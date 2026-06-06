@@ -18,8 +18,10 @@
 
 | L1 | L2 | L3 | FuncID | 目录路径 | design.md | 特性数 |
 |----|----|----|--------|----------|-----------|--------|
+| 01 架构通用设计 | 01 架构设计 | 01 编译构建 | `01-01-01` | `01-architecture/01-architecture-design/01-build-system/` | [design.md](01-architecture/01-architecture-design/01-build-system/design.md) | 1 |
 | 03 引擎框架层 | 01 渲染管线 | 01 基础渲染管线 | `03-01-01` | `03-engine-framework/01-render-pipeline/01-basic-render-pipeline/` | [design.md](03-engine-framework/01-render-pipeline/01-basic-render-pipeline/design.md) | 1 |
 | 04 通用能力层 | 03 通用属性 | 01 布局属性 | `04-03-01` | `04-common-capability/03-common-attributes/01-layout-attributes/` | [design.md](04-common-capability/03-common-attributes/01-layout-attributes/design.md) | 3 |
+| 04 通用能力层 | 03 通用属性 | 02 视效属性 | `04-03-02` | `04-common-capability/03-common-attributes/02-visual-effect-attributes/` | [design.md](04-common-capability/03-common-attributes/02-visual-effect-attributes/design.md) | 1 |
 | 04 通用能力层 | 04 通用事件 | 06 手势能力 | `04-04-06` | `04-common-capability/04-common-events/06-gesture-capability/` | [design.md](04-common-capability/04-common-events/06-gesture-capability/design.md) | 5 |
 | 05 组件层 | 01 布局类组件 | 01 Blank | `05-01-01` | `05-ui-components/01-layout-components/01-blank/` | [design.md](05-ui-components/01-layout-components/01-blank/design.md) | 1 |
 | 05 组件层 | 09 文本类组件 | 04 Text | `05-09-04` | `05-ui-components/09-text-components/04-text/` | [design.md](05-ui-components/09-text-components/04-text/design.md) | 7 |
@@ -29,6 +31,12 @@
 ---
 
 ## 已注册特性清单
+
+### 01-01-01 编译构建
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | BUILD.gn 结构 | [Feat-01-build-gn-structure-spec.md](01-architecture/01-architecture-design/01-build-system/Feat-01-build-gn-structure-spec.md) | Baselined |
 
 ### 03-01-01 基础渲染管线
 
@@ -43,6 +51,12 @@
 | Feat-01 | 尺寸属性 (width/height/size/constraintSize/padding/margin) | [Feat-01-size-properties-spec.md](04-common-capability/03-common-attributes/01-layout-attributes/Feat-01-size-properties-spec.md) | Baselined |
 | Feat-02 | 位置属性 (position/offset/markAnchor/align/direction) | [Feat-02-position-properties-spec.md](04-common-capability/03-common-attributes/01-layout-attributes/Feat-02-position-properties-spec.md) | Baselined |
 | Feat-03 | Flex 相关属性 (flexGrow/flexShrink/flexBasis/alignSelf/layoutWeight/displayPriority) | [Feat-03-flex-properties-spec.md](04-common-capability/03-common-attributes/01-layout-attributes/Feat-03-flex-properties-spec.md) | Baselined |
+
+### 04-03-02 视效属性
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | 图像效果 | [Feat-01-image-effects-spec.md](04-common-capability/03-common-attributes/02-visual-effect-attributes/Feat-01-image-effects-spec.md) | Baselined |
 
 ### 04-04-06 手势能力
 
