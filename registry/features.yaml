@@ -1,0 +1,101 @@
+features:
+- func_id: 01-01-01
+  id: Feat-01
+  title: BUILD.gn 结构
+  spec: 01-architecture/01-architecture-design/01-build-system/Feat-01-build-gn-structure-spec.md
+  status: Baselined
+- func_id: 03-01-01
+  id: Feat-01
+  title: 渲染主流程
+  spec: 03-engine-framework/01-render-pipeline/01-basic-render-pipeline/Feat-01-render-main-flow-spec.md
+  status: Baselined
+- func_id: 04-03-01
+  id: Feat-01
+  title: 尺寸属性 (width/height/size/constraintSize/padding/margin)
+  spec: 04-common-capability/03-common-attributes/01-layout-attributes/Feat-01-size-properties-spec.md
+  status: Baselined
+- func_id: 04-03-01
+  id: Feat-02
+  title: 位置属性 (position/offset/markAnchor/align/direction)
+  spec: 04-common-capability/03-common-attributes/01-layout-attributes/Feat-02-position-properties-spec.md
+  status: Baselined
+- func_id: 04-03-01
+  id: Feat-03
+  title: Flex 相关属性 (flexGrow/flexShrink/flexBasis/alignSelf/layoutWeight/displayPriority)
+  spec: 04-common-capability/03-common-attributes/01-layout-attributes/Feat-03-flex-properties-spec.md
+  status: Baselined
+- func_id: 04-03-02
+  id: Feat-01
+  title: 图像效果
+  spec: 04-common-capability/03-common-attributes/02-visual-effect-attributes/Feat-01-image-effects-spec.md
+  status: Baselined
+- func_id: 04-04-06
+  id: Feat-01
+  title: 基础手势 (Tap/LongPress/Pan/Pinch/Rotation/Swipe)
+  spec: 04-common-capability/04-common-events/06-gesture-capability/Feat-01-basic-gestures-spec.md
+  status: Baselined
+- func_id: 04-04-06
+  id: Feat-02
+  title: '组合手势 (GestureGroup: Sequential/Parallel/Exclusive)'
+  spec: 04-common-capability/04-common-events/06-gesture-capability/Feat-02-gesture-group-spec.md
+  status: Baselined
+- func_id: 04-04-06
+  id: Feat-03
+  title: '手势判定 (GestureReferee: 手势仲裁机制)'
+  spec: 04-common-capability/04-common-events/06-gesture-capability/Feat-03-gesture-referee-spec.md
+  status: Baselined
+- func_id: 04-04-06
+  id: Feat-04
+  title: 手势拦截 (Touch Intercept / responseLink / hitTestBehavior)
+  spec: 04-common-capability/04-common-events/06-gesture-capability/Feat-04-gesture-intercept-spec.md
+  status: Baselined
+- func_id: 04-04-06
+  id: Feat-05
+  title: 手势识别异常恢复增强
+  spec: 04-common-capability/04-common-events/06-gesture-capability/Feat-05-gesture-recognizer-recovery-spec.md
+  status: Draft
+- func_id: 05-01-01
+  id: Feat-01
+  title: Blank 组件
+  spec: 05-ui-components/01-layout-components/01-blank/Feat-01-blank-component-spec.md
+  status: Baselined
+- func_id: 05-09-04
+  id: Feat-01
+  title: 字体属性与自适应字体
+  spec: 05-ui-components/09-text-components/04-text/Feat-01-font-properties-spec.md
+  status: Baselined
+- func_id: 05-09-04
+  id: Feat-02
+  title: 行/段落布局
+  spec: 05-ui-components/09-text-components/04-text/Feat-02-line-paragraph-layout-spec.md
+  status: Baselined
+- func_id: 05-09-04
+  id: Feat-03
+  title: 溢出与截断
+  spec: 05-ui-components/09-text-components/04-text/Feat-03-overflow-truncation-spec.md
+  status: Baselined
+- func_id: 05-09-04
+  id: Feat-04
+  title: 装饰与样式 (decoration/textShadow/textCase/shaderStyle/contentTransition/marqueeOptions)
+  spec: 05-ui-components/09-text-components/04-text/Feat-04-decoration-styles-spec.md
+  status: Baselined
+- func_id: 05-09-04
+  id: Feat-05
+  title: 选择与复制
+  spec: 05-ui-components/09-text-components/04-text/Feat-05-selection-copy-spec.md
+  status: Baselined
+- func_id: 05-09-04
+  id: Feat-06
+  title: 系统能力（数据检测、隐私、震感）
+  spec: 05-ui-components/09-text-components/04-text/Feat-06-system-capabilities-spec.md
+  status: Baselined
+- func_id: 05-09-04
+  id: Feat-07
+  title: 事件回调 (onCopy/onWillCopy/onTextSelectionChange/onMarqueeStateChange)
+  spec: 05-ui-components/09-text-components/04-text/Feat-07-event-callbacks-spec.md
+  status: Baselined
+- func_id: 05-09-04
+  id: Feat-08
+  title: Text 尾部缩进
+  spec: null
+  status: 待补充

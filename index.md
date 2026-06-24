@@ -1746,9 +1746,9 @@
 
 ## 注册规则
 
-1. **新增功能域**：在本文件“功能域层级树”中添加 L2/L3 行；如 `design.md` 尚未创建，在 `design.md` 列标记为 `待补充`；同时在“已注册特性清单”中创建对应空表格（标题为 FuncID + 中文名）。
-2. **新增特性**：仅在具体规格补录开始、功能点/特性范围明确后，在对应功能域的特性清单表格中追加 FeatID 行，包含 FeatID、特性名称、Spec 文件链接、状态（`待补充`/`Draft`/`Baselined`/`Deprecated`）。
-3. **排序规则**：功能域层级树和已注册特性清单均按 FuncID 数值升序排列（`03-01-01` < `04-03-01` < `05-01-01`）；同一功能域内 FeatID 按 `Feat-01, Feat-02, ...` 顺序递增。
+1. **新增功能域**：在 `registry/functions.yaml` 中添加 FuncID 记录；如 `design.md` 尚未创建，`design` 字段置空；重新生成 `index.md`。
+2. **新增特性**：仅在具体规格补录开始、功能点/特性范围明确后，在 `registry/features.yaml` 中追加 FeatID 记录，包含 FuncID、FeatID、特性名称、Spec 文件、状态（`待补充`/`Draft`/`Baselined`/`Deprecated`）。
+3. **排序规则**：功能域按 FuncID 数值升序排列（`03-01-01` < `04-03-01` < `05-01-01`）；同一功能域内 FeatID 按 `Feat-01, Feat-02, ...` 顺序递增。
 4. **状态流转**：待补充 → Draft → Baselined（经评审通过后）→ Deprecated（被新特性替代）。
 5. **目录命名**：使用英文 slug（小写 + 短横线分隔），编号使用两位数字（`01-`, `02-`, ...）。
 6. **FeatID 编号**：同一功能域内从 `Feat-01` 顺序递增；历史功能域导入时不根据 Excel `一级功能点` 自动生成 FeatID。
@@ -1798,10 +1798,11 @@
 
 ```
 新特性补录流程:
-  1. 在 index.md 功能域层级树中确认/创建 FuncID
-  2. 具体规格补录开始、功能点/特性范围明确后，在 index.md 已注册特性清单中追加 FeatID 行；未生成规格时状态为待补充
+  1. 在 registry/functions.yaml 中确认/创建 FuncID
+  2. 具体规格补录开始、功能点/特性范围明确后，在 registry/features.yaml 中追加 FeatID 记录；未生成规格时状态为待补充
   3. 创建 <func-domain>/ 目录（如不存在）
-  4. 生成/更新 design.md，并将 design.md 列从待补充改为链接
-  5. 生成 Feat-NN-<name>-spec.md，并将 Spec 文件列从待补充改为链接
-  6. 更新 index.md 特性行状态为 Draft 或 Baselined
+  4. 生成/更新 design.md，并将 functions.yaml 的 design 字段从空值改为路径
+  5. 生成 Feat-NN-<name>-spec.md，并将 features.yaml 的 spec 字段从空值改为路径
+  6. 更新 features.yaml 特性状态为 Draft 或 Baselined
+  7. 运行 tools/generate_index.py 重新生成 index.md
 ```
