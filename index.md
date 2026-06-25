@@ -61,9 +61,9 @@
 | 03 引擎框架层 | 08 DFX | 04 Dump机制 | `03-08-04` | `03-engine-framework/08-dfx/04-dump-mechanism/` | *待补充* | 0 |
 | 03 引擎框架层 | 08 DFX | 05 Benchmark | `03-08-05` | `03-engine-framework/08-dfx/05-benchmark/` | *待补充* | 0 |
 | 03 引擎框架层 | 08 DFX | 06 布局边界显示 | `03-08-06` | `03-engine-framework/08-dfx/06-layout-boundary-display/` | *待补充* | 0 |
-| 04 通用能力层 | 01 图片加载能力 | 01 图片加载机制 | `04-01-01` | `04-common-capability/01-image-loading/01-image-loading-mechanism/` | *待补充* | 0 |
+| 04 通用能力层 | 01 图片加载能力 | 01 图片加载机制 | `04-01-01` | `04-common-capability/01-image-loading/01-image-loading-mechanism/` | [design.md](04-common-capability/01-image-loading/01-image-loading-mechanism/design.md) | 1 |
 | 04 通用能力层 | 01 图片加载能力 | 02 Svg解析 | `04-01-02` | `04-common-capability/01-image-loading/02-svg-parsing/` | *待补充* | 0 |
-| 04 通用能力层 | 01 图片加载能力 | 03 Drawable能力 | `04-01-03` | `04-common-capability/01-image-loading/03-drawable-capability/` | *待补充* | 0 |
+| 04 通用能力层 | 01 图片加载能力 | 03 DrawableDescriptor 能力 | `04-01-03` | `04-common-capability/01-image-loading/03-drawable-descriptor/` | [design.md](04-common-capability/01-image-loading/03-drawable-descriptor/design.md) | 1 |
 | 04 通用能力层 | 02 安全区机制 | 01 安全区机制 | `04-02-01` | `04-common-capability/02-safe-area/01-safe-area-mechanism/` | *待补充* | 0 |
 | 04 通用能力层 | 03 通用属性 | 01 布局属性 | `04-03-01` | `04-common-capability/03-common-attributes/01-layout-attributes/` | [design.md](04-common-capability/03-common-attributes/01-layout-attributes/design.md) | 3 |
 | 04 通用能力层 | 03 通用属性 | 02 视效属性 | `04-03-02` | `04-common-capability/03-common-attributes/02-visual-effect-attributes/` | [design.md](04-common-capability/03-common-attributes/02-visual-effect-attributes/design.md) | 1 |
@@ -192,7 +192,7 @@
 | 05 组件层 | 07 模态类组件 | 01 半模态弹窗 | `05-07-01` | `05-ui-components/07-modal-components/01-sheet-modal/` | *待补充* | 0 |
 | 05 组件层 | 07 模态类组件 | 02 全模态弹窗 | `05-07-02` | `05-ui-components/07-modal-components/02-full-modal/` | *待补充* | 0 |
 | 05 组件层 | 07 模态类组件 | 03 Panel | `05-07-03` | `05-ui-components/07-modal-components/03-panel/` | *待补充* | 0 |
-| 05 组件层 | 08 图片类组件 | 01 Image | `05-08-01` | `05-ui-components/08-image-components/01-image/` | *待补充* | 0 |
+| 05 组件层 | 08 图片类组件 | 01 Image | `05-08-01` | `05-ui-components/08-image-components/01-image/` | [design.md](05-ui-components/08-image-components/01-image/design.md) | 5 |
 | 05 组件层 | 08 图片类组件 | 02 ImageAnimator | `05-08-02` | `05-ui-components/08-image-components/02-image-animator/` | *待补充* | 0 |
 | 05 组件层 | 08 图片类组件 | 03 MediaCachedImage | `05-08-03` | `05-ui-components/08-image-components/03-media-cached-image/` | *待补充* | 0 |
 | 05 组件层 | 09 文本类组件 | 01 Marquee | `05-09-01` | `05-ui-components/09-text-components/01-marquee/` | *待补充* | 0 |
@@ -508,16 +508,18 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 图片加载机制 | [Feat-01-image-loading-mechanism-spec.md](04-common-capability/01-image-loading/01-image-loading-mechanism/Feat-01-image-loading-mechanism-spec.md) | Baselined |
 
 ### 04-01-02 Svg解析
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
 
-### 04-01-03 Drawable能力
+### 04-01-03 DrawableDescriptor 能力
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | DrawableDescriptor 能力 (TS + C API) | [Feat-01-drawable-descriptor-spec.md](04-common-capability/01-image-loading/03-drawable-descriptor/Feat-01-drawable-descriptor-spec.md) | Baselined |
 
 ### 04-02-01 安全区机制
 
@@ -1173,6 +1175,11 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 核心显示属性 | [Feat-01-image-core-display-spec.md](05-ui-components/08-image-components/01-image/Feat-01-image-core-display-spec.md) | Baselined |
+| Feat-02 | 颜色与效果 | [Feat-02-image-color-effects-spec.md](05-ui-components/08-image-components/01-image/Feat-02-image-color-effects-spec.md) | Baselined |
+| Feat-03 | 高级功能 | [Feat-03-image-advanced-spec.md](05-ui-components/08-image-components/01-image/Feat-03-image-advanced-spec.md) | Baselined |
+| Feat-04 | 事件回调 | [Feat-04-image-events-spec.md](05-ui-components/08-image-components/01-image/Feat-04-image-events-spec.md) | Baselined |
+| Feat-05 | Image 组件基础内存优化 | [Feat-05-image-base-memory-opt-spec.md](05-ui-components/08-image-components/01-image/Feat-05-image-base-memory-opt-spec.md) | Draft |
 
 ### 05-08-02 ImageAnimator
 
