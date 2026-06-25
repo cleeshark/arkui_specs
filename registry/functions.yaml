@@ -545,7 +545,7 @@ functions:
     id: '01'
     title: 图片加载机制
   path: 04-common-capability/01-image-loading/01-image-loading-mechanism/
-  design: null
+  design: 04-common-capability/01-image-loading/01-image-loading-mechanism/design.md
   status: active
 - id: 04-01-02
   l1:
@@ -569,9 +569,9 @@ functions:
     title: 图片加载能力
   l3:
     id: '03'
-    title: Drawable能力
-  path: 04-common-capability/01-image-loading/03-drawable-capability/
-  design: null
+    title: DrawableDescriptor 能力
+  path: 04-common-capability/01-image-loading/03-drawable-descriptor/
+  design: 04-common-capability/01-image-loading/03-drawable-descriptor/design.md
   status: active
 - id: 04-02-01
   l1:
@@ -2248,7 +2248,7 @@ functions:
     id: '01'
     title: Image
   path: 05-ui-components/08-image-components/01-image/
-  design: null
+  design: 05-ui-components/08-image-components/01-image/design.md
   status: active
 - id: 05-08-02
   l1:

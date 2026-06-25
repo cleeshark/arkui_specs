@@ -9,6 +9,16 @@ features:
   title: 渲染主流程
   spec: 03-engine-framework/01-render-pipeline/01-basic-render-pipeline/Feat-01-render-main-flow-spec.md
   status: Baselined
+- func_id: 04-01-01
+  id: Feat-01
+  title: 图片加载机制
+  spec: 04-common-capability/01-image-loading/01-image-loading-mechanism/Feat-01-image-loading-mechanism-spec.md
+  status: Baselined
+- func_id: 04-01-03
+  id: Feat-01
+  title: DrawableDescriptor 能力 (TS + C API)
+  spec: 04-common-capability/01-image-loading/03-drawable-descriptor/Feat-01-drawable-descriptor-spec.md
+  status: Baselined
 - func_id: 04-03-01
   id: Feat-01
   title: 尺寸属性 (width/height/size/constraintSize/padding/margin)
@@ -59,6 +69,31 @@ features:
   title: Blank 组件
   spec: 05-ui-components/01-layout-components/01-blank/Feat-01-blank-component-spec.md
   status: Baselined
+- func_id: 05-08-01
+  id: Feat-01
+  title: 核心显示属性
+  spec: 05-ui-components/08-image-components/01-image/Feat-01-image-core-display-spec.md
+  status: Baselined
+- func_id: 05-08-01
+  id: Feat-02
+  title: 颜色与效果
+  spec: 05-ui-components/08-image-components/01-image/Feat-02-image-color-effects-spec.md
+  status: Baselined
+- func_id: 05-08-01
+  id: Feat-03
+  title: 高级功能
+  spec: 05-ui-components/08-image-components/01-image/Feat-03-image-advanced-spec.md
+  status: Baselined
+- func_id: 05-08-01
+  id: Feat-04
+  title: 事件回调
+  spec: 05-ui-components/08-image-components/01-image/Feat-04-image-events-spec.md
+  status: Baselined
+- func_id: 05-08-01
+  id: Feat-05
+  title: Image 组件基础内存优化
+  spec: 05-ui-components/08-image-components/01-image/Feat-05-image-base-memory-opt-spec.md
+  status: Draft
 - func_id: 05-09-04
   id: Feat-01
   title: 字体属性与自适应字体
