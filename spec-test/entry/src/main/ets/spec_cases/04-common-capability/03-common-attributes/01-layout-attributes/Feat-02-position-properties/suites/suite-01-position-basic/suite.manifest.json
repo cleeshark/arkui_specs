@@ -1,0 +1,38 @@
+{
+  "suiteId": "suite-01-position-basic",
+  "suiteName": "Position Basic",
+  "acRefs": [
+    "AC-1.1",
+    "AC-1.2",
+    "AC-1.3",
+    "AC-4.1",
+    "AC-4.2",
+    "AC-7.1"
+  ],
+  "cases": [
+    {
+      "caseId": "case-001-position-xy-basic",
+      "nodeId": "N_F02_C001_TARGET",
+      "url": "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-02-position-properties/suites/suite-01-position-basic/cases/case_001_position_xy_basic",
+      "description": "position({x: 50, y: 30}) absolute positioning in Stack"
+    },
+    {
+      "caseId": "case-002-position-out-of-layout",
+      "nodeId": "N_F02_C002_TARGET",
+      "url": "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-02-position-properties/suites/suite-01-position-basic/cases/case_002_position_out_of_layout",
+      "description": "position causes component to leave normal layout flow"
+    },
+    {
+      "caseId": "case-003-offset-basic",
+      "nodeId": "N_F02_C003_TARGET",
+      "url": "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-02-position-properties/suites/suite-01-position-basic/cases/case_003_offset_basic",
+      "description": "offset({x: 20, y: 10}) relative offset from layout position"
+    },
+    {
+      "caseId": "case-004-mark-anchor-basic",
+      "nodeId": "N_F02_C004_TARGET",
+      "url": "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-02-position-properties/suites/suite-01-position-basic/cases/case_004_mark_anchor_basic",
+      "description": "markAnchor({x: 50, y: 25}) anchor point offset"
+    }
+  ]
+}

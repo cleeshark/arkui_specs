@@ -1,0 +1,66 @@
+{
+  "suiteId": "suite-02-flex-advanced",
+  "cases": [
+    {
+      "caseId": "case-001-flex-grow-zero-default",
+      "acRefs": ["AC-1.2"],
+      "targetNodeId": "N_F03_S02_C001_TARGET_A",
+      "expectedRect": {
+        "width": 50.0,
+        "height": 50.0
+      },
+      "tolerancePx": 1.0
+    },
+    {
+      "caseId": "case-002-row-flex-shrink-default",
+      "acRefs": ["AC-2.2"],
+      "targetNodeId": "N_F03_S02_C002_TARGET_A",
+      "expectedRect": {
+        "width": 150.0,
+        "height": 50.0
+      },
+      "tolerancePx": 1.0
+    },
+    {
+      "caseId": "case-003-flex-flex-shrink-default",
+      "acRefs": ["AC-2.3"],
+      "targetNodeId": "N_F03_S02_C003_TARGET_A",
+      "expectedRect": {
+        "width": 100.0,
+        "height": 50.0
+      },
+      "tolerancePx": 1.0
+    },
+    {
+      "caseId": "case-004-align-self-stretch",
+      "acRefs": ["AC-4.6"],
+      "targetNodeId": "N_F03_S02_C004_TARGET",
+      "expectedRect": {
+        "width": 100.0,
+        "height": 100.0
+      },
+      "tolerancePx": 1.0
+    },
+    {
+      "caseId": "case-005-align-self-center",
+      "acRefs": ["AC-4.4"],
+      "targetNodeId": "N_F03_S02_C005_TARGET",
+      "expectedRect": {
+        "y": 30.0,
+        "width": 100.0,
+        "height": 40.0
+      },
+      "tolerancePx": 1.0
+    },
+    {
+      "caseId": "case-006-display-priority-basic",
+      "acRefs": ["AC-6.3", "AC-6.4"],
+      "targetNodeId": "N_F03_S02_C006_TARGET_HIGH",
+      "expectedRect": {
+        "width": 120.0,
+        "height": 50.0
+      },
+      "tolerancePx": 1.0
+    }
+  ]
+}

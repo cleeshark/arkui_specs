@@ -1,0 +1,38 @@
+{
+  "suiteId": "suite-02-constraint-size",
+  "suiteName": "Constraint Size and Padding",
+  "acRefs": [
+    "AC-3.1",
+    "AC-3.2",
+    "AC-3.3",
+    "AC-4.1",
+    "AC-4.5",
+    "AC-6.1"
+  ],
+  "cases": [
+    {
+      "caseId": "case-001-constraint-max-width",
+      "nodeId": "N_F01_S02_C001_TARGET",
+      "url": "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-01-size-properties/suites/suite-02-constraint-size/cases/case_001_constraint_max_width",
+      "description": "width(200) with constraintSize({maxWidth:100}) should clamp to 100"
+    },
+    {
+      "caseId": "case-002-constraint-min-width",
+      "nodeId": "N_F01_S02_C002_TARGET",
+      "url": "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-01-size-properties/suites/suite-02-constraint-size/cases/case_002_constraint_min_width",
+      "description": "width(20) with constraintSize({minWidth:80}) should clamp to 80"
+    },
+    {
+      "caseId": "case-003-padding-basic",
+      "nodeId": "N_F01_S02_C003_TARGET",
+      "url": "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-01-size-properties/suites/suite-02-constraint-size/cases/case_003_padding_basic",
+      "description": "Child with 100% width/height in parent with padding(10) should have content area 80x60"
+    },
+    {
+      "caseId": "case-004-percent-width",
+      "nodeId": "N_F01_S02_C004_TARGET",
+      "url": "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-01-size-properties/suites/suite-02-constraint-size/cases/case_004_percent_width",
+      "description": "width('50%') in 200vp parent should be 100vp"
+    }
+  ]
+}

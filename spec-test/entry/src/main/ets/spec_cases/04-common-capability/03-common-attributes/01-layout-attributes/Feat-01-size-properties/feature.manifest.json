@@ -1,0 +1,16 @@
+{
+  "featureId": "Func-04-03-01-Feat-01",
+  "featureName": "size-properties",
+  "specPath": "specs/04-common-capability/03-common-attributes/01-layout-attributes/Feat-01-size-properties-spec.md",
+  "targetApi": 26,
+  "suites": [
+    {
+      "suiteId": "suite-01-width-height-basic",
+      "suitePath": "suites/suite-01-width-height-basic"
+    },
+    {
+      "suiteId": "suite-02-constraint-size",
+      "suitePath": "suites/suite-02-constraint-size"
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "suiteId": "suite-01-flex-basic",
+  "suiteName": "Flex Properties Basic",
+  "acRefs": [
+    "AC-1.1",
+    "AC-1.5",
+    "AC-2.1",
+    "AC-3.1",
+    "AC-4.1",
+    "AC-5.1"
+  ],
+  "cases": [
+    {
+      "caseId": "case-001-flex-grow-basic",
+      "nodeId": "N_F03_C001_TARGET",
+      "url": "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-03-flex-properties/suites/suite-01-flex-basic/cases/case_001_flex_grow_basic",
+      "description": "flexGrow(1) distributes remaining space"
+    },
+    {
+      "caseId": "case-002-flex-grow-ratio",
+      "nodeId": "N_F03_C002_TARGET_A",
+      "url": "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-03-flex-properties/suites/suite-01-flex-basic/cases/case_002_flex_grow_ratio",
+      "description": "flexGrow(1):flexGrow(2) ratio distribution"
+    },
+    {
+      "caseId": "case-003-flex-shrink-basic",
+      "nodeId": "N_F03_C003_TARGET_A",
+      "url": "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-03-flex-properties/suites/suite-01-flex-basic/cases/case_003_flex_shrink_basic",
+      "description": "flexShrink in Flex container when overflow"
+    },
+    {
+      "caseId": "case-004-flex-basis-basic",
+      "nodeId": "N_F03_C004_TARGET",
+      "url": "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-03-flex-properties/suites/suite-01-flex-basic/cases/case_004_flex_basis_basic",
+      "description": "flexBasis(100) sets initial main axis size"
+    },
+    {
+      "caseId": "case-005-layout-weight-basic",
+      "nodeId": "N_F03_C005_TARGET_A",
+      "url": "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-03-flex-properties/suites/suite-01-flex-basic/cases/case_005_layout_weight_basic",
+      "description": "layoutWeight(1):layoutWeight(2) weight distribution in Row"
+    },
+    {
+      "caseId": "case-006-align-self-basic",
+      "nodeId": "N_F03_C006_TARGET",
+      "url": "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-03-flex-properties/suites/suite-01-flex-basic/cases/case_006_align_self_basic",
+      "description": "alignSelf(ItemAlign.End) cross-axis alignment override"
+    }
+  ]
+}

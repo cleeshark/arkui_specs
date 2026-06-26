@@ -1,0 +1,53 @@
+{
+  "suiteId": "suite-02-align-basic",
+  "cases": [
+    {
+      "caseId": "case-001-align-default-center",
+      "acRefs": ["AC-9.2", "AC-9.4"],
+      "targetNodeId": "N_F02_S02_C001_TARGET",
+      "expectedRect": {
+        "x": 100.0,
+        "y": 75.0,
+        "width": 100.0,
+        "height": 50.0
+      },
+      "tolerancePx": 1.0
+    },
+    {
+      "caseId": "case-002-align-top-start",
+      "acRefs": ["AC-9.1"],
+      "targetNodeId": "N_F02_S02_C002_TARGET",
+      "expectedRect": {
+        "x": 0.0,
+        "y": 0.0,
+        "width": 100.0,
+        "height": 50.0
+      },
+      "tolerancePx": 1.0
+    },
+    {
+      "caseId": "case-003-align-bottom-end",
+      "acRefs": ["AC-9.3"],
+      "targetNodeId": "N_F02_S02_C003_TARGET",
+      "expectedRect": {
+        "x": 200.0,
+        "y": 150.0,
+        "width": 100.0,
+        "height": 50.0
+      },
+      "tolerancePx": 1.0
+    },
+    {
+      "caseId": "case-004-position-bottom-right",
+      "acRefs": ["AC-2.2", "AC-2.3"],
+      "targetNodeId": "N_F02_S02_C004_TARGET",
+      "expectedRect": {
+        "x": 210.0,
+        "y": 150.0,
+        "width": 80.0,
+        "height": 40.0
+      },
+      "tolerancePx": 1.0
+    }
+  ]
+}

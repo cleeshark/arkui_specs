@@ -1,0 +1,48 @@
+{
+  "suiteId": "suite-01-width-height-basic",
+  "suiteName": "Width and Height Basic",
+  "acRefs": [
+    "AC-1.1",
+    "AC-1.2",
+    "AC-1.3"
+  ],
+  "cases": [
+    {
+      "caseId": "case-001-width-height-basic",
+      "nodeId": "N_F01_C001_TARGET",
+      "url": "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-01-size-properties/suites/suite-01-width-height-basic/cases/case_001_width_height_basic",
+      "description": "Text.width(100).height(50) with vp default unit"
+    },
+    {
+      "caseId": "case-002-width-height-basic",
+      "nodeId": "N_F01_C002_TARGET",
+      "url": "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-01-size-properties/suites/suite-01-width-height-basic/cases/case_002_width_height_basic",
+      "description": "Text.width(120).height(80) with vp default unit"
+    },
+    {
+      "caseId": "case-003-width-height-zero",
+      "nodeId": "N_F01_C003_TARGET",
+      "url": "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-01-size-properties/suites/suite-01-width-height-basic/cases/case_003_width_height_zero",
+      "description": "Text.width(0).height(0) should keep node in tree with zero size"
+    },
+    {
+      "caseId": "case-004-click-update-size",
+      "nodeId": "N_F01_C004_TARGET",
+      "url": "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-01-size-properties/suites/suite-01-width-height-basic/cases/case_004_click_update_size",
+      "description": "Click Text to update width/height by @State and capture after wait",
+      "operationSequence": [
+        {
+          "op": "click",
+          "inject": "mouse",
+          "x": 50,
+          "y": 25,
+          "holdMs": 40
+        },
+        {
+          "op": "wait",
+          "durationMs": 100
+        }
+      ]
+    }
+  ]
+}

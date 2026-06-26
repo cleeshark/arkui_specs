@@ -1,0 +1,33 @@
+{
+  "src": [
+    "pages/Index",
+    "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-01-size-properties/suites/suite-01-width-height-basic/cases/case_001_width_height_basic",
+    "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-01-size-properties/suites/suite-01-width-height-basic/cases/case_002_width_height_basic",
+    "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-01-size-properties/suites/suite-01-width-height-basic/cases/case_003_width_height_zero",
+    "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-01-size-properties/suites/suite-01-width-height-basic/cases/case_004_click_update_size",
+    "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-01-size-properties/suites/suite-02-constraint-size/cases/case_001_constraint_max_width",
+    "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-01-size-properties/suites/suite-02-constraint-size/cases/case_002_constraint_min_width",
+    "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-01-size-properties/suites/suite-02-constraint-size/cases/case_003_padding_basic",
+    "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-01-size-properties/suites/suite-02-constraint-size/cases/case_004_percent_width",
+    "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-02-position-properties/suites/suite-01-position-basic/cases/case_001_position_xy_basic",
+    "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-02-position-properties/suites/suite-01-position-basic/cases/case_002_position_out_of_layout",
+    "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-02-position-properties/suites/suite-01-position-basic/cases/case_003_offset_basic",
+    "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-02-position-properties/suites/suite-01-position-basic/cases/case_004_mark_anchor_basic",
+    "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-02-position-properties/suites/suite-02-align-basic/cases/case_001_align_default_center",
+    "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-02-position-properties/suites/suite-02-align-basic/cases/case_002_align_top_start",
+    "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-02-position-properties/suites/suite-02-align-basic/cases/case_003_align_bottom_end",
+    "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-02-position-properties/suites/suite-02-align-basic/cases/case_004_position_bottom_right",
+    "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-03-flex-properties/suites/suite-01-flex-basic/cases/case_001_flex_grow_basic",
+    "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-03-flex-properties/suites/suite-01-flex-basic/cases/case_002_flex_grow_ratio",
+    "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-03-flex-properties/suites/suite-01-flex-basic/cases/case_003_flex_shrink_basic",
+    "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-03-flex-properties/suites/suite-01-flex-basic/cases/case_004_flex_basis_basic",
+    "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-03-flex-properties/suites/suite-01-flex-basic/cases/case_005_layout_weight_basic",
+    "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-03-flex-properties/suites/suite-01-flex-basic/cases/case_006_align_self_basic",
+    "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-03-flex-properties/suites/suite-02-flex-advanced/cases/case_001_flex_grow_zero_default",
+    "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-03-flex-properties/suites/suite-02-flex-advanced/cases/case_002_row_flex_shrink_default",
+    "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-03-flex-properties/suites/suite-02-flex-advanced/cases/case_003_flex_flex_shrink_default",
+    "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-03-flex-properties/suites/suite-02-flex-advanced/cases/case_004_align_self_stretch",
+    "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-03-flex-properties/suites/suite-02-flex-advanced/cases/case_005_align_self_center",
+    "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-03-flex-properties/suites/suite-02-flex-advanced/cases/case_006_display_priority_basic"
+  ]
+}

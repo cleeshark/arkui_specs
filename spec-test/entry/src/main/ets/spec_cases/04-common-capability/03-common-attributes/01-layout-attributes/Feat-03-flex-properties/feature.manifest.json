@@ -1,0 +1,16 @@
+{
+  "featureId": "Func-04-03-01-Feat-03",
+  "featureName": "flex-properties",
+  "specPath": "specs/04-common-capability/03-common-attributes/01-layout-attributes/Feat-03-flex-properties-spec.md",
+  "targetApi": 26,
+  "suites": [
+    {
+      "suiteId": "suite-01-flex-basic",
+      "suitePath": "suites/suite-01-flex-basic"
+    },
+    {
+      "suiteId": "suite-02-flex-advanced",
+      "suitePath": "suites/suite-02-flex-advanced"
+    }
+  ]
+}

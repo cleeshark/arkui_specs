@@ -1,0 +1,16 @@
+{
+  "featureId": "Func-04-03-01-Feat-02",
+  "featureName": "position-properties",
+  "specPath": "specs/04-common-capability/03-common-attributes/01-layout-attributes/Feat-02-position-properties-spec.md",
+  "targetApi": 26,
+  "suites": [
+    {
+      "suiteId": "suite-01-position-basic",
+      "suitePath": "suites/suite-01-position-basic"
+    },
+    {
+      "suiteId": "suite-02-align-basic",
+      "suitePath": "suites/suite-02-align-basic"
+    }
+  ]
+}

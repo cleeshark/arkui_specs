@@ -1,0 +1,61 @@
+{
+  "suiteId": "suite-01-width-height-basic",
+  "cases": [
+    {
+      "caseId": "case-001-width-height-basic",
+      "acRefs": [
+        "AC-1.1",
+        "AC-1.2",
+        "AC-1.3"
+      ],
+      "targetNodeId": "N_F01_C001_TARGET",
+      "expectedRect": {
+        "width": 100.0,
+        "height": 50.0
+      },
+      "tolerancePx": 1.0
+    },
+    {
+      "caseId": "case-002-width-height-basic",
+      "acRefs": [
+        "AC-1.1",
+        "AC-1.2",
+        "AC-1.3"
+      ],
+      "targetNodeId": "N_F01_C002_TARGET",
+      "expectedRect": {
+        "width": 120.0,
+        "height": 80.0
+      },
+      "tolerancePx": 1.0
+    },
+    {
+      "caseId": "case-003-width-height-zero",
+      "acRefs": [
+        "AC-1.1",
+        "AC-1.2",
+        "AC-1.3"
+      ],
+      "targetNodeId": "N_F01_C003_TARGET",
+      "expectedRect": {
+        "width": 0.0,
+        "height": 0.0
+      },
+      "tolerancePx": 1.0
+    },
+    {
+      "caseId": "case-004-click-update-size",
+      "acRefs": [
+        "AC-1.1",
+        "AC-1.2",
+        "AC-1.3"
+      ],
+      "targetNodeId": "N_F01_C004_TARGET",
+      "expectedRect": {
+        "width": 160.0,
+        "height": 90.0
+      },
+      "tolerancePx": 1.0
+    }
+  ]
+}

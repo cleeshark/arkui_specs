@@ -1,0 +1,80 @@
+{
+  "suiteId": "suite-01-flex-basic",
+  "cases": [
+    {
+      "caseId": "case-001-flex-grow-basic",
+      "acRefs": [
+        "AC-1.1"
+      ],
+      "targetNodeId": "N_F03_C001_TARGET",
+      "expectedRect": {
+        "width": 250.0,
+        "height": 50.0
+      },
+      "tolerancePx": 1.0
+    },
+    {
+      "caseId": "case-002-flex-grow-ratio",
+      "acRefs": [
+        "AC-1.1",
+        "AC-1.5"
+      ],
+      "targetNodeId": "N_F03_C002_TARGET_A",
+      "expectedRect": {
+        "width": 100.0,
+        "height": 50.0
+      },
+      "tolerancePx": 1.0
+    },
+    {
+      "caseId": "case-003-flex-shrink-basic",
+      "acRefs": [
+        "AC-2.1"
+      ],
+      "targetNodeId": "N_F03_C003_TARGET_A",
+      "expectedRect": {
+        "width": 116.67,
+        "height": 50.0
+      },
+      "tolerancePx": 2.0
+    },
+    {
+      "caseId": "case-004-flex-basis-basic",
+      "acRefs": [
+        "AC-3.1"
+      ],
+      "targetNodeId": "N_F03_C004_TARGET",
+      "expectedRect": {
+        "width": 100.0,
+        "height": 50.0
+      },
+      "tolerancePx": 1.0
+    },
+    {
+      "caseId": "case-005-layout-weight-basic",
+      "acRefs": [
+        "AC-5.1"
+      ],
+      "targetNodeId": "N_F03_C005_TARGET_A",
+      "expectedRect": {
+        "width": 100.0,
+        "height": 50.0
+      },
+      "tolerancePx": 1.0
+    },
+    {
+      "caseId": "case-006-align-self-basic",
+      "acRefs": [
+        "AC-4.1",
+        "AC-4.5"
+      ],
+      "targetNodeId": "N_F03_C006_TARGET",
+      "expectedRect": {
+        "y": 50.0,
+        "width": 80.0,
+        "height": 50.0
+      },
+      "tolerancePx": 1.0
+    }
+  ]
+}

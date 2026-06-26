@@ -1,0 +1,38 @@
+{
+  "suiteId": "suite-02-align-basic",
+  "suiteName": "Align and Position Edges Basic",
+  "acRefs": [
+    "AC-9.1",
+    "AC-9.2",
+    "AC-9.3",
+    "AC-9.4",
+    "AC-2.2",
+    "AC-2.3"
+  ],
+  "cases": [
+    {
+      "caseId": "case-001-align-default-center",
+      "nodeId": "N_F02_S02_C001_TARGET",
+      "url": "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-02-position-properties/suites/suite-02-align-basic/cases/case_001_align_default_center",
+      "description": "Stack without align should center child by default"
+    },
+    {
+      "caseId": "case-002-align-top-start",
+      "nodeId": "N_F02_S02_C002_TARGET",
+      "url": "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-02-position-properties/suites/suite-02-align-basic/cases/case_002_align_top_start",
+      "description": "Stack.align(Alignment.TopStart) should position child at top-left"
+    },
+    {
+      "caseId": "case-003-align-bottom-end",
+      "nodeId": "N_F02_S02_C003_TARGET",
+      "url": "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-02-position-properties/suites/suite-02-align-basic/cases/case_003_align_bottom_end",
+      "description": "Stack.align(Alignment.BottomEnd) should position child at bottom-right"
+    },
+    {
+      "caseId": "case-004-position-bottom-right",
+      "nodeId": "N_F02_S02_C004_TARGET",
+      "url": "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-02-position-properties/suites/suite-02-align-basic/cases/case_004_position_bottom_right",
+      "description": "position({bottom:10, right:10}) should position from bottom-right edges"
+    }
+  ]
+}

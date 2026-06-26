@@ -1,0 +1,45 @@
+{
+  "suiteId": "suite-02-constraint-size",
+  "cases": [
+    {
+      "caseId": "case-001-constraint-max-width",
+      "acRefs": ["AC-3.2"],
+      "targetNodeId": "N_F01_S02_C001_TARGET",
+      "expectedRect": {
+        "width": 100.0,
+        "height": 50.0
+      },
+      "tolerancePx": 1.0
+    },
+    {
+      "caseId": "case-002-constraint-min-width",
+      "acRefs": ["AC-3.3"],
+      "targetNodeId": "N_F01_S02_C002_TARGET",
+      "expectedRect": {
+        "width": 80.0,
+        "height": 50.0
+      },
+      "tolerancePx": 1.0
+    },
+    {
+      "caseId": "case-003-padding-basic",
+      "acRefs": ["AC-4.1", "AC-4.5"],
+      "targetNodeId": "N_F01_S02_C003_TARGET",
+      "expectedRect": {
+        "width": 80.0,
+        "height": 60.0
+      },
+      "tolerancePx": 1.0
+    },
+    {
+      "caseId": "case-004-percent-width",
+      "acRefs": ["AC-6.1"],
+      "targetNodeId": "N_F01_S02_C004_TARGET",
+      "expectedRect": {
+        "width": 100.0,
+        "height": 50.0
+      },
+      "tolerancePx": 1.0
+    }
+  ]
+}

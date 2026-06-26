@@ -1,0 +1,51 @@
+{
+  "suiteId": "suite-02-flex-advanced",
+  "suiteName": "Flex Advanced Features",
+  "acRefs": [
+    "AC-1.2",
+    "AC-2.2",
+    "AC-2.3",
+    "AC-4.4",
+    "AC-4.6",
+    "AC-6.3",
+    "AC-6.4"
+  ],
+  "cases": [
+    {
+      "caseId": "case-001-flex-grow-zero-default",
+      "nodeId": "N_F03_S02_C001_TARGET_A",
+      "url": "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-03-flex-properties/suites/suite-02-flex-advanced/cases/case_001_flex_grow_zero_default",
+      "description": "flexGrow(0) should not participate in remaining space distribution"
+    },
+    {
+      "caseId": "case-002-row-flex-shrink-default",
+      "nodeId": "N_F03_S02_C002_TARGET_A",
+      "url": "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-03-flex-properties/suites/suite-02-flex-advanced/cases/case_002_row_flex_shrink_default",
+      "description": "Row default flexShrink=0, children should not shrink (overflow)"
+    },
+    {
+      "caseId": "case-003-flex-flex-shrink-default",
+      "nodeId": "N_F03_S02_C003_TARGET_A",
+      "url": "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-03-flex-properties/suites/suite-02-flex-advanced/cases/case_003_flex_flex_shrink_default",
+      "description": "Flex default flexShrink=1, children should shrink proportionally"
+    },
+    {
+      "caseId": "case-004-align-self-stretch",
+      "nodeId": "N_F03_S02_C004_TARGET",
+      "url": "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-03-flex-properties/suites/suite-02-flex-advanced/cases/case_004_align_self_stretch",
+      "description": "alignSelf(ItemAlign.Stretch) should stretch to parent cross-axis size"
+    },
+    {
+      "caseId": "case-005-align-self-center",
+      "nodeId": "N_F03_S02_C005_TARGET",
+      "url": "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-03-flex-properties/suites/suite-02-flex-advanced/cases/case_005_align_self_center",
+      "description": "alignSelf(ItemAlign.Center) should override parent alignItems"
+    },
+    {
+      "caseId": "case-006-display-priority-basic",
+      "nodeId": "N_F03_S02_C006_TARGET_HIGH",
+      "url": "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-03-flex-properties/suites/suite-02-flex-advanced/cases/case_006_display_priority_basic",
+      "description": "displayPriority determines which children are visible when space is insufficient"
+    }
+  ]
+}
