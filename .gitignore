@@ -1,0 +1,6 @@
+site/.docusaurus/
+site/build/
+site/docs/
+site/node_modules/
+site/sidebars.js
+site/src/data/registry.json

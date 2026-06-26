@@ -1,0 +1,328 @@
+:root {
+  --ifm-color-primary: #2454d6;
+  --ifm-color-primary-dark: #1f4cc2;
+  --ifm-color-primary-darker: #1d47b7;
+  --ifm-color-primary-darkest: #183b96;
+  --ifm-color-primary-light: #3b66dc;
+  --ifm-color-primary-lighter: #4770df;
+  --ifm-color-primary-lightest: #6e8de6;
+  --ifm-font-family-base: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --ifm-heading-font-weight: 700;
+  --portal-border: #d9dee8;
+  --portal-muted: #5f6b7a;
+  --portal-surface: #ffffff;
+  --portal-soft: #f5f7fb;
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #8fb0ff;
+  --ifm-background-color: #111418;
+  --ifm-background-surface-color: #171b22;
+  --portal-border: #303847;
+  --portal-muted: #aab3c2;
+  --portal-surface: #171b22;
+  --portal-soft: #111820;
+}
+
+.portalHero {
+  border-bottom: 1px solid var(--portal-border);
+  background:
+    linear-gradient(135deg, rgba(36, 84, 214, 0.12), rgba(0, 155, 119, 0.08)),
+    var(--ifm-background-color);
+}
+
+.portalHeroInner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.8fr);
+  gap: 48px;
+  align-items: center;
+  max-width: 1180px;
+  min-height: 460px;
+  margin: 0 auto;
+  padding: 72px 24px;
+}
+
+.eyebrow {
+  margin: 0 0 12px;
+  color: var(--ifm-color-primary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.portalHero h1 {
+  max-width: 760px;
+  margin: 0;
+  font-size: clamp(2.4rem, 7vw, 4.8rem);
+  line-height: 1.02;
+  letter-spacing: 0;
+}
+
+.heroCopy {
+  max-width: 720px;
+  margin: 20px 0 0;
+  color: var(--portal-muted);
+  font-size: 1.12rem;
+  line-height: 1.7;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.heroStats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.statBox,
+.domainCard,
+.statusPanel {
+  border: 1px solid var(--portal-border);
+  border-radius: 8px;
+  background: var(--portal-surface);
+}
+
+.statBox {
+  min-height: 132px;
+  padding: 20px;
+}
+
+.statValue {
+  font-size: 2.5rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.statLabel {
+  margin-top: 10px;
+  color: var(--portal-muted);
+  font-size: 0.93rem;
+}
+
+.pageBand {
+  padding: 56px 0;
+}
+
+.mutedBand {
+  background: var(--portal-soft);
+  border-top: 1px solid var(--portal-border);
+  border-bottom: 1px solid var(--portal-border);
+}
+
+.contentWrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: end;
+  margin-bottom: 22px;
+}
+
+.sectionHeader h2 {
+  margin: 0;
+  font-size: 1.7rem;
+}
+
+.sectionHeader p {
+  max-width: 520px;
+  margin: 0;
+  color: var(--portal-muted);
+}
+
+.statusGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.statusPanel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px;
+}
+
+.statusPanel strong {
+  font-size: 1.8rem;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #eef2f8;
+  color: #304055;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.status-baselined {
+  background: #e5f6ef;
+  color: #116548;
+}
+
+.status-draft {
+  background: #fff0d8;
+  color: #8a5600;
+}
+
+.status-待补充 {
+  background: #eef2f8;
+  color: #304055;
+}
+
+.status-deprecated {
+  background: #fbe6e8;
+  color: #9f2637;
+}
+
+.domainGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.domainCard {
+  padding: 18px;
+}
+
+.domainHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.domainHeader h3 {
+  margin: 0;
+  font-size: 1.08rem;
+}
+
+.domainId {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 28px;
+  border-radius: 6px;
+  background: var(--ifm-color-primary);
+  color: white;
+  font-weight: 800;
+}
+
+.domainCard p {
+  min-height: 48px;
+  margin: 12px 0 16px;
+  color: var(--portal-muted);
+  line-height: 1.55;
+}
+
+.domainMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--portal-muted);
+  font-size: 0.86rem;
+}
+
+.tableScroll {
+  overflow-x: auto;
+  border: 1px solid var(--portal-border);
+  border-radius: 8px;
+}
+
+.portalTable {
+  width: 100%;
+  margin: 0;
+  border-collapse: collapse;
+  background: var(--portal-surface);
+}
+
+.portalTable th,
+.portalTable td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--portal-border);
+  vertical-align: top;
+}
+
+.portalTable th {
+  background: var(--portal-soft);
+  color: var(--portal-muted);
+  font-size: 0.82rem;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.portalTable tr:last-child td {
+  border-bottom: 0;
+}
+
+.monoCell,
+.functionPath {
+  font-family: var(--ifm-font-family-monospace);
+}
+
+.functionTitle {
+  font-weight: 700;
+}
+
+.functionPath {
+  margin-top: 4px;
+  color: var(--portal-muted);
+  font-size: 0.82rem;
+}
+
+.statusList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.statusCount {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@media (max-width: 900px) {
+  .portalHeroInner {
+    grid-template-columns: 1fr;
+    min-height: auto;
+    padding: 48px 20px;
+  }
+
+  .sectionHeader {
+    display: block;
+  }
+
+  .sectionHeader p {
+    margin-top: 8px;
+  }
+}
+
+@media (max-width: 520px) {
+  .heroStats {
+    grid-template-columns: 1fr;
+  }
+
+  .portalHero h1 {
+    font-size: 2.5rem;
+  }
+
+  .pageBand {
+    padding: 40px 0;
+  }
+}

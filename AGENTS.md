@@ -8,6 +8,8 @@ This repository is an ArkUI ace_engine feature specification repository. It is n
 - `registry/features.yaml` is the source of truth for FeatID feature specs.
 - `index.md` is generated output. Do not edit it by hand.
 - `tools/generate_index.py` validates the registry and regenerates `index.md`.
+- `tools/generate_site.py` generates Docusaurus inputs from the registry.
+- `site/docs`, `site/sidebars.js`, and `site/src/data/registry.json` are generated site inputs. Do not edit them by hand.
 - A functional-domain directory usually contains one `design.md` and one or more `Feat-NN-*-spec.md` files.
 
 Typical layout:
@@ -26,6 +28,7 @@ After changing registry entries or registered document paths, run:
 ```bash
 python3 tools/generate_index.py
 python3 tools/generate_index.py --check
+python3 tools/generate_site.py
 ```
 
 Before finishing a change, use this optional consistency check to find unregistered files and broken registered paths:
@@ -122,6 +125,53 @@ Common status values:
 - If a feature title, status, file path, or FeatID changes, update `registry/features.yaml`.
 - If a functional-domain title, directory path, or design path changes, update `registry/functions.yaml`.
 - Regenerate `index.md` after registry changes.
+- Regenerate site inputs after registry changes with `python3 tools/generate_site.py`.
+
+## Docusaurus Site
+
+The static site lives under `site/` and is deployed by `.github/workflows/deploy-pages.yml` using GitHub Pages.
+
+Source files to edit:
+
+- `site/docusaurus.config.js`
+- `site/src/pages/index.js`
+- `site/src/css/custom.css`
+- `site/package.json`
+- `site/package-lock.json`
+- `tools/generate_site.py`
+- `.github/workflows/deploy-pages.yml`
+
+Generated files and directories:
+
+- `site/docs/`
+- `site/sidebars.js`
+- `site/src/data/registry.json`
+- `site/build/`
+- `site/.docusaurus/`
+- `site/node_modules/`
+
+Local build flow:
+
+```bash
+python3 tools/generate_index.py --check
+python3 tools/generate_site.py
+cd site
+npm ci
+npm run build
+```
+
+GitHub Pages deployment flow:
+
+```text
+push to main
+  -> validate registry index
+  -> generate Docusaurus inputs
+  -> install site dependencies
+  -> build static site
+  -> deploy Pages artifact
+```
+
+The site sidebar is registry-driven. Do not hand-maintain navigation; update registry and rerun the generator instead.
 
 ### Rename A Directory Or File
 
@@ -190,6 +240,7 @@ After an add, update, or delete task, make sure all of this is true:
 
 ```text
 python3 tools/generate_index.py --check passes
+python3 tools/generate_site.py passes
 Every design.md on disk is registered in functions.yaml
 Every Feat-*.md on disk is registered in features.yaml
 Every registered design/spec path exists on disk
