@@ -58,6 +58,16 @@ cd spec-test
 ./tools/host_preview/run_feature.sh --case-id case-001-width-height-basic --openharmony-root /path/to/openharmony
 ```
 
+如果需要使用本地自编译 SDK，可用 `spec-test/release_sdk_from_packages.sh` 将 OpenHarmony 编译产物 `out/sdk/packages/ohos-sdk/linux` 下的 SDK 分包释放为独立 SDK 目录，再把该目录配置为 `sdk.dir` 或 `OHOS_BASE_SDK_HOME`：
+
+```bash
+cd spec-test
+./release_sdk_from_packages.sh --openharmony-root /path/to/openharmony --dst /path/to/spec_sdk/linux --dry-run
+./release_sdk_from_packages.sh --openharmony-root /path/to/openharmony --dst /path/to/spec_sdk/linux --force
+```
+
+释放后的目录会包含 `ets/`、`js/`、`native/`、`previewer/`、`toolchains/` 等 SDK 组件，适合避免直接依赖可能被清理的 `out/` 目录。
+
 ## Previewer 完整包
 
 仓库提供 Previewer 完整包归档：
@@ -65,6 +75,8 @@ cd spec-test
 ```text
 previewer/previewer-20260625.tar.gz
 ```
+
+详细说明见 [previewer/README.md](previewer/README.md)，包含归档解压、`PREVIEWER_BIN` 配置、从 OpenHarmony 编译生成 Previewer、手动 PreviewerCLI 调试命令等内容。
 
 该文件通过 Git LFS 管理。首次拉取仓库后如本地没有实际内容，执行：
 
@@ -84,6 +96,15 @@ PREVIEWER_BIN="$(pwd)/../previewer/runtime/previewer/common/bin" \
 ```
 
 `PREVIEWER_BIN` 指向包含 `Previewer` 和 `PreviewerCLI` 的目录，优先级高于 SDK 和 OpenHarmony 根目录下的 Previewer。
+
+如需验证本地 OpenHarmony 补丁后的 Previewer，可先在 OpenHarmony 根目录编译 `ohos-sdk`，确认生成：
+
+```text
+out/sdk/ohos-sdk/linux/previewer/common/bin/Previewer
+out/sdk/ohos-sdk/linux/previewer/common/bin/PreviewerCLI
+```
+
+然后将 `PREVIEWER_BIN` 指向该 `common/bin` 目录。
 
 ## 环境要求
 
