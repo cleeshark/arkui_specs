@@ -10,7 +10,7 @@
 | 优先级 | P0 |
 | 目标版本 | API 9 起支持（copyOption），API 11/12/14/22/23/26 有 API 新增 |
 | SIG 归属 | ArkUI SIG |
-| 状态 | Draft（已有实现补录） |
+| 状态 | Baselined |
 | 复杂度 | 标准 |
 
 ## 本次变更范围（Delta）

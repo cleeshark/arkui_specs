@@ -10,7 +10,7 @@
 | 优先级 | P1 |
 | 目标版本 | API 11 起支持，API 18/26.0.0 有新增 |
 | SIG 归属 | ArkUI SIG |
-| 状态 | Baselined（已有实现补录） |
+| 状态 | Baselined |
 | 复杂度 | 标准 |
 
 ## 本次变更范围（Delta）

@@ -1,6 +1,19 @@
-# spec.md — Image 组件基础内存优化
+# 特性规格
+
+> Func-05-08-01-Feat-05 基础内存优化：优化 Image 组件内部数据结构以减少单节点内存占用，不影响公共 API 和用户可见行为。
 
 ## 概述
+
+| 属性 | 值 |
+|------|-----|
+| 特性名称 | 基础内存优化 (Base Memory Optimization) |
+| 特性编号 | Func-05-08-01-Feat-05 |
+| 所属 Epic | 无 |
+| 优先级 | P1 |
+| 目标版本 | 待定 |
+| SIG 归属 | ArkUI SIG |
+| 状态 | Draft |
+| 复杂度 | 标准 |
 
 本规格定义 Image 组件基础内存优化的行为规则、验收标准和验证映射。优化范围限定在 NG Image 组件的内部数据结构，不影响公共 API 和用户可见行为。
 
@@ -123,17 +136,17 @@
 
 ## 验证映射
 
-| AC ID | 验证方法 | 验证命令/工具 |
-|-------|---------|-------------|
-| AC-1.1 | 500 Image 真实设备内存实测 | SpecTest 测试用例 + 设备内存 profiling |
-| AC-1.2 | 500 PixelMap Image 真实设备内存实测 | SpecTest 测试用例 + 设备内存 profiling |
-| AC-2.1 | Image 相关单元测试全量 | `./build.sh --product-name rk3568 --build-target //foundation/arkui/ace_engine/test/unittest/core/pattern:image_pattern_test --ccache` |
-| AC-2.2 | Image 相关单元测试全量 | 同上 |
-| AC-2.3 | Alt fallback 单元测试 | 同上（gtest_filter=*Alt*） |
-| AC-3.1 | sizeof 编译期检查 | `static_assert(sizeof(ImageSourceInfo) < X)` |
-| AC-3.2 | 调试期实例计数 | 添加临时计数器验证 |
-| AC-3.3 | 单元测试验证释放 | Mock ImageLoadingContext 生命周期 |
-| AC-3.4 | 单元测试验证无 alt 时不分配 | 检查 altState_ == nullptr |
+| VM ID | AC ID | 验证方法 | 验证命令/工具 |
+|-------|-------|---------|-------------|
+| VM-1 | AC-1.1 | 500 Image 真实设备内存实测 | SpecTest 测试用例 + 设备内存 profiling |
+| VM-2 | AC-1.2 | 500 PixelMap Image 真实设备内存实测 | SpecTest 测试用例 + 设备内存 profiling |
+| VM-3 | AC-2.1 | Image 相关单元测试全量 | `./build.sh --product-name rk3568 --build-target //foundation/arkui/ace_engine/test/unittest/core/pattern:image_pattern_test --ccache` |
+| VM-4 | AC-2.2 | Image 相关单元测试全量 | 同上 |
+| VM-5 | AC-2.3 | Alt fallback 单元测试 | 同上（gtest_filter=*Alt*） |
+| VM-6 | AC-3.1 | sizeof 编译期检查 | `static_assert(sizeof(ImageSourceInfo) < X)` |
+| VM-7 | AC-3.2 | 调试期实例计数 | 添加临时计数器验证 |
+| VM-8 | AC-3.3 | 单元测试验证释放 | Mock ImageLoadingContext 生命周期 |
+| VM-9 | AC-3.4 | 单元测试验证无 alt 时不分配 | 检查 altState_ == nullptr |
 
 ---
 
@@ -152,3 +165,17 @@
 - Legacy Image 组件
 - 渲染/绘制路径优化
 - 公共 API 变更
+
+---
+
+## context-references
+
+```yaml
+context-queries:
+  - repo: "openharmony/arkui_ace_engine"
+    query: "ImagePattern memory layout, ImageSourceInfo struct size, ImageDfxConfig sharing, alt state lazy allocation"
+  - repo: "openharmony/arkui_ace_engine"
+    query: "ImageLoadingContext lifecycle and ImageObject/CanvasImage ownership"
+```
+
+**关键文档：** `design.md`（同目录）、`docs/kb/components/media/image.md`（Image 组件 KB）

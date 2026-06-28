@@ -1217,7 +1217,6 @@
 | Feat-05 | 选择与复制 | [Feat-05-selection-copy-spec.md](05-ui-components/09-text-components/04-text/Feat-05-selection-copy-spec.md) | Baselined |
 | Feat-06 | 系统能力（数据检测、隐私、震感） | [Feat-06-system-capabilities-spec.md](05-ui-components/09-text-components/04-text/Feat-06-system-capabilities-spec.md) | Baselined |
 | Feat-07 | 事件回调 (onCopy/onWillCopy/onTextSelectionChange/onMarqueeStateChange) | [Feat-07-event-callbacks-spec.md](05-ui-components/09-text-components/04-text/Feat-07-event-callbacks-spec.md) | Baselined |
-| Feat-08 | Text 尾部缩进 | *待补充* | 待补充 |
 
 ### 05-09-05 TextArea
 
