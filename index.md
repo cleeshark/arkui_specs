@@ -166,12 +166,12 @@
 | 05 组件层 | 03 滚动容器类组件 | 08 Swiper | `05-03-08` | `05-ui-components/03-scroll-container-components/08-swiper/` | *待补充* | 0 |
 | 05 组件层 | 03 滚动容器类组件 | 09 Tabs/TabContent | `05-03-09` | `05-ui-components/03-scroll-container-components/09-tabs-tab-content/` | *待补充* | 0 |
 | 05 组件层 | 03 滚动容器类组件 | 10 WaterFlow/FlowItem | `05-03-10` | `05-ui-components/03-scroll-container-components/10-water-flow-flow-item/` | *待补充* | 0 |
-| 05 组件层 | 04 表单类组件 | 01 Button | `05-04-01` | `05-ui-components/04-form-components/01-button/` | *待补充* | 0 |
-| 05 组件层 | 04 表单类组件 | 02 Checkbox/CheckboxGroup | `05-04-02` | `05-ui-components/04-form-components/02-checkbox-checkbox-group/` | *待补充* | 0 |
-| 05 组件层 | 04 表单类组件 | 03 Rating | `05-04-03` | `05-ui-components/04-form-components/03-rating/` | *待补充* | 0 |
-| 05 组件层 | 04 表单类组件 | 04 Radio | `05-04-04` | `05-ui-components/04-form-components/04-radio/` | *待补充* | 0 |
-| 05 组件层 | 04 表单类组件 | 05 Slider | `05-04-05` | `05-ui-components/04-form-components/05-slider/` | *待补充* | 0 |
-| 05 组件层 | 04 表单类组件 | 06 Toggle | `05-04-06` | `05-ui-components/04-form-components/06-toggle/` | *待补充* | 0 |
+| 05 组件层 | 04 输入表单类 | 01 Button | `05-04-01` | `05-ui-components/04-input-form-components/01-button/` | *待补充* | 0 |
+| 05 组件层 | 04 输入表单类 | 02 Checkbox/CheckboxGroup | `05-04-02` | `05-ui-components/04-input-form-components/02-checkbox-checkbox-group/` | *待补充* | 0 |
+| 05 组件层 | 04 输入表单类 | 03 Rating | `05-04-03` | `05-ui-components/04-input-form-components/03-rating/` | *待补充* | 0 |
+| 05 组件层 | 04 输入表单类 | 04 Radio | `05-04-04` | `05-ui-components/04-input-form-components/04-radio/` | *待补充* | 0 |
+| 05 组件层 | 04 输入表单类 | 05 Slider | `05-04-05` | `05-ui-components/04-input-form-components/05-slider/` | *待补充* | 0 |
+| 05 组件层 | 04 输入表单类 | 06 Toggle | `05-04-06` | `05-ui-components/04-input-form-components/06-toggle/` | [design.md](05-ui-components/04-input-form-components/06-toggle/design.md) | 1 |
 | 05 组件层 | 05 选择类组件 | 01 Calendar/CalendarPicker | `05-05-01` | `05-ui-components/05-picker-components/01-calendar-calendar-picker/` | *待补充* | 0 |
 | 05 组件层 | 05 选择类组件 | 02 DatePicker | `05-05-02` | `05-ui-components/05-picker-components/02-date-picker/` | *待补充* | 0 |
 | 05 组件层 | 05 选择类组件 | 03 TextPicker | `05-05-03` | `05-ui-components/05-picker-components/03-text-picker/` | *待补充* | 0 |
@@ -1070,6 +1070,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Toggle 组件全量规格 (Switch/Checkbox/Button 三形态) | [Feat-01-toggle-spec.md](05-ui-components/04-input-form-components/06-toggle/Feat-01-toggle-spec.md) | Baselined |
 
 ### 05-05-01 Calendar/CalendarPicker
 
@@ -1217,6 +1218,7 @@
 | Feat-05 | 选择与复制 | [Feat-05-selection-copy-spec.md](05-ui-components/09-text-components/04-text/Feat-05-selection-copy-spec.md) | Baselined |
 | Feat-06 | 系统能力（数据检测、隐私、震感） | [Feat-06-system-capabilities-spec.md](05-ui-components/09-text-components/04-text/Feat-06-system-capabilities-spec.md) | Baselined |
 | Feat-07 | 事件回调 (onCopy/onWillCopy/onTextSelectionChange/onMarqueeStateChange) | [Feat-07-event-callbacks-spec.md](05-ui-components/09-text-components/04-text/Feat-07-event-callbacks-spec.md) | Baselined |
+| Feat-08 | Text 尾部缩进 | *待补充* | 待补充 |
 
 ### 05-09-05 TextArea
 

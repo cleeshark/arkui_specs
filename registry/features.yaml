@@ -134,3 +134,8 @@ features:
   title: Text 尾部缩进
   spec: null
   status: 待补充
+- func_id: 05-04-06
+  id: Feat-01
+  title: Toggle 组件全量规格 (Switch/Checkbox/Button 三形态)
+  spec: 05-ui-components/04-input-form-components/06-toggle/Feat-01-toggle-spec.md
+  status: Baselined

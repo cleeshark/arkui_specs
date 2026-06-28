@@ -1905,11 +1905,11 @@ functions:
     title: 组件层
   l2:
     id: '04'
-    title: 表单类组件
+    title: 输入表单类
   l3:
     id: '01'
     title: Button
-  path: 05-ui-components/04-form-components/01-button/
+  path: 05-ui-components/04-input-form-components/01-button/
   design: null
   status: active
 - id: 05-04-02
@@ -1918,11 +1918,11 @@ functions:
     title: 组件层
   l2:
     id: '04'
-    title: 表单类组件
+    title: 输入表单类
   l3:
     id: '02'
     title: Checkbox/CheckboxGroup
-  path: 05-ui-components/04-form-components/02-checkbox-checkbox-group/
+  path: 05-ui-components/04-input-form-components/02-checkbox-checkbox-group/
   design: null
   status: active
 - id: 05-04-03
@@ -1931,11 +1931,11 @@ functions:
     title: 组件层
   l2:
     id: '04'
-    title: 表单类组件
+    title: 输入表单类
   l3:
     id: '03'
     title: Rating
-  path: 05-ui-components/04-form-components/03-rating/
+  path: 05-ui-components/04-input-form-components/03-rating/
   design: null
   status: active
 - id: 05-04-04
@@ -1944,11 +1944,11 @@ functions:
     title: 组件层
   l2:
     id: '04'
-    title: 表单类组件
+    title: 输入表单类
   l3:
     id: '04'
     title: Radio
-  path: 05-ui-components/04-form-components/04-radio/
+  path: 05-ui-components/04-input-form-components/04-radio/
   design: null
   status: active
 - id: 05-04-05
@@ -1957,11 +1957,11 @@ functions:
     title: 组件层
   l2:
     id: '04'
-    title: 表单类组件
+    title: 输入表单类
   l3:
     id: '05'
     title: Slider
-  path: 05-ui-components/04-form-components/05-slider/
+  path: 05-ui-components/04-input-form-components/05-slider/
   design: null
   status: active
 - id: 05-04-06
@@ -1970,12 +1970,12 @@ functions:
     title: 组件层
   l2:
     id: '04'
-    title: 表单类组件
+    title: 输入表单类
   l3:
     id: '06'
     title: Toggle
-  path: 05-ui-components/04-form-components/06-toggle/
-  design: null
+  path: 05-ui-components/04-input-form-components/06-toggle/
+  design: 05-ui-components/04-input-form-components/06-toggle/design.md
   status: active
 - id: 05-05-01
   l1:
