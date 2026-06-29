@@ -37,14 +37,14 @@
 **我想要** 使用 `Blank()` 创建一个自动填充父容器剩余空间的空白占位组件,
 **以便** 在 Row/Column/Flex 布局中实现弹性间距。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-1.1 | WHEN 调用 `Blank()` 无参数 THEN 创建一个最小尺寸为 0 的空白占位组件 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-1.1 | WHEN 调用 `Blank()` 无参数 THEN 创建一个最小尺寸为 0 的空白占位组件 | 边界 |
 | AC-1.2 | WHEN 调用 `Blank(min?: number \| string)` 传入 min 参数 THEN 组件的最小尺寸被设置为 min 值 |
-| AC-1.3 | WHEN min 参数为负数 THEN 值被静默钳位为 0.0 VP，不报错 |
-| AC-1.4 | WHEN Blank 组件不允许拥有子组件 THEN `allowChildCount()` 返回 0 |
-| AC-1.5 | WHEN API < 10 THEN Blank 创建时自动设置 FlexGrow=1.0、FlexShrink=0.0、AlignSelf=STRETCH、Height=0.0VP |
-| AC-1.6 | WHEN API >= 10 THEN Blank 创建时仅重置 CalcMinSize，Flex 属性由 BeforeCreateLayoutWrapper 动态计算 |
+| AC-1.3 | WHEN min 参数为负数 THEN 值被静默钳位为 0.0 VP，不报错 | 异常 |
+| AC-1.4 | WHEN Blank 组件不允许拥有子组件 THEN `allowChildCount()` 返回 0 | 正常 |
+| AC-1.5 | WHEN API < 10 THEN Blank 创建时自动设置 FlexGrow=1.0、FlexShrink=0.0、AlignSelf=STRETCH、Height=0.0VP | 边界 |
+| AC-1.6 | WHEN API >= 10 THEN Blank 创建时仅重置 CalcMinSize，Flex 属性由 BeforeCreateLayoutWrapper 动态计算 | 边界 |
 
 ### US-2: 设置空白占位的背景颜色
 
@@ -52,12 +52,12 @@
 **我想要** 通过 `.color()` 设置 Blank 组件的背景颜色,
 **以便** 让空白占位区域具有可见的填充色。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-2.1 | WHEN 调用 `.color(value: ResourceColor)` THEN 空白占位区域渲染为指定颜色 |
-| AC-2.2 | WHEN 未设置 color 或调用 resetColor THEN 默认颜色为 Color::TRANSPARENT |
-| AC-2.3 | WHEN color 值解析失败 THEN 回退为 Color::TRANSPARENT |
-| AC-2.4 | WHEN color 为 Resource 类型 THEN 支持资源引用及配置变更时自动刷新 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-2.1 | WHEN 调用 `.color(value: ResourceColor)` THEN 空白占位区域渲染为指定颜色 | 正常 |
+| AC-2.2 | WHEN 未设置 color 或调用 resetColor THEN 默认颜色为 Color::TRANSPARENT | 异常 |
+| AC-2.3 | WHEN color 值解析失败 THEN 回退为 Color::TRANSPARENT | 异常 |
+| AC-2.4 | WHEN color 为 Resource 类型 THEN 支持资源引用及配置变更时自动刷新 | 正常 |
 
 ### US-3: 设置空白占位的显式高度
 
@@ -65,11 +65,11 @@
 **我想要** 通过 `.height()` 设置 Blank 组件的显式高度,
 **以便** 在需要时覆盖自动布局计算的高度值。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-3.1 | WHEN 调用 `.height(value: Length)`（继承自 CommonMethod，内部被 Blank 覆写）THEN 组件高度被设置到 BlankLayoutProperty::propHeight_ |
-| AC-3.2 | WHEN 调用 resetBlankHeight THEN 清除通用 LayoutProperty 的 selfIdealSize.Height（通过 `ViewAbstract::ClearWidthOrHeight`），BeforeCreateLayoutWrapper 依据 selfIdealSize 判断是否设置 AlignSelf=STRETCH。注意：此操作不清除 BlankLayoutProperty::propHeight_（见风险表） |
-| AC-3.3 | WHEN 设置了显式 height 且 API >= 10 THEN 该高度值存入 BlankLayoutProperty::propHeight_ |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-3.1 | WHEN 调用 `.height(value: Length)`（继承自 CommonMethod，内部被 Blank 覆写）THEN 组件高度被设置到 BlankLayoutProperty::propHeight_ | 正常 |
+| AC-3.2 | WHEN 调用 resetBlankHeight THEN 清除通用 LayoutProperty 的 selfIdealSize.Height（通过 `ViewAbstract::ClearWidthOrHeight`），BeforeCreateLayoutWrapper 依据 selfIdealSize 判断是否设置 AlignSelf=STRETCH。注意：此操作不清除 BlankLayoutProperty::propHeight_（见风险表） | 正常 |
+| AC-3.3 | WHEN 设置了显式 height 且 API >= 10 THEN 该高度值存入 BlankLayoutProperty::propHeight_ | 边界 |
 
 ### US-4: 自动 Flex 布局行为（API >= 10）
 
@@ -77,44 +77,44 @@
 **我想要** Blank 组件自动根据父容器方向填充剩余空间,
 **以便** 无需手动设置 Flex 属性即可实现弹性占位效果。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-4.1 | WHEN API >= 10 且父容器为 Row THEN FlexGrow=1.0、FlexShrink=1.0（仅当未显式设置主轴尺寸时） |
-| AC-4.2 | WHEN API >= 10 且父容器为 Column THEN FlexGrow=1.0、FlexShrink=1.0（仅当未显式设置主轴尺寸时） |
-| AC-4.3 | WHEN API >= 10 且未显式设置交叉轴尺寸 THEN AlignSelf=STRETCH |
-| AC-4.4 | WHEN API >= 10 且显式设置了主轴/交叉轴尺寸 THEN 对应 Flex 属性不被设置（保持 Reset 后的默认值） |
-| AC-4.5 | WHEN API >= 10 且设置了 min 参数 THEN min 值被转换为 CalcMinSize 沿父容器主轴方向生效 |
-| AC-4.6 | WHEN API >= 10 且已存在 CalcMinSize 对应轴的值 THEN 不覆盖（保留显式设置的约束） |
-| AC-4.7 | WHEN API >= 10 且父容器为 Flex THEN 根据 Flex 的 flexDirection 判断主轴方向 |
-| AC-4.8 | WHEN API >= 10 且父容器为非 Row/Column/Flex 的其他容器 THEN 按 ROW 方向处理（默认行为） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-4.1 | WHEN API >= 10 且父容器为 Row THEN FlexGrow=1.0、FlexShrink=1.0（仅当未显式设置主轴尺寸时） | 边界 |
+| AC-4.2 | WHEN API >= 10 且父容器为 Column THEN FlexGrow=1.0、FlexShrink=1.0（仅当未显式设置主轴尺寸时） | 边界 |
+| AC-4.3 | WHEN API >= 10 且未显式设置交叉轴尺寸 THEN AlignSelf=STRETCH | 边界 |
+| AC-4.4 | WHEN API >= 10 且显式设置了主轴/交叉轴尺寸 THEN 对应 Flex 属性不被设置（保持 Reset 后的默认值） | 边界 |
+| AC-4.5 | WHEN API >= 10 且设置了 min 参数 THEN min 值被转换为 CalcMinSize 沿父容器主轴方向生效 | 边界 |
+| AC-4.6 | WHEN API >= 10 且已存在 CalcMinSize 对应轴的值 THEN 不覆盖（保留显式设置的约束） | 边界 |
+| AC-4.7 | WHEN API >= 10 且父容器为 Flex THEN 根据 Flex 的 flexDirection 判断主轴方向 | 边界 |
+| AC-4.8 | WHEN API >= 10 且父容器为非 Row/Column/Flex 的其他容器 THEN 按 ROW 方向处理（默认行为） | 边界 |
 
 ---
 
 ## 验收追溯
 
-| AC ID | US ID | 关联规则 | 验证手段 |
+| AC编号 | US ID | 关联规则 | 验证手段 |
 |-------|-------|----------|----------|
-| AC-1.1 | US-1 | R-3 | 单元测试 BlankFrameNodeCreator001 |
-| AC-1.2 | US-1 | R-4 | 单元测试 BlankFrameNodeCreator001 |
-| AC-1.3 | US-1 | R-20 | 单元测试 BlankFrameNodeCreator002 |
-| AC-1.4 | US-1 | R-5 | 代码审查 ArkBlank.ts:89 |
-| AC-1.5 | US-1 | R-6, R-1 | 代码审查 blank_model_ng.cpp:33-37（注：BlankFrameNodeCreator001 仅验证 MinSize，未断言 Flex 属性） |
-| AC-1.6 | US-1 | R-7, R-1 | 代码审查 blank_model_ng.cpp:38-40（注：同上） |
-| AC-2.1 | US-2 | R-8 | 单元测试 SetColorTest1 |
-| AC-2.2 | US-2 | R-9 | 代码审查 blank_paint_property.h:42 |
-| AC-2.3 | US-2 | R-21 | 代码审查 js_blank.cpp:76 |
-| AC-2.4 | US-2 | R-10 | 代码审查 blank_model_ng.cpp:103-128（注：SetColorTest1 仅验证缓存键存在性，未验证配置变更回调路径） |
-| AC-3.1 | US-3 | R-11 | 单元测试 BlankFrameNodeCreator003 |
-| AC-3.2 | US-3 | R-12 | 代码审查 blank_modifier.cpp:50-54 + view_abstract.cpp:6954-6963 |
-| AC-3.3 | US-3 | R-11 | 代码审查 blank_layout_property.h:53 |
-| AC-4.1 | US-4 | R-13, R-2 | 单元测试 BlankPatternTest001/002 |
-| AC-4.2 | US-4 | R-13, R-2 | 单元测试 BlankPatternTest002 |
-| AC-4.3 | US-4 | R-14 | 单元测试 BlankPatternTest001/002 |
-| AC-4.4 | US-4 | R-15 | 代码审查 blank_pattern.cpp:86-100 |
-| AC-4.5 | US-4 | R-16 | 代码审查 blank_pattern.cpp:101-114 |
-| AC-4.6 | US-4 | R-17 | 代码审查 blank_pattern.cpp:103-113 |
-| AC-4.7 | US-4 | R-18 | 单元测试 BlankPatternTest003/004 |
-| AC-4.8 | US-4 | R-19 | 代码审查 blank_pattern.cpp:34-35 |
+| AC-1.1 || R-3 | 单元测试 BlankFrameNodeCreator001 | 正常 |
+| AC-1.2 || R-4 | 单元测试 BlankFrameNodeCreator001 | 正常 |
+| AC-1.3 || R-20 | 单元测试 BlankFrameNodeCreator002 | 正常 |
+| AC-1.4 || R-5 | 代码审查 ArkBlank.ts:89 | 正常 |
+| AC-1.5 || R-6, R-1 | 代码审查 blank_model_ng.cpp:33-37（注：BlankFrameNodeCreator001 仅验证 MinSize，未断言 Flex 属性） | 正常 |
+| AC-1.6 || R-7, R-1 | 代码审查 blank_model_ng.cpp:38-40（注：同上） | 正常 |
+| AC-2.1 || R-8 | 单元测试 SetColorTest1 | 正常 |
+| AC-2.2 || R-9 | 代码审查 blank_paint_property.h:42 | 正常 |
+| AC-2.3 || R-21 | 代码审查 js_blank.cpp:76 | 正常 |
+| AC-2.4 || R-10 | 代码审查 blank_model_ng.cpp:103-128（注：SetColorTest1 仅验证缓存键存在性，未验证配置变更回调路径） | 正常 |
+| AC-3.1 || R-11 | 单元测试 BlankFrameNodeCreator003 | 正常 |
+| AC-3.2 || R-12 | 代码审查 blank_modifier.cpp:50-54 + view_abstract.cpp:6954-6963 | 正常 |
+| AC-3.3 || R-11 | 代码审查 blank_layout_property.h:53 | 正常 |
+| AC-4.1 || R-13, R-2 | 单元测试 BlankPatternTest001/002 | 正常 |
+| AC-4.2 || R-13, R-2 | 单元测试 BlankPatternTest002 | 正常 |
+| AC-4.3 || R-14 | 单元测试 BlankPatternTest001/002 | 正常 |
+| AC-4.4 || R-15 | 代码审查 blank_pattern.cpp:86-100 | 正常 |
+| AC-4.5 || R-16 | 代码审查 blank_pattern.cpp:101-114 | 正常 |
+| AC-4.6 || R-17 | 代码审查 blank_pattern.cpp:103-113 | 正常 |
+| AC-4.7 || R-18 | 单元测试 BlankPatternTest003/004 | 正常 |
+| AC-4.8 || R-19 | 代码审查 blank_pattern.cpp:34-35 | 正常 |
 
 
 ## 规则定义
@@ -154,7 +154,7 @@
 
 ## 验证映射
 
-| AC ID | 验证类型 | 位置/用例 |
+| AC编号 | 验证类型 | 位置/用例 |
 |-------|----------|-----------|
 | AC-1.1 | 单元测试 | `test/unittest/core/pattern/blank/blank_test_ng.cpp` BlankFrameNodeCreator001 |
 | AC-1.2 | 单元测试 | `test/unittest/core/pattern/blank/blank_test_ng.cpp` BlankFrameNodeCreator001 |

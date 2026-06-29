@@ -34,120 +34,120 @@
 
 > 作为开发者，我想要控制 Text 组件内容是否可被复制及复制范围，以便保护应用内敏感文本或启用文本共享。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-1.1 | WHEN `copyOption(CopyOptions.None)` THEN 文本不可选择、不可复制、不可拖拽 |
-| AC-1.2 | WHEN `copyOption(CopyOptions.InApp)` THEN 复制的内容仅可在同一应用内粘贴 |
-| AC-1.3 | WHEN `copyOption(CopyOptions.LocalDevice)` THEN 复制的内容可在同一设备的任意应用内粘贴 |
-| AC-1.4 | WHEN `copyOption` 未设置 THEN 默认值为 `CopyOptions.None`（不可复制） |
-| AC-1.5 | WHEN `textOverflow` 为 `MARQUEE` 模式 THEN `copyOption` 强制为 `CopyOptions.None`（`text_pattern.cpp:2969`），选择与复制不可用 |
-| AC-1.6 | WHEN `copyOption != None` 且 `textSelectable != UNSELECTABLE` 且无文本动效 THEN `IsSelectableAndCopy()` 返回 true，选择与复制功能可用（`text_pattern.cpp:3816-3822`） |
-| AC-1.7 | WHEN SpanString 模式下执行复制 THEN 剪贴板同时写入纯文本、HTML、SpanString TLV 二进制三种格式（`text_pattern.cpp:1222-1248`） |
-| AC-1.8 | WHEN 非 SpanString 模式（纯文本或 Span 子节点）下执行复制 THEN 剪贴板同时写入纯文本、HTML、SpanString TLV 三种格式（`text_pattern.cpp:1366-1408`） |
-| AC-1.9 | WHEN HTML 生成完成前用户再次触发复制 THEN 后台线程异步生成 HTML 不阻塞 UI 线程 |
-| AC-1.10 | WHEN 用户按 Ctrl+C THEN 触发复制流程，行为与菜单"复制"一致（`text_pattern.cpp:3632-3637`） |
-| AC-1.11 | WHEN 用户按 Ctrl+A THEN 全选文本（`text_pattern.cpp:3640-3648`），选择范围为 `[0, textSize]` |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-1.1 | WHEN `copyOption(CopyOptions.None)` THEN 文本不可选择、不可复制、不可拖拽 | 正常 |
+| AC-1.2 | WHEN `copyOption(CopyOptions.InApp)` THEN 复制的内容仅可在同一应用内粘贴 | 正常 |
+| AC-1.3 | WHEN `copyOption(CopyOptions.LocalDevice)` THEN 复制的内容可在同一设备的任意应用内粘贴 | 正常 |
+| AC-1.4 | WHEN `copyOption` 未设置 THEN 默认值为 `CopyOptions.None`（不可复制） | 异常 |
+| AC-1.5 | WHEN `textOverflow` 为 `MARQUEE` 模式 THEN `copyOption` 强制为 `CopyOptions.None`（`text_pattern.cpp:2969`），选择与复制不可用 | 异常 |
+| AC-1.6 | WHEN `copyOption != None` 且 `textSelectable != UNSELECTABLE` 且无文本动效 THEN `IsSelectableAndCopy()` 返回 true，选择与复制功能可用（`text_pattern.cpp:3816-3822`） | 正常 |
+| AC-1.7 | WHEN SpanString 模式下执行复制 THEN 剪贴板同时写入纯文本、HTML、SpanString TLV 二进制三种格式（`text_pattern.cpp:1222-1248`） | 正常 |
+| AC-1.8 | WHEN 非 SpanString 模式（纯文本或 Span 子节点）下执行复制 THEN 剪贴板同时写入纯文本、HTML、SpanString TLV 三种格式（`text_pattern.cpp:1366-1408`） | 正常 |
+| AC-1.9 | WHEN HTML 生成完成前用户再次触发复制 THEN 后台线程异步生成 HTML 不阻塞 UI 线程 | 正常 |
+| AC-1.10 | WHEN 用户按 Ctrl+C THEN 触发复制流程，行为与菜单"复制"一致（`text_pattern.cpp:3632-3637`） | 正常 |
+| AC-1.11 | WHEN 用户按 Ctrl+A THEN 全选文本（`text_pattern.cpp:3640-3648`），选择范围为 `[0, textSize]` | 正常 |
 
 ### US-2: 可选择性控制
 
 > 作为开发者，我想要控制 Text 组件的文本是否可被用户选择以及选择后的焦点行为，以便在不同场景下提供合适的交互体验。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-2.1 | WHEN `textSelectable(TextSelectableMode.SELECTABLE_UNFOCUSABLE)` THEN 文本可选择，但组件不可获取焦点 |
-| AC-2.2 | WHEN `textSelectable(TextSelectableMode.SELECTABLE_FOCUSABLE)` THEN 文本可选择，且组件可获取焦点（`focusHub->SetFocusable(true)`, `SetIsFocusOnTouch(true)`）（`text_pattern.cpp:3801-3813`） |
-| AC-2.3 | WHEN `textSelectable(TextSelectableMode.UNSELECTABLE)` THEN 文本不可选择，长按/双击/鼠标拖选均无效 |
-| AC-2.4 | WHEN `textSelectable` 未设置 THEN 默认值为 `SELECTABLE_UNFOCUSABLE` |
-| AC-2.5 | WHEN 用户长按文本 THEN 以词边界为单位选中初始文本（`pManager_->GetWordBoundary()`，`text_pattern.cpp:344-364`），若无词边界则选中单个字符簇 |
-| AC-2.6 | WHEN 用户双击文本 THEN 选中光标所在的词（与长按相同的词边界逻辑，`text_pattern.cpp:2440-2474`） |
-| AC-2.7 | WHEN 用户鼠标左键按下并拖动 THEN 实时更新选区范围（`text_pattern.cpp:3397-3426`） |
-| AC-2.8 | WHEN 用户在 SELECTABLE_FOCUSABLE 模式下按 Shift+方向键 THEN 逐字符（Left/Right）或逐行（Up/Down）扩展选区（`text_pattern.cpp:3659-3680`） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-2.1 | WHEN `textSelectable(TextSelectableMode.SELECTABLE_UNFOCUSABLE)` THEN 文本可选择，但组件不可获取焦点 | 正常 |
+| AC-2.2 | WHEN `textSelectable(TextSelectableMode.SELECTABLE_FOCUSABLE)` THEN 文本可选择，且组件可获取焦点（`focusHub->SetFocusable(true)`, `SetIsFocusOnTouch(true)`）（`text_pattern.cpp:3801-3813`） | 正常 |
+| AC-2.3 | WHEN `textSelectable(TextSelectableMode.UNSELECTABLE)` THEN 文本不可选择，长按/双击/鼠标拖选均无效 | 异常 |
+| AC-2.4 | WHEN `textSelectable` 未设置 THEN 默认值为 `SELECTABLE_UNFOCUSABLE` | 异常 |
+| AC-2.5 | WHEN 用户长按文本 THEN 以词边界为单位选中初始文本（`pManager_->GetWordBoundary()`，`text_pattern.cpp:344-364`），若无词边界则选中单个字符簇 | 边界 |
+| AC-2.6 | WHEN 用户双击文本 THEN 选中光标所在的词（与长按相同的词边界逻辑，`text_pattern.cpp:2440-2474`） | 边界 |
+| AC-2.7 | WHEN 用户鼠标左键按下并拖动 THEN 实时更新选区范围（`text_pattern.cpp:3397-3426`） | 正常 |
+| AC-2.8 | WHEN 用户在 SELECTABLE_FOCUSABLE 模式下按 Shift+方向键 THEN 逐字符（Left/Right）或逐行（Up/Down）扩展选区（`text_pattern.cpp:3659-3680`） | 正常 |
 
 ### US-3: 编程式选区设置
 
 > 作为开发者，我想要通过代码设置 Text 组件的选区范围，以便实现搜索高亮、程序联动等功能。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-3.1 | WHEN `selection(startIndex, endIndex)` 且 `startIndex < endIndex` THEN 文本从 startIndex 到 endIndex 处于选中状态，显示选择手柄 |
-| AC-3.2 | WHEN `selection(startIndex, endIndex)` 且 `startIndex >= endIndex` THEN 选区无效，不显示选中效果 |
-| AC-3.3 | WHEN `selection` 的索引超出文本长度 THEN 自动钳位到 `[0, textLength]`（`text_pattern.cpp:4999`） |
-| AC-3.4 | WHEN `textSelectable == UNSELECTABLE` 或 `copyOption == None` THEN `selection()` 调用被忽略（`text_pattern.cpp:1589` 守卫条件） |
-| AC-3.5 | WHEN `selection()` 在布局完成前调用 THEN 通过 `AfterLayoutTask` 延迟执行，确保选区坐标正确（`text_pattern.cpp:1589`） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-3.1 | WHEN `selection(startIndex, endIndex)` 且 `startIndex < endIndex` THEN 文本从 startIndex 到 endIndex 处于选中状态，显示选择手柄 | 边界 |
+| AC-3.2 | WHEN `selection(startIndex, endIndex)` 且 `startIndex >= endIndex` THEN 选区无效，不显示选中效果 | 异常 |
+| AC-3.3 | WHEN `selection` 的索引超出文本长度 THEN 自动钳位到 `[0, textLength]`（`text_pattern.cpp:4999`） | 边界 |
+| AC-3.4 | WHEN `textSelectable == UNSELECTABLE` 或 `copyOption == None` THEN `selection()` 调用被忽略（`text_pattern.cpp:1589` 守卫条件） | 正常 |
+| AC-3.5 | WHEN `selection()` 在布局完成前调用 THEN 通过 `AfterLayoutTask` 延迟执行，确保选区坐标正确（`text_pattern.cpp:1589`） | 正常 |
 
 ### US-4: 选区外观定制
 
 > 作为开发者，我想要自定义选中文本的背景色和选择手柄颜色，以便与应用主题风格一致。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-4.1 | WHEN `selectedBackgroundColor(color)` THEN 选中文本区域的背景色为指定颜色 |
-| AC-4.2 | WHEN `selectedBackgroundColor` 传入的颜色 alpha 为 255（完全不透明）THEN 自动应用 20% 不透明度（`js_text.cpp:459`） |
-| AC-4.3 | WHEN `selectedBackgroundColor` 未设置 THEN 使用 `TextTheme` 提供的默认选中背景色 |
-| AC-4.4 | WHEN `caretColor(color)` THEN 选择手柄颜色变为指定颜色（存储为 `CursorColor`，`text_layout_property.h:210`） |
-| AC-4.5 | WHEN `caretColor` 未设置 THEN 手柄颜色取 `TextTheme::GetCaretColor()` 默认值 |
-| AC-4.6 | WHEN `caretColor` 设置后 THEN 选择覆盖层的 `handlerColor` 使用该颜色（`text_select_overlay.cpp:386`），拖拽手柄和选择手柄颜色一致 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-4.1 | WHEN `selectedBackgroundColor(color)` THEN 选中文本区域的背景色为指定颜色 | 正常 |
+| AC-4.2 | WHEN `selectedBackgroundColor` 传入的颜色 alpha 为 255（完全不透明）THEN 自动应用 20% 不透明度（`js_text.cpp:459`） | 正常 |
+| AC-4.3 | WHEN `selectedBackgroundColor` 未设置 THEN 使用 `TextTheme` 提供的默认选中背景色 | 异常 |
+| AC-4.4 | WHEN `caretColor(color)` THEN 选择手柄颜色变为指定颜色（存储为 `CursorColor`，`text_layout_property.h:210`） | 正常 |
+| AC-4.5 | WHEN `caretColor` 未设置 THEN 手柄颜色取 `TextTheme::GetCaretColor()` 默认值 | 异常 |
+| AC-4.6 | WHEN `caretColor` 设置后 THEN 选择覆盖层的 `handlerColor` 使用该颜色（`text_select_overlay.cpp:386`），拖拽手柄和选择手柄颜色一致 | 正常 |
 
 ### US-5: 选中文本拖拽
 
 > 作为开发者，我想要支持选中文本的拖拽操作，以便用户可以将文本拖放到其他组件或应用。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-5.1 | WHEN `draggable(true)` 且 `IsSelectableAndCopy() == true` THEN 可拖拽选中的文本 |
-| AC-5.2 | WHEN 用户长按已选中文本区域 THEN 触发拖拽手势，拖拽优先于重新选择（`text_pattern.cpp:718-727`） |
-| AC-5.3 | WHEN 用户长按未选中文本区域 THEN 触发正常的选择流程（不触发拖拽） |
-| AC-5.4 | WHEN 拖拽含 Span 子节点的选中文本 THEN 拖拽数据包含 UDMF 格式：纯文本 + SpanString TLV + 图片记录（`text_pattern.cpp:3877-3895`） |
-| AC-5.5 | WHEN 拖拽无子节点的纯文本 THEN 拖拽数据仅包含纯文本 UDMF 记录（`text_pattern.cpp:3960-3997`） |
-| AC-5.6 | WHEN 拖拽失败（未成功投放）THEN 选区恢复到拖拽前状态（`text_pattern.cpp:4067-4070`） |
-| AC-5.7 | WHEN `selectedDragPreviewStyle({ color: Color })` THEN 拖拽预览背景色为指定颜色 |
-| AC-5.8 | WHEN `selectedDragPreviewStyle` 未设置 THEN 亮色模式默认 `#f2ffffff`，暗色模式默认 `#202224` |
-| AC-5.9 | WHEN 拖拽预览生成 THEN 显示带圆角背景（18vp，2in1 设备 8vp）和选择手柄的文本片段缩略图 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-5.1 | WHEN `draggable(true)` 且 `IsSelectableAndCopy() == true` THEN 可拖拽选中的文本 | 正常 |
+| AC-5.2 | WHEN 用户长按已选中文本区域 THEN 触发拖拽手势，拖拽优先于重新选择（`text_pattern.cpp:718-727`） | 正常 |
+| AC-5.3 | WHEN 用户长按未选中文本区域 THEN 触发正常的选择流程（不触发拖拽） | 正常 |
+| AC-5.4 | WHEN 拖拽含 Span 子节点的选中文本 THEN 拖拽数据包含 UDMF 格式：纯文本 + SpanString TLV + 图片记录（`text_pattern.cpp:3877-3895`） | 正常 |
+| AC-5.5 | WHEN 拖拽无子节点的纯文本 THEN 拖拽数据仅包含纯文本 UDMF 记录（`text_pattern.cpp:3960-3997`） | 正常 |
+| AC-5.6 | WHEN 拖拽失败（未成功投放）THEN 选区恢复到拖拽前状态（`text_pattern.cpp:4067-4070`） | 异常 |
+| AC-5.7 | WHEN `selectedDragPreviewStyle({ color: Color })` THEN 拖拽预览背景色为指定颜色 | 正常 |
+| AC-5.8 | WHEN `selectedDragPreviewStyle` 未设置 THEN 亮色模式默认 `#f2ffffff`，暗色模式默认 `#202224` | 异常 |
+| AC-5.9 | WHEN 拖拽预览生成 THEN 显示带圆角背景（18vp，2in1 设备 8vp）和选择手柄的文本片段缩略图 | 正常 |
 
 ### US-6: 选择菜单绑定
 
 > 作为开发者，我想要为不同类型的选中内容（文本/图片/混合）绑定自定义选择菜单，以便提供针对性的操作选项。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-6.1 | WHEN `bindSelectionMenu(TextSpanType.TEXT, builder, TextResponseType.LONG_PRESS)` THEN 长按选中纯文本时显示自定义菜单（builder 渲染的 UI 替换系统默认菜单） |
-| AC-6.2 | WHEN `bindSelectionMenu(TextSpanType.IMAGE, builder, TextResponseType.RIGHT_CLICK)` THEN 右键点击选中图片时显示自定义菜单 |
-| AC-6.3 | WHEN `bindSelectionMenu(TextSpanType.DEFAULT, builder, TextResponseType.DEFAULT)` THEN 对所有内容类型和响应方式生效（通配匹配） |
-| AC-6.4 | WHEN 精确匹配的菜单绑定不存在 THEN 按 4 级回退查找：精确匹配 → span 通配 → response 通配 → 双通配（`text_pattern.cpp:6897-6917`） |
-| AC-6.5 | WHEN `bindSelectionMenu` 的 builder 传 null THEN 移除对应的菜单绑定（`text_pattern.cpp:6819-6850`） |
-| AC-6.6 | WHEN `SelectionMenuOptions.onAppear` 设置 THEN 菜单显示时回调 `(selectionStart, selectionEnd)` 参数 |
-| AC-6.7 | WHEN `SelectionMenuOptions.onDisappear` 设置 THEN 菜单消失时触发回调 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-6.1 | WHEN `bindSelectionMenu(TextSpanType.TEXT, builder, TextResponseType.LONG_PRESS)` THEN 长按选中纯文本时显示自定义菜单（builder 渲染的 UI 替换系统默认菜单） | 正常 |
+| AC-6.2 | WHEN `bindSelectionMenu(TextSpanType.IMAGE, builder, TextResponseType.RIGHT_CLICK)` THEN 右键点击选中图片时显示自定义菜单 | 正常 |
+| AC-6.3 | WHEN `bindSelectionMenu(TextSpanType.DEFAULT, builder, TextResponseType.DEFAULT)` THEN 对所有内容类型和响应方式生效（通配匹配） | 正常 |
+| AC-6.4 | WHEN 精确匹配的菜单绑定不存在 THEN 按 4 级回退查找：精确匹配 → span 通配 → response 通配 → 双通配（`text_pattern.cpp:6897-6917`） | 异常 |
+| AC-6.5 | WHEN `bindSelectionMenu` 的 builder 传 null THEN 移除对应的菜单绑定（`text_pattern.cpp:6819-6850`） | 异常 |
+| AC-6.6 | WHEN `SelectionMenuOptions.onAppear` 设置 THEN 菜单显示时回调 `(selectionStart, selectionEnd)` 参数 | 正常 |
+| AC-6.7 | WHEN `SelectionMenuOptions.onDisappear` 设置 THEN 菜单消失时触发回调 | 正常 |
 
 ### US-7: 编辑菜单定制
 
 > 作为开发者，我想要定制系统默认选择菜单的菜单项列表和点击行为，以便在保留系统菜单框架的同时添加自定义操作。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-7.1 | WHEN `editMenuOptions({ onCreateMenu, onMenuItemClick })` THEN `onCreateMenu` 在每次菜单显示前被调用，接收系统默认菜单项数组，返回定制后的菜单项数组 |
-| AC-7.2 | WHEN `onMenuItemClick` 返回 `true` THEN 拦截系统默认点击行为；返回 `false` THEN 执行系统默认行为 |
-| AC-7.3 | WHEN `editMenuOptions` 与 `bindSelectionMenu` 同时设置 THEN 两者互补——`bindSelectionMenu` 的自定义 builder 替换整个菜单 UI，`editMenuOptions` 的回调仍挂载在 overlay 上但不影响自定义 builder 的渲染 |
-| AC-7.4 | WHEN `bindSelectionMenu` 未匹配到任何绑定 THEN 显示系统默认菜单，此时 `editMenuOptions` 的 `onCreateMenu` 可定制系统菜单项 |
-| AC-7.5 | WHEN Text 组件的系统菜单显示 THEN 菜单包含"复制"（不包含"剪切"和"粘贴"，因为 Text 是只读组件）（`text_select_overlay.cpp:348-375`） |
-| AC-7.6 | WHEN 全部文本已选中 THEN "全选"菜单项隐藏（`showCopyAll = !textPattern->IsSelectAll()`） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-7.1 | WHEN `editMenuOptions({ onCreateMenu, onMenuItemClick })` THEN `onCreateMenu` 在每次菜单显示前被调用，接收系统默认菜单项数组，返回定制后的菜单项数组 | 正常 |
+| AC-7.2 | WHEN `onMenuItemClick` 返回 `true` THEN 拦截系统默认点击行为；返回 `false` THEN 执行系统默认行为 | 正常 |
+| AC-7.3 | WHEN `editMenuOptions` 与 `bindSelectionMenu` 同时设置 THEN 两者互补——`bindSelectionMenu` 的自定义 builder 替换整个菜单 UI，`editMenuOptions` 的回调仍挂载在 overlay 上但不影响自定义 builder 的渲染 | 正常 |
+| AC-7.4 | WHEN `bindSelectionMenu` 未匹配到任何绑定 THEN 显示系统默认菜单，此时 `editMenuOptions` 的 `onCreateMenu` 可定制系统菜单项 | 正常 |
+| AC-7.5 | WHEN Text 组件的系统菜单显示 THEN 菜单包含"复制"（不包含"剪切"和"粘贴"，因为 Text 是只读组件）（`text_select_overlay.cpp:348-375`） | 正常 |
+| AC-7.6 | WHEN 全部文本已选中 THEN "全选"菜单项隐藏（`showCopyAll = !textPattern->IsSelectAll()`） | 正常 |
 
 ### US-8: 选择覆盖层交互
 
 > 作为开发者，我想要选择覆盖层提供直观的手柄拖动和放大镜辅助，以便用户能精确调整选区。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-8.1 | WHEN 用户拖动选择手柄 THEN 选区范围实时更新，手柄位置对应最近的字符索引（`GetHandleIndex` → `pManager_->GetGlyphIndexByCoordinate()`，`text_pattern.cpp:6685`） |
-| AC-8.2 | WHEN 用户拖动选择手柄 THEN 触发振动反馈（`StartVibratorByIndexChange()`），每次字符索引变化时振动一次 |
-| AC-8.3 | WHEN 用户拖动选择手柄 THEN 显示放大镜（magnifier），跟随手柄位置实时移动（`text_select_overlay.cpp:175-177`） |
-| AC-8.4 | WHEN 用户释放选择手柄 THEN 放大镜隐藏（`RemoveMagnifierFrameNode()`，`text_select_overlay.cpp:229-231`） |
-| AC-8.5 | WHEN 长按初始选择文本 THEN 也显示放大镜（`text_pattern.cpp:744-747`），手指移动时放大镜跟随 |
-| AC-8.6 | WHEN 用户点击选区外部 THEN 清除选区并关闭覆盖层（`text_select_overlay.cpp:512-526`） |
-| AC-8.7 | WHEN 选择手柄的第一个手柄越过第二个手柄位置 THEN 选区仍有效（`GetTextStart()`/`GetTextEnd()` 使用 `std::min`/`std::max` 保证范围正确） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-8.1 | WHEN 用户拖动选择手柄 THEN 选区范围实时更新，手柄位置对应最近的字符索引（`GetHandleIndex` → `pManager_->GetGlyphIndexByCoordinate()`，`text_pattern.cpp:6685`） | 正常 |
+| AC-8.2 | WHEN 用户拖动选择手柄 THEN 触发振动反馈（`StartVibratorByIndexChange()`），每次字符索引变化时振动一次 | 正常 |
+| AC-8.3 | WHEN 用户拖动选择手柄 THEN 显示放大镜（magnifier），跟随手柄位置实时移动（`text_select_overlay.cpp:175-177`） | 正常 |
+| AC-8.4 | WHEN 用户释放选择手柄 THEN 放大镜隐藏（`RemoveMagnifierFrameNode()`，`text_select_overlay.cpp:229-231`） | 正常 |
+| AC-8.5 | WHEN 长按初始选择文本 THEN 也显示放大镜（`text_pattern.cpp:744-747`），手指移动时放大镜跟随 | 正常 |
+| AC-8.6 | WHEN 用户点击选区外部 THEN 清除选区并关闭覆盖层（`text_select_overlay.cpp:512-526`） | 正常 |
+| AC-8.7 | WHEN 选择手柄的第一个手柄越过第二个手柄位置 THEN 选区仍有效（`GetTextStart()`/`GetTextEnd()` 使用 `std::min`/`std::max` 保证范围正确） | 边界 |
 
 ## 验收追溯
 
-| AC ID | 关联规则 | 关联 Task | 验证方式 | 证据 |
+| AC编号 | 关联规则 | 关联 Task | 验证方式 | 证据 |
 |-------|----------|-----------|----------|------|
 | AC-1.1 | R-1, R-6 | TASK-5 | 单测 | text_pattern_test |
 | AC-1.2 | R-1 | TASK-5 | 单测 | clipboard scope test |

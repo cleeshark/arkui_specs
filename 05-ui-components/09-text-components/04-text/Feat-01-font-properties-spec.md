@@ -35,13 +35,13 @@
 **我想要** 通过 `.fontSize()` 设置 Text 组件的字号,
 **以便** 控制文本的显示大小。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-1.1 | WHEN 调用 `.fontSize(value)` 且 value 为正数 number THEN 文本以 value（单位 fp）渲染 |
-| AC-1.2 | WHEN value 为 string 类型（如 `'16fp'`、`'20px'`） THEN 按对应单位解析并渲染 |
-| AC-1.3 | WHEN value 为 Resource 类型 THEN 从资源文件解析为对应字号值 |
-| AC-1.4 | WHEN 未设置 fontSize 且未设置自适应字号 THEN 使用主题默认字号（通常 16fp） |
-| AC-1.5 | WHEN fontSize 与自适应字号（minFontSize/maxFontSize）同时设置且自适应生效 THEN fontSize 不生效，字号由自适应算法决定 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-1.1 | WHEN 调用 `.fontSize(value)` 且 value 为正数 number THEN 文本以 value（单位 fp）渲染 | 正常 |
+| AC-1.2 | WHEN value 为 string 类型（如 `'16fp'`、`'20px'`） THEN 按对应单位解析并渲染 | 正常 |
+| AC-1.3 | WHEN value 为 Resource 类型 THEN 从资源文件解析为对应字号值 | 正常 |
+| AC-1.4 | WHEN 未设置 fontSize 且未设置自适应字号 THEN 使用主题默认字号（通常 16fp） | 异常 |
+| AC-1.5 | WHEN fontSize 与自适应字号（minFontSize/maxFontSize）同时设置且自适应生效 THEN fontSize 不生效，字号由自适应算法决定 | 异常 |
 
 ### US-2: 设置文本颜色
 
@@ -49,10 +49,10 @@
 **我想要** 通过 `.fontColor()` 设置文本颜色,
 **以便** 控制文本的视觉呈现。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-2.1 | WHEN 调用 `.fontColor(value)` 且 value 为合法 ResourceColor THEN 文本以指定颜色渲染 |
-| AC-2.2 | WHEN 未设置 fontColor THEN 使用主题默认颜色（`#e6182431`，穿戴设备 `#c5ffffff`） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-2.1 | WHEN 调用 `.fontColor(value)` 且 value 为合法 ResourceColor THEN 文本以指定颜色渲染 | 正常 |
+| AC-2.2 | WHEN 未设置 fontColor THEN 使用主题默认颜色（`#e6182431`，穿戴设备 `#c5ffffff`） | 异常 |
 
 ### US-3: 设置文本字重
 
@@ -60,15 +60,15 @@
 **我想要** 通过 `.fontWeight()` 设置文本字重,
 **以便** 控制文本的粗细程度。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-3.1 | WHEN 调用 `.fontWeight(value)` 且 value 为 100~900 的 number THEN 文本以对应字重渲染 |
-| AC-3.2 | WHEN value 为 FontWeight 枚举（Normal/Bold/Bolder/Lighter/Medium/Regular） THEN 映射到对应数值字重 |
-| AC-3.3 | WHEN value 为合法字符串（`"400"`、`"bold"` 等） THEN 解析为对应字重 |
-| AC-3.4 | WHEN value 为非法字符串 THEN 使用默认值 FontWeight.Normal (400) |
-| AC-3.5 | WHEN 未设置 fontWeight THEN 使用默认值 FontWeight.Normal (400) |
-| AC-3.6 | WHEN 调用 `.fontWeight(weight, { enableVariableFontWeight: true })` (@since 12) 且 weight 为 100~900 THEN 使用可变字重渲染，字重值不受系统字重档位量化影响 |
-| AC-3.7 | WHEN 调用 `.fontWeight(weight, { enableVariableFontWeight: false })` 或不传 options THEN 字重受系统字重档位影响（量化到最近的预设档位） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-3.1 | WHEN 调用 `.fontWeight(value)` 且 value 为 100~900 的 number THEN 文本以对应字重渲染 | 正常 |
+| AC-3.2 | WHEN value 为 FontWeight 枚举（Normal/Bold/Bolder/Lighter/Medium/Regular） THEN 映射到对应数值字重 | 正常 |
+| AC-3.3 | WHEN value 为合法字符串（`"400"`、`"bold"` 等） THEN 解析为对应字重 | 正常 |
+| AC-3.4 | WHEN value 为非法字符串 THEN 使用默认值 FontWeight.Normal (400) | 异常 |
+| AC-3.5 | WHEN 未设置 fontWeight THEN 使用默认值 FontWeight.Normal (400) | 异常 |
+| AC-3.6 | WHEN 调用 `.fontWeight(weight, { enableVariableFontWeight: true })` (@since 12) 且 weight 为 100~900 THEN 使用可变字重渲染，字重值不受系统字重档位量化影响 | 正常 |
+| AC-3.7 | WHEN 调用 `.fontWeight(weight, { enableVariableFontWeight: false })` 或不传 options THEN 字重受系统字重档位影响（量化到最近的预设档位） | 异常 |
 
 ### US-4: 设置字族
 
@@ -76,12 +76,12 @@
 **我想要** 通过 `.fontFamily()` 设置文本使用的字族,
 **以便** 使用指定字体渲染文本。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-4.1 | WHEN 调用 `.fontFamily(value)` 且 value 为有效字族名 THEN 文本使用指定字族渲染 |
-| AC-4.2 | WHEN 指定字族不存在 THEN 回退到系统默认字族 |
-| AC-4.3 | WHEN value 为 Resource 类型 THEN 从资源文件解析字族名称 |
-| AC-4.4 | WHEN 在卡片（form）场景下设置 fontFamily THEN 仅 `HarmonyOS Sans` 字族生效，其他字族被忽略 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-4.1 | WHEN 调用 `.fontFamily(value)` 且 value 为有效字族名 THEN 文本使用指定字族渲染 | 正常 |
+| AC-4.2 | WHEN 指定字族不存在 THEN 回退到系统默认字族 | 异常 |
+| AC-4.3 | WHEN value 为 Resource 类型 THEN 从资源文件解析字族名称 | 正常 |
+| AC-4.4 | WHEN 在卡片（form）场景下设置 fontFamily THEN 仅 `HarmonyOS Sans` 字族生效，其他字族被忽略 | 正常 |
 
 ### US-5: 设置斜体
 
@@ -89,10 +89,10 @@
 **我想要** 通过 `.fontStyle()` 控制文本是否斜体,
 **以便** 实现斜体排版效果。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-5.1 | WHEN 调用 `.fontStyle(FontStyle.Italic)` THEN 文本以斜体渲染 |
-| AC-5.2 | WHEN 调用 `.fontStyle(FontStyle.Normal)` 或未设置 THEN 文本以正体渲染 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-5.1 | WHEN 调用 `.fontStyle(FontStyle.Italic)` THEN 文本以斜体渲染 | 正常 |
+| AC-5.2 | WHEN 调用 `.fontStyle(FontStyle.Normal)` 或未设置 THEN 文本以正体渲染 | 异常 |
 
 ### US-6: 使用复合 font 接口
 
@@ -100,11 +100,11 @@
 **我想要** 通过 `.font()` 一次性设置字号、字重、字族、斜体,
 **以便** 简化多属性设置。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-6.1 | WHEN 调用 `.font({ size, weight, family, style })` THEN 各字段分别生效，未指定字段保持已有值或默认值（`text_model_ng.cpp:118` — 仅在 `has_value()` 时调用对应 setter） |
-| AC-6.2 | WHEN 调用 `.font(fontValue, options)` (@since 12) 且 `options.enableVariableFontWeight` 为 true THEN 可变字重生效 |
-| AC-6.3 | WHEN 通过 C API `NODE_TEXT_FONT` 设置 THEN `.string` 为字族（逗号分隔）、`.value[0].f32` 为字号(fp)、`.value[1]?.i32` 为字重(ArkUI_FontWeight)、`.value[2]?.i32` 为斜体(ArkUI_FontStyle) |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-6.1 | WHEN 调用 `.font({ size, weight, family, style })` THEN 各字段分别生效，未指定字段保持已有值或默认值（`text_model_ng.cpp:118` — 仅在 `has_value()` 时调用对应 setter） | 正常 |
+| AC-6.2 | WHEN 调用 `.font(fontValue, options)` (@since 12) 且 `options.enableVariableFontWeight` 为 true THEN 可变字重生效 | 正常 |
+| AC-6.3 | WHEN 通过 C API `NODE_TEXT_FONT` 设置 THEN `.string` 为字族（逗号分隔）、`.value[0].f32` 为字号(fp)、`.value[1]?.i32` 为字重(ArkUI_FontWeight)、`.value[2]?.i32` 为斜体(ArkUI_FontStyle) | 正常 |
 
 ### US-7: 设置 OpenType 字体特性
 
@@ -112,12 +112,12 @@
 **我想要** 通过 `.fontFeature()` (@since 12) 设置 OpenType 特性标签,
 **以便** 启用连字、风格替代集等高级排版能力。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-7.1 | WHEN 调用 `.fontFeature("ss01 on")` THEN 激活 `ss01` 风格替代集 |
-| AC-7.2 | WHEN 设置多个特性（逗号分隔，如 `"ss01 on, liga off"`） THEN 各特性独立生效 |
-| AC-7.3 | WHEN 调用 `.fontFeature("normal")` 或未设置 THEN 使用字体默认 OpenType 特性 |
-| AC-7.4 | WHEN 通过 C API `NODE_TEXT_FONT_FEATURE` 设置 THEN `.string` 传入 OpenType 特性字符串 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-7.1 | WHEN 调用 `.fontFeature("ss01 on")` THEN 激活 `ss01` 风格替代集 | 正常 |
+| AC-7.2 | WHEN 设置多个特性（逗号分隔，如 `"ss01 on, liga off"`） THEN 各特性独立生效 | 正常 |
+| AC-7.3 | WHEN 调用 `.fontFeature("normal")` 或未设置 THEN 使用字体默认 OpenType 特性 | 异常 |
+| AC-7.4 | WHEN 通过 C API `NODE_TEXT_FONT_FEATURE` 设置 THEN `.string` 传入 OpenType 特性字符串 | 正常 |
 
 ### US-8: 设置可变字体轴
 
@@ -125,11 +125,11 @@
 **我想要** 通过 `.fontVariations()` (@since 26.0.0) 设置可变字体的轴参数,
 **以便** 精确控制可变字体的视觉表现。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-8.1 | WHEN 调用 `.fontVariations([{ axis: 'wght', value: 600 }])` 且字体支持该轴 THEN 文本以对应轴值渲染 |
-| AC-8.2 | WHEN 指定的轴标签在当前字体中不支持 THEN 该轴设置被忽略，不影响其他轴 |
-| AC-8.3 | WHEN FontVariation 类型来源为 `@ohos.graphics.text` 模块 THEN 参数类型在 `text_common.d.ts:1056` 定义为 `import('../api/@ohos.graphics.text').default.FontVariation` |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-8.1 | WHEN 调用 `.fontVariations([{ axis: 'wght', value: 600 }])` 且字体支持该轴 THEN 文本以对应轴值渲染 | 正常 |
+| AC-8.2 | WHEN 指定的轴标签在当前字体中不支持 THEN 该轴设置被忽略，不影响其他轴 | 异常 |
+| AC-8.3 | WHEN FontVariation 类型来源为 `@ohos.graphics.text` 模块 THEN 参数类型在 `text_common.d.ts:1056` 定义为 `import('../api/@ohos.graphics.text').default.FontVariation` | 正常 |
 
 ### US-9: 自适应字号
 
@@ -137,16 +137,16 @@
 **我想要** 设置 `minFontSize`/`maxFontSize` 和 `heightAdaptivePolicy`，让文本在有限空间内自动调整字号,
 **以便** 在不同屏幕尺寸下合理显示内容。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-9.1 | WHEN 同时设置 `minFontSize`、`maxFontSize` 并配合 `maxLines` 或布局约束 THEN 文本字号在 [minFontSize, maxFontSize] 范围内自适应缩放 |
-| AC-9.2 | WHEN 仅设置 `minFontSize` 未设置 `maxFontSize`（或反之）且无 `maxLines`/布局约束配合 THEN 自适应字号不生效，静默回退到 fontSize（无错误提示） |
-| AC-9.3 | WHEN `minFontSize` 或 `maxFontSize` ≤ 0 THEN 自适应字号不生效，使用 `fontSize` 值 |
-| AC-9.4 | WHEN `heightAdaptivePolicy` 为 `MAX_LINES_FIRST`（默认值） THEN 优先满足 maxLines 限制；超出布局约束时在 [minFontSize, maxFontSize] 范围内缩小字号 |
-| AC-9.5 | WHEN `heightAdaptivePolicy` 为 `MIN_FONT_SIZE_FIRST` THEN 优先使用 minFontSize；若单行可容纳则尝试增大字号至 maxFontSize |
-| AC-9.6 | WHEN `heightAdaptivePolicy` 为 `LAYOUT_CONSTRAINT_FIRST` THEN 优先满足布局约束；超出时缩小字号；缩至 minFontSize 仍超出则裁剪多余行 |
-| AC-9.7 | WHEN 自适应字号生效 THEN `fontSize` 设置不生效（自适应优先） |
-| AC-9.8 | WHEN API ≥ 18 THEN minFontSize/maxFontSize 对子组件和 StyledString 也生效，自适应字号应用于未单独设置字号的部分 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-9.1 | WHEN 同时设置 `minFontSize`、`maxFontSize` 并配合 `maxLines` 或布局约束 THEN 文本字号在 [minFontSize, maxFontSize] 范围内自适应缩放 | 边界 |
+| AC-9.2 | WHEN 仅设置 `minFontSize` 未设置 `maxFontSize`（或反之）且无 `maxLines`/布局约束配合 THEN 自适应字号不生效，静默回退到 fontSize（无错误提示） | 异常 |
+| AC-9.3 | WHEN `minFontSize` 或 `maxFontSize` ≤ 0 THEN 自适应字号不生效，使用 `fontSize` 值 | 异常 |
+| AC-9.4 | WHEN `heightAdaptivePolicy` 为 `MAX_LINES_FIRST`（默认值） THEN 优先满足 maxLines 限制；超出布局约束时在 [minFontSize, maxFontSize] 范围内缩小字号 | 边界 |
+| AC-9.5 | WHEN `heightAdaptivePolicy` 为 `MIN_FONT_SIZE_FIRST` THEN 优先使用 minFontSize；若单行可容纳则尝试增大字号至 maxFontSize | 边界 |
+| AC-9.6 | WHEN `heightAdaptivePolicy` 为 `LAYOUT_CONSTRAINT_FIRST` THEN 优先满足布局约束；超出时缩小字号；缩至 minFontSize 仍超出则裁剪多余行 | 边界 |
+| AC-9.7 | WHEN 自适应字号生效 THEN `fontSize` 设置不生效（自适应优先） | 异常 |
+| AC-9.8 | WHEN API ≥ 18 THEN minFontSize/maxFontSize 对子组件和 StyledString 也生效，自适应字号应用于未单独设置字号的部分 | 边界 |
 
 ### US-10: 字体缩放范围控制
 
@@ -154,14 +154,14 @@
 **我想要** 通过 `minFontScale`/`maxFontScale` (@since 12) 限制系统字体缩放对文本的影响范围,
 **以便** 在大字体/无障碍模式下保持合理的文本尺寸。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-10.1 | WHEN 调用 `.minFontScale(0.5)` 且系统字体缩放低于 0.5 THEN 文本实际缩放比例不低于 0.5 |
-| AC-10.2 | WHEN 调用 `.maxFontScale(2.0)` 且系统字体缩放高于 2.0 THEN 文本实际缩放比例不超过 2.0 |
-| AC-10.3 | WHEN `minFontScale` < 0 THEN 按 0 处理 |
-| AC-10.4 | WHEN `minFontScale` > 1 THEN 按 1 处理 |
-| AC-10.5 | WHEN `maxFontScale` < 1 THEN 按 1 处理 |
-| AC-10.6 | WHEN 异常值（非数字） THEN 设置不生效，保持默认行为 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-10.1 | WHEN 调用 `.minFontScale(0.5)` 且系统字体缩放低于 0.5 THEN 文本实际缩放比例不低于 0.5 | 正常 |
+| AC-10.2 | WHEN 调用 `.maxFontScale(2.0)` 且系统字体缩放高于 2.0 THEN 文本实际缩放比例不超过 2.0 | 边界 |
+| AC-10.3 | WHEN `minFontScale` < 0 THEN 按 0 处理 | 边界 |
+| AC-10.4 | WHEN `minFontScale` > 1 THEN 按 1 处理 | 边界 |
+| AC-10.5 | WHEN `maxFontScale` < 1 THEN 按 1 处理 | 边界 |
+| AC-10.6 | WHEN 异常值（非数字） THEN 设置不生效，保持默认行为 | 异常 |
 
 ## 验收追溯
 

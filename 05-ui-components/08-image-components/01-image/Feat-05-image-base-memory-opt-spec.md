@@ -39,22 +39,22 @@
 
 ### P0 验收标准
 
-| AC ID | 用户故事 | WHEN/THEN |
-|-------|---------|-----------|
-| AC-1.1 | US-1 | WHEN 500 个静态 Image 节点（src 为资源图片）加载完成 THEN 真实设备上单节点基础内存较优化前减少 ≥5KB |
-| AC-1.2 | US-1 | WHEN 500 个 PixelMap Image 节点加载完成 THEN 真实设备上单节点基础内存较优化前减少 ≥5KB |
-| AC-2.1 | US-2 | WHEN Image 组件正常加载/显示/销毁 THEN 行为与优化前完全一致（无功能回归） |
-| AC-2.2 | US-2 | WHEN 运行 Image 相关全部单元测试 THEN 全部通过 |
-| AC-2.3 | US-2 | WHEN Image 触发 onError 进入 alt 回退链 THEN alt 显示和事件行为与优化前一致 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-1.1 | WHEN 500 个静态 Image 节点（src 为资源图片）加载完成 THEN 真实设备上单节点基础内存较优化前减少 ≥5KB | 正常 |
+| AC-1.2 | WHEN 500 个 PixelMap Image 节点加载完成 THEN 真实设备上单节点基础内存较优化前减少 ≥5KB | 正常 |
+| AC-2.1 | WHEN Image 组件正常加载/显示/销毁 THEN 行为与优化前完全一致（无功能回归） | 正常 |
+| AC-2.2 | WHEN 运行 Image 相关全部单元测试 THEN 全部通过 | 正常 |
+| AC-2.3 | WHEN Image 触发 onError 进入 alt 回退链 THEN alt 显示和事件行为与优化前一致 | 异常 |
 
 ### P1 验收标准
 
-| AC ID | 用户故事 | WHEN/THEN |
-|-------|---------|-----------|
-| AC-3.1 | US-1 | WHEN 编译完成后 THEN sizeof(ImageSourceInfo) 较优化前减少 30%+ |
-| AC-3.2 | US-1 | WHEN ImageDfxConfig 改为共享 THEN 单节点中 ImageDfxConfig 实例从 5-6 份降至 1 份 |
-| AC-3.3 | US-1 | WHEN ImageLoadingContext 完成加载并释放 THEN 其持有的 ImageObject/CanvasImage 被主动释放 |
-| AC-3.4 | US-1 | WHEN Image 无 alt 配置 THEN alt 相关状态不分配内存 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-3.1 | WHEN 编译完成后 THEN sizeof(ImageSourceInfo) 较优化前减少 30%+ | 正常 |
+| AC-3.2 | WHEN ImageDfxConfig 改为共享 THEN 单节点中 ImageDfxConfig 实例从 5-6 份降至 1 份 | 正常 |
+| AC-3.3 | WHEN ImageLoadingContext 完成加载并释放 THEN 其持有的 ImageObject/CanvasImage 被主动释放 | 正常 |
+| AC-3.4 | WHEN Image 无 alt 配置 THEN alt 相关状态不分配内存 | 正常 |
 
 
 ## 规则定义
@@ -115,7 +115,7 @@
 
 ## 验证映射
 
-| VM ID | AC ID | 验证方法 | 验证命令/工具 |
+| VM ID | AC编号 | 验证方法 | 验证命令/工具 |
 |-------|-------|---------|-------------|
 | VM-1 | AC-1.1 | 500 Image 真实设备内存实测 | SpecTest 测试用例 + 设备内存 profiling |
 | VM-2 | AC-1.2 | 500 PixelMap Image 真实设备内存实测 | SpecTest 测试用例 + 设备内存 profiling |

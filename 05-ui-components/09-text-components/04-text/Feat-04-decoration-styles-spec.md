@@ -44,20 +44,20 @@
 **我想要** 通过 `.decoration()` 设置 Text 组件的装饰线（下划线/上划线/删除线），
 **以便** 实现文本的装饰排版效果。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-1.1 | WHEN 调用 `.decoration({ type: TextDecorationType.Underline })` THEN 文本渲染下划线 |
-| AC-1.2 | WHEN 调用 `.decoration({ type: TextDecorationType.Overline })` THEN 文本渲染上划线 |
-| AC-1.3 | WHEN 调用 `.decoration({ type: TextDecorationType.LineThrough })` THEN 文本渲染删除线 |
-| AC-1.4 | WHEN 调用 `.decoration({ type: TextDecorationType.None })` 或未设置 THEN 无装饰线 |
-| AC-1.5 | WHEN 设置 `color` 字段（如 `{ type: TextDecorationType.Underline, color: Color.Red }`） THEN 装饰线使用指定颜色渲染；WHEN 未设置 color THEN 装饰线颜色为 Color.Black |
-| AC-1.6 | WHEN 设置 `style` 字段为 TextDecorationStyle.DOUBLE/DOTTED/DASHED/WAVY (@since 12) THEN 装饰线以对应样式渲染；WHEN 未设置 style THEN 默认 SOLID |
-| AC-1.7 | WHEN 设置 `thicknessScale` 为正数 (@since 20) THEN 装饰线粗细按该倍率缩放；WHEN thicknessScale < 0 THEN 回退到默认值 1.0（`js_text.cpp:875-879` — `lineThicknessScale < 0 ? 1.0f : lineThicknessScale`） |
-| AC-1.8 | WHEN 在 `style` 属性值为 TextDecorationStyle 以外的类型时 THEN 回退到 SOLID（`js_text.cpp:870`） |
-| AC-1.9 | WHEN decoration 属性从 NONE 切换到 UNDERLINE（或反向） THEN 装饰线 alpha 通道渐变动画过渡（`text_content_modifier.cpp:1331-1343` — `textDecorationAnimatable_`） |
-| AC-1.10 | WHEN decoration 属性在 OVERLINE/LINE_THROUGH/DOUBLE 等非 NONE-UNDERLINE 对之间切换 THEN 无动画过渡，立即生效 |
-| AC-1.11 | WHEN 通过 C API `NODE_TEXT_DECORATION` 设置 THEN `.value[0].i32` 为 type, `.value[1].u32` 为 color (ARGB), `.value[2].i32` 为 style, `.value[3].f32` 为 thicknessScale |
-| AC-1.12 | WHEN @since 7~11 调用 `.decoration(value)` 且 value 类型为 `object` THEN 按 `{type, color}` 解析；WHEN @since 12+ 调用 THEN 按 `DecorationStyleInterface` 解析，新增 `style` 和 `thicknessScale` 字段 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-1.1 | WHEN 调用 `.decoration({ type: TextDecorationType.Underline })` THEN 文本渲染下划线 | 正常 |
+| AC-1.2 | WHEN 调用 `.decoration({ type: TextDecorationType.Overline })` THEN 文本渲染上划线 | 正常 |
+| AC-1.3 | WHEN 调用 `.decoration({ type: TextDecorationType.LineThrough })` THEN 文本渲染删除线 | 正常 |
+| AC-1.4 | WHEN 调用 `.decoration({ type: TextDecorationType.None })` 或未设置 THEN 无装饰线 | 异常 |
+| AC-1.5 | WHEN 设置 `color` 字段（如 `{ type: TextDecorationType.Underline, color: Color.Red }`） THEN 装饰线使用指定颜色渲染；WHEN 未设置 color THEN 装饰线颜色为 Color.Black | 异常 |
+| AC-1.6 | WHEN 设置 `style` 字段为 TextDecorationStyle.DOUBLE/DOTTED/DASHED/WAVY (@since 12) THEN 装饰线以对应样式渲染；WHEN 未设置 style THEN 默认 SOLID | 异常 |
+| AC-1.7 | WHEN 设置 `thicknessScale` 为正数 (@since 20) THEN 装饰线粗细按该倍率缩放；WHEN thicknessScale < 0 THEN 回退到默认值 1.0（`js_text.cpp:875-879` — `lineThicknessScale < 0 ? 1.0f : lineThicknessScale`） | 异常 |
+| AC-1.8 | WHEN 在 `style` 属性值为 TextDecorationStyle 以外的类型时 THEN 回退到 SOLID（`js_text.cpp:870`） | 异常 |
+| AC-1.9 | WHEN decoration 属性从 NONE 切换到 UNDERLINE（或反向） THEN 装饰线 alpha 通道渐变动画过渡（`text_content_modifier.cpp:1331-1343` — `textDecorationAnimatable_`） | 正常 |
+| AC-1.10 | WHEN decoration 属性在 OVERLINE/LINE_THROUGH/DOUBLE 等非 NONE-UNDERLINE 对之间切换 THEN 无动画过渡，立即生效 | 正常 |
+| AC-1.11 | WHEN 通过 C API `NODE_TEXT_DECORATION` 设置 THEN `.value[0].i32` 为 type, `.value[1].u32` 为 color (ARGB), `.value[2].i32` 为 style, `.value[3].f32` 为 thicknessScale | 正常 |
+| AC-1.12 | WHEN @since 7~11 调用 `.decoration(value)` 且 value 类型为 `object` THEN 按 `{type, color}` 解析；WHEN @since 12+ 调用 THEN 按 `DecorationStyleInterface` 解析，新增 `style` 和 `thicknessScale` 字段 | 正常 |
 
 ### US-2: 设置文本阴影
 
@@ -65,18 +65,18 @@
 **我想要** 通过 `.textShadow()` 设置文本阴影效果,
 **以便** 增强文本的视觉层次。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-2.1 | WHEN 调用 `.textShadow({ radius: 10, color: Color.Gray, offsetX: 5, offsetY: 5 })` THEN 文本按指定参数渲染阴影 |
-| AC-2.2 | WHEN radius 为 0 或负数 THEN 不渲染阴影 |
-| AC-2.3 | WHEN 未设置 color THEN 阴影颜色默认为 Black；WHEN 未设置 offsetX/offsetY THEN 默认偏移为 0 |
-| AC-2.4 | WHEN 调用 `.textShadow([shadow1, shadow2, ...])` (@since 11) THEN 多阴影按数组顺序叠加渲染 |
-| AC-2.5 | WHEN `type` 设置为 `ShadowType.COLOR` (默认) THEN 使用 color 值渲染阴影；WHEN `type` 设置为 `ShadowType.BLUR` (@since 10) THEN 使用模糊类型阴影 |
-| AC-2.6 | WHEN `fill` 字段设置为 true THEN 在 textShadow 中**不生效**（SDK 文档明确说明 "does not work with fill attribute"；`text.d.ts:1322` 注释 / `text.static.d.ets:401` NOTE） |
-| AC-2.7 | WHEN textShadow 与 `foregroundColor(ColoringStrategy)` 同时设置 THEN textShadow **不生效**（`text.d.ts:1322` 注释） |
-| AC-2.8 | WHEN textShadow 属性变更 THEN 阴影的 blurRadius/offsetX/offsetY/color 支持动画过渡（`text_content_modifier.cpp:1307-1329` — `ShadowProp` 包含 AnimatablePropertyFloat） |
-| AC-2.9 | WHEN 通过 C API `NODE_TEXT_TEXT_SHADOW` 设置 THEN `.value[0].f32` = radius, `.value[1].i32` = type, `.value[2].u32` = color (ARGB), `.value[3].f32` = offsetX, `.value[4].f32` = offsetY；支持多阴影时通过 `ArkUI_AttributeItem.size` 传入数量 |
-| AC-2.10 | WHEN 重置 textShadow THEN 回退为单个全零 Shadow（`node_text_modifier.cpp:1443-1452`） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-2.1 | WHEN 调用 `.textShadow({ radius: 10, color: Color.Gray, offsetX: 5, offsetY: 5 })` THEN 文本按指定参数渲染阴影 | 正常 |
+| AC-2.2 | WHEN radius 为 0 或负数 THEN 不渲染阴影 | 异常 |
+| AC-2.3 | WHEN 未设置 color THEN 阴影颜色默认为 Black；WHEN 未设置 offsetX/offsetY THEN 默认偏移为 0 | 异常 |
+| AC-2.4 | WHEN 调用 `.textShadow([shadow1, shadow2, ...])` (@since 11) THEN 多阴影按数组顺序叠加渲染 | 正常 |
+| AC-2.5 | WHEN `type` 设置为 `ShadowType.COLOR` (默认) THEN 使用 color 值渲染阴影；WHEN `type` 设置为 `ShadowType.BLUR` (@since 10) THEN 使用模糊类型阴影 | 正常 |
+| AC-2.6 | WHEN `fill` 字段设置为 true THEN 在 textShadow 中**不生效**（SDK 文档明确说明 "does not work with fill attribute"；`text.d.ts:1322` 注释 / `text.static.d.ets:401` NOTE） | 异常 |
+| AC-2.7 | WHEN textShadow 与 `foregroundColor(ColoringStrategy)` 同时设置 THEN textShadow **不生效**（`text.d.ts:1322` 注释） | 异常 |
+| AC-2.8 | WHEN textShadow 属性变更 THEN 阴影的 blurRadius/offsetX/offsetY/color 支持动画过渡（`text_content_modifier.cpp:1307-1329` — `ShadowProp` 包含 AnimatablePropertyFloat） | 正常 |
+| AC-2.9 | WHEN 通过 C API `NODE_TEXT_TEXT_SHADOW` 设置 THEN `.value[0].f32` = radius, `.value[1].i32` = type, `.value[2].u32` = color (ARGB), `.value[3].f32` = offsetX, `.value[4].f32` = offsetY；支持多阴影时通过 `ArkUI_AttributeItem.size` 传入数量 | 正常 |
+| AC-2.10 | WHEN 重置 textShadow THEN 回退为单个全零 Shadow（`node_text_modifier.cpp:1443-1452`） | 异常 |
 
 ### US-3: 设置文本大小写变换
 
@@ -84,16 +84,16 @@
 **我想要** 通过 `.textCase()` 控制文本的大小写显示,
 **以便** 实现全大写/全小写的排版需求。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-3.1 | WHEN 调用 `.textCase(TextCase.Normal)` 或未设置 THEN 文本保持原始大小写 |
-| AC-3.2 | WHEN 调用 `.textCase(TextCase.LowerCase)` THEN 文本全部转为小写显示（原始数据不变） |
-| AC-3.3 | WHEN 调用 `.textCase(TextCase.UpperCase)` THEN 文本全部转为大写显示（原始数据不变） |
-| AC-3.4 | WHEN 文本包含 Unicode 字符（如 `é`/`Ñ`） THEN 使用 `std::towupper`/`std::towlower` 进行区域感知转换（`string_utils.cpp:762-767` — `std::u16string` 特化） |
-| AC-3.5 | WHEN 文本包含 CJK/数字/符号等非字母字符 THEN 这些字符不受 textCase 影响 |
-| AC-3.6 | WHEN 在 Span 级别设置 textCase THEN 触发 `ChangeFlag::RE_CREATE`（段落重建），而非仅 RE_LAYOUT（`span_node.h:1060`） |
-| AC-3.7 | WHEN 通过 C API `NODE_TEXT_CASE` 设置 THEN `.value[0].i32` 为 TextCase 枚举值（0=Normal, 1=LowerCase, 2=UpperCase） |
-| AC-3.8 | WHEN 传入的枚举值超出 [0, 2] 范围 THEN 重置为默认值 Normal（`arkts_native_text_bridge.cpp:579` — `>SIZE_OF_TEXT_CASES` 时调用 reset） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-3.1 | WHEN 调用 `.textCase(TextCase.Normal)` 或未设置 THEN 文本保持原始大小写 | 异常 |
+| AC-3.2 | WHEN 调用 `.textCase(TextCase.LowerCase)` THEN 文本全部转为小写显示（原始数据不变） | 正常 |
+| AC-3.3 | WHEN 调用 `.textCase(TextCase.UpperCase)` THEN 文本全部转为大写显示（原始数据不变） | 正常 |
+| AC-3.4 | WHEN 文本包含 Unicode 字符（如 `é`/`Ñ`） THEN 使用 `std::towupper`/`std::towlower` 进行区域感知转换（`string_utils.cpp:762-767` — `std::u16string` 特化） | 正常 |
+| AC-3.5 | WHEN 文本包含 CJK/数字/符号等非字母字符 THEN 这些字符不受 textCase 影响 | 正常 |
+| AC-3.6 | WHEN 在 Span 级别设置 textCase THEN 触发 `ChangeFlag::RE_CREATE`（段落重建），而非仅 RE_LAYOUT（`span_node.h:1060`） | 正常 |
+| AC-3.7 | WHEN 通过 C API `NODE_TEXT_CASE` 设置 THEN `.value[0].i32` 为 TextCase 枚举值（0=Normal, 1=LowerCase, 2=UpperCase） | 正常 |
+| AC-3.8 | WHEN 传入的枚举值超出 [0, 2] 范围 THEN 重置为默认值 Normal（`arkts_native_text_bridge.cpp:579` — `>SIZE_OF_TEXT_CASES` 时调用 reset） | 边界 |
 
 ### US-4: 设置文本渐变着色
 
@@ -101,17 +101,17 @@
 **我想要** 通过 `.shaderStyle()` (@since 20) 为文本设置渐变或纯色着色效果,
 **以便** 实现渐变文字等视觉效果。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-4.1 | WHEN 调用 `.shaderStyle(new LinearGradientStyle(options))` THEN 文本以线性渐变着色渲染 |
-| AC-4.2 | WHEN 调用 `.shaderStyle(new RadialGradientStyle(options))` THEN 文本以径向渐变着色渲染 |
-| AC-4.3 | WHEN 调用 `.shaderStyle(new ColorShaderStyle(color))` THEN 文本以指定纯色着色，等效于替换 fontColor |
-| AC-4.4 | WHEN 设置 GradientShaderStyle 后再设置 ColorShaderStyle THEN GradientShaderStyle 被重置（`text_model_ng.cpp:2010-2013` — `SetColorShaderStyle` 先调用 `ResetGradientShaderStyle`）；反之亦然（`text_model_ng.cpp:2006` — `SetGradientShaderStyle` 先 reset `ColorShaderStyle`） |
-| AC-4.5 | WHEN shaderStyle 与 fontColor 同时设置 THEN shaderStyle 优先生效（`multiple_paragraph_layout_algorithm.cpp:207-222` — `UpdateShaderStyle` 覆盖 fontColor） |
-| AC-4.6 | WHEN shaderStyle 与 `foregroundColor()` 同时设置 THEN shaderStyle 的 foregroundBrush 覆盖 foregroundColor 效果 |
-| AC-4.7 | WHEN 传入 undefined 或调用重置 THEN 清除渐变和纯色着色，回退到 fontColor 渲染 |
-| AC-4.8 | WHEN 在 Span 级别继承 shaderStyle THEN 子 Span 继承父 Text 的 shaderStyle（`span_node.cpp:857-868` — 继承优先级判断） |
-| AC-4.9 | WHEN 通过静态版 ArkTS 设置 `shaderStyle(shader)` (@since 24 static) THEN 行为与动态版一致 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-4.1 | WHEN 调用 `.shaderStyle(new LinearGradientStyle(options))` THEN 文本以线性渐变着色渲染 | 正常 |
+| AC-4.2 | WHEN 调用 `.shaderStyle(new RadialGradientStyle(options))` THEN 文本以径向渐变着色渲染 | 正常 |
+| AC-4.3 | WHEN 调用 `.shaderStyle(new ColorShaderStyle(color))` THEN 文本以指定纯色着色，等效于替换 fontColor | 正常 |
+| AC-4.4 | WHEN 设置 GradientShaderStyle 后再设置 ColorShaderStyle THEN GradientShaderStyle 被重置（`text_model_ng.cpp:2010-2013` — `SetColorShaderStyle` 先调用 `ResetGradientShaderStyle`）；反之亦然（`text_model_ng.cpp:2006` — `SetGradientShaderStyle` 先 reset `ColorShaderStyle`） | 正常 |
+| AC-4.5 | WHEN shaderStyle 与 fontColor 同时设置 THEN shaderStyle 优先生效（`multiple_paragraph_layout_algorithm.cpp:207-222` — `UpdateShaderStyle` 覆盖 fontColor） | 正常 |
+| AC-4.6 | WHEN shaderStyle 与 `foregroundColor()` 同时设置 THEN shaderStyle 的 foregroundBrush 覆盖 foregroundColor 效果 | 正常 |
+| AC-4.7 | WHEN 传入 undefined 或调用重置 THEN 清除渐变和纯色着色，回退到 fontColor 渲染 | 异常 |
+| AC-4.8 | WHEN 在 Span 级别继承 shaderStyle THEN 子 Span 继承父 Text 的 shaderStyle（`span_node.cpp:857-868` — 继承优先级判断） | 正常 |
+| AC-4.9 | WHEN 通过静态版 ArkTS 设置 `shaderStyle(shader)` (@since 24 static) THEN 行为与动态版一致 | 正常 |
 
 ### US-5: 设置文本内容过渡动画
 
@@ -119,14 +119,14 @@
 **我想要** 通过 `.contentTransition()` (@since 20) 为数字文本内容变化设置翻页动画,
 **以便** 实现数字滚动等动态效果。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-5.1 | WHEN 调用 `.contentTransition(new NumericTextTransition())` 且文本内容为纯数字 THEN 数字变化时按 FLIP 策略播放翻页动画 |
-| AC-5.2 | WHEN `flipDirection` 设为 `FlipDirection.DOWN` (默认) THEN 数字向下翻转；WHEN 设为 `FlipDirection.UP` THEN 数字向上翻转 |
-| AC-5.3 | WHEN `enableBlur` 设为 true THEN 翻页过程中启用模糊效果；WHEN 设为 false (默认) THEN 无模糊 |
-| AC-5.4 | WHEN 文本内容不是纯数字 THEN contentTransition 不触发动画（`text_pattern.cpp:5372` — 仅数字文本时创建 TextEffect） |
-| AC-5.5 | WHEN 传入 undefined THEN 重置并停止动画效果（`text_model_ng.cpp:604-610` — `ResetContentTransition` 重置 TextEffectStrategy/FlipDirection/EnableBlur） |
-| AC-5.6 | WHEN 通过静态版 ArkTS 设置 `contentTransition(transition)` (@since 24 static) THEN 行为与动态版一致 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-5.1 | WHEN 调用 `.contentTransition(new NumericTextTransition())` 且文本内容为纯数字 THEN 数字变化时按 FLIP 策略播放翻页动画 | 正常 |
+| AC-5.2 | WHEN `flipDirection` 设为 `FlipDirection.DOWN` (默认) THEN 数字向下翻转；WHEN 设为 `FlipDirection.UP` THEN 数字向上翻转 | 正常 |
+| AC-5.3 | WHEN `enableBlur` 设为 true THEN 翻页过程中启用模糊效果；WHEN 设为 false (默认) THEN 无模糊 | 正常 |
+| AC-5.4 | WHEN 文本内容不是纯数字 THEN contentTransition 不触发动画（`text_pattern.cpp:5372` — 仅数字文本时创建 TextEffect） | 正常 |
+| AC-5.5 | WHEN 传入 undefined THEN 重置并停止动画效果（`text_model_ng.cpp:604-610` — `ResetContentTransition` 重置 TextEffectStrategy/FlipDirection/EnableBlur） | 异常 |
+| AC-5.6 | WHEN 通过静态版 ArkTS 设置 `contentTransition(transition)` (@since 24 static) THEN 行为与动态版一致 | 正常 |
 
 ### US-6: 设置跑马灯选项
 
@@ -134,27 +134,27 @@
 **我想要** 通过 `.marqueeOptions()` (@since 18) 配置 Text 组件跑马灯的滚动行为,
 **以便** 精细控制文本滚动参数。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-6.1 | WHEN 调用 `.marqueeOptions({ start: true })` 且已设置 `textOverflow(TextOverflow.MARQUEE)` THEN 启动跑马灯滚动 |
-| AC-6.2 | WHEN 未设置 `textOverflow(TextOverflow.MARQUEE)` THEN marqueeOptions 不生效（`text_pattern.cpp:8041-8046` — `IsMarqueeOverflow()` 守卫全部跑马灯逻辑） |
-| AC-6.3 | WHEN `step` 为正数 THEN 每帧滚动步长为 step（VP 转 px）；WHEN step 未设置 THEN 默认 `RACE_DURATION_RATIO` 驱动的速度 |
-| AC-6.4 | WHEN `loop` 为正整数 N THEN 滚动 N 圈后停止（`text_content_modifier.cpp:1860-1872` — `marqueeCount_ >= loop`）；WHEN loop ≤ 0 或未设置 THEN 无限循环（内部映射为 -1） |
-| AC-6.5 | WHEN `delay` 为正数 ms THEN 每圈结束后等待 delay 毫秒再开始下一圈；WHEN delay < 0 THEN 钳位到 0 |
-| AC-6.6 | WHEN `fromStart` 为 true THEN 从文本起始方向滚动（`MarqueeDirection::DEFAULT`）；WHEN 为 false THEN 反向（`MarqueeDirection::DEFAULT_REVERSE`）；实际方向受 RTL/LTR 布局影响 |
-| AC-6.7 | WHEN `fadeout` 为 true THEN 跑马灯两端显示渐隐效果（`text_content_modifier.cpp:1893-1953` — 计算 `marqueeGradientPercent_`） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-6.1 | WHEN 调用 `.marqueeOptions({ start: true })` 且已设置 `textOverflow(TextOverflow.MARQUEE)` THEN 启动跑马灯滚动 | 正常 |
+| AC-6.2 | WHEN 未设置 `textOverflow(TextOverflow.MARQUEE)` THEN marqueeOptions 不生效（`text_pattern.cpp:8041-8046` — `IsMarqueeOverflow()` 守卫全部跑马灯逻辑） | 异常 |
+| AC-6.3 | WHEN `step` 为正数 THEN 每帧滚动步长为 step（VP 转 px）；WHEN step 未设置 THEN 默认 `RACE_DURATION_RATIO` 驱动的速度 | 异常 |
+| AC-6.4 | WHEN `loop` 为正整数 N THEN 滚动 N 圈后停止（`text_content_modifier.cpp:1860-1872` — `marqueeCount_ >= loop`）；WHEN loop ≤ 0 或未设置 THEN 无限循环（内部映射为 -1） | 异常 |
+| AC-6.5 | WHEN `delay` 为正数 ms THEN 每圈结束后等待 delay 毫秒再开始下一圈；WHEN delay < 0 THEN 钳位到 0 | 边界 |
+| AC-6.6 | WHEN `fromStart` 为 true THEN 从文本起始方向滚动（`MarqueeDirection::DEFAULT`）；WHEN 为 false THEN 反向（`MarqueeDirection::DEFAULT_REVERSE`）；实际方向受 RTL/LTR 布局影响 | 正常 |
+| AC-6.7 | WHEN `fadeout` 为 true THEN 跑马灯两端显示渐隐效果（`text_content_modifier.cpp:1893-1953` — 计算 `marqueeGradientPercent_`） | 正常 |
 | AC-6.8 | WHEN `marqueeStartPolicy` 为 `MarqueeStartPolicy.DEFAULT` THEN 跑马灯立即启动；WHEN 为 `ON_FOCUS` THEN 仅在组件获得焦点或鼠标悬停时启动（`text_content_modifier.cpp:1866-1870` — `AllowTextRace` 检查 `focused_ \|\| hovered_`） |
-| AC-6.9 | WHEN `spacing` 设置为合法 LengthMetrics (@since 23) THEN 两圈文本之间的间距为 spacing 值；WHEN 未设置 THEN 默认 48vp（`marquee_option.h:42` — `RACE_SPACE_WIDTH`） |
-| AC-6.10 | WHEN `marqueeUpdatePolicy` 为 `MarqueeUpdatePolicy.DEFAULT` (@since 23) THEN 文本内容更新时按默认策略重启滚动；WHEN 为 `PRESERVE_POSITION` THEN 保持当前滚动位置继续 |
-| AC-6.11 | WHEN 注册 `onMarqueeStateChange(callback)` THEN 在 START（开始滚动）、BOUNCE（一圈结束回弹）、FINISH（全部结束）三个时机分别回调 |
-| AC-6.12 | WHEN 通过 C API `NODE_TEXT_MARQUEE_OPTIONS` 设置 THEN 使用 `OH_ArkUI_TextMarqueeOptions` 结构体传入各参数（`text_native_impl.cpp:517-643`） |
-| AC-6.13 | WHEN `start` 设为 false THEN 停止正在运行的跑马灯动画 |
+| AC-6.9 | WHEN `spacing` 设置为合法 LengthMetrics (@since 23) THEN 两圈文本之间的间距为 spacing 值；WHEN 未设置 THEN 默认 48vp（`marquee_option.h:42` — `RACE_SPACE_WIDTH`） | 异常 |
+| AC-6.10 | WHEN `marqueeUpdatePolicy` 为 `MarqueeUpdatePolicy.DEFAULT` (@since 23) THEN 文本内容更新时按默认策略重启滚动；WHEN 为 `PRESERVE_POSITION` THEN 保持当前滚动位置继续 | 正常 |
+| AC-6.11 | WHEN 注册 `onMarqueeStateChange(callback)` THEN 在 START（开始滚动）、BOUNCE（一圈结束回弹）、FINISH（全部结束）三个时机分别回调 | 正常 |
+| AC-6.12 | WHEN 通过 C API `NODE_TEXT_MARQUEE_OPTIONS` 设置 THEN 使用 `OH_ArkUI_TextMarqueeOptions` 结构体传入各参数（`text_native_impl.cpp:517-643`） | 正常 |
+| AC-6.13 | WHEN `start` 设为 false THEN 停止正在运行的跑马灯动画 | 正常 |
 
 ---
 
 ## 验收追溯
 
-| AC ID | 关联规则 | 关联 Task | 验证方式 | 证据 |
+| AC编号 | 关联规则 | 关联 Task | 验证方式 | 证据 |
 |-------|----------|-----------|----------|------|
 | AC-1.1~1.4 | R-11, R-1 | 存量实现 | UT + 手工验证 | text_pattern_test |
 | AC-1.5~1.6 | R-12 | 存量实现 | UT | text_pattern_test |

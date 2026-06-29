@@ -46,14 +46,14 @@
 **我想要** 通过 `opacity` 设置组件透明度,  
 **以便** 控制组件及其子内容的整体 alpha 混合效果。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-1.1 | WHEN ArkTS dynamic 调用 `.opacity(value)` 且 value 可解析为 number 或 Resource THEN 属性写入 RenderContext `Opacity` 并最终在 Rosen 中更新 alpha。 |
-| AC-1.2 | WHEN ArkTS dynamic `opacity` 参数不可解析 THEN 写入默认透明度 `1.0`。 |
-| AC-1.3 | WHEN target API >= 11 且 `opacity` 数值超出 `[0,1]` THEN 数值被 clamp 到 `[0,1]`。 |
-| AC-1.4 | WHEN target API < 11 且 `opacity` 数值小于 `0` 或大于 `1` THEN 数值回退为 `1.0`。 |
-| AC-1.5 | WHEN Native public `NODE_OPACITY` 传入小于 `0` 或大于 `1` 的值 THEN `style_modifier` 返回 `ERROR_CODE_PARAM_INVALID`，不进入 common modifier 写入。 |
-| AC-1.6 | WHEN Native common modifier reset opacity THEN 移除 `viewAbstract.opacity` ResourceObject 并写入 `1.0f`。 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-1.1 | WHEN ArkTS dynamic 调用 `.opacity(value)` 且 value 可解析为 number 或 Resource THEN 属性写入 RenderContext `Opacity` 并最终在 Rosen 中更新 alpha。 | 正常 |
+| AC-1.2 | WHEN ArkTS dynamic `opacity` 参数不可解析 THEN 写入默认透明度 `1.0`。 | 异常 |
+| AC-1.3 | WHEN target API >= 11 且 `opacity` 数值超出 `[0,1]` THEN 数值被 clamp 到 `[0,1]`。 | 边界 |
+| AC-1.4 | WHEN target API < 11 且 `opacity` 数值小于 `0` 或大于 `1` THEN 数值回退为 `1.0`。 | 异常 |
+| AC-1.5 | WHEN Native public `NODE_OPACITY` 传入小于 `0` 或大于 `1` 的值 THEN `style_modifier` 返回 `ERROR_CODE_PARAM_INVALID`，不进入 common modifier 写入。 | 正常 |
+| AC-1.6 | WHEN Native common modifier reset opacity THEN 移除 `viewAbstract.opacity` ResourceObject 并写入 `1.0f`。 | 正常 |
 
 ### US-2: 设置基础滤镜
 
@@ -61,17 +61,17 @@
 **我想要** 通过 `brightness/contrast/grayscale/colorBlend/saturate/sepia/invert/hueRotate` 设置基础图像滤镜,  
 **以便** 直接调整组件内容的亮度、对比度、灰度、混色、饱和度、褐色、反色和色相。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-2.1 | WHEN 设置 `brightness` THEN 属性写入 `GraphicsProperty::FrontBrightness` 并由 Rosen 调用 `SetBrightness`。 |
-| AC-2.2 | WHEN ArkTS dynamic `brightness` 参数不可解析 THEN 当前 JS 实现写入 `1.0`；WHEN common modifier 收到负值 THEN clamp 到 `0`。 |
-| AC-2.3 | WHEN 设置 `contrast` 或 `saturate` 且传入负值 THEN ArkTS dynamic/common modifier clamp 到 `0`；reset 值为 `1.0`。 |
-| AC-2.4 | WHEN 设置 `grayscale` THEN 数值 clamp 到 `[0,1]`；reset 值为 `0`。 |
-| AC-2.5 | WHEN 设置 `sepia` THEN 负值 clamp 到 `0`；reset 值为 `0`。 |
-| AC-2.6 | WHEN 设置 `invert(number)` THEN 数值 clamp 到 `[0,1]`；WHEN 设置 `InvertOptions` THEN `low/high/threshold/thresholdRange` 分别 clamp 到 `[0,1]` 并由 Rosen 走 `SetAiInvert`。 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-2.1 | WHEN 设置 `brightness` THEN 属性写入 `GraphicsProperty::FrontBrightness` 并由 Rosen 调用 `SetBrightness`。 | 正常 |
+| AC-2.2 | WHEN ArkTS dynamic `brightness` 参数不可解析 THEN 当前 JS 实现写入 `1.0`；WHEN common modifier 收到负值 THEN clamp 到 `0`。 | 异常 |
+| AC-2.3 | WHEN 设置 `contrast` 或 `saturate` 且传入负值 THEN ArkTS dynamic/common modifier clamp 到 `0`；reset 值为 `1.0`。 | 边界 |
+| AC-2.4 | WHEN 设置 `grayscale` THEN 数值 clamp 到 `[0,1]`；reset 值为 `0`。 | 边界 |
+| AC-2.5 | WHEN 设置 `sepia` THEN 负值 clamp 到 `0`；reset 值为 `0`。 | 边界 |
+| AC-2.6 | WHEN 设置 `invert(number)` THEN 数值 clamp 到 `[0,1]`；WHEN 设置 `InvertOptions` THEN `low/high/threshold/thresholdRange` 分别 clamp 到 `[0,1]` 并由 Rosen 走 `SetAiInvert`。 | 边界 |
 | AC-2.7 | WHEN 设置 `hueRotate(number\|string)` THEN 实现将角度归一化到 `[0,360)`；非法输入 reset 为 `0`。 |
-| AC-2.8 | WHEN `colorBlend` 为 undefined 或 target API >= 12 且颜色解析失败 THEN 写入 `Color::TRANSPARENT`；WHEN target API < 12 且解析失败 THEN return 不更新。 |
-| AC-2.9 | WHEN Native public 基础滤镜属性收到 `style_modifier` 定义的越界值 THEN 返回 `ERROR_CODE_PARAM_INVALID`。 |
+| AC-2.8 | WHEN `colorBlend` 为 undefined 或 target API >= 12 且颜色解析失败 THEN 写入 `Color::TRANSPARENT`；WHEN target API < 12 且解析失败 THEN return 不更新。 | 异常 |
+| AC-2.9 | WHEN Native public 基础滤镜属性收到 `style_modifier` 定义的越界值 THEN 返回 `ERROR_CODE_PARAM_INVALID`。 | 正常 |
 
 ### US-3: 设置内容模糊和背景模糊
 
@@ -79,15 +79,15 @@
 **我想要** 通过 `blur` 和 `backdropBlur` 设置内容/背景模糊,  
 **以便** 区分组件自身内容模糊和组件背后内容模糊。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-3.1 | WHEN ArkTS dynamic 调用 `blur(radius, options, sysOptions)` 且 radius 可解析 THEN 使用 PX 半径写入前景模糊并更新 front blur filter。 |
-| AC-3.2 | WHEN ArkTS dynamic `blur` 无参数或 radius 不可解析 THEN return，不写入新值；WHEN ArkTS native bridge 解析失败 THEN 调用 resetBlur。 |
-| AC-3.3 | WHEN common modifier 设置 `blur` 且半径小于或等于 `0` THEN 写入 `0px`；resetBlur 也写入 `0px`。 |
-| AC-3.4 | WHEN ArkTS dynamic 调用 `backdropBlur` 且 radius 解析失败并 target API < 12 THEN return；WHEN target API >= 12 THEN 以默认 `0` 半径继续设置。 |
-| AC-3.5 | WHEN 设置 `backdropBlur` THEN 清理已有 `backgroundEffect` 和 `backgroundBlurStyle`，再更新背景模糊。 |
-| AC-3.6 | WHEN 设置 `blur` THEN 清理已有 `foregroundBlurStyle`，再更新前景模糊。 |
-| AC-3.7 | WHEN Native public `NODE_BACKDROP_BLUR` 参数数量或灰度范围非法 THEN 返回 `ERROR_CODE_PARAM_INVALID`。 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-3.1 | WHEN ArkTS dynamic 调用 `blur(radius, options, sysOptions)` 且 radius 可解析 THEN 使用 PX 半径写入前景模糊并更新 front blur filter。 | 正常 |
+| AC-3.2 | WHEN ArkTS dynamic `blur` 无参数或 radius 不可解析 THEN return，不写入新值；WHEN ArkTS native bridge 解析失败 THEN 调用 resetBlur。 | 异常 |
+| AC-3.3 | WHEN common modifier 设置 `blur` 且半径小于或等于 `0` THEN 写入 `0px`；resetBlur 也写入 `0px`。 | 正常 |
+| AC-3.4 | WHEN ArkTS dynamic 调用 `backdropBlur` 且 radius 解析失败并 target API < 12 THEN return；WHEN target API >= 12 THEN 以默认 `0` 半径继续设置。 | 异常 |
+| AC-3.5 | WHEN 设置 `backdropBlur` THEN 清理已有 `backgroundEffect` 和 `backgroundBlurStyle`，再更新背景模糊。 | 正常 |
+| AC-3.6 | WHEN 设置 `blur` THEN 清理已有 `foregroundBlurStyle`，再更新前景模糊。 | 正常 |
+| AC-3.7 | WHEN Native public `NODE_BACKDROP_BLUR` 参数数量或灰度范围非法 THEN 返回 `ERROR_CODE_PARAM_INVALID`。 | 异常 |
 
 ### US-4: 设置渐变模糊和运动模糊
 
@@ -95,15 +95,15 @@
 **我想要** 通过 `linearGradientBlur` 和 `motionBlur` 设置更复杂的模糊效果,  
 **以便** 实现渐变方向模糊和运动过程模糊。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-4.1 | WHEN `linearGradientBlur` 参数少于 2 个 THEN ArkTS dynamic return，不写入新值。 |
-| AC-4.2 | WHEN `linearGradientBlur` 的 `fractionStops` 缺失、长度不足或位置非递增 THEN 回退默认 stops `[(0,0),(0,1)]`。 |
-| AC-4.3 | WHEN `linearGradientBlur` 的 direction 非法 THEN 回退 `BOTTOM`；WHEN common modifier 半径为负 THEN clamp 到 `0`。 |
-| AC-4.4 | WHEN resetLinearGradientBlur THEN 写入 `0px + [(0,0),(0,1)] + BOTTOM`。 |
-| AC-4.5 | WHEN `motionBlur` 参数不是 object THEN ArkTS dynamic return；WHEN radius 解析失败或小于 `0` THEN radius 为 `0`。 |
-| AC-4.6 | WHEN `motionBlur.anchor.x/y` 缺失、为负或大于 `1` THEN 缺失默认 `0`，越界 clamp 到 `[0,1]`。 |
-| AC-4.7 | WHEN resetMotionBlur THEN radius、anchor.x、anchor.y 均写入 `0`。 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-4.1 | WHEN `linearGradientBlur` 参数少于 2 个 THEN ArkTS dynamic return，不写入新值。 | 正常 |
+| AC-4.2 | WHEN `linearGradientBlur` 的 `fractionStops` 缺失、长度不足或位置非递增 THEN 回退默认 stops `[(0,0),(0,1)]`。 | 异常 |
+| AC-4.3 | WHEN `linearGradientBlur` 的 direction 非法 THEN 回退 `BOTTOM`；WHEN common modifier 半径为负 THEN clamp 到 `0`。 | 异常 |
+| AC-4.4 | WHEN resetLinearGradientBlur THEN 写入 `0px + [(0,0),(0,1)] + BOTTOM`。 | 正常 |
+| AC-4.5 | WHEN `motionBlur` 参数不是 object THEN ArkTS dynamic return；WHEN radius 解析失败或小于 `0` THEN radius 为 `0`。 | 异常 |
+| AC-4.6 | WHEN `motionBlur.anchor.x/y` 缺失、为负或大于 `1` THEN 缺失默认 `0`，越界 clamp 到 `[0,1]`。 | 异常 |
+| AC-4.7 | WHEN resetMotionBlur THEN radius、anchor.x、anchor.y 均写入 `0`。 | 正常 |
 
 ### US-5: 按入口区分 API 契约
 
@@ -111,16 +111,16 @@
 **我想要** 区分 SDK dynamic/static、ArkTS bridge、Native public `NODE_*` 与内部 common modifier 的契约,  
 **以便** 下游 SDD 流程能识别公开 API 与实现入口的差异。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-5.1 | WHEN 记录外部 ArkTS API THEN 以 `interface/sdk-js/api/@internal/component/ets/common.d.ts` 和 `interface/sdk-js/api/arkui/component/common.static.d.ets` 为签名单一真源。 |
-| AC-5.2 | WHEN 记录 Native public API THEN 仅把 `native_node.h` 中存在的 `NODE_*` 作为公开属性。 |
-| AC-5.3 | WHEN 源码行为与 SDK 注释不一致 THEN 规格同时记录 SDK 契约和源码偏差风险。 |
-| AC-5.4 | WHEN common modifier 中存在函数表入口但 `native_node.h` 没有同级公开枚举 THEN 标记为内部 modifier 覆盖，不写成公开 C API。 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-5.1 | WHEN 记录外部 ArkTS API THEN 以 `interface/sdk-js/api/@internal/component/ets/common.d.ts` 和 `interface/sdk-js/api/arkui/component/common.static.d.ets` 为签名单一真源。 | 正常 |
+| AC-5.2 | WHEN 记录 Native public API THEN 仅把 `native_node.h` 中存在的 `NODE_*` 作为公开属性。 | 正常 |
+| AC-5.3 | WHEN 源码行为与 SDK 注释不一致 THEN 规格同时记录 SDK 契约和源码偏差风险。 | 正常 |
+| AC-5.4 | WHEN common modifier 中存在函数表入口但 `native_node.h` 没有同级公开枚举 THEN 标记为内部 modifier 覆盖，不写成公开 C API。 | 正常 |
 
 ## 验收追溯
 
-| AC ID | 关联规则 | 关联 Task | 验证方式 | 证据 |
+| AC编号 | 关联规则 | 关联 Task | 验证方式 | 证据 |
 |-------|----------|-----------|----------|------|
 | AC-1.1~AC-1.6 | R-1, R-6, R-24, R-35 | 已有实现 | 单测/源码审查 | `js_view_abstract.cpp:2198`, `node_common_modifier.cpp:2128`, `view_abstract.cpp:7511`, `rosen_render_context.cpp:2285` |
 | AC-2.1~AC-2.9 | R-2, R-7~R-14, R-25~R-28, R-36 | 已有实现 | 单测/源码审查 | `js_view_abstract.cpp:9221`, `js_view_abstract.cpp:9241`, `js_view_abstract.cpp:9253`, `js_view_abstract.cpp:9269`, `js_view_abstract.cpp:9285`, `js_view_abstract.cpp:9301`, `js_view_abstract.cpp:9353`, `rosen_render_context.cpp:5580` |

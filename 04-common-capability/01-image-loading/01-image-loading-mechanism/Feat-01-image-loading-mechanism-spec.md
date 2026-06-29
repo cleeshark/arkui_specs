@@ -35,14 +35,14 @@
 **我想要** 通过 URI (文件路径/网络 URL/资源引用/asset/base64) 指定图片来源,
 **以便** 在 Image 组件中显示不同来源的图片。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-1.1 | WHEN src 为 file:// 路径 THEN 通过 FileImageLoader 从本地文件系统读取图片 |
-| AC-1.2 | WHEN src 为 http:// 或 https:// URL THEN 通过 NetworkImageLoader 下载网络图片，下载结果可写入磁盘缓存 |
-| AC-1.3 | WHEN src 为 $r('app.media.xxx') 资源引用 THEN 通过 ResourceImageLoader 从应用资源加载 |
-| AC-1.4 | WHEN src 为 data:image/xxx;base64,... THEN 通过 Base64ImageLoader 解码内嵌 Base64 数据 |
-| AC-1.5 | WHEN src 为 PixelMap 对象 THEN 通过 PixelMapImageLoader 直接使用，无需文件 I/O |
-| AC-1.6 | WHEN 工厂无法识别的 SrcType THEN CreateImageLoader 返回 nullptr，加载失败 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-1.1 | WHEN src 为 file:// 路径 THEN 通过 FileImageLoader 从本地文件系统读取图片 | 正常 |
+| AC-1.2 | WHEN src 为 http:// 或 https:// URL THEN 通过 NetworkImageLoader 下载网络图片，下载结果可写入磁盘缓存 | 正常 |
+| AC-1.3 | WHEN src 为 $r('app.media.xxx') 资源引用 THEN 通过 ResourceImageLoader 从应用资源加载 | 正常 |
+| AC-1.4 | WHEN src 为 data:image/xxx;base64,... THEN 通过 Base64ImageLoader 解码内嵌 Base64 数据 | 正常 |
+| AC-1.5 | WHEN src 为 PixelMap 对象 THEN 通过 PixelMapImageLoader 直接使用，无需文件 I/O | 正常 |
+| AC-1.6 | WHEN 工厂无法识别的 SrcType THEN CreateImageLoader 返回 nullptr，加载失败 | 异常 |
 
 ### US-2: 图片加载状态机驱动
 
@@ -50,16 +50,16 @@
 **我想要** 通过状态机管理图片加载的完整生命周期,
 **以便** 确保 UNLOADED → DATA_LOADING → DATA_READY → MAKE_CANVAS_IMAGE → LOAD_SUCCESS 的严格顺序流转。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-2.1 | WHEN 发送 LOAD_DATA 命令且当前状态为 UNLOADED THEN 转移到 DATA_LOADING 并调用 OnDataLoading |
-| AC-2.2 | WHEN 发送 LOAD_DATA_SUCCESS 命令且当前状态为 DATA_LOADING THEN 转移到 DATA_READY 并调用 OnDataReady |
-| AC-2.3 | WHEN 发送 MAKE_CANVAS_IMAGE 命令且当前状态为 DATA_READY THEN 转移到 MAKE_CANVAS_IMAGE 并调用 OnMakeCanvasImage |
-| AC-2.4 | WHEN 发送 MAKE_CANVAS_IMAGE_SUCCESS 命令且当前状态为 MAKE_CANVAS_IMAGE THEN 转移到 LOAD_SUCCESS 并调用 OnLoadSuccess |
-| AC-2.5 | WHEN 任何阶段发送 LOAD_FAIL 命令 THEN 转移到 LOAD_FAIL 终态并调用 OnLoadFail |
-| AC-2.6 | WHEN 任何状态发送 RESET_STATE 命令 THEN 回到 UNLOADED 状态 |
-| AC-2.7 | WHEN 当前状态为 LOAD_SUCCESS 且发送 MAKE_CANVAS_IMAGE 命令 THEN 重新进入 MAKE_CANVAS_IMAGE（支持重解码） |
-| AC-2.8 | WHEN 当前状态为 LOAD_FAIL THEN 除 RESET_STATE 外的所有命令被静默忽略（包括 RETRY_LOADING） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-2.1 | WHEN 发送 LOAD_DATA 命令且当前状态为 UNLOADED THEN 转移到 DATA_LOADING 并调用 OnDataLoading | 正常 |
+| AC-2.2 | WHEN 发送 LOAD_DATA_SUCCESS 命令且当前状态为 DATA_LOADING THEN 转移到 DATA_READY 并调用 OnDataReady | 正常 |
+| AC-2.3 | WHEN 发送 MAKE_CANVAS_IMAGE 命令且当前状态为 DATA_READY THEN 转移到 MAKE_CANVAS_IMAGE 并调用 OnMakeCanvasImage | 正常 |
+| AC-2.4 | WHEN 发送 MAKE_CANVAS_IMAGE_SUCCESS 命令且当前状态为 MAKE_CANVAS_IMAGE THEN 转移到 LOAD_SUCCESS 并调用 OnLoadSuccess | 正常 |
+| AC-2.5 | WHEN 任何阶段发送 LOAD_FAIL 命令 THEN 转移到 LOAD_FAIL 终态并调用 OnLoadFail | 正常 |
+| AC-2.6 | WHEN 任何状态发送 RESET_STATE 命令 THEN 回到 UNLOADED 状态 | 正常 |
+| AC-2.7 | WHEN 当前状态为 LOAD_SUCCESS 且发送 MAKE_CANVAS_IMAGE 命令 THEN 重新进入 MAKE_CANVAS_IMAGE（支持重解码） | 正常 |
+| AC-2.8 | WHEN 当前状态为 LOAD_FAIL THEN 除 RESET_STATE 外的所有命令被静默忽略（包括 RETRY_LOADING） | 正常 |
 
 ### US-3: 多级缓存加速图片加载
 
@@ -67,14 +67,14 @@
 **我想要** 已加载的图片被缓存以避免重复加载和解码,
 **以便** 提升图片显示性能和减少网络请求。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-3.1 | WHEN 图片数据首次加载完成 THEN ImageObject 被缓存到 ImageCache（默认容量 2000） |
-| AC-3.2 | WHEN 同一 URI 再次被请求 THEN 优先从 ImageObject 缓存获取，跳过数据加载阶段 |
-| AC-3.3 | WHEN 原始图片数据通过 GetImageData 获取 THEN 数据被缓存到 ImageData 缓存（默认禁用，容量为 0） |
-| AC-3.4 | WHEN 网络图片下载完成 THEN 图片文件被写入 ImageFileCache 磁盘缓存（默认 100MB） |
-| AC-3.5 | WHEN ImageFileCache 容量达到上限 THEN 按访问时间淘汰最旧的文件，直到总大小降至 50% |
-| AC-3.6 | WHEN ImageObject 缓存容量达到上限 THEN 按 LRU 策略淘汰最旧的条目 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-3.1 | WHEN 图片数据首次加载完成 THEN ImageObject 被缓存到 ImageCache（默认容量 2000） | 正常 |
+| AC-3.2 | WHEN 同一 URI 再次被请求 THEN 优先从 ImageObject 缓存获取，跳过数据加载阶段 | 正常 |
+| AC-3.3 | WHEN 原始图片数据通过 GetImageData 获取 THEN 数据被缓存到 ImageData 缓存（默认禁用，容量为 0） | 正常 |
+| AC-3.4 | WHEN 网络图片下载完成 THEN 图片文件被写入 ImageFileCache 磁盘缓存（默认 100MB） | 正常 |
+| AC-3.5 | WHEN ImageFileCache 容量达到上限 THEN 按访问时间淘汰最旧的文件，直到总大小降至 50% | 边界 |
+| AC-3.6 | WHEN ImageObject 缓存容量达到上限 THEN 按 LRU 策略淘汰最旧的条目 | 边界 |
 
 ### US-4: 图片解码与尺寸适配
 
@@ -82,14 +82,14 @@
 **我想要** 图片根据组件尺寸自动解码到合适的分辨率,
 **以便** 避免加载过大的图片浪费内存。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-4.1 | WHEN autoResize 启用且组件尺寸变化 THEN 目标解码宽度按功率对齐（原始宽度的 2^N 分之一），仅跨越边界时触发重解码 |
-| AC-4.2 | WHEN SystemProperties::GetImageFrameworkEnabled() 为 true THEN 使用 ImageFramework 解码路径（ImageSource::CreatePixelMap） |
-| AC-4.3 | WHEN SystemProperties::GetImageFrameworkEnabled() 为 false THEN 使用 Skia 解码路径（SkCodec） |
-| AC-4.4 | WHEN StaticImageObject 解码完成后 THEN CanvasImage 创建成功，原始 data 被清除（ClearData）释放内存 |
-| AC-4.5 | WHEN AnimatedImageObject 创建后 THEN 原始 data 被保留不清除（ClearData 为空操作），用于逐帧解码 |
-| AC-4.6 | WHEN SVG 图片加载 THEN 直接通过 SvgDomBase::DrawImage 渲染到 Canvas，不进行光栅化解码，忽略 resizeTarget 参数 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-4.1 | WHEN autoResize 启用且组件尺寸变化 THEN 目标解码宽度按功率对齐（原始宽度的 2^N 分之一），仅跨越边界时触发重解码 | 边界 |
+| AC-4.2 | WHEN SystemProperties::GetImageFrameworkEnabled() 为 true THEN 使用 ImageFramework 解码路径（ImageSource::CreatePixelMap） | 正常 |
+| AC-4.3 | WHEN SystemProperties::GetImageFrameworkEnabled() 为 false THEN 使用 Skia 解码路径（SkCodec） | 正常 |
+| AC-4.4 | WHEN StaticImageObject 解码完成后 THEN CanvasImage 创建成功，原始 data 被清除（ClearData）释放内存 | 正常 |
+| AC-4.5 | WHEN AnimatedImageObject 创建后 THEN 原始 data 被保留不清除（ClearData 为空操作），用于逐帧解码 | 正常 |
+| AC-4.6 | WHEN SVG 图片加载 THEN 直接通过 SvgDomBase::DrawImage 渲染到 Canvas，不进行光栅化解码，忽略 resizeTarget 参数 | 正常 |
 
 ### US-5: 加载任务去重
 
@@ -97,12 +97,12 @@
 **我想要** 多个组件请求同一图片源时共享同一个后台加载任务,
 **以便** 避免重复的网络请求或文件 I/O。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-5.1 | WHEN 多个 ImageLoadingContext 请求同一 URI 的数据加载 THEN 通过 RegisterTask 去重，仅创建一个后台任务 |
-| AC-5.2 | WHEN 去重任务完成 THEN 通过 EndTask 获取所有等待的 context 列表，逐个通知结果 |
-| AC-5.3 | WHEN 某个 context 被销毁且它是唯一等待者 THEN 通过 CancelTask 取消后台任务 |
-| AC-5.4 | WHEN 某个 context 被销毁但仍有其他等待者 THEN 仅从 ctxs_ 集合中移除该 context，任务继续执行 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-5.1 | WHEN 多个 ImageLoadingContext 请求同一 URI 的数据加载 THEN 通过 RegisterTask 去重，仅创建一个后台任务 | 正常 |
+| AC-5.2 | WHEN 去重任务完成 THEN 通过 EndTask 获取所有等待的 context 列表，逐个通知结果 | 正常 |
+| AC-5.3 | WHEN 某个 context 被销毁且它是唯一等待者 THEN 通过 CancelTask 取消后台任务 | 正常 |
+| AC-5.4 | WHEN 某个 context 被销毁但仍有其他等待者 THEN 仅从 ctxs_ 集合中移除该 context，任务继续执行 | 正常 |
 
 ### US-6: 加载回调通知
 
@@ -110,18 +110,18 @@
 **我想要** 在图片加载的关键阶段收到回调通知,
 **以便** 在 UI 上显示加载状态或处理错误。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-6.1 | WHEN 状态进入 DATA_READY THEN 触发 onDataReady 回调，通知数据已就绪 |
-| AC-6.2 | WHEN 状态进入 LOAD_SUCCESS THEN 触发 onLoadSuccess 回调，通知图片可渲染 |
-| AC-6.3 | WHEN 状态进入 LOAD_FAIL THEN 触发 onLoadFail 回调，携带错误信息和 ImageErrorInfo |
-| AC-6.4 | WHEN StaticImageObject 进入 LOAD_SUCCESS THEN 在 OnLoadSuccess 中自动调用 ClearData 释放原始字节 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-6.1 | WHEN 状态进入 DATA_READY THEN 触发 onDataReady 回调，通知数据已就绪 | 正常 |
+| AC-6.2 | WHEN 状态进入 LOAD_SUCCESS THEN 触发 onLoadSuccess 回调，通知图片可渲染 | 正常 |
+| AC-6.3 | WHEN 状态进入 LOAD_FAIL THEN 触发 onLoadFail 回调，携带错误信息和 ImageErrorInfo | 异常 |
+| AC-6.4 | WHEN StaticImageObject 进入 LOAD_SUCCESS THEN 在 OnLoadSuccess 中自动调用 ClearData 释放原始字节 | 正常 |
 
 ---
 
 ## 验收追溯
 
-| AC ID | 关联规则 | 关联 Task | 验证方式 | 证据 |
+| AC编号 | 关联规则 | 关联 Task | 验证方式 | 证据 |
 |-------|----------|-----------|----------|------|
 | AC-1.1 ~ AC-1.6 | R-6 ~ R-12 | — | 单元测试 | — |
 | AC-2.1 ~ AC-2.8 | R-13 ~ R-20 | — | 单元测试 | — |

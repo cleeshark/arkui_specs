@@ -35,14 +35,14 @@
 **我想要** 通过 resizable 属性设置图片的九宫格切片或网格拉伸配置,
 **以便** 实现图片在不同尺寸下的无损拉伸效果。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-1.1 | WHEN 调用 `.resizable(value: ResizableOptions)` 传入 slice 配置 THEN 设置九宫格切片（ImageResizableSlice: left/right/top/bottom 四边距） |
-| AC-1.2 | WHEN 调用 resizable 传入 lattice 配置 THEN 设置网格拉伸（DrawingLattice 对象） |
-| AC-1.3 | WHEN resizable 设置后 THEN 存储在 RenderProperty 的 ImagePaintStyle 组中，触发 PROPERTY_UPDATE_RENDER |
-| AC-1.4 | WHEN 存在 resizable 切片配置 THEN 每次 layout wrapper 交换时重新计算拉伸区域，`image_pattern.cpp:1024-1052` |
-| AC-1.5 | WHEN 存在 resizable 切片或旋转（非 UP）THEN autoResize 被强制关闭，`image_pattern.cpp:880-893` |
-| AC-1.6 | WHEN resizable slice 值支持 Resource 类型 THEN 通过 ResourceUpdater 支持主题变更动态更新，`image_model_ng.cpp:649-694` |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-1.1 | WHEN 调用 `.resizable(value: ResizableOptions)` 传入 slice 配置 THEN 设置九宫格切片（ImageResizableSlice: left/right/top/bottom 四边距） | 正常 |
+| AC-1.2 | WHEN 调用 resizable 传入 lattice 配置 THEN 设置网格拉伸（DrawingLattice 对象） | 正常 |
+| AC-1.3 | WHEN resizable 设置后 THEN 存储在 RenderProperty 的 ImagePaintStyle 组中，触发 PROPERTY_UPDATE_RENDER | 正常 |
+| AC-1.4 | WHEN 存在 resizable 切片配置 THEN 每次 layout wrapper 交换时重新计算拉伸区域，`image_pattern.cpp:1024-1052` | 正常 |
+| AC-1.5 | WHEN 存在 resizable 切片或旋转（非 UP）THEN autoResize 被强制关闭，`image_pattern.cpp:880-893` | 正常 |
+| AC-1.6 | WHEN resizable slice 值支持 Resource 类型 THEN 通过 ResourceUpdater 支持主题变更动态更新，`image_model_ng.cpp:649-694` | 正常 |
 
 > ImageResizableSlice 定义：`frameworks/base/image/image_resizable_slice.h:36-63`
 
@@ -52,12 +52,12 @@
 **我想要** 通过 enableAnalyzer 属性启用图片 AI 分析功能,
 **以便** 让用户对图片内容进行智能识别和分析。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-2.1 | WHEN 调用 `.enableAnalyzer(value: boolean)` THEN 启用或关闭图片分析器，默认 false |
-| AC-2.2 | WHEN enableAnalyzer 设置为 true THEN 创建 ImageAnalyzerManager 实例管理分析功能 |
-| AC-2.3 | WHEN enableAnalyzer 变更时 THEN 通过 Pattern 成员变量（isEnableAnalyzer_）管理，无 dirty flag 自动触发 |
-| AC-2.4 | WHEN ImageAnalyzerConfig 配置 THEN 支持设置分析类型集合（types）、标签（tag）、是否显示 AI 按钮（isShowAIButton） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-2.1 | WHEN 调用 `.enableAnalyzer(value: boolean)` THEN 启用或关闭图片分析器，默认 false | 正常 |
+| AC-2.2 | WHEN enableAnalyzer 设置为 true THEN 创建 ImageAnalyzerManager 实例管理分析功能 | 正常 |
+| AC-2.3 | WHEN enableAnalyzer 变更时 THEN 通过 Pattern 成员变量（isEnableAnalyzer_）管理，无 dirty flag 自动触发 | 正常 |
+| AC-2.4 | WHEN ImageAnalyzerConfig 配置 THEN 支持设置分析类型集合（types）、标签（tag）、是否显示 AI 按钮（isShowAIButton） | 正常 |
 
 > ImageAnalyzerConfig：`interfaces/inner_api/ace/ai/image_analyzer.h:105-109`
 
@@ -67,15 +67,15 @@
 **我想要** 通过 copyOption 属性设置图片是否可复制及复制范围,
 **以便** 控制图片内容的复制行为（应用内/本地/分布式）。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-3.1 | WHEN 调用 `.copyOption(value: CopyOptions)` THEN 设置复制选项，默认 None |
-| AC-3.2 | WHEN copyOption 为 None(0) THEN 图片不可复制 |
-| AC-3.3 | WHEN copyOption 为 InApp(1) THEN 图片仅可在应用内复制 |
-| AC-3.4 | WHEN copyOption 为 Local(2) THEN 图片可在本设备内复制 |
-| AC-3.5 | WHEN copyOption 为 Distributed(3) THEN 图片支持跨设备分布式复制 |
-| AC-3.6 | WHEN 图片被隐私遮盖（obscured by placeholder）THEN 复制功能被禁用，`image_pattern.cpp:1490-1508` |
-| AC-3.7 | WHEN copyOption 变更时 THEN 通过 Pattern 成员变量（copyOption_）管理，无 dirty flag |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-3.1 | WHEN 调用 `.copyOption(value: CopyOptions)` THEN 设置复制选项，默认 None | 正常 |
+| AC-3.2 | WHEN copyOption 为 None(0) THEN 图片不可复制 | 正常 |
+| AC-3.3 | WHEN copyOption 为 InApp(1) THEN 图片仅可在应用内复制 | 正常 |
+| AC-3.4 | WHEN copyOption 为 Local(2) THEN 图片可在本设备内复制 | 正常 |
+| AC-3.5 | WHEN copyOption 为 Distributed(3) THEN 图片支持跨设备分布式复制 | 正常 |
+| AC-3.6 | WHEN 图片被隐私遮盖（obscured by placeholder）THEN 复制功能被禁用，`image_pattern.cpp:1490-1508` | 正常 |
+| AC-3.7 | WHEN copyOption 变更时 THEN 通过 Pattern 成员变量（copyOption_）管理，无 dirty flag | 正常 |
 
 > CopyOptions 枚举 4 个值（0-3），`constants.h:727-732`
 
@@ -85,13 +85,13 @@
 **我想要** 通过 syncLoad 属性控制图片加载的同步/异步模式,
 **以便** 在需要立即显示图片时使用同步加载避免闪烁。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-4.1 | WHEN 调用 `.syncLoad(value: boolean)` THEN 设置同步/异步加载模式，默认 false（异步） |
-| AC-4.2 | WHEN syncLoad 为 false THEN 图片在后台线程加载，UI 线程不阻塞 |
-| AC-4.3 | WHEN syncLoad 为 true THEN 图片在 UI 线程同步加载，PixelMap 通过 LoadPixelMapDrawableSync() 同步获取，`image_pattern.cpp:1256-1273` |
-| AC-4.4 | WHEN syncLoad 变更时 THEN 通过 Pattern 成员变量（syncLoad_）管理，传递给 ImageLoadingContext 构造函数 |
-| AC-4.5 | WHEN syncLoad 设置后对新加载生效 THEN 不影响已加载完成的图片 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-4.1 | WHEN 调用 `.syncLoad(value: boolean)` THEN 设置同步/异步加载模式，默认 false（异步） | 正常 |
+| AC-4.2 | WHEN syncLoad 为 false THEN 图片在后台线程加载，UI 线程不阻塞 | 正常 |
+| AC-4.3 | WHEN syncLoad 为 true THEN 图片在 UI 线程同步加载，PixelMap 通过 LoadPixelMapDrawableSync() 同步获取，`image_pattern.cpp:1256-1273` | 正常 |
+| AC-4.4 | WHEN syncLoad 变更时 THEN 通过 Pattern 成员变量（syncLoad_）管理，传递给 ImageLoadingContext 构造函数 | 正常 |
+| AC-4.5 | WHEN syncLoad 设置后对新加载生效 THEN 不影响已加载完成的图片 | 正常 |
 
 > `image_pattern.h:418`：`bool syncLoad_ = false`
 
@@ -101,12 +101,12 @@
 **我想要** 通过 matchTextDirection 属性让图片在 RTL 布局中自动翻转,
 **以便** 支持从右到左的语言环境下的图片显示。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-5.1 | WHEN 调用 `.matchTextDirection(value: boolean)` THEN 设置是否匹配文本方向，默认 false |
-| AC-5.2 | WHEN matchTextDirection 为 true 且当前布局为 RTL（isRightToLeft=true）THEN 图片水平翻转（flipHorizontally=true），`image_paint_method.cpp:119-120` |
-| AC-5.3 | WHEN matchTextDirection 为 false THEN 即使在 RTL 布局中图片也不翻转 |
-| AC-5.4 | WHEN matchTextDirection 变更时 THEN 触发 PROPERTY_UPDATE_RENDER |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-5.1 | WHEN 调用 `.matchTextDirection(value: boolean)` THEN 设置是否匹配文本方向，默认 false | 正常 |
+| AC-5.2 | WHEN matchTextDirection 为 true 且当前布局为 RTL（isRightToLeft=true）THEN 图片水平翻转（flipHorizontally=true），`image_paint_method.cpp:119-120` | 正常 |
+| AC-5.3 | WHEN matchTextDirection 为 false THEN 即使在 RTL 布局中图片也不翻转 | 正常 |
+| AC-5.4 | WHEN matchTextDirection 变更时 THEN 触发 PROPERTY_UPDATE_RENDER | 正常 |
 
 > RenderProperty 存储：`image_render_property.h:74`
 
@@ -116,11 +116,11 @@
 **我想要** 通过 supportSvg2 属性启用 SVG2 规范支持,
 **以便** 使用 SVG2 的新特性和元素。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-6.1 | WHEN 调用 `.supportSvg2(value: boolean)` THEN 启用或关闭 SVG2 支持，默认 false |
-| AC-6.2 | WHEN supportSvg2 为 true THEN 传递给 ImageLoadingContext（loadingCtx_->SetSupportSvg2(true)），`image_pattern.cpp:1113` |
-| AC-6.3 | WHEN supportSvg2 变更时 THEN 通过 Pattern 成员变量（supportSvg2_）管理，无 dirty flag |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-6.1 | WHEN 调用 `.supportSvg2(value: boolean)` THEN 启用或关闭 SVG2 支持，默认 false | 正常 |
+| AC-6.2 | WHEN supportSvg2 为 true THEN 传递给 ImageLoadingContext（loadingCtx_->SetSupportSvg2(true)），`image_pattern.cpp:1113` | 正常 |
+| AC-6.3 | WHEN supportSvg2 变更时 THEN 通过 Pattern 成员变量（supportSvg2_）管理，无 dirty flag | 正常 |
 
 > `image_pattern.h:444`：`bool supportSvg2_ = false`
 
@@ -130,12 +130,12 @@
 **我想要** 通过 privacySensitive 属性标记图片为隐私敏感内容,
 **以便** 在安全显示模式下自动对图片应用模糊遮盖效果。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-7.1 | WHEN 调用 `.privacySensitive(value: boolean)` THEN 设置隐私敏感标记 |
-| AC-7.2 | WHEN privacySensitive 为 true 且 isSensitive 为 true THEN 对图片应用模糊背景效果（radius=IMAGE_SENSITIVE_RADIUS, saturation=IMAGE_SENSITIVE_SATURATION, brightness=IMAGE_SENSITIVE_BRIGHTNESS），`image_pattern.cpp:2716-2738` |
-| AC-7.3 | WHEN privacySensitive 为 false THEN 不应用隐私遮盖效果 |
-| AC-7.4 | WHEN privacySensitive 属性 THEN 实际存储在 FrameNode 上（host->IsPrivacySensitive()），非 Image 专属属性 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-7.1 | WHEN 调用 `.privacySensitive(value: boolean)` THEN 设置隐私敏感标记 | 正常 |
+| AC-7.2 | WHEN privacySensitive 为 true 且 isSensitive 为 true THEN 对图片应用模糊背景效果（radius=IMAGE_SENSITIVE_RADIUS, saturation=IMAGE_SENSITIVE_SATURATION, brightness=IMAGE_SENSITIVE_BRIGHTNESS），`image_pattern.cpp:2716-2738` | 正常 |
+| AC-7.3 | WHEN privacySensitive 为 false THEN 不应用隐私遮盖效果 | 正常 |
+| AC-7.4 | WHEN privacySensitive 属性 THEN 实际存储在 FrameNode 上（host->IsPrivacySensitive()），非 Image 专属属性 | 正常 |
 
 > `image_pattern.cpp:926-931`：通过 host->IsPrivacySensitive() 读取
 
@@ -145,14 +145,14 @@
 **我想要** 通过 enhancedImageQuality 属性启用 AI 图像增强,
 **以便** 通过 AI 算法提升图片的显示质量。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-8.1 | WHEN 调用 `.enhancedImageQuality(value: ResolutionQuality)` THEN 设置 AI 图像增强级别，默认 NONE |
-| AC-8.2 | WHEN enhancedImageQuality 为 NONE(0) THEN 不启用 AI 增强（默认） |
-| AC-8.3 | WHEN enhancedImageQuality 为 LOW(1) THEN 启用低级别 AI 增强 |
-| AC-8.4 | WHEN enhancedImageQuality 为 NORMAL(2) THEN 启用中级别 AI 增强 |
-| AC-8.5 | WHEN enhancedImageQuality 为 HIGH(3) THEN 启用高级别 AI 增强 |
-| AC-8.6 | WHEN enhancedImageQuality 设置后 THEN 传递给 ImageLoadingContext（loadingCtx_->SetImageQuality()），影响解码质量选择，`image_pattern.cpp:862` |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-8.1 | WHEN 调用 `.enhancedImageQuality(value: ResolutionQuality)` THEN 设置 AI 图像增强级别，默认 NONE | 正常 |
+| AC-8.2 | WHEN enhancedImageQuality 为 NONE(0) THEN 不启用 AI 增强（默认） | 正常 |
+| AC-8.3 | WHEN enhancedImageQuality 为 LOW(1) THEN 启用低级别 AI 增强 | 正常 |
+| AC-8.4 | WHEN enhancedImageQuality 为 NORMAL(2) THEN 启用中级别 AI 增强 | 正常 |
+| AC-8.5 | WHEN enhancedImageQuality 为 HIGH(3) THEN 启用高级别 AI 增强 | 正常 |
+| AC-8.6 | WHEN enhancedImageQuality 设置后 THEN 传递给 ImageLoadingContext（loadingCtx_->SetImageQuality()），影响解码质量选择，`image_pattern.cpp:862` | 正常 |
 
 > AIImageQuality 枚举 4 个值（0-3），`constants.h:374-379`。属性名在 API 层为 enhancedImageQuality/ResolutionQuality，内部实现为 AIImageQuality。
 
@@ -160,7 +160,7 @@
 
 ## 验收追溯
 
-| AC ID | 关联规则 | 关联 Task | 验证方式 | 证据 |
+| AC编号 | 关联规则 | 关联 Task | 验证方式 | 证据 |
 |-------|----------|-----------|----------|------|
 | AC-1.1~1.6 | R-4, R-12 | — | 代码审查 | `image_resizable_slice.h:36-63` |
 | AC-2.1~2.4 | R-5 | — | 代码审查 | `image_analyzer.h:105-109` |

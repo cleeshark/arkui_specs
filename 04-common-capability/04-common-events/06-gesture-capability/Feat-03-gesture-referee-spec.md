@@ -39,14 +39,14 @@
 **我想要** 通过 GestureReferee 在多个竞争的手势识别器中做出唯一判定,
 **以便** 同一触摸事件序列中仅一个手势最终获胜。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-1.1 | WHEN 识别器调用 `Adjudicate(recognizer, ACCEPT)` THEN Referee 检查所有 scope 是否需要阻塞该识别器；若无阻塞则调用 `AboutToAccept()` 并通知所有 scope 执行 `OnAcceptGesture()` |
-| AC-1.2 | WHEN `OnAcceptGesture()` 在 scope 中执行 THEN 接受的识别器被标记为 SUCCEED，同一 scope 内所有其他识别器被 `OnRejected()`（winner-takes-all） |
-| AC-1.3 | WHEN 识别器调用 `Adjudicate(recognizer, REJECT)` 且该识别器之前为 PENDING 状态 THEN Referee 搜索所有 scope 寻找被阻塞的识别器进行解除阻塞 |
-| AC-1.4 | WHEN 识别器调用 `Adjudicate(recognizer, PENDING)` THEN Referee 检查所有 scope 的阻塞条件；若无阻塞则调用 `OnPending()` |
-| AC-1.5 | WHEN 识别器已被标记为 FAIL 状态 THEN `HandleRejectDisposal` 直接返回，不做处理 |
-| AC-1.6 | WHEN 识别器已被标记为 SUCCEED 状态 THEN `HandleAcceptDisposal` 直接返回，不做处理 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-1.1 | WHEN 识别器调用 `Adjudicate(recognizer, ACCEPT)` THEN Referee 检查所有 scope 是否需要阻塞该识别器；若无阻塞则调用 `AboutToAccept()` 并通知所有 scope 执行 `OnAcceptGesture()` | 正常 |
+| AC-1.2 | WHEN `OnAcceptGesture()` 在 scope 中执行 THEN 接受的识别器被标记为 SUCCEED，同一 scope 内所有其他识别器被 `OnRejected()`（winner-takes-all） | 正常 |
+| AC-1.3 | WHEN 识别器调用 `Adjudicate(recognizer, REJECT)` 且该识别器之前为 PENDING 状态 THEN Referee 搜索所有 scope 寻找被阻塞的识别器进行解除阻塞 | 异常 |
+| AC-1.4 | WHEN 识别器调用 `Adjudicate(recognizer, PENDING)` THEN Referee 检查所有 scope 的阻塞条件；若无阻塞则调用 `OnPending()` | 正常 |
+| AC-1.5 | WHEN 识别器已被标记为 FAIL 状态 THEN `HandleRejectDisposal` 直接返回，不做处理 | 正常 |
+| AC-1.6 | WHEN 识别器已被标记为 SUCCEED 状态 THEN `HandleAcceptDisposal` 直接返回，不做处理 | 正常 |
 
 ### US-2: GestureScope 管理
 
@@ -54,13 +54,13 @@
 **我想要** 通过 GestureScope 为每个 touchId 维护独立的竞争识别器集合,
 **以便** 多指触摸时各手指的手势判定互不干扰。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-2.1 | WHEN EventManager 调用 `AddGestureToScope(touchId, result)` THEN 为该 touchId 创建或复用 GestureScope，将 hit test 结果中的识别器加入 scope |
-| AC-2.2 | WHEN `AddMember()` 发现识别器已存在于 scope THEN 跳过不重复添加（Existed() 检查） |
-| AC-2.3 | WHEN 触摸事件为 UP 或 CANCEL THEN EventManager 调用 `CleanGestureScope(touchId)` 关闭并移除该 scope |
-| AC-2.4 | WHEN scope 关闭时仍有 PENDING 状态的识别器 THEN 设置 `isDelay_=true`（延迟关闭），不立即移除 scope |
-| AC-2.5 | WHEN 多指触摸 THEN 每个 fingerId 对应独立的 GestureScope，各自维护 `recognizers_` 列表和 `hasGestureAccepted_` 标记 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-2.1 | WHEN EventManager 调用 `AddGestureToScope(touchId, result)` THEN 为该 touchId 创建或复用 GestureScope，将 hit test 结果中的识别器加入 scope | 正常 |
+| AC-2.2 | WHEN `AddMember()` 发现识别器已存在于 scope THEN 跳过不重复添加（Existed() 检查） | 正常 |
+| AC-2.3 | WHEN 触摸事件为 UP 或 CANCEL THEN EventManager 调用 `CleanGestureScope(touchId)` 关闭并移除该 scope | 正常 |
+| AC-2.4 | WHEN scope 关闭时仍有 PENDING 状态的识别器 THEN 设置 `isDelay_=true`（延迟关闭），不立即移除 scope | 正常 |
+| AC-2.5 | WHEN 多指触摸 THEN 每个 fingerId 对应独立的 GestureScope，各自维护 `recognizers_` 列表和 `hasGestureAccepted_` 标记 | 正常 |
 
 ### US-3: 阻塞判定（CheckNeedBlocked）
 
@@ -68,13 +68,13 @@
 **我想要** 通过 CheckNeedBlocked 决定识别器是否应被阻塞,
 **以便** 仅一个识别器可以进入 PENDING 或 SUCCEED 状态。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-3.1 | WHEN scope 中已有其他识别器处于 PENDING 状态 THEN 后续请求 ACCEPT/PENDING 的识别器被阻塞（返回 true） |
-| AC-3.2 | WHEN scope 中无 PENDING 状态的识别器 THEN 不阻塞（返回 false） |
-| AC-3.3 | WHEN 被检查的识别器与 PENDING 识别器处于同一 GestureGroup 层级 THEN 不阻塞（通过 gestureGroup_ 链向上遍历判定） |
-| AC-3.4 | WHEN Referee 处理 ACCEPT/PENDING 时 THEN 遍历所有 scope 检查阻塞条件（跨 scope 检查） |
-| AC-3.5 | WHEN 识别器被阻塞 THEN 调用 `OnBlocked()` 进入 PENDING_BLOCKED 或 SUCCEED_BLOCKED 状态 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-3.1 | WHEN scope 中已有其他识别器处于 PENDING 状态 THEN 后续请求 ACCEPT/PENDING 的识别器被阻塞（返回 true） | 正常 |
+| AC-3.2 | WHEN scope 中无 PENDING 状态的识别器 THEN 不阻塞（返回 false） | 正常 |
+| AC-3.3 | WHEN 被检查的识别器与 PENDING 识别器处于同一 GestureGroup 层级 THEN 不阻塞（通过 gestureGroup_ 链向上遍历判定） | 正常 |
+| AC-3.4 | WHEN Referee 处理 ACCEPT/PENDING 时 THEN 遍历所有 scope 检查阻塞条件（跨 scope 检查） | 正常 |
+| AC-3.5 | WHEN 识别器被阻塞 THEN 调用 `OnBlocked()` 进入 PENDING_BLOCKED 或 SUCCEED_BLOCKED 状态 | 正常 |
 
 ### US-4: 解除阻塞（UnBlockGesture）
 
@@ -82,12 +82,12 @@
 **我想要** 当 PENDING 识别器被拒绝后解除等待中的阻塞识别器,
 **以便** 其他识别器有机会继续竞争。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-4.1 | WHEN PENDING 识别器被 REJECT THEN Referee 搜索所有 scope 查找 PENDING_BLOCKED 或 SUCCEED_BLOCKED 的识别器 |
-| AC-4.2 | WHEN 找到 PENDING_BLOCKED 识别器 THEN 调用 `OnPending()` 将其转为 PENDING |
-| AC-4.3 | WHEN 找到 SUCCEED_BLOCKED 识别器 THEN 调用 `AboutToAccept()` 并通知所有 scope 执行 `OnAcceptGesture()` |
-| AC-4.4 | WHEN 所有 scope 中无可解除阻塞的识别器 THEN 不做额外操作 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-4.1 | WHEN PENDING 识别器被 REJECT THEN Referee 搜索所有 scope 查找 PENDING_BLOCKED 或 SUCCEED_BLOCKED 的识别器 | 异常 |
+| AC-4.2 | WHEN 找到 PENDING_BLOCKED 识别器 THEN 调用 `OnPending()` 将其转为 PENDING | 正常 |
+| AC-4.3 | WHEN 找到 SUCCEED_BLOCKED 识别器 THEN 调用 `AboutToAccept()` 并通知所有 scope 执行 `OnAcceptGesture()` | 正常 |
+| AC-4.4 | WHEN 所有 scope 中无可解除阻塞的识别器 THEN 不做额外操作 | 正常 |
 
 ### US-5: BatchAdjudicate 分层路由
 
@@ -95,11 +95,11 @@
 **我想要** 识别器的仲裁请求先经过父 Group 再到达 Referee,
 **以便** GestureGroup 内部的仲裁由 Group 自行处理。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-5.1 | WHEN 识别器属于某个 GestureGroup（eventImportGestureGroup_ 或 gestureGroup_ 有效）THEN `BatchAdjudicate` 将仲裁请求路由给父 Group |
-| AC-5.2 | WHEN 识别器无父 Group（根级识别器）THEN `BatchAdjudicate` 获取 `GetCurrentGestureReferee()` 将仲裁请求路由给 GestureReferee |
-| AC-5.3 | WHEN 无可用 referee THEN `BatchAdjudicate` 直接调用 `OnRejected()` 拒绝该识别器 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-5.1 | WHEN 识别器属于某个 GestureGroup（eventImportGestureGroup_ 或 gestureGroup_ 有效）THEN `BatchAdjudicate` 将仲裁请求路由给父 Group | 正常 |
+| AC-5.2 | WHEN 识别器无父 Group（根级识别器）THEN `BatchAdjudicate` 获取 `GetCurrentGestureReferee()` 将仲裁请求路由给 GestureReferee | 正常 |
+| AC-5.3 | WHEN 无可用 referee THEN `BatchAdjudicate` 直接调用 `OnRejected()` 拒绝该识别器 | 正常 |
 
 ### US-6: Delay 延迟接受机制
 
@@ -107,11 +107,11 @@
 **我想要** 通过 RecognizerDelayStatus 延迟内嵌容器中手势的接受判定,
 **以便** 外层容器有机会优先处理手势。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-6.1 | WHEN `recognizerDelayStatus_==START` 且识别器位于内嵌容器中 THEN `HandleAcceptDisposal` 不立即接受，存储到 `delayRecognizer_` |
-| AC-6.2 | WHEN `SetRecognizerDelayStatus(END)` 被调用 THEN 执行 `RecallOnAcceptGesture()` 处理延迟的识别器 |
-| AC-6.3 | WHEN delay 状态为 START 且无内嵌容器识别器请求接受 THEN 正常处理外部识别器的接受请求 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-6.1 | WHEN `recognizerDelayStatus_==START` 且识别器位于内嵌容器中 THEN `HandleAcceptDisposal` 不立即接受，存储到 `delayRecognizer_` | 正常 |
+| AC-6.2 | WHEN `SetRecognizerDelayStatus(END)` 被调用 THEN 执行 `RecallOnAcceptGesture()` 处理延迟的识别器 | 正常 |
+| AC-6.3 | WHEN delay 状态为 START 且无内嵌容器识别器请求接受 THEN 正常处理外部识别器的接受请求 | 正常 |
 
 ### US-7: Bridge Mode
 
@@ -119,11 +119,11 @@
 **我想要** 某些识别器以 Bridge Mode 运行,
 **以便** 它们不参与正常竞争且不会被其他手势获胜时拒绝。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-7.1 | WHEN `OnAcceptGesture()` 在 scope 中拒绝其他识别器 THEN 跳过 Bridge Mode 的识别器（不调用 OnRejected） |
-| AC-7.2 | WHEN 识别器处于 Bridge Mode THEN `HandleEvent()` 中直接返回 true，不处理触摸事件 |
-| AC-7.3 | WHEN 识别器设置 Bridge Mode THEN `bridgeMode_` 标志为 true |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-7.1 | WHEN `OnAcceptGesture()` 在 scope 中拒绝其他识别器 THEN 跳过 Bridge Mode 的识别器（不调用 OnRejected） | 正常 |
+| AC-7.2 | WHEN 识别器处于 Bridge Mode THEN `HandleEvent()` 中直接返回 true，不处理触摸事件 | 正常 |
+| AC-7.3 | WHEN 识别器设置 Bridge Mode THEN `bridgeMode_` 标志为 true | 正常 |
 
 ---
 

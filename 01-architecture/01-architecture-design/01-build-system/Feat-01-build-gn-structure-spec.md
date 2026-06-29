@@ -67,59 +67,59 @@
 
 作为 ArkUI 构建维护者，我想要明确 ace_engine 平台列表和全局编译配置的来源，以便新增平台或调整编译开关时能定位正确入口。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-1.1 | WHEN 读取 ace_engine 平台列表 THEN 应能追溯到 `ace_config.gni` 中 `ace_platforms` 初始化、adapter 扫描、`platform.gni` 导入和 ArkUI-X 过滤流程，证据为 `ace_config.gni:336-353` |
-| AC-1.2 | WHEN 读取全局编译配置 THEN 应能追溯到顶层 `BUILD.gn` 的 `ace_config`、`ace_test_config`、`ace_coverage_config`，证据为 `BUILD.gn:18-121`、`BUILD.gn:123-186` |
-| AC-1.3 | WHEN 判断 part/subsystem THEN 应使用 `ace_config.gni` 中的 `ace_engine_subsystem` 和 `ace_engine_part` 定义，证据为 `ace_config.gni:186-202` |
-| AC-1.4 | WHEN 从产品构建命令追溯到 ace_engine 构建图 THEN 应能识别 OpenHarmony 根 `build.sh` 的源码根定位、prebuilts 环境配置和 hb build 调用，证据为 `<OH_ROOT>/build.sh:47-55`、`<OH_ROOT>/build.sh:100-123`、`<OH_ROOT>/build.sh:208-214` |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-1.1 | WHEN 读取 ace_engine 平台列表 THEN 应能追溯到 `ace_config.gni` 中 `ace_platforms` 初始化、adapter 扫描、`platform.gni` 导入和 ArkUI-X 过滤流程，证据为 `ace_config.gni:336-353` | 正常 |
+| AC-1.2 | WHEN 读取全局编译配置 THEN 应能追溯到顶层 `BUILD.gn` 的 `ace_config`、`ace_test_config`、`ace_coverage_config`，证据为 `BUILD.gn:18-121`、`BUILD.gn:123-186` | 正常 |
+| AC-1.3 | WHEN 判断 part/subsystem THEN 应使用 `ace_config.gni` 中的 `ace_engine_subsystem` 和 `ace_engine_part` 定义，证据为 `ace_config.gni:186-202` | 正常 |
+| AC-1.4 | WHEN 从产品构建命令追溯到 ace_engine 构建图 THEN 应能识别 OpenHarmony 根 `build.sh` 的源码根定位、prebuilts 环境配置和 hb build 调用，证据为 `<OH_ROOT>/build.sh:47-55`、`<OH_ROOT>/build.sh:100-123`、`<OH_ROOT>/build.sh:208-214` | 正常 |
 
 ### US-2: 识别主库和框架聚合关系
 
 作为 ArkUI 构建维护者，我想要明确 `libace_compatible`、`libace`、`libace_static_*` 与 base/core/bridge 的依赖关系，以便定位主库构建失败或平台差异。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-2.1 | WHEN 读取主库构建入口 THEN `build/BUILD.gn` 应按 `ace_platforms` 为每个平台实例化 `libace_static_<platform>`，证据为 `build/BUILD.gn:20-37` |
-| AC-2.2 | WHEN 读取 OHOS 分离引擎库 THEN 仅 `current_os == "ohos"` 分支生成 `libace_engine_*`、debug engine、declarative engine 和 PA engine，证据为 `build/BUILD.gn:40-82` |
-| AC-2.3 | WHEN 读取 `libace_static` THEN 应看到固定 base 依赖，并按 `ohos_ng/is_arkui_x` 选择 NG bridge/core 或旧 bridge/core，证据为 `build/ace_lib.gni:32-75` |
-| AC-2.4 | WHEN 读取共享库输出 THEN `libace_compatible` 依赖 `libace_static_ohos`，可选 `libace` 依赖 `libace_static_ohos_ng`，证据为 `build/BUILD.gn:142-184`、`build/BUILD.gn:201-228` |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-2.1 | WHEN 读取主库构建入口 THEN `build/BUILD.gn` 应按 `ace_platforms` 为每个平台实例化 `libace_static_<platform>`，证据为 `build/BUILD.gn:20-37` | 正常 |
+| AC-2.2 | WHEN 读取 OHOS 分离引擎库 THEN 仅 `current_os == "ohos"` 分支生成 `libace_engine_*`、debug engine、declarative engine 和 PA engine，证据为 `build/BUILD.gn:40-82` | 正常 |
+| AC-2.3 | WHEN 读取 `libace_static` THEN 应看到固定 base 依赖，并按 `ohos_ng/is_arkui_x` 选择 NG bridge/core 或旧 bridge/core，证据为 `build/ace_lib.gni:32-75` | 正常 |
+| AC-2.4 | WHEN 读取共享库输出 THEN `libace_compatible` 依赖 `libace_static_ohos`，可选 `libace` 依赖 `libace_static_ohos_ng`，证据为 `build/BUILD.gn:142-184`、`build/BUILD.gn:201-228` | 正常 |
 
 ### US-3: 识别前端桥接和生成物依赖
 
 作为 ArkUI 前端构建维护者，我想要明确 declarative、ArkTS static、JS 资源和 ABC 生成物如何进入 GN 图，以便修改生成链时不破坏增量构建。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-3.1 | WHEN 读取 bridge 构建入口 THEN 应能区分旧 bridge 和 NG bridge 模板及其依赖，证据为 `frameworks/bridge/BUILD.gn:18-56`、`frameworks/bridge/BUILD.gn:60-91` |
-| AC-3.2 | WHEN 读取 declarative 前端构建 THEN 应能看到 NG/旧 frontend source 的选择和 JS 资源 `action`/`gen_obj` 链，证据为 `frameworks/bridge/declarative_frontend/BUILD.gn:24-82`、`frameworks/bridge/declarative_frontend/BUILD.gn:111-187` |
-| AC-3.3 | WHEN 读取 static ArkTS 生成链 THEN 应能看到 SDK patch、generation.py、`idlize_gen`、`components_compile_abc` 和 `components_abc` 的依赖，证据为 `frameworks/bridge/arkts_frontend/arkoala_generator/BUILD.gn:70-143`、`frameworks/bridge/arkts_frontend/arkoala_generator/BUILD.gn:181-185`、`frameworks/bridge/arkts_frontend/koala_projects/arkoala-arkts/BUILD.gn:176-195` |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-3.1 | WHEN 读取 bridge 构建入口 THEN 应能区分旧 bridge 和 NG bridge 模板及其依赖，证据为 `frameworks/bridge/BUILD.gn:18-56`、`frameworks/bridge/BUILD.gn:60-91` | 正常 |
+| AC-3.2 | WHEN 读取 declarative 前端构建 THEN 应能看到 NG/旧 frontend source 的选择和 JS 资源 `action`/`gen_obj` 链，证据为 `frameworks/bridge/declarative_frontend/BUILD.gn:24-82`、`frameworks/bridge/declarative_frontend/BUILD.gn:111-187` | 正常 |
+| AC-3.3 | WHEN 读取 static ArkTS 生成链 THEN 应能看到 SDK patch、generation.py、`idlize_gen`、`components_compile_abc` 和 `components_abc` 的依赖，证据为 `frameworks/bridge/arkts_frontend/arkoala_generator/BUILD.gn:70-143`、`frameworks/bridge/arkts_frontend/arkoala_generator/BUILD.gn:181-185`、`frameworks/bridge/arkts_frontend/koala_projects/arkoala-arkts/BUILD.gn:176-195` | 正常 |
 
 ### US-4: 识别接口、扩展组件和验证入口
 
 作为 ArkUI 发布和测试维护者，我想要明确 NDK/NAPI/ANI、扩展组件、单测和 benchmark 如何挂到构建图，以便检查产物缺失或测试目标缺失。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-4.1 | WHEN 读取接口包构建 THEN 应能区分 NDK `ace_ndk`、NAPI `napi_group`、ANI `ace_ani_package`，证据为 `interfaces/native/BUILD.gn:17-30`、`interfaces/native/BUILD.gn:37-155`、`interfaces/napi/kits/BUILD.gn:53-101`、`interfaces/ets/BUILD.gn:18-59` |
-| AC-4.2 | WHEN 读取扩展组件构建 THEN 应能定位高级组件 group 和 component_ext group，证据为 `advanced_ui_component/BUILD.gn:42-89`、`component_ext/BUILD.gn:14-22` |
-| AC-4.3 | WHEN 读取验证 target THEN 应能定位 `unittest`、`linux_unittest_capi`、`run_linux_unittest_capi`、`benchmark`、`benchmark_linux`，证据为 `test/unittest/BUILD.gn:20-68`、`test/benchmark/BUILD.gn:17-40` |
-| AC-4.4 | WHEN 读取部件入口 THEN 应能在 `bundle.json` 中定位 `fwk_group`、`service_group` 和 `inner_kits`，证据为 `bundle.json:137-220` |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-4.1 | WHEN 读取接口包构建 THEN 应能区分 NDK `ace_ndk`、NAPI `napi_group`、ANI `ace_ani_package`，证据为 `interfaces/native/BUILD.gn:17-30`、`interfaces/native/BUILD.gn:37-155`、`interfaces/napi/kits/BUILD.gn:53-101`、`interfaces/ets/BUILD.gn:18-59` | 正常 |
+| AC-4.2 | WHEN 读取扩展组件构建 THEN 应能定位高级组件 group 和 component_ext group，证据为 `advanced_ui_component/BUILD.gn:42-89`、`component_ext/BUILD.gn:14-22` | 正常 |
+| AC-4.3 | WHEN 读取验证 target THEN 应能定位 `unittest`、`linux_unittest_capi`、`run_linux_unittest_capi`、`benchmark`、`benchmark_linux`，证据为 `test/unittest/BUILD.gn:20-68`、`test/benchmark/BUILD.gn:17-40` | 正常 |
+| AC-4.4 | WHEN 读取部件入口 THEN 应能在 `bundle.json` 中定位 `fwk_group`、`service_group` 和 `inner_kits`，证据为 `bundle.json:137-220` | 正常 |
 
 ### US-5: 识别 ArkUI-X adapter 参考构建
 
 作为 ArkUI-X 构建维护者，我想要明确 Android/iOS adapter 如何接入 ace_engine 构建图并输出平台产物，以便分析跨平台构建差异时不会只依据 OpenHarmony 仓内 adapter 下结论。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-5.1 | WHEN 读取 ArkUI-X 平台发现 THEN 应能看到 Android/iOS adapter 仅在对应 `target_os` 下声明平台，并通过 `cross_platform_support = true` 接入 ArkUI-X `ace_platforms`，证据为 `<ARKUI_X_ROOT>/foundation/arkui/ace_engine/ace_config.gni:332-354`、`<ARKUI_X_ROOT>/foundation/arkui/ace_engine/adapter/android/build/platform.gni:16-28`、`<ARKUI_X_ROOT>/foundation/arkui/ace_engine/adapter/ios/build/platform.gni:16-28` |
-| AC-5.2 | WHEN 读取 ArkUI-X 平台 config THEN Android config 应声明 `ANDROID_PLATFORM`、`NG_BUILD`、`SK_BUILD_FOR_ANDROID`、`CROSS_PLATFORM` 并指向 `adapter/android/build:libarkui_android`；iOS config 应声明 `IOS_PLATFORM`、`NG_BUILD`、`PANDA_TARGET_IOS`、`SK_BUILD_FOR_IOS`、`CROSS_PLATFORM` 并指向 `adapter/ios/build:arkui_ios`，证据为 `<ARKUI_X_ROOT>/foundation/arkui/ace_engine/adapter/android/build/config.gni:14-64`、`<ARKUI_X_ROOT>/foundation/arkui/ace_engine/adapter/ios/build/config.gni:14-80` |
-| AC-5.3 | WHEN 读取 ArkUI-X 主产物 THEN Android 应能定位 `libarkui_android` 对 `libace_static_android`、`ace_kit`、`ace_static_ndk` 等依赖，iOS 应能定位 `arkui_ios` 和组合后的 `libarkui_ios.framework`，证据为 `<ARKUI_X_ROOT>/foundation/arkui/ace_engine/adapter/android/build/BUILD.gn:25-55`、`<ARKUI_X_ROOT>/foundation/arkui/ace_engine/adapter/ios/build/BUILD.gn:26-97` |
-| AC-5.4 | WHEN 读取跨平台组件库 THEN 应能区分 OHOS `libarkui_*`、ArkUI-X Android `arkui_*` shared library 和 ArkUI-X iOS `libarkui_*.framework` 的产物形态，证据为 `adapter/ohos/build/BUILD.gn:18-78`、`<ARKUI_X_ROOT>/foundation/arkui/ace_engine/adapter/android/build/BUILD.gn:140-202`、`<ARKUI_X_ROOT>/foundation/arkui/ace_engine/adapter/ios/build/BUILD.gn:256-320` |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-5.1 | WHEN 读取 ArkUI-X 平台发现 THEN 应能看到 Android/iOS adapter 仅在对应 `target_os` 下声明平台，并通过 `cross_platform_support = true` 接入 ArkUI-X `ace_platforms`，证据为 `<ARKUI_X_ROOT>/foundation/arkui/ace_engine/ace_config.gni:332-354`、`<ARKUI_X_ROOT>/foundation/arkui/ace_engine/adapter/android/build/platform.gni:16-28`、`<ARKUI_X_ROOT>/foundation/arkui/ace_engine/adapter/ios/build/platform.gni:16-28` | 正常 |
+| AC-5.2 | WHEN 读取 ArkUI-X 平台 config THEN Android config 应声明 `ANDROID_PLATFORM`、`NG_BUILD`、`SK_BUILD_FOR_ANDROID`、`CROSS_PLATFORM` 并指向 `adapter/android/build:libarkui_android`；iOS config 应声明 `IOS_PLATFORM`、`NG_BUILD`、`PANDA_TARGET_IOS`、`SK_BUILD_FOR_IOS`、`CROSS_PLATFORM` 并指向 `adapter/ios/build:arkui_ios`，证据为 `<ARKUI_X_ROOT>/foundation/arkui/ace_engine/adapter/android/build/config.gni:14-64`、`<ARKUI_X_ROOT>/foundation/arkui/ace_engine/adapter/ios/build/config.gni:14-80` | 正常 |
+| AC-5.3 | WHEN 读取 ArkUI-X 主产物 THEN Android 应能定位 `libarkui_android` 对 `libace_static_android`、`ace_kit`、`ace_static_ndk` 等依赖，iOS 应能定位 `arkui_ios` 和组合后的 `libarkui_ios.framework`，证据为 `<ARKUI_X_ROOT>/foundation/arkui/ace_engine/adapter/android/build/BUILD.gn:25-55`、`<ARKUI_X_ROOT>/foundation/arkui/ace_engine/adapter/ios/build/BUILD.gn:26-97` | 正常 |
+| AC-5.4 | WHEN 读取跨平台组件库 THEN 应能区分 OHOS `libarkui_*`、ArkUI-X Android `arkui_*` shared library 和 ArkUI-X iOS `libarkui_*.framework` 的产物形态，证据为 `adapter/ohos/build/BUILD.gn:18-78`、`<ARKUI_X_ROOT>/foundation/arkui/ace_engine/adapter/android/build/BUILD.gn:140-202`、`<ARKUI_X_ROOT>/foundation/arkui/ace_engine/adapter/ios/build/BUILD.gn:256-320` | 正常 |
 
 ## 验收追溯
 
-| AC ID | 关联规则 | 关联 Task | 验证方式 | 证据 |
+| AC编号 | 关联规则 | 关联 Task | 验证方式 | 证据 |
 |-------|----------|-----------|----------|------|
 | AC-1.1 | R-1, R-7 | TASK-BUILD-STRUCTURE-1 | 源码审查 | `ace_config.gni:336-353` |
 | AC-1.2 | R-1, R-8 | TASK-BUILD-STRUCTURE-1 | 源码审查 | `BUILD.gn:18-186` |

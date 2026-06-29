@@ -35,14 +35,14 @@
 **我想要** 通过 .flexGrow() 设置子组件在父容器剩余空间中的分配比例,
 **以便** 实现弹性布局中子组件按比例占满剩余空间。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-1.1 | WHEN 调用 `.flexGrow(value: number)` 设置正值 THEN 子组件在主轴剩余空间中按 value 占 totalGrow 的比例获得额外尺寸 |
-| AC-1.2 | WHEN value = 0（默认值）THEN 子组件不参与剩余空间分配，按自身内容尺寸布局 |
-| AC-1.3 | WHEN value 为负数 THEN JS 桥接层将 value Clamp 到 0，等效于 flexGrow(0) |
-| AC-1.4 | WHEN value 为 undefined 或 null THEN flexGrow 被设为 0.0（默认值） |
-| AC-1.5 | WHEN 多个子组件同时设置 flexGrow THEN 剩余空间 = 主轴总尺寸 - 所有子组件主轴尺寸之和，每个子组件获得 `remainSpace × (flexGrow / totalGrow)` 的额外空间 |
-| AC-1.6 | WHEN flexGrow 与 layoutWeight 同时存在且 totalFlexWeight > 0 THEN layoutWeight 模式优先，flexGrow 不生效（互斥优先级） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-1.1 | WHEN 调用 `.flexGrow(value: number)` 设置正值 THEN 子组件在主轴剩余空间中按 value 占 totalGrow 的比例获得额外尺寸 | 正常 |
+| AC-1.2 | WHEN value = 0（默认值）THEN 子组件不参与剩余空间分配，按自身内容尺寸布局 | 正常 |
+| AC-1.3 | WHEN value 为负数 THEN JS 桥接层将 value Clamp 到 0，等效于 flexGrow(0) | 异常 |
+| AC-1.4 | WHEN value 为 undefined 或 null THEN flexGrow 被设为 0.0（默认值） | 异常 |
+| AC-1.5 | WHEN 多个子组件同时设置 flexGrow THEN 剩余空间 = 主轴总尺寸 - 所有子组件主轴尺寸之和，每个子组件获得 `remainSpace × (flexGrow / totalGrow)` 的额外空间 | 正常 |
+| AC-1.6 | WHEN flexGrow 与 layoutWeight 同时存在且 totalFlexWeight > 0 THEN layoutWeight 模式优先，flexGrow 不生效（互斥优先级） | 异常 |
 
 ### US-2: 按比例收缩溢出空间（flexShrink）
 
@@ -50,14 +50,14 @@
 **我想要** 通过 .flexShrink() 设置子组件在空间不足时的收缩比例,
 **以便** 防止子组件溢出父容器。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-2.1 | WHEN 调用 `.flexShrink(value: number)` 设置正值 THEN 子组件在主轴空间不足时按比例收缩：每个子组件收缩量 = `overflowSpace × (flexShrink × childMainSize) / totalShrink` |
-| AC-2.2 | WHEN 父容器为 Row/Column 且未显式设置 flexShrink THEN 默认值为 0（不收缩） |
-| AC-2.3 | WHEN 父容器为 Flex 且未显式设置 flexShrink THEN 默认值为 1（按比例收缩） |
-| AC-2.4 | WHEN value 为负数 THEN JS 桥接层调用 ResetFlexShrink() 重置属性 |
-| AC-2.5 | WHEN value 为 undefined 或 null THEN JS 桥接层调用 ResetFlexShrink() 重置属性（与 flexGrow undefined 仅设为 0 的行为不一致） |
-| AC-2.6 | WHEN flexShrink 被重置（Reset）THEN 恢复为容器默认值（Row/Column: 0, Flex: 1） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-2.1 | WHEN 调用 `.flexShrink(value: number)` 设置正值 THEN 子组件在主轴空间不足时按比例收缩：每个子组件收缩量 = `overflowSpace × (flexShrink × childMainSize) / totalShrink` | 边界 |
+| AC-2.2 | WHEN 父容器为 Row/Column 且未显式设置 flexShrink THEN 默认值为 0（不收缩） | 正常 |
+| AC-2.3 | WHEN 父容器为 Flex 且未显式设置 flexShrink THEN 默认值为 1（按比例收缩） | 正常 |
+| AC-2.4 | WHEN value 为负数 THEN JS 桥接层调用 ResetFlexShrink() 重置属性 | 异常 |
+| AC-2.5 | WHEN value 为 undefined 或 null THEN JS 桥接层调用 ResetFlexShrink() 重置属性（与 flexGrow undefined 仅设为 0 的行为不一致） | 异常 |
+| AC-2.6 | WHEN flexShrink 被重置（Reset）THEN 恢复为容器默认值（Row/Column: 0, Flex: 1） | 正常 |
 
 ### US-3: 设置主轴基础尺寸（flexBasis）
 
@@ -65,15 +65,15 @@
 **我想要** 通过 .flexBasis() 设置子组件在主轴上的初始尺寸,
 **以便** 在 grow/shrink 分配之前确定子组件的基础大小。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-3.1 | WHEN 调用 `.flexBasis(value: number)` THEN 子组件主轴初始尺寸设置为 value（单位 VP） |
-| AC-3.2 | WHEN 调用 `.flexBasis(value: string)`（如 '100px'）THEN 按对应单位解析 |
-| AC-3.3 | WHEN value 为 undefined、null 或无效类型 THEN flexBasis 设为 AUTO（由内容决定基础尺寸） |
-| AC-3.4 | WHEN value 为百分比（如 '50%'）THEN JS 桥接层和 C-API 层均将其转为 AUTO（flexBasis 不支持百分比） |
-| AC-3.5 | WHEN flexBasis 为 AUTO 或无效值 THEN 子组件使用自身内容尺寸作为主轴基础尺寸 |
-| AC-3.6 | WHEN flexBasis 为有效正值 THEN 在 FlexLayoutAlgorithm 中通过 `UpdateChildLayoutConstrainByFlexBasis` 将 flexBasis 转换为像素值并设置到 selfIdealSize 的主轴维度 |
-| AC-3.7 | WHEN 子组件为 Blank 且 Blank 的 selfIdealSize > flexBasis THEN flexBasis 不覆盖 selfIdealSize（Blank 特殊处理） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-3.1 | WHEN 调用 `.flexBasis(value: number)` THEN 子组件主轴初始尺寸设置为 value（单位 VP） | 正常 |
+| AC-3.2 | WHEN 调用 `.flexBasis(value: string)`（如 '100px'）THEN 按对应单位解析 | 正常 |
+| AC-3.3 | WHEN value 为 undefined、null 或无效类型 THEN flexBasis 设为 AUTO（由内容决定基础尺寸） | 异常 |
+| AC-3.4 | WHEN value 为百分比（如 '50%'）THEN JS 桥接层和 C-API 层均将其转为 AUTO（flexBasis 不支持百分比） | 异常 |
+| AC-3.5 | WHEN flexBasis 为 AUTO 或无效值 THEN 子组件使用自身内容尺寸作为主轴基础尺寸 | 异常 |
+| AC-3.6 | WHEN flexBasis 为有效正值 THEN 在 FlexLayoutAlgorithm 中通过 `UpdateChildLayoutConstrainByFlexBasis` 将 flexBasis 转换为像素值并设置到 selfIdealSize 的主轴维度 | 正常 |
+| AC-3.7 | WHEN 子组件为 Blank 且 Blank 的 selfIdealSize > flexBasis THEN flexBasis 不覆盖 selfIdealSize（Blank 特殊处理） | 边界 |
 
 ### US-4: 设置交叉轴对齐覆盖（alignSelf）
 
@@ -81,17 +81,17 @@
 **我想要** 通过 .alignSelf() 单独设置某个子组件在交叉轴上的对齐方式,
 **以便** 覆盖父容器设置的 alignItems 全局对齐。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-4.1 | WHEN 调用 `.alignSelf(value: ItemAlign)` THEN 该子组件的交叉轴对齐使用 alignSelf 值，而非父容器的 alignItems |
-| AC-4.2 | WHEN value 为 ItemAlign.Auto（默认值）THEN 使用父容器的交叉轴对齐设置（不覆盖） |
-| AC-4.3 | WHEN value 为 ItemAlign.Start THEN 子组件在交叉轴起始端对齐 |
-| AC-4.4 | WHEN value 为 ItemAlign.Center THEN 子组件在交叉轴居中对齐 |
-| AC-4.5 | WHEN value 为 ItemAlign.End THEN 子组件在交叉轴末尾端对齐 |
-| AC-4.6 | WHEN value 为 ItemAlign.Stretch THEN 子组件在交叉轴方向拉伸至父容器交叉轴尺寸，触发二次测量（needSecondMeasure = true） |
-| AC-4.7 | WHEN value 为 ItemAlign.Baseline THEN 子组件按基线对齐，需要收集每个子组件的 baselineDistance 计算最大基线距离，交叉轴尺寸可能因此增大 |
-| AC-4.8 | WHEN value 为 undefined、null 或无效类型 THEN alignSelf 被设为 FlexAlign::AUTO |
-| AC-4.9 | WHEN value 超出有效范围（0-8）THEN C-API 层设为 FlexAlign::AUTO（`node_common_modifier.cpp:4944-4947`）；JS 层不处理（`js_view_abstract.cpp:3374` 仅在 0-8 范围内设置） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-4.1 | WHEN 调用 `.alignSelf(value: ItemAlign)` THEN 该子组件的交叉轴对齐使用 alignSelf 值，而非父容器的 alignItems | 正常 |
+| AC-4.2 | WHEN value 为 ItemAlign.Auto（默认值）THEN 使用父容器的交叉轴对齐设置（不覆盖） | 正常 |
+| AC-4.3 | WHEN value 为 ItemAlign.Start THEN 子组件在交叉轴起始端对齐 | 正常 |
+| AC-4.4 | WHEN value 为 ItemAlign.Center THEN 子组件在交叉轴居中对齐 | 正常 |
+| AC-4.5 | WHEN value 为 ItemAlign.End THEN 子组件在交叉轴末尾端对齐 | 正常 |
+| AC-4.6 | WHEN value 为 ItemAlign.Stretch THEN 子组件在交叉轴方向拉伸至父容器交叉轴尺寸，触发二次测量（needSecondMeasure = true） | 正常 |
+| AC-4.7 | WHEN value 为 ItemAlign.Baseline THEN 子组件按基线对齐，需要收集每个子组件的 baselineDistance 计算最大基线距离，交叉轴尺寸可能因此增大 | 边界 |
+| AC-4.8 | WHEN value 为 undefined、null 或无效类型 THEN alignSelf 被设为 FlexAlign::AUTO | 异常 |
+| AC-4.9 | WHEN value 超出有效范围（0-8）THEN C-API 层设为 FlexAlign::AUTO（`node_common_modifier.cpp:4944-4947`）；JS 层不处理（`js_view_abstract.cpp:3374` 仅在 0-8 范围内设置） | 边界 |
 
 ### US-5: 按权重分配剩余空间（layoutWeight）
 
@@ -99,16 +99,16 @@
 **我想要** 通过 .layoutWeight() 设置子组件在 Row/Column/Flex 中的权重,
 **以便** 简单快速地按比例分配父容器主轴空间。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-5.1 | WHEN 调用 `.layoutWeight(value: number)` 设置正值 THEN 子组件在主轴上按权重分配剩余空间：`childSize = max(spacePerWeight × layoutWeight, 0)` |
-| AC-5.2 | WHEN value = 0（默认值）THEN 子组件不参与权重分配，按自身内容尺寸布局 |
-| AC-5.3 | WHEN value 为负数 THEN 布局算法中 `LessOrEqual(childLayoutWeight, 0.0)` 判断为 true，等效于 layoutWeight = 0 |
-| AC-5.4 | WHEN value 为 undefined THEN 继续以 value = 0.0 处理 |
-| AC-5.5 | WHEN API < 12 且 value 为 number THEN 值被解析为 int32_t（截断小数部分） |
-| AC-5.6 | WHEN API ≥ 12 且 value 为 number THEN 值被解析为 float（保留小数部分） |
-| AC-5.7 | WHEN layoutWeight 模式激活（totalFlexWeight > 0）THEN 布局算法跳过 flexGrow/flexShrink 模式，使用 weight 模式 |
-| AC-5.8 | WHEN weight 模式下子组件有 layoutWeight > 0 THEN 先测量 layoutWeight = 0 的子组件确定剩余空间，再按权重分配给 layoutWeight > 0 的子组件 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-5.1 | WHEN 调用 `.layoutWeight(value: number)` 设置正值 THEN 子组件在主轴上按权重分配剩余空间：`childSize = max(spacePerWeight × layoutWeight, 0)` | 边界 |
+| AC-5.2 | WHEN value = 0（默认值）THEN 子组件不参与权重分配，按自身内容尺寸布局 | 正常 |
+| AC-5.3 | WHEN value 为负数 THEN 布局算法中 `LessOrEqual(childLayoutWeight, 0.0)` 判断为 true，等效于 layoutWeight = 0 | 异常 |
+| AC-5.4 | WHEN value 为 undefined THEN 继续以 value = 0.0 处理 | 异常 |
+| AC-5.5 | WHEN API < 12 且 value 为 number THEN 值被解析为 int32_t（截断小数部分） | 边界 |
+| AC-5.6 | WHEN API ≥ 12 且 value 为 number THEN 值被解析为 float（保留小数部分） | 正常 |
+| AC-5.7 | WHEN layoutWeight 模式激活（totalFlexWeight > 0）THEN 布局算法跳过 flexGrow/flexShrink 模式，使用 weight 模式 | 边界 |
+| AC-5.8 | WHEN weight 模式下子组件有 layoutWeight > 0 THEN 先测量 layoutWeight = 0 的子组件确定剩余空间，再按权重分配给 layoutWeight > 0 的子组件 | 边界 |
 
 ### US-6: 设置布局显示优先级（displayPriority）
 
@@ -116,78 +116,78 @@
 **我想要** 通过 .displayPriority() 设置子组件的布局优先级,
 **以便** 在空间不足时按优先级决定哪些子组件可见、哪些被隐藏。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-6.1 | WHEN 调用 `.displayPriority(value: number)` THEN 子组件获得对应的显示优先级（内部存储为 displayIndex） |
-| AC-6.2 | WHEN 开发者从未调用 `.displayPriority()` THEN 属性为 unset（std::optional 无值），布局算法使用 `value_or(1)` 作为默认优先级（`flex_layout_algorithm.cpp:320`）。这意味着未设置 displayPriority 的子组件默认优先级为 1，不会被优先淘汰 |
-| AC-6.3 | WHEN 多个子组件有不同 displayPriority THEN 布局算法按优先级从高到低依次处理 |
-| AC-6.4 | WHEN 空间不足以容纳所有子组件 THEN 优先级较低的子组件被隐藏（SetActive(false)），frameSize 设为 {0, 0} |
-| AC-6.5 | WHEN value 为 undefined 或 null THEN API ≥ 12 时 JS 桥接层显式调用 `SetDisplayIndex(0)` 将属性设为 0（`js_view_abstract.cpp:3262-3263`），此时布局算法 `value_or(1)` 不生效，实际使用 0。**注意**：这与"从未设置"（算法 fallback 到 1）的语义不同——`displayPriority(undefined)` 使组件成为最低优先级 |
-| AC-6.6 | WHEN value 为负数 THEN 值直接传递给 SetDisplayIndex（无验证），负优先级组件与未设置（priority=1）的组件相比更容易被淘汰 |
-| AC-6.7 | WHEN displayPriority 与 layoutWeight 同时使用 THEN displayPriority 仍生效，优先级较低的子组件在 weight 分配前即被排除 |
-| AC-6.8 | WHEN 通过 C-API 调用 `ResetDisplayPriority` THEN displayIndex 被设为 0（`DEFAULT_DISPLAY_PRIORITY`，`node_common_modifier.cpp:107`），与 JS undefined 行为一致 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-6.1 | WHEN 调用 `.displayPriority(value: number)` THEN 子组件获得对应的显示优先级（内部存储为 displayIndex） | 正常 |
+| AC-6.2 | WHEN 开发者从未调用 `.displayPriority()` THEN 属性为 unset（std::optional 无值），布局算法使用 `value_or(1)` 作为默认优先级（`flex_layout_algorithm.cpp:320`）。这意味着未设置 displayPriority 的子组件默认优先级为 1，不会被优先淘汰 | 异常 |
+| AC-6.3 | WHEN 多个子组件有不同 displayPriority THEN 布局算法按优先级从高到低依次处理 | 正常 |
+| AC-6.4 | WHEN 空间不足以容纳所有子组件 THEN 优先级较低的子组件被隐藏（SetActive(false)），frameSize 设为 {0, 0} | 正常 |
+| AC-6.5 | WHEN value 为 undefined 或 null THEN API ≥ 12 时 JS 桥接层显式调用 `SetDisplayIndex(0)` 将属性设为 0（`js_view_abstract.cpp:3262-3263`），此时布局算法 `value_or(1)` 不生效，实际使用 0。**注意**：这与"从未设置"（算法 fallback 到 1）的语义不同——`displayPriority(undefined)` 使组件成为最低优先级 | 异常 |
+| AC-6.6 | WHEN value 为负数 THEN 值直接传递给 SetDisplayIndex（无验证），负优先级组件与未设置（priority=1）的组件相比更容易被淘汰 | 异常 |
+| AC-6.7 | WHEN displayPriority 与 layoutWeight 同时使用 THEN displayPriority 仍生效，优先级较低的子组件在 weight 分配前即被排除 | 正常 |
+| AC-6.8 | WHEN 通过 C-API 调用 `ResetDisplayPriority` THEN displayIndex 被设为 0（`DEFAULT_DISPLAY_PRIORITY`，`node_common_modifier.cpp:107`），与 JS undefined 行为一致 | 异常 |
 
 ---
 
 ## 验收追溯
 
-| AC ID | US ID | 关联业务规则 | 验证手段 |
+| AC编号 | US ID | 关联业务规则 | 验证手段 |
 |-------|-------|-------------|----------|
-| AC-1.1 | US-1 | R-4 | 单元测试 / XTS |
-| AC-1.2 | US-1 | R-5 | 单元测试 |
-| AC-1.3 | US-1 | R-25 | 单元测试 / XTS |
-| AC-1.4 | US-1 | R-26 | 单元测试 |
-| AC-1.5 | US-1 | R-6 | 集成测试 |
-| AC-1.6 | US-1 | R-1, ADR-F3-1 | 集成测试 |
-| AC-2.1 | US-2 | R-7 | 单元测试 / XTS |
-| AC-2.2 | US-2 | R-8, ADR-F3-2 | 单元测试 |
-| AC-2.3 | US-2 | R-8, ADR-F3-2 | 单元测试 |
-| AC-2.4 | US-2 | R-27 | 单元测试 |
-| AC-2.5 | US-2 | R-28, ADR-F3-3 | 单元测试 |
-| AC-2.6 | US-2 | R-8 | 单元测试 |
-| AC-3.1 | US-3 | R-9 | 单元测试 / XTS |
-| AC-3.2 | US-3 | R-9 | 单元测试 |
-| AC-3.3 | US-3 | R-29 | 单元测试 |
-| AC-3.4 | US-3 | R-30, ADR-F3-4 | 单元测试 |
-| AC-3.5 | US-3 | R-10 | 单元测试 |
-| AC-3.6 | US-3 | R-11 | 代码评审 |
-| AC-3.7 | US-3 | R-12 | 单元测试 |
-| AC-4.1 | US-4 | R-13 | 单元测试 / XTS |
-| AC-4.2 | US-4 | R-14 | 单元测试 |
-| AC-4.3 | US-4 | R-13 | 单元测试 |
-| AC-4.4 | US-4 | R-13 | 单元测试 |
-| AC-4.5 | US-4 | R-13 | 单元测试 |
-| AC-4.6 | US-4 | R-15, ADR-F3-5 | 集成测试 |
-| AC-4.7 | US-4 | R-16, ADR-F3-5 | 集成测试 |
-| AC-4.8 | US-4 | R-31 | 单元测试 |
-| AC-4.9 | US-4 | R-32 | 单元测试 |
-| AC-5.1 | US-5 | R-17 | 单元测试 / XTS |
-| AC-5.2 | US-5 | R-18 | 单元测试 |
-| AC-5.3 | US-5 | R-33 | 单元测试 |
-| AC-5.4 | US-5 | R-34 | 单元测试 |
-| AC-5.5 | US-5 | R-19, ADR-F3-4 | 单元测试 |
-| AC-5.6 | US-5 | R-19, ADR-F3-4 | 单元测试 |
-| AC-5.7 | US-5 | R-1, ADR-F3-1 | 集成测试 |
-| AC-5.8 | US-5 | R-20 | 集成测试 |
-| AC-6.1 | US-6 | R-21 | 单元测试 |
-| AC-6.2 | US-6 | R-21 | 单元测试 |
-| AC-6.3 | US-6 | R-22 | 集成测试 |
-| AC-6.4 | US-6 | R-23 | 集成测试 |
-| AC-6.5 | US-6 | R-35 | 单元测试 |
-| AC-6.6 | US-6 | R-37 | 单元测试 |
-| AC-6.7 | US-6 | R-24 | 集成测试 |
-| AC-6.8 | US-6 | R-21 | 单元测试 |
-| AC-1.1 | US-1 | R-4 | SpecTest HostPreview |
-| AC-1.2 | US-1 | R-5 | SpecTest HostPreview |
-| AC-1.5 | US-1 | R-6 | SpecTest HostPreview |
-| AC-2.1 | US-2 | R-7 | SpecTest HostPreview |
-| AC-2.2 | US-2 | R-8 | SpecTest HostPreview |
-| AC-2.3 | US-2 | R-8 | SpecTest HostPreview |
-| AC-3.1 | US-3 | R-9 | SpecTest HostPreview |
+| AC-1.1 || R-4 | 单元测试 / XTS | 正常 |
+| AC-1.2 || R-5 | 单元测试 | 正常 |
+| AC-1.3 || R-25 | 单元测试 / XTS | 正常 |
+| AC-1.4 || R-26 | 单元测试 | 正常 |
+| AC-1.5 || R-6 | 集成测试 | 正常 |
+| AC-1.6 || R-1, ADR-F3-1 | 集成测试 | 正常 |
+| AC-2.1 || R-7 | 单元测试 / XTS | 正常 |
+| AC-2.2 || R-8, ADR-F3-2 | 单元测试 | 正常 |
+| AC-2.3 || R-8, ADR-F3-2 | 单元测试 | 正常 |
+| AC-2.4 || R-27 | 单元测试 | 正常 |
+| AC-2.5 || R-28, ADR-F3-3 | 单元测试 | 正常 |
+| AC-2.6 || R-8 | 单元测试 | 正常 |
+| AC-3.1 || R-9 | 单元测试 / XTS | 正常 |
+| AC-3.2 || R-9 | 单元测试 | 正常 |
+| AC-3.3 || R-29 | 单元测试 | 正常 |
+| AC-3.4 || R-30, ADR-F3-4 | 单元测试 | 正常 |
+| AC-3.5 || R-10 | 单元测试 | 正常 |
+| AC-3.6 || R-11 | 代码评审 | 正常 |
+| AC-3.7 || R-12 | 单元测试 | 正常 |
+| AC-4.1 || R-13 | 单元测试 / XTS | 正常 |
+| AC-4.2 || R-14 | 单元测试 | 正常 |
+| AC-4.3 || R-13 | 单元测试 | 正常 |
+| AC-4.4 || R-13 | 单元测试 | 正常 |
+| AC-4.5 || R-13 | 单元测试 | 正常 |
+| AC-4.6 || R-15, ADR-F3-5 | 集成测试 | 正常 |
+| AC-4.7 || R-16, ADR-F3-5 | 集成测试 | 正常 |
+| AC-4.8 || R-31 | 单元测试 | 正常 |
+| AC-4.9 || R-32 | 单元测试 | 正常 |
+| AC-5.1 || R-17 | 单元测试 / XTS | 正常 |
+| AC-5.2 || R-18 | 单元测试 | 正常 |
+| AC-5.3 || R-33 | 单元测试 | 正常 |
+| AC-5.4 || R-34 | 单元测试 | 正常 |
+| AC-5.5 || R-19, ADR-F3-4 | 单元测试 | 正常 |
+| AC-5.6 || R-19, ADR-F3-4 | 单元测试 | 正常 |
+| AC-5.7 || R-1, ADR-F3-1 | 集成测试 | 正常 |
+| AC-5.8 || R-20 | 集成测试 | 正常 |
+| AC-6.1 || R-21 | 单元测试 | 正常 |
+| AC-6.2 || R-21 | 单元测试 | 正常 |
+| AC-6.3 || R-22 | 集成测试 | 正常 |
+| AC-6.4 || R-23 | 集成测试 | 正常 |
+| AC-6.5 || R-35 | 单元测试 | 正常 |
+| AC-6.6 || R-37 | 单元测试 | 正常 |
+| AC-6.7 || R-24 | 集成测试 | 正常 |
+| AC-6.8 || R-21 | 单元测试 | 正常 |
+| AC-1.1 || R-4 | SpecTest HostPreview | 正常 |
+| AC-1.2 || R-5 | SpecTest HostPreview | 正常 |
+| AC-1.5 || R-6 | SpecTest HostPreview | 正常 |
+| AC-2.1 || R-7 | SpecTest HostPreview | 正常 |
+| AC-2.2 || R-8 | SpecTest HostPreview | 正常 |
+| AC-2.3 || R-8 | SpecTest HostPreview | 正常 |
+| AC-3.1 || R-9 | SpecTest HostPreview | 正常 |
 | AC-4.1, AC-4.5 | US-4 | R-13 | SpecTest HostPreview |
-| AC-4.4 | US-4 | R-13 | SpecTest HostPreview |
-| AC-4.6 | US-4 | R-15 | SpecTest HostPreview |
-| AC-5.1 | US-5 | R-17 | SpecTest HostPreview |
+| AC-4.4 || R-13 | SpecTest HostPreview | 正常 |
+| AC-4.6 || R-15 | SpecTest HostPreview | 正常 |
+| AC-5.1 || R-17 | SpecTest HostPreview | 正常 |
 | AC-6.3, AC-6.4 | US-6 | R-22, R-23 | SpecTest HostPreview |
 
 ### SpecTest 用例追溯
@@ -262,7 +262,7 @@
 
 ## 验证映射
 
-| AC ID | 验证类型 | 验证位置/用例 |
+| AC编号 | 验证类型 | 验证位置/用例 |
 |-------|----------|--------------|
 | AC-1.1 | 单元测试 | `test/unittest/core/pattern/flex/flex_new_test_ng_second_part.cpp` (flexGrow 分配) |
 | AC-1.2 | 单元测试 | `test/unittest/core/pattern/flex/flex_new_test_ng_second_part.cpp` (flexGrow=0) |

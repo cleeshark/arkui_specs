@@ -35,13 +35,13 @@
 **我想要** 通过 fillColor 属性设置 SVG 图片的填充颜色,
 **以便** 动态改变 SVG 图标的颜色以适配主题或状态。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-1.1 | WHEN 调用 `.fillColor(value: ResourceColor)` THEN 设置 SVG 填充颜色 |
-| AC-1.2 | WHEN fillColor 设置后 THEN 同时更新 SvgFillColor 渲染属性和 ForegroundColor 渲染上下文，`image_model_ng.cpp:447-451` |
-| AC-1.3 | WHEN fillColor 变更时 THEN 触发 PROPERTY_UPDATE_RENDER |
-| AC-1.4 | WHEN fillColor 应用到 SVG THEN 通过 svgCanvas->SetFillColor() 生效，`image_content_modifier.cpp:86-103` |
-| AC-1.5 | WHEN fillColor 变更且图片为 HDR 内容 THEN 同步更新 HDR headroom，`image_content_modifier.cpp:67-84` |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-1.1 | WHEN 调用 `.fillColor(value: ResourceColor)` THEN 设置 SVG 填充颜色 | 正常 |
+| AC-1.2 | WHEN fillColor 设置后 THEN 同时更新 SvgFillColor 渲染属性和 ForegroundColor 渲染上下文，`image_model_ng.cpp:447-451` | 正常 |
+| AC-1.3 | WHEN fillColor 变更时 THEN 触发 PROPERTY_UPDATE_RENDER | 正常 |
+| AC-1.4 | WHEN fillColor 应用到 SVG THEN 通过 svgCanvas->SetFillColor() 生效，`image_content_modifier.cpp:86-103` | 正常 |
+| AC-1.5 | WHEN fillColor 变更且图片为 HDR 内容 THEN 同步更新 HDR headroom，`image_content_modifier.cpp:67-84` | 正常 |
 
 ### US-2: 设置颜色滤镜
 
@@ -49,15 +49,15 @@
 **我想要** 通过 colorFilter 属性设置颜色滤镜矩阵或 DrawingColorFilter,
 **以便** 对图片应用自定义颜色变换效果。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-2.1 | WHEN 调用 `.colorFilter(value: ColorFilter)` 传入 4x5 矩阵数组 THEN 设置颜色滤镜矩阵（20 个 float 元素的 identity 矩阵为默认） |
-| AC-2.2 | WHEN 调用 colorFilter 传入 DrawingColorFilter 对象 THEN 设置 Drawing 渲染滤镜 |
-| AC-2.3 | WHEN 设置 ColorFilter 矩阵 THEN 自动重置 DrawingColorFilter（互斥），`image_model_ng.cpp:497-501` |
-| AC-2.4 | WHEN 设置 DrawingColorFilter THEN 自动重置 ColorFilter 矩阵（互斥），`image_model_ng.cpp:503-507` |
-| AC-2.5 | WHEN 未设置 colorFilter THEN 使用默认 identity 矩阵 `{1,0,0,0,0, 0,1,0,0,0, 0,0,1,0,0, 0,0,0,1,0}`，`image_model_ng.cpp:40` |
-| AC-2.6 | WHEN colorFilter 变更时 THEN 触发 PROPERTY_UPDATE_RENDER |
-| AC-2.7 | WHEN colorFilter 应用到 SVG 且 API >= 12 THEN 通过 svgCanvas 应用颜色滤镜，`image_content_modifier.cpp:96-101` |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-2.1 | WHEN 调用 `.colorFilter(value: ColorFilter)` 传入 4x5 矩阵数组 THEN 设置颜色滤镜矩阵（20 个 float 元素的 identity 矩阵为默认） | 正常 |
+| AC-2.2 | WHEN 调用 colorFilter 传入 DrawingColorFilter 对象 THEN 设置 Drawing 渲染滤镜 | 正常 |
+| AC-2.3 | WHEN 设置 ColorFilter 矩阵 THEN 自动重置 DrawingColorFilter（互斥），`image_model_ng.cpp:497-501` | 正常 |
+| AC-2.4 | WHEN 设置 DrawingColorFilter THEN 自动重置 ColorFilter 矩阵（互斥），`image_model_ng.cpp:503-507` | 正常 |
+| AC-2.5 | WHEN 未设置 colorFilter THEN 使用默认 identity 矩阵 `{1,0,0,0,0, 0,1,0,0,0, 0,0,1,0,0, 0,0,0,1,0}`，`image_model_ng.cpp:40` | 异常 |
+| AC-2.6 | WHEN colorFilter 变更时 THEN 触发 PROPERTY_UPDATE_RENDER | 正常 |
+| AC-2.7 | WHEN colorFilter 应用到 SVG 且 API >= 12 THEN 通过 svgCanvas 应用颜色滤镜，`image_content_modifier.cpp:96-101` | 边界 |
 
 > ColorFilter 双类型（矩阵 vs DrawingColorFilter）互斥设计，见 design.md ADR 部分。
 
@@ -67,14 +67,14 @@
 **我想要** 通过 dynamicRangeMode 属性控制 HDR 图片的渲染方式,
 **以便** 在支持 HDR 的设备上获得更好的视觉效果。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-3.1 | WHEN 调用 `.dynamicRangeMode(value: DynamicRangeMode)` THEN 设置动态范围模式，默认为 STANDARD |
-| AC-3.2 | WHEN dynamicRangeMode 为 HIGH(0) THEN 使用 HDR 渲染（需要设备支持） |
-| AC-3.3 | WHEN dynamicRangeMode 为 CONSTRAINT(1) THEN 使用受限 HDR 渲染 |
-| AC-3.4 | WHEN dynamicRangeMode 为 STANDARD(2) THEN 使用标准 SDR 渲染（默认值） |
-| AC-3.5 | WHEN dynamicRangeMode 变更时 THEN 触发 PROPERTY_UPDATE_RENDER |
-| AC-3.6 | WHEN 同时设置了 hdrBrightness 且图片为 HDR PixelMap THEN dynamicRangeMode 被强制为 HIGH，`image_paint_method.cpp:134-138` |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-3.1 | WHEN 调用 `.dynamicRangeMode(value: DynamicRangeMode)` THEN 设置动态范围模式，默认为 STANDARD | 正常 |
+| AC-3.2 | WHEN dynamicRangeMode 为 HIGH(0) THEN 使用 HDR 渲染（需要设备支持） | 正常 |
+| AC-3.3 | WHEN dynamicRangeMode 为 CONSTRAINT(1) THEN 使用受限 HDR 渲染 | 正常 |
+| AC-3.4 | WHEN dynamicRangeMode 为 STANDARD(2) THEN 使用标准 SDR 渲染（默认值） | 正常 |
+| AC-3.5 | WHEN dynamicRangeMode 变更时 THEN 触发 PROPERTY_UPDATE_RENDER | 正常 |
+| AC-3.6 | WHEN 同时设置了 hdrBrightness 且图片为 HDR PixelMap THEN dynamicRangeMode 被强制为 HIGH，`image_paint_method.cpp:134-138` | 正常 |
 
 > DynamicRangeMode 枚举 3 个值，`constants.h:368-372`
 
@@ -84,12 +84,12 @@
 **我想要** 通过 hdrBrightness 属性调整 HDR 图片的亮度,
 **以便** 在 HDR 显示模式下精细控制图片亮度表现。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-4.1 | WHEN 调用 `.hdrBrightness(value: number)` THEN 设置 HDR 亮度值，默认为 1.0 |
-| AC-4.2 | WHEN hdrBrightness 设置且图片为 HDR PixelMap THEN 设置 renderContext 的 ImageHDRBrightness 并启用 ImageHDRPresent，`image_paint_method.cpp:134-138` |
-| AC-4.3 | WHEN hdrBrightness 设置且图片为 HDR THEN 强制 dynamicRangeMode 为 HIGH |
-| AC-4.4 | WHEN hdrBrightness 变更时 THEN 触发 PROPERTY_UPDATE_RENDER |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-4.1 | WHEN 调用 `.hdrBrightness(value: number)` THEN 设置 HDR 亮度值，默认为 1.0 | 正常 |
+| AC-4.2 | WHEN hdrBrightness 设置且图片为 HDR PixelMap THEN 设置 renderContext 的 ImageHDRBrightness 并启用 ImageHDRPresent，`image_paint_method.cpp:134-138` | 正常 |
+| AC-4.3 | WHEN hdrBrightness 设置且图片为 HDR THEN 强制 dynamicRangeMode 为 HIGH | 正常 |
+| AC-4.4 | WHEN hdrBrightness 变更时 THEN 触发 PROPERTY_UPDATE_RENDER | 正常 |
 
 > DEFAULT_HDR_BRIGHTNESS = 1.0f，`image_render_property.h:32`
 
@@ -99,13 +99,13 @@
 **我想要** 通过 imageMatrix 属性设置图片的变换矩阵,
 **以便** 对图片应用自定义的仿射或透视变换。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-5.1 | WHEN 调用 `.imageMatrix(value: Matrix4Transit)` THEN 设置变换矩阵 |
-| AC-5.2 | WHEN imageMatrix 仅在 objectFit 为 MATRIX(17) 时生效，`image_paint_method.cpp:142-156` |
-| AC-5.3 | WHEN objectFit 非 MATRIX 且设置了 imageMatrix THEN imageMatrix 被忽略 |
-| AC-5.4 | WHEN 未设置 imageMatrix 且 objectFit 为 MATRIX THEN 使用 identity 矩阵作为默认值 |
-| AC-5.5 | WHEN imageMatrix 变更时 THEN 触发 PROPERTY_UPDATE_RENDER |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-5.1 | WHEN 调用 `.imageMatrix(value: Matrix4Transit)` THEN 设置变换矩阵 | 正常 |
+| AC-5.2 | WHEN imageMatrix 仅在 objectFit 为 MATRIX(17) 时生效，`image_paint_method.cpp:142-156` | 正常 |
+| AC-5.3 | WHEN objectFit 非 MATRIX 且设置了 imageMatrix THEN imageMatrix 被忽略 | 正常 |
+| AC-5.4 | WHEN 未设置 imageMatrix 且 objectFit 为 MATRIX THEN 使用 identity 矩阵作为默认值 | 异常 |
+| AC-5.5 | WHEN imageMatrix 变更时 THEN 触发 PROPERTY_UPDATE_RENDER | 正常 |
 
 > imageMatrix 存储在 RenderProperty 但不在 ImagePaintStyle 组内，独立存储，`image_render_property.h:87`
 
@@ -115,13 +115,13 @@
 **我想要** 通过 edgeAntialiasing 属性设置图片边缘抗锯齿强度,
 **以便** 改善图片边缘的渲染质量。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-6.1 | WHEN 调用 `.edgeAntialiasing(value: number)` THEN 设置边缘抗锯齿值（float 类型内部存储为 SmoothEdge） |
-| AC-6.2 | WHEN 未显式设置 THEN 默认为 0.0f（无抗锯齿），`image_paint_method.cpp:113` |
-| AC-6.3 | WHEN 图片为 SVG THEN 同时应用 smoothEdge 到 svgCanvas，`image_content_modifier.cpp:94` |
-| AC-6.4 | WHEN SVG 场景下 smoothEdge 值 THEN 取 max(theme默认值, renderProp值)，`image_pattern.cpp:895-900` |
-| AC-6.5 | WHEN edgeAntialiasing 变更时 THEN 触发 PROPERTY_UPDATE_RENDER |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-6.1 | WHEN 调用 `.edgeAntialiasing(value: number)` THEN 设置边缘抗锯齿值（float 类型内部存储为 SmoothEdge） | 正常 |
+| AC-6.2 | WHEN 未显式设置 THEN 默认为 0.0f（无抗锯齿），`image_paint_method.cpp:113` | 正常 |
+| AC-6.3 | WHEN 图片为 SVG THEN 同时应用 smoothEdge 到 svgCanvas，`image_content_modifier.cpp:94` | 正常 |
+| AC-6.4 | WHEN SVG 场景下 smoothEdge 值 THEN 取 max(theme默认值, renderProp值)，`image_pattern.cpp:895-900` | 边界 |
+| AC-6.5 | WHEN edgeAntialiasing 变更时 THEN 触发 PROPERTY_UPDATE_RENDER | 正常 |
 
 ### US-7: 设置抗锯齿
 
@@ -129,11 +129,11 @@
 **我想要** 通过 antialiased 属性开启或关闭图片渲染的抗锯齿,
 **以便** 控制图片缩放时的边缘平滑处理。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-7.1 | WHEN 调用 `.antialiased(value: boolean)` THEN 设置抗锯齿开关，默认为 false |
-| AC-7.2 | WHEN antialiased 为 true THEN 图片渲染时启用抗锯齿 |
-| AC-7.3 | WHEN antialiased 变更时 THEN 触发 PROPERTY_UPDATE_RENDER |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-7.1 | WHEN 调用 `.antialiased(value: boolean)` THEN 设置抗锯齿开关，默认为 false | 正常 |
+| AC-7.2 | WHEN antialiased 为 true THEN 图片渲染时启用抗锯齿 | 正常 |
+| AC-7.3 | WHEN antialiased 变更时 THEN 触发 PROPERTY_UPDATE_RENDER | 正常 |
 
 > `image_paint_method.cpp:118`：`config.antiAlias_ = renderProps->GetAntiAliasValue(false)`
 
@@ -143,14 +143,14 @@
 **我想要** 通过 contentTransition 属性设置图片源切换时的过渡动画,
 **以便** 在更换图片时提供平滑的视觉效果。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-8.1 | WHEN 调用 `.contentTransition(value: ContentTransitionEffect)` THEN 设置内容过渡类型 |
-| AC-8.2 | WHEN contentTransition 为 IDENTITY(0) THEN 无过渡效果（默认） |
-| AC-8.3 | WHEN contentTransition 为 OPACITY(1) THEN 图片切换时使用透明度淡入淡出过渡 |
-| AC-8.4 | WHEN 图片源变更且 contentTransition 非 IDENTITY THEN ImagePaintMethod 根据源变更判断是否需要过渡动画，`image_paint_method.cpp:159-180` |
-| AC-8.5 | WHEN 图片为 SVG 或动画图片 THEN 跳过内容过渡动画 |
-| AC-8.6 | WHEN contentTransition 变更时 THEN 触发 PROPERTY_UPDATE_RENDER |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-8.1 | WHEN 调用 `.contentTransition(value: ContentTransitionEffect)` THEN 设置内容过渡类型 | 正常 |
+| AC-8.2 | WHEN contentTransition 为 IDENTITY(0) THEN 无过渡效果（默认） | 正常 |
+| AC-8.3 | WHEN contentTransition 为 OPACITY(1) THEN 图片切换时使用透明度淡入淡出过渡 | 正常 |
+| AC-8.4 | WHEN 图片源变更且 contentTransition 非 IDENTITY THEN ImagePaintMethod 根据源变更判断是否需要过渡动画，`image_paint_method.cpp:159-180` | 正常 |
+| AC-8.5 | WHEN 图片为 SVG 或动画图片 THEN 跳过内容过渡动画 | 正常 |
+| AC-8.6 | WHEN contentTransition 变更时 THEN 触发 PROPERTY_UPDATE_RENDER | 正常 |
 
 > ContentTransitionType 枚举 2 个值（IDENTITY=0, OPACITY=1），`constants.h:977-980`
 
@@ -158,7 +158,7 @@
 
 ## 验收追溯
 
-| AC ID | 关联规则 | 关联 Task | 验证方式 | 证据 |
+| AC编号 | 关联规则 | 关联 Task | 验证方式 | 证据 |
 |-------|----------|-----------|----------|------|
 | AC-1.1~1.5 | R-4 | — | 代码审查 | `image_model_ng.cpp:447-451` |
 | AC-2.1~2.7 | R-5, R-12 | — | 代码审查 | `image_model_ng.cpp:497-507` |

@@ -35,13 +35,13 @@
 **我想要** 通过 src 属性设置 Image 组件显示的图片源,
 **以便** 显示来自不同来源（本地文件、资源、网络、内存、Base64 等）的图片。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
 | AC-1.1 | WHEN 调用 `Image(src: string \\| Resource \\| PixelMap \\| DrawableDescriptor)` 构造函数 THEN 根据 SrcType 自动识别图片来源类型（FILE/ASSET/NETWORK/MEMORY/BASE64/RESOURCE/PIXMAP 等 13 种） |
-| AC-1.2 | WHEN src 为 Resource 类型 THEN 从资源文件解析图片（SrcType=RESOURCE），包含 bundleName 和 moduleName |
-| AC-1.3 | WHEN src 为 PixelMap 类型 THEN 使用内存中的 PixelMap 直接渲染（SrcType=PIXMAP），无需额外解码 |
-| AC-1.4 | WHEN src 变更时 THEN 触发 PROPERTY_UPDATE_NORMAL，重新加载图片 |
-| AC-1.5 | WHEN src 为空字符串 THEN ImageSourceInfo 使用默认构造，不触发加载 |
+| AC-1.2 | WHEN src 为 Resource 类型 THEN 从资源文件解析图片（SrcType=RESOURCE），包含 bundleName 和 moduleName | 正常 |
+| AC-1.3 | WHEN src 为 PixelMap 类型 THEN 使用内存中的 PixelMap 直接渲染（SrcType=PIXMAP），无需额外解码 | 正常 |
+| AC-1.4 | WHEN src 变更时 THEN 触发 PROPERTY_UPDATE_NORMAL，重新加载图片 | 正常 |
+| AC-1.5 | WHEN src 为空字符串 THEN ImageSourceInfo 使用默认构造，不触发加载 | 异常 |
 
 > SrcType 枚举定义：`frameworks/core/components/common/layout/constants.h:459`（UNSUPPORTED=-1, FILE=0, ASSET=1, NETWORK=2, MEMORY=3, BASE64=4, INTERNAL=5, RESOURCE=6, DATA_ABILITY=7, DATA_ABILITY_DECODED=8, RESOURCE_ID=9, PIXMAP=10, ASTC=11, STREAM=12）
 
@@ -51,14 +51,14 @@
 **我想要** 通过 alt 属性设置加载中占位图和加载失败错误图,
 **以便** 在图片加载过程中或加载失败时显示替代内容。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
 | AC-2.1 | WHEN 调用 `.alt(value: string \\| Resource \\| PixelMap \\| ImageAlt)` THEN 设置占位图/错误图资源 |
-| AC-2.2 | WHEN 使用 ImageAlt 对象 `{placeholder, error}` THEN placeholder 在主图加载中显示，error 在主图加载失败时显示 |
-| AC-2.3 | WHEN 主图加载失败且设置了 alt THEN 自动尝试加载 alt 图片作为替代 |
-| AC-2.4 | WHEN alt 图片也加载失败且设置了 altError THEN 尝试加载 altError 图片 |
-| AC-2.5 | WHEN alt 为网络 URL 且类型非 IMAGE_ALT_ERROR THEN 网络地址被拒绝（桥接层校验），不加载 |
-| AC-2.6 | WHEN alt 属性变更时 THEN 触发 PROPERTY_UPDATE_NORMAL |
+| AC-2.2 | WHEN 使用 ImageAlt 对象 `{placeholder, error}` THEN placeholder 在主图加载中显示，error 在主图加载失败时显示 | 异常 |
+| AC-2.3 | WHEN 主图加载失败且设置了 alt THEN 自动尝试加载 alt 图片作为替代 | 异常 |
+| AC-2.4 | WHEN alt 图片也加载失败且设置了 altError THEN 尝试加载 altError 图片 | 异常 |
+| AC-2.5 | WHEN alt 为网络 URL 且类型非 IMAGE_ALT_ERROR THEN 网络地址被拒绝（桥接层校验），不加载 | 正常 |
+| AC-2.6 | WHEN alt 属性变更时 THEN 触发 PROPERTY_UPDATE_NORMAL | 正常 |
 
 > 三级降级链：主图 → alt → altError → altPlaceholder/空白。`image_pattern.cpp:704-720`
 
@@ -68,19 +68,19 @@
 **我想要** 通过 objectFit 属性设置图片在容器中的缩放和定位方式,
 **以便** 控制图片的显示效果（填满、居中、裁剪等）。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-3.1 | WHEN 调用 `.objectFit(value: ImageFit)` THEN 设置图片缩放模式，默认为 COVER |
-| AC-3.2 | WHEN objectFit 为 FILL(0) THEN 拉伸图片填满容器，不保持宽高比 |
-| AC-3.3 | WHEN objectFit 为 CONTAIN(1) THEN 保持宽高比完整显示图片，容器内居中，可能有留白 |
-| AC-3.4 | WHEN objectFit 为 COVER(2) THEN 保持宽高比填满容器，居中裁剪溢出部分（默认值） |
-| AC-3.5 | WHEN objectFit 为 FITWIDTH(3) THEN 宽度适配容器宽度，高度按比例缩放 |
-| AC-3.6 | WHEN objectFit 为 FITHEIGHT(4) THEN 高度适配容器高度，宽度按比例缩放 |
-| AC-3.7 | WHEN objectFit 为 NONE(5) THEN 图片使用原始尺寸，不缩放 |
-| AC-3.8 | WHEN objectFit 为 SCALE_DOWN(6) THEN 行为同 NONE，但不超过原始图片尺寸（取 min(原始, 容器)） |
-| AC-3.9 | WHEN objectFit 为 TOP_LEFT(7)~BOTTOM_END(15) THEN 按 9 宫格方位定位图片（TOP_LEFT/TOP/TOP_END/START/CENTER/END/BOTTOM_START/BOTTOM/BOTTOM_END） |
-| AC-3.10 | WHEN objectFit 为 MATRIX(17) THEN 使用 imageMatrix 变换矩阵定位图片 |
-| AC-3.11 | WHEN objectFit 变更时 THEN 同时触发 PROPERTY_UPDATE_LAYOUT（布局层）和 PROPERTY_UPDATE_RENDER（渲染层）双重更新 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-3.1 | WHEN 调用 `.objectFit(value: ImageFit)` THEN 设置图片缩放模式，默认为 COVER | 正常 |
+| AC-3.2 | WHEN objectFit 为 FILL(0) THEN 拉伸图片填满容器，不保持宽高比 | 正常 |
+| AC-3.3 | WHEN objectFit 为 CONTAIN(1) THEN 保持宽高比完整显示图片，容器内居中，可能有留白 | 正常 |
+| AC-3.4 | WHEN objectFit 为 COVER(2) THEN 保持宽高比填满容器，居中裁剪溢出部分（默认值） | 边界 |
+| AC-3.5 | WHEN objectFit 为 FITWIDTH(3) THEN 宽度适配容器宽度，高度按比例缩放 | 正常 |
+| AC-3.6 | WHEN objectFit 为 FITHEIGHT(4) THEN 高度适配容器高度，宽度按比例缩放 | 正常 |
+| AC-3.7 | WHEN objectFit 为 NONE(5) THEN 图片使用原始尺寸，不缩放 | 正常 |
+| AC-3.8 | WHEN objectFit 为 SCALE_DOWN(6) THEN 行为同 NONE，但不超过原始图片尺寸（取 min(原始, 容器)） | 边界 |
+| AC-3.9 | WHEN objectFit 为 TOP_LEFT(7)~BOTTOM_END(15) THEN 按 9 宫格方位定位图片（TOP_LEFT/TOP/TOP_END/START/CENTER/END/BOTTOM_START/BOTTOM/BOTTOM_END） | 正常 |
+| AC-3.10 | WHEN objectFit 为 MATRIX(17) THEN 使用 imageMatrix 变换矩阵定位图片 | 正常 |
+| AC-3.11 | WHEN objectFit 变更时 THEN 同时触发 PROPERTY_UPDATE_LAYOUT（布局层）和 PROPERTY_UPDATE_RENDER（渲染层）双重更新 | 正常 |
 
 > ImageFit 枚举 18 个值（0-17），`constants.h:324-343`。默认 COVER 在 `image_layout_property.cpp:87`
 
@@ -90,16 +90,16 @@
 **我想要** 通过 objectRepeat 属性设置图片在容器中的重复方式,
 **以便** 实现平铺背景等效果。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-4.1 | WHEN 调用 `.objectRepeat(value: ImageRepeat)` THEN 设置图片重复模式，默认为 NO_REPEAT |
-| AC-4.2 | WHEN objectRepeat 为 NO_REPEAT(0) THEN 图片不重复，仅显示一次 |
-| AC-4.3 | WHEN objectRepeat 为 REPEAT_X(1) THEN 图片在水平方向重复 |
-| AC-4.4 | WHEN objectRepeat 为 REPEAT_Y(2) THEN 图片在垂直方向重复 |
-| AC-4.5 | WHEN objectRepeat 为 REPEAT(3) THEN 图片在水平和垂直方向同时重复 |
-| AC-4.6 | WHEN objectRepeat 变更时 THEN 触发 PROPERTY_UPDATE_RENDER |
-| AC-4.7 | WHEN objectRepeat 为 REPEAT 或 REPEAT_X THEN 水平方向图片尺寸不受容器宽度限制（repeatX=true），`image_pattern.cpp:388-389` |
-| AC-4.8 | WHEN objectRepeat 为 REPEAT 或 REPEAT_Y THEN 垂直方向图片尺寸不受容器高度限制（repeatY=true），`image_pattern.cpp:388-389` |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-4.1 | WHEN 调用 `.objectRepeat(value: ImageRepeat)` THEN 设置图片重复模式，默认为 NO_REPEAT | 正常 |
+| AC-4.2 | WHEN objectRepeat 为 NO_REPEAT(0) THEN 图片不重复，仅显示一次 | 正常 |
+| AC-4.3 | WHEN objectRepeat 为 REPEAT_X(1) THEN 图片在水平方向重复 | 正常 |
+| AC-4.4 | WHEN objectRepeat 为 REPEAT_Y(2) THEN 图片在垂直方向重复 | 正常 |
+| AC-4.5 | WHEN objectRepeat 为 REPEAT(3) THEN 图片在水平和垂直方向同时重复 | 正常 |
+| AC-4.6 | WHEN objectRepeat 变更时 THEN 触发 PROPERTY_UPDATE_RENDER | 正常 |
+| AC-4.7 | WHEN objectRepeat 为 REPEAT 或 REPEAT_X THEN 水平方向图片尺寸不受容器宽度限制（repeatX=true），`image_pattern.cpp:388-389` | 正常 |
+| AC-4.8 | WHEN objectRepeat 为 REPEAT 或 REPEAT_Y THEN 垂直方向图片尺寸不受容器高度限制（repeatY=true），`image_pattern.cpp:388-389` | 正常 |
 
 > ImageRepeat 枚举 4 个值（0-3），`constants.h:317-322`
 
@@ -109,12 +109,12 @@
 **我想要** 通过 renderMode 属性选择图片以原始模式或模板模式渲染,
 **以便** SVG 图片可以使用主题颜色进行模板化渲染。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-5.1 | WHEN 调用 `.renderMode(value: ImageRenderMode)` THEN 设置渲染模式，默认为 ORIGINAL |
-| AC-5.2 | WHEN renderMode 为 ORIGINAL(0) THEN 图片以原始颜色渲染 |
-| AC-5.3 | WHEN renderMode 为 TEMPLATE(1) THEN 图片以模板模式渲染（SVG 可结合 fillColor 使用主题颜色） |
-| AC-5.4 | WHEN renderMode 变更时 THEN 触发 PROPERTY_UPDATE_RENDER |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-5.1 | WHEN 调用 `.renderMode(value: ImageRenderMode)` THEN 设置渲染模式，默认为 ORIGINAL | 正常 |
+| AC-5.2 | WHEN renderMode 为 ORIGINAL(0) THEN 图片以原始颜色渲染 | 正常 |
+| AC-5.3 | WHEN renderMode 为 TEMPLATE(1) THEN 图片以模板模式渲染（SVG 可结合 fillColor 使用主题颜色） | 正常 |
+| AC-5.4 | WHEN renderMode 变更时 THEN 触发 PROPERTY_UPDATE_RENDER | 正常 |
 
 > ImageRenderMode 枚举 2 个值（0-1），`constants.h:399-402`
 
@@ -124,15 +124,15 @@
 **我想要** 通过 autoResize 属性控制图片是否自动调整解码尺寸以匹配组件尺寸,
 **以便** 优化内存使用（开启时按组件尺寸解码，关闭时使用原始尺寸解码）。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-6.1 | WHEN 调用 `.autoResize(value: boolean)` THEN 设置是否自动调整解码尺寸 |
-| AC-6.2 | WHEN 未显式设置 autoResize 且 API < 11 THEN 默认值为 true（启用功率对齐优化） |
-| AC-6.3 | WHEN 未显式设置 autoResize 且 API >= 11 THEN 默认值为 false（不自动调整） |
-| AC-6.4 | WHEN 运行在 SceneBoard 窗口 THEN autoResize 默认值为 true（覆盖 API 版本判定），`image_pattern.cpp:2688-2690` |
-| AC-6.5 | WHEN autoResize 为 true 且存在 resizable 切片配置或图片有旋转（非 UP 方向） THEN autoResize 实际行为被强制关闭，`image_pattern.cpp:880-893` |
-| AC-6.6 | WHEN autoResize 变更时 THEN 触发 PROPERTY_UPDATE_LAYOUT |
-| AC-6.7 | WHEN autoResize 为 true 且非 resizable 且无旋转 THEN 使用 SystemProperties::GetImageAutoResizeEnabled() 系统属性决定最终行为 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-6.1 | WHEN 调用 `.autoResize(value: boolean)` THEN 设置是否自动调整解码尺寸 | 正常 |
+| AC-6.2 | WHEN 未显式设置 autoResize 且 API < 11 THEN 默认值为 true（启用功率对齐优化） | 边界 |
+| AC-6.3 | WHEN 未显式设置 autoResize 且 API >= 11 THEN 默认值为 false（不自动调整） | 边界 |
+| AC-6.4 | WHEN 运行在 SceneBoard 窗口 THEN autoResize 默认值为 true（覆盖 API 版本判定），`image_pattern.cpp:2688-2690` | 正常 |
+| AC-6.5 | WHEN autoResize 为 true 且存在 resizable 切片配置或图片有旋转（非 UP 方向） THEN autoResize 实际行为被强制关闭，`image_pattern.cpp:880-893` | 正常 |
+| AC-6.6 | WHEN autoResize 变更时 THEN 触发 PROPERTY_UPDATE_LAYOUT | 正常 |
+| AC-6.7 | WHEN autoResize 为 true 且非 resizable 且无旋转 THEN 使用 SystemProperties::GetImageAutoResizeEnabled() 系统属性决定最终行为 | 正常 |
 
 > autoResize 默认值双重逻辑是已知兼容性风险，见 design.md ADR-3。`image_pattern.cpp:2679-2693`
 
@@ -142,13 +142,13 @@
 **我想要** 通过 sourceSize 属性指定图片解码的目标像素尺寸,
 **以便** 控制解码后图片的实际像素分辨率。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-7.1 | WHEN 调用 `.sourceSize(value: {width: number, height: number})` THEN 设置解码目标尺寸（单位 px） |
-| AC-7.2 | WHEN sourceSize 宽度或高度 < 0 THEN 桥接层拒绝设置（值校验），`arkts_native_image_bridge.cpp:693-700` |
-| AC-7.3 | WHEN 未设置 sourceSize THEN 默认为 SizeF(0, 0)，表示不限制解码尺寸 |
-| AC-7.4 | WHEN sourceSize 变更时 THEN 触发 PROPERTY_UPDATE_LAYOUT |
-| AC-7.5 | WHEN sourceSize 和 autoResize 同时设置 THEN sourceSize 优先级更高，作为显式指定的解码目标 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-7.1 | WHEN 调用 `.sourceSize(value: {width: number, height: number})` THEN 设置解码目标尺寸（单位 px） | 正常 |
+| AC-7.2 | WHEN sourceSize 宽度或高度 < 0 THEN 桥接层拒绝设置（值校验），`arkts_native_image_bridge.cpp:693-700` | 边界 |
+| AC-7.3 | WHEN 未设置 sourceSize THEN 默认为 SizeF(0, 0)，表示不限制解码尺寸 | 异常 |
+| AC-7.4 | WHEN sourceSize 变更时 THEN 触发 PROPERTY_UPDATE_LAYOUT | 正常 |
+| AC-7.5 | WHEN sourceSize 和 autoResize 同时设置 THEN sourceSize 优先级更高，作为显式指定的解码目标 | 正常 |
 
 > 属性类型为 SizeF（非 ImageSourceSize 结构体），`image_layout_property.h:55`
 
@@ -158,15 +158,15 @@
 **我想要** 通过 orientation 属性设置图片的旋转方向,
 **以便** 手动或自动（EXIF）旋转图片显示方向。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-8.1 | WHEN 调用 `.orientation(value: ImageRotateOrientation)` THEN 设置图片旋转方向，默认为 UP |
-| AC-8.2 | WHEN orientation 为 AUTO(0) THEN 使用图片 EXIF 信息中记录的旋转方向 |
-| AC-8.3 | WHEN orientation 为 UP(1) THEN 不旋转，使用原始方向（默认值） |
-| AC-8.4 | WHEN orientation 为 RIGHT(2)/DOWN(3)/LEFT(4) THEN 分别旋转 90°/180°/270° |
-| AC-8.5 | WHEN orientation 为 UP_MIRRORED(5)~LEFT_MIRRORED(8) THEN 应用镜像+旋转组合变换 |
-| AC-8.6 | WHEN 图片为多帧图片（GIF/WebP） THEN 强制使用 UP 方向，忽略用户设置，`image_pattern.cpp:680-701` |
-| AC-8.7 | WHEN orientation 变更时 THEN 触发 PROPERTY_UPDATE_MEASURE（需重新测量布局） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-8.1 | WHEN 调用 `.orientation(value: ImageRotateOrientation)` THEN 设置图片旋转方向，默认为 UP | 正常 |
+| AC-8.2 | WHEN orientation 为 AUTO(0) THEN 使用图片 EXIF 信息中记录的旋转方向 | 正常 |
+| AC-8.3 | WHEN orientation 为 UP(1) THEN 不旋转，使用原始方向（默认值） | 正常 |
+| AC-8.4 | WHEN orientation 为 RIGHT(2)/DOWN(3)/LEFT(4) THEN 分别旋转 90°/180°/270° | 正常 |
+| AC-8.5 | WHEN orientation 为 UP_MIRRORED(5)~LEFT_MIRRORED(8) THEN 应用镜像+旋转组合变换 | 正常 |
+| AC-8.6 | WHEN 图片为多帧图片（GIF/WebP） THEN 强制使用 UP 方向，忽略用户设置，`image_pattern.cpp:680-701` | 正常 |
+| AC-8.7 | WHEN orientation 变更时 THEN 触发 PROPERTY_UPDATE_MEASURE（需重新测量布局） | 正常 |
 
 > ImageRotateOrientation 枚举 9 个值（0-8），`constants.h:381-391`
 
@@ -176,12 +176,12 @@
 **我想要** 通过 fitOriginalSize 属性让 Image 组件尺寸自适应图片原始尺寸,
 **以便** 在未设置显式宽高时按图片实际大小显示。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-9.1 | WHEN 调用 `.fitOriginalSize(value: boolean)` THEN 设置是否适应原始尺寸，默认为 false |
-| AC-9.2 | WHEN fitOriginalSize 为 true 且未设置显式宽高（selfIdealSize.IsNull()） THEN 组件尺寸使用图片原始尺寸 |
-| AC-9.3 | WHEN fitOriginalSize 为 true 但已设置显式宽高 THEN 显式宽高优先，fitOriginalSize 不生效 |
-| AC-9.4 | WHEN fitOriginalSize 变更时 THEN 触发 PROPERTY_UPDATE_BY_CHILD_REQUEST（唯一使用此标志的 Image 属性） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-9.1 | WHEN 调用 `.fitOriginalSize(value: boolean)` THEN 设置是否适应原始尺寸，默认为 false | 正常 |
+| AC-9.2 | WHEN fitOriginalSize 为 true 且未设置显式宽高（selfIdealSize.IsNull()） THEN 组件尺寸使用图片原始尺寸 | 异常 |
+| AC-9.3 | WHEN fitOriginalSize 为 true 但已设置显式宽高 THEN 显式宽高优先，fitOriginalSize 不生效 | 异常 |
+| AC-9.4 | WHEN fitOriginalSize 变更时 THEN 触发 PROPERTY_UPDATE_BY_CHILD_REQUEST（唯一使用此标志的 Image 属性） | 正常 |
 
 > `image_layout_algorithm.cpp:49-104`
 
@@ -191,17 +191,17 @@
 **我想要** 通过 interpolation 属性设置图片缩放时的插值质量,
 **以便** 在图片质量与性能之间做取舍。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-10.1 | WHEN 调用 `.interpolation(value: ImageInterpolation)` THEN 设置插值质量 |
-| AC-10.2 | WHEN interpolation 为 NONE(0) THEN 不使用插值（最快，质量最低） |
-| AC-10.3 | WHEN interpolation 为 LOW(1) THEN 使用低质量插值 |
-| AC-10.4 | WHEN interpolation 为 MEDIUM(2) THEN 使用中等质量插值 |
-| AC-10.5 | WHEN interpolation 为 HIGH(3) THEN 使用高质量插值（最慢，质量最高） |
-| AC-10.6 | WHEN 未显式设置 interpolation 且 API < 11（非 SceneBoard） THEN 默认为 NONE |
-| AC-10.7 | WHEN 未显式设置 interpolation 且 API >= 11（非 SceneBoard） THEN 默认为 LOW |
-| AC-10.8 | WHEN 运行在 SceneBoard 窗口 THEN interpolation 默认为 NONE |
-| AC-10.9 | WHEN interpolation 变更时 THEN 触发 PROPERTY_UPDATE_RENDER |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-10.1 | WHEN 调用 `.interpolation(value: ImageInterpolation)` THEN 设置插值质量 | 正常 |
+| AC-10.2 | WHEN interpolation 为 NONE(0) THEN 不使用插值（最快，质量最低） | 正常 |
+| AC-10.3 | WHEN interpolation 为 LOW(1) THEN 使用低质量插值 | 正常 |
+| AC-10.4 | WHEN interpolation 为 MEDIUM(2) THEN 使用中等质量插值 | 正常 |
+| AC-10.5 | WHEN interpolation 为 HIGH(3) THEN 使用高质量插值（最慢，质量最高） | 正常 |
+| AC-10.6 | WHEN 未显式设置 interpolation 且 API < 11（非 SceneBoard） THEN 默认为 NONE | 边界 |
+| AC-10.7 | WHEN 未显式设置 interpolation 且 API >= 11（非 SceneBoard） THEN 默认为 LOW | 边界 |
+| AC-10.8 | WHEN 运行在 SceneBoard 窗口 THEN interpolation 默认为 NONE | 正常 |
+| AC-10.9 | WHEN interpolation 变更时 THEN 触发 PROPERTY_UPDATE_RENDER | 正常 |
 
 > interpolation 默认值存在不一致（Pattern 成员初始值 LOW vs getter 默认 NONE），见 design.md 风险表。`image_pattern.h:382` vs `image_model_ng.cpp:977`
 
@@ -209,7 +209,7 @@
 
 ## 验收追溯
 
-| AC ID | 关联规则 | 关联 Task | 验证方式 | 证据 |
+| AC编号 | 关联规则 | 关联 Task | 验证方式 | 证据 |
 |-------|----------|-----------|----------|------|
 | AC-1.1 | R-4 | — | 代码审查 | `constants.h:459` |
 | AC-1.2 | R-4 | — | 代码审查 | `image_source_info.h:35` |

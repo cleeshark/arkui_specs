@@ -905,7 +905,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | Divider 组件全量规格 (vertical/color/strokeWidth/lineCap) | [Feat-01-divider-spec.md](05-ui-components/01-layout-components/02-divider/Feat-01-divider-spec.md) | Baselined |
+| Feat-01 | Divider 组件全量规格 | [Feat-01-divider-spec.md](05-ui-components/01-layout-components/02-divider/Feat-01-divider-spec.md) | Baselined |
 
 ### 05-01-03 Column
 
@@ -1071,7 +1071,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | Toggle 组件全量规格 (Switch/Checkbox/Button 三形态) | [Feat-01-toggle-spec.md](05-ui-components/04-input-form-components/06-toggle/Feat-01-toggle-spec.md) | Baselined |
+| Feat-01 | Toggle 组件全量规格 | [Feat-01-toggle-spec.md](05-ui-components/04-input-form-components/06-toggle/Feat-01-toggle-spec.md) | Baselined |
 
 ### 05-05-01 Calendar/CalendarPicker
 

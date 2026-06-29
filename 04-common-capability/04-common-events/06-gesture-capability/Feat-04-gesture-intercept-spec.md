@@ -37,15 +37,15 @@
 **我想要** 通过 `.hitTestBehavior(mode)` 控制组件及其子组件是否参与触摸测试,
 **以便** 精确控制哪些组件可以接收触摸事件。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-1.1 | WHEN 设置 `HitTestMode.Default` THEN 自身和子组件参与触摸测试，但屏蔽被标记的节点 |
-| AC-1.2 | WHEN 设置 `HitTestMode.Block` THEN 自身响应触摸，阻止子组件和被标记节点参与 |
-| AC-1.3 | WHEN 设置 `HitTestMode.Transparent` THEN 自身和子组件参与触摸测试，不屏蔽被标记节点 |
-| AC-1.4 | WHEN 设置 `HitTestMode.None` THEN 自身不响应触摸事件，子组件正常响应 |
-| AC-1.5 | WHEN 设置 `HitTestMode.BlockHierarchy` THEN 阻止所有低优先级兄弟节点和父节点接收触摸 |
-| AC-1.6 | WHEN 设置 `HitTestMode.BlockDescendants` THEN 自身和所有后代节点均不响应触摸事件 |
-| AC-1.7 | WHEN 设置 `HitTestMode.TransparentSelf` THEN 根据触摸事件是否被消费动态决定自身透明性 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-1.1 | WHEN 设置 `HitTestMode.Default` THEN 自身和子组件参与触摸测试，但屏蔽被标记的节点 | 正常 |
+| AC-1.2 | WHEN 设置 `HitTestMode.Block` THEN 自身响应触摸，阻止子组件和被标记节点参与 | 正常 |
+| AC-1.3 | WHEN 设置 `HitTestMode.Transparent` THEN 自身和子组件参与触摸测试，不屏蔽被标记节点 | 正常 |
+| AC-1.4 | WHEN 设置 `HitTestMode.None` THEN 自身不响应触摸事件，子组件正常响应 | 正常 |
+| AC-1.5 | WHEN 设置 `HitTestMode.BlockHierarchy` THEN 阻止所有低优先级兄弟节点和父节点接收触摸 | 正常 |
+| AC-1.6 | WHEN 设置 `HitTestMode.BlockDescendants` THEN 自身和所有后代节点均不响应触摸事件 | 正常 |
+| AC-1.7 | WHEN 设置 `HitTestMode.TransparentSelf` THEN 根据触摸事件是否被消费动态决定自身透明性 | 正常 |
 
 ### US-2: onTouchIntercept 动态拦截触摸
 
@@ -53,13 +53,13 @@
 **我想要** 通过 `.onTouchIntercept(callback)` 在触摸测试阶段动态决定组件的命中测试模式,
 **以便** 根据触摸事件信息（如手指数量、位置）动态决定是否拦截触摸。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-2.1 | WHEN 设置 `onTouchIntercept` 回调 THEN 在每次触摸测试时调用回调，传入 TouchEventInfo |
-| AC-2.2 | WHEN 回调返回 `HitTestMode.None` THEN 组件不接收该触摸事件 |
-| AC-2.3 | WHEN 回调返回 `HitTestMode.Block` THEN 组件拦截触摸，子组件不接收 |
-| AC-2.4 | WHEN 未设置 `onTouchIntercept` THEN 使用静态 `hitTestBehavior` 值 |
-| AC-2.5 | WHEN 回调返回值与静态 `hitTestBehavior` 冲突 THEN `onTouchIntercept` 返回值优先 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-2.1 | WHEN 设置 `onTouchIntercept` 回调 THEN 在每次触摸测试时调用回调，传入 TouchEventInfo | 正常 |
+| AC-2.2 | WHEN 回调返回 `HitTestMode.None` THEN 组件不接收该触摸事件 | 正常 |
+| AC-2.3 | WHEN 回调返回 `HitTestMode.Block` THEN 组件拦截触摸，子组件不接收 | 正常 |
+| AC-2.4 | WHEN 未设置 `onTouchIntercept` THEN 使用静态 `hitTestBehavior` 值 | 异常 |
+| AC-2.5 | WHEN 回调返回值与静态 `hitTestBehavior` 冲突 THEN `onTouchIntercept` 返回值优先 | 正常 |
 
 ### US-3: onGestureCollectIntercept 手势收集拦截
 
@@ -67,13 +67,13 @@
 **我想要** 通过 `.onGestureCollectIntercept(callback)` 在手势收集阶段拦截手势传递,
 **以便** 控制手势在组件层级中的传播方向。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-3.1 | WHEN 回调返回 `GestureCollectIntervention.CONTINUE` THEN 不做干预，手势正常收集 |
-| AC-3.2 | WHEN 回调返回 `GestureCollectIntervention.DISCARD_LOWER` THEN 阻止手势向祖先组件冒泡 |
-| AC-3.3 | WHEN 回调返回 `GestureCollectIntervention.DISCARD_HIGHER` THEN 丢弃所有已收集的目标 |
-| AC-3.4 | WHEN 回调返回 `GestureCollectIntervention.DISCARD_SELF` THEN 丢弃自身但保留子组件的手势 |
-| AC-3.5 | WHEN 回调返回 `GestureCollectIntervention.DISCARD_LOWER_PRIORITY_SIBLINGS` THEN 阻止低优先级的兄弟节点 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-3.1 | WHEN 回调返回 `GestureCollectIntervention.CONTINUE` THEN 不做干预，手势正常收集 | 正常 |
+| AC-3.2 | WHEN 回调返回 `GestureCollectIntervention.DISCARD_LOWER` THEN 阻止手势向祖先组件冒泡 | 正常 |
+| AC-3.3 | WHEN 回调返回 `GestureCollectIntervention.DISCARD_HIGHER` THEN 丢弃所有已收集的目标 | 正常 |
+| AC-3.4 | WHEN 回调返回 `GestureCollectIntervention.DISCARD_SELF` THEN 丢弃自身但保留子组件的手势 | 正常 |
+| AC-3.5 | WHEN 回调返回 `GestureCollectIntervention.DISCARD_LOWER_PRIORITY_SIBLINGS` THEN 阻止低优先级的兄弟节点 | 正常 |
 
 ### US-4: onChildTouchTest 子组件触摸控制
 
@@ -81,10 +81,10 @@
 **我想要** 通过 `.onChildTouchTest(callback)` 控制子组件的触摸分发,
 **以便** 父组件可以根据触摸信息决定哪些子组件接收触摸。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-4.1 | WHEN 设置 `onChildTouchTest` 回调 THEN 在子组件触摸测试时调用，传入子组件的 TouchTestInfo 数组 |
-| AC-4.2 | WHEN 回调返回 TouchResult THEN 根据返回值决定子组件的触摸分发 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-4.1 | WHEN 设置 `onChildTouchTest` 回调 THEN 在子组件触摸测试时调用，传入子组件的 TouchTestInfo 数组 | 正常 |
+| AC-4.2 | WHEN 回调返回 TouchResult THEN 根据返回值决定子组件的触摸分发 | 正常 |
 
 ### US-5: monopolizeEvents 首节点独占
 
@@ -92,11 +92,11 @@
 **我想要** 通过 `.monopolizeEvents(true)` 确保只有第一个响应触摸的组件继续接收后续事件,
 **以便** 避免多个组件同时响应同一触摸序列。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-5.1 | WHEN 设置 `monopolizeEvents(true)` THEN 第一个成功响应触摸事件的组件（通过 ResponseCtrl 记录）独占后续事件 |
-| AC-5.2 | WHEN 首节点已确定后其他节点尝试响应 THEN `ResponseCtrl::ShouldResponse()` 返回 false，阻止其他节点 |
-| AC-5.3 | WHEN 设置 `monopolizeEvents(false)`（默认）THEN 所有命中组件均可响应触摸事件 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-5.1 | WHEN 设置 `monopolizeEvents(true)` THEN 第一个成功响应触摸事件的组件（通过 ResponseCtrl 记录）独占后续事件 | 正常 |
+| AC-5.2 | WHEN 首节点已确定后其他节点尝试响应 THEN `ResponseCtrl::ShouldResponse()` 返回 false，阻止其他节点 | 正常 |
+| AC-5.3 | WHEN 设置 `monopolizeEvents(false)`（默认）THEN 所有命中组件均可响应触摸事件 | 正常 |
 
 ### US-6: preventBegin 阻止手势开始
 
@@ -104,10 +104,10 @@
 **我想要** 通过 `preventBegin_` 标志阻止识别器开始手势识别,
 **以便** 在特定条件下禁用某个手势识别器。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-6.1 | WHEN 识别器的 `preventBegin_==true` THEN `HandleEvent()` 检查到 IsPreventBegin() 返回 true 后直接返回，不处理触摸事件 |
-| AC-6.2 | WHEN `preventBegin_` 从 true 变为 false THEN 识别器恢复正常的触摸事件处理 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-6.1 | WHEN 识别器的 `preventBegin_==true` THEN `HandleEvent()` 检查到 IsPreventBegin() 返回 true 后直接返回，不处理触摸事件 | 正常 |
+| AC-6.2 | WHEN `preventBegin_` 从 true 变为 false THEN 识别器恢复正常的触摸事件处理 | 正常 |
 
 ### US-7: TouchRestrict 触摸类型限制
 
@@ -115,11 +115,11 @@
 **我想要** 通过 TouchRestrict 位标志限制可识别的手势类型,
 **以便** 根据触摸输入源类型过滤不需要的手势。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-7.1 | WHEN TouchRestrict 包含 CLICK 位 THEN 点击类手势（ClickRecognizer）被限制 |
-| AC-7.2 | WHEN TouchRestrict 包含 LONG_PRESS 位 THEN 长按手势被限制 |
-| AC-7.3 | WHEN TouchRestrict 包含方向标志（SWIPE_LEFT/RIGHT/UP/DOWN）THEN 对应方向的滑动手势被限制 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-7.1 | WHEN TouchRestrict 包含 CLICK 位 THEN 点击类手势（ClickRecognizer）被限制 | 正常 |
+| AC-7.2 | WHEN TouchRestrict 包含 LONG_PRESS 位 THEN 长按手势被限制 | 正常 |
+| AC-7.3 | WHEN TouchRestrict 包含方向标志（SWIPE_LEFT/RIGHT/UP/DOWN）THEN 对应方向的滑动手势被限制 | 正常 |
 
 ### US-8: onTouch 原始触摸事件
 
@@ -127,10 +127,10 @@
 **我想要** 通过 `.onTouch(callback)` 直接处理原始触摸事件,
 **以便** 在手势识别之前消费或响应触摸。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-8.1 | WHEN 设置 `onTouch` 回调 THEN 在触摸事件到达手势识别器之前触发回调 |
-| AC-8.2 | WHEN onTouch 回调中消费了事件 THEN 后续手势识别可能受到影响 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-8.1 | WHEN 设置 `onTouch` 回调 THEN 在触摸事件到达手势识别器之前触发回调 | 正常 |
+| AC-8.2 | WHEN onTouch 回调中消费了事件 THEN 后续手势识别可能受到影响 | 正常 |
 
 ---
 

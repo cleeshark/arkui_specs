@@ -35,14 +35,14 @@
 **我想要** 通过 onComplete 回调获取图片加载成功后的详细信息,
 **以便** 根据图片实际尺寸、组件尺寸、内容区域等信息进行后续处理。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-1.1 | WHEN 调用 `.onComplete(callback: (event: ImageCompleteEvent) => void)` THEN 注册图片加载完成回调 |
-| AC-1.2 | WHEN 图片数据就绪完成布局计算（OnDataReady）THEN 触发 onComplete，loadingStatus=0，`image_pattern.cpp:213-244` |
-| AC-1.3 | WHEN 图片完整解码成功（OnImageLoadSuccess）THEN 触发 onComplete，loadingStatus=1，`image_pattern.cpp:543-549` |
-| AC-1.4 | WHEN onComplete 触发且 loadingStatus=0 THEN event 包含：width（原始图宽）、height（原始图高）、componentWidth（组件宽）、componentHeight（组件高）、contentWidth/Height（内容尺寸来自 geometryNode） |
-| AC-1.5 | WHEN onComplete 触发且 loadingStatus=1 THEN event 包含：width（原始图宽）、height（原始图高）、componentWidth（组件宽）、componentHeight（组件高）、contentWidth/Height（来自 CalcImageContentPaintSize）、contentOffsetX/Y（内容偏移） |
-| AC-1.6 | WHEN onComplete 回调未注册 THEN 不触发任何回调逻辑 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-1.1 | WHEN 调用 `.onComplete(callback: (event: ImageCompleteEvent) => void)` THEN 注册图片加载完成回调 | 边界 |
+| AC-1.2 | WHEN 图片数据就绪完成布局计算（OnDataReady）THEN 触发 onComplete，loadingStatus=0，`image_pattern.cpp:213-244` | 正常 |
+| AC-1.3 | WHEN 图片完整解码成功（OnImageLoadSuccess）THEN 触发 onComplete，loadingStatus=1，`image_pattern.cpp:543-549` | 正常 |
+| AC-1.4 | WHEN onComplete 触发且 loadingStatus=0 THEN event 包含：width（原始图宽）、height（原始图高）、componentWidth（组件宽）、componentHeight（组件高）、contentWidth/Height（内容尺寸来自 geometryNode） | 正常 |
+| AC-1.5 | WHEN onComplete 触发且 loadingStatus=1 THEN event 包含：width（原始图宽）、height（原始图高）、componentWidth（组件宽）、componentHeight（组件高）、contentWidth/Height（来自 CalcImageContentPaintSize）、contentOffsetX/Y（内容偏移） | 正常 |
+| AC-1.6 | WHEN onComplete 回调未注册 THEN 不触发任何回调逻辑 | 正常 |
 
 > LoadImageSuccessEvent 定义：`frameworks/core/components/image/image_event.h:24-93`
 
@@ -52,14 +52,14 @@
 **我想要** 通过 onError 回调获取图片加载失败的错误信息,
 **以便** 处理加载失败场景（如显示错误提示、重试等）。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-2.1 | WHEN 调用 `.onError(callback: (event: ImageError) => void)` THEN 注册图片加载失败回调 |
-| AC-2.2 | WHEN 图片加载或解码失败 THEN 触发 onError，传入 LoadImageFailEvent，`image_pattern.cpp:704-724` |
-| AC-2.3 | WHEN onError 触发 THEN event 包含：componentWidth（组件宽）、componentHeight（组件高）、errorMessage（错误描述字符串） |
-| AC-2.4 | WHEN onError 触发且存在结构化错误信息 THEN event 额外包含 errorInfo（ImageErrorInfo：errorCode + errorMessage + downloadInfo） |
-| AC-2.5 | WHEN onError 触发后 THEN Image 尝试进入 alt 降级链（加载 alt 替代图） |
-| AC-2.6 | WHEN onError 回调未注册 THEN 不触发任何回调逻辑，但降级链仍然执行 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-2.1 | WHEN 调用 `.onError(callback: (event: ImageError) => void)` THEN 注册图片加载失败回调 | 异常 |
+| AC-2.2 | WHEN 图片加载或解码失败 THEN 触发 onError，传入 LoadImageFailEvent，`image_pattern.cpp:704-724` | 异常 |
+| AC-2.3 | WHEN onError 触发 THEN event 包含：componentWidth（组件宽）、componentHeight（组件高）、errorMessage（错误描述字符串） | 异常 |
+| AC-2.4 | WHEN onError 触发且存在结构化错误信息 THEN event 额外包含 errorInfo（ImageErrorInfo：errorCode + errorMessage + downloadInfo） | 异常 |
+| AC-2.5 | WHEN onError 触发后 THEN Image 尝试进入 alt 降级链（加载 alt 替代图） | 异常 |
+| AC-2.6 | WHEN onError 回调未注册 THEN 不触发任何回调逻辑，但降级链仍然执行 | 异常 |
 
 > LoadImageFailEvent 定义：`frameworks/core/components/image/image_event.h:95-135`
 
@@ -69,13 +69,13 @@
 **我想要** 通过 onFinish 回调获知动画图片播放完成,
 **以便** 在 GIF/WebP 动画播放结束时执行后续操作。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-3.1 | WHEN 调用 `.onFinish(callback: () => void)` THEN 注册动画播放完成回调 |
-| AC-3.2 | WHEN 动画图片（GIF/WebP/SVG 动画）播放到最后一帧 THEN 触发 onFinish，`image_pattern.cpp:267-278` |
-| AC-3.3 | WHEN 图片为静态图片 THEN onFinish 不会被触发 |
-| AC-3.4 | WHEN onFinish 通过 CanvasImage::SetOnFinishCallback 注册 THEN 回调在动画帧完成时由渲染管道触发 |
-| AC-3.5 | WHEN onFinish 回调未注册 THEN 动画正常播放但不触发回调 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-3.1 | WHEN 调用 `.onFinish(callback: () => void)` THEN 注册动画播放完成回调 | 边界 |
+| AC-3.2 | WHEN 动画图片（GIF/WebP/SVG 动画）播放到最后一帧 THEN 触发 onFinish，`image_pattern.cpp:267-278` | 正常 |
+| AC-3.3 | WHEN 图片为静态图片 THEN onFinish 不会被触发 | 正常 |
+| AC-3.4 | WHEN onFinish 通过 CanvasImage::SetOnFinishCallback 注册 THEN 回调在动画帧完成时由渲染管道触发 | 正常 |
+| AC-3.5 | WHEN onFinish 回调未注册 THEN 动画正常播放但不触发回调 | 正常 |
 
 > onFinish 与 onComplete/onError 独立——onFinish 专属于动画播放完成，不属于图片加载生命周期。
 
@@ -85,17 +85,17 @@
 **我想要** 在 onComplete 回调中获取完整的图片渲染信息,
 **以便** 精确了解图片的原始尺寸、组件尺寸、内容区域和偏移量。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-4.1 | WHEN LoadImageSuccessEvent 创建 THEN 包含 width（double, 默认 0.0）：图片原始宽度（像素） |
-| AC-4.2 | WHEN LoadImageSuccessEvent 创建 THEN 包含 height（double, 默认 0.0）：图片原始高度（像素） |
-| AC-4.3 | WHEN LoadImageSuccessEvent 创建 THEN 包含 componentWidth（double, 默认 0.0）：组件帧宽度 |
-| AC-4.4 | WHEN LoadImageSuccessEvent 创建 THEN 包含 componentHeight（double, 默认 0.0）：组件帧高度 |
-| AC-4.5 | WHEN LoadImageSuccessEvent 创建 THEN 包含 loadingStatus（int32_t, 默认 1）：0=布局完成，1=加载成功 |
-| AC-4.6 | WHEN LoadImageSuccessEvent 创建 THEN 包含 contentWidth（double, 默认 0.0）：绘制内容区域宽度 |
-| AC-4.7 | WHEN LoadImageSuccessEvent 创建 THEN 包含 contentHeight（double, 默认 0.0）：绘制内容区域高度 |
-| AC-4.8 | WHEN LoadImageSuccessEvent 创建 THEN 包含 contentOffsetX（double, 默认 0.0）：内容区域 X 偏移 |
-| AC-4.9 | WHEN LoadImageSuccessEvent 创建 THEN 包含 contentOffsetY（double, 默认 0.0）：内容区域 Y 偏移 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-4.1 | WHEN LoadImageSuccessEvent 创建 THEN 包含 width（double, 默认 0.0）：图片原始宽度（像素） | 正常 |
+| AC-4.2 | WHEN LoadImageSuccessEvent 创建 THEN 包含 height（double, 默认 0.0）：图片原始高度（像素） | 正常 |
+| AC-4.3 | WHEN LoadImageSuccessEvent 创建 THEN 包含 componentWidth（double, 默认 0.0）：组件帧宽度 | 正常 |
+| AC-4.4 | WHEN LoadImageSuccessEvent 创建 THEN 包含 componentHeight（double, 默认 0.0）：组件帧高度 | 正常 |
+| AC-4.5 | WHEN LoadImageSuccessEvent 创建 THEN 包含 loadingStatus（int32_t, 默认 1）：0=布局完成，1=加载成功 | 正常 |
+| AC-4.6 | WHEN LoadImageSuccessEvent 创建 THEN 包含 contentWidth（double, 默认 0.0）：绘制内容区域宽度 | 正常 |
+| AC-4.7 | WHEN LoadImageSuccessEvent 创建 THEN 包含 contentHeight（double, 默认 0.0）：绘制内容区域高度 | 正常 |
+| AC-4.8 | WHEN LoadImageSuccessEvent 创建 THEN 包含 contentOffsetX（double, 默认 0.0）：内容区域 X 偏移 | 正常 |
+| AC-4.9 | WHEN LoadImageSuccessEvent 创建 THEN 包含 contentOffsetY（double, 默认 0.0）：内容区域 Y 偏移 | 正常 |
 
 ### US-5: 获取加载失败事件数据
 
@@ -103,14 +103,14 @@
 **我想要** 在 onError 回调中获取完整的错误信息,
 **以便** 精确定位图片加载失败的原因和上下文。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-5.1 | WHEN LoadImageFailEvent 创建 THEN 包含 componentWidth（double, 默认 0.0）：组件帧宽度 |
-| AC-5.2 | WHEN LoadImageFailEvent 创建 THEN 包含 componentHeight（double, 默认 0.0）：组件帧高度 |
-| AC-5.3 | WHEN LoadImageFailEvent 创建 THEN 包含 errorMessage（string, 默认 ""）：错误描述文本 |
-| AC-5.4 | WHEN LoadImageFailEvent 创建且存在结构化错误 THEN 包含 errorInfo（ImageErrorInfo） |
-| AC-5.5 | WHEN ImageErrorInfo 存在 THEN 包含 errorCode（ImageErrorCode 枚举）和 errorMessage（详细错误描述） |
-| AC-5.6 | WHEN ImageErrorInfo 存在且为网络错误 THEN 可能包含 downloadInfo（CppDownloadInfo 指针） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-5.1 | WHEN LoadImageFailEvent 创建 THEN 包含 componentWidth（double, 默认 0.0）：组件帧宽度 | 正常 |
+| AC-5.2 | WHEN LoadImageFailEvent 创建 THEN 包含 componentHeight（double, 默认 0.0）：组件帧高度 | 正常 |
+| AC-5.3 | WHEN LoadImageFailEvent 创建 THEN 包含 errorMessage（string, 默认 ""）：错误描述文本 | 异常 |
+| AC-5.4 | WHEN LoadImageFailEvent 创建且存在结构化错误 THEN 包含 errorInfo（ImageErrorInfo） | 异常 |
+| AC-5.5 | WHEN ImageErrorInfo 存在 THEN 包含 errorCode（ImageErrorCode 枚举）和 errorMessage（详细错误描述） | 异常 |
+| AC-5.6 | WHEN ImageErrorInfo 存在且为网络错误 THEN 可能包含 downloadInfo（CppDownloadInfo 指针） | 异常 |
 
 > ImageErrorCode 枚举覆盖：未知源类型(101000)、HTTP/网络错误(102xxx)、解码错误(103xxx)、Canvas图片错误(111xxx)。`frameworks/base/image/image_defines.h:39-64`
 
@@ -118,7 +118,7 @@
 
 ## 验收追溯
 
-| AC ID | 关联规则 | 关联 Task | 验证方式 | 证据 |
+| AC编号 | 关联规则 | 关联 Task | 验证方式 | 证据 |
 |-------|----------|-----------|----------|------|
 | AC-1.1~1.6 | R-4 | — | 代码审查 | `image_event_hub.h:48-56` |
 | AC-2.1~2.6 | R-5, R-6 | — | 代码审查 | `image_pattern.cpp:704-724` |

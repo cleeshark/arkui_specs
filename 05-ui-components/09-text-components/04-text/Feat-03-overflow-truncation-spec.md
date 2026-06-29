@@ -35,16 +35,16 @@
 **我想要** 通过 `.textOverflow()` 控制文本超出容器时的显示方式,
 **以便** 在有限空间内合理呈现长文本。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-1.1 | WHEN 调用 `.textOverflow({ overflow: TextOverflow.Clip })` 且文本超出 maxLines 限制 THEN 超出部分被裁剪，不显示省略号 |
-| AC-1.2 | WHEN 调用 `.textOverflow({ overflow: TextOverflow.Ellipsis })` 且文本超出 maxLines 限制 THEN 超出部分被截断并在截断处显示省略号（U+2026） |
-| AC-1.3 | WHEN 调用 `.textOverflow({ overflow: TextOverflow.None })` THEN 行为与 Clip 相同（`constants.h:257-258`，NONE 和 CLIP 在排版引擎中行为一致） |
-| AC-1.4 | WHEN 调用 `.textOverflow({ overflow: TextOverflow.MARQUEE })` 且文本实际宽度超出容器宽度 THEN 文本以单行跑马灯形式滚动显示 |
-| AC-1.5 | WHEN 设置 TextOverflow.MARQUEE THEN 以下属性被隐式覆盖：maxLines 强制为 1、textIndent 强制为 0、文本中换行符替换为空格、copyOption 强制为 None（`text_layout_algorithm.cpp:1214-1217`, `text_pattern.cpp:2969-2970`） |
-| AC-1.6 | WHEN 设置 TextOverflow.MARQUEE 但文本实际宽度未超出容器宽度 THEN 不启动滚动动画，文本静态显示 |
-| AC-1.7 | WHEN 未设置 textOverflow THEN 使用默认值 TextOverflow.Clip（`text_model_ng.cpp:1319`） |
-| AC-1.8 | WHEN 通过 C-API ResetTextTextOverflow 重置 THEN 值重置为 TextOverflow.NONE（`node_text_modifier.cpp:1092`），与 ArkTS 默认值 Clip 存在语义差异 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-1.1 | WHEN 调用 `.textOverflow({ overflow: TextOverflow.Clip })` 且文本超出 maxLines 限制 THEN 超出部分被裁剪，不显示省略号 | 边界 |
+| AC-1.2 | WHEN 调用 `.textOverflow({ overflow: TextOverflow.Ellipsis })` 且文本超出 maxLines 限制 THEN 超出部分被截断并在截断处显示省略号（U+2026） | 边界 |
+| AC-1.3 | WHEN 调用 `.textOverflow({ overflow: TextOverflow.None })` THEN 行为与 Clip 相同（`constants.h:257-258`，NONE 和 CLIP 在排版引擎中行为一致） | 边界 |
+| AC-1.4 | WHEN 调用 `.textOverflow({ overflow: TextOverflow.MARQUEE })` 且文本实际宽度超出容器宽度 THEN 文本以单行跑马灯形式滚动显示 | 边界 |
+| AC-1.5 | WHEN 设置 TextOverflow.MARQUEE THEN 以下属性被隐式覆盖：maxLines 强制为 1、textIndent 强制为 0、文本中换行符替换为空格、copyOption 强制为 None（`text_layout_algorithm.cpp:1214-1217`, `text_pattern.cpp:2969-2970`） | 边界 |
+| AC-1.6 | WHEN 设置 TextOverflow.MARQUEE 但文本实际宽度未超出容器宽度 THEN 不启动滚动动画，文本静态显示 | 边界 |
+| AC-1.7 | WHEN 未设置 textOverflow THEN 使用默认值 TextOverflow.Clip（`text_model_ng.cpp:1319`） | 异常 |
+| AC-1.8 | WHEN 通过 C-API ResetTextTextOverflow 重置 THEN 值重置为 TextOverflow.NONE（`node_text_modifier.cpp:1092`），与 ArkTS 默认值 Clip 存在语义差异 | 正常 |
 
 ### US-2: 限制文本最大行数
 
@@ -52,13 +52,13 @@
 **我想要** 通过 `.maxLines()` 限制文本显示的最大行数,
 **以便** 控制文本占用的垂直空间。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-2.1 | WHEN 调用 `.maxLines(N)` 且 N 为正整数 THEN 文本最多显示 N 行 |
-| AC-2.2 | WHEN 未设置 maxLines THEN 默认值为 UINT32_MAX（无限制），文本自动换行直到内容结束（`text_model_ng.cpp:1283`） |
-| AC-2.3 | WHEN maxLines 值为 Infinity 字符串 THEN 按 UINT32_MAX 处理（`js_text.cpp:508`） |
-| AC-2.4 | WHEN 文本包含 SpanString 且 SpanString 有自身 maxLines 设置 THEN 组件 maxLines 被覆盖为 UINT32_MAX（由 SpanString 的 maxLines 生效），除非 IsTextMaxlinesFirst 为 true（`text_layout_algorithm.cpp:175-176`） |
-| AC-2.5 | WHEN maxLines 与 textOverflow.Ellipsis 配合使用 THEN 超出 maxLines 的文本被截断并显示省略号 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-2.1 | WHEN 调用 `.maxLines(N)` 且 N 为正整数 THEN 文本最多显示 N 行 | 边界 |
+| AC-2.2 | WHEN 未设置 maxLines THEN 默认值为 UINT32_MAX（无限制），文本自动换行直到内容结束（`text_model_ng.cpp:1283`） | 异常 |
+| AC-2.3 | WHEN maxLines 值为 Infinity 字符串 THEN 按 UINT32_MAX 处理（`js_text.cpp:508`） | 边界 |
+| AC-2.4 | WHEN 文本包含 SpanString 且 SpanString 有自身 maxLines 设置 THEN 组件 maxLines 被覆盖为 UINT32_MAX（由 SpanString 的 maxLines 生效），除非 IsTextMaxlinesFirst 为 true（`text_layout_algorithm.cpp:175-176`） | 边界 |
+| AC-2.5 | WHEN maxLines 与 textOverflow.Ellipsis 配合使用 THEN 超出 maxLines 的文本被截断并显示省略号 | 边界 |
 
 ### US-3: 设置文本最小行数
 
@@ -66,13 +66,13 @@
 **我想要** 通过 `.minLines()` (@since 22) 设置文本的最小显示行数,
 **以便** 确保文本区域在内容较少时仍保持足够的高度。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-3.1 | WHEN 调用 `.minLines(N)` 且 N ≥ 1 THEN 文本框高度至少容纳 N 行，不足 N 行时自动扩展高度 |
-| AC-3.2 | WHEN minLines > maxLines THEN minLines 被钳位到 maxLines 值（`multiple_paragraph_layout_algorithm.cpp:1154`） |
-| AC-3.3 | WHEN minLines 为 0 或未设置 THEN 不限制最小行数，高度由内容决定（默认值 0，`text_model_ng.cpp:32`） |
-| AC-3.4 | WHEN minLines 为负值或非数字 THEN 调用 ResetMinLines 清除属性（`js_text.cpp:524`） |
-| AC-3.5 | WHEN minLines 生效 THEN 仅影响组件 Frame 高度（扩展），不改变 Paragraph 布局本身（`multiple_paragraph_layout_algorithm.cpp:1145-1189`） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-3.1 | WHEN 调用 `.minLines(N)` 且 N ≥ 1 THEN 文本框高度至少容纳 N 行，不足 N 行时自动扩展高度 | 正常 |
+| AC-3.2 | WHEN minLines > maxLines THEN minLines 被钳位到 maxLines 值（`multiple_paragraph_layout_algorithm.cpp:1154`） | 边界 |
+| AC-3.3 | WHEN minLines 为 0 或未设置 THEN 不限制最小行数，高度由内容决定（默认值 0，`text_model_ng.cpp:32`） | 异常 |
+| AC-3.4 | WHEN minLines 为负值或非数字 THEN 调用 ResetMinLines 清除属性（`js_text.cpp:524`） | 正常 |
+| AC-3.5 | WHEN minLines 生效 THEN 仅影响组件 Frame 高度（扩展），不改变 Paragraph 布局本身（`multiple_paragraph_layout_algorithm.cpp:1145-1189`） | 正常 |
 
 ### US-4: 控制省略号位置
 
@@ -80,16 +80,16 @@
 **我想要** 通过 `.ellipsisMode()` (@since 11) 控制省略号出现的位置,
 **以便** 实现头部省略、中部省略或尾部省略效果。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-4.1 | WHEN 调用 `.ellipsisMode(EllipsisMode.END)` THEN 省略号出现在文本末尾（默认行为） |
-| AC-4.2 | WHEN 调用 `.ellipsisMode(EllipsisMode.START)` THEN 省略号出现在文本开头 |
-| AC-4.3 | WHEN 调用 `.ellipsisMode(EllipsisMode.CENTER)` THEN 省略号出现在文本中间位置（分割比例 TEXT_SPLIT_RATIO=0.6，`txt_paragraph.cpp:33`） |
-| AC-4.4 | WHEN 调用 `.ellipsisMode(EllipsisMode.MULTILINE_START)` (@since 24) THEN 省略号出现在多行文本块的开头 |
-| AC-4.5 | WHEN 调用 `.ellipsisMode(EllipsisMode.MULTILINE_CENTER)` (@since 24) THEN 省略号出现在多行文本块的中间 |
-| AC-4.6 | WHEN ellipsisMode 设置了任意值但 textOverflow 不是 Ellipsis THEN ellipsisMode 不生效（省略号字符仅在 `textOverflow == TextOverflow.ELLIPSIS` 时注入，`txt_paragraph.cpp:93-95`） |
-| AC-4.7 | WHEN ellipsisMode 为 CENTER THEN Paragraph 缓存失效，每次布局强制重建（`text_layout_algorithm.cpp:315`） |
-| AC-4.8 | WHEN 未设置 ellipsisMode THEN 默认值为 EllipsisMode.END（C++ 内部名 TAIL，`text_style.h:662`） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-4.1 | WHEN 调用 `.ellipsisMode(EllipsisMode.END)` THEN 省略号出现在文本末尾（默认行为） | 正常 |
+| AC-4.2 | WHEN 调用 `.ellipsisMode(EllipsisMode.START)` THEN 省略号出现在文本开头 | 正常 |
+| AC-4.3 | WHEN 调用 `.ellipsisMode(EllipsisMode.CENTER)` THEN 省略号出现在文本中间位置（分割比例 TEXT_SPLIT_RATIO=0.6，`txt_paragraph.cpp:33`） | 正常 |
+| AC-4.4 | WHEN 调用 `.ellipsisMode(EllipsisMode.MULTILINE_START)` (@since 24) THEN 省略号出现在多行文本块的开头 | 正常 |
+| AC-4.5 | WHEN 调用 `.ellipsisMode(EllipsisMode.MULTILINE_CENTER)` (@since 24) THEN 省略号出现在多行文本块的中间 | 正常 |
+| AC-4.6 | WHEN ellipsisMode 设置了任意值但 textOverflow 不是 Ellipsis THEN ellipsisMode 不生效（省略号字符仅在 `textOverflow == TextOverflow.ELLIPSIS` 时注入，`txt_paragraph.cpp:93-95`） | 异常 |
+| AC-4.7 | WHEN ellipsisMode 为 CENTER THEN Paragraph 缓存失效，每次布局强制重建（`text_layout_algorithm.cpp:315`） | 正常 |
+| AC-4.8 | WHEN 未设置 ellipsisMode THEN 默认值为 EllipsisMode.END（C++ 内部名 TAIL，`text_style.h:662`） | 异常 |
 
 ### US-5: 控制断词策略
 
@@ -97,13 +97,13 @@
 **我想要** 通过 `.wordBreak()` (@since 11) 控制文本的断词策略,
 **以便** 优化不同语言文本的换行效果。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-5.1 | WHEN 调用 `.wordBreak(WordBreak.NORMAL)` THEN 按照默认 Unicode 断行规则换行 |
-| AC-5.2 | WHEN 调用 `.wordBreak(WordBreak.BREAK_ALL)` THEN 允许在任意两个字符之间断行（包括字母中间） |
-| AC-5.3 | WHEN 调用 `.wordBreak(WordBreak.BREAK_WORD)` THEN 优先在词边界断行，仅在单词过长无法放入一行时才拆词（默认值，`text_style.h:655`） |
-| AC-5.4 | WHEN 调用 `.wordBreak(WordBreak.HYPHENATION)` (@since 18) THEN 在支持连字符断词的语言中按音节断行并插入连字符 |
-| AC-5.5 | WHEN 未设置 wordBreak THEN 默认值为 WordBreak.BREAK_WORD（`node_text_modifier.cpp:1610`） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-5.1 | WHEN 调用 `.wordBreak(WordBreak.NORMAL)` THEN 按照默认 Unicode 断行规则换行 | 正常 |
+| AC-5.2 | WHEN 调用 `.wordBreak(WordBreak.BREAK_ALL)` THEN 允许在任意两个字符之间断行（包括字母中间） | 正常 |
+| AC-5.3 | WHEN 调用 `.wordBreak(WordBreak.BREAK_WORD)` THEN 优先在词边界断行，仅在单词过长无法放入一行时才拆词（默认值，`text_style.h:655`） | 边界 |
+| AC-5.4 | WHEN 调用 `.wordBreak(WordBreak.HYPHENATION)` (@since 18) THEN 在支持连字符断词的语言中按音节断行并插入连字符 | 正常 |
+| AC-5.5 | WHEN 未设置 wordBreak THEN 默认值为 WordBreak.BREAK_WORD（`node_text_modifier.cpp:1610`） | 异常 |
 
 ### US-6: 控制换行质量策略
 
@@ -111,12 +111,12 @@
 **我想要** 通过 `.lineBreakStrategy()` (@since 12) 控制换行算法的质量级别,
 **以便** 在排版质量与性能之间做出权衡。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-6.1 | WHEN 调用 `.lineBreakStrategy(LineBreakStrategy.GREEDY)` THEN 使用贪心算法逐行填充，每行尽可能放更多内容（默认行为） |
-| AC-6.2 | WHEN 调用 `.lineBreakStrategy(LineBreakStrategy.HIGH_QUALITY)` THEN 使用全局优化算法选择断行点，可能插入连字符以获得更均匀的行宽 |
-| AC-6.3 | WHEN 调用 `.lineBreakStrategy(LineBreakStrategy.BALANCED)` THEN 尝试使各行宽度尽可能均匀分配 |
-| AC-6.4 | WHEN 未设置 lineBreakStrategy THEN 默认值为 LineBreakStrategy.GREEDY（`text_style.h:666`） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-6.1 | WHEN 调用 `.lineBreakStrategy(LineBreakStrategy.GREEDY)` THEN 使用贪心算法逐行填充，每行尽可能放更多内容（默认行为） | 正常 |
+| AC-6.2 | WHEN 调用 `.lineBreakStrategy(LineBreakStrategy.HIGH_QUALITY)` THEN 使用全局优化算法选择断行点，可能插入连字符以获得更均匀的行宽 | 正常 |
+| AC-6.3 | WHEN 调用 `.lineBreakStrategy(LineBreakStrategy.BALANCED)` THEN 尝试使各行宽度尽可能均匀分配 | 正常 |
+| AC-6.4 | WHEN 未设置 lineBreakStrategy THEN 默认值为 LineBreakStrategy.GREEDY（`text_style.h:666`） | 异常 |
 
 ### US-7: 高度自适应策略与溢出的交互
 
@@ -126,12 +126,12 @@
 
 > 注：heightAdaptivePolicy 的基础行为已在 Feat-01 (AC-9.4~9.6) 中规格化。本 US 补充其与溢出截断属性的交互行为。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-7.1 | WHEN heightAdaptivePolicy 为 LAYOUT_CONSTRAINT_FIRST 且 maxLines 为 UINT32_MAX THEN 从 `GetAdaptedMaxLines()` 计算得出约束高度可容纳的最大行数（`text_layout_algorithm.cpp:67-88`） |
-| AC-7.2 | WHEN heightAdaptivePolicy 为 LAYOUT_CONSTRAINT_FIRST THEN 在约束高度内循环减少 maxLines 直到内容适配，textOverflow 模式在最终段落中仍然生效（`text_layout_algorithm.cpp:1179-1203`） |
-| AC-7.3 | WHEN heightAdaptivePolicy 为 MIN_FONT_SIZE_FIRST THEN 先缩小字号到 minFontSize，再根据 maxLines 限制截断（`text_layout_algorithm.cpp:1145-1153`） |
-| AC-7.4 | WHEN 未设置 heightAdaptivePolicy THEN 默认值为 MAX_LINES_FIRST（`text_model_ng.cpp:1352`） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-7.1 | WHEN heightAdaptivePolicy 为 LAYOUT_CONSTRAINT_FIRST 且 maxLines 为 UINT32_MAX THEN 从 `GetAdaptedMaxLines()` 计算得出约束高度可容纳的最大行数（`text_layout_algorithm.cpp:67-88`） | 边界 |
+| AC-7.2 | WHEN heightAdaptivePolicy 为 LAYOUT_CONSTRAINT_FIRST THEN 在约束高度内循环减少 maxLines 直到内容适配，textOverflow 模式在最终段落中仍然生效（`text_layout_algorithm.cpp:1179-1203`） | 边界 |
+| AC-7.3 | WHEN heightAdaptivePolicy 为 MIN_FONT_SIZE_FIRST THEN 先缩小字号到 minFontSize，再根据 maxLines 限制截断（`text_layout_algorithm.cpp:1145-1153`） | 边界 |
+| AC-7.4 | WHEN 未设置 heightAdaptivePolicy THEN 默认值为 MAX_LINES_FIRST（`text_model_ng.cpp:1352`） | 异常 |
 
 ### US-8: 压缩行首标点
 
@@ -139,10 +139,10 @@
 **我想要** 通过 `.compressLeadingPunctuation()` (@since 23) 压缩行首的全角标点符号,
 **以便** 优化中文排版中行首标点的视觉对齐效果。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-8.1 | WHEN 调用 `.compressLeadingPunctuation(true)` THEN 行首的全角开括号/引号等标点被压缩为半宽显示（`txt_paragraph.cpp:108` → Rosen `compressHeadPunctuation`） |
-| AC-8.2 | WHEN 调用 `.compressLeadingPunctuation(false)` 或未设置 THEN 行首标点保持全角宽度（默认 false，`text_style.h:684`） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-8.1 | WHEN 调用 `.compressLeadingPunctuation(true)` THEN 行首的全角开括号/引号等标点被压缩为半宽显示（`txt_paragraph.cpp:108` → Rosen `compressHeadPunctuation`） | 正常 |
+| AC-8.2 | WHEN 调用 `.compressLeadingPunctuation(false)` 或未设置 THEN 行首标点保持全角宽度（默认 false，`text_style.h:684`） | 异常 |
 
 ### US-9: 孤字优化
 
@@ -150,10 +150,10 @@
 **我想要** 通过 `.orphanCharOptimization()` (@since 26) 避免最后一行出现单个孤立字符,
 **以便** 提升多行文本的排版美观度。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-9.1 | WHEN 调用 `.orphanCharOptimization(true)` THEN 排版引擎调整断行策略，避免最后一行仅包含一个孤立字符（`txt_paragraph.cpp:107` → Rosen `orphanCharOptimization`） |
-| AC-9.2 | WHEN 调用 `.orphanCharOptimization(false)` 或未设置 THEN 不进行孤字优化（默认 false，`text_style.h:682`） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-9.1 | WHEN 调用 `.orphanCharOptimization(true)` THEN 排版引擎调整断行策略，避免最后一行仅包含一个孤立字符（`txt_paragraph.cpp:107` → Rosen `orphanCharOptimization`） | 正常 |
+| AC-9.2 | WHEN 调用 `.orphanCharOptimization(false)` 或未设置 THEN 不进行孤字优化（默认 false，`text_style.h:682`） | 异常 |
 
 ### US-10: 尾部空格优化
 
@@ -161,10 +161,10 @@
 **我想要** 通过 `.optimizeTrailingSpace()` (@since 20) 控制尾部空白字符是否计入行宽,
 **以便** 避免行尾不可见空格导致的意外宽度扩展。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-10.1 | WHEN 调用 `.optimizeTrailingSpace(true)` THEN 尾部空白字符不计入行宽度测量（`txt_paragraph.cpp:106` → Rosen `isTrailingSpaceOptimized`） |
-| AC-10.2 | WHEN 调用 `.optimizeTrailingSpace(false)` 或未设置 THEN 尾部空白字符计入行宽度（默认 false，`text_style.h:673`） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-10.1 | WHEN 调用 `.optimizeTrailingSpace(true)` THEN 尾部空白字符不计入行宽度测量（`txt_paragraph.cpp:106` → Rosen `isTrailingSpaceOptimized`） | 正常 |
+| AC-10.2 | WHEN 调用 `.optimizeTrailingSpace(false)` 或未设置 THEN 尾部空白字符计入行宽度（默认 false，`text_style.h:673`） | 异常 |
 
 ### US-11: CJK-拉丁自动间距
 
@@ -172,11 +172,11 @@
 **我想要** 通过 `.enableAutoSpacing()` (@since 20) 自动在 CJK 字符和拉丁字母/数字之间插入间距,
 **以便** 改善中英文混排的可读性。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-11.1 | WHEN 调用 `.enableAutoSpacing(true)` THEN CJK 字符和相邻的拉丁字母/数字之间自动插入细间距（`txt_paragraph.cpp:96` → Rosen `enableAutoSpace`） |
-| AC-11.2 | WHEN 调用 `.enableAutoSpacing(false)` 或未设置 THEN 不自动插入间距（默认 false，`text_style.h:687`） |
-| AC-11.3 | WHEN enableAutoSpacing 属性变更 THEN 触发 PROPERTY_UPDATE_MEASURE 重新测量（`text_layout_property.h:183`） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-11.1 | WHEN 调用 `.enableAutoSpacing(true)` THEN CJK 字符和相邻的拉丁字母/数字之间自动插入细间距（`txt_paragraph.cpp:96` → Rosen `enableAutoSpace`） | 正常 |
+| AC-11.2 | WHEN 调用 `.enableAutoSpacing(false)` 或未设置 THEN 不自动插入间距（默认 false，`text_style.h:687`） | 异常 |
+| AC-11.3 | WHEN enableAutoSpacing 属性变更 THEN 触发 PROPERTY_UPDATE_MEASURE 重新测量（`text_layout_property.h:183`） | 正常 |
 
 ## 验收追溯
 

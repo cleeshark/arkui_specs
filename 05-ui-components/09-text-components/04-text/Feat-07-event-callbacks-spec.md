@@ -37,62 +37,62 @@
 
 > 作为开发者，我想要在用户复制文本前拦截复制操作并在复制完成后获取已复制的文本内容，以便实现复制内容审计、脱敏或自定义复制行为。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-1.1 | WHEN 用户通过选择菜单点击"复制"或按 Ctrl+C 触发复制操作 THEN `onWillCopy` 回调先于剪贴板写入被调用，参数 `value` 为选中文本的 `std::u16string` 内容（`text_pattern.cpp:1094`） |
-| AC-1.2 | WHEN `onWillCopy` 回调返回 `true` THEN 复制操作继续执行——剪贴板写入、菜单关闭、`onCopy` 回调依次触发 |
-| AC-1.3 | WHEN `onWillCopy` 回调返回 `false` THEN 复制操作被取消——不执行剪贴板写入、不触发 `onCopy` 回调，仅关闭选择菜单（`text_pattern.cpp:1097-1099`） |
-| AC-1.4 | WHEN 未注册 `onWillCopy` 回调 THEN 默认行为等同返回 `true`（`text_event_hub.h:55` `FireOnWillCopy` 在回调为空时返回 `true`） |
-| AC-1.5 | WHEN 复制操作成功完成（剪贴板已写入） THEN `onCopy` 回调被调用，参数 `value` 为已复制的文本内容（`text_pattern.cpp:1113`） |
-| AC-1.6 | WHEN 选区有效但 `start == end`（零宽选区）且非 AI 实体选中 THEN 不触发 onWillCopy/onCopy，而是调用 `HandleSelectionChange(-1, -1)` 清除选区（`text_pattern.cpp:1081-1083`） |
-| AC-1.7 | WHEN `clipboard_` 为空或 `GetDataDetectorAdapter()` 返回 null THEN HandleOnCopy 立即返回，不触发任何回调（`text_pattern.cpp:1079-1080`） |
-| AC-1.8 | WHEN 选中文本为空（`value.empty()`） THEN 跳过 `onWillCopy` 调用但仍尝试执行剪贴板写入流程（`text_pattern.cpp:1090-1101`）；最终 `FireOnCopy` 被 `CHECK_NULL_VOID(!value.empty())` 守卫阻止（`text_pattern.cpp:1110`） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-1.1 | WHEN 用户通过选择菜单点击"复制"或按 Ctrl+C 触发复制操作 THEN `onWillCopy` 回调先于剪贴板写入被调用，参数 `value` 为选中文本的 `std::u16string` 内容（`text_pattern.cpp:1094`） | 正常 |
+| AC-1.2 | WHEN `onWillCopy` 回调返回 `true` THEN 复制操作继续执行——剪贴板写入、菜单关闭、`onCopy` 回调依次触发 | 正常 |
+| AC-1.3 | WHEN `onWillCopy` 回调返回 `false` THEN 复制操作被取消——不执行剪贴板写入、不触发 `onCopy` 回调，仅关闭选择菜单（`text_pattern.cpp:1097-1099`） | 正常 |
+| AC-1.4 | WHEN 未注册 `onWillCopy` 回调 THEN 默认行为等同返回 `true`（`text_event_hub.h:55` `FireOnWillCopy` 在回调为空时返回 `true`） | 正常 |
+| AC-1.5 | WHEN 复制操作成功完成（剪贴板已写入） THEN `onCopy` 回调被调用，参数 `value` 为已复制的文本内容（`text_pattern.cpp:1113`） | 正常 |
+| AC-1.6 | WHEN 选区有效但 `start == end`（零宽选区）且非 AI 实体选中 THEN 不触发 onWillCopy/onCopy，而是调用 `HandleSelectionChange(-1, -1)` 清除选区（`text_pattern.cpp:1081-1083`） | 正常 |
+| AC-1.7 | WHEN `clipboard_` 为空或 `GetDataDetectorAdapter()` 返回 null THEN HandleOnCopy 立即返回，不触发任何回调（`text_pattern.cpp:1079-1080`） | 异常 |
+| AC-1.8 | WHEN 选中文本为空（`value.empty()`） THEN 跳过 `onWillCopy` 调用但仍尝试执行剪贴板写入流程（`text_pattern.cpp:1090-1101`）；最终 `FireOnCopy` 被 `CHECK_NULL_VOID(!value.empty())` 守卫阻止（`text_pattern.cpp:1110`） | 异常 |
 
 ### US-2: 选区变化监听
 
 > 作为开发者，我想要在文本选区范围发生变化时收到通知，以便实时更新关联的 UI（如字数统计、选区高亮、工具栏状态）。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-2.1 | WHEN 用户长按文本触发初始选区（词边界选中） THEN `onTextSelectionChange` 回调被调用，`selectionStart` 和 `selectionEnd` 为选中范围的起止索引（`text_pattern.cpp:363`） |
-| AC-2.2 | WHEN 用户双击文本选中词 THEN `onTextSelectionChange` 回调被调用，参数为词边界索引 |
-| AC-2.3 | WHEN 用户鼠标左键按下并拖动 THEN 每次鼠标移动更新选区时触发回调（`text_pattern.cpp:3415`） |
-| AC-2.4 | WHEN 用户拖动选择手柄改变选区 THEN 每次手柄位置变化触发回调（`text_pattern.cpp:968,973`） |
-| AC-2.5 | WHEN 用户按 Ctrl+A 全选 THEN 回调参数为 `(0, textSize)`（`text_pattern.cpp:3645`） |
-| AC-2.6 | WHEN 通过 `selection(startIndex, endIndex)` API 编程式设置选区 THEN 触发回调，参数为钳位后的索引（`text_pattern.cpp:5018`） |
-| AC-2.7 | WHEN 通过 `setTextSelection(selectionStart, selectionEnd)` 控制器方法设置选区 THEN 触发回调（`text_pattern.cpp:7220`） |
-| AC-2.8 | WHEN 用户按 Shift+方向键扩展选区（SELECTABLE_FOCUSABLE 模式） THEN 每次按键触发回调（`text_pattern.cpp:3763`） |
-| AC-2.9 | WHEN 选区被清除（点击空白区域、复制后取消选区等） THEN 回调参数为 `(-1, -1)`（`text_pattern.cpp:314, 1082`） |
-| AC-2.10 | WHEN AI 实体被选中 THEN 触发回调，参数为实体的 `(aiSpan.start, aiSpan.end)`（`text_pattern.cpp:2328`） |
-| AC-2.11 | WHEN 连续两次设置完全相同的 `(start, end)` 值 THEN 第二次不触发回调（去重机制，`text_pattern.cpp:7033-7035`） |
-| AC-2.12 | WHEN 鼠标按住 Shift 键点击扩展选区 THEN 回调参数的 start 保持为上次有效选区起点 `lastValidStart`（`text_pattern.cpp:3272`） |
-| AC-2.13 | WHEN 鼠标自动滚动选择（鼠标移出可视区域） THEN 持续触发回调（`text_pattern.cpp:8034`） |
-| AC-2.14 | WHEN 拖拽失败需恢复选区 THEN 触发回调，参数为 `(recoverStart_, recoverEnd_)`（`text_pattern.cpp:4068`） |
-| AC-2.15 | WHEN AI 实体长按选中 THEN 触发回调，参数为实体范围（`text_pattern.cpp:515`） |
-| AC-2.16 | WHEN `textSelectable == UNSELECTABLE` 或 `copyOption == None` THEN `selection()` API 调用被忽略（`text_pattern.cpp:1589` 守卫），不触发回调 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-2.1 | WHEN 用户长按文本触发初始选区（词边界选中） THEN `onTextSelectionChange` 回调被调用，`selectionStart` 和 `selectionEnd` 为选中范围的起止索引（`text_pattern.cpp:363`） | 边界 |
+| AC-2.2 | WHEN 用户双击文本选中词 THEN `onTextSelectionChange` 回调被调用，参数为词边界索引 | 边界 |
+| AC-2.3 | WHEN 用户鼠标左键按下并拖动 THEN 每次鼠标移动更新选区时触发回调（`text_pattern.cpp:3415`） | 正常 |
+| AC-2.4 | WHEN 用户拖动选择手柄改变选区 THEN 每次手柄位置变化触发回调（`text_pattern.cpp:968,973`） | 正常 |
+| AC-2.5 | WHEN 用户按 Ctrl+A 全选 THEN 回调参数为 `(0, textSize)`（`text_pattern.cpp:3645`） | 正常 |
+| AC-2.6 | WHEN 通过 `selection(startIndex, endIndex)` API 编程式设置选区 THEN 触发回调，参数为钳位后的索引（`text_pattern.cpp:5018`） | 边界 |
+| AC-2.7 | WHEN 通过 `setTextSelection(selectionStart, selectionEnd)` 控制器方法设置选区 THEN 触发回调（`text_pattern.cpp:7220`） | 正常 |
+| AC-2.8 | WHEN 用户按 Shift+方向键扩展选区（SELECTABLE_FOCUSABLE 模式） THEN 每次按键触发回调（`text_pattern.cpp:3763`） | 正常 |
+| AC-2.9 | WHEN 选区被清除（点击空白区域、复制后取消选区等） THEN 回调参数为 `(-1, -1)`（`text_pattern.cpp:314, 1082`） | 正常 |
+| AC-2.10 | WHEN AI 实体被选中 THEN 触发回调，参数为实体的 `(aiSpan.start, aiSpan.end)`（`text_pattern.cpp:2328`） | 正常 |
+| AC-2.11 | WHEN 连续两次设置完全相同的 `(start, end)` 值 THEN 第二次不触发回调（去重机制，`text_pattern.cpp:7033-7035`） | 正常 |
+| AC-2.12 | WHEN 鼠标按住 Shift 键点击扩展选区 THEN 回调参数的 start 保持为上次有效选区起点 `lastValidStart`（`text_pattern.cpp:3272`） | 正常 |
+| AC-2.13 | WHEN 鼠标自动滚动选择（鼠标移出可视区域） THEN 持续触发回调（`text_pattern.cpp:8034`） | 正常 |
+| AC-2.14 | WHEN 拖拽失败需恢复选区 THEN 触发回调，参数为 `(recoverStart_, recoverEnd_)`（`text_pattern.cpp:4068`） | 异常 |
+| AC-2.15 | WHEN AI 实体长按选中 THEN 触发回调，参数为实体范围（`text_pattern.cpp:515`） | 正常 |
+| AC-2.16 | WHEN `textSelectable == UNSELECTABLE` 或 `copyOption == None` THEN `selection()` API 调用被忽略（`text_pattern.cpp:1589` 守卫），不触发回调 | 正常 |
 
 ### US-3: 跑马灯状态监听
 
 > 作为开发者，我想要在跑马灯动画的各个状态变化时收到通知，以便控制关联 UI 或记录跑马灯行为。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-3.1 | WHEN 跑马灯动画启动（首次或从非 bounce 状态启动） THEN `onMarqueeStateChange` 回调被调用，参数为 `MarqueeState.START`（值 0）（`text_content_modifier.cpp:1765`） |
-| AC-3.2 | WHEN 跑马灯一轮滚动到达终点（`racePercent == marqueeRaceMaxPercent_`） THEN 回调参数为 `MarqueeState.BOUNCE`（值 1），`marqueeCount_` 递增（`text_content_modifier.cpp:1821-1822`） |
-| AC-3.3 | WHEN `AllowTextRace()` 返回 false（循环次数耗尽或 ON_FOCUS 策略下失焦） THEN 回调参数为 `MarqueeState.FINISH`（值 2）（`text_content_modifier.cpp:1824-1825`） |
-| AC-3.4 | WHEN `marqueeOptions.loop > 0` 且 `marqueeCount_ >= loop` THEN `AllowTextRace()` 返回 false → 触发 FINISH（`text_content_modifier.cpp:1865`） |
-| AC-3.5 | WHEN `marqueeOptions.loop == -1`（无限循环） THEN `AllowTextRace()` 中 loop 条件始终不满足 → 永远不触发 FINISH，仅重复 BOUNCE → START 循环 |
-| AC-3.6 | WHEN 最后一轮动画结束 THEN 先触发 BOUNCE 再触发 FINISH（同一轮动画结束回调中依次触发，`text_content_modifier.cpp:1820-1826`） |
-| AC-3.7 | WHEN START 状态触发 THEN 自动关闭选择覆盖层并重置选区（`text_pattern.cpp:6996-6999`），`isMarqueeRunning_` 置为 true |
-| AC-3.8 | WHEN FINISH 状态触发 THEN `isMarqueeRunning_` 置为 false（`text_pattern.cpp:7000-7001`） |
-| AC-3.9 | WHEN 任意状态变化后 THEN 调用 `RecoverCopyOption()` 恢复复制能力（`text_pattern.cpp:7004`） |
-| AC-3.10 | WHEN `marqueeOption_.startPolicy == MarqueeStartPolicy.ON_FOCUS` 且组件失焦且未 hovered THEN `AllowTextRace()` 返回 false → 触发 FINISH（`text_content_modifier.cpp:1868-1869`） |
-| AC-3.11 | WHEN `marqueeSet_ == false` 或 `marqueeOption_.start == false` THEN `AllowTextRace()` 返回 false，不启动跑马灯，不触发任何状态回调（`text_content_modifier.cpp:1862`） |
-| AC-3.12 | WHEN 动画中 `marqueeAnimationId` 与当前 `marqueeAnimationId_` 不匹配（动画被替代） THEN 旧动画的完成回调直接返回，不触发 BOUNCE/FINISH（`text_content_modifier.cpp:1815-1816`） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-3.1 | WHEN 跑马灯动画启动（首次或从非 bounce 状态启动） THEN `onMarqueeStateChange` 回调被调用，参数为 `MarqueeState.START`（值 0）（`text_content_modifier.cpp:1765`） | 正常 |
+| AC-3.2 | WHEN 跑马灯一轮滚动到达终点（`racePercent == marqueeRaceMaxPercent_`） THEN 回调参数为 `MarqueeState.BOUNCE`（值 1），`marqueeCount_` 递增（`text_content_modifier.cpp:1821-1822`） | 正常 |
+| AC-3.3 | WHEN `AllowTextRace()` 返回 false（循环次数耗尽或 ON_FOCUS 策略下失焦） THEN 回调参数为 `MarqueeState.FINISH`（值 2）（`text_content_modifier.cpp:1824-1825`） | 正常 |
+| AC-3.4 | WHEN `marqueeOptions.loop > 0` 且 `marqueeCount_ >= loop` THEN `AllowTextRace()` 返回 false → 触发 FINISH（`text_content_modifier.cpp:1865`） | 边界 |
+| AC-3.5 | WHEN `marqueeOptions.loop == -1`（无限循环） THEN `AllowTextRace()` 中 loop 条件始终不满足 → 永远不触发 FINISH，仅重复 BOUNCE → START 循环 | 正常 |
+| AC-3.6 | WHEN 最后一轮动画结束 THEN 先触发 BOUNCE 再触发 FINISH（同一轮动画结束回调中依次触发，`text_content_modifier.cpp:1820-1826`） | 正常 |
+| AC-3.7 | WHEN START 状态触发 THEN 自动关闭选择覆盖层并重置选区（`text_pattern.cpp:6996-6999`），`isMarqueeRunning_` 置为 true | 正常 |
+| AC-3.8 | WHEN FINISH 状态触发 THEN `isMarqueeRunning_` 置为 false（`text_pattern.cpp:7000-7001`） | 正常 |
+| AC-3.9 | WHEN 任意状态变化后 THEN 调用 `RecoverCopyOption()` 恢复复制能力（`text_pattern.cpp:7004`） | 正常 |
+| AC-3.10 | WHEN `marqueeOption_.startPolicy == MarqueeStartPolicy.ON_FOCUS` 且组件失焦且未 hovered THEN `AllowTextRace()` 返回 false → 触发 FINISH（`text_content_modifier.cpp:1868-1869`） | 正常 |
+| AC-3.11 | WHEN `marqueeSet_ == false` 或 `marqueeOption_.start == false` THEN `AllowTextRace()` 返回 false，不启动跑马灯，不触发任何状态回调（`text_content_modifier.cpp:1862`） | 正常 |
+| AC-3.12 | WHEN 动画中 `marqueeAnimationId` 与当前 `marqueeAnimationId_` 不匹配（动画被替代） THEN 旧动画的完成回调直接返回，不触发 BOUNCE/FINISH（`text_content_modifier.cpp:1815-1816`） | 正常 |
 
 ## 验收追溯
 
-| AC ID | 关联规则 | 关联 Task | 验证方式 | 证据 |
+| AC编号 | 关联规则 | 关联 Task | 验证方式 | 证据 |
 |-------|----------|-----------|----------|------|
 | AC-1.1 | R-8, R-1 | TASK-7 | 单测 | HandleOnCopy test |
 | AC-1.2 | R-8, R-9 | TASK-7 | 单测 | onWillCopy returns true test |

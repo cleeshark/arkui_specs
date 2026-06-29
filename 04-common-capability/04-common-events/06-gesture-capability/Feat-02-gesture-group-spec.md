@@ -36,16 +36,16 @@
 **我想要** 通过 GestureGroup(GestureMode.Sequence, ...) 将多个手势按顺序组合,
 **以便** 用户必须依次完成所有手势才算成功（如先长按再拖动）。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-1.1 | WHEN 创建 `GestureGroup(GestureMode.Sequence, gesture1, gesture2, ...)` THEN 手势按顺序识别，第一个手势成功后自动开始第二个 |
-| AC-1.2 | WHEN 序列中某个手势识别失败 THEN 整个序列立即失败，后续手势不再识别，触发 onCancel 回调 |
-| AC-1.3 | WHEN 序列中最后一个手势成功 THEN 整个序列成功 |
-| AC-1.4 | WHEN 两个手势之间间隔超过 SEQUENCE_GESTURE_TIMEOUT(300ms) THEN 序列超时失败，触发 onCancel 回调 |
-| AC-1.5 | WHEN 前一个手势成功后 THEN 自动向下一个手势发送合成的 TouchDown 事件（事件传递机制） |
-| AC-1.6 | WHEN 序列中包含两个连续的 LongPressGesture THEN 事件传递时自动调整时间戳（beforeDuration），确保第二个 LongPress 不立即触发 |
-| AC-1.7 | WHEN 序列处于 PENDING 状态并收到 TouchCancel THEN 整个序列失败 |
-| AC-1.8 | WHEN 手势序列超时或失败后 THEN currentIndex_ 重置为 0，所有子识别器状态重置为 READY |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-1.1 | WHEN 创建 `GestureGroup(GestureMode.Sequence, gesture1, gesture2, ...)` THEN 手势按顺序识别，第一个手势成功后自动开始第二个 | 正常 |
+| AC-1.2 | WHEN 序列中某个手势识别失败 THEN 整个序列立即失败，后续手势不再识别，触发 onCancel 回调 | 异常 |
+| AC-1.3 | WHEN 序列中最后一个手势成功 THEN 整个序列成功 | 正常 |
+| AC-1.4 | WHEN 两个手势之间间隔超过 SEQUENCE_GESTURE_TIMEOUT(300ms) THEN 序列超时失败，触发 onCancel 回调 | 异常 |
+| AC-1.5 | WHEN 前一个手势成功后 THEN 自动向下一个手势发送合成的 TouchDown 事件（事件传递机制） | 正常 |
+| AC-1.6 | WHEN 序列中包含两个连续的 LongPressGesture THEN 事件传递时自动调整时间戳（beforeDuration），确保第二个 LongPress 不立即触发 | 正常 |
+| AC-1.7 | WHEN 序列处于 PENDING 状态并收到 TouchCancel THEN 整个序列失败 | 异常 |
+| AC-1.8 | WHEN 手势序列超时或失败后 THEN currentIndex_ 重置为 0，所有子识别器状态重置为 READY | 异常 |
 
 ### US-2: 并行组合手势（Parallel）
 
@@ -53,14 +53,14 @@
 **我想要** 通过 GestureGroup(GestureMode.Parallel, ...) 将多个手势并行组合,
 **以便** 多个手势可同时独立识别，互不影响。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-2.1 | WHEN 创建 `GestureGroup(GestureMode.Parallel, gesture1, gesture2, ...)` THEN 所有子手势同时接收触摸事件 |
-| AC-2.2 | WHEN 一个子手势成功 THEN 不影响其他子手势的识别（多个手势可同时处于 SUCCEED 状态） |
-| AC-2.3 | WHEN 所有子手势均失败 THEN 整个并行组失败 |
-| AC-2.4 | WHEN 并行组被外部接受 THEN 当前请求接受的子手势和所有已被阻塞但成功的子手势（succeedBlockRecognizers_）均被接受 |
-| AC-2.5 | WHEN 并行组被外部拒绝 THEN 所有子手势被拒绝（ForceReject 递归执行） |
-| AC-2.6 | WHEN 一个子手势成功但并行组整体被阻塞（SUCCEED_BLOCKED）THEN 该子手势被加入 succeedBlockRecognizers_ 等待后续批量接受 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-2.1 | WHEN 创建 `GestureGroup(GestureMode.Parallel, gesture1, gesture2, ...)` THEN 所有子手势同时接收触摸事件 | 正常 |
+| AC-2.2 | WHEN 一个子手势成功 THEN 不影响其他子手势的识别（多个手势可同时处于 SUCCEED 状态） | 正常 |
+| AC-2.3 | WHEN 所有子手势均失败 THEN 整个并行组失败 | 异常 |
+| AC-2.4 | WHEN 并行组被外部接受 THEN 当前请求接受的子手势和所有已被阻塞但成功的子手势（succeedBlockRecognizers_）均被接受 | 正常 |
+| AC-2.5 | WHEN 并行组被外部拒绝 THEN 所有子手势被拒绝（ForceReject 递归执行） | 正常 |
+| AC-2.6 | WHEN 一个子手势成功但并行组整体被阻塞（SUCCEED_BLOCKED）THEN 该子手势被加入 succeedBlockRecognizers_ 等待后续批量接受 | 正常 |
 
 ### US-3: 互斥组合手势（Exclusive）
 
@@ -68,16 +68,16 @@
 **我想要** 通过 GestureGroup(GestureMode.Exclusive, ...) 将多个手势互斥组合,
 **以便** 仅第一个成功的手势生效，其他手势自动失败。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-3.1 | WHEN 创建 `GestureGroup(GestureMode.Exclusive, gesture1, gesture2, ...)` THEN 所有子手势同时接收初始触摸事件（竞争阶段） |
-| AC-3.2 | WHEN 一个子手势进入 PENDING 状态 THEN 它成为 activeRecognizer_，其他子手势被阻塞（CheckNeedBlocked） |
-| AC-3.3 | WHEN activeRecognizer_ 识别成功 THEN 它被接受，所有其他子手势被拒绝（ForceReject） |
-| AC-3.4 | WHEN activeRecognizer_ 识别失败 THEN 系统尝试解除其他被阻塞的手势（UnBlockGesture）继续竞争 |
-| AC-3.5 | WHEN 被阻塞的手势中有 SUCCEED_BLOCKED 状态的 THEN 解除阻塞后直接请求组接受，无需重新识别 |
-| AC-3.6 | WHEN 所有子手势均失败且无可解除阻塞的手势 THEN 整个互斥组失败 |
-| AC-3.7 | WHEN activeRecognizer_ 已选中后 THEN 后续 MOVE/DOWN 事件仅分发给 activeRecognizer_（不再广播） |
-| AC-3.8 | WHEN UP/CANCEL 事件到达 THEN 始终分发给所有子手势（用于清理状态） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-3.1 | WHEN 创建 `GestureGroup(GestureMode.Exclusive, gesture1, gesture2, ...)` THEN 所有子手势同时接收初始触摸事件（竞争阶段） | 边界 |
+| AC-3.2 | WHEN 一个子手势进入 PENDING 状态 THEN 它成为 activeRecognizer_，其他子手势被阻塞（CheckNeedBlocked） | 正常 |
+| AC-3.3 | WHEN activeRecognizer_ 识别成功 THEN 它被接受，所有其他子手势被拒绝（ForceReject） | 正常 |
+| AC-3.4 | WHEN activeRecognizer_ 识别失败 THEN 系统尝试解除其他被阻塞的手势（UnBlockGesture）继续竞争 | 异常 |
+| AC-3.5 | WHEN 被阻塞的手势中有 SUCCEED_BLOCKED 状态的 THEN 解除阻塞后直接请求组接受，无需重新识别 | 正常 |
+| AC-3.6 | WHEN 所有子手势均失败且无可解除阻塞的手势 THEN 整个互斥组失败 | 异常 |
+| AC-3.7 | WHEN activeRecognizer_ 已选中后 THEN 后续 MOVE/DOWN 事件仅分发给 activeRecognizer_（不再广播） | 正常 |
+| AC-3.8 | WHEN UP/CANCEL 事件到达 THEN 始终分发给所有子手势（用于清理状态） | 正常 |
 
 ### US-4: onCancel 回调
 
@@ -85,12 +85,12 @@
 **我想要** 通过 .onCancel() 为 GestureGroup 设置取消回调,
 **以便** 在手势组合被取消时得到通知。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-4.1 | WHEN 设置 `.onCancel(() => {...})` THEN 仅在 Sequence 模式中生效（Parallel 和 Exclusive 模式不触发 onCancel） |
-| AC-4.2 | WHEN 序列中某个手势失败导致整个序列失败 THEN 触发 onCancel 回调 |
-| AC-4.3 | WHEN 序列超时（300ms）THEN 触发 onCancel 回调 |
-| AC-4.4 | WHEN 序列在 PENDING 状态被重置（ResetStatusOnFinish）THEN 触发 onCancel 回调 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-4.1 | WHEN 设置 `.onCancel(() => {...})` THEN 仅在 Sequence 模式中生效（Parallel 和 Exclusive 模式不触发 onCancel） | 边界 |
+| AC-4.2 | WHEN 序列中某个手势失败导致整个序列失败 THEN 触发 onCancel 回调 | 异常 |
+| AC-4.3 | WHEN 序列超时（300ms）THEN 触发 onCancel 回调 | 边界 |
+| AC-4.4 | WHEN 序列在 PENDING 状态被重置（ResetStatusOnFinish）THEN 触发 onCancel 回调 | 正常 |
 
 ### US-5: GestureGroup 嵌套
 
@@ -98,12 +98,12 @@
 **我想要** 在 GestureGroup 中嵌套包含另一个 GestureGroup,
 **以便** 构建复杂的多层手势组合逻辑。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-5.1 | WHEN 在 GestureGroup 的子手势中包含另一个 GestureGroup THEN 嵌套组合正确工作，子 Group 作为整体参与父 Group 的竞争/协作 |
-| AC-5.2 | WHEN 对嵌套 Group 执行 RemoveChildrenByTag THEN 递归搜索并删除所有层级中匹配的子手势 |
-| AC-5.3 | WHEN 父 Group 被拒绝（ForceReject）THEN 递归拒绝所有子 Group 中的手势 |
-| AC-5.4 | WHEN 嵌套 Group 中的子 Group 请求仲裁 THEN 通过 GroupAdjudicate 向上传递到父 Group |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-5.1 | WHEN 在 GestureGroup 的子手势中包含另一个 GestureGroup THEN 嵌套组合正确工作，子 Group 作为整体参与父 Group 的竞争/协作 | 边界 |
+| AC-5.2 | WHEN 对嵌套 Group 执行 RemoveChildrenByTag THEN 递归搜索并删除所有层级中匹配的子手势 | 正常 |
+| AC-5.3 | WHEN 父 Group 被拒绝（ForceReject）THEN 递归拒绝所有子 Group 中的手势 | 正常 |
+| AC-5.4 | WHEN 嵌套 Group 中的子 Group 请求仲裁 THEN 通过 GroupAdjudicate 向上传递到父 Group | 正常 |
 
 ---
 

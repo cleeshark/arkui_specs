@@ -40,68 +40,68 @@
 
 **作为** 应用开发者，**我想要** 在 Text 组件中自动识别电话号码、URL、邮箱、地址、日期时间等实体，**以便** 用户可以直接点击实体执行对应操作（拨号、跳转、发邮件等）。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-1.1 | WHEN `enableDataDetector(true)` 且设备支持文本识别 THEN Text 组件内的电话号码、URL、邮箱、地址、日期时间实体被自动标记并高亮 |
-| AC-1.2 | WHEN `enableDataDetector(true)` 但未设置 `dataDetectorConfig` THEN 所有类型实体均被识别，实体样式为 `color: '#ff007dff'`, `decoration: { type: Underline, color: '#ff007dff', style: SOLID }` |
-| AC-1.3 | WHEN `dataDetectorConfig({ types: [PHONE_NUMBER, URL] })` THEN 仅识别电话号码和 URL，其他实体类型被忽略 |
-| AC-1.4 | WHEN 触摸或右键点击已识别实体 THEN 弹出对应实体类型的操作菜单；WHEN 鼠标左键点击 THEN 直接执行菜单第一个选项 |
-| AC-1.5 | WHEN `textOverflow` 设为 `TextOverflow.MARQUEE` THEN 数据检测不生效 |
-| AC-1.6 | WHEN `copyOption` 设为 `CopyOptions.None` THEN 实体点击菜单不提供文本选择、复制、翻译、分享功能 |
-| AC-1.7 | WHEN `copyOption` 非 `None` 且 `textSelectable` 设为 `UNSELECTABLE` THEN 实体仍有复制功能但无文本选择功能 |
-| AC-1.8 | WHEN `dataDetectorConfig` 设置 `color` 和 `decoration` THEN 识别实体使用自定义样式，覆盖默认蓝色下划线 |
-| AC-1.9 | WHEN `dataDetectorConfig` 设置 `enablePreviewMenu(true)` THEN 实体支持预览菜单 |
-| AC-1.10 | WHEN `dataDetectorConfig` 设置 `onDetectResultUpdate` 回调 THEN AI 检测完成后回调返回 JSON 格式的检测结果 |
-| AC-1.11 | WHEN 实体 A 是实体 B 的子集（A ⊂ B）THEN 保留 B；WHEN A 不是 B 的子集且 B 不是 A 的子集，且 A.start < B.start THEN 保留 A |
-| AC-1.12 | WHEN 设备不支持文本识别（`DataDetectorInterface::IsDataDetectorSupported()` 返回 false）THEN `enableDataDetector(true)` 静默不生效 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-1.1 | WHEN `enableDataDetector(true)` 且设备支持文本识别 THEN Text 组件内的电话号码、URL、邮箱、地址、日期时间实体被自动标记并高亮 | 正常 |
+| AC-1.2 | WHEN `enableDataDetector(true)` 但未设置 `dataDetectorConfig` THEN 所有类型实体均被识别，实体样式为 `color: '#ff007dff'`, `decoration: { type: Underline, color: '#ff007dff', style: SOLID }` | 异常 |
+| AC-1.3 | WHEN `dataDetectorConfig({ types: [PHONE_NUMBER, URL] })` THEN 仅识别电话号码和 URL，其他实体类型被忽略 | 正常 |
+| AC-1.4 | WHEN 触摸或右键点击已识别实体 THEN 弹出对应实体类型的操作菜单；WHEN 鼠标左键点击 THEN 直接执行菜单第一个选项 | 正常 |
+| AC-1.5 | WHEN `textOverflow` 设为 `TextOverflow.MARQUEE` THEN 数据检测不生效 | 异常 |
+| AC-1.6 | WHEN `copyOption` 设为 `CopyOptions.None` THEN 实体点击菜单不提供文本选择、复制、翻译、分享功能 | 正常 |
+| AC-1.7 | WHEN `copyOption` 非 `None` 且 `textSelectable` 设为 `UNSELECTABLE` THEN 实体仍有复制功能但无文本选择功能 | 正常 |
+| AC-1.8 | WHEN `dataDetectorConfig` 设置 `color` 和 `decoration` THEN 识别实体使用自定义样式，覆盖默认蓝色下划线 | 正常 |
+| AC-1.9 | WHEN `dataDetectorConfig` 设置 `enablePreviewMenu(true)` THEN 实体支持预览菜单 | 正常 |
+| AC-1.10 | WHEN `dataDetectorConfig` 设置 `onDetectResultUpdate` 回调 THEN AI 检测完成后回调返回 JSON 格式的检测结果 | 正常 |
+| AC-1.11 | WHEN 实体 A 是实体 B 的子集（A ⊂ B）THEN 保留 B；WHEN A 不是 B 的子集且 B 不是 A 的子集，且 A.start < B.start THEN 保留 A | 边界 |
+| AC-1.12 | WHEN 设备不支持文本识别（`DataDetectorInterface::IsDataDetectorSupported()` 返回 false）THEN `enableDataDetector(true)` 静默不生效 | 异常 |
 
 ### US-2: 选中文本数据检测
 
 **作为** 应用开发者，**我想要** 对选中文本单独启用/禁用数据检测，**以便** 精细控制交互行为。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-2.1 | WHEN `enableSelectedDataDetector(true)` THEN 选中文本区域内的实体被识别并可操作 |
-| AC-2.2 | WHEN `enableSelectedDataDetector(false)` THEN 选中文本内不执行实体检测 |
-| AC-2.3 | WHEN 未设置 `enableSelectedDataDetector` THEN 默认启用（`selectDetectEnabled_ = true`） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-2.1 | WHEN `enableSelectedDataDetector(true)` THEN 选中文本区域内的实体被识别并可操作 | 正常 |
+| AC-2.2 | WHEN `enableSelectedDataDetector(false)` THEN 选中文本内不执行实体检测 | 正常 |
+| AC-2.3 | WHEN 未设置 `enableSelectedDataDetector` THEN 默认启用（`selectDetectEnabled_ = true`） | 异常 |
 
 ### US-3: 隐私敏感内容保护
 
 **作为** 应用开发者，**我想要** 在敏感场景（卡片后台、锁屏等）下自动遮蔽 Text 组件内容，**以便** 保护用户隐私数据。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-3.1 | WHEN `privacySensitive(true)` 且系统触发敏感模式 THEN 文本所有字符（除换行符 `\n`）被替换为 `-`（减号） |
-| AC-3.2 | WHEN `privacySensitive(true)` 但系统未触发敏感模式 THEN 文本正常显示，不做遮蔽 |
-| AC-3.3 | WHEN `privacySensitive(null)` 或 `privacySensitive(false)` THEN 禁用隐私模式，系统触发敏感模式时文本不受影响 |
-| AC-3.4 | WHEN 隐私模式激活 THEN 文本选择、AI 数据检测、文本复制/搜索功能被禁用 |
-| AC-3.5 | WHEN 隐私模式从激活恢复为非激活 THEN 文本内容恢复原始显示，选择/检测/复制功能恢复 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-3.1 | WHEN `privacySensitive(true)` 且系统触发敏感模式 THEN 文本所有字符（除换行符 `\n`）被替换为 `-`（减号） | 正常 |
+| AC-3.2 | WHEN `privacySensitive(true)` 但系统未触发敏感模式 THEN 文本正常显示，不做遮蔽 | 正常 |
+| AC-3.3 | WHEN `privacySensitive(null)` 或 `privacySensitive(false)` THEN 禁用隐私模式，系统触发敏感模式时文本不受影响 | 异常 |
+| AC-3.4 | WHEN 隐私模式激活 THEN 文本选择、AI 数据检测、文本复制/搜索功能被禁用 | 正常 |
+| AC-3.5 | WHEN 隐私模式从激活恢复为非激活 THEN 文本内容恢复原始显示，选择/检测/复制功能恢复 | 正常 |
 
 ### US-4: obscured 视觉遮蔽（与 privacySensitive 共存的独立机制）
 
 **作为** 应用开发者，**我想要** 通过 `.obscured([ObscuredReasons.PLACEHOLDER])` 在渲染层绘制遮蔽覆盖层，**以便** 在文本上方显示半透明遮罩。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-4.1 | WHEN `renderContext.obscured` 包含 `ObscuredReasons.PLACEHOLDER` 且无 Span 子节点 THEN 在文本每行上绘制 20% alpha、2vp 圆角的半透明矩形遮蔽 |
-| AC-4.2 | WHEN `obscured` 设置但包含 Span 子节点 THEN `IsSetObscured()` 返回 false，不绘制遮蔽矩形 |
-| AC-4.3 | WHEN `privacySensitive` 和 `obscured` 同时启用 THEN 两套机制独立工作：内容替换发生在布局阶段，视觉遮蔽发生在绘制阶段 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-4.1 | WHEN `renderContext.obscured` 包含 `ObscuredReasons.PLACEHOLDER` 且无 Span 子节点 THEN 在文本每行上绘制 20% alpha、2vp 圆角的半透明矩形遮蔽 | 正常 |
+| AC-4.2 | WHEN `obscured` 设置但包含 Span 子节点 THEN `IsSetObscured()` 返回 false，不绘制遮蔽矩形 | 正常 |
+| AC-4.3 | WHEN `privacySensitive` 和 `obscured` 同时启用 THEN 两套机制独立工作：内容替换发生在布局阶段，视觉遮蔽发生在绘制阶段 | 正常 |
 
 ### US-5: 震感反馈
 
 **作为** 应用开发者，**我想要** 在文本选择操作时提供触觉反馈，**以便** 增强用户的操作感知。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-5.1 | WHEN `enableHapticFeedback(true)` 或未设置（默认 true）且用户长按文本触发选择 THEN 触发 `longPress.light` 类型振动 |
-| AC-5.2 | WHEN `enableHapticFeedback(true)` 或未设置且用户拖动选择手柄使字符索引变化 THEN 触发 `slide` 类型振动 |
-| AC-5.3 | WHEN `enableHapticFeedback(false)` THEN 长按和拖动手柄均不触发振动 |
-| AC-5.4 | WHEN 父 `SelectionContainer` 设置 `enableHapticFeedback(false)` 且 Text 自身未显式设置 THEN Text 继承容器设置，不触发振动 |
-| AC-5.5 | WHEN 父 `SelectionContainer` 设置 `enableHapticFeedback(false)` 但 Text 自身显式设置 `enableHapticFeedback(true)` THEN Text 使用自身设置，触发振动（`hapticFeedbackFlagByUser_` 优先级机制） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-5.1 | WHEN `enableHapticFeedback(true)` 或未设置（默认 true）且用户长按文本触发选择 THEN 触发 `longPress.light` 类型振动 | 异常 |
+| AC-5.2 | WHEN `enableHapticFeedback(true)` 或未设置且用户拖动选择手柄使字符索引变化 THEN 触发 `slide` 类型振动 | 异常 |
+| AC-5.3 | WHEN `enableHapticFeedback(false)` THEN 长按和拖动手柄均不触发振动 | 正常 |
+| AC-5.4 | WHEN 父 `SelectionContainer` 设置 `enableHapticFeedback(false)` 且 Text 自身未显式设置 THEN Text 继承容器设置，不触发振动 | 正常 |
+| AC-5.5 | WHEN 父 `SelectionContainer` 设置 `enableHapticFeedback(false)` 但 Text 自身显式设置 `enableHapticFeedback(true)` THEN Text 使用自身设置，触发振动（`hapticFeedbackFlagByUser_` 优先级机制） | 正常 |
 
 ## 验收追溯
 
-| AC ID | 关联规则 | 关联 Task | 验证方式 | 证据 |
+| AC编号 | 关联规则 | 关联 Task | 验证方式 | 证据 |
 |-------|----------|-----------|----------|------|
 | AC-1.1 | R-6 | TASK-6 | 手动测试 + XTS | 设备端验证实体高亮 |
 | AC-1.2 | R-7 | TASK-6 | 手动测试 | 默认样式验证 |

@@ -52,14 +52,14 @@
 **期望**: 我想要使用 Toggle 组件在三种形态（Switch / Checkbox / Button）间统一地实现开关状态切换
 **价值**: 以便用不同的视觉风格满足不同场景的开关交互需求
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-1.1 | WHEN 创建 `Toggle({ type: ToggleType.Switch, isOn: true })` THEN 显示滑块开关样式，初始状态为开 |
-| AC-1.2 | WHEN 创建 `Toggle({ type: ToggleType.Checkbox, isOn: false })` THEN 显示复选框样式，初始状态为关 |
-| AC-1.3 | WHEN 创建 `Toggle({ type: ToggleType.Button, isOn: true })` THEN 显示按钮样式，初始状态为开，支持子组件作为按钮内容 |
-| AC-1.4 | WHEN 点击 Toggle（任意类型）THEN isOn 状态翻转，onChange 回调触发并携带新状态值 |
-| AC-1.5 | WHEN isOn 使用 `$$` 双向绑定 THEN 组件状态与绑定变量保持同步 |
-| AC-1.6 | WHEN Toggle 处于 disabled 状态 THEN 点击不改变状态，不触发 onChange，Switch 类型应用 disabledAlpha 透明度（`switch_pattern.cpp:236-237`） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-1.1 | WHEN 创建 `Toggle({ type: ToggleType.Switch, isOn: true })` THEN 显示滑块开关样式，初始状态为开 | 正常 |
+| AC-1.2 | WHEN 创建 `Toggle({ type: ToggleType.Checkbox, isOn: false })` THEN 显示复选框样式，初始状态为关 | 正常 |
+| AC-1.3 | WHEN 创建 `Toggle({ type: ToggleType.Button, isOn: true })` THEN 显示按钮样式，初始状态为开，支持子组件作为按钮内容 | 正常 |
+| AC-1.4 | WHEN 点击 Toggle（任意类型）THEN isOn 状态翻转，onChange 回调触发并携带新状态值 | 正常 |
+| AC-1.5 | WHEN isOn 使用 `$$` 双向绑定 THEN 组件状态与绑定变量保持同步 | 正常 |
+| AC-1.6 | WHEN Toggle 处于 disabled 状态 THEN 点击不改变状态，不触发 onChange，Switch 类型应用 disabledAlpha 透明度（`switch_pattern.cpp:236-237`） | 正常 |
 
 ### US-2: Switch 样式定制
 
@@ -67,13 +67,13 @@
 **期望**: 我想要自定义 Switch 类型的颜色、滑块大小和轨道圆角
 **价值**: 以便匹配应用的设计语言
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-2.1 | WHEN 设置 `selectedColor(Color.Red)` THEN Switch 开启时轨道背景色为红色 |
-| AC-2.2 | WHEN 设置 `switchPointColor(Color.Blue)` THEN Switch 滑块颜色为蓝色 |
-| AC-2.3 | WHEN 设置 `switchStyle({ pointRadius: 10, unselectedColor: '#337F7F7F', pointColor: Color.White, trackBorderRadius: 8 })` THEN 滑块半径 10vp、关闭态轨道颜色 0x337F7F7F、滑块颜色白色、轨道圆角 8vp |
-| AC-2.4 | WHEN `switchPointColor` 和 `switchStyle.pointColor` 同时设置 THEN 两者写入同一个 `SwitchPaintProperty::SwitchPointColor`，后设置的生效（功能等价，`switch_paint_property.h`） |
-| AC-2.5 | WHEN 未设置任何颜色属性 THEN 使用 SwitchTheme 的默认值（pointColor = `ohos_id_color_foreground_contrary`，unselectedColor = `0x337F7F7F`，selectedColor = `ohos_id_color_emphasize`） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-2.1 | WHEN 设置 `selectedColor(Color.Red)` THEN Switch 开启时轨道背景色为红色 | 正常 |
+| AC-2.2 | WHEN 设置 `switchPointColor(Color.Blue)` THEN Switch 滑块颜色为蓝色 | 正常 |
+| AC-2.3 | WHEN 设置 `switchStyle({ pointRadius: 10, unselectedColor: '#337F7F7F', pointColor: Color.White, trackBorderRadius: 8 })` THEN 滑块半径 10vp、关闭态轨道颜色 0x337F7F7F、滑块颜色白色、轨道圆角 8vp | 正常 |
+| AC-2.4 | WHEN `switchPointColor` 和 `switchStyle.pointColor` 同时设置 THEN 两者写入同一个 `SwitchPaintProperty::SwitchPointColor`，后设置的生效（功能等价，`switch_paint_property.h`） | 正常 |
+| AC-2.5 | WHEN 未设置任何颜色属性 THEN 使用 SwitchTheme 的默认值（pointColor = `ohos_id_color_foreground_contrary`，unselectedColor = `0x337F7F7F`，selectedColor = `ohos_id_color_emphasize`） | 异常 |
 
 ### US-3: Button 样式与交互
 
@@ -81,12 +81,12 @@
 **期望**: 我想要定制 Button 类型的选中色和背景色
 **价值**: 以便 Toggle Button 的外观与应用风格一致
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-3.1 | WHEN 设置 `selectedColor` 在 Button 类型上 THEN 开启时背景色为指定颜色，关闭时恢复为 `backgroundColor`（`toggle_button_pattern.cpp:89-97`） |
-| AC-3.2 | WHEN Button 类型运行在 API 18+ THEN 按钮形状为 ROUNDED_RECTANGLE；API 18 以下为 CAPSULE（`toggle_button_pattern.cpp:678-682`） |
-| AC-3.3 | WHEN Button 类型切换状态 THEN 背景色立即切换（无渐变动画），通过 `RenderContext::UpdateBackgroundColor()` 实现（`toggle_button_pattern.cpp:630`） |
-| AC-3.4 | WHEN Button 类型接收触摸/悬停事件 THEN 应用 overlay 透明度混合效果，触摸 100ms / 悬停 250ms（`toggle_button_pattern.cpp:31-32`） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-3.1 | WHEN 设置 `selectedColor` 在 Button 类型上 THEN 开启时背景色为指定颜色，关闭时恢复为 `backgroundColor`（`toggle_button_pattern.cpp:89-97`） | 正常 |
+| AC-3.2 | WHEN Button 类型运行在 API 18+ THEN 按钮形状为 ROUNDED_RECTANGLE；API 18 以下为 CAPSULE（`toggle_button_pattern.cpp:678-682`） | 正常 |
+| AC-3.3 | WHEN Button 类型切换状态 THEN 背景色立即切换（无渐变动画），通过 `RenderContext::UpdateBackgroundColor()` 实现（`toggle_button_pattern.cpp:630`） | 正常 |
+| AC-3.4 | WHEN Button 类型接收触摸/悬停事件 THEN 应用 overlay 透明度混合效果，触摸 100ms / 悬停 250ms（`toggle_button_pattern.cpp:31-32`） | 正常 |
 
 ### US-4: Switch 拖拽与动画
 
@@ -94,13 +94,13 @@
 **期望**: 我想要通过拖拽 Switch 滑块来切换状态
 **价值**: 以便获得自然的交互体验
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-4.1 | WHEN 水平拖拽 Switch 滑块超过中点 THEN 状态翻转（中点 = `(mainSize + height_) / 2`，`switch_pattern.cpp:843`） |
-| AC-4.2 | WHEN 拖拽未超过中点 THEN 状态保持不变，滑块弹回原位 |
-| AC-4.3 | WHEN RTL 布局 THEN 拖拽方向判定反转（`switch_pattern.cpp:844-849`） |
-| AC-4.4 | WHEN Switch 状态切换 THEN 使用弹簧动画过渡（velocity=0, mass=1, stiffness=305, damping=24，`switch_pattern.cpp:55-58`） |
-| AC-4.5 | WHEN 颜色/滑块位置变化 THEN 使用 200ms FAST_OUT_SLOW_IN 曲线过渡（`switch_modifier.h:65, 339`） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-4.1 | WHEN 水平拖拽 Switch 滑块超过中点 THEN 状态翻转（中点 = `(mainSize + height_) / 2`，`switch_pattern.cpp:843`） | 边界 |
+| AC-4.2 | WHEN 拖拽未超过中点 THEN 状态保持不变，滑块弹回原位 | 边界 |
+| AC-4.3 | WHEN RTL 布局 THEN 拖拽方向判定反转（`switch_pattern.cpp:844-849`） | 正常 |
+| AC-4.4 | WHEN Switch 状态切换 THEN 使用弹簧动画过渡（velocity=0, mass=1, stiffness=305, damping=24，`switch_pattern.cpp:55-58`） | 正常 |
+| AC-4.5 | WHEN 颜色/滑块位置变化 THEN 使用 200ms FAST_OUT_SLOW_IN 曲线过渡（`switch_modifier.h:65, 339`） | 正常 |
 
 ### US-5: Switch Material 长按效果
 
@@ -108,12 +108,12 @@
 **期望**: 我想要在长按 Switch 时看到 Material 效果反馈
 **价值**: 以便感知交互正在进行
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-5.1 | WHEN 长按 Switch 超过 400ms（`switch_pattern.cpp:68`）且 `HasSystemMaterial()` 返回 true THEN 触发 Material 效果 |
-| AC-5.2 | WHEN Material 等级为高级（EXQUISITE 或 GENTLE，`switch_pattern.cpp:900-904`）THEN 创建 dragFrameNode_/dragPointNode_/blurCoverNode_ 三层覆盖节点，应用 BrightnessBlender（linearRate=1.048, degree=0.37647, saturation=1.5，`switch_pattern.cpp:1409-1411`） |
-| AC-5.3 | WHEN Material 等级为低级 THEN 滑块缩放至 0.78 再放大至 1.56（`switch_pattern.cpp:61-62, 675-676`） |
-| AC-5.4 | WHEN `HasSystemMaterial()` 返回 false THEN 不触发 Material 效果，仅使用普通弹簧动画 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-5.1 | WHEN 长按 Switch 超过 400ms（`switch_pattern.cpp:68`）且 `HasSystemMaterial()` 返回 true THEN 触发 Material 效果 | 边界 |
+| AC-5.2 | WHEN Material 等级为高级（EXQUISITE 或 GENTLE，`switch_pattern.cpp:900-904`）THEN 创建 dragFrameNode_/dragPointNode_/blurCoverNode_ 三层覆盖节点，应用 BrightnessBlender（linearRate=1.048, degree=0.37647, saturation=1.5，`switch_pattern.cpp:1409-1411`） | 正常 |
+| AC-5.3 | WHEN Material 等级为低级 THEN 滑块缩放至 0.78 再放大至 1.56（`switch_pattern.cpp:61-62, 675-676`） | 正常 |
+| AC-5.4 | WHEN `HasSystemMaterial()` 返回 false THEN 不触发 Material 效果，仅使用普通弹簧动画 | 正常 |
 
 ### US-6: API 版本兼容布局
 
@@ -121,11 +121,11 @@
 **期望**: 我想要了解 Toggle 在不同 API 版本下的布局行为差异
 **价值**: 以便在适配不同版本时预判布局变化
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-6.1 | WHEN API < 12 THEN Switch 布局强制 width = height × 1.8（ratio=1.8f，`switch_layout_algorithm.cpp:120-135`，`checkable_theme.h:285`） |
-| AC-6.2 | WHEN API >= 12 THEN Switch 布局直接使用设置的 frameWidth/frameHeight，不再强制宽高比（`switch_layout_algorithm.cpp:116-118`） |
-| AC-6.3 | WHEN API >= 18 且使用 ContentModifier THEN 布局调用 `geometryNode->ResetContent()` 替代 `geometryNode->Reset()`（`switch_layout_algorithm.cpp:35-37`） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-6.1 | WHEN API < 12 THEN Switch 布局强制 width = height × 1.8（ratio=1.8f，`switch_layout_algorithm.cpp:120-135`，`checkable_theme.h:285`） | 边界 |
+| AC-6.2 | WHEN API >= 12 THEN Switch 布局直接使用设置的 frameWidth/frameHeight，不再强制宽高比（`switch_layout_algorithm.cpp:116-118`） | 边界 |
+| AC-6.3 | WHEN API >= 18 且使用 ContentModifier THEN 布局调用 `geometryNode->ResetContent()` 替代 `geometryNode->Reset()`（`switch_layout_algorithm.cpp:35-37`） | 边界 |
 
 ### US-7: ContentModifier 自定义渲染
 
@@ -133,12 +133,12 @@
 **期望**: 我想要使用 ContentModifier 完全自定义 Toggle 的渲染内容
 **价值**: 以便实现超出标准样式的定制化需求
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-7.1 | WHEN 设置 `contentModifier(modifier)` THEN 组件通过 `ToggleConfiguration { isOn, enabled, triggerChange }` 回调自定义 Builder |
-| AC-7.2 | WHEN ContentModifier 激活时 THEN Switch 类型跳过默认点击/触摸/拖拽事件处理（`switch_pattern.cpp:443, 485, 505`），Button 类型跳过颜色切换和悬停效果（`toggle_button_pattern.cpp:89, 607-609`），背景设为 `Color::TRANSPARENT`（`toggle_button_pattern.cpp:829`） |
-| AC-7.3 | WHEN 调用 `triggerChange(true/false)` THEN 程序化切换 Toggle 状态 |
-| AC-7.4 | WHEN ContentModifier 激活时 THEN Switch 的 disabled 状态不再应用 disabledAlpha（`switch_pattern.cpp:221-223`） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-7.1 | WHEN 设置 `contentModifier(modifier)` THEN 组件通过 `ToggleConfiguration { isOn, enabled, triggerChange }` 回调自定义 Builder | 正常 |
+| AC-7.2 | WHEN ContentModifier 激活时 THEN Switch 类型跳过默认点击/触摸/拖拽事件处理（`switch_pattern.cpp:443, 485, 505`），Button 类型跳过颜色切换和悬停效果（`toggle_button_pattern.cpp:89, 607-609`），背景设为 `Color::TRANSPARENT`（`toggle_button_pattern.cpp:829`） | 正常 |
+| AC-7.3 | WHEN 调用 `triggerChange(true/false)` THEN 程序化切换 Toggle 状态 | 正常 |
+| AC-7.4 | WHEN ContentModifier 激活时 THEN Switch 的 disabled 状态不再应用 disabledAlpha（`switch_pattern.cpp:221-223`） | 正常 |
 
 ### US-8: C API / NDK 支持
 
@@ -146,14 +146,14 @@
 **期望**: 我想要通过 C API 控制 Toggle 状态和样式
 **价值**: 以便在 Native 层集成 Toggle 组件
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-8.1 | WHEN 通过 `NODE_TOGGLE_VALUE` 设置 `.value[0].i32 = 1` THEN Toggle 状态为开 |
-| AC-8.2 | WHEN 通过 `NODE_TOGGLE_SELECTED_COLOR` 设置 `.value[0].u32 = 0xFFFF0000` THEN 开启态背景色为红色 |
-| AC-8.3 | WHEN 通过 `NODE_TOGGLE_SWITCH_POINT_COLOR` 设置颜色 THEN Switch 滑块颜色更新 |
-| AC-8.4 | WHEN 通过 `NODE_TOGGLE_UNSELECTED_COLOR` 设置颜色 THEN 关闭态轨道颜色更新 |
-| AC-8.5 | WHEN 注册 `NODE_TOGGLE_ON_CHANGE` 回调 THEN 状态变化时 `.data[0].i32` 返回 1（开）或 0（关） |
-| AC-8.6 | WHEN 尝试通过 C API 设置 SwitchStyle 子属性（pointRadius/trackBorderRadius）THEN 无对应 C API 枚举，不可设置（已知差距） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-8.1 | WHEN 通过 `NODE_TOGGLE_VALUE` 设置 `.value[0].i32 = 1` THEN Toggle 状态为开 | 正常 |
+| AC-8.2 | WHEN 通过 `NODE_TOGGLE_SELECTED_COLOR` 设置 `.value[0].u32 = 0xFFFF0000` THEN 开启态背景色为红色 | 正常 |
+| AC-8.3 | WHEN 通过 `NODE_TOGGLE_SWITCH_POINT_COLOR` 设置颜色 THEN Switch 滑块颜色更新 | 正常 |
+| AC-8.4 | WHEN 通过 `NODE_TOGGLE_UNSELECTED_COLOR` 设置颜色 THEN 关闭态轨道颜色更新 | 正常 |
+| AC-8.5 | WHEN 注册 `NODE_TOGGLE_ON_CHANGE` 回调 THEN 状态变化时 `.data[0].i32` 返回 1（开）或 0（关） | 正常 |
+| AC-8.6 | WHEN 尝试通过 C API 设置 SwitchStyle 子属性（pointRadius/trackBorderRadius）THEN 无对应 C API 枚举，不可设置（已知差距） | 正常 |
 
 ### US-9: 无障碍支持
 
@@ -161,16 +161,16 @@
 **期望**: 我想要通过无障碍服务操作 Toggle
 **价值**: 以便在无法直接触摸屏幕时完成开关操作
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-9.1 | WHEN 无障碍服务查询 Toggle THEN 报告 IsCheckable = true，IsChecked = 当前 isOn 状态 |
-| AC-9.2 | WHEN 无障碍服务查询 ToggleType THEN Switch 报告 "1"（`switch_accessibility_property.h:23`），Button 报告 "2"（`toggle_button_accessibility_property`），Checkbox 报告 "0"（`toggle_checkbox_accessibility_property`） |
-| AC-9.3 | WHEN 无障碍服务执行 ActionSelect THEN Toggle 状态设为开 |
-| AC-9.4 | WHEN 无障碍服务执行 ActionClearSelection THEN Toggle 状态设为关 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-9.1 | WHEN 无障碍服务查询 Toggle THEN 报告 IsCheckable = true，IsChecked = 当前 isOn 状态 | 正常 |
+| AC-9.2 | WHEN 无障碍服务查询 ToggleType THEN Switch 报告 "1"（`switch_accessibility_property.h:23`），Button 报告 "2"（`toggle_button_accessibility_property`），Checkbox 报告 "0"（`toggle_checkbox_accessibility_property`） | 正常 |
+| AC-9.3 | WHEN 无障碍服务执行 ActionSelect THEN Toggle 状态设为开 | 正常 |
+| AC-9.4 | WHEN 无障碍服务执行 ActionClearSelection THEN Toggle 状态设为关 | 正常 |
 
 ## 验收追溯
 
-| AC ID | 关联规则 | 关联 Task | 验证方式 | 证据 |
+| AC编号 | 关联规则 | 关联 Task | 验证方式 | 证据 |
 |-------|----------|-----------|----------|------|
 | AC-1.1 ~ AC-1.3 | R-5, R-6 | TASK-TOGGLE-01 | UT | `test/unittest/core/pattern/toggle/` |
 | AC-1.4 | R-7 | TASK-TOGGLE-01 | UT | toggle 单测 onChange 用例 |

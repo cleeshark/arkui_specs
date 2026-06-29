@@ -35,14 +35,14 @@
 **我想要** 通过 `.lineHeight()` 设置 Text 组件的行高,
 **以便** 控制文本行与行之间的垂直间距。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-1.1 | WHEN 调用 `.lineHeight(value)` 且 value 为正数 THEN 文本每行高度为 value（单位 fp），文本在行内垂直居中 |
-| AC-1.2 | WHEN value 为 string 类型（如 `'24fp'`、`'30px'`） THEN 按对应单位解析行高 |
-| AC-1.3 | WHEN value 为 Resource 类型 THEN 从资源文件解析为对应行高值 |
-| AC-1.4 | WHEN value ≤ 0 THEN 行高不受限制，字号自适应，使用排版引擎默认行高 |
-| AC-1.5 | WHEN 未设置 lineHeight THEN 使用排版引擎基于字号计算的默认行高 |
-| AC-1.6 | WHEN lineHeight 设置为正值 THEN TextLayoutAlgorithm 中 `hasHeightOverride_=true`，自适应 maxLines 计算基于 lineHeight 进行行数推断（`text_layout_algorithm.cpp:67-88`） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-1.1 | WHEN 调用 `.lineHeight(value)` 且 value 为正数 THEN 文本每行高度为 value（单位 fp），文本在行内垂直居中 | 正常 |
+| AC-1.2 | WHEN value 为 string 类型（如 `'24fp'`、`'30px'`） THEN 按对应单位解析行高 | 正常 |
+| AC-1.3 | WHEN value 为 Resource 类型 THEN 从资源文件解析为对应行高值 | 正常 |
+| AC-1.4 | WHEN value ≤ 0 THEN 行高不受限制，字号自适应，使用排版引擎默认行高 | 正常 |
+| AC-1.5 | WHEN 未设置 lineHeight THEN 使用排版引擎基于字号计算的默认行高 | 异常 |
+| AC-1.6 | WHEN lineHeight 设置为正值 THEN TextLayoutAlgorithm 中 `hasHeightOverride_=true`，自适应 maxLines 计算基于 lineHeight 进行行数推断（`text_layout_algorithm.cpp:67-88`） | 边界 |
 
 ### US-2: 设置行间距
 
@@ -50,13 +50,13 @@
 **我想要** 通过 `.lineSpacing()` 设置文本行间距,
 **以便** 调整行与行之间的额外间距。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-2.1 | WHEN 调用 `.lineSpacing(value)` 且 value 为 LengthMetrics 正值 THEN 行间距增加 value 对应的距离 |
-| AC-2.2 | WHEN value ≤ 0 THEN 行间距使用默认值 0（无额外间距） |
-| AC-2.3 | WHEN 调用 `.lineSpacing(value, { onlyBetweenLines: true })` (@since 20) THEN 仅在行与行之间生效，首行之前和末行之后不包含额外间距 |
-| AC-2.4 | WHEN 调用 `.lineSpacing(value)` 不传 options 或 `onlyBetweenLines` 为 false THEN 行间距对所有行生效（包括首行之前和末行之后） |
-| AC-2.5 | WHEN 通过 C API `NODE_TEXT_LINE_SPACING` 设置 THEN `.value[0].f32` 为行间距（fp 单位），不支持 onlyBetweenLines 参数（始终为 false） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-2.1 | WHEN 调用 `.lineSpacing(value)` 且 value 为 LengthMetrics 正值 THEN 行间距增加 value 对应的距离 | 正常 |
+| AC-2.2 | WHEN value ≤ 0 THEN 行间距使用默认值 0（无额外间距） | 正常 |
+| AC-2.3 | WHEN 调用 `.lineSpacing(value, { onlyBetweenLines: true })` (@since 20) THEN 仅在行与行之间生效，首行之前和末行之后不包含额外间距 | 正常 |
+| AC-2.4 | WHEN 调用 `.lineSpacing(value)` 不传 options 或 `onlyBetweenLines` 为 false THEN 行间距对所有行生效（包括首行之前和末行之后） | 异常 |
+| AC-2.5 | WHEN 通过 C API `NODE_TEXT_LINE_SPACING` 设置 THEN `.value[0].f32` 为行间距（fp 单位），不支持 onlyBetweenLines 参数（始终为 false） | 异常 |
 
 ### US-3: 设置行高倍数
 
@@ -64,12 +64,12 @@
 **我想要** 通过 `.lineHeightMultiple()` (@since 22) 以倍数方式设置行高,
 **以便** 按比例控制行高而非固定值。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-3.1 | WHEN 调用 `.lineHeightMultiple(value)` 且 value > 0 THEN 行高设为 基准行高 × value |
-| AC-3.2 | WHEN value ≤ 0 或 undefined THEN 倍数不生效，已设置的倍数被 Reset |
-| AC-3.3 | WHEN lineHeightMultiple 设置为正值 THEN JS Bridge 和静态版均会先将 lineHeight 强制设为 28px（`CalcDimension(DEFAULT_LINE_HEIGHT=28, DimensionUnit::PX)`），再设置倍数值（`js_text.cpp:647`、`text_model_static.cpp:539`） |
-| AC-3.4 | WHEN 通过 C API `NODE_TEXT_LINE_HEIGHT_MULTIPLE` 设置正值 THEN 同样先将 lineHeight reset 为默认值再设置倍数（`style_modifier.cpp:14083`） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-3.1 | WHEN 调用 `.lineHeightMultiple(value)` 且 value > 0 THEN 行高设为 基准行高 × value | 边界 |
+| AC-3.2 | WHEN value ≤ 0 或 undefined THEN 倍数不生效，已设置的倍数被 Reset | 异常 |
+| AC-3.3 | WHEN lineHeightMultiple 设置为正值 THEN JS Bridge 和静态版均会先将 lineHeight 强制设为 28px（`CalcDimension(DEFAULT_LINE_HEIGHT=28, DimensionUnit::PX)`），再设置倍数值（`js_text.cpp:647`、`text_model_static.cpp:539`） | 正常 |
+| AC-3.4 | WHEN 通过 C API `NODE_TEXT_LINE_HEIGHT_MULTIPLE` 设置正值 THEN 同样先将 lineHeight reset 为默认值再设置倍数（`style_modifier.cpp:14083`） | 正常 |
 
 ### US-4: 设置最小行高
 
@@ -77,11 +77,11 @@
 **我想要** 通过 `.minLineHeight()` (@since 22) 设置行高下限,
 **以便** 确保行高不小于指定值。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-4.1 | WHEN 调用 `.minLineHeight(value)` 且 value 为 LengthMetrics 正值 THEN 实际行高不低于 value |
-| AC-4.2 | WHEN value < 0 THEN 按 0 处理（C API 层：`style_modifier.cpp:14165` 将负值设为 0 并返回错误码） |
-| AC-4.3 | WHEN value 为 undefined THEN 该属性不限制行高 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-4.1 | WHEN 调用 `.minLineHeight(value)` 且 value 为 LengthMetrics 正值 THEN 实际行高不低于 value | 正常 |
+| AC-4.2 | WHEN value < 0 THEN 按 0 处理（C API 层：`style_modifier.cpp:14165` 将负值设为 0 并返回错误码） | 异常 |
+| AC-4.3 | WHEN value 为 undefined THEN 该属性不限制行高 | 异常 |
 
 ### US-5: 设置最大行高
 
@@ -89,11 +89,11 @@
 **我想要** 通过 `.maxLineHeight()` (@since 22) 设置行高上限,
 **以便** 确保行高不超过指定值。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-5.1 | WHEN 调用 `.maxLineHeight(value)` 且 value 为 LengthMetrics 正值 THEN 实际行高不超过 value |
-| AC-5.2 | WHEN value < 0 THEN 按 0 处理（C API 层同 minLineHeight） |
-| AC-5.3 | WHEN value 为 undefined THEN 该属性不限制行高 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-5.1 | WHEN 调用 `.maxLineHeight(value)` 且 value 为 LengthMetrics 正值 THEN 实际行高不超过 value | 边界 |
+| AC-5.2 | WHEN value < 0 THEN 按 0 处理（C API 层同 minLineHeight） | 边界 |
+| AC-5.3 | WHEN value 为 undefined THEN 该属性不限制行高 | 异常 |
 
 ### US-6: 控制半行距
 
@@ -101,12 +101,12 @@
 **我想要** 通过 `.halfLeading()` (@since 12) 控制是否启用半行距分配,
 **以便** 在行高大于字号时将多余空间平均分配到行顶和行底。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-6.1 | WHEN 调用 `.halfLeading(true)` THEN 启用半行距分配，多余行高空间平均分配到行顶和行底 |
-| AC-6.2 | WHEN 调用 `.halfLeading(false)` 或未设置 THEN 不启用半行距 |
-| AC-6.3 | WHEN 组件级设置存在 THEN 组件级设置覆盖 `module.json5` 全局设置 |
-| AC-6.4 | WHEN 未在组件上设置 halfLeading THEN 使用 `pipeline->GetHalfLeading()` 的全局默认值（`multiple_paragraph_layout_algorithm.cpp:186`），而非硬编码 false |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-6.1 | WHEN 调用 `.halfLeading(true)` THEN 启用半行距分配，多余行高空间平均分配到行顶和行底 | 正常 |
+| AC-6.2 | WHEN 调用 `.halfLeading(false)` 或未设置 THEN 不启用半行距 | 异常 |
+| AC-6.3 | WHEN 组件级设置存在 THEN 组件级设置覆盖 `module.json5` 全局设置 | 正常 |
+| AC-6.4 | WHEN 未在组件上设置 halfLeading THEN 使用 `pipeline->GetHalfLeading()` 的全局默认值（`multiple_paragraph_layout_algorithm.cpp:186`），而非硬编码 false | 正常 |
 
 ### US-7: 启用回退字体行间距
 
@@ -114,10 +114,10 @@
 **我想要** 通过 `.fallbackLineSpacing()` (@since 23) 控制回退字体是否参与行间距计算,
 **以便** 在使用多字体时避免行重叠。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-7.1 | WHEN 调用 `.fallbackLineSpacing(true)` THEN 回退字体的 ascent/descent 参与行间距计算，防止行重叠 |
-| AC-7.2 | WHEN 调用 `.fallbackLineSpacing(false)` 或未设置 THEN 回退字体不额外影响行间距 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-7.1 | WHEN 调用 `.fallbackLineSpacing(true)` THEN 回退字体的 ascent/descent 参与行间距计算，防止行重叠 | 异常 |
+| AC-7.2 | WHEN 调用 `.fallbackLineSpacing(false)` 或未设置 THEN 回退字体不额外影响行间距 | 异常 |
 
 ### US-8: 控制字体内边距
 
@@ -125,10 +125,10 @@
 **我想要** 通过 `.includeFontPadding()` (@since 23) 控制是否在行顶和行底添加额外空间,
 **以便** 兼容需要额外字体内边距的布局场景。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-8.1 | WHEN 调用 `.includeFontPadding(true)` THEN 布局在行顶和行底添加额外内边距以容纳字符的最大上升/下降 |
-| AC-8.2 | WHEN 调用 `.includeFontPadding(false)` 或未设置 THEN 不添加额外内边距 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-8.1 | WHEN 调用 `.includeFontPadding(true)` THEN 布局在行顶和行底添加额外内边距以容纳字符的最大上升/下降 | 边界 |
+| AC-8.2 | WHEN 调用 `.includeFontPadding(false)` 或未设置 THEN 不添加额外内边距 | 异常 |
 
 ### US-9: 设置文本水平对齐
 
@@ -136,14 +136,14 @@
 **我想要** 通过 `.textAlign()` 设置文本的水平对齐方式,
 **以便** 控制文本在组件宽度内的排列位置。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-9.1 | WHEN 调用 `.textAlign(TextAlign.Start)` THEN 文本起始边对齐（LTR 为左对齐，RTL 为右对齐） |
-| AC-9.2 | WHEN 调用 `.textAlign(TextAlign.Center)` THEN 文本居中对齐 |
-| AC-9.3 | WHEN 调用 `.textAlign(TextAlign.End)` THEN 文本末端对齐 |
-| AC-9.4 | WHEN 调用 `.textAlign(TextAlign.JUSTIFY)` THEN 文本两端对齐；需配合 `wordBreak` 使用；最后一行仍按起始边对齐 |
-| AC-9.5 | WHEN 未设置 textAlign THEN 默认 `TextAlign.Start`（穿戴设备默认 `TextAlign.Center`） |
-| AC-9.6 | WHEN 传入非法枚举值 THEN API ≥ 12 时回退到 `TextAlign.Start`（默认值 0），API < 12 时不生效 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-9.1 | WHEN 调用 `.textAlign(TextAlign.Start)` THEN 文本起始边对齐（LTR 为左对齐，RTL 为右对齐） | 正常 |
+| AC-9.2 | WHEN 调用 `.textAlign(TextAlign.Center)` THEN 文本居中对齐 | 正常 |
+| AC-9.3 | WHEN 调用 `.textAlign(TextAlign.End)` THEN 文本末端对齐 | 正常 |
+| AC-9.4 | WHEN 调用 `.textAlign(TextAlign.JUSTIFY)` THEN 文本两端对齐；需配合 `wordBreak` 使用；最后一行仍按起始边对齐 | 正常 |
+| AC-9.5 | WHEN 未设置 textAlign THEN 默认 `TextAlign.Start`（穿戴设备默认 `TextAlign.Center`） | 异常 |
+| AC-9.6 | WHEN 传入非法枚举值 THEN API ≥ 12 时回退到 `TextAlign.Start`（默认值 0），API < 12 时不生效 | 异常 |
 
 ### US-10: 设置文本垂直对齐
 
@@ -151,13 +151,13 @@
 **我想要** 通过 `.textVerticalAlign()` (@since 20) 设置文本的垂直对齐方式,
 **以便** 控制文本在行内的垂直位置。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-10.1 | WHEN 调用 `.textVerticalAlign(TextVerticalAlign.BASELINE)` 或未设置 THEN 文本基线对齐（默认行为） |
-| AC-10.2 | WHEN 调用 `.textVerticalAlign(TextVerticalAlign.TOP)` THEN 文本顶部对齐 |
-| AC-10.3 | WHEN 调用 `.textVerticalAlign(TextVerticalAlign.CENTER)` THEN 文本垂直居中 |
-| AC-10.4 | WHEN 调用 `.textVerticalAlign(TextVerticalAlign.BOTTOM)` THEN 文本底部对齐 |
-| AC-10.5 | WHEN 在 ArkTS 静态版中使用 textVerticalAlign THEN 该属性在静态版 Model 层缺失实现（`text_model_static.cpp` 未包含 SetTextVerticalAlign），属性设置可能不生效 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-10.1 | WHEN 调用 `.textVerticalAlign(TextVerticalAlign.BASELINE)` 或未设置 THEN 文本基线对齐（默认行为） | 异常 |
+| AC-10.2 | WHEN 调用 `.textVerticalAlign(TextVerticalAlign.TOP)` THEN 文本顶部对齐 | 正常 |
+| AC-10.3 | WHEN 调用 `.textVerticalAlign(TextVerticalAlign.CENTER)` THEN 文本垂直居中 | 正常 |
+| AC-10.4 | WHEN 调用 `.textVerticalAlign(TextVerticalAlign.BOTTOM)` THEN 文本底部对齐 | 正常 |
+| AC-10.5 | WHEN 在 ArkTS 静态版中使用 textVerticalAlign THEN 该属性在静态版 Model 层缺失实现（`text_model_static.cpp` 未包含 SetTextVerticalAlign），属性设置可能不生效 | 异常 |
 
 ### US-11: 设置文本内容整体垂直对齐
 
@@ -165,13 +165,13 @@
 **我想要** 通过 `.textContentAlign()` (@since 21) 设置文本内容块整体的垂直对齐方式,
 **以便** 当文本内容高度小于组件高度时，控制内容块在垂直方向的位置。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-11.1 | WHEN 调用 `.textContentAlign(TextContentAlign.TOP)` THEN 文本内容块顶部对齐 |
-| AC-11.2 | WHEN 调用 `.textContentAlign(TextContentAlign.CENTER)` THEN 文本内容块垂直居中 |
-| AC-11.3 | WHEN 调用 `.textContentAlign(TextContentAlign.BOTTOM)` THEN 文本内容块底部对齐 |
-| AC-11.4 | WHEN 未设置或传入非法值 THEN ArkTS 动态版默认 `CENTER`；ArkTS 静态版默认 `TOP`（`text.static.d.ets` 文档标注 `TOP`） |
-| AC-11.5 | WHEN textContentAlign 属性变更 THEN 触发 `PROPERTY_UPDATE_LAYOUT`（而非 `PROPERTY_UPDATE_MEASURE`），仅重新布局不触发重新测量 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-11.1 | WHEN 调用 `.textContentAlign(TextContentAlign.TOP)` THEN 文本内容块顶部对齐 | 正常 |
+| AC-11.2 | WHEN 调用 `.textContentAlign(TextContentAlign.CENTER)` THEN 文本内容块垂直居中 | 正常 |
+| AC-11.3 | WHEN 调用 `.textContentAlign(TextContentAlign.BOTTOM)` THEN 文本内容块底部对齐 | 正常 |
+| AC-11.4 | WHEN 未设置或传入非法值 THEN ArkTS 动态版默认 `CENTER`；ArkTS 静态版默认 `TOP`（`text.static.d.ets` 文档标注 `TOP`） | 异常 |
+| AC-11.5 | WHEN textContentAlign 属性变更 THEN 触发 `PROPERTY_UPDATE_LAYOUT`（而非 `PROPERTY_UPDATE_MEASURE`），仅重新布局不触发重新测量 | 正常 |
 
 ### US-12: 设置首行缩进
 
@@ -179,12 +179,12 @@
 **我想要** 通过 `.textIndent()` (@since 10) 设置段落首行缩进,
 **以便** 控制每段文本第一行的缩进距离。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-12.1 | WHEN 调用 `.textIndent(value)` 且 value 为正数 Length THEN 首行缩进 value 对应的距离 |
-| AC-12.2 | WHEN value 为负数 THEN 首行产生反向缩进（缩进到行首之前，允许负值，不做钳位） |
-| AC-12.3 | WHEN value 为 0 或未设置 THEN 无首行缩进 |
-| AC-12.4 | WHEN value 通过 Resource 引用 THEN 从资源文件解析缩进值 |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-12.1 | WHEN 调用 `.textIndent(value)` 且 value 为正数 Length THEN 首行缩进 value 对应的距离 | 正常 |
+| AC-12.2 | WHEN value 为负数 THEN 首行产生反向缩进（缩进到行首之前，允许负值，不做钳位） | 异常 |
+| AC-12.3 | WHEN value 为 0 或未设置 THEN 无首行缩进 | 异常 |
+| AC-12.4 | WHEN value 通过 Resource 引用 THEN 从资源文件解析缩进值 | 正常 |
 
 ### US-13: 设置基线偏移
 
@@ -192,13 +192,13 @@
 **我想要** 通过 `.baselineOffset()` 设置文本基线偏移量,
 **以便** 微调文本在垂直方向的位置。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-13.1 | WHEN 调用 `.baselineOffset(value)` 且 value > 0 THEN 文本内容向上偏移 value 对应的距离 |
-| AC-13.2 | WHEN value < 0 THEN 文本内容向下偏移 |
-| AC-13.3 | WHEN value 为 0 或未设置 THEN 无基线偏移（默认值 0） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-13.1 | WHEN 调用 `.baselineOffset(value)` 且 value > 0 THEN 文本内容向上偏移 value 对应的距离 | 边界 |
+| AC-13.2 | WHEN value < 0 THEN 文本内容向下偏移 | 边界 |
+| AC-13.3 | WHEN value 为 0 或未设置 THEN 无基线偏移（默认值 0） | 异常 |
 | AC-13.4 | WHEN baselineOffset 设置了非零值 THEN `\|baselineOffset\|` 参与内容高度计算，加入段落总高度（`text_layout_algorithm.cpp:230`） |
-| AC-13.5 | WHEN value 为百分比字符串 THEN 使用默认值（百分比不支持） |
+| AC-13.5 | WHEN value 为百分比字符串 THEN 使用默认值（百分比不支持） | 异常 |
 
 ### US-14: 设置文本方向
 
@@ -206,13 +206,13 @@
 **我想要** 通过 `.textDirection()` (@since 23) 显式设置文本排列方向,
 **以便** 控制文本的书写和阅读方向。
 
-| AC ID | WHEN/THEN |
-|-------|-----------|
-| AC-14.1 | WHEN 调用 `.textDirection(TextDirection.LTR)` THEN 文本从左到右排列 |
-| AC-14.2 | WHEN 调用 `.textDirection(TextDirection.RTL)` THEN 文本从右到左排列 |
-| AC-14.3 | WHEN 调用 `.textDirection(TextDirection.AUTO)` THEN 根据文本内容自动判断方向 |
-| AC-14.4 | WHEN 未设置或设为 undefined THEN 重置为继承（`TextDirection::INHERIT`），从父组件或系统获取方向 |
-| AC-14.5 | WHEN textDirection 属性变更 THEN 触发 `PROPERTY_UPDATE_MEASURE_SELF`（仅自身重新测量，不级联子组件） |
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-14.1 | WHEN 调用 `.textDirection(TextDirection.LTR)` THEN 文本从左到右排列 | 正常 |
+| AC-14.2 | WHEN 调用 `.textDirection(TextDirection.RTL)` THEN 文本从右到左排列 | 正常 |
+| AC-14.3 | WHEN 调用 `.textDirection(TextDirection.AUTO)` THEN 根据文本内容自动判断方向 | 正常 |
+| AC-14.4 | WHEN 未设置或设为 undefined THEN 重置为继承（`TextDirection::INHERIT`），从父组件或系统获取方向 | 异常 |
+| AC-14.5 | WHEN textDirection 属性变更 THEN 触发 `PROPERTY_UPDATE_MEASURE_SELF`（仅自身重新测量，不级联子组件） | 正常 |
 
 ## 验收追溯
 
