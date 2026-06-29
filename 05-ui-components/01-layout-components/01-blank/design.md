@@ -35,6 +35,20 @@
 | ace_engine | `frameworks/bridge/declarative_frontend/ark_component/src/ArkBlank.ts` | ArkTS 组件定义 | 全量涉及 |
 | ace_engine | `frameworks/core/components_v2/inspector/blank_composed_element.cpp` | Inspector 诊断支持 | 全量涉及 |
 
+### 调用链层级分析
+
+| 层 | 模块 | 职责 | 修改类型 |
+|----|------|------|----------|
+| JS Bridge | `frameworks/bridge/declarative_frontend/jsview/js_blank.cpp/.h` | JS→C++ 调用桥接，解析 Blank 构造参数和属性 | 无修改（规格补录） |
+| JS Bridge (Model) | `frameworks/bridge/declarative_frontend/jsview/models/blank_model_impl.cpp/.h` | 旧框架 Model 实现（Bridge 侧） | 无修改（规格补录） |
+| ArkTS Modifier | `frameworks/bridge/declarative_frontend/ark_component/src/ArkBlank.ts` | ArkTS 组件定义，属性修改器 | 无修改（规格补录） |
+| Model | `frameworks/core/components_ng/pattern/blank/blank_model_ng.cpp/.h` | NG Model 层：Create + SetBlankMin/SetHeight/SetColor | 无修改（规格补录） |
+| Pattern | `frameworks/core/components_ng/pattern/blank/blank_pattern.cpp/.h` | 自动 Flex 布局逻辑（BeforeCreateLayoutWrapper），API 版本门控 | 无修改（规格补录） |
+| LayoutProperty | `frameworks/core/components_ng/pattern/blank/blank_layout_property.h` | 存储 MinSize/Height，脏标记 PROPERTY_UPDATE_MEASURE_SELF_AND_PARENT | 无修改（规格补录） |
+| PaintProperty | `frameworks/core/components_ng/pattern/blank/blank_paint_property.h` | 存储 Color，脏标记 PROPERTY_UPDATE_RENDER | 无修改（规格补录） |
+| Paint | `frameworks/core/components_ng/pattern/blank/blank_paint_method.cpp/.h` | 绘制带颜色的矩形（PaintRect） | 无修改（规格补录） |
+| C-API | `frameworks/core/interfaces/native/node/blank_modifier.cpp/.h` | C API 属性 Set/Reset 委托层 | 无修改（规格补录） |
+
 ### 适用架构规则
 
 | 规则 ID | 设计结论 |
@@ -90,7 +104,7 @@
 |---------|------|------------|------|
 | TASK-1 | Blank 组件全部行为规格 | Feat-01-blank-component-spec.md | 无 |
 
-## API 签名与权限
+## API 签名、Kit 与权限
 
 ### 新增 API
 

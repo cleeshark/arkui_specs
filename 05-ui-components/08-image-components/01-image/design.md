@@ -9,7 +9,7 @@
 | Design ID | DESIGN-Func-05-08-01 |
 | 关联需求 | 已有能力补录（无独立 requirement.md） |
 | 关联 Epic | 无 |
-| 目标 Feature | Feat-01 核心显示属性, Feat-02 颜色与效果, Feat-03 高级功能, Feat-04 事件回调 |
+| 目标 Feature | Feat-01 核心显示属性, Feat-02 颜色与效果, Feat-03 高级功能, Feat-04 事件回调, Feat-05 基础内存优化 |
 | 复杂度 | 复杂 |
 | 目标版本 | API 7 起支持 |
 | Owner | ArkUI SIG |
@@ -20,6 +20,7 @@
 | 项 | 补充说明 |
 |----|----------|
 | 核心目标 | 提供 Image 组件，支持多源图片显示（31 个属性 + 3 个事件），覆盖图片加载、渲染、效果、事件回调和高级功能 |
+| Feat-05 补充 | 对 Image 组件进行基础内存优化：通过 shared_ptr 共享 ImageDfxConfig 和 ImageSourceInfo、移除冗余 pixmapBuffer_ 成员，预计单节点节省 ~2,376B |
 
 ## 上下文和现状
 
@@ -36,6 +37,23 @@
 | ace_engine | `frameworks/core/components_ng/pattern/image/image_content_modifier.h/.cpp` | 内容绘制 modifier，执行 CanvasImage 渲染 | Feat-01/02 |
 | ace_engine | `frameworks/core/components_ng/pattern/image/image_model_ng.h/.cpp` | NG Model，所有属性的 Set/Get 方法 | API 层 |
 | ace_engine | `frameworks/bridge/declarative_frontend/engine/jsi/nativeModule/arkts_native_image_bridge.h/.cpp` | ArkTS 桥接层，34 个 Set/Reset 方法 | 桥接层 |
+
+### 调用链层级分析
+
+| 层 | 模块 | 职责 | 修改类型 |
+|----|------|------|----------|
+| ArkTS 动态版 JSView 入口 | `bridge/declarative_frontend/jsview/js_image.cpp` | 解析 ArkTS Image() 构造参数及 31 个属性方法，参数类型校验与枚举映射，调用 ImageModel 接口 | 存量分析 |
+| ArkTS 动态版 Bridge 层 | `bridge/declarative_frontend/engine/jsi/nativeModule/arkts_native_image_bridge.cpp` | ArkTS → C++ 桥接层，约 34 组 Set/Reset 方法，将 JSI 值转换为 C++ 类型后调用 node_modifier | 存量分析 |
+| C API NDK 入口 | `interfaces/native/node/style_modifier.cpp` | NDK 公开 C API：SetImageSrc、SetImageMatrix、SetImageRotateOrientation 等，ArkUI_AttributeItem 参数校验 | 存量分析 |
+| C API node_modifier | `core/interfaces/native/node/node_image_modifier.cpp` | 内部 C API 实现：Set/Reset/Get 全量属性方法，参数默认值定义，调用 ImageModelNG 静态方法 | 存量分析 |
+| Model 层 | `core/components_ng/pattern/image/image_model_ng.cpp` | 属性设置统一入口：所有 Set/Get 方法写入 LayoutProperty、RenderProperty 或 Pattern 成员 | 存量分析 |
+| LayoutProperty 层 | `core/components_ng/pattern/image/image_layout_property.h` | 存储触发 MEASURE/LAYOUT 的属性：src、alt、objectFit、autoResize、sourceSize、orientation 等 | 存量分析 |
+| RenderProperty 层 | `core/components_ng/pattern/image/image_render_property.h` | 存储触发 RENDER 的属性：colorFilter、objectRepeat、fillColor、hdrBrightness、dynamicRangeMode 等 | 存量分析 |
+| Pattern 层 | `core/components_ng/pattern/image/image_pattern.cpp` | 核心编排（约 3155 行）：加载生命周期驱动、ImageLoadingContext 创建与回调、事件触发、alt 三级回退、动画管理、内存回收 | 存量分析 |
+| ImageLoadingContext | `core/components_ng/image_provider/image_loading_context.cpp` | 异步加载状态机（UNLOADED→DATA_LOADING→DATA_READY→MAKE_CANVAS_IMAGE→SUCCESS/FAIL），协调 ImageProvider 与 ImageObject | 存量分析 |
+| Layout 算法层 | `core/components_ng/pattern/image/image_layout_algorithm.cpp` | MeasureContent：根据 ImageFit（18 种枚举）、图片 intrinsic size 与容器约束计算组件尺寸 | 存量分析 |
+| Paint 层 | `core/components_ng/pattern/image/image_paint_method.cpp` | 绘制配置：创建 ImageContentModifier，更新 borderRadius 裁剪、HDR 亮度、SVG 渲染参数 | 存量分析 |
+| 图片源与解码层 | `core/image/image_source_info.cpp` + `core/components_ng/image_provider/image_provider.cpp` | 图片源统一抽象（resource/network/pixelmap/SVG/base64）、4 级缓存策略、后台线程解码与 GPU 纹理上传 | 存量分析 |
 
 ### 适用架构规则
 
@@ -62,6 +80,9 @@
 | ADR-2 | objectFit 默认值为 COVER | COVER 保持图片比例填满容器，裁剪溢出部分 | 方案A：CONTAIN（留白）；方案B：FILL（拉伸变形） | COVER 是最常见的图片展示模式，对齐 Android/iOS 默认行为 | `image_layout_property.cpp:87` |
 | ADR-3 | autoResize 默认值双重逻辑 | JSON 反序列化默认 false；Pattern 构造时 autoResizeDefault_=true | 方案A：统一 false（浪费内存）；方案B：统一 true（可能过度解码） | 未显式设置时 Pattern 使用 true（启用功率对齐优化），显式设置 false 时关闭 | `image_layout_property.cpp:30` / `image_pattern.h:425` |
 | ADR-4 | 图片加载与渲染管线的关系 | ImagePattern 持有 ImageLoadingContext（在 04-01-01 中规格化），通过回调驱动属性更新和重绘 | 方案A：Image 组件直接管理加载（逻辑耦合）；方案B：完全独立加载器（回调复杂） | ImagePattern 作为加载管线的消费者，通过 LoadNotifier 回调获取加载结果，职责清晰 | 图片加载机制已在 Func-04-01-01 中规格化 |
+| ADR-F5-1 | ImageDfxConfig（~152B）在单节点中存在 5-6 份拷贝，浪费内存 | 将 ImagePattern、ImageLoadingContext、ImageObject、CanvasImage 中的 ImageDfxConfig 从值类型改为 `std::shared_ptr<ImageDfxConfig>` 共享 | 方案A：保持值拷贝（浪费 ~576B/节点）；方案B：unique_ptr 转移所有权（不适用多持有者场景） | 单节点从 5-6 份降至 1 份，节省 ~576B；空指针访问需添加保护 | `image_pattern.h`, `image_loading_context.h` |
+| ADR-F5-2 | ImageSourceInfo（~448B）在单节点中存在 5 份拷贝（ImageLayoutProperty 4 个 optional + ImageLoadingContext 1 份） | ImageLayoutProperty 中 4 个 ImageSourceInfo 属性从 `std::optional<ImageSourceInfo>` 改为 `std::shared_ptr<ImageSourceInfo>` 存储，保留旧 API 兼容，新增 `GetImageSourceInfoShared()` 返回 shared_ptr | 方案A：保持 optional 值拷贝（浪费 ~2,240B/节点）；方案B：仅减少 optional 个数（节省有限） | 单节点 ImageSourceInfo 从 ~2,240B 降至 ~536B；shared_ptr 共享后需确保不可变（copy-on-write） | `image_layout_property.h` |
+| ADR-F5-3 | `const uint8_t* pixmapBuffer_`（8B）缓存了 `pixmap_->GetPixels()` 指针，冗余 | 移除该成员，在相等比较中用 `pixmap_->GetPixels()` 直接调用 | 方案A：保留缓存指针（多占 8B 且有过时风险） | 零成本消除冗余字段，调用开销可忽略 | `image_source_info.h` |
 
 ## 设计骨架
 
@@ -89,10 +110,11 @@
 | Feat-02-image-color-effects-spec.md | 固化颜色与效果属性行为规格 | 本 Design | 完整行为规格与 AC |
 | Feat-03-image-advanced-spec.md | 固化高级功能属性行为规格 | 本 Design | 完整行为规格与 AC |
 | Feat-04-image-events-spec.md | 固化事件回调行为规格 | 本 Design | 完整行为规格与 AC |
+| Feat-05-image-base-memory-opt-spec.md | 固化基础内存优化规格（ImageDfxConfig/ImageSourceInfo shared_ptr 共享、移除 pixmapBuffer_） | 本 Design（ADR-F5-1/F5-2/F5-3） | 完整行为规格与 AC |
 
 ---
 
-## API 签名与权限
+## API 签名、Kit 与权限
 
 ### 新增 API
 
@@ -276,6 +298,8 @@ ImagePattern::OnImageLoadSuccess (after render)
 | colorFilter 双类型（ColorFilter/DrawingColorFilter） | 架构 | 低 | 同时支持数组矩阵和 DrawingColorFilter 对象，桥接层按类型分派 | 标注 |
 | 图片加载管线跨功能域依赖 | 架构 | 中 | Image 组件依赖 04-01-01 的加载管线，管线行为变更可能影响 Image 组件表现 | ArkUI SIG |
 | interpolation 默认值不一致 | 枚举 | 低 | 属性定义默认 NONE(0)，Pattern 字段默认 LOW(1)，实际使用 Pattern 字段值 | 标注 |
+| ImageDfxConfig shared_ptr 空指针访问 | 内存优化 | 低 | shared_ptr 共享后下游持有者需添加空指针保护，避免未初始化访问 | ArkUI SIG |
+| ImageSourceInfo shared_ptr 共享后可变性 | 内存优化 | 中 | shared_ptr 共享 ImageSourceInfo 后需确保不可变语义（copy-on-write），否则一处修改影响所有持有者 | ArkUI SIG |
 
 ## 设计审批
 
@@ -291,51 +315,3 @@ ImagePattern::OnImageLoadSuccess (after render)
 - [x] 风险和开放问题有 Owner
 
 **结论:** 通过（已有实现补录）
-
----
-
-## Feat-05: Image 组件基础内存优化（增量设计）
-
-### 设计元数据
-
-| 字段 | 内容 |
-|------|------|
-| Design ID | ADR-F5-1（继承 DESIGN-Func-05-08-01） |
-| 关联 Feature | Feat-05 基础内存优化 |
-| 关联 Spec | Feat-05-image-base-memory-opt-spec.md |
-| 复杂度 | 标准 |
-| 目标版本 | TBD |
-| 状态 | Baselined |
-
-### ADR-F5-1: ImageDfxConfig 改为 shared_ptr 共享
-
-**问题：** ImageDfxConfig（~152B）在单 Image 节点中存在 5-6 份拷贝（ImagePattern 3 份 + ImageLoadingContext 1 份 + ImageSourceInfo 内嵌 1 份）。
-
-**方案：** 将 ImagePattern、ImageLoadingContext、ImageObject、CanvasImage 中的 ImageDfxConfig 存储从值类型改为 `std::shared_ptr<ImageDfxConfig>`，`CreateImageDfxConfig()` 返回 shared_ptr，下游共享同一实例。
-
-**取舍：** 优势——单节点从 5-6 份降至 1 份，节省 ~576B；风险——空指针访问需添加保护。
-
-### ADR-F5-2: ImageSourceInfo 改为 shared_ptr 共享
-
-**问题：** ImageSourceInfo（~448B）在单节点中存在 5 份拷贝（ImageLayoutProperty 4 个 optional + ImageLoadingContext 1 份）。
-
-**方案：** ImageLayoutProperty 中 4 个 ImageSourceInfo 属性从 `std::optional<ImageSourceInfo>` 改为 `std::shared_ptr<ImageSourceInfo>` 存储，脱离原有宏手动实现 getter/setter。保留旧 API（`GetImageSourceInfo()` 返回 `std::optional<ImageSourceInfo>`）兼容现有调用方，新增 `GetImageSourceInfoShared()` 返回 shared_ptr 供零拷贝共享。
-
-**取舍：** 优势——单节点 ImageSourceInfo 从 ~2,240B 降至 ~536B；风险——shared_ptr 共享后需确保 ImageSourceInfo 不可变（copy-on-write）。
-
-### ADR-F5-3: 移除 ImageSourceInfo::pixmapBuffer_
-
-**问题：** `const uint8_t* pixmapBuffer_`（8B）缓存了 `pixmap_->GetPixels()` 的指针，但可在需要时内联调用。
-
-**方案：** 移除该成员，在相等比较中用 `pixmap_->GetPixels()` 直接调用。
-
-### 执行结果
-
-| 优化项 | 结构体级节省 | 编译 |
-|--------|-------------|------|
-| ImageDfxConfig shared_ptr 共享 | ~576B/节点 | 通过 |
-| ImageSourceInfo shared_ptr 共享 | ~1,792B/节点 | 通过 |
-| 移除 pixmapBuffer_ | ~8B/节点 | 通过 |
-| **合计** | **~2,376B/节点** | |
-| Alt 状态合并 | 取消（ROI 低） | — |
-| Bool 位域合并 | 取消（ROI 低） | — |

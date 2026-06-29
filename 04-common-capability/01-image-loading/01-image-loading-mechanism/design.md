@@ -38,6 +38,23 @@
 | ace_engine | `frameworks/core/components_ng/pattern/image/` | Image 组件 Pattern，持有 ImageLoadingContext，编排加载生命周期 | 消费层 |
 | ace_engine | `frameworks/core/components_ng/render/adapter/` | CanvasImage 实现层：DrawingImage、PixelMapImage、AnimatedImage、SvgCanvasImage | 渲染输出 |
 
+### 调用链层级分析
+
+| 层 | 模块 | 职责 | 修改类型 |
+|----|------|------|----------|
+| 消费层 | `frameworks/core/components_ng/pattern/image/` | Image 组件 Pattern，持有 ImageLoadingContext，编排加载生命周期 | 无修改（规格补录） |
+| 加载上下文 | `frameworks/core/components_ng/image_provider/image_loading_context.cpp/.h` | 状态机驱动加载生命周期、autoResize 功率对齐、回调分发 | 无修改（规格补录） |
+| 状态管理 | `frameworks/core/components_ng/image_provider/image_state_manager.cpp/.h` | 5 状态 + 7 命令有限状态机，严格顺序转移 | 无修改（规格补录） |
+| 协调器 | `frameworks/core/components_ng/image_provider/image_provider.cpp/.h` | 加载协调器 + 进程级任务去重（static tasks_）、BuildImageObject、MakeCanvasImage | 无修改（规格补录） |
+| 数据加载 | `frameworks/core/image/image_loader.cpp/.h` | ImageLoader 抽象基类 + 12 个具体 Loader（File/Network/Resource/Asset/Base64/PixelMap 等）+ 工厂方法 | 无修改（规格补录） |
+| 源描述 | `frameworks/core/image/image_source_info.cpp/.h` | 图片源统一描述（URI、SrcType、缓存键、SVG/HDR 标志） | 无修改（规格补录） |
+| 解码 | `frameworks/core/components_ng/image_provider/image_decoder.h` | 双路径解码：Skia(SkCodec) / ImageFramework(ImageSource::CreatePixelMap) | 无修改（规格补录） |
+| ImageObject | `frameworks/core/components_ng/image_provider/image_object.cpp/.h`, `static_image_object.cpp`, `animated_image_object.cpp`, `svg_image_object.cpp`, `pixel_map_image_object.cpp/.h` | 图片对象层次（Static/Animated/Svg/PixelMap），管理数据生命周期和 CanvasImage 创建 | 无修改（规格补录） |
+| 内存缓存 | `frameworks/core/image/image_cache.cpp/.h` | 内存 LRU 缓存（四隔离室：解码图像、原始数据、NG ImageObject、旧 ImageObject） | 无修改（规格补录） |
+| 磁盘缓存 | `frameworks/core/image/image_file_cache.cpp/.h` | 磁盘文件缓存（100MB 默认，LRU 淘汰） | 无修改（规格补录） |
+| GPU 压缩 | `frameworks/core/image/image_compressor.cpp/.h` | GPU 加速 ASTC 压缩（OpenCL，可选） | 无修改（规格补录） |
+| 渲染输出 | `frameworks/core/components_ng/render/adapter/` | CanvasImage 实现：DrawingImage、PixelMapImage、AnimatedImage、SvgCanvasImage | 无修改（规格补录） |
+
 ### 适用架构规则
 
 | Rule ID | 适用原因 | 设计结论 | 验证方式 |
@@ -94,7 +111,7 @@
 
 ---
 
-## API 签名与权限
+## API 签名、Kit 与权限
 
 ### 新增 API
 

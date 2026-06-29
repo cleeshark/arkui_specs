@@ -36,18 +36,18 @@
 **我想要** 通过 `.position()` 将组件定位到父容器内的指定位置,
 **以便** 实现浮动按钮、徽标覆盖等需要脱离正常布局流的 UI 效果。
 
-**验收标准：**
-
-- **AC-1.1:** WHEN 调用 `.position({x: value, y: value})` THEN 组件脱离正常布局流（outOfLayout），绘制位置为 parentPadding + selfMargin + position(x,y)
-- **AC-1.2:** WHEN 调用 `.position({x: value, y: value})` THEN 兄弟组件布局不受该组件影响（该组件不占据布局空间）
-- **AC-1.3:** WHEN value 为 number 类型 THEN 默认单位为 vp
-- **AC-1.4:** WHEN value 为 string 类型（如 '100px'、'50%'）THEN 按对应单位解析，百分比参照父组件内容区域尺寸
-- **AC-1.5:** WHEN value 为 Resource 类型 THEN 从资源文件解析为对应长度值
-- **AC-1.6:** WHEN value 为负数 THEN 允许负值（组件可超出父组件可视区域，向左/上偏移）
-- **AC-1.7:** WHEN 调用 `.position(undefined)` 且 API ≥ 12 THEN ResetPosition：清除 position 属性，组件回到正常布局流
-- **AC-1.8:** WHEN 调用 `.position(undefined)` 且 API < 12 THEN SetPosition(0,0)：组件仍脱离布局流，定位在父容器左上角（parentPadding 偏移处）
-- **AC-1.9:** WHEN 组件同时设置了 position 和 offset THEN position 优先，offset 被忽略
-- **AC-1.10:** WHEN 组件设置了 position 且父组件为 Row/Column/Flex THEN 首次设置 position 时，父组件标记 PROPERTY_UPDATE_MEASURE_SELF 以重新计算布局流中剩余子组件的位置
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-1.1 | WHEN 调用 `.position({x: value, y: value})` THEN 组件脱离正常布局流（outOfLayout），绘制位置为 parentPadding + selfMargin + position(x,y) |
+| AC-1.2 | WHEN 调用 `.position({x: value, y: value})` THEN 兄弟组件布局不受该组件影响（该组件不占据布局空间） |
+| AC-1.3 | WHEN value 为 number 类型 THEN 默认单位为 vp |
+| AC-1.4 | WHEN value 为 string 类型（如 '100px'、'50%'）THEN 按对应单位解析，百分比参照父组件内容区域尺寸 |
+| AC-1.5 | WHEN value 为 Resource 类型 THEN 从资源文件解析为对应长度值 |
+| AC-1.6 | WHEN value 为负数 THEN 允许负值（组件可超出父组件可视区域，向左/上偏移） |
+| AC-1.7 | WHEN 调用 `.position(undefined)` 且 API ≥ 12 THEN ResetPosition：清除 position 属性，组件回到正常布局流 |
+| AC-1.8 | WHEN 调用 `.position(undefined)` 且 API < 12 THEN SetPosition(0,0)：组件仍脱离布局流，定位在父容器左上角（parentPadding 偏移处） |
+| AC-1.9 | WHEN 组件同时设置了 position 和 offset THEN position 优先，offset 被忽略 |
+| AC-1.10 | WHEN 组件设置了 position 且父组件为 Row/Column/Flex THEN 首次设置 position 时，父组件标记 PROPERTY_UPDATE_MEASURE_SELF 以重新计算布局流中剩余子组件的位置 |
 
 ### US-2: 边缘距离定位
 
@@ -55,16 +55,16 @@
 **我想要** 通过 `.position({top, left, bottom, right})` 按边缘距离定位组件,
 **以便** 从父容器的任意边缘进行定位（例如"距底部 10vp"）。
 
-**验收标准：**
-
-- **AC-2.1:** WHEN 调用 `.position({top: t, left: l})` THEN 组件绘制位置为 parentPaddingTop + selfMarginTop + t (Y 轴) 和 parentPaddingLeft + selfMarginLeft + l (X 轴)
-- **AC-2.2:** WHEN 调用 `.position({bottom: b})` 且未设置 top THEN 组件 Y 坐标 = parentHeight - selfHeight - parentPaddingBottom - selfMarginBottom - b
-- **AC-2.3:** WHEN 调用 `.position({right: r})` 且未设置 left THEN 组件 X 坐标 = parentWidth - selfWidth - parentPaddingRight - selfMarginRight - r
-- **AC-2.4:** WHEN 同时设置 top 和 bottom THEN top 优先，bottom 被忽略
-- **AC-2.5:** WHEN 同时设置 left 和 right THEN left 优先，right 被忽略
-- **AC-2.6:** WHEN 调用 `.position({top: t, left: l})` (edges 形式) THEN 组件在 Flex/Row/Column 布局中**不脱离布局流**（`frame_node.cpp:3021` 创建 LayoutWrapper 时仅基于 `HasPosition()` 设置 `outOfLayout_` 标志，不含 `HasPositionEdges()`）。组件仍参与 Flex 主轴分配，绘制位置通过 AdjustPaintRect 的 HasPositionEdges 分支单独计算。**注意**：`FrameNode::IsOutOfLayout()` 方法（`frame_node.h:1023`）检查 `HasPosition() || HasPositionEdges()` 两者，与 LayoutWrapper 路径不一致——当前实现即规格，标注此差异
-- **AC-2.7:** WHEN 设置了 edges 形式的 position 后又设置了 x/y 形式的 position THEN x/y 形式生效，edges 被清除（两种形式互斥）
-- **AC-2.8:** WHEN 设置了 x/y 形式的 position 后又设置了 edges 形式的 position THEN edges 形式生效，x/y 被清除
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-2.1 | WHEN 调用 `.position({top: t, left: l})` THEN 组件绘制位置为 parentPaddingTop + selfMarginTop + t (Y 轴) 和 parentPaddingLeft + selfMarginLeft + l (X 轴) |
+| AC-2.2 | WHEN 调用 `.position({bottom: b})` 且未设置 top THEN 组件 Y 坐标 = parentHeight - selfHeight - parentPaddingBottom - selfMarginBottom - b |
+| AC-2.3 | WHEN 调用 `.position({right: r})` 且未设置 left THEN 组件 X 坐标 = parentWidth - selfWidth - parentPaddingRight - selfMarginRight - r |
+| AC-2.4 | WHEN 同时设置 top 和 bottom THEN top 优先，bottom 被忽略 |
+| AC-2.5 | WHEN 同时设置 left 和 right THEN left 优先，right 被忽略 |
+| AC-2.6 | WHEN 调用 `.position({top: t, left: l})` (edges 形式) THEN 组件在 Flex/Row/Column 布局中**不脱离布局流**（`frame_node.cpp:3021` 创建 LayoutWrapper 时仅基于 `HasPosition()` 设置 `outOfLayout_` 标志，不含 `HasPositionEdges()`）。组件仍参与 Flex 主轴分配，绘制位置通过 AdjustPaintRect 的 HasPositionEdges 分支单独计算。**注意**：`FrameNode::IsOutOfLayout()` 方法（`frame_node.h:1023`）检查 `HasPosition() \|\| HasPositionEdges()` 两者，与 LayoutWrapper 路径不一致——当前实现即规格，标注此差异 |
+| AC-2.7 | WHEN 设置了 edges 形式的 position 后又设置了 x/y 形式的 position THEN x/y 形式生效，edges 被清除（两种形式互斥） |
+| AC-2.8 | WHEN 设置了 x/y 形式的 position 后又设置了 edges 形式的 position THEN edges 形式生效，x/y 被清除 |
 
 ### US-3: 本地化边缘定位（RTL）
 
@@ -72,13 +72,13 @@
 **我想要** 通过 `.position({start, end, top, bottom})` 使用方向感知的边缘定位,
 **以便** 在 LTR 和 RTL 布局中自动镜像定位。
 
-**验收标准：**
-
-- **AC-3.1:** WHEN 布局方向为 LTR 且调用 `.position({start: s})` THEN start 映射为 left：组件 X = parentPaddingLeft + selfMarginLeft + s
-- **AC-3.2:** WHEN 布局方向为 RTL 且调用 `.position({start: s})` THEN start 映射为 right：组件 X = parentWidth - selfWidth - parentPaddingRight - selfMarginRight - s
-- **AC-3.3:** WHEN 布局方向为 LTR 且调用 `.position({end: e})` THEN end 映射为 right
-- **AC-3.4:** WHEN 布局方向为 RTL 且调用 `.position({end: e})` THEN end 映射为 left
-- **AC-3.5:** WHEN 使用 LocalizedEdges 形式（LengthMetrics 类型）THEN needPositionLocalizedEdges 标记为 true，方向变更时自动重新解析 start/end 到 left/right
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-3.1 | WHEN 布局方向为 LTR 且调用 `.position({start: s})` THEN start 映射为 left：组件 X = parentPaddingLeft + selfMarginLeft + s |
+| AC-3.2 | WHEN 布局方向为 RTL 且调用 `.position({start: s})` THEN start 映射为 right：组件 X = parentWidth - selfWidth - parentPaddingRight - selfMarginRight - s |
+| AC-3.3 | WHEN 布局方向为 LTR 且调用 `.position({end: e})` THEN end 映射为 right |
+| AC-3.4 | WHEN 布局方向为 RTL 且调用 `.position({end: e})` THEN end 映射为 left |
+| AC-3.5 | WHEN 使用 LocalizedEdges 形式（LengthMetrics 类型）THEN needPositionLocalizedEdges 标记为 true，方向变更时自动重新解析 start/end 到 left/right |
 
 ### US-4: 相对偏移组件
 
@@ -86,16 +86,16 @@
 **我想要** 通过 `.offset()` 在布局位置基础上追加偏移,
 **以便** 微调组件位置而不影响布局流。
 
-**验收标准：**
-
-- **AC-4.1:** WHEN 调用 `.offset({x: dx, y: dy})` THEN 组件绘制位置 = 布局计算位置 + offset(dx, dy)
-- **AC-4.2:** WHEN 设置 offset THEN 组件仍然参与正常布局流（outOfLayout=false），兄弟组件按 offset 不存在的方式布局
-- **AC-4.3:** WHEN value 为 number 类型 THEN 默认单位为 vp
-- **AC-4.4:** WHEN value 为负数 THEN 允许负值（向左/上偏移）
-- **AC-4.5:** WHEN 调用 `.offset(undefined)` 或非法值 THEN 设置为 offset(0, 0)（不清除属性，仅归零）
-- **AC-4.6:** WHEN 调用 `.offset({x: dx, y: dy})` 且 API < 10 THEN offset 值自动叠加父组件 padding（offsetX += parentPaddingLeft, offsetY += parentPaddingTop）
-- **AC-4.7:** WHEN 调用 `.offset({x: dx, y: dy})` 且 API ≥ 10 THEN offset 纯粹相对布局计算位置，不叠加父组件 padding
-- **AC-4.8:** WHEN offset 值为百分比（如 '50%'）THEN 百分比参照父组件内容区域尺寸
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-4.1 | WHEN 调用 `.offset({x: dx, y: dy})` THEN 组件绘制位置 = 布局计算位置 + offset(dx, dy) |
+| AC-4.2 | WHEN 设置 offset THEN 组件仍然参与正常布局流（outOfLayout=false），兄弟组件按 offset 不存在的方式布局 |
+| AC-4.3 | WHEN value 为 number 类型 THEN 默认单位为 vp |
+| AC-4.4 | WHEN value 为负数 THEN 允许负值（向左/上偏移） |
+| AC-4.5 | WHEN 调用 `.offset(undefined)` 或非法值 THEN 设置为 offset(0, 0)（不清除属性，仅归零） |
+| AC-4.6 | WHEN 调用 `.offset({x: dx, y: dy})` 且 API < 10 THEN offset 值自动叠加父组件 padding（offsetX += parentPaddingLeft, offsetY += parentPaddingTop） |
+| AC-4.7 | WHEN 调用 `.offset({x: dx, y: dy})` 且 API ≥ 10 THEN offset 纯粹相对布局计算位置，不叠加父组件 padding |
+| AC-4.8 | WHEN offset 值为百分比（如 '50%'）THEN 百分比参照父组件内容区域尺寸 |
 
 ### US-5: 边缘距离偏移
 
@@ -103,15 +103,15 @@
 **我想要** 通过 `.offset({top, left, bottom, right})` 使用边缘方向偏移,
 **以便** 按方向语义微调组件位置。
 
-**验收标准：**
-
-- **AC-5.1:** WHEN 调用 `.offset({top: t})` THEN 组件 Y 方向追加 +t 偏移
-- **AC-5.2:** WHEN 调用 `.offset({left: l})` THEN 组件 X 方向追加 +l 偏移
-- **AC-5.3:** WHEN 调用 `.offset({bottom: b})` 且未设置 top THEN 组件 Y 方向追加 -b 偏移（向上移动）
-- **AC-5.4:** WHEN 调用 `.offset({right: r})` 且未设置 left THEN 组件 X 方向追加 -r 偏移（向左移动）
-- **AC-5.5:** WHEN 同时设置 top 和 bottom THEN top 优先，bottom 被忽略
-- **AC-5.6:** WHEN 同时设置 left 和 right THEN left 优先，right 被忽略
-- **AC-5.7:** WHEN 设置了 edges 形式的 offset 后又设置了 x/y 形式的 offset THEN x/y 形式生效，edges 被清除（两种形式互斥）
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-5.1 | WHEN 调用 `.offset({top: t})` THEN 组件 Y 方向追加 +t 偏移 |
+| AC-5.2 | WHEN 调用 `.offset({left: l})` THEN 组件 X 方向追加 +l 偏移 |
+| AC-5.3 | WHEN 调用 `.offset({bottom: b})` 且未设置 top THEN 组件 Y 方向追加 -b 偏移（向上移动） |
+| AC-5.4 | WHEN 调用 `.offset({right: r})` 且未设置 left THEN 组件 X 方向追加 -r 偏移（向左移动） |
+| AC-5.5 | WHEN 同时设置 top 和 bottom THEN top 优先，bottom 被忽略 |
+| AC-5.6 | WHEN 同时设置 left 和 right THEN left 优先，right 被忽略 |
+| AC-5.7 | WHEN 设置了 edges 形式的 offset 后又设置了 x/y 形式的 offset THEN x/y 形式生效，edges 被清除（两种形式互斥） |
 
 ### US-6: 本地化边缘偏移（RTL）
 
@@ -119,13 +119,13 @@
 **我想要** 通过 `.offset({start, end, top, bottom})` 使用方向感知的偏移,
 **以便** 在 LTR 和 RTL 布局中自动镜像偏移方向。
 
-**验收标准：**
-
-- **AC-6.1:** WHEN 布局方向为 LTR 且调用 `.offset({start: s})` THEN start 映射为 left，组件追加 +s 的 X 偏移
-- **AC-6.2:** WHEN 布局方向为 RTL 且调用 `.offset({start: s})` THEN start 映射为 right，组件追加 -s 的 X 偏移
-- **AC-6.3:** WHEN 布局方向为 LTR 且调用 `.offset({end: e})` THEN end 映射为 right，组件追加 -e 的 X 偏移
-- **AC-6.4:** WHEN 布局方向为 RTL 且调用 `.offset({end: e})` THEN end 映射为 left，组件追加 +e 的 X 偏移
-- **AC-6.5:** WHEN 使用 LocalizedEdges 形式 THEN needOffsetLocalizedEdges 标记为 true
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-6.1 | WHEN 布局方向为 LTR 且调用 `.offset({start: s})` THEN start 映射为 left，组件追加 +s 的 X 偏移 |
+| AC-6.2 | WHEN 布局方向为 RTL 且调用 `.offset({start: s})` THEN start 映射为 right，组件追加 -s 的 X 偏移 |
+| AC-6.3 | WHEN 布局方向为 LTR 且调用 `.offset({end: e})` THEN end 映射为 right，组件追加 -e 的 X 偏移 |
+| AC-6.4 | WHEN 布局方向为 RTL 且调用 `.offset({end: e})` THEN end 映射为 left，组件追加 +e 的 X 偏移 |
+| AC-6.5 | WHEN 使用 LocalizedEdges 形式 THEN needOffsetLocalizedEdges 标记为 true |
 
 ### US-7: 锚点偏移
 
@@ -133,16 +133,16 @@
 **我想要** 通过 `.markAnchor()` 调整组件的定位锚点,
 **以便** 实现以组件内部某个点为基准的定位（如以中心点定位而非左上角）。
 
-**验收标准：**
-
-- **AC-7.1:** WHEN 调用 `.markAnchor({x: ax, y: ay})` THEN 组件绘制位置在最终计算时减去锚点偏移：finalX -= anchorX, finalY -= anchorY
-- **AC-7.2:** WHEN markAnchor 设置后 THEN 仅影响视觉绘制位置（paintRect），不影响布局盒（frameRect），兄弟组件按 markAnchor 不存在的方式布局
-- **AC-7.3:** WHEN markAnchor 值为百分比 THEN 百分比参照组件自身尺寸（非父组件）
-- **AC-7.4:** WHEN markAnchor 与 position 同时设置 THEN 最终位置 = position 计算结果 - anchor
-- **AC-7.5:** WHEN markAnchor 与 offset 同时设置 THEN 最终位置 = 布局位置 + offset - anchor
-- **AC-7.6:** WHEN markAnchor 值为负数 THEN 允许负值（向相反方向偏移锚点）
-- **AC-7.7:** WHEN 调用 `.markAnchor(undefined)` 或非法值 THEN 设置为 markAnchor(0, 0)
-- **AC-7.8:** WHEN value 为 number 类型 THEN 默认单位为 vp
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-7.1 | WHEN 调用 `.markAnchor({x: ax, y: ay})` THEN 组件绘制位置在最终计算时减去锚点偏移：finalX -= anchorX, finalY -= anchorY |
+| AC-7.2 | WHEN markAnchor 设置后 THEN 仅影响视觉绘制位置（paintRect），不影响布局盒（frameRect），兄弟组件按 markAnchor 不存在的方式布局 |
+| AC-7.3 | WHEN markAnchor 值为百分比 THEN 百分比参照组件自身尺寸（非父组件） |
+| AC-7.4 | WHEN markAnchor 与 position 同时设置 THEN 最终位置 = position 计算结果 - anchor |
+| AC-7.5 | WHEN markAnchor 与 offset 同时设置 THEN 最终位置 = 布局位置 + offset - anchor |
+| AC-7.6 | WHEN markAnchor 值为负数 THEN 允许负值（向相反方向偏移锚点） |
+| AC-7.7 | WHEN 调用 `.markAnchor(undefined)` 或非法值 THEN 设置为 markAnchor(0, 0) |
+| AC-7.8 | WHEN value 为 number 类型 THEN 默认单位为 vp |
 
 ### US-8: 锚点本地化（RTL）
 
@@ -150,11 +150,11 @@
 **我想要** 通过 `.markAnchor({start, top})` 使用方向感知的锚点,
 **以便** 在 RTL 布局中自动镜像锚点方向。
 
-**验收标准：**
-
-- **AC-8.1:** WHEN 布局方向为 LTR 且调用 `.markAnchor({start: s, top: t})` THEN anchorX = s（正值，向右偏移锚点）
-- **AC-8.2:** WHEN 布局方向为 RTL 且调用 `.markAnchor({start: s, top: t})` THEN anchorX = -s（取反，向左偏移锚点）
-- **AC-8.3:** WHEN 使用 start 形式 THEN markAnchorStart_ 存储原始值，布局方向变更时自动重新解析
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-8.1 | WHEN 布局方向为 LTR 且调用 `.markAnchor({start: s, top: t})` THEN anchorX = s（正值，向右偏移锚点） |
+| AC-8.2 | WHEN 布局方向为 RTL 且调用 `.markAnchor({start: s, top: t})` THEN anchorX = -s（取反，向左偏移锚点） |
+| AC-8.3 | WHEN 使用 start 形式 THEN markAnchorStart_ 存储原始值，布局方向变更时自动重新解析 |
 
 ### US-9: 内容对齐
 
@@ -162,17 +162,17 @@
 **我想要** 通过 `.align()` 设置容器内子组件的对齐方式,
 **以便** 控制子组件在容器内容区域中的位置。
 
-**验收标准：**
-
-- **AC-9.1:** WHEN 调用 `.align(Alignment.TopStart)` THEN 子组件对齐到容器内容区域的左上角
-- **AC-9.2:** WHEN 调用 `.align(Alignment.Center)` THEN 子组件对齐到容器内容区域的正中心
-- **AC-9.3:** WHEN 调用 `.align(Alignment.BottomEnd)` THEN 子组件对齐到容器内容区域的右下角
-- **AC-9.4:** WHEN 未设置 align THEN 默认对齐方式为 Alignment.Center
-- **AC-9.5:** WHEN 容器有多个子组件 THEN align 应用于每个子组件（所有子组件使用相同对齐方式）
-- **AC-9.6:** WHEN 子组件尺寸等于容器内容区域尺寸 THEN align 无可见效果（偏移为 0）
-- **AC-9.7:** WHEN 子组件为 outOfLayout（通过 position(x/y) 设置，不含 position(edges)）THEN align 不影响该子组件的位置
-- **AC-9.8:** WHEN 调用 `.align(undefined)` 且 API ≥ 10 THEN 重置为默认值 Alignment.Center
-- **AC-9.9:** WHEN align 变更 THEN 触发 PROPERTY_UPDATE_LAYOUT（仅重新布局，不重新测量）
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-9.1 | WHEN 调用 `.align(Alignment.TopStart)` THEN 子组件对齐到容器内容区域的左上角 |
+| AC-9.2 | WHEN 调用 `.align(Alignment.Center)` THEN 子组件对齐到容器内容区域的正中心 |
+| AC-9.3 | WHEN 调用 `.align(Alignment.BottomEnd)` THEN 子组件对齐到容器内容区域的右下角 |
+| AC-9.4 | WHEN 未设置 align THEN 默认对齐方式为 Alignment.Center |
+| AC-9.5 | WHEN 容器有多个子组件 THEN align 应用于每个子组件（所有子组件使用相同对齐方式） |
+| AC-9.6 | WHEN 子组件尺寸等于容器内容区域尺寸 THEN align 无可见效果（偏移为 0） |
+| AC-9.7 | WHEN 子组件为 outOfLayout（通过 position(x/y) 设置，不含 position(edges)）THEN align 不影响该子组件的位置 |
+| AC-9.8 | WHEN 调用 `.align(undefined)` 且 API ≥ 10 THEN 重置为默认值 Alignment.Center |
+| AC-9.9 | WHEN align 变更 THEN 触发 PROPERTY_UPDATE_LAYOUT（仅重新布局，不重新测量） |
 
 ### US-10: 本地化对齐（RTL）
 
@@ -180,11 +180,11 @@
 **我想要** 通过本地化对齐字符串（如 'top_start'、'center'）设置方向感知对齐,
 **以便** 在 RTL 布局中自动镜像对齐方向。
 
-**验收标准：**
-
-- **AC-10.1:** WHEN 使用本地化对齐字符串（IsMirrorable=true）且布局方向为 RTL THEN TOP_START 映射为 TOP_RIGHT（而非 TOP_LEFT）
-- **AC-10.2:** WHEN 使用数字枚举（IsMirrorable=false）THEN 不进行 RTL 镜像，TOP_LEFT 始终为左上角
-- **AC-10.3:** WHEN 布局方向为 RTL 且使用本地化对齐 THEN LEFT 映射为 RIGHT，RIGHT 映射为 LEFT，CENTER 保持不变
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-10.1 | WHEN 使用本地化对齐字符串（IsMirrorable=true）且布局方向为 RTL THEN TOP_START 映射为 TOP_RIGHT（而非 TOP_LEFT） |
+| AC-10.2 | WHEN 使用数字枚举（IsMirrorable=false）THEN 不进行 RTL 镜像，TOP_LEFT 始终为左上角 |
+| AC-10.3 | WHEN 布局方向为 RTL 且使用本地化对齐 THEN LEFT 映射为 RIGHT，RIGHT 映射为 LEFT，CENTER 保持不变 |
 
 ### US-11: 布局方向控制
 
@@ -192,16 +192,16 @@
 **我想要** 通过 `.direction()` 控制组件的布局方向,
 **以便** 在 RTL 语言环境中正确排列 UI 组件。
 
-**验收标准：**
-
-- **AC-11.1:** WHEN 调用 `.direction(Direction.Ltr)` 且父组件为 Row/Flex(ROW) THEN 子组件从左到右排列
-- **AC-11.2:** WHEN 调用 `.direction(Direction.Rtl)` 且父组件为 Row/Flex(ROW) THEN 子组件从右到左排列
-- **AC-11.3:** WHEN 调用 `.direction(Direction.Rtl)` 且父组件为 Column THEN 子组件排列方向不受影响（Column 主轴为垂直方向）
-- **AC-11.4:** WHEN 调用 `.direction(Direction.Auto)` THEN 方向解析为系统语言环境：RTL 语言环境解析为 RTL，否则解析为 LTR
-- **AC-11.5:** WHEN direction 为 AUTO 且父组件设置了 direction(RTL) THEN 本组件的 AUTO 仍然解析为系统语言环境，**不继承**父组件的 direction 设置（⚠️ 重要：AUTO 不等于 INHERIT）
-- **AC-11.6:** WHEN direction 变更 THEN 触发 PROPERTY_UPDATE_MEASURE（需要重新测量，因为子组件排列方向变化）
-- **AC-11.7:** WHEN 调用 `.direction(undefined)` 且 API ≥ 10 THEN 重置为 Direction.Auto
-- **AC-11.8:** WHEN direction(RTL) 设置后 THEN 影响所有使用 start/end 的本地化属性：position edges、offset edges、markAnchor start、localized alignment
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-11.1 | WHEN 调用 `.direction(Direction.Ltr)` 且父组件为 Row/Flex(ROW) THEN 子组件从左到右排列 |
+| AC-11.2 | WHEN 调用 `.direction(Direction.Rtl)` 且父组件为 Row/Flex(ROW) THEN 子组件从右到左排列 |
+| AC-11.3 | WHEN 调用 `.direction(Direction.Rtl)` 且父组件为 Column THEN 子组件排列方向不受影响（Column 主轴为垂直方向） |
+| AC-11.4 | WHEN 调用 `.direction(Direction.Auto)` THEN 方向解析为系统语言环境：RTL 语言环境解析为 RTL，否则解析为 LTR |
+| AC-11.5 | WHEN direction 为 AUTO 且父组件设置了 direction(RTL) THEN 本组件的 AUTO 仍然解析为系统语言环境，**不继承**父组件的 direction 设置（⚠️ 重要：AUTO 不等于 INHERIT） |
+| AC-11.6 | WHEN direction 变更 THEN 触发 PROPERTY_UPDATE_MEASURE（需要重新测量，因为子组件排列方向变化） |
+| AC-11.7 | WHEN 调用 `.direction(undefined)` 且 API ≥ 10 THEN 重置为 Direction.Auto |
+| AC-11.8 | WHEN direction(RTL) 设置后 THEN 影响所有使用 start/end 的本地化属性：position edges、offset edges、markAnchor start、localized alignment |
 
 ---
 
@@ -209,22 +209,22 @@
 
 | AC | 关联规则 | 关联 Task | 验证方式 | 证据 |
 |----|----------|-----------|----------|------|
-| AC-1.1~1.10 | BR-1, BR-2, FR-1~FR-5, EX-1~EX-3 | 已有实现 | 单测/XTS | `test/unittest/core/` |
-| AC-2.1~2.8 | BR-3, FR-6~FR-9 | 已有实现 | 单测 | 同上 |
-| AC-3.1~3.5 | BR-4, FR-10~FR-11 | 已有实现 | 单测 | 同上 |
-| AC-4.1~4.8 | BR-5, FR-12~FR-15, EX-4~EX-5 | 已有实现 | 单测 | 同上 |
-| AC-5.1~5.7 | BR-6, FR-16~FR-18 | 已有实现 | 单测 | 同上 |
-| AC-6.1~6.5 | BR-7, FR-19 | 已有实现 | 单测 | 同上 |
-| AC-7.1~7.8 | BR-8, FR-20~FR-23 | 已有实现 | 单测 | 同上 |
-| AC-8.1~8.3 | BR-9, FR-24 | 已有实现 | 单测 | 同上 |
-| AC-9.1~9.9 | BR-10, FR-25~FR-28 | 已有实现 | 单测 | 同上 |
-| AC-10.1~10.3 | BR-11, FR-29 | 已有实现 | 单测 | 同上 |
-| AC-11.1~11.8 | BR-12, FR-30~FR-33, EX-6 | 已有实现 | 单测 | 同上 |
-| AC-1.1, AC-1.2, AC-1.3 | BR-1, BR-2, FR-1~FR-5 | SpecTest 回填用例 | HostPreview | 见 SpecTest用例追溯 表格 |
-| AC-4.1, AC-4.2 | BR-5, FR-12~FR-15 | SpecTest 回填用例 | HostPreview | 见 SpecTest用例追溯 表格 |
-| AC-7.1 | BR-8, FR-20~FR-23 | SpecTest 回填用例 | HostPreview | 见 SpecTest用例追溯 表格 |
-| AC-2.2, AC-2.3 | BR-3, FR-6~FR-9 | SpecTest 回填用例 | HostPreview | 见 SpecTest用例追溯 表格 |
-| AC-9.1, AC-9.2, AC-9.3, AC-9.4 | BR-10, FR-25~FR-28 | SpecTest 回填用例 | HostPreview | 见 SpecTest用例追溯 表格 |
+| AC-1.1~1.10 | R-1, R-2, R-13~R-17, R-46~R-48 | 已有实现 | 单测/XTS | `test/unittest/core/` |
+| AC-2.1~2.8 | R-3, R-18~R-21 | 已有实现 | 单测 | 同上 |
+| AC-3.1~3.5 | R-4, R-22~R-23 | 已有实现 | 单测 | 同上 |
+| AC-4.1~4.8 | R-5, R-24~R-27, R-49~R-50 | 已有实现 | 单测 | 同上 |
+| AC-5.1~5.7 | R-6, R-28~R-30 | 已有实现 | 单测 | 同上 |
+| AC-6.1~6.5 | R-7, R-31 | 已有实现 | 单测 | 同上 |
+| AC-7.1~7.8 | R-8, R-32~R-35 | 已有实现 | 单测 | 同上 |
+| AC-8.1~8.3 | R-9, R-36 | 已有实现 | 单测 | 同上 |
+| AC-9.1~9.9 | R-10, R-37~R-40 | 已有实现 | 单测 | 同上 |
+| AC-10.1~10.3 | R-11, R-41 | 已有实现 | 单测 | 同上 |
+| AC-11.1~11.8 | R-12, R-42~R-45, R-51 | 已有实现 | 单测 | 同上 |
+| AC-1.1, AC-1.2, AC-1.3 | R-1, R-2, R-13~R-17 | SpecTest 回填用例 | HostPreview | 见 SpecTest用例追溯 表格 |
+| AC-4.1, AC-4.2 | R-5, R-24~R-27 | SpecTest 回填用例 | HostPreview | 见 SpecTest用例追溯 表格 |
+| AC-7.1 | R-8, R-32~R-35 | SpecTest 回填用例 | HostPreview | 见 SpecTest用例追溯 表格 |
+| AC-2.2, AC-2.3 | R-3, R-18~R-21 | SpecTest 回填用例 | HostPreview | 见 SpecTest用例追溯 表格 |
+| AC-9.1, AC-9.2, AC-9.3, AC-9.4 | R-10, R-37~R-40 | SpecTest 回填用例 | HostPreview | 见 SpecTest用例追溯 表格 |
 
 ### SpecTest 用例追溯
 
@@ -239,90 +239,70 @@
 | case-003-align-bottom-end | AC-9.3 |
 | case-004-position-bottom-right | AC-2.2, AC-2.3 |
 
----
 
-## 业务规则
+## 规则定义
 
-| 编号 | 规则描述 | 约束条件 | 关联 AC |
-|------|----------|----------|---------|
-| BR-1 | 所有组件均继承 CommonMethod，支持 position/offset/markAnchor/align/direction 属性 | 适用于所有 FrameNode | AC-1.1~AC-11.8 |
-| BR-2 | position(x/y) 使组件脱离正常布局流（outOfLayout=true），类似 CSS position:absolute；position(edges) 在 Flex/Row/Column 中不脱离布局流（LayoutWrapper 路径差异） | FrameNode::IsOutOfLayout 检查两者，但 LayoutWrapper::outOfLayout_ 仅由 HasPosition 设置 | AC-1.1, AC-1.2, AC-2.6 |
-| BR-3 | position 支持三种互斥的输入形式：x/y 坐标、edges 边缘距离、localizedEdges 本地化边缘 | Position 和 PositionEdges 互斥存储，后设置覆盖前设置 | AC-2.7, AC-2.8 |
-| BR-4 | 本地化边缘（start/end）根据布局方向解析为物理方向（left/right）| LTR: start→left, end→right; RTL: start→right, end→left | AC-3.1~3.4 |
-| BR-5 | offset 保持组件在正常布局流中（outOfLayout=false），是布局后的位移 | offset 不影响兄弟组件布局 | AC-4.1, AC-4.2 |
-| BR-6 | offset edges 中 top/left 优先于 bottom/right | 同时设置时，top 生效 bottom 忽略，left 生效 right 忽略 | AC-5.5, AC-5.6 |
-| BR-7 | offset 本地化边缘遵循与 position 相同的 start/end → left/right 映射规则 | 依赖 CheckPositionOrOffsetLocalizedEdges | AC-6.1~6.4 |
-| BR-8 | markAnchor 仅影响视觉绘制位置（paintRect），不影响布局盒（frameRect） | 兄弟组件按 markAnchor 不存在的方式布局 | AC-7.2 |
-| BR-9 | markAnchor 的 start 形式在 RTL 方向下取反 | CheckMarkAnchorPosition: RTL 时 x = -start | AC-8.1, AC-8.2 |
-| BR-10 | align 控制容器内所有子组件的对齐方式 | 应用于 BoxLayoutAlgorithm::PerformLayout 中的每个子组件 | AC-9.5 |
-| BR-11 | 本地化对齐（IsMirrorable=true）在 RTL 方向下镜像 LEFT↔RIGHT | 使用 GetAlignPositionWithDirection 进行镜像 | AC-10.1~10.3 |
-| BR-12 | direction(AUTO) 解析为系统语言环境，不继承父组件 direction | GetNonAutoLayoutDirection 读取 AceApplicationInfo::IsRightToLeft() | AC-11.4, AC-11.5 |
+> **统一规则表，取消 FR/BR/EX/RC 四分类。** 类型标签：**行为**（正常路径下的系统行为）、**边界**（输入/状态的临界点）、**异常**（非法输入或异常状态的处理）、**恢复**（系统异常后的恢复策略）。
 
----
-
-## 功能规则
-
-| 编号 | 规则描述 | 触发条件 | 作用对象 | 关联 AC |
-|------|----------|----------|----------|---------|
-| FR-1 | position(x/y) 存储在 RenderContext::RenderPositionProperty::Position，设置时清除 PositionEdges | 调用 SetPosition | RenderContext | AC-1.1, AC-2.7 |
-| FR-2 | position 变更不直接触发 PropertyChangeFlag，而是通过 OnPositionUpdate 回调调用 SetPositionToRSNode 更新渲染树 | 修改 position 值 | RenderContext | AC-1.1 |
-| FR-3 | 首次设置 position 时，CheckIfParentNeedMarkDirty 标记父组件（Row/Column/Flex）为 PROPERTY_UPDATE_MEASURE_SELF | 子组件从 inFlow → outOfLayout 切换 | FrameNode | AC-1.10 |
-| FR-4 | FrameNode::IsOutOfLayout() 返回 HasPosition() \|\| HasPositionEdges()，不检查 HasOffset | 布局算法判断是否跳过子组件 | FrameNode | AC-1.2 |
-| FR-5 | position(x/y) 计算公式：paintRect.X = parentPaddingLeft + selfMarginLeft + position.x - anchorX; Y 轴同理 | AdjustPaintRect 渲染阶段 | RosenRenderContext | AC-1.1 |
-| FR-6 | position(edges) 存储在 RenderContext::RenderPositionProperty::PositionEdges，设置时清除 Position | 调用 SetPositionEdges | RenderContext | AC-2.6, AC-2.8 |
-| FR-7 | edges 定位中 top 优先于 bottom：当 top 有值时忽略 bottom | GetRectOffsetWithPositionEdges | RosenRenderContext | AC-2.4 |
-| FR-8 | edges 定位中 left 优先于 right：当 left 有值时忽略 right | GetRectOffsetWithPositionEdges | RosenRenderContext | AC-2.5 |
-| FR-9 | bottom/right 定位公式：Y = parentH - selfH - parentPaddingBottom - selfMarginBottom - edges.bottom | GetRectOffsetWithPositionEdges | RosenRenderContext | AC-2.2, AC-2.3 |
-| FR-10 | CheckPositionOrOffsetLocalizedEdges 将 start/end 根据 layoutDirection 映射为 left/right | 设置 LocalizedEdges 时和方向变更时 | ViewAbstract | AC-3.1~3.4 |
-| FR-11 | needPositionLocalizedEdges_ 标记存储在 LayoutProperty 中，用于标识是否需要方向感知重新解析 | 使用 LocalizedEdges 形式设置 position | LayoutProperty | AC-3.5 |
-| FR-12 | offset(x/y) 存储在 RenderContext::RenderPositionProperty::Offset，设置时清除 OffsetEdges | 调用 SetOffset | RenderContext | AC-4.1, AC-5.7 |
-| FR-13 | offset 计算公式：paintRect.X = layoutX + offset.x - anchorX; Y 轴同理 | AdjustPaintRect 渲染阶段 | RosenRenderContext | AC-4.1 |
-| FR-14 | API < 10: offset 叠加父 padding：offset += OffsetT(parentPaddingLeft, parentPaddingTop) | MinPlatformVersion < 10 | RosenRenderContext | AC-4.6 |
-| FR-15 | API ≥ 10: offset 不叠加父 padding，纯粹相对布局位置 | MinPlatformVersion ≥ 10 | RosenRenderContext | AC-4.7 |
-| FR-16 | offset edges 中 top 转为正 Y 偏移，bottom 转为负 Y 偏移 | GetRectOffsetWithOffsetEdges | RosenRenderContext | AC-5.1, AC-5.3 |
-| FR-17 | offset edges 中 left 转为正 X 偏移，right 转为负 X 偏移 | GetRectOffsetWithOffsetEdges | RosenRenderContext | AC-5.2, AC-5.4 |
-| FR-18 | offset edges 中 top 优先于 bottom，left 优先于 right | GetRectOffsetWithOffsetEdges | RosenRenderContext | AC-5.5, AC-5.6 |
-| FR-19 | needOffsetLocalizedEdges_ 标记存储在 LayoutProperty 中 | 使用 LocalizedEdges 形式设置 offset | LayoutProperty | AC-6.5 |
-| FR-20 | markAnchor 存储在 RenderContext::RenderPositionProperty::Anchor，类型为 OffsetT<Dimension> | 调用 MarkAnchor | RenderContext | AC-7.1 |
-| FR-21 | markAnchor 以减法应用于最终位置：finalX -= anchorX, finalY -= anchorY | AdjustPaintRect 中所有定位分支 | RosenRenderContext | AC-7.1 |
-| FR-22 | markAnchor 百分比参照组件自身尺寸（rect.Width()/rect.Height()），非父组件尺寸 | AdjustPaintRect 获取 anchor 时 | RosenRenderContext | AC-7.3 |
-| FR-23 | markAnchor 变更触发 OnAnchorUpdate → SetPositionToRSNode，不触发 PROPERTY_UPDATE_MEASURE/LAYOUT | RenderContext 回调 | RosenRenderContext | AC-7.2 |
-| FR-24 | markAnchor start 形式：LTR 时 x = start，RTL 时 x = -start | CheckMarkAnchorPosition(layoutDirection) | LayoutProperty | AC-8.1, AC-8.2 |
-| FR-25 | align 存储在 LayoutProperty::PositionProperty::Alignment（枚举）或 LocalizedAlignment（字符串） | 调用 SetAlign | LayoutProperty | AC-9.1~9.3 |
-| FR-26 | align 变更触发 PROPERTY_UPDATE_LAYOUT（不触发 MEASURE） | UpdateAlignment | LayoutProperty | AC-9.9 |
-| FR-27 | BoxLayoutAlgorithm::PerformLayout 使用 GetAlignPosition 计算子组件偏移：offset.X = (1 + horizontal) * (parentW - childW) / 2 | Layout 阶段 | BoxLayoutAlgorithm | AC-9.1~9.3 |
-| FR-28 | align 默认值为 Alignment::CENTER（horizontal=0, vertical=0）| 未设置 align 时 | BoxLayoutAlgorithm | AC-9.4 |
-| FR-29 | IsMirrorable=true 时使用 LocalizedAlignment 字符串映射；IsMirrorable=false 时直接使用 Alignment 枚举 | 布局阶段读取对齐方式 | BoxLayoutAlgorithm | AC-10.1, AC-10.2 |
-| FR-30 | direction 存储在 LayoutProperty::layoutDirection_（std::optional<TextDirection>）| 调用 SetLayoutDirection | LayoutProperty | AC-11.1~11.4 |
-| FR-31 | direction 变更触发 PROPERTY_UPDATE_MEASURE | UpdateLayoutDirection | LayoutProperty | AC-11.6 |
-| FR-32 | GetNonAutoLayoutDirection: AUTO → AceApplicationInfo::IsRightToLeft() ? RTL : LTR | 解析 AUTO 值 | LayoutProperty | AC-11.4 |
-| FR-33 | direction(RTL) 影响 FlexLayoutAlgorithm::IsStartTopLeft：FlexDirection::ROW 时 RTL 导致子组件从右到左排列 | Flex/Row 布局 | FlexLayoutAlgorithm | AC-11.1, AC-11.2 |
-
----
-
-## 异常/豁免规则
-
-| 编号 | 规则描述 | 触发条件 | 处理结果 | 关联 AC |
-|------|----------|----------|----------|---------|
-| EX-1 | position(undefined) 重置（API ≥ 12） | position 传入 undefined/非法值且 target API ≥ 12 | ResetPosition：清除 Position 和 PositionEdges，组件回到布局流（outOfLayout=false）| AC-1.7 |
-| EX-2 | position(undefined) 归零（API < 12） | position 传入 undefined/非法值且 target API < 12 | SetPosition(0.0_vp, 0.0_vp)：组件仍脱离布局流，定位在 (0,0) | AC-1.8 |
-| EX-3 | ResetPosition 时的父组件标记 | ResetPosition 且父组件为 Column/Row/Flex/Stack | 子节点标记 PROPERTY_UPDATE_MEASURE（因为子组件从 outOfLayout 回到布局流） | AC-1.7 |
-| EX-4 | offset(undefined) 归零 | offset 传入 undefined/非法值 | SetOffset(0.0_vp, 0.0_vp)：offset 始终保持属性存在，仅归零 | AC-4.5 |
-| EX-5 | offset API < 10 包含父 padding | API < 10 环境下设置 offset | offset 值自动叠加父组件 padding(left, top) | AC-4.6 |
-| EX-6 | direction AUTO 不继承 | 子组件 direction 为 AUTO 且父组件为 RTL | 子组件 AUTO 解析为系统语言环境，不继承父组件 RTL | AC-11.5 |
-| EX-7 | markAnchor(undefined) 归零 | markAnchor 传入 undefined/非法值 | MarkAnchor(0.0_vp, 0.0_vp)：锚点归零 | AC-7.7 |
-
----
-
-## 恢复契约
-
-| 编号 | 触发条件 | 恢复策略 | 恢复结果 | 约束 |
-|------|----------|----------|----------|------|
-| RC-1 | position(undefined) API ≥ 12 | ResetPosition 清除属性 | 组件回到正常布局流，由父容器布局算法决定位置 | 仅 API ≥ 12 |
-| RC-2 | offset(undefined) | SetOffset(0, 0) | 组件无额外偏移，按布局计算位置渲染 | 所有 API 版本 |
-| RC-3 | markAnchor(undefined) | MarkAnchor(0, 0) | 锚点归零，不影响位置 | 所有 API 版本 |
-| RC-4 | align(undefined) API ≥ 10 | 重置为 Alignment::CENTER | 子组件居中对齐 | 仅 API ≥ 10 |
-| RC-5 | direction(undefined) API ≥ 10 | 重置为 TextDirection::AUTO | 方向解析为系统语言环境 | 仅 API ≥ 10 |
+| 规则ID | 类型 | 触发条件 | 预期行为 | 边界/约束 | 关联AC |
+|--------|------|----------|----------|-----------|--------|
+| R-1 | 行为 | 适用于所有 FrameNode | 所有组件均继承 CommonMethod，支持 position/offset/markAnchor/align/direction 属性 | — | AC-1.1~AC-11.8 |
+| R-2 | 行为 | FrameNode::IsOutOfLayout 检查两者，但 LayoutWrapper::outOfLayout_ 仅由 HasPosition 设置 | position(x/y) 使组件脱离正常布局流（outOfLayout=true），类似 CSS position:absolute；position(edges) 在 Flex/Row/Column 中不脱离布局流（LayoutWrapper 路径差异） | — | AC-1.1, AC-1.2, AC-2.6 |
+| R-3 | 行为 | Position 和 PositionEdges 互斥存储，后设置覆盖前设置 | position 支持三种互斥的输入形式：x/y 坐标、edges 边缘距离、localizedEdges 本地化边缘 | — | AC-2.7, AC-2.8 |
+| R-4 | 行为 | LTR: start→left, end→right; RTL: start→right, end→left | 本地化边缘（start/end）根据布局方向解析为物理方向（left/right） | — | AC-3.1~3.4 |
+| R-5 | 行为 | offset 不影响兄弟组件布局 | offset 保持组件在正常布局流中（outOfLayout=false），是布局后的位移 | — | AC-4.1, AC-4.2 |
+| R-6 | 行为 | 同时设置时，top 生效 bottom 忽略，left 生效 right 忽略 | offset edges 中 top/left 优先于 bottom/right | — | AC-5.5, AC-5.6 |
+| R-7 | 行为 | 依赖 CheckPositionOrOffsetLocalizedEdges | offset 本地化边缘遵循与 position 相同的 start/end → left/right 映射规则 | — | AC-6.1~6.4 |
+| R-8 | 行为 | 兄弟组件按 markAnchor 不存在的方式布局 | markAnchor 仅影响视觉绘制位置（paintRect），不影响布局盒（frameRect） | — | AC-7.2 |
+| R-9 | 行为 | CheckMarkAnchorPosition: RTL 时 x = -start | markAnchor 的 start 形式在 RTL 方向下取反 | — | AC-8.1, AC-8.2 |
+| R-10 | 行为 | 应用于 BoxLayoutAlgorithm::PerformLayout 中的每个子组件 | align 控制容器内所有子组件的对齐方式 | — | AC-9.5 |
+| R-11 | 行为 | 使用 GetAlignPositionWithDirection 进行镜像 | 本地化对齐（IsMirrorable=true）在 RTL 方向下镜像 LEFT↔RIGHT | — | AC-10.1~10.3 |
+| R-12 | 行为 | GetNonAutoLayoutDirection 读取 AceApplicationInfo::IsRightToLeft() | direction(AUTO) 解析为系统语言环境，不继承父组件 direction | — | AC-11.4, AC-11.5 |
+| R-13 | 行为 | 调用 SetPosition | position(x/y) 存储在 RenderContext::RenderPositionProperty::Position，设置时清除 PositionEdges | RenderContext | AC-1.1, AC-2.7 |
+| R-14 | 行为 | 修改 position 值 | position 变更不直接触发 PropertyChangeFlag，而是通过 OnPositionUpdate 回调调用 SetPositionToRSNode 更新渲染树 | RenderContext | AC-1.1 |
+| R-15 | 行为 | 子组件从 inFlow → outOfLayout 切换 | 首次设置 position 时，CheckIfParentNeedMarkDirty 标记父组件（Row/Column/Flex）为 PROPERTY_UPDATE_MEASURE_SELF | FrameNode | AC-1.10 |
+| R-16 | 行为 | \ | FrameNode::IsOutOfLayout() 返回 HasPosition() \ | HasPositionEdges()，不检查 HasOffset | 布局算法判断是否跳过子组件 |
+| R-17 | 行为 | AdjustPaintRect 渲染阶段 | position(x/y) 计算公式：paintRect.X = parentPaddingLeft + selfMarginLeft + position.x - anchorX; Y 轴同理 | RosenRenderContext | AC-1.1 |
+| R-18 | 行为 | 调用 SetPositionEdges | position(edges) 存储在 RenderContext::RenderPositionProperty::PositionEdges，设置时清除 Position | RenderContext | AC-2.6, AC-2.8 |
+| R-19 | 行为 | GetRectOffsetWithPositionEdges | edges 定位中 top 优先于 bottom：当 top 有值时忽略 bottom | RosenRenderContext | AC-2.4 |
+| R-20 | 行为 | GetRectOffsetWithPositionEdges | edges 定位中 left 优先于 right：当 left 有值时忽略 right | RosenRenderContext | AC-2.5 |
+| R-21 | 行为 | GetRectOffsetWithPositionEdges | bottom/right 定位公式：Y = parentH - selfH - parentPaddingBottom - selfMarginBottom - edges.bottom | RosenRenderContext | AC-2.2, AC-2.3 |
+| R-22 | 行为 | 设置 LocalizedEdges 时和方向变更时 | CheckPositionOrOffsetLocalizedEdges 将 start/end 根据 layoutDirection 映射为 left/right | ViewAbstract | AC-3.1~3.4 |
+| R-23 | 行为 | 使用 LocalizedEdges 形式设置 position | needPositionLocalizedEdges_ 标记存储在 LayoutProperty 中，用于标识是否需要方向感知重新解析 | LayoutProperty | AC-3.5 |
+| R-24 | 行为 | 调用 SetOffset | offset(x/y) 存储在 RenderContext::RenderPositionProperty::Offset，设置时清除 OffsetEdges | RenderContext | AC-4.1, AC-5.7 |
+| R-25 | 行为 | AdjustPaintRect 渲染阶段 | offset 计算公式：paintRect.X = layoutX + offset.x - anchorX; Y 轴同理 | RosenRenderContext | AC-4.1 |
+| R-26 | 行为 | MinPlatformVersion < 10 | API < 10: offset 叠加父 padding：offset += OffsetT(parentPaddingLeft, parentPaddingTop) | RosenRenderContext | AC-4.6 |
+| R-27 | 行为 | MinPlatformVersion ≥ 10 | API ≥ 10: offset 不叠加父 padding，纯粹相对布局位置 | RosenRenderContext | AC-4.7 |
+| R-28 | 行为 | GetRectOffsetWithOffsetEdges | offset edges 中 top 转为正 Y 偏移，bottom 转为负 Y 偏移 | RosenRenderContext | AC-5.1, AC-5.3 |
+| R-29 | 行为 | GetRectOffsetWithOffsetEdges | offset edges 中 left 转为正 X 偏移，right 转为负 X 偏移 | RosenRenderContext | AC-5.2, AC-5.4 |
+| R-30 | 行为 | GetRectOffsetWithOffsetEdges | offset edges 中 top 优先于 bottom，left 优先于 right | RosenRenderContext | AC-5.5, AC-5.6 |
+| R-31 | 行为 | 使用 LocalizedEdges 形式设置 offset | needOffsetLocalizedEdges_ 标记存储在 LayoutProperty 中 | LayoutProperty | AC-6.5 |
+| R-32 | 行为 | 调用 MarkAnchor | markAnchor 存储在 RenderContext::RenderPositionProperty::Anchor，类型为 OffsetT<Dimension> | RenderContext | AC-7.1 |
+| R-33 | 行为 | AdjustPaintRect 中所有定位分支 | markAnchor 以减法应用于最终位置：finalX -= anchorX, finalY -= anchorY | RosenRenderContext | AC-7.1 |
+| R-34 | 行为 | AdjustPaintRect 获取 anchor 时 | markAnchor 百分比参照组件自身尺寸（rect.Width()/rect.Height()），非父组件尺寸 | RosenRenderContext | AC-7.3 |
+| R-35 | 行为 | RenderContext 回调 | markAnchor 变更触发 OnAnchorUpdate → SetPositionToRSNode，不触发 PROPERTY_UPDATE_MEASURE/LAYOUT | RosenRenderContext | AC-7.2 |
+| R-36 | 行为 | CheckMarkAnchorPosition(layoutDirection) | markAnchor start 形式：LTR 时 x = start，RTL 时 x = -start | LayoutProperty | AC-8.1, AC-8.2 |
+| R-37 | 行为 | 调用 SetAlign | align 存储在 LayoutProperty::PositionProperty::Alignment（枚举）或 LocalizedAlignment（字符串） | LayoutProperty | AC-9.1~9.3 |
+| R-38 | 行为 | UpdateAlignment | align 变更触发 PROPERTY_UPDATE_LAYOUT（不触发 MEASURE） | LayoutProperty | AC-9.9 |
+| R-39 | 行为 | Layout 阶段 | BoxLayoutAlgorithm::PerformLayout 使用 GetAlignPosition 计算子组件偏移：offset.X = (1 + horizontal) * (parentW - childW) / 2 | BoxLayoutAlgorithm | AC-9.1~9.3 |
+| R-40 | 行为 | 未设置 align 时 | align 默认值为 Alignment::CENTER（horizontal=0, vertical=0） | BoxLayoutAlgorithm | AC-9.4 |
+| R-41 | 行为 | 布局阶段读取对齐方式 | IsMirrorable=true 时使用 LocalizedAlignment 字符串映射；IsMirrorable=false 时直接使用 Alignment 枚举 | BoxLayoutAlgorithm | AC-10.1, AC-10.2 |
+| R-42 | 行为 | 调用 SetLayoutDirection | direction 存储在 LayoutProperty::layoutDirection_（std::optional<TextDirection>） | LayoutProperty | AC-11.1~11.4 |
+| R-43 | 行为 | UpdateLayoutDirection | direction 变更触发 PROPERTY_UPDATE_MEASURE | LayoutProperty | AC-11.6 |
+| R-44 | 行为 | 解析 AUTO 值 | GetNonAutoLayoutDirection: AUTO → AceApplicationInfo::IsRightToLeft() ? RTL : LTR | LayoutProperty | AC-11.4 |
+| R-45 | 行为 | Flex/Row 布局 | direction(RTL) 影响 FlexLayoutAlgorithm::IsStartTopLeft：FlexDirection::ROW 时 RTL 导致子组件从右到左排列 | FlexLayoutAlgorithm | AC-11.1, AC-11.2 |
+| R-46 | 异常 | position 传入 undefined/非法值且 target API ≥ 12 | position(undefined) 重置（API ≥ 12） | ResetPosition：清除 Position 和 PositionEdges，组件回到布局流（outOfLayout=false） | AC-1.7 |
+| R-47 | 异常 | position 传入 undefined/非法值且 target API < 12 | position(undefined) 归零（API < 12） | SetPosition(0.0_vp, 0.0_vp)：组件仍脱离布局流，定位在 (0,0) | AC-1.8 |
+| R-48 | 异常 | ResetPosition 且父组件为 Column/Row/Flex/Stack | ResetPosition 时的父组件标记 | 子节点标记 PROPERTY_UPDATE_MEASURE（因为子组件从 outOfLayout 回到布局流） | AC-1.7 |
+| R-49 | 异常 | offset 传入 undefined/非法值 | offset(undefined) 归零 | SetOffset(0.0_vp, 0.0_vp)：offset 始终保持属性存在，仅归零 | AC-4.5 |
+| R-50 | 异常 | API < 10 环境下设置 offset | offset API < 10 包含父 padding | offset 值自动叠加父组件 padding(left, top) | AC-4.6 |
+| R-51 | 异常 | 子组件 direction 为 AUTO 且父组件为 RTL | direction AUTO 不继承 | 子组件 AUTO 解析为系统语言环境，不继承父组件 RTL | AC-11.5 |
+| R-52 | 异常 | markAnchor 传入 undefined/非法值 | markAnchor(undefined) 归零 | MarkAnchor(0.0_vp, 0.0_vp)：锚点归零 | AC-7.7 |
+| R-53 | 恢复 | position(undefined) API ≥ 12 | ResetPosition 清除属性 | 组件回到正常布局流，由父容器布局算法决定位置 | — |
+| R-54 | 恢复 | offset(undefined) | SetOffset(0, 0) | 组件无额外偏移，按布局计算位置渲染 | — |
+| R-55 | 恢复 | markAnchor(undefined) | MarkAnchor(0, 0) | 锚点归零，不影响位置 | — |
+| R-56 | 恢复 | align(undefined) API ≥ 10 | 重置为 Alignment::CENTER | 子组件居中对齐 | — |
+| R-57 | 恢复 | direction(undefined) API ≥ 10 | 重置为 TextDirection::AUTO | 方向解析为系统语言环境 | — |
 
 ---
 
@@ -330,18 +310,18 @@
 
 | 编号 | 对应规格项 | 验证方式 | 验证重点 |
 |------|------------|----------|----------|
-| VM-1 | FR-1~FR-5, AC-1.1~1.10 | 单测 | position x/y 定位正确、outOfLayout 生效 |
-| VM-2 | FR-6~FR-9, AC-2.1~2.8 | 单测 | position edges 定位正确、top/left 优先级 |
-| VM-3 | FR-10~FR-11, AC-3.1~3.5 | 单测 | LocalizedEdges start/end 方向映射正确 |
-| VM-4 | FR-12~FR-15, AC-4.1~4.8 | 单测 | offset 偏移正确、API 版本差异 |
-| VM-5 | FR-16~FR-18, AC-5.1~5.7 | 单测 | offset edges 正/负偏移方向正确 |
-| VM-6 | FR-19, AC-6.1~6.5 | 单测 | offset LocalizedEdges 方向映射正确 |
-| VM-7 | FR-20~FR-23, AC-7.1~7.8 | 单测 | markAnchor 减法应用、不影响布局盒 |
-| VM-8 | FR-24, AC-8.1~8.3 | 单测 | markAnchor start RTL 取反 |
-| VM-9 | FR-25~FR-28, AC-9.1~9.9 | 单测 | align 对齐计算公式正确、默认 CENTER |
-| VM-10 | FR-29, AC-10.1~10.3 | 单测 | 本地化对齐 RTL 镜像正确 |
-| VM-11 | FR-30~FR-33, AC-11.1~11.8 | 单测 | direction 影响 Flex/Row 排列、AUTO 解析 |
-| VM-12 | EX-1~EX-2 | 单测 | position undefined 处理（区分 API 版本） |
+| VM-1 | R-13~R-17, AC-1.1~1.10 | 单测 | position x/y 定位正确、outOfLayout 生效 |
+| VM-2 | R-18~R-21, AC-2.1~2.8 | 单测 | position edges 定位正确、top/left 优先级 |
+| VM-3 | R-22~R-23, AC-3.1~3.5 | 单测 | LocalizedEdges start/end 方向映射正确 |
+| VM-4 | R-24~R-27, AC-4.1~4.8 | 单测 | offset 偏移正确、API 版本差异 |
+| VM-5 | R-28~R-30, AC-5.1~5.7 | 单测 | offset edges 正/负偏移方向正确 |
+| VM-6 | R-31, AC-6.1~6.5 | 单测 | offset LocalizedEdges 方向映射正确 |
+| VM-7 | R-32~R-35, AC-7.1~7.8 | 单测 | markAnchor 减法应用、不影响布局盒 |
+| VM-8 | R-36, AC-8.1~8.3 | 单测 | markAnchor start RTL 取反 |
+| VM-9 | R-37~R-40, AC-9.1~9.9 | 单测 | align 对齐计算公式正确、默认 CENTER |
+| VM-10 | R-41, AC-10.1~10.3 | 单测 | 本地化对齐 RTL 镜像正确 |
+| VM-11 | R-42~R-45, AC-11.1~11.8 | 单测 | direction 影响 Flex/Row 排列、AUTO 解析 |
+| VM-12 | R-46~R-47 | 单测 | position undefined 处理（区分 API 版本） |
 | VM-13 | 全量 | XTS/集成 | 端到端布局位置渲染正确 |
 
 ---
@@ -391,6 +371,16 @@
 
 ---
 
+## 接口规格
+
+### 接口定义
+
+> 本特性为已有实现补录，接口行为定义详见上方规则定义和用户故事。
+
+无新增接口规格。
+
+---
+
 ## 兼容性声明
 
 - **已有 API 行为变更:**
@@ -429,6 +419,16 @@
 | 性能 | position/offset/markAnchor 变更不触发 Measure 管线，仅更新 RS 节点 bounds（O(1) 操作） | benchmark | — |
 | 性能 | align 变更仅触发 Layout（不触发 Measure），减少不必要的测量 | benchmark | — |
 | 内存 | RenderPositionProperty 使用 std::optional 避免无用分配 | hidumper | — |
+
+---
+
+## 多设备适配声明
+
+| 设备类型 | 行为差异 | 规格/约束 | 验证方式 | 证据 |
+|----------|----------|-----------|----------|------|
+| 手机 | 无差异 | — | — | — |
+| 平板 | 无差异 | — | — | — |
+| 折叠屏 | 无差异 | — | — | — |
 
 ---
 

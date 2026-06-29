@@ -40,134 +40,134 @@
 
 **作为** 应用开发者，**我想要** 在 Text 组件中自动识别电话号码、URL、邮箱、地址、日期时间等实体，**以便** 用户可以直接点击实体执行对应操作（拨号、跳转、发邮件等）。
 
-- **AC-1.1** WHEN `enableDataDetector(true)` 且设备支持文本识别 THEN Text 组件内的电话号码、URL、邮箱、地址、日期时间实体被自动标记并高亮
-- **AC-1.2** WHEN `enableDataDetector(true)` 但未设置 `dataDetectorConfig` THEN 所有类型实体均被识别，实体样式为 `color: '#ff007dff'`, `decoration: { type: Underline, color: '#ff007dff', style: SOLID }`
-- **AC-1.3** WHEN `dataDetectorConfig({ types: [PHONE_NUMBER, URL] })` THEN 仅识别电话号码和 URL，其他实体类型被忽略
-- **AC-1.4** WHEN 触摸或右键点击已识别实体 THEN 弹出对应实体类型的操作菜单；WHEN 鼠标左键点击 THEN 直接执行菜单第一个选项
-- **AC-1.5** WHEN `textOverflow` 设为 `TextOverflow.MARQUEE` THEN 数据检测不生效
-- **AC-1.6** WHEN `copyOption` 设为 `CopyOptions.None` THEN 实体点击菜单不提供文本选择、复制、翻译、分享功能
-- **AC-1.7** WHEN `copyOption` 非 `None` 且 `textSelectable` 设为 `UNSELECTABLE` THEN 实体仍有复制功能但无文本选择功能
-- **AC-1.8** WHEN `dataDetectorConfig` 设置 `color` 和 `decoration` THEN 识别实体使用自定义样式，覆盖默认蓝色下划线
-- **AC-1.9** WHEN `dataDetectorConfig` 设置 `enablePreviewMenu(true)` THEN 实体支持预览菜单
-- **AC-1.10** WHEN `dataDetectorConfig` 设置 `onDetectResultUpdate` 回调 THEN AI 检测完成后回调返回 JSON 格式的检测结果
-- **AC-1.11** WHEN 实体 A 是实体 B 的子集（A ⊂ B）THEN 保留 B；WHEN A 不是 B 的子集且 B 不是 A 的子集，且 A.start < B.start THEN 保留 A
-- **AC-1.12** WHEN 设备不支持文本识别（`DataDetectorInterface::IsDataDetectorSupported()` 返回 false）THEN `enableDataDetector(true)` 静默不生效
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-1.1 | WHEN `enableDataDetector(true)` 且设备支持文本识别 THEN Text 组件内的电话号码、URL、邮箱、地址、日期时间实体被自动标记并高亮 |
+| AC-1.2 | WHEN `enableDataDetector(true)` 但未设置 `dataDetectorConfig` THEN 所有类型实体均被识别，实体样式为 `color: '#ff007dff'`, `decoration: { type: Underline, color: '#ff007dff', style: SOLID }` |
+| AC-1.3 | WHEN `dataDetectorConfig({ types: [PHONE_NUMBER, URL] })` THEN 仅识别电话号码和 URL，其他实体类型被忽略 |
+| AC-1.4 | WHEN 触摸或右键点击已识别实体 THEN 弹出对应实体类型的操作菜单；WHEN 鼠标左键点击 THEN 直接执行菜单第一个选项 |
+| AC-1.5 | WHEN `textOverflow` 设为 `TextOverflow.MARQUEE` THEN 数据检测不生效 |
+| AC-1.6 | WHEN `copyOption` 设为 `CopyOptions.None` THEN 实体点击菜单不提供文本选择、复制、翻译、分享功能 |
+| AC-1.7 | WHEN `copyOption` 非 `None` 且 `textSelectable` 设为 `UNSELECTABLE` THEN 实体仍有复制功能但无文本选择功能 |
+| AC-1.8 | WHEN `dataDetectorConfig` 设置 `color` 和 `decoration` THEN 识别实体使用自定义样式，覆盖默认蓝色下划线 |
+| AC-1.9 | WHEN `dataDetectorConfig` 设置 `enablePreviewMenu(true)` THEN 实体支持预览菜单 |
+| AC-1.10 | WHEN `dataDetectorConfig` 设置 `onDetectResultUpdate` 回调 THEN AI 检测完成后回调返回 JSON 格式的检测结果 |
+| AC-1.11 | WHEN 实体 A 是实体 B 的子集（A ⊂ B）THEN 保留 B；WHEN A 不是 B 的子集且 B 不是 A 的子集，且 A.start < B.start THEN 保留 A |
+| AC-1.12 | WHEN 设备不支持文本识别（`DataDetectorInterface::IsDataDetectorSupported()` 返回 false）THEN `enableDataDetector(true)` 静默不生效 |
 
 ### US-2: 选中文本数据检测
 
 **作为** 应用开发者，**我想要** 对选中文本单独启用/禁用数据检测，**以便** 精细控制交互行为。
 
-- **AC-2.1** WHEN `enableSelectedDataDetector(true)` THEN 选中文本区域内的实体被识别并可操作
-- **AC-2.2** WHEN `enableSelectedDataDetector(false)` THEN 选中文本内不执行实体检测
-- **AC-2.3** WHEN 未设置 `enableSelectedDataDetector` THEN 默认启用（`selectDetectEnabled_ = true`）
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-2.1 | WHEN `enableSelectedDataDetector(true)` THEN 选中文本区域内的实体被识别并可操作 |
+| AC-2.2 | WHEN `enableSelectedDataDetector(false)` THEN 选中文本内不执行实体检测 |
+| AC-2.3 | WHEN 未设置 `enableSelectedDataDetector` THEN 默认启用（`selectDetectEnabled_ = true`） |
 
 ### US-3: 隐私敏感内容保护
 
 **作为** 应用开发者，**我想要** 在敏感场景（卡片后台、锁屏等）下自动遮蔽 Text 组件内容，**以便** 保护用户隐私数据。
 
-- **AC-3.1** WHEN `privacySensitive(true)` 且系统触发敏感模式 THEN 文本所有字符（除换行符 `\n`）被替换为 `-`（减号）
-- **AC-3.2** WHEN `privacySensitive(true)` 但系统未触发敏感模式 THEN 文本正常显示，不做遮蔽
-- **AC-3.3** WHEN `privacySensitive(null)` 或 `privacySensitive(false)` THEN 禁用隐私模式，系统触发敏感模式时文本不受影响
-- **AC-3.4** WHEN 隐私模式激活 THEN 文本选择、AI 数据检测、文本复制/搜索功能被禁用
-- **AC-3.5** WHEN 隐私模式从激活恢复为非激活 THEN 文本内容恢复原始显示，选择/检测/复制功能恢复
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-3.1 | WHEN `privacySensitive(true)` 且系统触发敏感模式 THEN 文本所有字符（除换行符 `\n`）被替换为 `-`（减号） |
+| AC-3.2 | WHEN `privacySensitive(true)` 但系统未触发敏感模式 THEN 文本正常显示，不做遮蔽 |
+| AC-3.3 | WHEN `privacySensitive(null)` 或 `privacySensitive(false)` THEN 禁用隐私模式，系统触发敏感模式时文本不受影响 |
+| AC-3.4 | WHEN 隐私模式激活 THEN 文本选择、AI 数据检测、文本复制/搜索功能被禁用 |
+| AC-3.5 | WHEN 隐私模式从激活恢复为非激活 THEN 文本内容恢复原始显示，选择/检测/复制功能恢复 |
 
 ### US-4: obscured 视觉遮蔽（与 privacySensitive 共存的独立机制）
 
 **作为** 应用开发者，**我想要** 通过 `.obscured([ObscuredReasons.PLACEHOLDER])` 在渲染层绘制遮蔽覆盖层，**以便** 在文本上方显示半透明遮罩。
 
-- **AC-4.1** WHEN `renderContext.obscured` 包含 `ObscuredReasons.PLACEHOLDER` 且无 Span 子节点 THEN 在文本每行上绘制 20% alpha、2vp 圆角的半透明矩形遮蔽
-- **AC-4.2** WHEN `obscured` 设置但包含 Span 子节点 THEN `IsSetObscured()` 返回 false，不绘制遮蔽矩形
-- **AC-4.3** WHEN `privacySensitive` 和 `obscured` 同时启用 THEN 两套机制独立工作：内容替换发生在布局阶段，视觉遮蔽发生在绘制阶段
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-4.1 | WHEN `renderContext.obscured` 包含 `ObscuredReasons.PLACEHOLDER` 且无 Span 子节点 THEN 在文本每行上绘制 20% alpha、2vp 圆角的半透明矩形遮蔽 |
+| AC-4.2 | WHEN `obscured` 设置但包含 Span 子节点 THEN `IsSetObscured()` 返回 false，不绘制遮蔽矩形 |
+| AC-4.3 | WHEN `privacySensitive` 和 `obscured` 同时启用 THEN 两套机制独立工作：内容替换发生在布局阶段，视觉遮蔽发生在绘制阶段 |
 
 ### US-5: 震感反馈
 
 **作为** 应用开发者，**我想要** 在文本选择操作时提供触觉反馈，**以便** 增强用户的操作感知。
 
-- **AC-5.1** WHEN `enableHapticFeedback(true)` 或未设置（默认 true）且用户长按文本触发选择 THEN 触发 `longPress.light` 类型振动
-- **AC-5.2** WHEN `enableHapticFeedback(true)` 或未设置且用户拖动选择手柄使字符索引变化 THEN 触发 `slide` 类型振动
-- **AC-5.3** WHEN `enableHapticFeedback(false)` THEN 长按和拖动手柄均不触发振动
-- **AC-5.4** WHEN 父 `SelectionContainer` 设置 `enableHapticFeedback(false)` 且 Text 自身未显式设置 THEN Text 继承容器设置，不触发振动
-- **AC-5.5** WHEN 父 `SelectionContainer` 设置 `enableHapticFeedback(false)` 但 Text 自身显式设置 `enableHapticFeedback(true)` THEN Text 使用自身设置，触发振动（`hapticFeedbackFlagByUser_` 优先级机制）
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-5.1 | WHEN `enableHapticFeedback(true)` 或未设置（默认 true）且用户长按文本触发选择 THEN 触发 `longPress.light` 类型振动 |
+| AC-5.2 | WHEN `enableHapticFeedback(true)` 或未设置且用户拖动选择手柄使字符索引变化 THEN 触发 `slide` 类型振动 |
+| AC-5.3 | WHEN `enableHapticFeedback(false)` THEN 长按和拖动手柄均不触发振动 |
+| AC-5.4 | WHEN 父 `SelectionContainer` 设置 `enableHapticFeedback(false)` 且 Text 自身未显式设置 THEN Text 继承容器设置，不触发振动 |
+| AC-5.5 | WHEN 父 `SelectionContainer` 设置 `enableHapticFeedback(false)` 但 Text 自身显式设置 `enableHapticFeedback(true)` THEN Text 使用自身设置，触发振动（`hapticFeedbackFlagByUser_` 优先级机制） |
 
 ## 验收追溯
 
 | AC ID | 关联规则 | 关联 Task | 验证方式 | 证据 |
 |-------|----------|-----------|----------|------|
-| AC-1.1 | FR-1 | TASK-6 | 手动测试 + XTS | 设备端验证实体高亮 |
-| AC-1.2 | FR-2 | TASK-6 | 手动测试 | 默认样式验证 |
-| AC-1.3 | FR-3 | TASK-6 | 单测 | 类型过滤验证 |
-| AC-1.4 | FR-4 | TASK-6 | 手动测试 | 菜单弹出验证 |
-| AC-1.5 | EX-1 | TASK-6 | 单测 | MARQUEE 模式下 AI 不启动 |
-| AC-1.6 | FR-5 | TASK-6 | 手动测试 | 菜单项缺失验证 |
-| AC-1.7 | FR-6 | TASK-6 | 手动测试 | 复制可用/选择不可用 |
-| AC-1.8 | FR-7 | TASK-6 | 手动测试 | 自定义实体样式 |
-| AC-1.9 | FR-8 | TASK-6 | 手动测试 | 预览菜单验证 |
-| AC-1.10 | FR-9 | TASK-6 | 单测 | 回调 JSON 验证 |
-| AC-1.11 | BR-1 | TASK-6 | 单测 | 实体重叠消歧 |
-| AC-1.12 | EX-2 | TASK-6 | 单测 | 不支持设备静默回退 |
-| AC-2.1 | FR-10 | TASK-6 | 单测 | 选中文本检测 |
-| AC-2.2 | FR-10 | TASK-6 | 单测 | 选中文本检测禁用 |
-| AC-2.3 | FR-10 | TASK-6 | 代码审查 | 默认值验证 |
-| AC-3.1 | FR-11, BR-2 | TASK-6 | 手动测试 | 卡片后台场景 |
-| AC-3.2 | FR-11 | TASK-6 | 手动测试 | 前台正常显示 |
-| AC-3.3 | FR-12 | TASK-6 | 单测 | 禁用隐私模式 |
-| AC-3.4 | BR-3 | TASK-6 | 单测 | 功能禁用验证 |
-| AC-3.5 | RC-1 | TASK-6 | 手动测试 | 恢复后功能正常 |
-| AC-4.1 | FR-13 | TASK-6 | 手动测试 | 遮蔽矩形绘制 |
-| AC-4.2 | EX-4 | TASK-6 | 单测 | Span 节点时不绘制 |
-| AC-4.3 | BR-4 | TASK-6 | 手动测试 | 双机制共存 |
-| AC-5.1 | FR-14 | TASK-6 | 手动测试 | 长按振动 |
-| AC-5.2 | FR-15 | TASK-6 | 手动测试 | 滑动振动 |
-| AC-5.3 | FR-16 | TASK-6 | 单测 | 禁用振动 |
-| AC-5.4 | BR-5 | TASK-6 | 单测 | 容器继承 |
-| AC-5.5 | BR-5 | TASK-6 | 单测 | 用户显式设置优先 |
+| AC-1.1 | R-6 | TASK-6 | 手动测试 + XTS | 设备端验证实体高亮 |
+| AC-1.2 | R-7 | TASK-6 | 手动测试 | 默认样式验证 |
+| AC-1.3 | R-8 | TASK-6 | 单测 | 类型过滤验证 |
+| AC-1.4 | R-9 | TASK-6 | 手动测试 | 菜单弹出验证 |
+| AC-1.5 | R-22 | TASK-6 | 单测 | MARQUEE 模式下 AI 不启动 |
+| AC-1.6 | R-10 | TASK-6 | 手动测试 | 菜单项缺失验证 |
+| AC-1.7 | R-11 | TASK-6 | 手动测试 | 复制可用/选择不可用 |
+| AC-1.8 | R-12 | TASK-6 | 手动测试 | 自定义实体样式 |
+| AC-1.9 | R-13 | TASK-6 | 手动测试 | 预览菜单验证 |
+| AC-1.10 | R-14 | TASK-6 | 单测 | 回调 JSON 验证 |
+| AC-1.11 | R-1 | TASK-6 | 单测 | 实体重叠消歧 |
+| AC-1.12 | R-23 | TASK-6 | 单测 | 不支持设备静默回退 |
+| AC-2.1 | R-15 | TASK-6 | 单测 | 选中文本检测 |
+| AC-2.2 | R-15 | TASK-6 | 单测 | 选中文本检测禁用 |
+| AC-2.3 | R-15 | TASK-6 | 代码审查 | 默认值验证 |
+| AC-3.1 | R-16, R-2 | TASK-6 | 手动测试 | 卡片后台场景 |
+| AC-3.2 | R-16 | TASK-6 | 手动测试 | 前台正常显示 |
+| AC-3.3 | R-17 | TASK-6 | 单测 | 禁用隐私模式 |
+| AC-3.4 | R-3 | TASK-6 | 单测 | 功能禁用验证 |
+| AC-3.5 | R-26 | TASK-6 | 手动测试 | 恢复后功能正常 |
+| AC-4.1 | R-18 | TASK-6 | 手动测试 | 遮蔽矩形绘制 |
+| AC-4.2 | R-25 | TASK-6 | 单测 | Span 节点时不绘制 |
+| AC-4.3 | R-4 | TASK-6 | 手动测试 | 双机制共存 |
+| AC-5.1 | R-19 | TASK-6 | 手动测试 | 长按振动 |
+| AC-5.2 | R-20 | TASK-6 | 手动测试 | 滑动振动 |
+| AC-5.3 | R-21 | TASK-6 | 单测 | 禁用振动 |
+| AC-5.4 | R-5 | TASK-6 | 单测 | 容器继承 |
+| AC-5.5 | R-5 | TASK-6 | 单测 | 用户显式设置优先 |
 
-## 业务规则
 
-| 规则 ID | 规则描述 | 关联 AC |
-|---------|----------|---------|
-| BR-1 | 实体重叠消歧策略：子集关系保留超集；非子集关系保留起始位置靠前者 | AC-1.11 |
-| BR-2 | privacySensitive 内容替换规则：所有字符（除 `\n`）替换为 `-`，在布局阶段 `TextLayoutAlgorithm::UpdateSensitiveContent()` 执行（`text_layout_algorithm.cpp:1277-1284`） | AC-3.1 |
-| BR-3 | privacySensitive 激活时的功能禁用：文本选择（`text_pattern.cpp:1623`）、AI 检测（`text_pattern.cpp:6801`）、复制/搜索（`text_pattern.cpp:5837,6285,8311`）均被禁止 | AC-3.4 |
-| BR-4 | privacySensitive 与 obscured 双机制共存：privacySensitive 在布局阶段替换文本内容（`UpdateSensitiveContent`），obscured 在绘制阶段覆盖半透明矩形（`TextContentModifier::DrawObscuration`）；两者触发条件和视觉效果独立 | AC-4.3 |
-| BR-5 | 震感反馈容器继承优先级：Text 未显式设置时继承父 SelectionContainer 的 `enableHapticFeedback`；显式设置时（`hapticFeedbackFlagByUser_=true`）不受容器覆盖（`text_pattern.cpp:2884-2914`） | AC-5.4, AC-5.5 |
+## 规则定义
 
-## 功能规则
+> **统一规则表，取消 FR/BR/EX/RC 四分类。** 类型标签：**行为**（正常路径下的系统行为）、**边界**（输入/状态的临界点）、**异常**（非法输入或异常状态的处理）、**恢复**（系统异常后的恢复策略）。
 
-| 规则 ID | 规则描述 | 关联 AC |
-|---------|----------|---------|
-| FR-1 | `enableDataDetector(true)` 在设备支持时启动 AI 实体检测，通过 `DataDetectorAdapter::StartAITask()` 异步执行（`data_detector_adapter.h:105`） | AC-1.1 |
-| FR-2 | 默认实体样式：`entityColor='#ff007dff'`, `entityDecorationType=Underline`, `entityDecorationColor='#ff007dff'`, `entityDecorationStyle=SOLID` | AC-1.2 |
-| FR-3 | `dataDetectorConfig.types` 传入类型数组，转为逗号分隔字符串存储在 `DataDetectorAdapter::textDetectTypes_`（`text_pattern.cpp:5892`） | AC-1.3 |
-| FR-4 | 触摸/右键弹出实体菜单：`DataDetectorAdapter::ShowAIEntityMenu()`（`data_detector_adapter.h:118`）；鼠标左键直接执行 `ResponseBestMatchItem()`（`data_detector_adapter.h:124`） | AC-1.4 |
-| FR-5 | `copyOption=None` 时实体菜单仅保留实体操作项，移除选择/复制/翻译/分享 | AC-1.6 |
-| FR-6 | `copyOption!=None` + `textSelectable=UNSELECTABLE` 时，实体保留复制功能但无选择功能 | AC-1.7 |
-| FR-7 | `dataDetectorConfig.color` 和 `dataDetectorConfig.decoration` 自定义实体样式，通过 `DataDetectorAdapter` 的 `entityColor_`/`entityDecorationType_`/`entityDecorationColor_`/`entityDecorationStyle_` 存储 | AC-1.8 |
-| FR-8 | `dataDetectorConfig.enablePreviewMenu=true` 启用实体预览菜单（`DataDetectorAdapter::enablePreviewMenu_`） | AC-1.9 |
-| FR-9 | `dataDetectorConfig.onDetectResultUpdate` 注册结果回调，AI 检测完成后通过 `DataDetectorAdapter::onResult_` 返回 JSON 格式检测结果 | AC-1.10 |
-| FR-10 | `enableSelectedDataDetector` 控制选中文本的独立检测，通过 `TextPattern::selectDetectorAdapter_` 管理，默认启用（`selectDetectEnabled_=true`，`text_pattern.h:675`） | AC-2.1, AC-2.2, AC-2.3 |
-| FR-11 | `privacySensitive(true)` 注册到 `PrivacySensitiveManager`（`frame_node.cpp:3375`）；系统触发时 `PipelineContext::ChangeSensitiveNodes(true)` → `FrameNode::ChangeSensitiveStyle(true)` → `TextPattern::OnSensitiveStyleChange(true)` 设置 `isSensitive_=true` 并触发 `PROPERTY_UPDATE_MEASURE` | AC-3.1, AC-3.2 |
-| FR-12 | `privacySensitive(false)` 或 `null` 从 `PrivacySensitiveManager` 中移除节点 | AC-3.3 |
-| FR-13 | obscured 遮蔽绘制：`TextPaintMethod::UpdateObscuredRects()` 从段落管理器获取每行矩形，`TextContentModifier::DrawObscuration()` 以文本颜色 20% alpha 填充 2vp 圆角矩形（`text_content_modifier.cpp:765-809`，常量 `OBSCURED_ALPHA=0.2f`） | AC-4.1 |
-| FR-14 | 长按触发 `longPress.light` 振动：`TextPattern::StartVibratorByLongPress()` → `VibratorUtils::StartVibraFeedback("longPress.light")`（`text_pattern.cpp:685-688`） | AC-5.1 |
-| FR-15 | 选择手柄拖动触发 `slide` 振动：`TextPattern::StartVibratorByIndexChange()` → `VibratorUtils::StartVibraFeedback("slide")`（`text_pattern.cpp:7019-7022`），仅当字符索引变化时触发 | AC-5.2 |
-| FR-16 | `enableHapticFeedback(false)` 禁用振动：`isEnableHapticFeedback_=false`（`text_pattern.h:845`），两个振动入口均前置检查此标记 | AC-5.3 |
+| 规则ID | 类型 | 触发条件 | 预期行为 | 边界/约束 | 关联AC |
+|--------|------|----------|----------|-----------|--------|
+| R-1 | 行为 | — | 实体重叠消歧策略：子集关系保留超集；非子集关系保留起始位置靠前者 | — | AC-1.11 |
+| R-2 | 行为 | — | privacySensitive 内容替换规则：所有字符（除 `\n`）替换为 `-`，在布局阶段 `TextLayoutAlgorithm::UpdateSensitiveContent()` 执行（`text_layout_algorithm.cpp:1277-1284`） | — | AC-3.1 |
+| R-3 | 行为 | — | privacySensitive 激活时的功能禁用：文本选择（`text_pattern.cpp:1623`）、AI 检测（`text_pattern.cpp:6801`）、复制/搜索（`text_pattern.cpp:5837,6285,8311`）均被禁止 | — | AC-3.4 |
+| R-4 | 行为 | — | privacySensitive 与 obscured 双机制共存：privacySensitive 在布局阶段替换文本内容（`UpdateSensitiveContent`），obscured 在绘制阶段覆盖半透明矩形（`TextContentModifier::DrawObscuration`）；两者触发条件和视觉效果独立 | — | AC-4.3 |
+| R-5 | 行为 | — | 震感反馈容器继承优先级：Text 未显式设置时继承父 SelectionContainer 的 `enableHapticFeedback`；显式设置时（`hapticFeedbackFlagByUser_=true`）不受容器覆盖（`text_pattern.cpp:2884-2914`） | — | AC-5.4, AC-5.5 |
+| R-6 | 行为 | — | `enableDataDetector(true)` 在设备支持时启动 AI 实体检测，通过 `DataDetectorAdapter::StartAITask()` 异步执行（`data_detector_adapter.h:105`） | — | AC-1.1 |
+| R-7 | 行为 | — | 默认实体样式：`entityColor='#ff007dff'`, `entityDecorationType=Underline`, `entityDecorationColor='#ff007dff'`, `entityDecorationStyle=SOLID` | — | AC-1.2 |
+| R-8 | 行为 | — | `dataDetectorConfig.types` 传入类型数组，转为逗号分隔字符串存储在 `DataDetectorAdapter::textDetectTypes_`（`text_pattern.cpp:5892`） | — | AC-1.3 |
+| R-9 | 行为 | — | 触摸/右键弹出实体菜单：`DataDetectorAdapter::ShowAIEntityMenu()`（`data_detector_adapter.h:118`）；鼠标左键直接执行 `ResponseBestMatchItem()`（`data_detector_adapter.h:124`） | — | AC-1.4 |
+| R-10 | 行为 | — | `copyOption=None` 时实体菜单仅保留实体操作项，移除选择/复制/翻译/分享 | — | AC-1.6 |
+| R-11 | 行为 | — | `copyOption!=None` + `textSelectable=UNSELECTABLE` 时，实体保留复制功能但无选择功能 | — | AC-1.7 |
+| R-12 | 行为 | — | `dataDetectorConfig.color` 和 `dataDetectorConfig.decoration` 自定义实体样式，通过 `DataDetectorAdapter` 的 `entityColor_`/`entityDecorationType_`/`entityDecorationColor_`/`entityDecorationStyle_` 存储 | — | AC-1.8 |
+| R-13 | 行为 | — | `dataDetectorConfig.enablePreviewMenu=true` 启用实体预览菜单（`DataDetectorAdapter::enablePreviewMenu_`） | — | AC-1.9 |
+| R-14 | 行为 | — | `dataDetectorConfig.onDetectResultUpdate` 注册结果回调，AI 检测完成后通过 `DataDetectorAdapter::onResult_` 返回 JSON 格式检测结果 | — | AC-1.10 |
+| R-15 | 行为 | — | `enableSelectedDataDetector` 控制选中文本的独立检测，通过 `TextPattern::selectDetectorAdapter_` 管理，默认启用（`selectDetectEnabled_=true`，`text_pattern.h:675`） | — | AC-2.1, AC-2.2, AC-2.3 |
+| R-16 | 行为 | — | `privacySensitive(true)` 注册到 `PrivacySensitiveManager`（`frame_node.cpp:3375`）；系统触发时 `PipelineContext::ChangeSensitiveNodes(true)` → `FrameNode::ChangeSensitiveStyle(true)` → `TextPattern::OnSensitiveStyleChange(true)` 设置 `isSensitive_=true` 并触发 `PROPERTY_UPDATE_MEASURE` | — | AC-3.1, AC-3.2 |
+| R-17 | 行为 | — | `privacySensitive(false)` 或 `null` 从 `PrivacySensitiveManager` 中移除节点 | — | AC-3.3 |
+| R-18 | 行为 | — | obscured 遮蔽绘制：`TextPaintMethod::UpdateObscuredRects()` 从段落管理器获取每行矩形，`TextContentModifier::DrawObscuration()` 以文本颜色 20% alpha 填充 2vp 圆角矩形（`text_content_modifier.cpp:765-809`，常量 `OBSCURED_ALPHA=0.2f`） | — | AC-4.1 |
+| R-19 | 行为 | — | 长按触发 `longPress.light` 振动：`TextPattern::StartVibratorByLongPress()` → `VibratorUtils::StartVibraFeedback("longPress.light")`（`text_pattern.cpp:685-688`） | — | AC-5.1 |
+| R-20 | 行为 | — | 选择手柄拖动触发 `slide` 振动：`TextPattern::StartVibratorByIndexChange()` → `VibratorUtils::StartVibraFeedback("slide")`（`text_pattern.cpp:7019-7022`），仅当字符索引变化时触发 | — | AC-5.2 |
+| R-21 | 行为 | — | `enableHapticFeedback(false)` 禁用振动：`isEnableHapticFeedback_=false`（`text_pattern.h:845`），两个振动入口均前置检查此标记 | — | AC-5.3 |
+| R-22 | 异常 | — | `textOverflow=TextOverflow.MARQUEE` 时数据检测不生效：跑马灯模式禁用 AI 检测任务 | — | AC-1.5 |
+| R-23 | 异常 | — | 设备不支持文本识别时 `enableDataDetector(true)` 静默不生效：`DataDetectorInterface::IsDataDetectorSupported()` 返回 false 时 `CanStartAITask()` 返回 false（`text_pattern.cpp:3029`） | — | AC-1.12 |
+| R-24 | 异常 | — | privacySensitive 需要卡片框架支持：`IsSensitiveEnable()` 判断 `isSensitive_ && host->IsPrivacySensitive()`，系统未触发敏感模式时即使属性为 true 也不遮蔽 | — | AC-3.2 |
+| R-25 | 异常 | — | obscured 仅在无 Span 子节点时绘制遮蔽矩形：`IsSetObscured()` 检查 `spans_` 为空（`text_pattern.cpp:7576-7585`） | — | AC-4.2 |
+| R-26 | 恢复 | — | 隐私模式恢复：`OnSensitiveStyleChange(false)` 设置 `isSensitive_=false` 并触发 `PROPERTY_UPDATE_MEASURE`，下一帧布局恢复原始文本内容，选择/检测/复制功能恢复（`text_pattern.cpp:7505-7511`） | — | AC-3.5 |
+| R-27 | 恢复 | — | 数据检测取消与重启：`DataDetectorAdapter::CancelAITask()` 可取消进行中的检测任务；`enableDataDetector` 从 false 切换为 true 时重新触发 `StartAITask()` | — | AC-1.1 |
 
-## 异常/豁免规则
-
-| 规则 ID | 规则描述 | 关联 AC |
-|---------|----------|---------|
-| EX-1 | `textOverflow=TextOverflow.MARQUEE` 时数据检测不生效：跑马灯模式禁用 AI 检测任务 | AC-1.5 |
-| EX-2 | 设备不支持文本识别时 `enableDataDetector(true)` 静默不生效：`DataDetectorInterface::IsDataDetectorSupported()` 返回 false 时 `CanStartAITask()` 返回 false（`text_pattern.cpp:3029`） | AC-1.12 |
-| EX-3 | privacySensitive 需要卡片框架支持：`IsSensitiveEnable()` 判断 `isSensitive_ && host->IsPrivacySensitive()`，系统未触发敏感模式时即使属性为 true 也不遮蔽 | AC-3.2 |
-| EX-4 | obscured 仅在无 Span 子节点时绘制遮蔽矩形：`IsSetObscured()` 检查 `spans_` 为空（`text_pattern.cpp:7576-7585`） | AC-4.2 |
-
-## 恢复契约
-
-| 规则 ID | 规则描述 | 关联 AC |
-|---------|----------|---------|
-| RC-1 | 隐私模式恢复：`OnSensitiveStyleChange(false)` 设置 `isSensitive_=false` 并触发 `PROPERTY_UPDATE_MEASURE`，下一帧布局恢复原始文本内容，选择/检测/复制功能恢复（`text_pattern.cpp:7505-7511`） | AC-3.5 |
-| RC-2 | 数据检测取消与重启：`DataDetectorAdapter::CancelAITask()` 可取消进行中的检测任务；`enableDataDetector` 从 false 切换为 true 时重新触发 `StartAITask()` | AC-1.1 |
+---
 
 ## 验证映射
 
@@ -194,6 +194,16 @@
 ### 变更/废弃 API
 
 无。
+
+## 接口规格
+
+### 接口定义
+
+> 本特性为已有实现补录，接口行为定义详见上方规则定义和用户故事。
+
+无新增接口规格。
+
+---
 
 ## 兼容性声明
 
@@ -235,6 +245,16 @@
 | 安全 | 隐私模式替换文本内容，不泄露原始数据到渲染管线 | 代码审查 | 布局阶段替换 |
 | 可靠性 | AI 检测失败时 `ParseAIResult` 处理错误码，不影响文本正常显示 | 单测 | 错误路径覆盖 |
 | 问题定位 | Inspector dump 输出 `enableDataDetector`/`enableSelectedDataDetector`/`dataDetectorConfig`/`privacySensitive`/`enableHapticFeedback`（`text_pattern.cpp:4859`，`text_layout_property.cpp:267`） | 调试验证 | dump 输出 |
+
+## 多设备适配声明
+
+| 设备类型 | 行为差异 | 规格/约束 | 验证方式 | 证据 |
+|----------|----------|-----------|----------|------|
+| 手机 | 无差异 | — | — | — |
+| 平板 | 无差异 | — | — | — |
+| 折叠屏 | 无差异 | — | — | — |
+
+---
 
 ## 全局特性影响
 

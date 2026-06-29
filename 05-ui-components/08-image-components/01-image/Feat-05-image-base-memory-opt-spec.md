@@ -56,69 +56,48 @@
 | AC-3.3 | US-1 | WHEN ImageLoadingContext 完成加载并释放 THEN 其持有的 ImageObject/CanvasImage 被主动释放 |
 | AC-3.4 | US-1 | WHEN Image 无 alt 配置 THEN alt 相关状态不分配内存 |
 
----
 
-## 功能规则
+## 规则定义
 
-### FR-1: ImageSourceInfo 共享语义
+> **统一规则表，取消 FR/BR/EX/RC 四分类。** 类型标签：**行为**（正常路径下的系统行为）、**边界**（输入/状态的临界点）、**异常**（非法输入或异常状态的处理）、**恢复**（系统异常后的恢复策略）。
 
-- FR-1.1: `ImageLayoutProperty` 中的 `propImageSourceInfo_`、`propAlt_`、`propAltError_`、`propAltPlaceholder_` 改为 `std::optional<RefPtr<ImageSourceInfo>>`
-- FR-1.2: `ImageLoadingContext::src_` 改为 `RefPtr<ImageSourceInfo>`，创建时传入 Pattern 持有的引用
-- FR-1.3: ImageSourceInfo 在共享后必须保持不可变；属性更新时创建新的 ImageSourceInfo 实例
-- FR-1.4: `GetImageSourceInfo()` 返回 `const RefPtr<ImageSourceInfo>&` 而非值拷贝
-
-### FR-2: ImageDfxConfig 按需创建和共享
-
-- FR-2.1: `ImagePattern` 中 3 个 ImageDfxConfig 改为 `RefPtr<ImageDfxConfig>`，首次需要时创建
-- FR-2.2: `ImageSourceInfo::imageDfxConfig_` 改为 `RefPtr<ImageDfxConfig>`
-- FR-2.3: `ImageLoadingContext::imageDfxConfig_` 改为 `RefPtr<ImageDfxConfig>`
-- FR-2.4: DFX 日志写入前检查 RefPtr 是否已初始化，未初始化时跳过该条日志（不崩溃）
-
-### FR-3: Alt 状态按需创建
-
-- FR-3.1: `ImagePattern` 中 alt 相关字段合并为 `std::unique_ptr<AltImageState>`
-- FR-3.2: `ImagePattern` 中 altError 相关字段合并为 `std::unique_ptr<AltErrorState>`
-- FR-3.3: 仅在 alt/altError src 被设置时才创建对应状态对象
-- FR-3.4: alt 回退链逻辑不变，只是通过 `altState_->loadingCtx` 替代 `altLoadingCtx_` 访问
-
-### FR-4: 回调按需分配
-
-- FR-4.1: `ImagePattern::keyEventCallback_` 和 `onProgressCallback_` 改为按需分配
-- FR-4.2: 注册回调时检查并分配，未注册时零开销
-
-### FR-5: Bool 位域合并
-
-- FR-5.1: `ImagePattern` 中 22 个 bool 合并为 `uint32_t` 位掩码结构体
-- FR-5.2: 确认所有 bool 均在 UI 线程访问（不涉及跨线程原子操作需求）
-- FR-5.3: 提供内联 getter/setter 保持代码可读性
+| 规则ID | 类型 | 触发条件 | 预期行为 | 边界/约束 | 关联AC |
+|--------|------|----------|----------|-----------|--------|
+| R-1 | 行为 | — | .1: `ImageLayoutProperty` 中的 `propImageSourceInfo_`、`propAlt_`、`propAltError_`、`propAltPlaceholder_` 改为 `std::optional<RefPtr<ImageSourceInfo>>` | — | — |
+| R-2 | 行为 | — | .2: `ImageLoadingContext::src_` 改为 `RefPtr<ImageSourceInfo>`，创建时传入 Pattern 持有的引用 | — | — |
+| R-3 | 行为 | — | .3: ImageSourceInfo 在共享后必须保持不可变；属性更新时创建新的 ImageSourceInfo 实例 | — | — |
+| R-4 | 行为 | — | .4: `GetImageSourceInfo()` 返回 `const RefPtr<ImageSourceInfo>&` 而非值拷贝 | — | — |
+| R-5 | 行为 | — | .1: `ImagePattern` 中 3 个 ImageDfxConfig 改为 `RefPtr<ImageDfxConfig>`，首次需要时创建 | — | — |
+| R-6 | 行为 | — | .2: `ImageSourceInfo::imageDfxConfig_` 改为 `RefPtr<ImageDfxConfig>` | — | — |
+| R-7 | 行为 | — | .3: `ImageLoadingContext::imageDfxConfig_` 改为 `RefPtr<ImageDfxConfig>` | — | — |
+| R-8 | 行为 | — | .4: DFX 日志写入前检查 RefPtr 是否已初始化，未初始化时跳过该条日志（不崩溃） | — | — |
+| R-9 | 行为 | — | .1: `ImagePattern` 中 alt 相关字段合并为 `std::unique_ptr<AltImageState>` | — | — |
+| R-10 | 行为 | — | .2: `ImagePattern` 中 altError 相关字段合并为 `std::unique_ptr<AltErrorState>` | — | — |
+| R-11 | 行为 | — | .3: 仅在 alt/altError src 被设置时才创建对应状态对象 | — | — |
+| R-12 | 行为 | — | .4: alt 回退链逻辑不变，只是通过 `altState_->loadingCtx` 替代 `altLoadingCtx_` 访问 | — | — |
+| R-13 | 行为 | — | .1: `ImagePattern::keyEventCallback_` 和 `onProgressCallback_` 改为按需分配 | — | — |
+| R-14 | 行为 | — | .2: 注册回调时检查并分配，未注册时零开销 | — | — |
+| R-15 | 行为 | — | .1: `ImagePattern` 中 22 个 bool 合并为 `uint32_t` 位掩码结构体 | — | — |
+| R-16 | 行为 | — | .2: 确认所有 bool 均在 UI 线程访问（不涉及跨线程原子操作需求） | — | — |
+| R-17 | 行为 | — | .3: 提供内联 getter/setter 保持代码可读性 | — | — |
+| R-18 | 异常 | — | .1: 当 ImageDfxConfig 的 RefPtr 为空时，DFX 日志跳过该条记录 | — | — |
+| R-19 | 异常 | — | .2: 不因 DFX 配置未初始化而阻塞正常加载和显示流程 | — | — |
+| R-20 | 异常 | — | .1: 如果代码路径需要修改共享的 ImageSourceInfo，必须创建新实例（copy-on-write） | — | — |
+| R-21 | 异常 | — | .2: 不得在共享引用上直接修改成员 | — | — |
+| R-22 | 恢复 | — | .1: 当 src 属性更新时，旧的 ImageSourceInfo RefPtr 引用计数自然递减，无需手动释放 | — | — |
+| R-23 | 恢复 | — | .2: 当 alt 被移除时，`altState_` 的 unique_ptr 析构自动释放所有关联资源 | — | — |
+| R-24 | 恢复 | — | .1: ImagePattern 析构时，所有 RefPtr 和 unique_ptr 自然释放 | — | — |
+| R-25 | 恢复 | — | .2: ImageLoadingContext 在不再被引用时释放 ImageObject 和 CanvasImage | — | — |
 
 ---
 
-## 异常/豁免规则
+## 接口规格
 
-### ER-1: DFX 配置未初始化
+### 接口定义
 
-- ER-1.1: 当 ImageDfxConfig 的 RefPtr 为空时，DFX 日志跳过该条记录
-- ER-1.2: 不因 DFX 配置未初始化而阻塞正常加载和显示流程
+> 本特性为已有实现补录，接口行为定义详见上方规则定义和用户故事。
 
-### ER-2: ImageSourceInfo 共享修改
-
-- ER-2.1: 如果代码路径需要修改共享的 ImageSourceInfo，必须创建新实例（copy-on-write）
-- ER-2.2: 不得在共享引用上直接修改成员
-
----
-
-## 恢复契约
-
-### RC-1: 属性更新时的内存处理
-
-- RC-1.1: 当 src 属性更新时，旧的 ImageSourceInfo RefPtr 引用计数自然递减，无需手动释放
-- RC-1.2: 当 alt 被移除时，`altState_` 的 unique_ptr 析构自动释放所有关联资源
-
-### RC-2: 组件销毁时的内存释放
-
-- RC-2.1: ImagePattern 析构时，所有 RefPtr 和 unique_ptr 自然释放
-- RC-2.2: ImageLoadingContext 在不再被引用时释放 ImageObject 和 CanvasImage
+无新增接口规格。
 
 ---
 
@@ -165,6 +144,16 @@
 - Legacy Image 组件
 - 渲染/绘制路径优化
 - 公共 API 变更
+
+---
+
+## 多设备适配声明
+
+| 设备类型 | 行为差异 | 规格/约束 | 验证方式 | 证据 |
+|----------|----------|-----------|----------|------|
+| 手机 | 无差异 | — | — | — |
+| 平板 | 无差异 | — | — | — |
+| 折叠屏 | 无差异 | — | — | — |
 
 ---
 

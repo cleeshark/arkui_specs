@@ -47,6 +47,21 @@
 | ArkUI-X | `<ARKUI_X_ROOT>/foundation/arkui/ace_engine/adapter/android/build/` | Android 平台描述、宏配置、`libarkui_android` 和 Android 组件/插件/package 聚合，见 `<ARKUI_X_ROOT>/foundation/arkui/ace_engine/adapter/android/build/platform.gni:16-28`、`<ARKUI_X_ROOT>/foundation/arkui/ace_engine/adapter/android/build/config.gni:14-64`、`<ARKUI_X_ROOT>/foundation/arkui/ace_engine/adapter/android/build/BUILD.gn:25-55`、`<ARKUI_X_ROOT>/foundation/arkui/ace_engine/adapter/android/build/BUILD.gn:140-202`。 | 作为 ArkUI-X Android adapter 参考。 |
 | ArkUI-X | `<ARKUI_X_ROOT>/foundation/arkui/ace_engine/adapter/ios/build/` | iOS 平台描述、宏配置、`arkui_ios`、`libarkui_ios.framework` 和组件 framework 聚合，见 `<ARKUI_X_ROOT>/foundation/arkui/ace_engine/adapter/ios/build/platform.gni:16-28`、`<ARKUI_X_ROOT>/foundation/arkui/ace_engine/adapter/ios/build/config.gni:14-80`、`<ARKUI_X_ROOT>/foundation/arkui/ace_engine/adapter/ios/build/BUILD.gn:26-97`、`<ARKUI_X_ROOT>/foundation/arkui/ace_engine/adapter/ios/build/BUILD.gn:256-320`。 | 作为 ArkUI-X iOS adapter 参考。 |
 
+### 调用链层级分析
+
+| 层 | 模块 | 职责 | 修改类型 |
+|----|------|------|----------|
+| 根构建入口 | `<OH_ROOT>/build.sh` | 定位源码根、配置 prebuilts（Python/Node/OHPM），调用 `build/hb/main.py build` | 无修改（规格补录） |
+| 部件入口 | `bundle.json` | fwk_group/service_group/inner_kits 声明，part 分组和 inner kit 暴露 | 无修改（规格补录） |
+| 全局配置 | `ace_config.gni` | 构建参数声明、平台判定、全局路径、part/subsystem 定义、`ace_platforms` 列表发现 | 无修改（规格补录） |
+| 全局编译 config | `BUILD.gn`（根） | 提供 `ace_config`/`ace_test_config`/`ace_coverage_config` 共享编译配置 | 无修改（规格补录） |
+| 平台选择 | `adapter/ohos/build/platform.gni`, `adapter/ohos/build/config.gni` | 声明 `ohos`/`ohos_ng` 平台，选择 `libace_target`，设置平台宏 | 无修改（规格补录） |
+| 主库聚合 | `build/BUILD.gn`, `build/ace_lib.gni` | 遍历 `ace_platforms` 生成 `libace_static_*`，聚合为 `libace_compatible`/`libace` 共享库 | 无修改（规格补录） |
+| 框架 source_set | `frameworks/base/BUILD.gn`, `frameworks/core/BUILD.gn`, `frameworks/bridge/BUILD.gn` | base/core/bridge 模板化 source_set，按平台实例化 | 无修改（规格补录） |
+| 接口与包输出 | `interfaces/native/BUILD.gn`, `interfaces/napi/kits/BUILD.gn`, `interfaces/ets/BUILD.gn` | NDK 头和库、NAPI 模块、ANI 包构建 | 无修改（规格补录） |
+| 平台产物 | `adapter/ohos/build/BUILD.gn` | OHOS `ace_packages` 聚合 + `libarkui_*` 组件库输出 | 无修改（规格补录） |
+| 测试入口 | `test/unittest/BUILD.gn`, `test/benchmark/BUILD.gn` | 聚合单测（unittest/linux_unittest_capi）和 benchmark | 无修改（规格补录） |
+
 ### 适用架构规则
 
 | Rule ID | 适用原因 | 设计结论 | 验证方式 |
@@ -105,7 +120,7 @@
 | TASK-BUILD-STRUCTURE-1 | 建立编译构建功能域基线设计与 Feat-01 规格 | `design.md`, `Feat-01-build-gn-structure-spec.md`, `specs/index.md` | 已有 BUILD.gn 实现 |
 | TASK-BUILD-STRUCTURE-2 | 补充根构建入口、ArkUI-X adapter 参考和跨平台产物形态 | `design.md`, `Feat-01-build-gn-structure-spec.md` | 当前新增编译架构知识库与 ArkUI-X adapter 参考 |
 
-## API 签名与权限
+## API 签名、Kit 与权限
 
 ### 新增 API
 

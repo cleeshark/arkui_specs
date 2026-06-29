@@ -40,11 +40,12 @@
 - I want 每次 RenderService 产生的 VSync 信号在每个 PipelineContext 上恰好触发一次 `FlushVsync`
 - So that 多容器/多窗口下一帧内不会出现重复绘制或漏帧
 
-**AC**：
-- AC-1.1 RS 发出一次 VSync，RosenWindow 的 `vsyncCallback_->onCallback` 仅执行一次，并以 `(timeStampNanos, frameCount)` 透传至 `Window::OnVsync`，再经 `PipelineBase::OnVsyncEvent` 调用 `PipelineContext::FlushVsync`。来源：`rosen_window.cpp:63-106`、`window.cpp:48-58`、`pipeline_base.cpp:748-783`、`pipeline_context.cpp:936`。
-- AC-1.2 多容器场景下，`Window::callbacks_` 列表中每个回调按注册顺序被调用一次；同一帧内同一 PipelineContext 不会被同源 VSync 重复触发。来源：`window.cpp:48-58`、`pipeline_base.cpp:62-70`。
-- AC-1.3 当 `RosenWindow::ForceFlushVsync` 触发兜底路径时，使用 `frameCount=UINT64_MAX` 哨兵，`FlushVsync` 在 `pipeline_context.cpp:972-974` 跳过 `DispatchDisplaySync`，避免污染 DisplaySync 时间线。来源：`rosen_window.cpp:222-228`、`pipeline_context.cpp:972-974`。
-- AC-1.4 `PipelineContext::FlushVsync` 起始记录 `SetVsyncTime` 并发出 `ACE_SCOPED_TRACE_COMMERCIAL("UIVsyncTask[timestamp][vsyncID][instanceID]")` HiTrace。来源：`pipeline_context.cpp:943,948-949`。
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-1.1 | WHEN RS 发出一次 VSync THEN RosenWindow 的 `vsyncCallback_->onCallback` 仅执行一次，并以 `(timeStampNanos, frameCount)` 透传至 `Window::OnVsync` → `PipelineBase::OnVsyncEvent` → `PipelineContext::FlushVsync`。来源：`rosen_window.cpp:63-106`、`window.cpp:48-58`、`pipeline_base.cpp:748-783`、`pipeline_context.cpp:936` |
+| AC-1.2 | WHEN 多容器场景下 THEN `Window::callbacks_` 列表中每个回调按注册顺序被调用一次；同一帧内同一 PipelineContext 不会被同源 VSync 重复触发。来源：`window.cpp:48-58`、`pipeline_base.cpp:62-70` |
+| AC-1.3 | WHEN `RosenWindow::ForceFlushVsync` 触发兜底路径 THEN 使用 `frameCount=UINT64_MAX` 哨兵，`FlushVsync` 跳过 `DispatchDisplaySync`，避免污染 DisplaySync 时间线。来源：`rosen_window.cpp:222-228`、`pipeline_context.cpp:972-974` |
+| AC-1.4 | WHEN `PipelineContext::FlushVsync` 起始 THEN 记录 `SetVsyncTime` 并发出 `ACE_SCOPED_TRACE_COMMERCIAL("UIVsyncTask[timestamp][vsyncID][instanceID]")` HiTrace。来源：`pipeline_context.cpp:943,948-949` |
 
 ### US-2: 一帧子阶段顺序固定
 
@@ -52,11 +53,12 @@
 - I want `FlushVsync` 内部子阶段顺序固定（动画→事件→Build→Layout/Render→Modifier/FrameRate→Messages→收尾），不被绕过
 - So that 上层能力依赖该序列推导自身时序正确性，新插入步骤必须显式定位
 
-**AC**：
-- AC-2.1 子阶段顺序为：`FlushZindexUpdate` → `FlushAnimation` → `FlushFrameCallback` → `FlushModifierAnimation` → `FlushTouchEvents/FlushCompatibleTouchEvents/FlushDragEvents` → `FlushFrameCallbackFromCAPI` → `FlushBuild` → `ReloadNodesResource` → `taskScheduler_->FlushTask` → `FlushPersistAfterLayoutTask` → `FlushNodeChangeFlag` → `FlushAnimationClosure` → `TryCallNextFrameLayoutCallback` → `window_->FlushModifier` → `FlushFrameRate` → `FlushAfterModifierTask` → `FlushMessages` → 焦点/可见性事件 → `FlushAfterRenderTask` → `window_->FlushLayoutSize` → `window_->FlushVsync` → `FireAccessibilityEvents`。来源：`pipeline_context.cpp:975-1123`。
-- AC-2.2 `FlushBuild`（`pipeline_context.cpp:1006`）必须先于 `taskScheduler_->FlushTask`（`:1020`），即 Build 完毕后才进入 Layout/Render，否则新建节点不会进入当帧布局。
-- AC-2.3 `window_->FlushModifier`（`:1046`）必须先于 `FlushMessages`（`:1068/1074`）；后者为 RS 提交边界，之后产生的 RC 改动进入下一帧。
-- AC-2.4 仅在 `onShow_ && onFocus_ && isWindowHasFocused_` 时执行 `FlushFocusView/FlushFocus/FlushFocusScroll`（`:1080-1086`）；后台或失焦窗口跳过。
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-2.1 | WHEN FlushVsync 执行 THEN 子阶段顺序为：`FlushZindexUpdate` → `FlushAnimation` → `FlushFrameCallback` → `FlushModifierAnimation` → `FlushTouchEvents/FlushCompatibleTouchEvents/FlushDragEvents` → `FlushFrameCallbackFromCAPI` → `FlushBuild` → `ReloadNodesResource` → `taskScheduler_->FlushTask` → `FlushPersistAfterLayoutTask` → `FlushNodeChangeFlag` → `FlushAnimationClosure` → `TryCallNextFrameLayoutCallback` → `window_->FlushModifier` → `FlushFrameRate` → `FlushAfterModifierTask` → `FlushMessages` → 焦点/可见性事件 → `FlushAfterRenderTask` → `window_->FlushLayoutSize` → `window_->FlushVsync` → `FireAccessibilityEvents`。来源：`pipeline_context.cpp:975-1123` |
+| AC-2.2 | WHEN Build 阶段执行 THEN `FlushBuild`（`:1006`）必须先于 `taskScheduler_->FlushTask`（`:1020`），即 Build 完毕后才进入 Layout/Render，否则新建节点不会进入当帧布局 |
+| AC-2.3 | WHEN Modifier 提交阶段执行 THEN `window_->FlushModifier`（`:1046`）必须先于 `FlushMessages`（`:1068/1074`）；后者为 RS 提交边界，之后产生的 RC 改动进入下一帧 |
+| AC-2.4 | WHEN `onShow_ && onFocus_ && isWindowHasFocused_` THEN 执行 `FlushFocusView/FlushFocus/FlushFocusScroll`（`:1080-1086`）；后台或失焦窗口跳过 |
 
 ### US-3: Build 阶段 dirty 节点排空
 
@@ -64,11 +66,12 @@
 - I want 一帧内状态变更产生的 dirtyPropertyNodes_ 与 dirtyNodes_（CustomNode）能在 `FlushBuild` 中被排空，且最多 3 次重入
 - So that 状态→FrameNode 重建在当前帧完成，超额工作受控延后
 
-**AC**：
-- AC-3.1 `FlushBuild` 先 `FlushOnceVsyncTask`，再设 `isRebuildFinished_=false`，调用 `FlushDirtyNodeUpdate`，最后 `isRebuildFinished_=true` 并执行 `FlushBuildFinishCallbacks`。来源：`pipeline_context.cpp:1745-1783`。
-- AC-3.2 `FlushDirtyNodeUpdate` 顺序：`FlushFreezeNode` → `FlushDirtyPropertyNodes`（排空 `dirtyPropertyNodes_`，对每个节点 `ProcessPropertyDiff`）→ `FlushPendingDeleteCustomNode` → 重入循环最多 3 次 `customNode->Update()` → `FlushTSUpdates`。来源：`pipeline_context.cpp:666-708`。
-- AC-3.3 `CustomNodeBase::MarkNeedUpdate` 若已 `needRebuild_=true` 则不重复入队；首次入队 `context->AddDirtyCustomNode(this)` 并 `RequestFrame()`。来源：`custom_node_base.cpp:283-296`。
-- AC-3.4 进入 `FlushDirtyNodeUpdate` 时若 `ViewStackProcessor` 非空，发出告警但不阻塞执行。来源：`pipeline_context.cpp:684-687`。
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-3.1 | WHEN `FlushBuild` 执行 THEN 先 `FlushOnceVsyncTask`，再设 `isRebuildFinished_=false`，调用 `FlushDirtyNodeUpdate`，最后 `isRebuildFinished_=true` 并执行 `FlushBuildFinishCallbacks`。来源：`pipeline_context.cpp:1745-1783` |
+| AC-3.2 | WHEN `FlushDirtyNodeUpdate` 执行 THEN 顺序为：`FlushFreezeNode` → `FlushDirtyPropertyNodes`（排空 `dirtyPropertyNodes_`，对每个节点 `ProcessPropertyDiff`）→ `FlushPendingDeleteCustomNode` → 重入循环最多 3 次 `customNode->Update()` → `FlushTSUpdates`。来源：`pipeline_context.cpp:666-708` |
+| AC-3.3 | WHEN `CustomNodeBase::MarkNeedUpdate` 被调用且已 `needRebuild_=true` THEN 不重复入队；首次入队 `context->AddDirtyCustomNode(this)` 并 `RequestFrame()`。来源：`custom_node_base.cpp:283-296` |
+| AC-3.4 | WHEN 进入 `FlushDirtyNodeUpdate` 时 `ViewStackProcessor` 非空 THEN 发出告警但不阻塞执行。来源：`pipeline_context.cpp:684-687` |
 
 ### US-4: Layout/Render 由 TaskScheduler 统一驱动
 
@@ -76,12 +79,13 @@
 - I want 同一个 `UITaskScheduler::FlushTask` 在一次调用内驱动 `FlushLayoutTask` 与 `FlushRenderTask`，支持最多 2 轮二次布局
 - So that Layout 完成后立即 Render，geometryTransition 等需要二次布局的场景在当帧收敛
 
-**AC**：
-- AC-4.1 `UITaskScheduler::FlushTask` 在 `CHECK_RUN_ON(UI)` 前提下执行 do-while 循环；循环上限 `ENDORSE_LAYOUT_COUNT=2`。来源：`ui_task_scheduler.cpp:31,300-337`。
-- AC-4.2 每轮：`FlushLayoutTask` → 若 `NeedAdditionalLayout()` 再次 `FlushLayoutTask` → `FlushAfterLayoutTask` → `FlushSafeAreaPaddingProcess` → `FlushAfterLayoutCallbackInImplicitAnimationTask`；循环结束后执行 `FlushAllSingleNodeTasks` 与 `FlushRenderTask`。来源：`ui_task_scheduler.cpp:300-337`。
-- AC-4.3 `FlushLayoutTask` 将 `dirtyLayoutNodes_` 移入局部副本并按页迭代；调用 `FrameNode::CreateLayoutTask` 进入 `Measure → Layout`。来源：`ui_task_scheduler.cpp:131-185`、`frame_node.cpp:2830-2869`。
-- AC-4.4 若 `isLayouting_` 已为真，`FlushTaskWithCheck` 自增 `multiLayoutCount_` 并返回，不进行嵌套 layout。来源：`ui_task_scheduler.cpp:290-298`。
-- AC-4.5 当布局轮数超过 `ENDORSE_LAYOUT_COUNT`，剩余工作通过 `RequestFrameOnLayoutCountExceeds` 延入下一帧。来源：`ui_task_scheduler.cpp:310,364`。
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-4.1 | WHEN `UITaskScheduler::FlushTask` 执行 THEN 在 `CHECK_RUN_ON(UI)` 前提下执行 do-while 循环；循环上限 `ENDORSE_LAYOUT_COUNT=2`。来源：`ui_task_scheduler.cpp:31,300-337` |
+| AC-4.2 | WHEN 每轮循环执行 THEN `FlushLayoutTask` → 若 `NeedAdditionalLayout()` 再次 `FlushLayoutTask` → `FlushAfterLayoutTask` → `FlushSafeAreaPaddingProcess` → `FlushAfterLayoutCallbackInImplicitAnimationTask`；循环结束后执行 `FlushAllSingleNodeTasks` 与 `FlushRenderTask`。来源：`ui_task_scheduler.cpp:300-337` |
+| AC-4.3 | WHEN `FlushLayoutTask` 执行 THEN 将 `dirtyLayoutNodes_` 移入局部副本并按页迭代；调用 `FrameNode::CreateLayoutTask` 进入 `Measure → Layout`。来源：`ui_task_scheduler.cpp:131-185`、`frame_node.cpp:2830-2869` |
+| AC-4.4 | WHEN `isLayouting_` 已为真时 `FlushTaskWithCheck` 再次被调用 THEN 自增 `multiLayoutCount_` 并返回，不进行嵌套 layout。来源：`ui_task_scheduler.cpp:290-298` |
+| AC-4.5 | WHEN 布局轮数超过 `ENDORSE_LAYOUT_COUNT` THEN 剩余工作通过 `RequestFrameOnLayoutCountExceeds` 延入下一帧。来源：`ui_task_scheduler.cpp:310,364` |
 
 ### US-5: Paint 优先 Modifier 路径
 
@@ -89,10 +93,11 @@
 - I want `PaintWrapper::FlushRender` 在存在 Modifier 时仅走 Modifier 路径，无 Modifier 时回退到 Draw 录制
 - So that 支持属性独立动画的同时保持旧组件可用
 
-**AC**：
-- AC-5.1 `PaintWrapper::FlushRender` 先尝试 `GetContentModifier/GetOverlayModifier/GetForegroundModifier`；任一存在则调用对应 `UpdateXxxModifier` 并返回，不再录制 draw。来源：`paint_wrapper.cpp:125-152`。
-- AC-5.2 全部 Modifier 缺失时，调用 `renderContext->StartRecording`，依次执行 ContentDraw/ForegroundDraw/OverlayDraw 函数，再 `FinishRecording`。来源：`paint_wrapper.cpp:155-180`、`rosen_render_context.cpp:398/412`。
-- AC-5.3 `FrameNode::CreateRenderTask` 在 `!isRenderDirtyMarked_` 时直接返回空任务；在 `CreatePaintWrapper` 中清 `isRenderDirtyMarked_=false`。来源：`frame_node.cpp:3057-3093,3075-3098`。
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-5.1 | WHEN `PaintWrapper::FlushRender` 被调用且存在 Modifier THEN 先尝试 `GetContentModifier/GetOverlayModifier/GetForegroundModifier`；任一存在则调用对应 `UpdateXxxModifier` 并返回，不再录制 draw。来源：`paint_wrapper.cpp:125-152` |
+| AC-5.2 | WHEN 全部 Modifier 缺失 THEN 调用 `renderContext->StartRecording`，依次执行 ContentDraw/ForegroundDraw/OverlayDraw 函数，再 `FinishRecording`。来源：`paint_wrapper.cpp:155-180`、`rosen_render_context.cpp:398/412` |
+| AC-5.3 | WHEN `FrameNode::CreateRenderTask` 被调用且 `!isRenderDirtyMarked_` THEN 直接返回空任务；在 `CreatePaintWrapper` 中清 `isRenderDirtyMarked_=false`。来源：`frame_node.cpp:3057-3093,3075-3098` |
 
 ### US-6: RS 提交仅一处边界
 
@@ -100,11 +105,12 @@
 - I want 每帧仅在 `FlushMessages → SendMessages` 一处提交 RS，其后修改进入下一帧
 - So that "帧完成"具备唯一可观察边界，避免无意识跨帧
 
-**AC**：
-- AC-6.1 `PipelineContext::FlushMessages`（`pipeline_context.cpp:1412`）通过 `window_->FlushTasks(callback)` 最终调用 `rsUIDirector_->SendMessages`。来源：`rosen_window.cpp:378-388`。
-- AC-6.2 在同一帧内 `FlushMessages` 仅被 `FlushVsync` 调用一次（在 `:1068` 或 `:1074` 分支二选一）；后台 + `backgroundColorModeUpdated_` 走 `:1066-1073` 的快照通知分支。来源：`pipeline_context.cpp:1066-1075`。
-- AC-6.3 旁路 `FlushImplicitTransaction`（`rosen_window.cpp:309-322`、`rosen_render_context.cpp:8403-8443`）仅在 OnShow 多实例、组件截图等枚举路径调用，不构成主流程提交点。
-- AC-6.4 `FlushMessages` 之后的 `FlushAfterRenderTask`、A11y 事件、`window_->FlushVsync()` 不再修改 RS Tree。来源：`pipeline_context.cpp:1111-1125`。
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-6.1 | WHEN `PipelineContext::FlushMessages` 执行 THEN 通过 `window_->FlushTasks(callback)` 最终调用 `rsUIDirector_->SendMessages`。来源：`pipeline_context.cpp:1412`、`rosen_window.cpp:378-388` |
+| AC-6.2 | WHEN 同一帧内 THEN `FlushMessages` 仅被 `FlushVsync` 调用一次（在 `:1068` 或 `:1074` 分支二选一）；后台 + `backgroundColorModeUpdated_` 走 `:1066-1073` 的快照通知分支。来源：`pipeline_context.cpp:1066-1075` |
+| AC-6.3 | WHEN 旁路 `FlushImplicitTransaction` 被调用 THEN 仅在 OnShow 多实例、组件截图等枚举路径触发，不构成主流程提交点。来源：`rosen_window.cpp:309-322`、`rosen_render_context.cpp:8403-8443` |
+| AC-6.4 | WHEN `FlushMessages` 之后 THEN `FlushAfterRenderTask`、A11y 事件、`window_->FlushVsync()` 不再修改 RS Tree。来源：`pipeline_context.cpp:1111-1125` |
 
 ### US-7: 帧请求合并与后台门控
 
@@ -112,95 +118,94 @@
 - I want 同一帧内多次 `RequestFrame` 自动合并为一次 VSync 请求，且后台窗口默认不请求 VSync
 - So that 减少 IPC 频次并避免后台无意义绘制
 
-**AC**：
-- AC-7.1 `RosenWindow::RequestFrame` 在 `!forceVsync_ && !onShow_` 时直接返回，不调用 `rsWindow_->RequestVsync`。来源：`rosen_window.cpp:258-263`。
-- AC-7.2 `isRequestVsync_=true` 时 `RequestFrame` 直接返回；调用 `rsWindow_->RequestVsync` 后置 `isRequestVsync_=true`，在 `Window::OnVsync` 中清除。来源：`rosen_window.cpp:265-273`、`window.cpp:48-58`。
-- AC-7.3 在成功调用 `rsWindow_->RequestVsync` 的分支中（即通过 `onShow_`/`forceVsync_` 门控且未命中 `isRequestVsync_` 合并），`RequestFrame` 必然伴随注册 `PostVsyncTimeoutDFXTask`（500ms 兜底）与 `OnIdle` 延迟任务（IDLE_TASK_DELAY_MILLISECOND）。来源：`rosen_window.cpp:260-289`。
-- AC-7.4 `SystemProperties::GetMultiInstanceEnabled()` 启用时，子窗口的 `RequestVsync` 会经主窗口透传。来源：`rosen_window.cpp:147-178`。
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-7.1 | WHEN `!forceVsync_ && !onShow_` THEN `RosenWindow::RequestFrame` 直接返回，不调用 `rsWindow_->RequestVsync`。来源：`rosen_window.cpp:258-263` |
+| AC-7.2 | WHEN `isRequestVsync_=true` THEN `RequestFrame` 直接返回；调用 `rsWindow_->RequestVsync` 后置 `isRequestVsync_=true`，在 `Window::OnVsync` 中清除。来源：`rosen_window.cpp:265-273`、`window.cpp:48-58` |
+| AC-7.3 | WHEN 成功调用 `rsWindow_->RequestVsync`（通过 `onShow_`/`forceVsync_` 门控且未命中 `isRequestVsync_` 合并） THEN `RequestFrame` 伴随注册 `PostVsyncTimeoutDFXTask`（500ms 兜底）与 `OnIdle` 延迟任务（IDLE_TASK_DELAY_MILLISECOND）。来源：`rosen_window.cpp:260-289` |
+| AC-7.4 | WHEN `SystemProperties::GetMultiInstanceEnabled()` 启用 THEN 子窗口的 `RequestVsync` 会经主窗口透传。来源：`rosen_window.cpp:147-178` |
 
 ## 验收追溯
 
 | AC ID | US ID | 业务规则 | 验证手段 |
 |-------|-------|----------|----------|
-| AC-1.1 | US-1 | BR-1 / FR-1 | 代码评审 + pipeline ut |
-| AC-1.2 | US-1 | BR-1 | 代码评审 + 多容器集成测试 |
-| AC-1.3 | US-1 | ER-1 | 代码评审 + 模拟超时 ut |
-| AC-1.4 | US-1 | FR-2 | HiTrace 抓取 |
-| AC-2.1 | US-2 | BR-2 / FR-3 | 代码评审 |
-| AC-2.2 | US-2 | BR-2 | 代码评审 + Build/Layout 顺序 ut |
-| AC-2.3 | US-2 | BR-2 / BR-5 | 代码评审 |
-| AC-2.4 | US-2 | FR-4 | 焦点状态 ut |
-| AC-3.1 | US-3 | FR-5 | pipeline_context ut |
-| AC-3.2 | US-3 | FR-5 / FR-6 | FlushDirtyNodeUpdate ut |
-| AC-3.3 | US-3 | FR-6 | custom_node ut |
-| AC-3.4 | US-3 | ER-2 | 代码评审 |
-| AC-4.1 | US-4 | BR-3 / FR-7 | ui_task_scheduler ut |
-| AC-4.2 | US-4 | FR-7 | ui_task_scheduler ut |
-| AC-4.3 | US-4 | FR-8 | frame_node ut |
-| AC-4.4 | US-4 | ER-3 | 重入 ut |
-| AC-4.5 | US-4 | RC-1 | 二次布局 ut |
-| AC-5.1 | US-5 | FR-9 | paint_wrapper ut |
-| AC-5.2 | US-5 | FR-9 | paint_wrapper ut |
-| AC-5.3 | US-5 | FR-10 | frame_node ut |
-| AC-6.1 | US-6 | BR-5 | rosen_window ut |
-| AC-6.2 | US-6 | BR-5 | pipeline_context ut |
-| AC-6.3 | US-6 | ER-4 | 代码评审 |
-| AC-6.4 | US-6 | BR-5 | 代码评审 |
-| AC-7.1 | US-7 | FR-11 | rosen_window ut |
-| AC-7.2 | US-7 | FR-11 | rosen_window ut |
-| AC-7.3 | US-7 | RC-2 | DFX 抓取 |
-| AC-7.4 | US-7 | FR-12 | 多实例集成测试 |
+| AC-1.1 | US-1 | R-1 / R-7 | 代码评审 + pipeline ut |
+| AC-1.2 | US-1 | R-1 | 代码评审 + 多容器集成测试 |
+| AC-1.3 | US-1 | R-21 | 代码评审 + 模拟超时 ut |
+| AC-1.4 | US-1 | R-8 | HiTrace 抓取 |
+| AC-2.1 | US-2 | R-2 / R-9 | 代码评审 |
+| AC-2.2 | US-2 | R-2 | 代码评审 + Build/Layout 顺序 ut |
+| AC-2.3 | US-2 | R-2 / R-5 | 代码评审 |
+| AC-2.4 | US-2 | R-10 | 焦点状态 ut |
+| AC-3.1 | US-3 | R-11 | pipeline_context ut |
+| AC-3.2 | US-3 | R-11 / R-12 | FlushDirtyNodeUpdate ut |
+| AC-3.3 | US-3 | R-12 | custom_node ut |
+| AC-3.4 | US-3 | R-22 | 代码评审 |
+| AC-4.1 | US-4 | R-3 / R-13 | ui_task_scheduler ut |
+| AC-4.2 | US-4 | R-13 | ui_task_scheduler ut |
+| AC-4.3 | US-4 | R-14 | frame_node ut |
+| AC-4.4 | US-4 | R-23 | 重入 ut |
+| AC-4.5 | US-4 | R-28 | 二次布局 ut |
+| AC-5.1 | US-5 | R-15 | paint_wrapper ut |
+| AC-5.2 | US-5 | R-15 | paint_wrapper ut |
+| AC-5.3 | US-5 | R-16 | frame_node ut |
+| AC-6.1 | US-6 | R-5 | rosen_window ut |
+| AC-6.2 | US-6 | R-5 | pipeline_context ut |
+| AC-6.3 | US-6 | R-24 | 代码评审 |
+| AC-6.4 | US-6 | R-5 | 代码评审 |
+| AC-7.1 | US-7 | R-17 | rosen_window ut |
+| AC-7.2 | US-7 | R-17 | rosen_window ut |
+| AC-7.3 | US-7 | R-29 | DFX 抓取 |
+| AC-7.4 | US-7 | R-18 | 多实例集成测试 |
 
-## 业务规则
 
-- BR-1: VSync 是 NG 主流程唯一节拍源；每个 PipelineContext 一帧仅一次 `FlushVsync`。
-- BR-2: 一帧内子阶段顺序硬绑定，不可绕过、不可重排；新阶段必须显式定位插入。
-- BR-3: Layout 与 Render 由同一个 `UITaskScheduler::FlushTask` 驱动，禁止外部独立调用 `FlushRenderTask` 跨越 Layout。
-- BR-4: dirty 节点分四条队列（property/custom/layout/render），各自带帧内幂等标志，禁止在其他位置重新实现 dirty 集合。
-- BR-5: RS 提交仅在 `FlushMessages → SendMessages` 一处；之后的修改进入下一帧。
-- BR-6: 后台（!onShow_）窗口默认不 `RequestFrame`，除非显式 `forceVsync_`。
+## 规则定义
 
-## 功能规则
+> **统一规则表，取消 FR/BR/EX/RC 四分类。** 类型标签：**行为**（正常路径下的系统行为）、**边界**（输入/状态的临界点）、**异常**（非法输入或异常状态的处理）、**恢复**（系统异常后的恢复策略）。
 
-- FR-1: `vsyncCallback_->onCallback(timeStamp, frameCount)` 会先调用 `ArkUIPerfMonitor::StartPerf`、`FrameReport::FlushBegin`，再依次 `Window::OnVsync`、`PipelineBase::OnVsyncEvent`、`PipelineContext::FlushVsync`，结束后 `ArkUIPerfMonitor::FinishPerf`、`FrameReport::FlushEnd`、`JankFrameReport::JankFrameRecord`。来源：`rosen_window.cpp:63-106`。
-- FR-2: `FlushVsync` 入口发 HiTrace `UIVsyncTask`；`FlushBuild` 段内发 `BeginFlushBuild/End`（`pipeline_context.cpp:674,709`）；`FlushAnimation` 段内发 `BeginFlushAnimation/End`（`:1317,:1324`）。
-- FR-3: 在 `FlushVsync` 起始 `window_->Lock()`，末尾 `window_->Unlock()`（`:950, :1125`），保证一帧内 RS 操作的临界区。
-- FR-4: 焦点/区域变化事件 `HandleOnAreaChangeEvent`、`HandleVisibleAreaChangeEvent` 紧随 `FlushMessages` 之后但在 `FlushAfterRenderTask` 之前（`:1092-1099`），保证基于最新布局结果分发。
-- FR-5: `FlushBuild` 起：`vsyncListener_()` → `FlushOnceVsyncTask` → `isRebuildFinished_=false` → `FlushDirtyNodeUpdate` → `isRebuildFinished_=true` → `FlushBuildFinishCallbacks`。来源：`pipeline_context.cpp:1745-1783`。
-- FR-6: `FlushDirtyNodeUpdate` 主循环 `maxFlushTimes=3`；每轮 `decltype(dirtyNodes_) dirtyNodes(std::move(dirtyNodes_));` 然后遍历调用 `customNode->Update()`，剩余 dirty 留待下一轮或下一帧。来源：`pipeline_context.cpp:691-703`。
-- FR-7: `UITaskScheduler::FlushTask` do-while 循环上限 `ENDORSE_LAYOUT_COUNT=2`，循环结束执行 `FlushAllSingleNodeTasks` 与 `FlushRenderTask`。来源：`ui_task_scheduler.cpp:300-337`。
-- FR-8: `FrameNode::CreateLayoutTask` 在 `!isLayoutDirtyMarked_` 时直接返回；设置 `RootMeasureNode(true)`、`UpdateLayoutPropertyFlag()`，再 `Measure → Layout`。来源：`frame_node.cpp:2830-2869`。
-- FR-9: `PaintWrapper::FlushRender` 三类 Modifier 优先；缺失时 `StartRecording → DrawFunctions → FinishRecording`。来源：`paint_wrapper.cpp:125-180`。
-- FR-10: `FrameNode::MarkNeedRender` 标记 `PROPERTY_UPDATE_RENDER`，向父节点冒泡 `PROPERTY_UPDATE_RENDER_BY_CHILD_REQUEST`，并 `AddDirtyRenderNode`。来源：`frame_node.cpp:3430-3461`。
-- FR-11: `RosenWindow::RequestFrame` 路径：`onShow` 门控 → `isRequestVsync_` 合并 → `rsWindow_->RequestVsync(vsyncCallback_)` → `PostVsyncTimeoutDFXTask(500ms)` → `OnIdle` 延迟任务（IDLE_TASK_DELAY_MILLISECOND）。超时任务与 OnIdle 仅在成功发起 RequestVsync 的分支中注册。来源：`rosen_window.cpp:258-289`。
-- FR-12: 多实例：`RosenWindow::Init` 在 `rsUIDirector_->SetRequestVsyncCallback` 中检查 `SystemProperties::GetMultiInstanceEnabled()` 并向子窗口扇出。来源：`rosen_window.cpp:147-178`。
-- FR-13: `RecordFrameTime` 推送时间戳到 `RSUIDirector::SetTimeStamp`（`rosen_window.cpp:372-376`），保证 RS 端 jank 统计与 ArkUI 时间线一致。
-- FR-14: `window_->FlushFrameRate(rate, animatorExpectedFrameRate, rateType)` 在 Modifier 提交之后、`FlushMessages` 之前发出（`pipeline_context.cpp:1047`）；rate 由当前帧动画估算。
+| 规则ID | 类型 | 触发条件 | 预期行为 | 边界/约束 | 关联AC |
+|--------|------|----------|----------|-----------|--------|
+| R-1 | 行为 | — | VSync 是 NG 主流程唯一节拍源；每个 PipelineContext 一帧仅一次 `FlushVsync`。 | — | — |
+| R-2 | 行为 | — | 一帧内子阶段顺序硬绑定，不可绕过、不可重排；新阶段必须显式定位插入。 | — | — |
+| R-3 | 行为 | — | Layout 与 Render 由同一个 `UITaskScheduler::FlushTask` 驱动，禁止外部独立调用 `FlushRenderTask` 跨越 Layout。 | — | — |
+| R-4 | 行为 | — | dirty 节点分四条队列（property/custom/layout/render），各自带帧内幂等标志，禁止在其他位置重新实现 dirty 集合。 | — | — |
+| R-5 | 行为 | — | RS 提交仅在 `FlushMessages → SendMessages` 一处；之后的修改进入下一帧。 | — | — |
+| R-6 | 行为 | — | 后台（!onShow_）窗口默认不 `RequestFrame`，除非显式 `forceVsync_`。 | — | — |
+| R-7 | 行为 | — | `vsyncCallback_->onCallback(timeStamp, frameCount)` 会先调用 `ArkUIPerfMonitor::StartPerf`、`FrameReport::FlushBegin`，再依次 `Window::OnVsync`、`PipelineBase::OnVsyncEvent`、`PipelineContext::FlushVsync`，结束后 `ArkUIPerfMonitor::FinishPerf`、`FrameReport::FlushEnd`、`JankFrameReport::JankFrameRecord`。来源：`rosen_window.cpp:63-106`。 | — | — |
+| R-8 | 行为 | — | `FlushVsync` 入口发 HiTrace `UIVsyncTask`；`FlushBuild` 段内发 `BeginFlushBuild/End`（`pipeline_context.cpp:674,709`）；`FlushAnimation` 段内发 `BeginFlushAnimation/End`（`:1317,:1324`）。 | — | — |
+| R-9 | 行为 | — | 在 `FlushVsync` 起始 `window_->Lock()`，末尾 `window_->Unlock()`（`:950, :1125`），保证一帧内 RS 操作的临界区。 | — | — |
+| R-10 | 行为 | — | 焦点/区域变化事件 `HandleOnAreaChangeEvent`、`HandleVisibleAreaChangeEvent` 紧随 `FlushMessages` 之后但在 `FlushAfterRenderTask` 之前（`:1092-1099`），保证基于最新布局结果分发。 | — | — |
+| R-11 | 行为 | — | `FlushBuild` 起：`vsyncListener_()` → `FlushOnceVsyncTask` → `isRebuildFinished_=false` → `FlushDirtyNodeUpdate` → `isRebuildFinished_=true` → `FlushBuildFinishCallbacks`。来源：`pipeline_context.cpp:1745-1783`。 | — | — |
+| R-12 | 行为 | — | `FlushDirtyNodeUpdate` 主循环 `maxFlushTimes=3`；每轮 `decltype(dirtyNodes_) dirtyNodes(std::move(dirtyNodes_));` 然后遍历调用 `customNode->Update()`，剩余 dirty 留待下一轮或下一帧。来源：`pipeline_context.cpp:691-703`。 | — | — |
+| R-13 | 行为 | — | `UITaskScheduler::FlushTask` do-while 循环上限 `ENDORSE_LAYOUT_COUNT=2`，循环结束执行 `FlushAllSingleNodeTasks` 与 `FlushRenderTask`。来源：`ui_task_scheduler.cpp:300-337`。 | — | — |
+| R-14 | 行为 | — | `FrameNode::CreateLayoutTask` 在 `!isLayoutDirtyMarked_` 时直接返回；设置 `RootMeasureNode(true)`、`UpdateLayoutPropertyFlag()`，再 `Measure → Layout`。来源：`frame_node.cpp:2830-2869`。 | — | — |
+| R-15 | 行为 | — | `PaintWrapper::FlushRender` 三类 Modifier 优先；缺失时 `StartRecording → DrawFunctions → FinishRecording`。来源：`paint_wrapper.cpp:125-180`。 | — | — |
+| R-16 | 行为 | — | `FrameNode::MarkNeedRender` 标记 `PROPERTY_UPDATE_RENDER`，向父节点冒泡 `PROPERTY_UPDATE_RENDER_BY_CHILD_REQUEST`，并 `AddDirtyRenderNode`。来源：`frame_node.cpp:3430-3461`。 | — | — |
+| R-17 | 行为 | — | `RosenWindow::RequestFrame` 路径：`onShow` 门控 → `isRequestVsync_` 合并 → `rsWindow_->RequestVsync(vsyncCallback_)` → `PostVsyncTimeoutDFXTask(500ms)` → `OnIdle` 延迟任务（IDLE_TASK_DELAY_MILLISECOND）。超时任务与 OnIdle 仅在成功发起 RequestVsync 的分支中注册。来源：`rosen_window.cpp:258-289`。 | — | — |
+| R-18 | 行为 | — | 多实例：`RosenWindow::Init` 在 `rsUIDirector_->SetRequestVsyncCallback` 中检查 `SystemProperties::GetMultiInstanceEnabled()` 并向子窗口扇出。来源：`rosen_window.cpp:147-178`。 | — | — |
+| R-19 | 行为 | — | `RecordFrameTime` 推送时间戳到 `RSUIDirector::SetTimeStamp`（`rosen_window.cpp:372-376`），保证 RS 端 jank 统计与 ArkUI 时间线一致。 | — | — |
+| R-20 | 行为 | — | `window_->FlushFrameRate(rate, animatorExpectedFrameRate, rateType)` 在 Modifier 提交之后、`FlushMessages` 之前发出（`pipeline_context.cpp:1047`）；rate 由当前帧动画估算。 | — | — |
+| R-21 | 异常 | — | 当 RS 在 500ms 内未送达 VSync，`PostVsyncTimeoutDFXTask` 触发，并通过 `EventReport::SendVsyncException(VsyncExcepType::UI_VSYNC_TIMEOUT, …)`（`rosen_window.cpp:237`）上报；同时 `ForceFlushVsync` 调用 `vsyncCallback_->onCallback(now, UINT64_MAX)` 兜底走一次 FlushVsync。 | — | — |
+| R-22 | 异常 | — | 进入 `FlushDirtyNodeUpdate` 时若 `ViewStackProcessor` 非空，记录 warning 但不中断（`pipeline_context.cpp:684-687`）；表明上游存在 mount/build 未平衡。 | — | — |
+| R-23 | 异常 | — | 嵌套调用 `UITaskScheduler::FlushTaskWithCheck`（已在 layouting）只增加 `multiLayoutCount_`，原次调用结束后再决定是否补一次（`ui_task_scheduler.cpp:290-298`）。 | — | — |
+| R-24 | 异常 | — | `FlushImplicitTransaction` 是离帧旁路；仅在 OnShow 多实例（`rosen_window.cpp:291-298`）与组件截图等枚举路径调用，**不得**作为主流程提交点。 | — | — |
+| R-25 | 异常 | — | `FlushDirtyNodeUpdate` while-loop 超 3 次仍有 dirtyNodes 时，剩余项保留至下一帧；不抛错。 | — | — |
+| R-26 | 异常 | — | 当 `frameCount==UINT64_MAX`，`DispatchDisplaySync` 被跳过（`pipeline_context.cpp:972-974`），防止 DisplaySync 时间线被哨兵污染。 | — | — |
+| R-27 | 异常 | — | 表单渲染（`isFormRender_ && drawDelegate_`）走一次 `drawDelegate_->DrawRSFrame(renderContext)` 后跳出主 build/layout/render 流程（`pipeline_context.cpp:1008-1012`），不视为常规 FlushVsync 路径。 | — | — |
+| R-28 | 恢复 | — | 当 Layout 二次轮数超过 `ENDORSE_LAYOUT_COUNT=2`，调用 `RequestFrameOnLayoutCountExceeds()` 延入下一帧；不阻塞当前帧 Render。来源：`ui_task_scheduler.cpp:310,364`。 | — | — |
+| R-29 | 恢复 | — | `RequestFrame` 已注册超时 DFX 任务，500ms 内未收到 VSync → `ForceFlushVsync` 触发一次合成 vsync 以保证不卡死；其后 `RequestFrame` 重新请求真实 VSync。来源：`rosen_window.cpp:222-256`。 | — | — |
+| R-30 | 恢复 | — | 若 `HasUIRunningAnimation()` 在 FlushVsync 末尾仍为 true，自动 `RequestFrame()`（`pipeline_context.cpp:1043-1044`），保证动画连帧。 | — | — |
+| R-31 | 恢复 | — | 布局过程中产生新 dirty 节点由 `AddSingleNodeToFlush` 收集，FlushTask 末尾 `FlushAllSingleNodeTasks` 统一处理；过期 dirty 留待下一帧（`ui_task_scheduler.cpp:334`、`pipeline_context.cpp:1451-1457`）。 | — | — |
 
-## 异常/豁免规则
-
-- ER-1: 当 RS 在 500ms 内未送达 VSync，`PostVsyncTimeoutDFXTask` 触发，并通过 `EventReport::SendVsyncException(VsyncExcepType::UI_VSYNC_TIMEOUT, …)`（`rosen_window.cpp:237`）上报；同时 `ForceFlushVsync` 调用 `vsyncCallback_->onCallback(now, UINT64_MAX)` 兜底走一次 FlushVsync。
-- ER-2: 进入 `FlushDirtyNodeUpdate` 时若 `ViewStackProcessor` 非空，记录 warning 但不中断（`pipeline_context.cpp:684-687`）；表明上游存在 mount/build 未平衡。
-- ER-3: 嵌套调用 `UITaskScheduler::FlushTaskWithCheck`（已在 layouting）只增加 `multiLayoutCount_`，原次调用结束后再决定是否补一次（`ui_task_scheduler.cpp:290-298`）。
-- ER-4: `FlushImplicitTransaction` 是离帧旁路；仅在 OnShow 多实例（`rosen_window.cpp:291-298`）与组件截图等枚举路径调用，**不得**作为主流程提交点。
-- ER-5: `FlushDirtyNodeUpdate` while-loop 超 3 次仍有 dirtyNodes 时，剩余项保留至下一帧；不抛错。
-- ER-6: 当 `frameCount==UINT64_MAX`，`DispatchDisplaySync` 被跳过（`pipeline_context.cpp:972-974`），防止 DisplaySync 时间线被哨兵污染。
-- ER-7: 表单渲染（`isFormRender_ && drawDelegate_`）走一次 `drawDelegate_->DrawRSFrame(renderContext)` 后跳出主 build/layout/render 流程（`pipeline_context.cpp:1008-1012`），不视为常规 FlushVsync 路径。
-
-## 恢复契约
-
-- RC-1: 当 Layout 二次轮数超过 `ENDORSE_LAYOUT_COUNT=2`，调用 `RequestFrameOnLayoutCountExceeds()` 延入下一帧；不阻塞当前帧 Render。来源：`ui_task_scheduler.cpp:310,364`。
-- RC-2: `RequestFrame` 已注册超时 DFX 任务，500ms 内未收到 VSync → `ForceFlushVsync` 触发一次合成 vsync 以保证不卡死；其后 `RequestFrame` 重新请求真实 VSync。来源：`rosen_window.cpp:222-256`。
-- RC-3: 若 `HasUIRunningAnimation()` 在 FlushVsync 末尾仍为 true，自动 `RequestFrame()`（`pipeline_context.cpp:1043-1044`），保证动画连帧。
-- RC-4: 布局过程中产生新 dirty 节点由 `AddSingleNodeToFlush` 收集，FlushTask 末尾 `FlushAllSingleNodeTasks` 统一处理；过期 dirty 留待下一帧（`ui_task_scheduler.cpp:334`、`pipeline_context.cpp:1451-1457`）。
+---
 
 ## 验证映射
 
 | AC ID | 类型 | 位置 / 用例名 |
 |-------|------|---------------|
 | AC-1.1 / AC-1.2 | 单元测试 | test/unittest/core/pipeline/pipeline_context_test_ng.cpp（FlushVsync / OnVsyncEvent 系列） |
-| AC-1.3 / RC-2 | 单元测试 | 待补充 — 当前无 ForceFlushVsync 专用 ut；建议在 test/unittest/core/pipeline/ 下新增 `frameCount=UINT64_MAX` 场景 |
-| AC-1.4 / FR-2 | HiTrace 验证 | bytrace 抓取 `UIVsyncTask` / `BeginFlushBuild` |
+| AC-1.3 / R-29 | 单元测试 | 待补充 — 当前无 ForceFlushVsync 专用 ut；建议在 test/unittest/core/pipeline/ 下新增 `frameCount=UINT64_MAX` 场景 |
+| AC-1.4 / R-8 | HiTrace 验证 | bytrace 抓取 `UIVsyncTask` / `BeginFlushBuild` |
 | AC-2.1 / AC-2.2 / AC-2.3 | 代码评审 | pipeline_context.cpp 直接对照 |
 | AC-2.4 | 单元测试 | test/unittest/core/pipeline/pipeline_context_test_ng.cpp 焦点相关用例 |
 | AC-3.1..3.4 | 单元测试 | test/unittest/core/pipeline/pipeline_context_test_ng.cpp（FlushBuild / FlushDirtyNodeUpdate） |
@@ -237,6 +242,16 @@
 |----------|----------|---------|
 | — | — | 无变更/废弃 API |
 
+## 接口规格
+
+### 接口定义
+
+> 本特性为已有实现补录，接口行为定义详见上方规则定义和用户故事。
+
+无新增接口规格。
+
+---
+
 ## 兼容性声明
 
 | API 版本 | 行为差异 | 影响 | 迁移指引 |
@@ -246,7 +261,7 @@
 | 各版本 | `SystemProperties::GetLayoutDetectEnabled()` 启用时会在重入 layout 处抛断言（`ui_task_scheduler.cpp:138`） | 低（开发态）：未启用时为 no-op | 仅 dev 环境启用 |
 | 各版本 | `SystemProperties::GetContainerDeleteFlag()` 改变 `HandleOnAreaChangeEvent`/`HandleVisibleAreaChangeEvent` 分支（`pipeline_context.cpp:1088-1100`） | 低：迁移期容器删除策略 | 文档化 |
 | 各版本 | `dvsyncOn_` 决定 `OnIdle` 截止时间计算（`rosen_window.cpp:84-92,200-215`） | 低：DVSync 启用与否仅影响截止 | 不需迁移 |
-| 各版本 | `SystemProperties::GetMultiInstanceEnabled()` 切换子窗口 VSync 扇出（`rosen_window.cpp:147-178`） | 中：多实例编译态决定 | 切换后行为按 FR-12 |
+| 各版本 | `SystemProperties::GetMultiInstanceEnabled()` 切换子窗口 VSync 扇出（`rosen_window.cpp:147-178`） | 中：多实例编译态决定 | 切换后行为按 R-18 |
 
 > 本表仅记录与"主流程编排"直接相关的版本差异。子阶段内部差异（如 Layout/Build 算法）由对应子 Feat 维护。
 
@@ -263,6 +278,16 @@
 - 性能：单帧主流程主线程执行；耗时受 `maxFlushTimes=3` 与 `ENDORSE_LAYOUT_COUNT=2` 双重约束。
 - 鲁棒性：VSync 超时由 500ms DFX 兜底；ViewStackProcessor 异常仅告警；嵌套 layout 自合并。
 - 多容器：`Window::callbacks_` 列表保证每个 PipelineContext 各自接收 VSync；多实例下子窗口经主窗口扇出。
+
+## 多设备适配声明
+
+| 设备类型 | 行为差异 | 规格/约束 | 验证方式 | 证据 |
+|----------|----------|-----------|----------|------|
+| 手机 | 无差异 | — | — | — |
+| 平板 | 无差异 | — | — | — |
+| 折叠屏 | 无差异 | — | — | — |
+
+---
 
 ## 全局特性影响
 
@@ -282,7 +307,7 @@
    And PipelineBase::OnVsyncEvent(T0, N) 被调用一次
    And PipelineContext::FlushVsync(T0, N) 被调用一次
 
-场景 2: ForceFlushVsync 兜底 (AC-1.3, ER-1, RC-2)
+场景 2: ForceFlushVsync 兜底 (AC-1.3, R-21, R-29)
   Given 上一次 RequestFrame 后 500ms 内未收到 VSync
   When PostVsyncTimeoutDFXTask 触发 ForceFlushVsync
   Then vsyncCallback_->onCallback(now, UINT64_MAX) 被调用
@@ -297,31 +322,31 @@
    And FlushMessages 仅被调用一次
    And FlushAfterRenderTask 在 FlushMessages 之后
 
-场景 4: 后台窗口不 RequestFrame (AC-7.1, BR-6)
+场景 4: 后台窗口不 RequestFrame (AC-7.1, R-6)
   Given onShow_==false 且 forceVsync_==false
   When 任意状态变化触发 RequestFrame
   Then RosenWindow::RequestFrame 直接返回，不调用 rsWindow_->RequestVsync
 
-场景 5: 同帧多次 RequestFrame 合并 (AC-7.2, FR-11)
+场景 5: 同帧多次 RequestFrame 合并 (AC-7.2, R-17)
   Given onShow_==true 且 isRequestVsync_==false
   When 同一帧内 RequestFrame 被调用三次
   Then 第一次设置 isRequestVsync_=true 并调用 rsWindow_->RequestVsync 一次
    And 第二、三次直接返回
    And Window::OnVsync 触发后 isRequestVsync_ 被清除
 
-场景 6: dirty CustomNode 三轮重入收敛 (AC-3.2, FR-6)
+场景 6: dirty CustomNode 三轮重入收敛 (AC-3.2, R-12)
   Given dirtyNodes_ 中存在自我注入新 dirty 的 CustomNode
   When FlushDirtyNodeUpdate 开始执行
   Then 重入循环最多执行 3 次
    And 若第 3 次结束后仍有 dirty 留存，则等到下一帧
 
-场景 7: Layout 二次布局触发 (AC-4.2, AC-4.5, RC-1)
+场景 7: Layout 二次布局触发 (AC-4.2, AC-4.5, R-28)
   Given geometryTransition 需要二次布局
   When UITaskScheduler::FlushTask 第一轮完成
   Then NeedAdditionalLayout 返回 true，再次 FlushLayoutTask
    And do-while 最多 2 轮，超出后 RequestFrameOnLayoutCountExceeds 延入下一帧
 
-场景 8: 嵌套 layout 自合并 (AC-4.4, ER-3)
+场景 8: 嵌套 layout 自合并 (AC-4.4, R-23)
   Given isLayouting_==true 时 FlushTaskWithCheck 再次被调用
   When 调用入口检测
   Then multiLayoutCount_++ 并立即返回，不进行嵌套 layout
@@ -339,24 +364,24 @@
    And ContentDraw / ForegroundDraw / OverlayDraw 函数依序执行
    And renderContext->FinishRecording 收尾
 
-场景 11: RS 仅一次提交 (AC-6.1, AC-6.2, AC-6.4, BR-5)
+场景 11: RS 仅一次提交 (AC-6.1, AC-6.2, AC-6.4, R-5)
   Given 任意非空 dirty 集合
   When FlushVsync 执行完成
   Then rsUIDirector_->SendMessages 被调用且仅被调用一次
    And SendMessages 之后的 FlushAfterRenderTask、A11y 事件不再修改 RS Tree
 
-场景 12: 多实例子窗口 VSync 扇出 (AC-7.4, FR-12)
+场景 12: 多实例子窗口 VSync 扇出 (AC-7.4, R-18)
   Given SystemProperties::GetMultiInstanceEnabled()==true 且子窗口已附着
   When 主窗口在 SetRequestVsyncCallback 中接收到子窗口 RequestVsync
   Then 子窗口的请求被透传到主窗口的 rsWindow_->RequestVsync
 
-场景 13: 焦点事件后置于 FlushMessages (AC-2.4, FR-4)
+场景 13: 焦点事件后置于 FlushMessages (AC-2.4, R-10)
   Given onShow_ && onFocus_ && isWindowHasFocused_ 均为 true
   When FlushVsync 进行到 FlushMessages 之后
   Then FlushFocusView / FlushFocus / FlushFocusScroll 被调用
    And 之后才进入 HandleOnAreaChangeEvent / HandleVisibleAreaChangeEvent
 
-场景 14: 表单一次性绘制旁路 (ER-7)
+场景 14: 表单一次性绘制旁路 (R-27)
   Given isFormRender_==true 且 drawDelegate_ 非空
   When FlushVsync 进入 :1008-1012 分支
   Then drawDelegate_->DrawRSFrame(renderContext) 被调用

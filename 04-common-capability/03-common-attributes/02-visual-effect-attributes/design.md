@@ -41,6 +41,22 @@
 | sdk-js | `api/@internal/component/ets/common.d.ts` | ArkTS dynamic API 契约 | `@since`、Optional 重载、参数类型和注释约束 |
 | sdk-js | `api/arkui/component/common.static.d.ets` | ArkTS static API 契约 | static API 23 起统一签名 |
 
+### 调用链层级分析
+
+| 层 | 模块 | 职责 | 修改类型 |
+|----|------|------|----------|
+| ArkTS dynamic 入口 | `frameworks/bridge/declarative_frontend/jsview/js_view_abstract.cpp` | `JsOpacity/JsBlur/JsBackdropBlur/JsBrightness/JsContrast/JsGrayscale/JsSaturate/JsSepia/JsInvert/JsHueRotate/JsColorBlend/JsLinearGradientBlur/JsMotionBlur/JsSphericalEffect/JsLightUpEffect/JsPixelStretchEffect` 通用属性注册与参数解析，执行版本分支、clamp/reset/return 策略 | 存量——仅补录规格，不改动代码 |
+| ArkTS Modifier bridge | `frameworks/bridge/declarative_frontend/engine/jsi/nativeModule/arkts_native_common_bridge.cpp` | ArkTS Modifier 通道 `SetOpacity/ResetOpacity`、`SetBrightness/ResetBrightness` 等 Set/Reset 对，将 ArkTS modifier 调用分发到 `node_common_modifier` | 存量——仅补录规格，不改动代码 |
+| C API 公开入口 | `interfaces/native/node/style_modifier.cpp` | `ArkUI_Node` 通用属性对外入口；对 `NODE_OPACITY/NODE_BRIGHTNESS/NODE_SATURATION/NODE_BLUR/NODE_GRAY_SCALE/NODE_INVERT/NODE_SEPIA/NODE_CONTRAST/NODE_COLOR_BLEND/NODE_BACKDROP_BLUR` 执行参数个数与范围校验，非法时返回 `ERROR_CODE_PARAM_INVALID` | 存量——仅补录规格，不改动代码 |
+| C API 属性枚举 | `interfaces/native/native_node.h` | 定义公开 `NODE_*` 属性枚举与参数契约；`hueRotate/linearGradientBlur/motionBlur/sphericalEffect/lightUpEffect/pixelStretchEffect` 无同级公开枚举 | 存量——仅补录规格，不改动代码 |
+| Native common modifier | `frameworks/core/interfaces/native/node/node_common_modifier.cpp` | 内部 modifier 函数表入口，提供全部视效属性的 `SetXxx/ResetXxx`（含公开枚举未覆盖的 `SetHueRotate/SetLinearGradientBlur/SetMotionBlur/SetSphericalEffect/SetLightUpEffect/SetPixelStretchEffect`），桥接 C/NDK 和 ArkTS modifier 通道到 `ViewAbstract` | 存量——仅补录规格，不改动代码 |
+| 框架 API 层 | `frameworks/core/components_ng/base/view_abstract.cpp` | `SetOpacity/SetBrightness/SetFrontGrayScale/SetFrontContrast/SetFrontSaturate/SetFrontSepia/SetFrontInvert/SetFrontHueRotate/SetFrontColorBlend/SetFrontBlur/SetBackdropBlur/SetLinearGradientBlur/SetMotionBlur/SetSphericalEffect/SetLightUpEffect/SetPixelStretchEffect`；通过 `ACE_UPDATE_NODE_RENDER_CONTEXT` 写入 RenderContext，处理背景/前景模糊互斥清理 | 存量——仅补录规格，不改动代码 |
+| 属性存储——独立属性 | `frameworks/core/components_ng/render/render_context.h` | `ACE_DEFINE_PROPERTY_ITEM_FUNC_WITHOUT_GROUP(Opacity, double)` 为 RenderContext 独立属性 | 存量——仅补录规格，不改动代码 |
+| 属性存储——GraphicsProperty | `frameworks/core/components_ng/render/render_property.h` | `GraphicsProperty` 存储 `FrontBrightness/FrontGrayScale/FrontContrast/FrontSaturate/FrontSepia/FrontInvert/FrontHueRotate/FrontColorBlend/LinearGradientBlur/SphericalEffect/LightUpEffect/PixelStretchEffect` | 存量——仅补录规格，不改动代码 |
+| 属性存储——ForegroundProperty | `frameworks/core/components_ng/render/render_property.h` | `ForegroundProperty` 存储 `MotionBlur` 和 `propBlurRadius`（前景模糊半径）、`propSysOptionsForBlur` | 存量——仅补录规格，不改动代码 |
+| 属性存储——BackgroundProperty | `frameworks/core/components_ng/render/render_property.h` | `BackgroundProperty` 存储 `BackdropBlur` 相关属性（背景模糊半径、灰度系数等） | 存量——仅补录规格，不改动代码 |
+| Rosen 渲染后端 | `frameworks/core/components_ng/render/adapter/rosen_render_context.cpp` | `OnOpacityUpdate/OnFrontBrightnessUpdate/OnFrontGrayScaleUpdate/OnFrontContrastUpdate/OnFrontSaturateUpdate/OnFrontSepiaUpdate/OnFrontInvertUpdate/OnFrontHueRotateUpdate/OnFrontColorBlendUpdate/OnSphericalEffectUpdate/OnLightUpEffectUpdate/OnPixelStretchEffectUpdate/OnMotionBlurUpdate/UpdateFrontBlur/UpdateBackBlur/UpdateLinearGradientBlur` 回调，调用 RSNode 的 `SetAlpha/SetBrightness/SetGrayScale/SetContrast/SetSaturate/SetSepia/SetInvert/SetHueRotate/SetColorBlend/SetBack/FrontBlurFilter/SetLinearGradientBlurPara/SetMotionBlurPara` 等接口并请求下一帧 | 存量——仅补录规格，不改动代码 |
+
 ### 适用架构规则
 
 | Rule ID | 适用原因 | 设计结论 | 验证方式 |
@@ -99,7 +115,7 @@
 |---------|------|------------|------|
 | Feat-01-image-effects-spec.md | 固化 opacity、基础滤镜、模糊特效的存量规格 | `js_view_abstract.cpp`, `view_abstract.cpp`, `render_property.h`, `rosen_render_context.cpp`, `node_common_modifier.cpp`, `style_modifier.cpp`, `native_node.h`, SDK `.d.ts/.d.ets` | 本 Design |
 
-## API 签名与权限
+## API 签名、Kit 与权限
 
 ### 新增 API
 

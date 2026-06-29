@@ -35,14 +35,14 @@
 **我想要** 通过 URI (文件路径/网络 URL/资源引用/asset/base64) 指定图片来源,
 **以便** 在 Image 组件中显示不同来源的图片。
 
-**验收标准：**
-
-- **AC-1.1:** WHEN src 为 file:// 路径 THEN 通过 FileImageLoader 从本地文件系统读取图片
-- **AC-1.2:** WHEN src 为 http:// 或 https:// URL THEN 通过 NetworkImageLoader 下载网络图片，下载结果可写入磁盘缓存
-- **AC-1.3:** WHEN src 为 $r('app.media.xxx') 资源引用 THEN 通过 ResourceImageLoader 从应用资源加载
-- **AC-1.4:** WHEN src 为 data:image/xxx;base64,... THEN 通过 Base64ImageLoader 解码内嵌 Base64 数据
-- **AC-1.5:** WHEN src 为 PixelMap 对象 THEN 通过 PixelMapImageLoader 直接使用，无需文件 I/O
-- **AC-1.6:** WHEN 工厂无法识别的 SrcType THEN CreateImageLoader 返回 nullptr，加载失败
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-1.1 | WHEN src 为 file:// 路径 THEN 通过 FileImageLoader 从本地文件系统读取图片 |
+| AC-1.2 | WHEN src 为 http:// 或 https:// URL THEN 通过 NetworkImageLoader 下载网络图片，下载结果可写入磁盘缓存 |
+| AC-1.3 | WHEN src 为 $r('app.media.xxx') 资源引用 THEN 通过 ResourceImageLoader 从应用资源加载 |
+| AC-1.4 | WHEN src 为 data:image/xxx;base64,... THEN 通过 Base64ImageLoader 解码内嵌 Base64 数据 |
+| AC-1.5 | WHEN src 为 PixelMap 对象 THEN 通过 PixelMapImageLoader 直接使用，无需文件 I/O |
+| AC-1.6 | WHEN 工厂无法识别的 SrcType THEN CreateImageLoader 返回 nullptr，加载失败 |
 
 ### US-2: 图片加载状态机驱动
 
@@ -50,16 +50,16 @@
 **我想要** 通过状态机管理图片加载的完整生命周期,
 **以便** 确保 UNLOADED → DATA_LOADING → DATA_READY → MAKE_CANVAS_IMAGE → LOAD_SUCCESS 的严格顺序流转。
 
-**验收标准：**
-
-- **AC-2.1:** WHEN 发送 LOAD_DATA 命令且当前状态为 UNLOADED THEN 转移到 DATA_LOADING 并调用 OnDataLoading
-- **AC-2.2:** WHEN 发送 LOAD_DATA_SUCCESS 命令且当前状态为 DATA_LOADING THEN 转移到 DATA_READY 并调用 OnDataReady
-- **AC-2.3:** WHEN 发送 MAKE_CANVAS_IMAGE 命令且当前状态为 DATA_READY THEN 转移到 MAKE_CANVAS_IMAGE 并调用 OnMakeCanvasImage
-- **AC-2.4:** WHEN 发送 MAKE_CANVAS_IMAGE_SUCCESS 命令且当前状态为 MAKE_CANVAS_IMAGE THEN 转移到 LOAD_SUCCESS 并调用 OnLoadSuccess
-- **AC-2.5:** WHEN 任何阶段发送 LOAD_FAIL 命令 THEN 转移到 LOAD_FAIL 终态并调用 OnLoadFail
-- **AC-2.6:** WHEN 任何状态发送 RESET_STATE 命令 THEN 回到 UNLOADED 状态
-- **AC-2.7:** WHEN 当前状态为 LOAD_SUCCESS 且发送 MAKE_CANVAS_IMAGE 命令 THEN 重新进入 MAKE_CANVAS_IMAGE（支持重解码）
-- **AC-2.8:** WHEN 当前状态为 LOAD_FAIL THEN 除 RESET_STATE 外的所有命令被静默忽略（包括 RETRY_LOADING）
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-2.1 | WHEN 发送 LOAD_DATA 命令且当前状态为 UNLOADED THEN 转移到 DATA_LOADING 并调用 OnDataLoading |
+| AC-2.2 | WHEN 发送 LOAD_DATA_SUCCESS 命令且当前状态为 DATA_LOADING THEN 转移到 DATA_READY 并调用 OnDataReady |
+| AC-2.3 | WHEN 发送 MAKE_CANVAS_IMAGE 命令且当前状态为 DATA_READY THEN 转移到 MAKE_CANVAS_IMAGE 并调用 OnMakeCanvasImage |
+| AC-2.4 | WHEN 发送 MAKE_CANVAS_IMAGE_SUCCESS 命令且当前状态为 MAKE_CANVAS_IMAGE THEN 转移到 LOAD_SUCCESS 并调用 OnLoadSuccess |
+| AC-2.5 | WHEN 任何阶段发送 LOAD_FAIL 命令 THEN 转移到 LOAD_FAIL 终态并调用 OnLoadFail |
+| AC-2.6 | WHEN 任何状态发送 RESET_STATE 命令 THEN 回到 UNLOADED 状态 |
+| AC-2.7 | WHEN 当前状态为 LOAD_SUCCESS 且发送 MAKE_CANVAS_IMAGE 命令 THEN 重新进入 MAKE_CANVAS_IMAGE（支持重解码） |
+| AC-2.8 | WHEN 当前状态为 LOAD_FAIL THEN 除 RESET_STATE 外的所有命令被静默忽略（包括 RETRY_LOADING） |
 
 ### US-3: 多级缓存加速图片加载
 
@@ -67,14 +67,14 @@
 **我想要** 已加载的图片被缓存以避免重复加载和解码,
 **以便** 提升图片显示性能和减少网络请求。
 
-**验收标准：**
-
-- **AC-3.1:** WHEN 图片数据首次加载完成 THEN ImageObject 被缓存到 ImageCache（默认容量 2000）
-- **AC-3.2:** WHEN 同一 URI 再次被请求 THEN 优先从 ImageObject 缓存获取，跳过数据加载阶段
-- **AC-3.3:** WHEN 原始图片数据通过 GetImageData 获取 THEN 数据被缓存到 ImageData 缓存（默认禁用，容量为 0）
-- **AC-3.4:** WHEN 网络图片下载完成 THEN 图片文件被写入 ImageFileCache 磁盘缓存（默认 100MB）
-- **AC-3.5:** WHEN ImageFileCache 容量达到上限 THEN 按访问时间淘汰最旧的文件，直到总大小降至 50%
-- **AC-3.6:** WHEN ImageObject 缓存容量达到上限 THEN 按 LRU 策略淘汰最旧的条目
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-3.1 | WHEN 图片数据首次加载完成 THEN ImageObject 被缓存到 ImageCache（默认容量 2000） |
+| AC-3.2 | WHEN 同一 URI 再次被请求 THEN 优先从 ImageObject 缓存获取，跳过数据加载阶段 |
+| AC-3.3 | WHEN 原始图片数据通过 GetImageData 获取 THEN 数据被缓存到 ImageData 缓存（默认禁用，容量为 0） |
+| AC-3.4 | WHEN 网络图片下载完成 THEN 图片文件被写入 ImageFileCache 磁盘缓存（默认 100MB） |
+| AC-3.5 | WHEN ImageFileCache 容量达到上限 THEN 按访问时间淘汰最旧的文件，直到总大小降至 50% |
+| AC-3.6 | WHEN ImageObject 缓存容量达到上限 THEN 按 LRU 策略淘汰最旧的条目 |
 
 ### US-4: 图片解码与尺寸适配
 
@@ -82,14 +82,14 @@
 **我想要** 图片根据组件尺寸自动解码到合适的分辨率,
 **以便** 避免加载过大的图片浪费内存。
 
-**验收标准：**
-
-- **AC-4.1:** WHEN autoResize 启用且组件尺寸变化 THEN 目标解码宽度按功率对齐（原始宽度的 2^N 分之一），仅跨越边界时触发重解码
-- **AC-4.2:** WHEN SystemProperties::GetImageFrameworkEnabled() 为 true THEN 使用 ImageFramework 解码路径（ImageSource::CreatePixelMap）
-- **AC-4.3:** WHEN SystemProperties::GetImageFrameworkEnabled() 为 false THEN 使用 Skia 解码路径（SkCodec）
-- **AC-4.4:** WHEN StaticImageObject 解码完成后 THEN CanvasImage 创建成功，原始 data 被清除（ClearData）释放内存
-- **AC-4.5:** WHEN AnimatedImageObject 创建后 THEN 原始 data 被保留不清除（ClearData 为空操作），用于逐帧解码
-- **AC-4.6:** WHEN SVG 图片加载 THEN 直接通过 SvgDomBase::DrawImage 渲染到 Canvas，不进行光栅化解码，忽略 resizeTarget 参数
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-4.1 | WHEN autoResize 启用且组件尺寸变化 THEN 目标解码宽度按功率对齐（原始宽度的 2^N 分之一），仅跨越边界时触发重解码 |
+| AC-4.2 | WHEN SystemProperties::GetImageFrameworkEnabled() 为 true THEN 使用 ImageFramework 解码路径（ImageSource::CreatePixelMap） |
+| AC-4.3 | WHEN SystemProperties::GetImageFrameworkEnabled() 为 false THEN 使用 Skia 解码路径（SkCodec） |
+| AC-4.4 | WHEN StaticImageObject 解码完成后 THEN CanvasImage 创建成功，原始 data 被清除（ClearData）释放内存 |
+| AC-4.5 | WHEN AnimatedImageObject 创建后 THEN 原始 data 被保留不清除（ClearData 为空操作），用于逐帧解码 |
+| AC-4.6 | WHEN SVG 图片加载 THEN 直接通过 SvgDomBase::DrawImage 渲染到 Canvas，不进行光栅化解码，忽略 resizeTarget 参数 |
 
 ### US-5: 加载任务去重
 
@@ -97,12 +97,12 @@
 **我想要** 多个组件请求同一图片源时共享同一个后台加载任务,
 **以便** 避免重复的网络请求或文件 I/O。
 
-**验收标准：**
-
-- **AC-5.1:** WHEN 多个 ImageLoadingContext 请求同一 URI 的数据加载 THEN 通过 RegisterTask 去重，仅创建一个后台任务
-- **AC-5.2:** WHEN 去重任务完成 THEN 通过 EndTask 获取所有等待的 context 列表，逐个通知结果
-- **AC-5.3:** WHEN 某个 context 被销毁且它是唯一等待者 THEN 通过 CancelTask 取消后台任务
-- **AC-5.4:** WHEN 某个 context 被销毁但仍有其他等待者 THEN 仅从 ctxs_ 集合中移除该 context，任务继续执行
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-5.1 | WHEN 多个 ImageLoadingContext 请求同一 URI 的数据加载 THEN 通过 RegisterTask 去重，仅创建一个后台任务 |
+| AC-5.2 | WHEN 去重任务完成 THEN 通过 EndTask 获取所有等待的 context 列表，逐个通知结果 |
+| AC-5.3 | WHEN 某个 context 被销毁且它是唯一等待者 THEN 通过 CancelTask 取消后台任务 |
+| AC-5.4 | WHEN 某个 context 被销毁但仍有其他等待者 THEN 仅从 ctxs_ 集合中移除该 context，任务继续执行 |
 
 ### US-6: 加载回调通知
 
@@ -110,12 +110,12 @@
 **我想要** 在图片加载的关键阶段收到回调通知,
 **以便** 在 UI 上显示加载状态或处理错误。
 
-**验收标准：**
-
-- **AC-6.1:** WHEN 状态进入 DATA_READY THEN 触发 onDataReady 回调，通知数据已就绪
-- **AC-6.2:** WHEN 状态进入 LOAD_SUCCESS THEN 触发 onLoadSuccess 回调，通知图片可渲染
-- **AC-6.3:** WHEN 状态进入 LOAD_FAIL THEN 触发 onLoadFail 回调，携带错误信息和 ImageErrorInfo
-- **AC-6.4:** WHEN StaticImageObject 进入 LOAD_SUCCESS THEN 在 OnLoadSuccess 中自动调用 ClearData 释放原始字节
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-6.1 | WHEN 状态进入 DATA_READY THEN 触发 onDataReady 回调，通知数据已就绪 |
+| AC-6.2 | WHEN 状态进入 LOAD_SUCCESS THEN 触发 onLoadSuccess 回调，通知图片可渲染 |
+| AC-6.3 | WHEN 状态进入 LOAD_FAIL THEN 触发 onLoadFail 回调，携带错误信息和 ImageErrorInfo |
+| AC-6.4 | WHEN StaticImageObject 进入 LOAD_SUCCESS THEN 在 OnLoadSuccess 中自动调用 ClearData 释放原始字节 |
 
 ---
 
@@ -123,81 +123,69 @@
 
 | AC ID | 关联规则 | 关联 Task | 验证方式 | 证据 |
 |-------|----------|-----------|----------|------|
-| AC-1.1 ~ AC-1.6 | FR-1 ~ FR-7 | — | 单元测试 | — |
-| AC-2.1 ~ AC-2.8 | FR-8 ~ FR-15 | — | 单元测试 | — |
-| AC-3.1 ~ AC-3.6 | FR-16 ~ FR-22 | — | 单元测试 + 性能测试 | — |
-| AC-4.1 ~ AC-4.6 | FR-23 ~ FR-30 | — | 单元测试 | — |
-| AC-5.1 ~ AC-5.4 | FR-31 ~ FR-34 | — | 单元测试 | — |
-| AC-6.1 ~ AC-6.4 | FR-35 ~ FR-38 | — | 集成测试 | — |
+| AC-1.1 ~ AC-1.6 | R-6 ~ R-12 | — | 单元测试 | — |
+| AC-2.1 ~ AC-2.8 | R-13 ~ R-20 | — | 单元测试 | — |
+| AC-3.1 ~ AC-3.6 | R-21 ~ R-27 | — | 单元测试 + 性能测试 | — |
+| AC-4.1 ~ AC-4.6 | R-28 ~ R-35 | — | 单元测试 | — |
+| AC-5.1 ~ AC-5.4 | R-36 ~ R-39 | — | 单元测试 | — |
+| AC-6.1 ~ AC-6.4 | R-40 ~ R-43 | — | 集成测试 | — |
 
----
 
-## 业务规则
+## 规则定义
 
-- **BR-1:** 图片加载管线分为两个独立阶段：数据加载（获取原始字节 → ImageObject）和画布图像制作（解码 → CanvasImage）。两阶段通过状态机严格隔离
-- **BR-2:** 缓存层次从热到冷为：内存 ImageObject 缓存 → 内存 ImageData 缓存 → 磁盘文件缓存 → 网络。每一级未命中才访问下一级
-- **BR-3:** Static 和 Animated 图片的内存策略不同：Static 在 CanvasImage 创建后释放原始数据；Animated 保留数据用于逐帧解码
-- **BR-4:** SVG 图片不经过位图解码路径，直接通过 SVG DOM 渲染到 Canvas，矢量特性保留
-- **BR-5:** autoResize 功率对齐机制将连续的尺寸变化离散化为 2^N 级别，减少重解码次数
+> **统一规则表，取消 FR/BR/EX/RC 四分类。** 类型标签：**行为**（正常路径下的系统行为）、**边界**（输入/状态的临界点）、**异常**（非法输入或异常状态的处理）、**恢复**（系统异常后的恢复策略）。
 
----
-
-## 功能规则
-
-- **FR-1:** `ImageLoader::CreateImageLoader()` 工厂根据 SrcType 返回对应 Loader 实例 → `image_loader.cpp:116-161`
-- **FR-2:** `FileImageLoader` 处理 FILE 和 INTERNAL 源类型 → `image_loader.cpp:120-123`
-- **FR-3:** `NetworkImageLoader` 处理 NETWORK 源类型，支持磁盘缓存写入 → `image_loader.cpp:124-126`
-- **FR-4:** `ResourceImageLoader` 处理 RESOURCE 源类型（$r 引用） → `image_loader.cpp:133-135`
-- **FR-5:** `Base64ImageLoader` 处理 BASE64 源类型 → `image_loader.cpp:130-132`
-- **FR-6:** `PixelMapImageLoader` 处理 PIXMAP 源类型，直接使用现有 PixelMap → `image_loader.cpp:148-150`
-- **FR-7:** UNSUPPORTED 源类型返回 nullptr → `image_loader.cpp:157-160`
-- **FR-8:** `ImageLoadingState` 枚举：UNLOADED(0), DATA_LOADING(1), DATA_READY(2), MAKE_CANVAS_IMAGE(3), LOAD_SUCCESS(4), LOAD_FAIL(5) → `image_state_manager.h:26-33`
-- **FR-9:** `ImageLoadingCommand` 枚举：LOAD_DATA(0), LOAD_FAIL(1), LOAD_DATA_SUCCESS(2), MAKE_CANVAS_IMAGE(3), MAKE_CANVAS_IMAGE_SUCCESS(4), RETRY_LOADING(5), RESET_STATE(6) → `image_state_manager.h:35-43`
-- **FR-10:** UNLOADED + LOAD_DATA → DATA_LOADING → `image_state_manager.cpp:74-79`
-- **FR-11:** DATA_LOADING + LOAD_DATA_SUCCESS → DATA_READY → `image_state_manager.cpp:82-89`
-- **FR-12:** DATA_READY + MAKE_CANVAS_IMAGE → MAKE_CANVAS_IMAGE → `image_state_manager.cpp:91-96`
-- **FR-13:** MAKE_CANVAS_IMAGE + MAKE_CANVAS_IMAGE_SUCCESS → LOAD_SUCCESS → `image_state_manager.cpp:99-106`
-- **FR-14:** LOAD_SUCCESS + MAKE_CANVAS_IMAGE → MAKE_CANVAS_IMAGE（重解码） → `image_state_manager.cpp:108-114`
-- **FR-15:** LOAD_FAIL 对所有命令（含 RETRY_LOADING）均忽略，仅 RESET_STATE 回到 UNLOADED → `image_state_manager.cpp:116-121`
-- **FR-16:** ImageObject 缓存默认容量 2000 → `image_cache.h:120`
-- **FR-17:** ImageData 缓存默认容量 0（禁用） → `image_cache.h:113-114`
-- **FR-18:** 解码图像缓存默认容量 0（禁用） → `image_cache.h:107, 109-110`
-- **FR-19:** ImageFileCache 默认 100MB，淘汰比例 50% → `image_file_cache.h:80-82`
-- **FR-20:** ImageFileCache 按 FileInfo::accessTime LRU 排序，最旧优先淘汰 → `image_file_cache.h:34-37`
-- **FR-21:** `ImageLoader::GetImageData()` 先查内存缓存，未命中再加载 → `image_loader.cpp:214-236`
-- **FR-22:** PIXMAP 源跳过缓存直接加载；STREAM 源跳过缓存直接调用 LoadImageData → `image_loader.cpp:218-223`
-- **FR-23:** `RoundUp(value)` 从原始图像宽度反复减半，返回 >= value 的最小 2^N 分之一 → `image_loading_context.cpp:319-328`
-- **FR-24:** autoResize 尺寸变化仅在 `RoundUp(dstSize.Width()) != sizeLevel_` 时触发重解码 → `image_loading_context.cpp:330-360`
-- **FR-25:** `SystemProperties::GetImageFrameworkEnabled()` 决定解码路径 → `image_provider.cpp:674-677`
-- **FR-26:** Skia 路径使用 `SkCodec` 解码，输出 `DrawingImage` → `image_decoder.cpp:101-127`
-- **FR-27:** ImageFramework 路径使用 `ImageSource::CreatePixelMap` 解码，输出 `PixelMapImage` → `image_decoder.cpp:144-201`
-- **FR-28:** `StaticImageObject` 继承基类 ClearData（`data_.Reset()`） → `image_object.cpp:53-57`
-- **FR-29:** `AnimatedImageObject::ClearData()` 为空操作，保留数据用于帧解码 → `animated_image_object.h:36-39`
-- **FR-30:** `SvgImageObject::MakeCanvasImage` 创建 SvgCanvasImage，忽略 resizeTarget → `svg_image_object.cpp:45-54`
-- **FR-31:** `ImageProvider::RegisterTask(key, ctx)` 去重检查 → `image_provider.cpp:250-266`
-- **FR-32:** `ImageProvider::EndTask(key)` 返回所有等待的 context → `image_provider.cpp:268-286`
-- **FR-33:** `ImageProvider::CancelTask(key, ctx)` 唯一等待者时取消任务 → `image_provider.cpp:288-309`
-- **FR-34:** 多等待者时仅移除 context，任务继续 → `image_provider.cpp:296-308`
-- **FR-35:** `LoadNotifier` 包含 onDataReady_、onLoadSuccess_、onLoadFail_ 三个回调 → `image_provider.h:38-49`
-- **FR-36:** onDataReady_ 在 DATA_READY 状态触发 → `image_loading_context.cpp:115-117`
-- **FR-37:** onLoadSuccess_ 在 LOAD_SUCCESS 状态触发 → `image_loading_context.cpp:100-102`
-- **FR-38:** onLoadFail_ 在 LOAD_FAIL 状态触发，携带 errorMsg 和 errorInfo → `image_loading_context.cpp:108-110`
-
----
-
-## 异常/豁免规则
-
-- **ER-1:** RETRY_LOADING 命令已定义（ordinal 5）但 LOAD_FAIL 处理器无对应 case，重试功能未实现 → `image_state_manager.cpp:116-121`
-- **ER-2:** ImageData 缓存和解码图像缓存默认容量为 0（禁用），需通过 `SetCapacity()` / `SetDataSizeLimit()` 显式启用 → `image_cache.h:107-117`
-- **ER-3:** ImageObject 缓存中存储的是克隆对象（数据已清除），原始数据由源 context 持有 → `image_provider.cpp` 中 CacheImgObjNG 逻辑
-
----
-
-## 恢复契约
-
-- **RC-1:** 任何状态发送 RESET_STATE 命令可回到 UNLOADED，清除所有中间状态
-- **RC-2:** LOAD_FAIL 状态下仅接受 RESET_STATE 命令恢复；RETRY_LOADING 不生效
-- **RC-3:** ImageFileCache 磁盘缓存可被系统自动清理或通过 `ClearCacheFile()` 手动清除
+| 规则ID | 类型 | 触发条件 | 预期行为 | 边界/约束 | 关联AC |
+|--------|------|----------|----------|-----------|--------|
+| R-1 | 行为 | — | ** 图片加载管线分为两个独立阶段：数据加载（获取原始字节 → ImageObject）和画布图像制作（解码 → CanvasImage）。两阶段通过状态机严格隔离 | — | — |
+| R-2 | 行为 | — | ** 缓存层次从热到冷为：内存 ImageObject 缓存 → 内存 ImageData 缓存 → 磁盘文件缓存 → 网络。每一级未命中才访问下一级 | — | — |
+| R-3 | 行为 | — | ** Static 和 Animated 图片的内存策略不同：Static 在 CanvasImage 创建后释放原始数据；Animated 保留数据用于逐帧解码 | — | — |
+| R-4 | 行为 | — | ** SVG 图片不经过位图解码路径，直接通过 SVG DOM 渲染到 Canvas，矢量特性保留 | — | — |
+| R-5 | 行为 | — | ** autoResize 功率对齐机制将连续的尺寸变化离散化为 2^N 级别，减少重解码次数 | — | — |
+| R-6 | 行为 | — | ** `ImageLoader::CreateImageLoader()` 工厂根据 SrcType 返回对应 Loader 实例 → `image_loader.cpp:116-161` | — | — |
+| R-7 | 行为 | — | ** `FileImageLoader` 处理 FILE 和 INTERNAL 源类型 → `image_loader.cpp:120-123` | — | — |
+| R-8 | 行为 | — | ** `NetworkImageLoader` 处理 NETWORK 源类型，支持磁盘缓存写入 → `image_loader.cpp:124-126` | — | — |
+| R-9 | 行为 | — | ** `ResourceImageLoader` 处理 RESOURCE 源类型（$r 引用） → `image_loader.cpp:133-135` | — | — |
+| R-10 | 行为 | — | ** `Base64ImageLoader` 处理 BASE64 源类型 → `image_loader.cpp:130-132` | — | — |
+| R-11 | 行为 | — | ** `PixelMapImageLoader` 处理 PIXMAP 源类型，直接使用现有 PixelMap → `image_loader.cpp:148-150` | — | — |
+| R-12 | 行为 | — | ** UNSUPPORTED 源类型返回 nullptr → `image_loader.cpp:157-160` | — | — |
+| R-13 | 行为 | — | ** `ImageLoadingState` 枚举：UNLOADED(0), DATA_LOADING(1), DATA_READY(2), MAKE_CANVAS_IMAGE(3), LOAD_SUCCESS(4), LOAD_FAIL(5) → `image_state_manager.h:26-33` | — | — |
+| R-14 | 行为 | — | ** `ImageLoadingCommand` 枚举：LOAD_DATA(0), LOAD_FAIL(1), LOAD_DATA_SUCCESS(2), MAKE_CANVAS_IMAGE(3), MAKE_CANVAS_IMAGE_SUCCESS(4), RETRY_LOADING(5), RESET_STATE(6) → `image_state_manager.h:35-43` | — | — |
+| R-15 | 行为 | — | ** UNLOADED + LOAD_DATA → DATA_LOADING → `image_state_manager.cpp:74-79` | — | — |
+| R-16 | 行为 | — | ** DATA_LOADING + LOAD_DATA_SUCCESS → DATA_READY → `image_state_manager.cpp:82-89` | — | — |
+| R-17 | 行为 | — | ** DATA_READY + MAKE_CANVAS_IMAGE → MAKE_CANVAS_IMAGE → `image_state_manager.cpp:91-96` | — | — |
+| R-18 | 行为 | — | ** MAKE_CANVAS_IMAGE + MAKE_CANVAS_IMAGE_SUCCESS → LOAD_SUCCESS → `image_state_manager.cpp:99-106` | — | — |
+| R-19 | 行为 | — | ** LOAD_SUCCESS + MAKE_CANVAS_IMAGE → MAKE_CANVAS_IMAGE（重解码） → `image_state_manager.cpp:108-114` | — | — |
+| R-20 | 行为 | — | ** LOAD_FAIL 对所有命令（含 RETRY_LOADING）均忽略，仅 RESET_STATE 回到 UNLOADED → `image_state_manager.cpp:116-121` | — | — |
+| R-21 | 行为 | — | ** ImageObject 缓存默认容量 2000 → `image_cache.h:120` | — | — |
+| R-22 | 行为 | — | ** ImageData 缓存默认容量 0（禁用） → `image_cache.h:113-114` | — | — |
+| R-23 | 行为 | — | ** 解码图像缓存默认容量 0（禁用） → `image_cache.h:107, 109-110` | — | — |
+| R-24 | 行为 | — | ** ImageFileCache 默认 100MB，淘汰比例 50% → `image_file_cache.h:80-82` | — | — |
+| R-25 | 行为 | — | ** ImageFileCache 按 FileInfo::accessTime LRU 排序，最旧优先淘汰 → `image_file_cache.h:34-37` | — | — |
+| R-26 | 行为 | — | ** `ImageLoader::GetImageData()` 先查内存缓存，未命中再加载 → `image_loader.cpp:214-236` | — | — |
+| R-27 | 行为 | — | ** PIXMAP 源跳过缓存直接加载；STREAM 源跳过缓存直接调用 LoadImageData → `image_loader.cpp:218-223` | — | — |
+| R-28 | 行为 | — | ** `RoundUp(value)` 从原始图像宽度反复减半，返回 >= value 的最小 2^N 分之一 → `image_loading_context.cpp:319-328` | — | — |
+| R-29 | 行为 | — | ** autoResize 尺寸变化仅在 `RoundUp(dstSize.Width()) != sizeLevel_` 时触发重解码 → `image_loading_context.cpp:330-360` | — | — |
+| R-30 | 行为 | — | ** `SystemProperties::GetImageFrameworkEnabled()` 决定解码路径 → `image_provider.cpp:674-677` | — | — |
+| R-31 | 行为 | — | ** Skia 路径使用 `SkCodec` 解码，输出 `DrawingImage` → `image_decoder.cpp:101-127` | — | — |
+| R-32 | 行为 | — | ** ImageFramework 路径使用 `ImageSource::CreatePixelMap` 解码，输出 `PixelMapImage` → `image_decoder.cpp:144-201` | — | — |
+| R-33 | 行为 | — | ** `StaticImageObject` 继承基类 ClearData（`data_.Reset()`） → `image_object.cpp:53-57` | — | — |
+| R-34 | 行为 | — | ** `AnimatedImageObject::ClearData()` 为空操作，保留数据用于帧解码 → `animated_image_object.h:36-39` | — | — |
+| R-35 | 行为 | — | ** `SvgImageObject::MakeCanvasImage` 创建 SvgCanvasImage，忽略 resizeTarget → `svg_image_object.cpp:45-54` | — | — |
+| R-36 | 行为 | — | ** `ImageProvider::RegisterTask(key, ctx)` 去重检查 → `image_provider.cpp:250-266` | — | — |
+| R-37 | 行为 | — | ** `ImageProvider::EndTask(key)` 返回所有等待的 context → `image_provider.cpp:268-286` | — | — |
+| R-38 | 行为 | — | ** `ImageProvider::CancelTask(key, ctx)` 唯一等待者时取消任务 → `image_provider.cpp:288-309` | — | — |
+| R-39 | 行为 | — | ** 多等待者时仅移除 context，任务继续 → `image_provider.cpp:296-308` | — | — |
+| R-40 | 行为 | — | ** `LoadNotifier` 包含 onDataReady_、onLoadSuccess_、onLoadFail_ 三个回调 → `image_provider.h:38-49` | — | — |
+| R-41 | 行为 | — | ** onDataReady_ 在 DATA_READY 状态触发 → `image_loading_context.cpp:115-117` | — | — |
+| R-42 | 行为 | — | ** onLoadSuccess_ 在 LOAD_SUCCESS 状态触发 → `image_loading_context.cpp:100-102` | — | — |
+| R-43 | 行为 | — | ** onLoadFail_ 在 LOAD_FAIL 状态触发，携带 errorMsg 和 errorInfo → `image_loading_context.cpp:108-110` | — | — |
+| R-44 | 异常 | — | ** RETRY_LOADING 命令已定义（ordinal 5）但 LOAD_FAIL 处理器无对应 case，重试功能未实现 → `image_state_manager.cpp:116-121` | — | — |
+| R-45 | 异常 | — | ** ImageData 缓存和解码图像缓存默认容量为 0（禁用），需通过 `SetCapacity()` / `SetDataSizeLimit()` 显式启用 → `image_cache.h:107-117` | — | — |
+| R-46 | 异常 | — | ** ImageObject 缓存中存储的是克隆对象（数据已清除），原始数据由源 context 持有 → `image_provider.cpp` 中 CacheImgObjNG 逻辑 | — | — |
+| R-47 | 恢复 | — | ** 任何状态发送 RESET_STATE 命令可回到 UNLOADED，清除所有中间状态 | — | — |
+| R-48 | 恢复 | — | ** LOAD_FAIL 状态下仅接受 RESET_STATE 命令恢复；RETRY_LOADING 不生效 | — | — |
+| R-49 | 恢复 | — | ** ImageFileCache 磁盘缓存可被系统自动清理或通过 `ClearCacheFile()` 手动清除 | — | — |
 
 ---
 
@@ -223,6 +211,16 @@
 ### 变更/废弃 API
 
 无。
+
+---
+
+## 接口规格
+
+### 接口定义
+
+> 本特性为已有实现补录，接口行为定义详见上方规则定义和用户故事。
+
+无新增接口规格。
 
 ---
 
@@ -254,6 +252,16 @@
 | 内存 | StaticImageObject 解码后 ClearData 释放原始字节；内存缓存容量可配置 | 内存分析 | `image_object.cpp:53-57` |
 | 安全 | 网络图片下载结果写入磁盘缓存，文件路径由框架控制 | 代码审查 | `image_file_cache.h` |
 | 可靠性 | 任务去重避免重复网络请求；缓存未命中自动降级到下一级 | 单元测试 | `image_provider.cpp:250-309` |
+
+---
+
+## 多设备适配声明
+
+| 设备类型 | 行为差异 | 规格/约束 | 验证方式 | 证据 |
+|----------|----------|-----------|----------|------|
+| 手机 | 无差异 | — | — | — |
+| 平板 | 无差异 | — | — | — |
+| 折叠屏 | 无差异 | — | — | — |
 
 ---
 

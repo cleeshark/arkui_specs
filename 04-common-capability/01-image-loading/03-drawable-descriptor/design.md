@@ -42,6 +42,25 @@
 | interface_sdk_js | `interface/sdk-js/api/@ohos.arkui.drawableDescriptor.d.ts` | 动态 TS API 声明 | API 契约 |
 | interface_sdk_js | `interface/sdk-js/api/@ohos.arkui.drawableDescriptor.static.d.ets` | 静态 TS API 声明 | API 契约 |
 
+### 调用链层级分析
+
+| 层 | 模块 | 职责 | 修改类型 |
+|----|------|------|----------|
+| TS API | `@ohos.arkui.drawableDescriptor.d.ts` / `.static.d.ets` | 5 个类 + 3 接口/枚举的 TS API 声明（Dynamic + Static） | 无修改（规格补录） |
+| NAPI 桥接 | `interfaces/inner_api/drawable_descriptor/js_drawable_descriptor.cpp/.h` | TS→NAPI 入口，JsDrawableDescriptor 绑定，Init/Wrap/Unwrap | 无修改（规格补录） |
+| 旧 inner_api | `interfaces/inner_api/drawable_descriptor/drawable_descriptor.cpp/.h` | 旧架构 Napi::DrawableDescriptor / LayeredDrawableDescriptor / Factory，NAPI 到新核心的过渡层 | 无修改（规格补录） |
+| Bridge 层 | `interfaces/inner_api/drawable_descriptor/drawable_bridge.cpp/.h` | NAPI/ANI 通道桥接函数（CreateDrawableC/GetPixelMapC/引用计数管理） | 无修改（规格补录） |
+| 核心实现 (Base) | `frameworks/core/drawable/drawable_descriptor.cpp/.h` | Ace::DrawableDescriptor 基类，虚函数接口（GetPixelMap/LoadSync/LoadAsync） | 无修改（规格补录） |
+| 核心实现 (Layered) | `frameworks/core/drawable/layered_drawable_descriptor.cpp/.h` | 分层合成：foreground/background/mask 三层 + 自适应/非自适应合成路径 | 无修改（规格补录） |
+| 核心实现 (Animated) | `frameworks/core/drawable/animated_drawable_descriptor.cpp/.h` | 帧动画：pixelMapList + per-nodeId ControlledAnimator + 播放控制 | 无修改（规格补录） |
+| 核心实现 (PixelMap) | `frameworks/core/drawable/pixel_map_drawable_descriptor.cpp/.h` | 单个 PixelMap 包装，支持 ResourceStr 加载 | 无修改（规格补录） |
+| 核心实现 (Picture) | `frameworks/core/drawable/picture_drawable_descriptor.cpp/.h` | Picture + HDR 合成配置 | 无修改（规格补录） |
+| 资源加载 | `frameworks/core/drawable/drawable_descriptor_info.cpp/.h`, `drawable_descriptor_loader.cpp/.h` | 统一资源源信息解析（RESOURCE/BASE64/FILE）和加载器 | 无修改（规格补录） |
+| C API 头文件 | `interfaces/native/drawable_descriptor.h` | OH_ArkUI_DrawableDescriptor_* 20+ 公开函数声明 | 无修改（规格补录） |
+| C API 实现 | `interfaces/native/node/native_drawable_descriptor.cpp/.h`, `drawable_descriptor.cpp` | C API 实现层，不透明句柄管理 + 动画控制 | 无修改（规格补录） |
+| NAPI Bridge | `interfaces/native/node/native_node_napi.cpp` (+ `native_node_napi.h`) | OH_ArkUI_GetDrawableDescriptorFromNapiValue / FromResourceNapiValue | 无修改（规格补录） |
+| ANI Bridge | `interfaces/native/node/native_node_ani.cpp` (+ `native_node_ani.h`) | OH_ArkUI_NativeModule_GetDrawableDescriptorFromAniValue / FromResourceAniValue | 无修改（规格补录） |
+
 ### 适用架构规则
 
 | Rule ID | 适用原因 | 设计结论 | 验证方式 |
@@ -99,7 +118,7 @@
 |---------|------|------------|------|
 | TASK-SKELETON-1 | [Feat-01] DrawableDescriptor 能力补录 | `specs/04-common-capability/01-image-loading/03-drawable-descriptor/Feat-01-drawable-descriptor-spec.md` | 无（已有实现） |
 
-## API 签名与权限
+## API 签名、Kit 与权限
 
 > 本节承接 spec.md "API 变更分析"中识别的 API，给出签名、权限和 d.ts 位置等实现细节。
 

@@ -40,6 +40,24 @@
 | interface/sdk-js | `api/arkui/component/toggle.static.d.ets` | Static API 声明 | 规格对照 |
 | graphic_2d | `rosen/modules/render_service_client/core/ui_effect/` | BrightnessBlender（Material 长按效果） | 外部依赖 |
 
+### 调用链层级分析
+
+| 层 | 模块 | 职责 | 修改类型 |
+|----|------|------|----------|
+| JS Bridge | `frameworks/bridge/declarative_frontend/ark_modifier/src/toggle_modifier.ts`, `ark_direct_component/src/arktoggle.ts` | ArkTS 属性解析入口，IsJsView 分支分发 | 无修改（规格补录） |
+| Bridge | `frameworks/core/components_ng/pattern/toggle/bridge/arkts_native_toggle_bridge.cpp` | 属性解析、IsJsView 分支 + 参数解析 | 无修改（规格补录） |
+| Bridge (DynamicModule) | `frameworks/core/components_ng/pattern/toggle/bridge/toggle_dynamic_module.cpp` | 组件化 SO 入口（libarkui_toggle.z.so），DynamicModule 注册 | 无修改（规格补录） |
+| Bridge (DynamicModifier) | `frameworks/core/components_ng/pattern/toggle/bridge/toggle_dynamic_modifier.cpp` | Set/Reset/Get 属性委托层 | 无修改（规格补录） |
+| Model | `frameworks/core/components_ng/pattern/toggle/toggle_model_ng.cpp` | ToggleType 分发，CreateFrameNode/ReCreateFrameNode 按类型创建 Pattern | 无修改（规格补录） |
+| Pattern (Switch) | `frameworks/core/components_ng/pattern/toggle/switch_pattern.cpp/.h` | Switch 形态：点击/拖拽/长按/动画/Material 效果/无障碍 | 无修改（规格补录） |
+| Pattern (Button) | `frameworks/core/components_ng/pattern/button/toggle_button_pattern.cpp/.h` | Button 形态：背景色切换 + 触摸/悬停 overlay | 无修改（规格补录） |
+| Pattern (Checkbox) | `frameworks/core/components_ng/pattern/checkbox/toggle_checkbox_pattern.h` | Checkbox 形态薄封装，继承 CheckBoxPattern | 无修改（规格补录） |
+| Pattern (Base) | `frameworks/core/components_ng/pattern/toggle/toggle_base_pattern.cpp/.h` | 类型切换时子节点迁移暂存机制 | 无修改（规格补录） |
+| Layout | `frameworks/core/components_ng/pattern/toggle/switch_layout_algorithm.cpp/.h` | Switch 宽高比约束（API<12 强制 1.8:1）和自由尺寸（API>=12） | 无修改（规格补录） |
+| Paint | `frameworks/core/components_ng/pattern/toggle/switch_paint_method.cpp/.h`, `switch_modifier.h` | Switch 弹簧动画、颜色过渡、Material 长按效果渲染 | 无修改（规格补录） |
+| Paint (Button) | `frameworks/core/components_ng/pattern/button/toggle_button_paint_property.cpp/.h` | Button 形态 IsOn/SelectedColor/BackgroundColor 渲染属性 | 无修改（规格补录） |
+| C-API | `frameworks/core/interfaces/native/node/node_toggle_modifier.cpp/.h` | C API 属性 Set/Reset/Get 委托层（NODE_TOGGLE_*） | 无修改（规格补录） |
+
 ### 适用架构规则
 
 | Rule ID | 适用原因 | 设计结论 | 验证方式 |
@@ -97,7 +115,7 @@
 |---------|------|-----------|------|
 | TASK-TOGGLE-01 | Toggle 全量规格补录 | Feat-01-toggle-spec.md, design.md | 无 |
 
-## API 签名与权限
+## API 签名、Kit 与权限
 
 > 本节承接 spec.md"API 变更分析"中识别的 API，给出签名、权限和 d.ts 位置等实现细节。
 

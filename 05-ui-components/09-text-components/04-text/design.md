@@ -109,6 +109,29 @@
 | sdk-js | `api/@internal/component/ets/text_common.d.ts:38-135` | Feat-06: TextDataDetectorType/TextDataDetectorConfig 类型定义 | 类型定义 |
 | sdk-js | `api/arkui/component/text.static.d.ets:593-742,902` | Feat-06: 数据检测/隐私/震感/选中检测静态版 API 声明 | 类型定义 |
 
+### 调用链层级分析
+
+| 层 | 模块 | 职责 | 修改类型 |
+|----|------|------|----------|
+| JS Bridge | `frameworks/bridge/declarative_frontend/jsview/js_text.cpp` (1980 行) | ArkTS 动态版属性解析入口：JSText::SetFontSize/SetTextColor/SetLineHeight/SetTextOverflow/SetDecoration/SetCopyOption/SetTextSelectableMode/JsEnableDataDetector/SetOnCopy 等 60+ 静态方法，通过 `JSBind()` 注册到 JS 引擎；负责参数校验、枚举映射、类型转换后调用 `TextModel::GetInstance()->Set*()` | 存量 — 全部 7 个 Feat 的 ArkTS 动态版输入解析均已实现，新增属性需在此新增对应 `StaticMethod` 注册 |
+| Model 层 | `frameworks/core/components_ng/pattern/text/text_model_ng.h/cpp` (2223 行) | API → Property 桥接：提供无 FrameNode 参数版本（ViewStackProcessor 路径，供 JS Bridge 调用）和 FrameNode* 参数版本（供 C-API/静态版/FrameNode 直接调用）两套方法；通过 `ACE_UPDATE_LAYOUT_PROPERTY` / `ACE_UPDATE_NODE_LAYOUT_PROPERTY` 宏将值写入 TextLayoutProperty | 存量 — 全部 7 个 Feat 的 Model 方法均已实现；事件回调（Feat-07）通过 EventHub 注册 |
+| Model 层（静态版） | `frameworks/core/components_ng/pattern/text/text_model_static.cpp` (579 行) | ArkTS 静态版 Model 代理：TextModelStatic facade 方法内部调用 TextModelNG 的 FrameNode* 版本方法完成属性设置 | 存量 — 大部分属性已实现，textVerticalAlign 缺少 facade 方法（走 Arkoala modifier 直接调用路径） |
+| Model 层（Arkoala） | `frameworks/core/interfaces/native/implementation/text_modifier.cpp` (1165 行) | Arkoala 静态版桥接：由 arkoala_generator 生成的 modifier 方法（如 SetFontSizeImpl/SetTextCaseImpl），直接调用 TextModelNG 的 FrameNode* 版本方法；是静态版 `.abc` 编译产物到 C++ 层的入口 | 存量 — 全部 7 个 Feat 涉及的静态版桥接已实现 |
+| Property 层 | `frameworks/core/components_ng/pattern/text/text_layout_property.h` (348 行) | 属性存储聚合：通过 `ACE_DEFINE_PROPERTY_GROUP` 宏聚合 FontStyle（字体属性组）、TextLineStyle（行样式属性组）、TextMarqueeOptions（跑马灯属性组）三个属性组，并通过 `ACE_DEFINE_PROPERTY_ITEM_WITHOUT_GROUP` 存储后增独立属性（MinLines/LineHeightMultiply/ColorShaderStyle/TextSelectableMode 等）；每个属性关联 PROPERTY_UPDATE_MEASURE / MEASURE_SELF / LAYOUT 脏标记 | 存量 — 全部 7 个 Feat 涉及的属性定义均已就位 |
+| Property 层（属性组定义） | `frameworks/core/components_ng/pattern/text/text_styles.h` (489 行) | FontStyle / TextLineStyle / TextMarqueeOptions 属性组 struct 定义：每个字段通过 `ACE_DEFINE_PROPERTY_GROUP_ITEM` 宏生成 `std::optional` 存储 + Get/Has/Update/Reset 方法 | 存量 — 核心数据结构，全部 Feat 共享 |
+| Property → TextStyle 转换 | `frameworks/core/components_ng/pattern/text/text_styles.cpp` (489 行) | `UpdateTextStyleFromProperty()`：通过 `UPDATE_TEXT_STYLE` / `UPDATE_TEXT_STYLE_WITH_THEME` 宏链路将 FontStyle/TextLineStyle 属性组批量转换为布局算法消费的 `TextStyle` 对象 | 存量 — Feat-01/02/03/04 的属性转换链路均经此文件 |
+| Layout 算法 | `frameworks/core/components_ng/pattern/text/text_layout_algorithm.cpp` (1460 行) | `MeasureContent()` 入口：调用 `ConstructTextStyles()` 构建 TextStyle，按 textOverflow 分为 MARQUEE（`BuildTextRaceParagraph`）和正常路径（`BuildParagraph` + heightAdaptivePolicy 三分支）；消费字体属性/行布局属性/溢出截断属性；处理 privacySensitive 字符替换（`UpdateSensitiveContent`） | 存量 — Feat-01/02/03/06 的布局消费路径均已实现 |
+| Layout 算法（多段落） | `frameworks/core/components_ng/pattern/text/multiple_paragraph_layout_algorithm.cpp` (1191 行) | `ConstructTextStyles()`：处理含 Span 子节点的多段落布局，将属性组转换为各段落的 TextStyle；直接读取 WITHOUT_GROUP 属性（enableAutoSpacing/minLines）；`CalcHeightWithMinLines()` 实现 minLines 高度扩展 | 存量 — Feat-02/03/04 的多段落布局路径 |
+| Paint / 渲染 | `frameworks/core/components_ng/pattern/text/text_content_modifier.cpp` (2002 行) | `onDraw()` 绘制入口：decoration NONE↔UNDERLINE alpha 动画、textShadow 动画属性、跑马灯滚动动画（`StartTextRace`）、obscured 遮蔽矩形绘制（`DrawObscuration`）、跑马灯状态回调（BOUNCE/FINISH 触发 `onMarqueeStateChange`） | 存量 — Feat-03（跑马灯动画）、Feat-04（装饰动画）、Feat-06（遮蔽绘制）、Feat-07（跑马灯状态回调）的渲染逻辑 |
+| Pattern 层 | `frameworks/core/components_ng/pattern/text/text_pattern.cpp` (9644 行) | 组件核心控制器：选择/复制/拖拽三重门控（`IsSelectableAndCopy`）、长按/双击/鼠标选择手势处理（`HandleLongPress`）、剪贴板三格式写入（`HandleOnCopy`）、选区变化去重与分发（`HandleSelectionChange`）、数据检测 AI 任务调度、隐私敏感回调（`OnSensitiveStyleChange`）、跑马灯状态副作用（`FireOnMarqueeStateChange`）、事件回调 onWillCopy/onCopy 拦截链 | 存量 — Feat-05（选择/复制/拖拽）、Feat-06（数据检测/隐私/震感）、Feat-07（事件回调）的核心逻辑 |
+| 交互层 | `frameworks/core/components_ng/pattern/text/text_select_overlay.h/cpp`、`text_overlay_modifier.h/cpp` | 选择覆盖层：手柄显示/拖动/菜单弹出/放大镜管理（TextSelectOverlay）；选中区域高亮绘制（TextOverlayModifier） | 存量 — Feat-05 的交互层实现 |
+| 事件层 | `frameworks/core/components_ng/pattern/text/text_event_hub.h` | `TextEventHub`：集中存储 onWillCopy/onCopy/onSelectionChange/onMarqueeStateChange 四个事件回调，提供 `Set<Event>` / `Fire<Event>` 注册与触发接口 | 存量 — Feat-07 的事件存储与分发 |
+| C-API 桥接 | `frameworks/core/interfaces/native/node/node_text_modifier.cpp` (3485 行) | C API → Model 桥接：为每个 NODE_TEXT_* 属性提供 Set/Get/Reset 三件套函数，内部调用 TextModelNG 的 FrameNode* 版本方法；处理 ArkUI_* 枚举到 C++ 枚举的 static_cast 映射 | 存量 — 全部 7 个 Feat 涉及的 C-API 属性桥接（部分属性如 fontVariations/enableHapticFeedback 无公开 NODE 枚举，仅通过内部桥接） |
+| C-API 分发 | `interfaces/native/node/style_modifier.cpp` (23304 行) | C API Set/Get/Reset 分发中心：按 NODE_TEXT_* 属性枚举值路由到 node_text_modifier.cpp 中的具体实现函数；同时处理数据检测等结构化 C-API | 存量 — 全部 C-API 属性的分发入口 |
+| C-API 定义 | `interfaces/native/native_node.h`、`interfaces/native/native_type.h` | NODE_TEXT_* 属性枚举定义（30+ 个属性）和 ArkUI_FontStyle/ArkUI_FontWeight/ArkUI_TextOverflow 等类型定义 | 存量 — 新增 C-API 属性需在此新增枚举值 |
+| Span 层 | `frameworks/core/components_ng/pattern/text/span/` (21 文件) | Span 子节点管理：SpanString/MutableSpanString（富文本数据模型）、SpanObject（样式段）、TLV 序列化（剪贴板/拖拽格式）、SpanGroupHashCalculator（脏检测优化）、ImageSpanView/SymbolSpanModel（图片/符号 Span） | 存量 — Feat-04（textCase Span 级触发）、Feat-05（剪贴板 SpanString TLV 序列化、拖拽数据格式）的 Span 层支撑 |
+| 排版引擎桥接 | `frameworks/core/components_ng/render/adapter/txt_paragraph.cpp`、`frameworks/core/components_ng/render/drawing_prop_convertor.cpp`、`frameworks/core/components/font/constants_converter.cpp` | ParagraphStyle → Rosen TypographyStyle 转换（ellipsisMode/wordBreak/lineBreakStrategy 枚举映射）；TextDecoration → RSTextDecoration 转换；textShadow/shaderStyle → Rosen foregroundBrush 转换 | 存量 — Feat-01/02/03/04 的排版引擎对接层 |
+
 ### 适用架构规则
 
 | Rule ID | 适用原因 | 设计结论 | 验证方式 |
@@ -194,7 +217,7 @@
 | TASK-6 | Feat-06 系统能力（数据检测、隐私敏感、震感反馈）（存量补录） | spec + design | design.md Baselined |
 | TASK-7 | Feat-07 事件回调 (onCopy/onWillCopy/onTextSelectionChange/onMarqueeStateChange)（存量补录） | spec + design | design.md Baselined |
 
-## API 签名与权限
+## API 签名、Kit 与权限
 
 > 本节承接 spec.md"API 变更分析"中识别的 API，给出签名、d.ts 位置、权限等实现细节。
 

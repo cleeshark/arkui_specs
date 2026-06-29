@@ -35,14 +35,14 @@
 **我想要** 通过 .flexGrow() 设置子组件在父容器剩余空间中的分配比例,
 **以便** 实现弹性布局中子组件按比例占满剩余空间。
 
-**验收标准：**
-
-- **AC-1.1:** WHEN 调用 `.flexGrow(value: number)` 设置正值 THEN 子组件在主轴剩余空间中按 value 占 totalGrow 的比例获得额外尺寸
-- **AC-1.2:** WHEN value = 0（默认值）THEN 子组件不参与剩余空间分配，按自身内容尺寸布局
-- **AC-1.3:** WHEN value 为负数 THEN JS 桥接层将 value Clamp 到 0，等效于 flexGrow(0)
-- **AC-1.4:** WHEN value 为 undefined 或 null THEN flexGrow 被设为 0.0（默认值）
-- **AC-1.5:** WHEN 多个子组件同时设置 flexGrow THEN 剩余空间 = 主轴总尺寸 - 所有子组件主轴尺寸之和，每个子组件获得 `remainSpace × (flexGrow / totalGrow)` 的额外空间
-- **AC-1.6:** WHEN flexGrow 与 layoutWeight 同时存在且 totalFlexWeight > 0 THEN layoutWeight 模式优先，flexGrow 不生效（互斥优先级）
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-1.1 | WHEN 调用 `.flexGrow(value: number)` 设置正值 THEN 子组件在主轴剩余空间中按 value 占 totalGrow 的比例获得额外尺寸 |
+| AC-1.2 | WHEN value = 0（默认值）THEN 子组件不参与剩余空间分配，按自身内容尺寸布局 |
+| AC-1.3 | WHEN value 为负数 THEN JS 桥接层将 value Clamp 到 0，等效于 flexGrow(0) |
+| AC-1.4 | WHEN value 为 undefined 或 null THEN flexGrow 被设为 0.0（默认值） |
+| AC-1.5 | WHEN 多个子组件同时设置 flexGrow THEN 剩余空间 = 主轴总尺寸 - 所有子组件主轴尺寸之和，每个子组件获得 `remainSpace × (flexGrow / totalGrow)` 的额外空间 |
+| AC-1.6 | WHEN flexGrow 与 layoutWeight 同时存在且 totalFlexWeight > 0 THEN layoutWeight 模式优先，flexGrow 不生效（互斥优先级） |
 
 ### US-2: 按比例收缩溢出空间（flexShrink）
 
@@ -50,14 +50,14 @@
 **我想要** 通过 .flexShrink() 设置子组件在空间不足时的收缩比例,
 **以便** 防止子组件溢出父容器。
 
-**验收标准：**
-
-- **AC-2.1:** WHEN 调用 `.flexShrink(value: number)` 设置正值 THEN 子组件在主轴空间不足时按比例收缩：每个子组件收缩量 = `overflowSpace × (flexShrink × childMainSize) / totalShrink`
-- **AC-2.2:** WHEN 父容器为 Row/Column 且未显式设置 flexShrink THEN 默认值为 0（不收缩）
-- **AC-2.3:** WHEN 父容器为 Flex 且未显式设置 flexShrink THEN 默认值为 1（按比例收缩）
-- **AC-2.4:** WHEN value 为负数 THEN JS 桥接层调用 ResetFlexShrink() 重置属性
-- **AC-2.5:** WHEN value 为 undefined 或 null THEN JS 桥接层调用 ResetFlexShrink() 重置属性（与 flexGrow undefined 仅设为 0 的行为不一致）
-- **AC-2.6:** WHEN flexShrink 被重置（Reset）THEN 恢复为容器默认值（Row/Column: 0, Flex: 1）
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-2.1 | WHEN 调用 `.flexShrink(value: number)` 设置正值 THEN 子组件在主轴空间不足时按比例收缩：每个子组件收缩量 = `overflowSpace × (flexShrink × childMainSize) / totalShrink` |
+| AC-2.2 | WHEN 父容器为 Row/Column 且未显式设置 flexShrink THEN 默认值为 0（不收缩） |
+| AC-2.3 | WHEN 父容器为 Flex 且未显式设置 flexShrink THEN 默认值为 1（按比例收缩） |
+| AC-2.4 | WHEN value 为负数 THEN JS 桥接层调用 ResetFlexShrink() 重置属性 |
+| AC-2.5 | WHEN value 为 undefined 或 null THEN JS 桥接层调用 ResetFlexShrink() 重置属性（与 flexGrow undefined 仅设为 0 的行为不一致） |
+| AC-2.6 | WHEN flexShrink 被重置（Reset）THEN 恢复为容器默认值（Row/Column: 0, Flex: 1） |
 
 ### US-3: 设置主轴基础尺寸（flexBasis）
 
@@ -65,15 +65,15 @@
 **我想要** 通过 .flexBasis() 设置子组件在主轴上的初始尺寸,
 **以便** 在 grow/shrink 分配之前确定子组件的基础大小。
 
-**验收标准：**
-
-- **AC-3.1:** WHEN 调用 `.flexBasis(value: number)` THEN 子组件主轴初始尺寸设置为 value（单位 VP）
-- **AC-3.2:** WHEN 调用 `.flexBasis(value: string)`（如 '100px'）THEN 按对应单位解析
-- **AC-3.3:** WHEN value 为 undefined、null 或无效类型 THEN flexBasis 设为 AUTO（由内容决定基础尺寸）
-- **AC-3.4:** WHEN value 为百分比（如 '50%'）THEN JS 桥接层和 C-API 层均将其转为 AUTO（flexBasis 不支持百分比）
-- **AC-3.5:** WHEN flexBasis 为 AUTO 或无效值 THEN 子组件使用自身内容尺寸作为主轴基础尺寸
-- **AC-3.6:** WHEN flexBasis 为有效正值 THEN 在 FlexLayoutAlgorithm 中通过 `UpdateChildLayoutConstrainByFlexBasis` 将 flexBasis 转换为像素值并设置到 selfIdealSize 的主轴维度
-- **AC-3.7:** WHEN 子组件为 Blank 且 Blank 的 selfIdealSize > flexBasis THEN flexBasis 不覆盖 selfIdealSize（Blank 特殊处理）
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-3.1 | WHEN 调用 `.flexBasis(value: number)` THEN 子组件主轴初始尺寸设置为 value（单位 VP） |
+| AC-3.2 | WHEN 调用 `.flexBasis(value: string)`（如 '100px'）THEN 按对应单位解析 |
+| AC-3.3 | WHEN value 为 undefined、null 或无效类型 THEN flexBasis 设为 AUTO（由内容决定基础尺寸） |
+| AC-3.4 | WHEN value 为百分比（如 '50%'）THEN JS 桥接层和 C-API 层均将其转为 AUTO（flexBasis 不支持百分比） |
+| AC-3.5 | WHEN flexBasis 为 AUTO 或无效值 THEN 子组件使用自身内容尺寸作为主轴基础尺寸 |
+| AC-3.6 | WHEN flexBasis 为有效正值 THEN 在 FlexLayoutAlgorithm 中通过 `UpdateChildLayoutConstrainByFlexBasis` 将 flexBasis 转换为像素值并设置到 selfIdealSize 的主轴维度 |
+| AC-3.7 | WHEN 子组件为 Blank 且 Blank 的 selfIdealSize > flexBasis THEN flexBasis 不覆盖 selfIdealSize（Blank 特殊处理） |
 
 ### US-4: 设置交叉轴对齐覆盖（alignSelf）
 
@@ -81,17 +81,17 @@
 **我想要** 通过 .alignSelf() 单独设置某个子组件在交叉轴上的对齐方式,
 **以便** 覆盖父容器设置的 alignItems 全局对齐。
 
-**验收标准：**
-
-- **AC-4.1:** WHEN 调用 `.alignSelf(value: ItemAlign)` THEN 该子组件的交叉轴对齐使用 alignSelf 值，而非父容器的 alignItems
-- **AC-4.2:** WHEN value 为 ItemAlign.Auto（默认值）THEN 使用父容器的交叉轴对齐设置（不覆盖）
-- **AC-4.3:** WHEN value 为 ItemAlign.Start THEN 子组件在交叉轴起始端对齐
-- **AC-4.4:** WHEN value 为 ItemAlign.Center THEN 子组件在交叉轴居中对齐
-- **AC-4.5:** WHEN value 为 ItemAlign.End THEN 子组件在交叉轴末尾端对齐
-- **AC-4.6:** WHEN value 为 ItemAlign.Stretch THEN 子组件在交叉轴方向拉伸至父容器交叉轴尺寸，触发二次测量（needSecondMeasure = true）
-- **AC-4.7:** WHEN value 为 ItemAlign.Baseline THEN 子组件按基线对齐，需要收集每个子组件的 baselineDistance 计算最大基线距离，交叉轴尺寸可能因此增大
-- **AC-4.8:** WHEN value 为 undefined、null 或无效类型 THEN alignSelf 被设为 FlexAlign::AUTO
-- **AC-4.9:** WHEN value 超出有效范围（0-8）THEN C-API 层设为 FlexAlign::AUTO（`node_common_modifier.cpp:4944-4947`）；JS 层不处理（`js_view_abstract.cpp:3374` 仅在 0-8 范围内设置）
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-4.1 | WHEN 调用 `.alignSelf(value: ItemAlign)` THEN 该子组件的交叉轴对齐使用 alignSelf 值，而非父容器的 alignItems |
+| AC-4.2 | WHEN value 为 ItemAlign.Auto（默认值）THEN 使用父容器的交叉轴对齐设置（不覆盖） |
+| AC-4.3 | WHEN value 为 ItemAlign.Start THEN 子组件在交叉轴起始端对齐 |
+| AC-4.4 | WHEN value 为 ItemAlign.Center THEN 子组件在交叉轴居中对齐 |
+| AC-4.5 | WHEN value 为 ItemAlign.End THEN 子组件在交叉轴末尾端对齐 |
+| AC-4.6 | WHEN value 为 ItemAlign.Stretch THEN 子组件在交叉轴方向拉伸至父容器交叉轴尺寸，触发二次测量（needSecondMeasure = true） |
+| AC-4.7 | WHEN value 为 ItemAlign.Baseline THEN 子组件按基线对齐，需要收集每个子组件的 baselineDistance 计算最大基线距离，交叉轴尺寸可能因此增大 |
+| AC-4.8 | WHEN value 为 undefined、null 或无效类型 THEN alignSelf 被设为 FlexAlign::AUTO |
+| AC-4.9 | WHEN value 超出有效范围（0-8）THEN C-API 层设为 FlexAlign::AUTO（`node_common_modifier.cpp:4944-4947`）；JS 层不处理（`js_view_abstract.cpp:3374` 仅在 0-8 范围内设置） |
 
 ### US-5: 按权重分配剩余空间（layoutWeight）
 
@@ -99,16 +99,16 @@
 **我想要** 通过 .layoutWeight() 设置子组件在 Row/Column/Flex 中的权重,
 **以便** 简单快速地按比例分配父容器主轴空间。
 
-**验收标准：**
-
-- **AC-5.1:** WHEN 调用 `.layoutWeight(value: number)` 设置正值 THEN 子组件在主轴上按权重分配剩余空间：`childSize = max(spacePerWeight × layoutWeight, 0)`
-- **AC-5.2:** WHEN value = 0（默认值）THEN 子组件不参与权重分配，按自身内容尺寸布局
-- **AC-5.3:** WHEN value 为负数 THEN 布局算法中 `LessOrEqual(childLayoutWeight, 0.0)` 判断为 true，等效于 layoutWeight = 0
-- **AC-5.4:** WHEN value 为 undefined THEN 继续以 value = 0.0 处理
-- **AC-5.5:** WHEN API < 12 且 value 为 number THEN 值被解析为 int32_t（截断小数部分）
-- **AC-5.6:** WHEN API ≥ 12 且 value 为 number THEN 值被解析为 float（保留小数部分）
-- **AC-5.7:** WHEN layoutWeight 模式激活（totalFlexWeight > 0）THEN 布局算法跳过 flexGrow/flexShrink 模式，使用 weight 模式
-- **AC-5.8:** WHEN weight 模式下子组件有 layoutWeight > 0 THEN 先测量 layoutWeight = 0 的子组件确定剩余空间，再按权重分配给 layoutWeight > 0 的子组件
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-5.1 | WHEN 调用 `.layoutWeight(value: number)` 设置正值 THEN 子组件在主轴上按权重分配剩余空间：`childSize = max(spacePerWeight × layoutWeight, 0)` |
+| AC-5.2 | WHEN value = 0（默认值）THEN 子组件不参与权重分配，按自身内容尺寸布局 |
+| AC-5.3 | WHEN value 为负数 THEN 布局算法中 `LessOrEqual(childLayoutWeight, 0.0)` 判断为 true，等效于 layoutWeight = 0 |
+| AC-5.4 | WHEN value 为 undefined THEN 继续以 value = 0.0 处理 |
+| AC-5.5 | WHEN API < 12 且 value 为 number THEN 值被解析为 int32_t（截断小数部分） |
+| AC-5.6 | WHEN API ≥ 12 且 value 为 number THEN 值被解析为 float（保留小数部分） |
+| AC-5.7 | WHEN layoutWeight 模式激活（totalFlexWeight > 0）THEN 布局算法跳过 flexGrow/flexShrink 模式，使用 weight 模式 |
+| AC-5.8 | WHEN weight 模式下子组件有 layoutWeight > 0 THEN 先测量 layoutWeight = 0 的子组件确定剩余空间，再按权重分配给 layoutWeight > 0 的子组件 |
 
 ### US-6: 设置布局显示优先级（displayPriority）
 
@@ -116,16 +116,16 @@
 **我想要** 通过 .displayPriority() 设置子组件的布局优先级,
 **以便** 在空间不足时按优先级决定哪些子组件可见、哪些被隐藏。
 
-**验收标准：**
-
-- **AC-6.1:** WHEN 调用 `.displayPriority(value: number)` THEN 子组件获得对应的显示优先级（内部存储为 displayIndex）
-- **AC-6.2:** WHEN 开发者从未调用 `.displayPriority()` THEN 属性为 unset（std::optional 无值），布局算法使用 `value_or(1)` 作为默认优先级（`flex_layout_algorithm.cpp:320`）。这意味着未设置 displayPriority 的子组件默认优先级为 1，不会被优先淘汰
-- **AC-6.3:** WHEN 多个子组件有不同 displayPriority THEN 布局算法按优先级从高到低依次处理
-- **AC-6.4:** WHEN 空间不足以容纳所有子组件 THEN 优先级较低的子组件被隐藏（SetActive(false)），frameSize 设为 {0, 0}
-- **AC-6.5:** WHEN value 为 undefined 或 null THEN API ≥ 12 时 JS 桥接层显式调用 `SetDisplayIndex(0)` 将属性设为 0（`js_view_abstract.cpp:3262-3263`），此时布局算法 `value_or(1)` 不生效，实际使用 0。**注意**：这与"从未设置"（算法 fallback 到 1）的语义不同——`displayPriority(undefined)` 使组件成为最低优先级
-- **AC-6.6:** WHEN value 为负数 THEN 值直接传递给 SetDisplayIndex（无验证），负优先级组件与未设置（priority=1）的组件相比更容易被淘汰
-- **AC-6.7:** WHEN displayPriority 与 layoutWeight 同时使用 THEN displayPriority 仍生效，优先级较低的子组件在 weight 分配前即被排除
-- **AC-6.8:** WHEN 通过 C-API 调用 `ResetDisplayPriority` THEN displayIndex 被设为 0（`DEFAULT_DISPLAY_PRIORITY`，`node_common_modifier.cpp:107`），与 JS undefined 行为一致
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-6.1 | WHEN 调用 `.displayPriority(value: number)` THEN 子组件获得对应的显示优先级（内部存储为 displayIndex） |
+| AC-6.2 | WHEN 开发者从未调用 `.displayPriority()` THEN 属性为 unset（std::optional 无值），布局算法使用 `value_or(1)` 作为默认优先级（`flex_layout_algorithm.cpp:320`）。这意味着未设置 displayPriority 的子组件默认优先级为 1，不会被优先淘汰 |
+| AC-6.3 | WHEN 多个子组件有不同 displayPriority THEN 布局算法按优先级从高到低依次处理 |
+| AC-6.4 | WHEN 空间不足以容纳所有子组件 THEN 优先级较低的子组件被隐藏（SetActive(false)），frameSize 设为 {0, 0} |
+| AC-6.5 | WHEN value 为 undefined 或 null THEN API ≥ 12 时 JS 桥接层显式调用 `SetDisplayIndex(0)` 将属性设为 0（`js_view_abstract.cpp:3262-3263`），此时布局算法 `value_or(1)` 不生效，实际使用 0。**注意**：这与"从未设置"（算法 fallback 到 1）的语义不同——`displayPriority(undefined)` 使组件成为最低优先级 |
+| AC-6.6 | WHEN value 为负数 THEN 值直接传递给 SetDisplayIndex（无验证），负优先级组件与未设置（priority=1）的组件相比更容易被淘汰 |
+| AC-6.7 | WHEN displayPriority 与 layoutWeight 同时使用 THEN displayPriority 仍生效，优先级较低的子组件在 weight 分配前即被排除 |
+| AC-6.8 | WHEN 通过 C-API 调用 `ResetDisplayPriority` THEN displayIndex 被设为 0（`DEFAULT_DISPLAY_PRIORITY`，`node_common_modifier.cpp:107`），与 JS undefined 行为一致 |
 
 ---
 
@@ -133,62 +133,62 @@
 
 | AC ID | US ID | 关联业务规则 | 验证手段 |
 |-------|-------|-------------|----------|
-| AC-1.1 | US-1 | FR-1 | 单元测试 / XTS |
-| AC-1.2 | US-1 | FR-2 | 单元测试 |
-| AC-1.3 | US-1 | ER-1 | 单元测试 / XTS |
-| AC-1.4 | US-1 | ER-2 | 单元测试 |
-| AC-1.5 | US-1 | FR-3 | 集成测试 |
-| AC-1.6 | US-1 | BR-1, ADR-F3-1 | 集成测试 |
-| AC-2.1 | US-2 | FR-4 | 单元测试 / XTS |
-| AC-2.2 | US-2 | FR-5, ADR-F3-2 | 单元测试 |
-| AC-2.3 | US-2 | FR-5, ADR-F3-2 | 单元测试 |
-| AC-2.4 | US-2 | ER-3 | 单元测试 |
-| AC-2.5 | US-2 | ER-4, ADR-F3-3 | 单元测试 |
-| AC-2.6 | US-2 | FR-5 | 单元测试 |
-| AC-3.1 | US-3 | FR-6 | 单元测试 / XTS |
-| AC-3.2 | US-3 | FR-6 | 单元测试 |
-| AC-3.3 | US-3 | ER-5 | 单元测试 |
-| AC-3.4 | US-3 | ER-6, ADR-F3-4 | 单元测试 |
-| AC-3.5 | US-3 | FR-7 | 单元测试 |
-| AC-3.6 | US-3 | FR-8 | 代码评审 |
-| AC-3.7 | US-3 | FR-9 | 单元测试 |
-| AC-4.1 | US-4 | FR-10 | 单元测试 / XTS |
-| AC-4.2 | US-4 | FR-11 | 单元测试 |
-| AC-4.3 | US-4 | FR-10 | 单元测试 |
-| AC-4.4 | US-4 | FR-10 | 单元测试 |
-| AC-4.5 | US-4 | FR-10 | 单元测试 |
-| AC-4.6 | US-4 | FR-12, ADR-F3-5 | 集成测试 |
-| AC-4.7 | US-4 | FR-13, ADR-F3-5 | 集成测试 |
-| AC-4.8 | US-4 | ER-7 | 单元测试 |
-| AC-4.9 | US-4 | ER-8 | 单元测试 |
-| AC-5.1 | US-5 | FR-14 | 单元测试 / XTS |
-| AC-5.2 | US-5 | FR-15 | 单元测试 |
-| AC-5.3 | US-5 | ER-9 | 单元测试 |
-| AC-5.4 | US-5 | ER-10 | 单元测试 |
-| AC-5.5 | US-5 | FR-16, ADR-F3-4 | 单元测试 |
-| AC-5.6 | US-5 | FR-16, ADR-F3-4 | 单元测试 |
-| AC-5.7 | US-5 | BR-1, ADR-F3-1 | 集成测试 |
-| AC-5.8 | US-5 | FR-17 | 集成测试 |
-| AC-6.1 | US-6 | FR-18 | 单元测试 |
-| AC-6.2 | US-6 | FR-18 | 单元测试 |
-| AC-6.3 | US-6 | FR-19 | 集成测试 |
-| AC-6.4 | US-6 | FR-20 | 集成测试 |
-| AC-6.5 | US-6 | ER-11 | 单元测试 |
-| AC-6.6 | US-6 | ER-12 | 单元测试 |
-| AC-6.7 | US-6 | FR-21 | 集成测试 |
-| AC-6.8 | US-6 | FR-18 | 单元测试 |
-| AC-1.1 | US-1 | FR-1 | SpecTest HostPreview |
-| AC-1.2 | US-1 | FR-2 | SpecTest HostPreview |
-| AC-1.5 | US-1 | FR-3 | SpecTest HostPreview |
-| AC-2.1 | US-2 | FR-4 | SpecTest HostPreview |
-| AC-2.2 | US-2 | FR-5 | SpecTest HostPreview |
-| AC-2.3 | US-2 | FR-5 | SpecTest HostPreview |
-| AC-3.1 | US-3 | FR-6 | SpecTest HostPreview |
-| AC-4.1, AC-4.5 | US-4 | FR-10 | SpecTest HostPreview |
-| AC-4.4 | US-4 | FR-10 | SpecTest HostPreview |
-| AC-4.6 | US-4 | FR-12 | SpecTest HostPreview |
-| AC-5.1 | US-5 | FR-14 | SpecTest HostPreview |
-| AC-6.3, AC-6.4 | US-6 | FR-19, FR-20 | SpecTest HostPreview |
+| AC-1.1 | US-1 | R-4 | 单元测试 / XTS |
+| AC-1.2 | US-1 | R-5 | 单元测试 |
+| AC-1.3 | US-1 | R-25 | 单元测试 / XTS |
+| AC-1.4 | US-1 | R-26 | 单元测试 |
+| AC-1.5 | US-1 | R-6 | 集成测试 |
+| AC-1.6 | US-1 | R-1, ADR-F3-1 | 集成测试 |
+| AC-2.1 | US-2 | R-7 | 单元测试 / XTS |
+| AC-2.2 | US-2 | R-8, ADR-F3-2 | 单元测试 |
+| AC-2.3 | US-2 | R-8, ADR-F3-2 | 单元测试 |
+| AC-2.4 | US-2 | R-27 | 单元测试 |
+| AC-2.5 | US-2 | R-28, ADR-F3-3 | 单元测试 |
+| AC-2.6 | US-2 | R-8 | 单元测试 |
+| AC-3.1 | US-3 | R-9 | 单元测试 / XTS |
+| AC-3.2 | US-3 | R-9 | 单元测试 |
+| AC-3.3 | US-3 | R-29 | 单元测试 |
+| AC-3.4 | US-3 | R-30, ADR-F3-4 | 单元测试 |
+| AC-3.5 | US-3 | R-10 | 单元测试 |
+| AC-3.6 | US-3 | R-11 | 代码评审 |
+| AC-3.7 | US-3 | R-12 | 单元测试 |
+| AC-4.1 | US-4 | R-13 | 单元测试 / XTS |
+| AC-4.2 | US-4 | R-14 | 单元测试 |
+| AC-4.3 | US-4 | R-13 | 单元测试 |
+| AC-4.4 | US-4 | R-13 | 单元测试 |
+| AC-4.5 | US-4 | R-13 | 单元测试 |
+| AC-4.6 | US-4 | R-15, ADR-F3-5 | 集成测试 |
+| AC-4.7 | US-4 | R-16, ADR-F3-5 | 集成测试 |
+| AC-4.8 | US-4 | R-31 | 单元测试 |
+| AC-4.9 | US-4 | R-32 | 单元测试 |
+| AC-5.1 | US-5 | R-17 | 单元测试 / XTS |
+| AC-5.2 | US-5 | R-18 | 单元测试 |
+| AC-5.3 | US-5 | R-33 | 单元测试 |
+| AC-5.4 | US-5 | R-34 | 单元测试 |
+| AC-5.5 | US-5 | R-19, ADR-F3-4 | 单元测试 |
+| AC-5.6 | US-5 | R-19, ADR-F3-4 | 单元测试 |
+| AC-5.7 | US-5 | R-1, ADR-F3-1 | 集成测试 |
+| AC-5.8 | US-5 | R-20 | 集成测试 |
+| AC-6.1 | US-6 | R-21 | 单元测试 |
+| AC-6.2 | US-6 | R-21 | 单元测试 |
+| AC-6.3 | US-6 | R-22 | 集成测试 |
+| AC-6.4 | US-6 | R-23 | 集成测试 |
+| AC-6.5 | US-6 | R-35 | 单元测试 |
+| AC-6.6 | US-6 | R-37 | 单元测试 |
+| AC-6.7 | US-6 | R-24 | 集成测试 |
+| AC-6.8 | US-6 | R-21 | 单元测试 |
+| AC-1.1 | US-1 | R-4 | SpecTest HostPreview |
+| AC-1.2 | US-1 | R-5 | SpecTest HostPreview |
+| AC-1.5 | US-1 | R-6 | SpecTest HostPreview |
+| AC-2.1 | US-2 | R-7 | SpecTest HostPreview |
+| AC-2.2 | US-2 | R-8 | SpecTest HostPreview |
+| AC-2.3 | US-2 | R-8 | SpecTest HostPreview |
+| AC-3.1 | US-3 | R-9 | SpecTest HostPreview |
+| AC-4.1, AC-4.5 | US-4 | R-13 | SpecTest HostPreview |
+| AC-4.4 | US-4 | R-13 | SpecTest HostPreview |
+| AC-4.6 | US-4 | R-15 | SpecTest HostPreview |
+| AC-5.1 | US-5 | R-17 | SpecTest HostPreview |
+| AC-6.3, AC-6.4 | US-6 | R-22, R-23 | SpecTest HostPreview |
 
 ### SpecTest 用例追溯
 
@@ -207,70 +207,58 @@
 | case-005-align-self-center | AC-4.4 |
 | case-006-display-priority-basic | AC-6.3, AC-6.4 |
 
+
+## 规则定义
+
+> **统一规则表，取消 FR/BR/EX/RC 四分类。** 类型标签：**行为**（正常路径下的系统行为）、**边界**（输入/状态的临界点）、**异常**（非法输入或异常状态的处理）、**恢复**（系统异常后的恢复策略）。
+
+| 规则ID | 类型 | 触发条件 | 预期行为 | 边界/约束 | 关联AC |
+|--------|------|----------|----------|-----------|--------|
+| R-1 | 行为 | — | **layoutWeight 与 flexGrow 互斥优先级**：当 totalFlexWeight > 0 时，布局算法进入 weight 模式，跳过 grow/shrink 模式。layoutWeight 存储在 MagicItemProperty，flexGrow 存储在 FlexItemProperty，二者存储层独立但布局消费互斥（`flex_layout_algorithm.cpp:619-629`） | — | — |
+| R-2 | 行为 | — | 所有 Flex 子项属性变更均触发 `PROPERTY_UPDATE_MEASURE`，导致所属组件在下一帧重新进入测量管线 | — | — |
+| R-3 | 行为 | — | Flex 子项属性仅在有 Flex/Row/Column 父容器时才有布局效果，在其他容器中设置不影响布局（但属性仍被存储） | — | — |
+| R-4 | 行为 | — | flexGrow 空间分配公式：`childExtraSpace = remainSpace × (childFlexGrow / totalGrow)`，其中 `totalGrow = Σ(flexGrow)`（仅计算正值）（`flex_layout_algorithm.cpp:850-854`） | — | — |
+| R-5 | 行为 | — | flexGrow 默认值为 0.0，表示不参与剩余空间分配（`flex_layout_algorithm.cpp:724`） | — | — |
+| R-6 | 行为 | — | 当剩余空间 > 0 且 totalGrow > 0 时进入 grow 模式；当剩余空间 < 0 且 totalShrink > 0 时进入 shrink 模式（`flex_layout_algorithm.cpp:887-929`） | — | — |
+| R-7 | 行为 | — | flexShrink 空间收缩公式：`childShrinkSpace = overflowSpace × (childFlexShrink × childMainSize) / totalShrink`，注意收缩量与子组件自身尺寸成正比（`flex_layout_algorithm.cpp:850-854`） | — | — |
+| R-8 | 行为 | — | flexShrink 默认值因父容器类型而异：Row/Column（isLinearLayoutFeature_=true）默认 0.0，Flex 默认 1.0。该逻辑由 `isLinearLayoutFeature_` 标志控制（`flex_layout_algorithm.cpp:723`） | — | — |
+| R-9 | 行为 | — | flexBasis 支持 VP/PX/FP/LPX 单位，不支持百分比和 calc()。设置后通过 `UpdateChildLayoutConstrainByFlexBasis` 将值转换为像素并写入 selfIdealSize 的主轴维度（`flex_layout_algorithm.cpp:126-155`） | — | — |
+| R-10 | 行为 | — | flexBasis 为 AUTO 或无效值时，子组件使用自身内容尺寸作为主轴基础尺寸，flexBasis 不参与约束构建（`flex_layout_algorithm.cpp:135-136`） | — | — |
+| R-11 | 行为 | — | flexBasis 像素转换使用 `Dimension::ConvertToPx()`，不使用 CalcLength 的百分比参照系（因为不支持百分比）（`flex_layout_algorithm.cpp:150-154`） | — | — |
+| R-12 | 行为 | — | Blank 组件特殊处理：当 Blank 的 selfIdealSize > flexBasis 时，flexBasis 不覆盖 selfIdealSize（`flex_layout_algorithm.cpp:138-148`） | — | — |
+| R-13 | 行为 | — | alignSelf 覆盖父容器的交叉轴对齐设置。有效值通过 ItemAlign 枚举（ArkTS）或 FlexAlign 枚举（C++/C-API）指定，二者值域相同（0-5 对应 Auto/Start/Center/End/Stretch/Baseline） | — | — |
+| R-14 | 行为 | — | alignSelf 为 Auto 时使用父容器交叉轴对齐（crossAxisAlign_），等效于未设置 alignSelf（`flex_layout_algorithm.cpp:1605-1616`） | — | — |
+| R-15 | 行为 | — | alignSelf:STRETCH 触发二次测量：首先按正常尺寸测量，然后将交叉轴约束更新为父容器交叉轴尺寸，设置 `needSecondMeasure = true`（`flex_layout_algorithm.cpp:836-839`） | — | — |
+| R-16 | 行为 | — | alignSelf:BASELINE 需要收集每个子组件的 baselineDistance，计算 maxBaselineDistance。交叉轴位置 = `maxBaselineDistance - selfBaselineDistance`（`flex_layout_algorithm.cpp:206-219, 1458-1464`） | — | — |
+| R-17 | 行为 | — | layoutWeight 空间分配公式：`childSize = max(spacePerWeight × childLayoutWeight, 0.0f)`，其中 `spacePerWeight = remainedMainAxisSize / totalFlexWeight`（`flex_layout_algorithm.cpp:476, 492`） | — | — |
+| R-18 | 行为 | — | layoutWeight 默认值为 0.0，不参与权重分配。存储在 MagicItemProperty 而非 FlexItemProperty（`magic_layout_property.h:27`） | — | — |
+| R-19 | 行为 | — | layoutWeight API < 12 解析为 int32_t（截断小数），API ≥ 12 解析为 float（保留小数）。影响 string 和 number 两种输入形式（`js_view_abstract.cpp:2827-2851`） | — | — |
+| R-20 | 行为 | — | weight 模式下测量顺序：先测量 layoutWeight = 0 的子组件确定 consumedSize，再计算 remainSpace = mainAxisSize - consumedSize，最后按权重分配给 layoutWeight > 0 的子组件（`flex_layout_algorithm.cpp:414-548`） | — | — |
+| R-21 | 行为 | — | displayPriority 值直接存储为 FlexItemProperty 中的 DisplayIndex（int32_t）。属性类型为 `std::optional<int32_t>`，未设置时无值。布局算法使用 `GetDisplayIndex().value_or(1)` 作为 fallback（`flex_layout_algorithm.cpp:320`），注意 ViewAbstract::GetDisplayIndex 的 getter 使用 `value_or(0)`（`view_abstract.cpp:10254-10260`），两条路径默认值不同 | — | — |
+| R-22 | 行为 | — | 布局算法按 displayPriority 从高到低遍历（`magicNodes_.rbegin()`），高优先级子组件优先分配空间（`flex_layout_algorithm.cpp:414-468`） | — | — |
+| R-23 | 行为 | — | 当空间不足以容纳所有优先级的子组件时，较低优先级的子组件被 SetActive(false)，frameSize 设为 {0, 0}（`flex_layout_algorithm.cpp:MeasureInPriorityMode`） | — | — |
+| R-24 | 行为 | — | displayPriority 与 layoutWeight 交互：displayPriority 先筛选可见子组件，再在可见子组件中应用 layoutWeight 分配。displayPriority 影响每一行的 magicNodeWeights_ 累计（`flex_layout_algorithm.cpp:260-280`） | — | — |
+| R-25 | 异常 | — | flexGrow 负值被 JS 桥接层 Clamp 到 0（`js_view_abstract.cpp:3233`）；C-API 层同样 Clamp 到 0（`node_common_modifier.cpp:4991-4992`） | — | — |
+| R-26 | 异常 | — | flexGrow undefined/null 被设为 0.0（默认值），不触发属性重置（`js_view_abstract.cpp:3224-3227`） | — | — |
+| R-27 | 异常 | — | flexShrink 负值触发 `ResetFlexShrink()`，属性被清除恢复为容器默认值（`js_view_abstract.cpp:3249-3251`） | — | — |
+| R-28 | 异常 | — | flexShrink undefined/null 触发 `ResetFlexShrink()`，与 flexGrow undefined 仅设 0 的行为不一致（`js_view_abstract.cpp:3244-3246`）。这是历史实现差异，当前实现即规格 | — | — |
+| R-29 | 异常 | — | flexBasis undefined/null/无效类型被设为 AUTO（`js_view_abstract.cpp:3209-3210`） | — | — |
+| R-30 | 异常 | — | flexBasis 百分比值在 JS 桥接层和 C-API 层均被转为 AUTO（`js_view_abstract.cpp:3212-3214`, `node_common_modifier.cpp:5099-5101`） | — | — |
+| R-31 | 异常 | — | alignSelf undefined/null/无效类型被设为 FlexAlign::AUTO（`js_view_abstract.cpp:3369`） | — | — |
+| R-32 | 异常 | — | alignSelf 值超出 [0, 8] 范围时，JS 桥接层忽略该值不设置，C-API 层设为 AUTO（`js_view_abstract.cpp:3374`, `node_common_modifier.cpp:4944-4947`） | — | — |
+| R-33 | 异常 | — | layoutWeight 负值无验证，直接传递。布局算法中 `LessOrEqual(childLayoutWeight, 0.0)` 判断为 true，等效于 0（`flex_layout_algorithm.cpp:489`） | — | — |
+| R-34 | 异常 | — | layoutWeight undefined 时继续以 value = 0.0 处理；null 时 CheckJSCallbackInfo 返回 false 且 IsUndefined 为 false，直接 return 不设置（`js_view_abstract.cpp:2833-2835`） | — | — |
+| R-35 | 异常 | — | displayPriority undefined/null 在 API ≥ 12 时显式调用 `SetDisplayIndex(0)` 将属性设为 0（`js_view_abstract.cpp:3262-3263`）。**注意**：此行为与"从未调用 displayPriority"（属性 unset，布局 fallback 到 1）语义不同——undefined 使组件成为最低优先级（0 < 1） | — | — |
+| R-36 | 异常 | — | displayPriority 属性存在 getter/algorithm 默认值不一致：`ViewAbstract::GetDisplayIndex` 使用 `value_or(0)`（`view_abstract.cpp:10254-10260`），布局算法使用 `value_or(1)`（`flex_layout_algorithm.cpp:320`）。当前实现即规格，下游测试应按消费路径分别断言 | — | — |
+| R-37 | 异常 | — | displayPriority 负值无验证，直接传递给 SetDisplayIndex（`js_view_abstract.cpp:3267`） | — | — |
+| R-38 | 恢复 | — | flexGrow 设置后可通过 `.flexGrow(undefined)` 恢复为默认值 0.0（但不清除属性，仅设值） | — | — |
+| R-39 | 恢复 | — | flexShrink 设置后可通过 `.flexShrink(undefined)` 或 `.flexShrink(负值)` 完全重置（ResetFlexShrink 清除属性） | — | — |
+| R-40 | 恢复 | — | flexBasis 设置后可通过 `.flexBasis(undefined)` 恢复为 AUTO | — | — |
+| R-41 | 恢复 | — | alignSelf 设置后可通过 `.alignSelf(undefined)` 或 `.alignSelf(ItemAlign.Auto)` 恢复为 AUTO（跟随父容器） | — | — |
+| R-42 | 恢复 | — | layoutWeight 设置后可通过 `.layoutWeight(undefined)` 以 value = 0.0 处理 | — | — |
+| R-43 | 恢复 | — | displayPriority 设置后可通过 `.displayPriority(undefined)` 在 API ≥ 12 恢复为 0 | — | — |
+
 ---
-
-## 业务规则
-
-| 规则 ID | 规则描述 |
-|---------|----------|
-| BR-1 | **layoutWeight 与 flexGrow 互斥优先级**：当 totalFlexWeight > 0 时，布局算法进入 weight 模式，跳过 grow/shrink 模式。layoutWeight 存储在 MagicItemProperty，flexGrow 存储在 FlexItemProperty，二者存储层独立但布局消费互斥（`flex_layout_algorithm.cpp:619-629`） |
-| BR-2 | 所有 Flex 子项属性变更均触发 `PROPERTY_UPDATE_MEASURE`，导致所属组件在下一帧重新进入测量管线 |
-| BR-3 | Flex 子项属性仅在有 Flex/Row/Column 父容器时才有布局效果，在其他容器中设置不影响布局（但属性仍被存储） |
-
-## 功能规则
-
-| 规则 ID | 规则描述 |
-|---------|----------|
-| FR-1 | flexGrow 空间分配公式：`childExtraSpace = remainSpace × (childFlexGrow / totalGrow)`，其中 `totalGrow = Σ(flexGrow)`（仅计算正值）（`flex_layout_algorithm.cpp:850-854`） |
-| FR-2 | flexGrow 默认值为 0.0，表示不参与剩余空间分配（`flex_layout_algorithm.cpp:724`） |
-| FR-3 | 当剩余空间 > 0 且 totalGrow > 0 时进入 grow 模式；当剩余空间 < 0 且 totalShrink > 0 时进入 shrink 模式（`flex_layout_algorithm.cpp:887-929`） |
-| FR-4 | flexShrink 空间收缩公式：`childShrinkSpace = overflowSpace × (childFlexShrink × childMainSize) / totalShrink`，注意收缩量与子组件自身尺寸成正比（`flex_layout_algorithm.cpp:850-854`） |
-| FR-5 | flexShrink 默认值因父容器类型而异：Row/Column（isLinearLayoutFeature_=true）默认 0.0，Flex 默认 1.0。该逻辑由 `isLinearLayoutFeature_` 标志控制（`flex_layout_algorithm.cpp:723`） |
-| FR-6 | flexBasis 支持 VP/PX/FP/LPX 单位，不支持百分比和 calc()。设置后通过 `UpdateChildLayoutConstrainByFlexBasis` 将值转换为像素并写入 selfIdealSize 的主轴维度（`flex_layout_algorithm.cpp:126-155`） |
-| FR-7 | flexBasis 为 AUTO 或无效值时，子组件使用自身内容尺寸作为主轴基础尺寸，flexBasis 不参与约束构建（`flex_layout_algorithm.cpp:135-136`） |
-| FR-8 | flexBasis 像素转换使用 `Dimension::ConvertToPx()`，不使用 CalcLength 的百分比参照系（因为不支持百分比）（`flex_layout_algorithm.cpp:150-154`） |
-| FR-9 | Blank 组件特殊处理：当 Blank 的 selfIdealSize > flexBasis 时，flexBasis 不覆盖 selfIdealSize（`flex_layout_algorithm.cpp:138-148`） |
-| FR-10 | alignSelf 覆盖父容器的交叉轴对齐设置。有效值通过 ItemAlign 枚举（ArkTS）或 FlexAlign 枚举（C++/C-API）指定，二者值域相同（0-5 对应 Auto/Start/Center/End/Stretch/Baseline） |
-| FR-11 | alignSelf 为 Auto 时使用父容器交叉轴对齐（crossAxisAlign_），等效于未设置 alignSelf（`flex_layout_algorithm.cpp:1605-1616`） |
-| FR-12 | alignSelf:STRETCH 触发二次测量：首先按正常尺寸测量，然后将交叉轴约束更新为父容器交叉轴尺寸，设置 `needSecondMeasure = true`（`flex_layout_algorithm.cpp:836-839`） |
-| FR-13 | alignSelf:BASELINE 需要收集每个子组件的 baselineDistance，计算 maxBaselineDistance。交叉轴位置 = `maxBaselineDistance - selfBaselineDistance`（`flex_layout_algorithm.cpp:206-219, 1458-1464`） |
-| FR-14 | layoutWeight 空间分配公式：`childSize = max(spacePerWeight × childLayoutWeight, 0.0f)`，其中 `spacePerWeight = remainedMainAxisSize / totalFlexWeight`（`flex_layout_algorithm.cpp:476, 492`） |
-| FR-15 | layoutWeight 默认值为 0.0，不参与权重分配。存储在 MagicItemProperty 而非 FlexItemProperty（`magic_layout_property.h:27`） |
-| FR-16 | layoutWeight API < 12 解析为 int32_t（截断小数），API ≥ 12 解析为 float（保留小数）。影响 string 和 number 两种输入形式（`js_view_abstract.cpp:2827-2851`） |
-| FR-17 | weight 模式下测量顺序：先测量 layoutWeight = 0 的子组件确定 consumedSize，再计算 remainSpace = mainAxisSize - consumedSize，最后按权重分配给 layoutWeight > 0 的子组件（`flex_layout_algorithm.cpp:414-548`） |
-| FR-18 | displayPriority 值直接存储为 FlexItemProperty 中的 DisplayIndex（int32_t）。属性类型为 `std::optional<int32_t>`，未设置时无值。布局算法使用 `GetDisplayIndex().value_or(1)` 作为 fallback（`flex_layout_algorithm.cpp:320`），注意 ViewAbstract::GetDisplayIndex 的 getter 使用 `value_or(0)`（`view_abstract.cpp:10254-10260`），两条路径默认值不同 |
-| FR-19 | 布局算法按 displayPriority 从高到低遍历（`magicNodes_.rbegin()`），高优先级子组件优先分配空间（`flex_layout_algorithm.cpp:414-468`） |
-| FR-20 | 当空间不足以容纳所有优先级的子组件时，较低优先级的子组件被 SetActive(false)，frameSize 设为 {0, 0}（`flex_layout_algorithm.cpp:MeasureInPriorityMode`） |
-| FR-21 | displayPriority 与 layoutWeight 交互：displayPriority 先筛选可见子组件，再在可见子组件中应用 layoutWeight 分配。displayPriority 影响每一行的 magicNodeWeights_ 累计（`flex_layout_algorithm.cpp:260-280`） |
-
-## 异常/豁免规则
-
-| 规则 ID | 规则描述 |
-|---------|----------|
-| ER-1 | flexGrow 负值被 JS 桥接层 Clamp 到 0（`js_view_abstract.cpp:3233`）；C-API 层同样 Clamp 到 0（`node_common_modifier.cpp:4991-4992`） |
-| ER-2 | flexGrow undefined/null 被设为 0.0（默认值），不触发属性重置（`js_view_abstract.cpp:3224-3227`） |
-| ER-3 | flexShrink 负值触发 `ResetFlexShrink()`，属性被清除恢复为容器默认值（`js_view_abstract.cpp:3249-3251`） |
-| ER-4 | flexShrink undefined/null 触发 `ResetFlexShrink()`，与 flexGrow undefined 仅设 0 的行为不一致（`js_view_abstract.cpp:3244-3246`）。这是历史实现差异，当前实现即规格 |
-| ER-5 | flexBasis undefined/null/无效类型被设为 AUTO（`js_view_abstract.cpp:3209-3210`） |
-| ER-6 | flexBasis 百分比值在 JS 桥接层和 C-API 层均被转为 AUTO（`js_view_abstract.cpp:3212-3214`, `node_common_modifier.cpp:5099-5101`） |
-| ER-7 | alignSelf undefined/null/无效类型被设为 FlexAlign::AUTO（`js_view_abstract.cpp:3369`） |
-| ER-8 | alignSelf 值超出 [0, 8] 范围时，JS 桥接层忽略该值不设置，C-API 层设为 AUTO（`js_view_abstract.cpp:3374`, `node_common_modifier.cpp:4944-4947`） |
-| ER-9 | layoutWeight 负值无验证，直接传递。布局算法中 `LessOrEqual(childLayoutWeight, 0.0)` 判断为 true，等效于 0（`flex_layout_algorithm.cpp:489`） |
-| ER-10 | layoutWeight undefined 时继续以 value = 0.0 处理；null 时 CheckJSCallbackInfo 返回 false 且 IsUndefined 为 false，直接 return 不设置（`js_view_abstract.cpp:2833-2835`） |
-| ER-11 | displayPriority undefined/null 在 API ≥ 12 时显式调用 `SetDisplayIndex(0)` 将属性设为 0（`js_view_abstract.cpp:3262-3263`）。**注意**：此行为与"从未调用 displayPriority"（属性 unset，布局 fallback 到 1）语义不同——undefined 使组件成为最低优先级（0 < 1） |
-| ER-11b | displayPriority 属性存在 getter/algorithm 默认值不一致：`ViewAbstract::GetDisplayIndex` 使用 `value_or(0)`（`view_abstract.cpp:10254-10260`），布局算法使用 `value_or(1)`（`flex_layout_algorithm.cpp:320`）。当前实现即规格，下游测试应按消费路径分别断言 |
-| ER-12 | displayPriority 负值无验证，直接传递给 SetDisplayIndex（`js_view_abstract.cpp:3267`） |
-
-## 恢复契约
-
-| 规则 ID | 规则描述 |
-|---------|----------|
-| RC-1 | flexGrow 设置后可通过 `.flexGrow(undefined)` 恢复为默认值 0.0（但不清除属性，仅设值） |
-| RC-2 | flexShrink 设置后可通过 `.flexShrink(undefined)` 或 `.flexShrink(负值)` 完全重置（ResetFlexShrink 清除属性） |
-| RC-3 | flexBasis 设置后可通过 `.flexBasis(undefined)` 恢复为 AUTO |
-| RC-4 | alignSelf 设置后可通过 `.alignSelf(undefined)` 或 `.alignSelf(ItemAlign.Auto)` 恢复为 AUTO（跟随父容器） |
-| RC-5 | layoutWeight 设置后可通过 `.layoutWeight(undefined)` 以 value = 0.0 处理 |
-| RC-6 | displayPriority 设置后可通过 `.displayPriority(undefined)` 在 API ≥ 12 恢复为 0 |
 
 ## 验证映射
 
@@ -385,6 +373,16 @@ enum class FlexAlign {
 |----------|----------|---------|
 | — | — | 无变更/废弃 API |
 
+## 接口规格
+
+### 接口定义
+
+> 本特性为已有实现补录，接口行为定义详见上方规则定义和用户故事。
+
+无新增接口规格。
+
+---
+
 ## 兼容性声明
 
 | API 版本 | 行为差异 | 影响 | 迁移指引 |
@@ -412,6 +410,16 @@ enum class FlexAlign {
 | 性能 | Flex 属性变更不应导致全树重测量 | PROPERTY_UPDATE_MEASURE 仅标记当前节点为脏，不会向上传播。但 Flex 容器的 grow/shrink 分配需要重新计算所有兄弟的尺寸 |
 | 内存 | FlexItemProperty 为 optional 存储，未设置时不占用额外空间 | FlexItemProperty 由 LayoutProperty 持有，采用 lazy-init |
 | 精度 | 浮点权重计算误差不应导致可见像素偏差 | spacePerFlex 使用 float 运算，最终结果经过 PixelGridRound |
+
+## 多设备适配声明
+
+| 设备类型 | 行为差异 | 规格/约束 | 验证方式 | 证据 |
+|----------|----------|-----------|----------|------|
+| 手机 | 无差异 | — | — | — |
+| 平板 | 无差异 | — | — | — |
+| 折叠屏 | 无差异 | — | — | — |
+
+---
 
 ## 全局特性影响
 

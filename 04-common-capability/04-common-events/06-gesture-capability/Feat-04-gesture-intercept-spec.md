@@ -37,15 +37,15 @@
 **我想要** 通过 `.hitTestBehavior(mode)` 控制组件及其子组件是否参与触摸测试,
 **以便** 精确控制哪些组件可以接收触摸事件。
 
-**验收标准：**
-
-- **AC-1.1:** WHEN 设置 `HitTestMode.Default` THEN 自身和子组件参与触摸测试，但屏蔽被标记的节点
-- **AC-1.2:** WHEN 设置 `HitTestMode.Block` THEN 自身响应触摸，阻止子组件和被标记节点参与
-- **AC-1.3:** WHEN 设置 `HitTestMode.Transparent` THEN 自身和子组件参与触摸测试，不屏蔽被标记节点
-- **AC-1.4:** WHEN 设置 `HitTestMode.None` THEN 自身不响应触摸事件，子组件正常响应
-- **AC-1.5:** WHEN 设置 `HitTestMode.BlockHierarchy` THEN 阻止所有低优先级兄弟节点和父节点接收触摸
-- **AC-1.6:** WHEN 设置 `HitTestMode.BlockDescendants` THEN 自身和所有后代节点均不响应触摸事件
-- **AC-1.7:** WHEN 设置 `HitTestMode.TransparentSelf` THEN 根据触摸事件是否被消费动态决定自身透明性
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-1.1 | WHEN 设置 `HitTestMode.Default` THEN 自身和子组件参与触摸测试，但屏蔽被标记的节点 |
+| AC-1.2 | WHEN 设置 `HitTestMode.Block` THEN 自身响应触摸，阻止子组件和被标记节点参与 |
+| AC-1.3 | WHEN 设置 `HitTestMode.Transparent` THEN 自身和子组件参与触摸测试，不屏蔽被标记节点 |
+| AC-1.4 | WHEN 设置 `HitTestMode.None` THEN 自身不响应触摸事件，子组件正常响应 |
+| AC-1.5 | WHEN 设置 `HitTestMode.BlockHierarchy` THEN 阻止所有低优先级兄弟节点和父节点接收触摸 |
+| AC-1.6 | WHEN 设置 `HitTestMode.BlockDescendants` THEN 自身和所有后代节点均不响应触摸事件 |
+| AC-1.7 | WHEN 设置 `HitTestMode.TransparentSelf` THEN 根据触摸事件是否被消费动态决定自身透明性 |
 
 ### US-2: onTouchIntercept 动态拦截触摸
 
@@ -53,13 +53,13 @@
 **我想要** 通过 `.onTouchIntercept(callback)` 在触摸测试阶段动态决定组件的命中测试模式,
 **以便** 根据触摸事件信息（如手指数量、位置）动态决定是否拦截触摸。
 
-**验收标准：**
-
-- **AC-2.1:** WHEN 设置 `onTouchIntercept` 回调 THEN 在每次触摸测试时调用回调，传入 TouchEventInfo
-- **AC-2.2:** WHEN 回调返回 `HitTestMode.None` THEN 组件不接收该触摸事件
-- **AC-2.3:** WHEN 回调返回 `HitTestMode.Block` THEN 组件拦截触摸，子组件不接收
-- **AC-2.4:** WHEN 未设置 `onTouchIntercept` THEN 使用静态 `hitTestBehavior` 值
-- **AC-2.5:** WHEN 回调返回值与静态 `hitTestBehavior` 冲突 THEN `onTouchIntercept` 返回值优先
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-2.1 | WHEN 设置 `onTouchIntercept` 回调 THEN 在每次触摸测试时调用回调，传入 TouchEventInfo |
+| AC-2.2 | WHEN 回调返回 `HitTestMode.None` THEN 组件不接收该触摸事件 |
+| AC-2.3 | WHEN 回调返回 `HitTestMode.Block` THEN 组件拦截触摸，子组件不接收 |
+| AC-2.4 | WHEN 未设置 `onTouchIntercept` THEN 使用静态 `hitTestBehavior` 值 |
+| AC-2.5 | WHEN 回调返回值与静态 `hitTestBehavior` 冲突 THEN `onTouchIntercept` 返回值优先 |
 
 ### US-3: onGestureCollectIntercept 手势收集拦截
 
@@ -67,13 +67,13 @@
 **我想要** 通过 `.onGestureCollectIntercept(callback)` 在手势收集阶段拦截手势传递,
 **以便** 控制手势在组件层级中的传播方向。
 
-**验收标准：**
-
-- **AC-3.1:** WHEN 回调返回 `GestureCollectIntervention.CONTINUE` THEN 不做干预，手势正常收集
-- **AC-3.2:** WHEN 回调返回 `GestureCollectIntervention.DISCARD_LOWER` THEN 阻止手势向祖先组件冒泡
-- **AC-3.3:** WHEN 回调返回 `GestureCollectIntervention.DISCARD_HIGHER` THEN 丢弃所有已收集的目标
-- **AC-3.4:** WHEN 回调返回 `GestureCollectIntervention.DISCARD_SELF` THEN 丢弃自身但保留子组件的手势
-- **AC-3.5:** WHEN 回调返回 `GestureCollectIntervention.DISCARD_LOWER_PRIORITY_SIBLINGS` THEN 阻止低优先级的兄弟节点
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-3.1 | WHEN 回调返回 `GestureCollectIntervention.CONTINUE` THEN 不做干预，手势正常收集 |
+| AC-3.2 | WHEN 回调返回 `GestureCollectIntervention.DISCARD_LOWER` THEN 阻止手势向祖先组件冒泡 |
+| AC-3.3 | WHEN 回调返回 `GestureCollectIntervention.DISCARD_HIGHER` THEN 丢弃所有已收集的目标 |
+| AC-3.4 | WHEN 回调返回 `GestureCollectIntervention.DISCARD_SELF` THEN 丢弃自身但保留子组件的手势 |
+| AC-3.5 | WHEN 回调返回 `GestureCollectIntervention.DISCARD_LOWER_PRIORITY_SIBLINGS` THEN 阻止低优先级的兄弟节点 |
 
 ### US-4: onChildTouchTest 子组件触摸控制
 
@@ -81,10 +81,10 @@
 **我想要** 通过 `.onChildTouchTest(callback)` 控制子组件的触摸分发,
 **以便** 父组件可以根据触摸信息决定哪些子组件接收触摸。
 
-**验收标准：**
-
-- **AC-4.1:** WHEN 设置 `onChildTouchTest` 回调 THEN 在子组件触摸测试时调用，传入子组件的 TouchTestInfo 数组
-- **AC-4.2:** WHEN 回调返回 TouchResult THEN 根据返回值决定子组件的触摸分发
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-4.1 | WHEN 设置 `onChildTouchTest` 回调 THEN 在子组件触摸测试时调用，传入子组件的 TouchTestInfo 数组 |
+| AC-4.2 | WHEN 回调返回 TouchResult THEN 根据返回值决定子组件的触摸分发 |
 
 ### US-5: monopolizeEvents 首节点独占
 
@@ -92,11 +92,11 @@
 **我想要** 通过 `.monopolizeEvents(true)` 确保只有第一个响应触摸的组件继续接收后续事件,
 **以便** 避免多个组件同时响应同一触摸序列。
 
-**验收标准：**
-
-- **AC-5.1:** WHEN 设置 `monopolizeEvents(true)` THEN 第一个成功响应触摸事件的组件（通过 ResponseCtrl 记录）独占后续事件
-- **AC-5.2:** WHEN 首节点已确定后其他节点尝试响应 THEN `ResponseCtrl::ShouldResponse()` 返回 false，阻止其他节点
-- **AC-5.3:** WHEN 设置 `monopolizeEvents(false)`（默认）THEN 所有命中组件均可响应触摸事件
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-5.1 | WHEN 设置 `monopolizeEvents(true)` THEN 第一个成功响应触摸事件的组件（通过 ResponseCtrl 记录）独占后续事件 |
+| AC-5.2 | WHEN 首节点已确定后其他节点尝试响应 THEN `ResponseCtrl::ShouldResponse()` 返回 false，阻止其他节点 |
+| AC-5.3 | WHEN 设置 `monopolizeEvents(false)`（默认）THEN 所有命中组件均可响应触摸事件 |
 
 ### US-6: preventBegin 阻止手势开始
 
@@ -104,10 +104,10 @@
 **我想要** 通过 `preventBegin_` 标志阻止识别器开始手势识别,
 **以便** 在特定条件下禁用某个手势识别器。
 
-**验收标准：**
-
-- **AC-6.1:** WHEN 识别器的 `preventBegin_==true` THEN `HandleEvent()` 检查到 IsPreventBegin() 返回 true 后直接返回，不处理触摸事件
-- **AC-6.2:** WHEN `preventBegin_` 从 true 变为 false THEN 识别器恢复正常的触摸事件处理
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-6.1 | WHEN 识别器的 `preventBegin_==true` THEN `HandleEvent()` 检查到 IsPreventBegin() 返回 true 后直接返回，不处理触摸事件 |
+| AC-6.2 | WHEN `preventBegin_` 从 true 变为 false THEN 识别器恢复正常的触摸事件处理 |
 
 ### US-7: TouchRestrict 触摸类型限制
 
@@ -115,11 +115,11 @@
 **我想要** 通过 TouchRestrict 位标志限制可识别的手势类型,
 **以便** 根据触摸输入源类型过滤不需要的手势。
 
-**验收标准：**
-
-- **AC-7.1:** WHEN TouchRestrict 包含 CLICK 位 THEN 点击类手势（ClickRecognizer）被限制
-- **AC-7.2:** WHEN TouchRestrict 包含 LONG_PRESS 位 THEN 长按手势被限制
-- **AC-7.3:** WHEN TouchRestrict 包含方向标志（SWIPE_LEFT/RIGHT/UP/DOWN）THEN 对应方向的滑动手势被限制
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-7.1 | WHEN TouchRestrict 包含 CLICK 位 THEN 点击类手势（ClickRecognizer）被限制 |
+| AC-7.2 | WHEN TouchRestrict 包含 LONG_PRESS 位 THEN 长按手势被限制 |
+| AC-7.3 | WHEN TouchRestrict 包含方向标志（SWIPE_LEFT/RIGHT/UP/DOWN）THEN 对应方向的滑动手势被限制 |
 
 ### US-8: onTouch 原始触摸事件
 
@@ -127,10 +127,10 @@
 **我想要** 通过 `.onTouch(callback)` 直接处理原始触摸事件,
 **以便** 在手势识别之前消费或响应触摸。
 
-**验收标准：**
-
-- **AC-8.1:** WHEN 设置 `onTouch` 回调 THEN 在触摸事件到达手势识别器之前触发回调
-- **AC-8.2:** WHEN onTouch 回调中消费了事件 THEN 后续手势识别可能受到影响
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-8.1 | WHEN 设置 `onTouch` 回调 THEN 在触摸事件到达手势识别器之前触发回调 |
+| AC-8.2 | WHEN onTouch 回调中消费了事件 THEN 后续手势识别可能受到影响 |
 
 ---
 
@@ -138,86 +138,66 @@
 
 | AC | 关联规则 | 关联 Task | 验证方式 | 证据 |
 |----|----------|-----------|----------|------|
-| AC-1.1~1.7 | BR-1, FR-1~FR-7 | 已有实现 | 单测/XTS | `test/unittest/core/event/` |
-| AC-2.1~2.5 | BR-2, FR-8~FR-12 | 已有实现 | 单测/XTS | 同上 |
-| AC-3.1~3.5 | BR-3, FR-13~FR-17 | 已有实现 | 单测 | 同上 |
-| AC-4.1~4.2 | BR-4, FR-18~FR-19 | 已有实现 | 单测 | 同上 |
-| AC-5.1~5.3 | BR-5, FR-20~FR-22 | 已有实现 | 单测 | 同上 |
-| AC-6.1~6.2 | BR-6, FR-23~FR-24 | 已有实现 | 单测 | 同上 |
-| AC-7.1~7.3 | BR-7, FR-25~FR-27 | 已有实现 | 单测 | 同上 |
-| AC-8.1~8.2 | BR-8, FR-28~FR-29 | 已有实现 | 单测 | 同上 |
+| AC-1.1~1.7 | R-1, R-9~R-15 | 已有实现 | 单测/XTS | `test/unittest/core/event/` |
+| AC-2.1~2.5 | R-2, R-16~R-20 | 已有实现 | 单测/XTS | 同上 |
+| AC-3.1~3.5 | R-3, R-21~R-25 | 已有实现 | 单测 | 同上 |
+| AC-4.1~4.2 | R-4, R-26~R-27 | 已有实现 | 单测 | 同上 |
+| AC-5.1~5.3 | R-5, R-28~R-30 | 已有实现 | 单测 | 同上 |
+| AC-6.1~6.2 | R-6, R-31~R-32 | 已有实现 | 单测 | 同上 |
+| AC-7.1~7.3 | R-7, R-33~R-35 | 已有实现 | 单测 | 同上 |
+| AC-8.1~8.2 | R-8, R-36~R-37 | 已有实现 | 单测 | 同上 |
 
----
 
-## 业务规则
+## 规则定义
 
-| 编号 | 规则描述 | 约束条件 | 关联 AC |
-|------|----------|----------|---------|
-| BR-1 | hitTestBehavior 有 7 种模式，每种决定组件自身和后代是否参与触摸测试及是否屏蔽其他节点 | 静态设置，在触摸测试阶段生效 | AC-1.1~1.7 |
-| BR-2 | onTouchIntercept 回调返回值优先于静态 hitTestBehavior | 回调在触摸测试时动态调用 | AC-2.1~2.5 |
-| BR-3 | onGestureCollectIntercept 有 5 种干预策略，在手势收集阶段执行 | 回调在手势层级构建后、事件分发前执行 | AC-3.1~3.5 |
-| BR-4 | onChildTouchTest 允许父组件根据触摸信息控制子组件分发 | 回调在子组件触摸测试时执行 | AC-4.1~4.2 |
-| BR-5 | monopolizeEvents 通过 ResponseCtrl 实现首节点独占，独占范围为一个触摸序列 | 仅当 monopolizeEvents=true 时 ResponseCtrl 生效 | AC-5.1~5.3 |
-| BR-6 | preventBegin 阻止识别器处理触摸事件，但不清除已设置的回调 | 识别器内部标志 | AC-6.1~6.2 |
-| BR-7 | TouchRestrict 使用位标志组合，可同时限制多种手势类型 | 从父组件传递到子组件 | AC-7.1~7.3 |
-| BR-8 | onTouch 回调在手势识别器之前执行，可消费原始触摸事件 | 回调在事件分发管线早期 | AC-8.1~8.2 |
+> **统一规则表，取消 FR/BR/EX/RC 四分类。** 类型标签：**行为**（正常路径下的系统行为）、**边界**（输入/状态的临界点）、**异常**（非法输入或异常状态的处理）、**恢复**（系统异常后的恢复策略）。
 
----
-
-## 功能规则
-
-| 编号 | 规则描述 | 触发条件 | 作用对象 | 关联 AC |
-|------|----------|----------|----------|---------|
-| FR-1 | HitTestMode.Default 下自身和子组件参与触摸测试 | 触摸测试阶段 | FrameNode | AC-1.1 |
-| FR-2 | HitTestMode.Block 阻止子组件参与，仅自身响应 | 触摸测试阶段 | FrameNode | AC-1.2 |
-| FR-3 | HitTestMode.Transparent 允许穿透到被标记节点 | 触摸测试阶段 | FrameNode | AC-1.3 |
-| FR-4 | HitTestMode.None 自身不响应但子组件正常 | 触摸测试阶段 | FrameNode | AC-1.4 |
-| FR-5 | HitTestMode.BlockHierarchy 阻止低优先级兄弟和父节点 | 触摸测试阶段 | FrameNode | AC-1.5 |
-| FR-6 | HitTestMode.BlockDescendants 阻止自身和所有后代 | 触摸测试阶段 | FrameNode | AC-1.6 |
-| FR-7 | HitTestMode.TransparentSelf 根据事件消费状态动态决定 | 触摸测试阶段 | FrameNode | AC-1.7 |
-| FR-8 | onTouchIntercept 回调在 ProcessTouchTestHit 时调用 | 触摸测试阶段 | GestureEventHub | AC-2.1 |
-| FR-9 | 回调返回 HitTestMode.None 时组件不接收该触摸 | 回调返回 | GestureEventHub | AC-2.2 |
-| FR-10 | 回调返回 HitTestMode.Block 时组件拦截触摸 | 回调返回 | GestureEventHub | AC-2.3 |
-| FR-11 | 未设置回调时使用静态 hitTestBehavior 值 | 无回调 | GestureEventHub | AC-2.4 |
-| FR-12 | onTouchIntercept 返回值优先于静态 hitTestBehavior | 两者同时设置 | GestureEventHub | AC-2.5 |
-| FR-13 | GestureCollectIntervention.CONTINUE 不干预手势收集 | 回调返回 CONTINUE | GestureEventHub | AC-3.1 |
-| FR-14 | DISCARD_LOWER 阻止手势向祖先冒泡 | 回调返回 | GestureEventHub | AC-3.2 |
-| FR-15 | DISCARD_HIGHER 丢弃所有已收集目标 | 回调返回 | GestureEventHub | AC-3.3 |
-| FR-16 | DISCARD_SELF 丢弃自身保留子组件 | 回调返回 | GestureEventHub | AC-3.4 |
-| FR-17 | DISCARD_LOWER_PRIORITY_SIBLINGS 阻止低优先级兄弟 | 回调返回 | GestureEventHub | AC-3.5 |
-| FR-18 | onChildTouchTest 在子组件触摸测试时调用 | 触摸测试 | GestureEventHub | AC-4.1 |
-| FR-19 | 回调返回 TouchResult 决定子组件分发策略 | 回调返回 | GestureEventHub | AC-4.2 |
-| FR-20 | monopolizeEvents=true 时 ResponseCtrl 记录首个响应节点 | 手势 AboutToAccept | ResponseCtrl | AC-5.1 |
-| FR-21 | ShouldResponse() 检查当前节点是否为首节点，非首节点返回 false | 手势响应阶段 | ResponseCtrl | AC-5.2 |
-| FR-22 | monopolizeEvents=false 时所有命中组件均可响应 | 默认行为 | ResponseCtrl | AC-5.3 |
-| FR-23 | preventBegin_=true 时 HandleEvent 直接返回 true | 触摸事件到达 | NGGestureRecognizer | AC-6.1 |
-| FR-24 | preventBegin_ 变为 false 后恢复正常处理 | 标志变更 | NGGestureRecognizer | AC-6.2 |
-| FR-25 | TouchRestrict CLICK 位阻止 ClickRecognizer | 触摸测试 | TouchRestrict | AC-7.1 |
-| FR-26 | TouchRestrict LONG_PRESS 位阻止 LongPressRecognizer | 触摸测试 | TouchRestrict | AC-7.2 |
-| FR-27 | TouchRestrict 方向位阻止对应方向的 SwipeRecognizer | 触摸测试 | TouchRestrict | AC-7.3 |
-| FR-28 | onTouch 回调在触摸事件分发早期触发 | 触摸事件到达 | TouchEvent | AC-8.1 |
-| FR-29 | onTouch 回调消费事件后影响后续手势识别 | 回调中消费 | TouchEvent | AC-8.2 |
-
----
-
-## 异常/豁免规则
-
-| 编号 | 规则描述 | 触发条件 | 处理结果 | 关联 AC |
-|------|----------|----------|----------|---------|
-| EX-1 | onTouchIntercept 回调未设置 | 无回调 | 使用静态 hitTestBehavior | AC-2.4 |
-| EX-2 | monopolizeEvents=false（默认） | 未开启独占 | 所有命中组件均可响应 | AC-5.3 |
-| EX-3 | preventBegin_=false（默认） | 未阻止 | 正常处理触摸事件 | AC-6.2 |
-| EX-4 | TouchRestrict=NONE | 无限制 | 所有手势类型均可识别 | AC-7.1~7.3 |
-
----
-
-## 恢复契约
-
-| 编号 | 触发条件 | 恢复策略 | 恢复结果 | 约束 |
-|------|----------|----------|----------|------|
-| RC-1 | hitTestBehavior 从 Block 恢复为 Default | 后续触摸测试中子组件重新参与 | 子组件恢复响应 | 下一次触摸测试生效 |
-| RC-2 | monopolizeEvents 独占节点在触摸序列结束后 | ResponseCtrl 重置首节点记录 | 下一触摸序列可重新选择首节点 | 每个触摸序列独立 |
-| RC-3 | preventBegin 从 true 变为 false | 识别器恢复正常处理 | 后续触摸事件正常处理 | 仅影响后续事件 |
+| 规则ID | 类型 | 触发条件 | 预期行为 | 边界/约束 | 关联AC |
+|--------|------|----------|----------|-----------|--------|
+| R-1 | 行为 | 静态设置，在触摸测试阶段生效 | hitTestBehavior 有 7 种模式，每种决定组件自身和后代是否参与触摸测试及是否屏蔽其他节点 | — | AC-1.1~1.7 |
+| R-2 | 行为 | 回调在触摸测试时动态调用 | onTouchIntercept 回调返回值优先于静态 hitTestBehavior | — | AC-2.1~2.5 |
+| R-3 | 行为 | 回调在手势层级构建后、事件分发前执行 | onGestureCollectIntercept 有 5 种干预策略，在手势收集阶段执行 | — | AC-3.1~3.5 |
+| R-4 | 行为 | 回调在子组件触摸测试时执行 | onChildTouchTest 允许父组件根据触摸信息控制子组件分发 | — | AC-4.1~4.2 |
+| R-5 | 行为 | 仅当 monopolizeEvents=true 时 ResponseCtrl 生效 | monopolizeEvents 通过 ResponseCtrl 实现首节点独占，独占范围为一个触摸序列 | — | AC-5.1~5.3 |
+| R-6 | 行为 | 识别器内部标志 | preventBegin 阻止识别器处理触摸事件，但不清除已设置的回调 | — | AC-6.1~6.2 |
+| R-7 | 行为 | 从父组件传递到子组件 | TouchRestrict 使用位标志组合，可同时限制多种手势类型 | — | AC-7.1~7.3 |
+| R-8 | 行为 | 回调在事件分发管线早期 | onTouch 回调在手势识别器之前执行，可消费原始触摸事件 | — | AC-8.1~8.2 |
+| R-9 | 行为 | 触摸测试阶段 | HitTestMode.Default 下自身和子组件参与触摸测试 | FrameNode | AC-1.1 |
+| R-10 | 行为 | 触摸测试阶段 | HitTestMode.Block 阻止子组件参与，仅自身响应 | FrameNode | AC-1.2 |
+| R-11 | 行为 | 触摸测试阶段 | HitTestMode.Transparent 允许穿透到被标记节点 | FrameNode | AC-1.3 |
+| R-12 | 行为 | 触摸测试阶段 | HitTestMode.None 自身不响应但子组件正常 | FrameNode | AC-1.4 |
+| R-13 | 行为 | 触摸测试阶段 | HitTestMode.BlockHierarchy 阻止低优先级兄弟和父节点 | FrameNode | AC-1.5 |
+| R-14 | 行为 | 触摸测试阶段 | HitTestMode.BlockDescendants 阻止自身和所有后代 | FrameNode | AC-1.6 |
+| R-15 | 行为 | 触摸测试阶段 | HitTestMode.TransparentSelf 根据事件消费状态动态决定 | FrameNode | AC-1.7 |
+| R-16 | 行为 | 触摸测试阶段 | onTouchIntercept 回调在 ProcessTouchTestHit 时调用 | GestureEventHub | AC-2.1 |
+| R-17 | 行为 | 回调返回 | 回调返回 HitTestMode.None 时组件不接收该触摸 | GestureEventHub | AC-2.2 |
+| R-18 | 行为 | 回调返回 | 回调返回 HitTestMode.Block 时组件拦截触摸 | GestureEventHub | AC-2.3 |
+| R-19 | 行为 | 无回调 | 未设置回调时使用静态 hitTestBehavior 值 | GestureEventHub | AC-2.4 |
+| R-20 | 行为 | 两者同时设置 | onTouchIntercept 返回值优先于静态 hitTestBehavior | GestureEventHub | AC-2.5 |
+| R-21 | 行为 | 回调返回 CONTINUE | GestureCollectIntervention.CONTINUE 不干预手势收集 | GestureEventHub | AC-3.1 |
+| R-22 | 行为 | 回调返回 | DISCARD_LOWER 阻止手势向祖先冒泡 | GestureEventHub | AC-3.2 |
+| R-23 | 行为 | 回调返回 | DISCARD_HIGHER 丢弃所有已收集目标 | GestureEventHub | AC-3.3 |
+| R-24 | 行为 | 回调返回 | DISCARD_SELF 丢弃自身保留子组件 | GestureEventHub | AC-3.4 |
+| R-25 | 行为 | 回调返回 | DISCARD_LOWER_PRIORITY_SIBLINGS 阻止低优先级兄弟 | GestureEventHub | AC-3.5 |
+| R-26 | 行为 | 触摸测试 | onChildTouchTest 在子组件触摸测试时调用 | GestureEventHub | AC-4.1 |
+| R-27 | 行为 | 回调返回 | 回调返回 TouchResult 决定子组件分发策略 | GestureEventHub | AC-4.2 |
+| R-28 | 行为 | 手势 AboutToAccept | monopolizeEvents=true 时 ResponseCtrl 记录首个响应节点 | ResponseCtrl | AC-5.1 |
+| R-29 | 行为 | 手势响应阶段 | ShouldResponse() 检查当前节点是否为首节点，非首节点返回 false | ResponseCtrl | AC-5.2 |
+| R-30 | 行为 | 默认行为 | monopolizeEvents=false 时所有命中组件均可响应 | ResponseCtrl | AC-5.3 |
+| R-31 | 行为 | 触摸事件到达 | preventBegin_=true 时 HandleEvent 直接返回 true | NGGestureRecognizer | AC-6.1 |
+| R-32 | 行为 | 标志变更 | preventBegin_ 变为 false 后恢复正常处理 | NGGestureRecognizer | AC-6.2 |
+| R-33 | 行为 | 触摸测试 | TouchRestrict CLICK 位阻止 ClickRecognizer | TouchRestrict | AC-7.1 |
+| R-34 | 行为 | 触摸测试 | TouchRestrict LONG_PRESS 位阻止 LongPressRecognizer | TouchRestrict | AC-7.2 |
+| R-35 | 行为 | 触摸测试 | TouchRestrict 方向位阻止对应方向的 SwipeRecognizer | TouchRestrict | AC-7.3 |
+| R-36 | 行为 | 触摸事件到达 | onTouch 回调在触摸事件分发早期触发 | TouchEvent | AC-8.1 |
+| R-37 | 行为 | 回调中消费 | onTouch 回调消费事件后影响后续手势识别 | TouchEvent | AC-8.2 |
+| R-38 | 异常 | 无回调 | onTouchIntercept 回调未设置 | 使用静态 hitTestBehavior | AC-2.4 |
+| R-39 | 异常 | 未开启独占 | monopolizeEvents=false（默认） | 所有命中组件均可响应 | AC-5.3 |
+| R-40 | 异常 | 未阻止 | preventBegin_=false（默认） | 正常处理触摸事件 | AC-6.2 |
+| R-41 | 异常 | 无限制 | TouchRestrict=NONE | 所有手势类型均可识别 | AC-7.1~7.3 |
+| R-42 | 恢复 | hitTestBehavior 从 Block 恢复为 Default | 后续触摸测试中子组件重新参与 | 子组件恢复响应 | — |
+| R-43 | 恢复 | monopolizeEvents 独占节点在触摸序列结束后 | ResponseCtrl 重置首节点记录 | 下一触摸序列可重新选择首节点 | — |
+| R-44 | 恢复 | preventBegin 从 true 变为 false | 识别器恢复正常处理 | 后续触摸事件正常处理 | — |
 
 ---
 
@@ -225,14 +205,14 @@
 
 | 编号 | 对应规格项 | 验证方式 | 验证重点 |
 |------|------------|----------|----------|
-| VM-1 | FR-1~FR-7, AC-1.1~1.7 | 单测/XTS | hitTestBehavior 7 种模式正确 |
-| VM-2 | FR-8~FR-12, AC-2.1~2.5 | 单测 | onTouchIntercept 动态返回值生效 |
-| VM-3 | FR-13~FR-17, AC-3.1~3.5 | 单测 | onGestureCollectIntercept 5 种干预策略 |
-| VM-4 | FR-18~FR-19, AC-4.1~4.2 | 单测 | onChildTouchTest 子组件分发控制 |
-| VM-5 | FR-20~FR-22, AC-5.1~5.3 | 单测 | monopolizeEvents 首节点独占 |
-| VM-6 | FR-23~FR-24, AC-6.1~6.2 | 单测 | preventBegin 阻止和恢复 |
-| VM-7 | FR-25~FR-27, AC-7.1~7.3 | 单测 | TouchRestrict 位标志过滤 |
-| VM-8 | FR-28~FR-29, AC-8.1~8.2 | 单测 | onTouch 原始事件消费 |
+| VM-1 | R-9~R-15, AC-1.1~1.7 | 单测/XTS | hitTestBehavior 7 种模式正确 |
+| VM-2 | R-16~R-20, AC-2.1~2.5 | 单测 | onTouchIntercept 动态返回值生效 |
+| VM-3 | R-21~R-25, AC-3.1~3.5 | 单测 | onGestureCollectIntercept 5 种干预策略 |
+| VM-4 | R-26~R-27, AC-4.1~4.2 | 单测 | onChildTouchTest 子组件分发控制 |
+| VM-5 | R-28~R-30, AC-5.1~5.3 | 单测 | monopolizeEvents 首节点独占 |
+| VM-6 | R-31~R-32, AC-6.1~6.2 | 单测 | preventBegin 阻止和恢复 |
+| VM-7 | R-33~R-35, AC-7.1~7.3 | 单测 | TouchRestrict 位标志过滤 |
+| VM-8 | R-36~R-37, AC-8.1~8.2 | 单测 | onTouch 原始事件消费 |
 | VM-9 | 全量 | XTS/集成 | 端到端拦截场景正确 |
 
 ---
@@ -262,6 +242,16 @@
 | API 名称 | 变更类型 | 关联 AC |
 |----------|----------|---------|
 | — | — | 无变更/废弃 API |
+
+---
+
+## 接口规格
+
+### 接口定义
+
+> 本特性为已有实现补录，接口行为定义详见上方规则定义和用户故事。
+
+无新增接口规格。
 
 ---
 
@@ -295,6 +285,16 @@
 | 性能 | onTouchIntercept 回调执行 < 100μs | benchmark | — |
 | 安全 | N/A — 无权限要求 | — | — |
 | 可靠性 | hitTestBehavior 变更在下一帧生效 | 单测 | — |
+
+---
+
+## 多设备适配声明
+
+| 设备类型 | 行为差异 | 规格/约束 | 验证方式 | 证据 |
+|----------|----------|-----------|----------|------|
+| 手机 | 无差异 | — | — | — |
+| 平板 | 无差异 | — | — | — |
+| 折叠屏 | 无差异 | — | — | — |
 
 ---
 

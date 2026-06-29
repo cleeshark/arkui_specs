@@ -38,6 +38,19 @@
 | foundation/arkui/ace_engine | frameworks/core/common/window.cpp / window.h | Window 抽象接口（VSync 回调列表、RequestFrame） | 多容器 VSync 分发 |
 | foundation/arkui/ace_engine | frameworks/core/components_ng/pattern/custom/custom_node_base.cpp | CustomNode rebuild、MarkNeedUpdate | 锁定 Build 入队边界 |
 
+### 调用链层级分析
+
+| 层 | 模块 | 职责 | 修改类型 |
+|----|------|------|----------|
+| VSync 入口 | `frameworks/core/components_ng/render/adapter/rosen_window.cpp/.h` | VSync 接收、RequestFrame 合并、帧超时 DFX、SendMessages RS 提交 | 无修改（规格补录） |
+| Window 抽象 | `frameworks/core/common/window.cpp/.h` | Window 接口抽象、callbacks_ 多容器 VSync 扇出 | 无修改（规格补录） |
+| 管线编排 | `frameworks/core/pipeline_ng/pipeline_context.cpp/.h` | FlushVsync 一帧主编排（14+ 子阶段硬序列）、FlushBuild/FlushMessages | 无修改（规格补录） |
+| 任务调度 | `frameworks/core/pipeline_ng/ui_task_scheduler.cpp/.h` | dirtyLayoutNodes_/dirtyRenderNodes_ 调度、FlushTask do-while 循环驱动 Layout+Render | 无修改（规格补录） |
+| Build 阶段 | `frameworks/core/components_ng/pattern/custom/custom_node_base.cpp` | CustomNode rebuild、MarkNeedUpdate、FlushDirtyNodeUpdate | 无修改（规格补录） |
+| Layout 阶段 | `frameworks/core/components_ng/base/frame_node.cpp` | FrameNode 生命周期、MarkDirtyNode、CreateLayoutTask（Measure/Layout） | 无修改（规格补录） |
+| Render 阶段 | `frameworks/core/components_ng/render/paint_wrapper.cpp/.h` | PaintWrapper::FlushRender，Modifier(Content/Overlay/Foreground) vs Draw 路径分发 | 无修改（规格补录） |
+| RS 桥接 | `frameworks/core/components_ng/render/adapter/rosen_render_context.cpp/.h` | RenderContext 与 Rosen RSNode 桥接、StartRecording/FinishRecording | 无修改（规格补录） |
+
 ### 适用架构规则
 
 | 规则 | 设计结论 |
@@ -99,7 +112,7 @@
 | TASK-4（规划） | Render 阶段细化 | Feat-04-render-stage-spec.md | TASK-1 |
 | TASK-5（规划） | VSync 与 commit 旁路 | Feat-05-vsync-and-commit-spec.md | TASK-1 |
 
-## API 签名与权限
+## API 签名、Kit 与权限
 
 ### 新增 API
 

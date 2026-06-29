@@ -35,17 +35,17 @@
 **我想要** 通过 .width() 和 .height() 设置组件的固定宽高,
 **以便** 精确控制组件在页面中的布局尺寸。
 
-**验收标准：**
-
-- **AC-1.1:** WHEN 调用 `.width(value: Length)` 设置宽度 THEN 组件渲染宽度等于 value 转换为像素后的值（受 constraintSize 约束）
-- **AC-1.2:** WHEN 调用 `.height(value: Length)` 设置高度 THEN 组件渲染高度等于 value 转换为像素后的值（受 constraintSize 约束）
-- **AC-1.3:** WHEN value 为 number 类型 THEN 默认单位为 vp
-- **AC-1.4:** WHEN value 为 string 类型（如 '100px'、'50%'、'calc(100vp - 20px)'）THEN 按对应单位解析
-- **AC-1.5:** WHEN value 为 Resource 类型 THEN 从资源文件解析为对应长度值
-- **AC-1.6:** WHEN value 为 undefined THEN 重置为默认尺寸（MATCH_CONTENT），等效于未设置
-- **AC-1.7:** WHEN value 为负数且 API ≥ 12 THEN 重置为默认尺寸（等同 undefined 行为）
-- **AC-1.8:** WHEN value 为负数且 API < 12 THEN 值被 Clamp 到 0
-- **AC-1.9:** WHEN value 为 0 THEN 组件宽度/高度为 0，组件不可见但存在于布局树中
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-1.1 | WHEN 调用 `.width(value: Length)` 设置宽度 THEN 组件渲染宽度等于 value 转换为像素后的值（受 constraintSize 约束） |
+| AC-1.2 | WHEN 调用 `.height(value: Length)` 设置高度 THEN 组件渲染高度等于 value 转换为像素后的值（受 constraintSize 约束） |
+| AC-1.3 | WHEN value 为 number 类型 THEN 默认单位为 vp |
+| AC-1.4 | WHEN value 为 string 类型（如 '100px'、'50%'、'calc(100vp - 20px)'）THEN 按对应单位解析 |
+| AC-1.5 | WHEN value 为 Resource 类型 THEN 从资源文件解析为对应长度值 |
+| AC-1.6 | WHEN value 为 undefined THEN 重置为默认尺寸（MATCH_CONTENT），等效于未设置 |
+| AC-1.7 | WHEN value 为负数且 API ≥ 12 THEN 重置为默认尺寸（等同 undefined 行为） |
+| AC-1.8 | WHEN value 为负数且 API < 12 THEN 值被 Clamp 到 0 |
+| AC-1.9 | WHEN value 为 0 THEN 组件宽度/高度为 0，组件不可见但存在于布局树中 |
 
 ### US-2: 通过 size 同时设置宽高
 
@@ -53,11 +53,11 @@
 **我想要** 通过 `.size({width, height})` 一次性设置宽高,
 **以便** 减少代码量。
 
-**验收标准：**
-
-- **AC-2.1:** WHEN 调用 `.size({width: w, height: h})` THEN 等效于同时调用 `.width(w).height(h)`
-- **AC-2.2:** WHEN SizeOptions 中仅设置 width 而 height 为 undefined THEN 设置宽度，同时高度被清除（ClearWidthOrHeight）回退到默认行为（因 JsSize 内部对缺失字段调用 JsHeight(undefined) 触发清除逻辑）
-- **AC-2.3:** WHEN SizeOptions 中仅设置 height 而 width 为 undefined THEN 设置高度，同时宽度被清除（ClearWidthOrHeight）回退到默认行为（因 JsSize 内部对缺失字段调用 JsWidth(undefined) 触发清除逻辑）
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-2.1 | WHEN 调用 `.size({width: w, height: h})` THEN 等效于同时调用 `.width(w).height(h)` |
+| AC-2.2 | WHEN SizeOptions 中仅设置 width 而 height 为 undefined THEN 设置宽度，同时高度被清除（ClearWidthOrHeight）回退到默认行为（因 JsSize 内部对缺失字段调用 JsHeight(undefined) 触发清除逻辑） |
+| AC-2.3 | WHEN SizeOptions 中仅设置 height 而 width 为 undefined THEN 设置高度，同时宽度被清除（ClearWidthOrHeight）回退到默认行为（因 JsSize 内部对缺失字段调用 JsWidth(undefined) 触发清除逻辑） |
 
 ### US-3: 设置尺寸约束范围
 
@@ -65,14 +65,14 @@
 **我想要** 通过 `.constraintSize()` 设置组件的最小/最大宽高约束,
 **以便** 在响应式布局中限制组件尺寸范围。
 
-**验收标准：**
-
-- **AC-3.1:** WHEN 设置 `constraintSize({minWidth, maxWidth, minHeight, maxHeight})` THEN 组件最终渲染尺寸被约束在 [min, max] 范围内
-- **AC-3.2:** WHEN 同时设置 width(100) 和 constraintSize({maxWidth: 50}) THEN 最终宽度为 50（selfIdealSize 被 Clamp 到 maxWidth）
-- **AC-3.3:** WHEN 同时设置 width(20) 和 constraintSize({minWidth: 50}) THEN 最终宽度为 50（selfIdealSize 被 Clamp 到 minWidth）
-- **AC-3.4:** WHEN constraintSize 中 minWidth > maxWidth THEN 以 minWidth 为准（min 优先于 max）
-- **AC-3.5:** WHEN constraintSize 各字段为 undefined THEN 对应维度不设约束（使用父节点传递的约束）
-- **AC-3.6:** WHEN 调用 constraintSize(undefined) THEN 重置所有约束
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-3.1 | WHEN 设置 `constraintSize({minWidth, maxWidth, minHeight, maxHeight})` THEN 组件最终渲染尺寸被约束在 [min, max] 范围内 |
+| AC-3.2 | WHEN 同时设置 width(100) 和 constraintSize({maxWidth: 50}) THEN 最终宽度为 50（selfIdealSize 被 Clamp 到 maxWidth） |
+| AC-3.3 | WHEN 同时设置 width(20) 和 constraintSize({minWidth: 50}) THEN 最终宽度为 50（selfIdealSize 被 Clamp 到 minWidth） |
+| AC-3.4 | WHEN constraintSize 中 minWidth > maxWidth THEN 以 minWidth 为准（min 优先于 max） |
+| AC-3.5 | WHEN constraintSize 各字段为 undefined THEN 对应维度不设约束（使用父节点传递的约束） |
+| AC-3.6 | WHEN 调用 constraintSize(undefined) THEN 重置所有约束 |
 
 ### US-4: 设置组件内边距
 
@@ -80,16 +80,16 @@
 **我想要** 通过 `.padding()` 设置组件的内边距,
 **以便** 控制内容与组件边框之间的间距。
 
-**验收标准：**
-
-- **AC-4.1:** WHEN 调用 `.padding(value: Length)` THEN 四个方向均设置为 value
-- **AC-4.2:** WHEN 调用 `.padding({top, right, bottom, left})` THEN 分别设置四个方向的内边距
-- **AC-4.3:** WHEN 调用 `.padding(value: LocalizedPadding)` (API 12+) THEN 使用 start/end 替代 left/right，支持 RTL 布局
-- **AC-4.4:** WHEN padding 设置后，组件无显式 width/height THEN 组件内容区缩小，总尺寸由内容+padding 决定（MATCH_CONTENT 模式）
-- **AC-4.5:** WHEN padding 设置后，组件有显式 width THEN 内容区 = width - paddingLeft - paddingRight（border-box 模型）
-- **AC-4.6:** WHEN padding + border > 显式 width THEN 组件 selfIdealSize 自动扩展到 padding + border 之和（CheckBorderAndPadding）
-- **AC-4.7:** WHEN padding 值为负数 THEN 值被 Clamp 到 0
-- **AC-4.8:** WHEN padding 值为 undefined 或部分方向缺失 THEN 非 Localized 路径（top/right/bottom/left）执行全量替换——未传方向被清除为无值（nullopt）；Localized 路径（start/end）仅更新已传方向，未传方向保留原值
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-4.1 | WHEN 调用 `.padding(value: Length)` THEN 四个方向均设置为 value |
+| AC-4.2 | WHEN 调用 `.padding({top, right, bottom, left})` THEN 分别设置四个方向的内边距 |
+| AC-4.3 | WHEN 调用 `.padding(value: LocalizedPadding)` (API 12+) THEN 使用 start/end 替代 left/right，支持 RTL 布局 |
+| AC-4.4 | WHEN padding 设置后，组件无显式 width/height THEN 组件内容区缩小，总尺寸由内容+padding 决定（MATCH_CONTENT 模式） |
+| AC-4.5 | WHEN padding 设置后，组件有显式 width THEN 内容区 = width - paddingLeft - paddingRight（border-box 模型） |
+| AC-4.6 | WHEN padding + border > 显式 width THEN 组件 selfIdealSize 自动扩展到 padding + border 之和（CheckBorderAndPadding） |
+| AC-4.7 | WHEN padding 值为负数 THEN 值被 Clamp 到 0 |
+| AC-4.8 | WHEN padding 值为 undefined 或部分方向缺失 THEN 非 Localized 路径（top/right/bottom/left）执行全量替换——未传方向被清除为无值（nullopt）；Localized 路径（start/end）仅更新已传方向，未传方向保留原值 |
 
 ### US-5: 设置组件外边距
 
@@ -97,16 +97,16 @@
 **我想要** 通过 `.margin()` 设置组件的外边距,
 **以便** 控制组件与其他组件之间的间距。
 
-**验收标准：**
-
-- **AC-5.1:** WHEN 调用 `.margin(value: Length)` THEN 四个方向均设置为 value
-- **AC-5.2:** WHEN 调用 `.margin({top, right, bottom, left})` THEN 分别设置四个方向的外边距
-- **AC-5.3:** WHEN 调用 `.margin(value: LocalizedMargin)` (API 12+) THEN 使用 start/end 替代 left/right，支持 RTL 布局
-- **AC-5.4:** WHEN margin 设置后 THEN 父级传递给本节点的约束 maxSize 扣除 margin 后再传递
-- **AC-5.5:** WHEN margin 设置后 THEN 父级传递给本节点的 percentReference 扣除 margin 后再传递
-- **AC-5.6:** WHEN margin 为百分比 THEN 百分比参照父节点对应轴的 percentReference
-- **AC-5.7:** WHEN margin 值为负数 THEN 允许负值（负 margin 是合法的，组件向对应方向偏移）
-- **AC-5.8:** WHEN margin 值为 undefined 或部分方向缺失 THEN 非 Localized 路径（top/right/bottom/left）执行全量替换——未传方向被清除为无值（nullopt）；Localized 路径（start/end）仅更新已传方向，未传方向保留原值
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-5.1 | WHEN 调用 `.margin(value: Length)` THEN 四个方向均设置为 value |
+| AC-5.2 | WHEN 调用 `.margin({top, right, bottom, left})` THEN 分别设置四个方向的外边距 |
+| AC-5.3 | WHEN 调用 `.margin(value: LocalizedMargin)` (API 12+) THEN 使用 start/end 替代 left/right，支持 RTL 布局 |
+| AC-5.4 | WHEN margin 设置后 THEN 父级传递给本节点的约束 maxSize 扣除 margin 后再传递 |
+| AC-5.5 | WHEN margin 设置后 THEN 父级传递给本节点的 percentReference 扣除 margin 后再传递 |
+| AC-5.6 | WHEN margin 为百分比 THEN 百分比参照父节点对应轴的 percentReference |
+| AC-5.7 | WHEN margin 值为负数 THEN 允许负值（负 margin 是合法的，组件向对应方向偏移） |
+| AC-5.8 | WHEN margin 值为 undefined 或部分方向缺失 THEN 非 Localized 路径（top/right/bottom/left）执行全量替换——未传方向被清除为无值（nullopt）；Localized 路径（start/end）仅更新已传方向，未传方向保留原值 |
 
 ### US-6: 百分比尺寸
 
@@ -114,12 +114,12 @@
 **我想要** 通过百分比设置组件尺寸（如 `.width('50%')`）,
 **以便** 实现相对于父组件的响应式布局。
 
-**验收标准：**
-
-- **AC-6.1:** WHEN `.width('50%')` THEN 宽度 = 父节点 contentConstraint 的 percentReference.width × 0.5
-- **AC-6.2:** WHEN 父节点未设置显式宽度且非 MATCH_PARENT THEN percentReference.width 可能为 0，子组件百分比宽度结果为 0
-- **AC-6.3:** WHEN 父节点设置了 padding THEN percentReference 基于父节点 contentConstraint（已扣除 padding 和 border）
-- **AC-6.4:** WHEN 父节点设置了 margin（用于本节点）THEN percentReference 在 UpdateLayoutConstraint 中已扣除 margin
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-6.1 | WHEN `.width('50%')` THEN 宽度 = 父节点 contentConstraint 的 percentReference.width × 0.5 |
+| AC-6.2 | WHEN 父节点未设置显式宽度且非 MATCH_PARENT THEN percentReference.width 可能为 0，子组件百分比宽度结果为 0 |
+| AC-6.3 | WHEN 父节点设置了 padding THEN percentReference 基于父节点 contentConstraint（已扣除 padding 和 border） |
+| AC-6.4 | WHEN 父节点设置了 margin（用于本节点）THEN percentReference 在 UpdateLayoutConstraint 中已扣除 margin |
 
 ### US-7: calc() 表达式
 
@@ -127,12 +127,12 @@
 **我想要** 通过 calc() 表达式设置尺寸（如 `.width('calc(100% - 20vp)')`）,
 **以便** 在一个表达式中混合百分比和固定值。
 
-**验收标准：**
-
-- **AC-7.1:** WHEN 使用 calc() 表达式 THEN 支持 +、-、*、/ 四则运算
-- **AC-7.2:** WHEN 表达式混合单位（如 `calc(100vp - 20px)`）THEN 各部分按各自单位转换为 px 后计算
-- **AC-7.3:** WHEN 表达式包含百分比（如 `calc(100% - 20vp)`）THEN 百分比部分使用 percentReference 转换
-- **AC-7.4:** WHEN calc() 计算结果为负数 THEN NormalizeToPx 返回 false（值无效），该维度按未设置处理
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-7.1 | WHEN 使用 calc() 表达式 THEN 支持 +、-、*、/ 四则运算 |
+| AC-7.2 | WHEN 表达式混合单位（如 `calc(100vp - 20px)`）THEN 各部分按各自单位转换为 px 后计算 |
+| AC-7.3 | WHEN 表达式包含百分比（如 `calc(100% - 20vp)`）THEN 百分比部分使用 percentReference 转换 |
+| AC-7.4 | WHEN calc() 计算结果为负数 THEN NormalizeToPx 返回 false（值无效），该维度按未设置处理 |
 
 ### US-8: LayoutPolicy (API 15+)
 
@@ -140,12 +140,12 @@
 **我想要** 通过 LayoutPolicy 控制组件的尺寸策略,
 **以便** 明确组件应匹配父容器还是包裹内容。
 
-**验收标准：**
-
-- **AC-8.1:** WHEN `.width(LayoutPolicy.matchParent)` THEN 组件宽度匹配父容器可用宽度
-- **AC-8.2:** WHEN `.width(LayoutPolicy.wrapContent)` THEN 组件宽度包裹内容（MATCH_CONTENT）
-- **AC-8.3:** WHEN `.width(LayoutPolicy.fixAtIdealSize)` THEN 解除 maxSize 限制，组件按 selfIdealSize 渲染（若有）
-- **AC-8.4:** WHEN 同时设置 `.width(100)` 后再设置 `.width(LayoutPolicy.matchParent)` THEN LayoutPolicy 生效，数值尺寸被清除
+| AC ID | WHEN/THEN |
+|-------|-----------|
+| AC-8.1 | WHEN `.width(LayoutPolicy.matchParent)` THEN 组件宽度匹配父容器可用宽度 |
+| AC-8.2 | WHEN `.width(LayoutPolicy.wrapContent)` THEN 组件宽度包裹内容（MATCH_CONTENT） |
+| AC-8.3 | WHEN `.width(LayoutPolicy.fixAtIdealSize)` THEN 解除 maxSize 限制，组件按 selfIdealSize 渲染（若有） |
+| AC-8.4 | WHEN 同时设置 `.width(100)` 后再设置 `.width(LayoutPolicy.matchParent)` THEN LayoutPolicy 生效，数值尺寸被清除 |
 
 ---
 
@@ -153,18 +153,18 @@
 
 | AC | 关联规则 | 关联 Task | 验证方式 | 证据 |
 |----|----------|-----------|----------|------|
-| AC-1.1~1.9 | BR-1, BR-2, FR-1~FR-4, EX-1~EX-3 | 已有实现 | 单测/XTS | `test/unittest/core/layout/` |
-| AC-2.1~2.3 | FR-5 | 已有实现 | 单测 | 同上 |
-| AC-3.1~3.6 | BR-3, FR-6~FR-8 | 已有实现 | 单测 | 同上 |
-| AC-4.1~4.8 | BR-4, FR-9~FR-12, EX-4 | 已有实现 | 单测 | 同上 |
-| AC-5.1~5.8 | BR-5, FR-13~FR-15 | 已有实现 | 单测 | 同上 |
-| AC-6.1~6.4 | BR-6, FR-16 | 已有实现 | 单测 | 同上 |
-| AC-7.1~7.4 | FR-17 | 已有实现 | 单测 | 同上 |
-| AC-8.1~8.4 | FR-18 | 已有实现 | 单测 | 同上 |
-| AC-1.1, AC-1.2, AC-1.3, AC-1.9 | BR-1, BR-2, FR-1~FR-4 | SpecTest 回填用例 | HostPreview | 见 SpecTest用例追溯 表格 |
-| AC-3.2, AC-3.3 | BR-3, FR-6~FR-8 | SpecTest 回填用例 | HostPreview | 见 SpecTest用例追溯 表格 |
-| AC-4.1, AC-4.5 | BR-4, FR-9~FR-12 | SpecTest 回填用例 | HostPreview | 见 SpecTest用例追溯 表格 |
-| AC-6.1 | BR-6, FR-16 | SpecTest 回填用例 | HostPreview | 见 SpecTest用例追溯 表格 |
+| AC-1.1~1.9 | R-1, R-2, R-7~R-10, R-25~R-27 | 已有实现 | 单测/XTS | `test/unittest/core/layout/` |
+| AC-2.1~2.3 | R-11 | 已有实现 | 单测 | 同上 |
+| AC-3.1~3.6 | R-3, R-12~R-14 | 已有实现 | 单测 | 同上 |
+| AC-4.1~4.8 | R-4, R-15~R-18, R-28 | 已有实现 | 单测 | 同上 |
+| AC-5.1~5.8 | R-5, R-19~R-21 | 已有实现 | 单测 | 同上 |
+| AC-6.1~6.4 | R-6, R-22 | 已有实现 | 单测 | 同上 |
+| AC-7.1~7.4 | R-23 | 已有实现 | 单测 | 同上 |
+| AC-8.1~8.4 | R-24 | 已有实现 | 单测 | 同上 |
+| AC-1.1, AC-1.2, AC-1.3, AC-1.9 | R-1, R-2, R-7~R-10 | SpecTest 回填用例 | HostPreview | 见 SpecTest用例追溯 表格 |
+| AC-3.2, AC-3.3 | R-3, R-12~R-14 | SpecTest 回填用例 | HostPreview | 见 SpecTest用例追溯 表格 |
+| AC-4.1, AC-4.5 | R-4, R-15~R-18 | SpecTest 回填用例 | HostPreview | 见 SpecTest用例追溯 表格 |
+| AC-6.1 | R-6, R-22 | SpecTest 回填用例 | HostPreview | 见 SpecTest用例追溯 表格 |
 
 ### SpecTest 用例追溯
 
@@ -179,68 +179,48 @@
 | case-003-padding-basic | AC-4.1, AC-4.5 |
 | case-004-percent-width | AC-6.1 |
 
----
 
-## 业务规则
+## 规则定义
 
-| 编号 | 规则描述 | 约束条件 | 关联 AC |
-|------|----------|----------|---------|
-| BR-1 | 所有组件均继承 CommonMethod，支持 width/height/size/constraintSize/padding/margin 属性 | 适用于所有 FrameNode | AC-1.1~AC-5.8 |
-| BR-2 | Length 类型支持 number(vp)、string('100px'/'50%'/'calc()')、Resource 三种形式 | 所有接受 Length 参数的属性 | AC-1.3~1.5 |
-| BR-3 | constraintSize 的 min/max 约束优先于 width/height 的 selfIdealSize | selfIdealSize 被 Clamp 到 [min, max] | AC-3.2, AC-3.3 |
-| BR-4 | 组件采用 border-box 模型：width/height 包含 padding 和 border | padding+border 是 width/height 的一部分 | AC-4.5 |
-| BR-5 | margin 从父级约束中扣除后传递给本节点 | margin 减少本节点的可用布局空间 | AC-5.4, AC-5.5 |
-| BR-6 | 百分比参照系为父节点 contentConstraint 中的 percentReference（等于父节点 parentIdealSize 减去 padding 和 border） | 父节点需要有确定尺寸 | AC-6.1~6.4 |
+> **统一规则表，取消 FR/BR/EX/RC 四分类。** 类型标签：**行为**（正常路径下的系统行为）、**边界**（输入/状态的临界点）、**异常**（非法输入或异常状态的处理）、**恢复**（系统异常后的恢复策略）。
 
----
-
-## 功能规则
-
-| 编号 | 规则描述 | 触发条件 | 作用对象 | 关联 AC |
-|------|----------|----------|----------|---------|
-| FR-1 | width(number) 默认单位为 vp，转换为像素：px = value × vpScale | 传入 number 类型 | CalcLength | AC-1.3 |
-| FR-2 | width(string) 根据后缀解析单位：'px'→PX, 'vp'→VP, 'fp'→FP, 'lpx'→LPX, '%'→PERCENT, 'calc()'→CALC | 传入 string 类型 | CalcLength | AC-1.4 |
-| FR-3 | 设置 width/height 触发 PROPERTY_UPDATE_MEASURE 标记，下一帧对脏节点执行 Measure | 任何尺寸属性变更 | LayoutProperty | AC-1.1 |
-| FR-4 | width/height 存储在 calcLayoutConstraint_->selfIdealSize 中，设置其中一个维度时保留另一维度的值 | 调用 SetWidth 时保留已有 height | MeasureProperty | AC-1.1, AC-1.2 |
-| FR-5 | size({width, height}) 内部分别调用 JsWidth 和 JsHeight；任一字段缺失（undefined）时该维度会被清除（ClearWidthOrHeight），而非保留原值 | 调用 SetSize | MeasureProperty | AC-2.1~2.3 |
-| FR-6 | constraintSize 的四个字段分别存储在 calcLayoutConstraint_->minSize 和 maxSize 中 | 调用 SetConstraintSize | MeasureProperty | AC-3.1 |
-| FR-7 | CheckSelfIdealSize 阶段执行 Clamp：selfIdealSize.width = clamp(selfIdealSize.width, minSize.width, maxSize.width) | Measure 阶段 | LayoutConstraintF | AC-3.2, AC-3.3 |
-| FR-8 | constraintSize 中 minWidth > maxWidth 时，Clamp 结果等于 minSize（min 优先） | min > max 边界条件 | LayoutConstraintF | AC-3.4 |
-| FR-9 | padding(Length) 四个方向设置相同值；padding(Padding) 分别设置四个方向 | 调用 SetPadding | PaddingProperty | AC-4.1, AC-4.2 |
-| FR-10 | padding 值为负数时 Clamp 到 0 | 负值输入 | PaddingProperty | AC-4.7 |
-| FR-11 | CheckBorderAndPadding：若 padding+border 总宽度 > selfIdealSize.width，则 selfIdealSize.width 扩展为 padding+border 总宽度 | padding+border > 显式宽度 | LayoutConstraintF | AC-4.6 |
-| FR-12 | UpdateContentConstraint：contentConstraint = layoutConstraint 减去 padding 和 border | Measure 阶段 | LayoutConstraintF | AC-4.5 |
-| FR-13 | margin(Length) 四个方向设置相同值；margin(Margin) 分别设置四个方向 | 调用 SetMargin | MarginProperty | AC-5.1, AC-5.2 |
-| FR-14 | margin 允许负值（不做 Clamp），负 margin 导致组件向对应方向偏移 | 负值输入 | MarginProperty | AC-5.7 |
-| FR-15 | UpdateLayoutConstraint 阶段：parentConstraint.maxSize -= margin; parentConstraint.percentReference -= margin | Measure 阶段 | LayoutConstraintF | AC-5.4, AC-5.5 |
-| FR-16 | 百分比转换：NormalizeToPx 将 PERCENT 类型 CalcLength 按 value × percentReference 转换为像素 | PERCENT 单位 | CalcLength | AC-6.1 |
-| FR-17 | calc() 表达式通过 StringExpression::CalculateExp 计算，支持 +、-、*、/ 运算和混合单位 | CALC 单位 | CalcLength | AC-7.1~7.3 |
-| FR-18 | LayoutPolicy 通过 layoutPolicy_ 存储，枚举值为 NO_MATCH/MATCH_PARENT/WRAP_CONTENT/FIX_AT_IDEAL_SIZE | 调用 width(LayoutPolicy) (API 15+) | LayoutPolicyProperty | AC-8.1~8.4 |
-
----
-
-## 异常/豁免规则
-
-| 编号 | 规则描述 | 触发条件 | 处理结果 | 关联 AC |
-|------|----------|----------|----------|---------|
-| EX-1 | 负值重置（API ≥ 12） | width/height 传入负值且 target API ≥ 12 | ClearWidthOrHeight：清除 selfIdealSize 对应维度，回退到默认行为（MATCH_CONTENT） | AC-1.7 |
-| EX-2 | 负值 Clamp（API < 12） | width/height 传入负值且 target API < 12 | 值被 Clamp 到 0.0 | AC-1.8 |
-| EX-3 | undefined 重置 | width/height 传入 undefined | ClearWidthOrHeight + 重置 LayoutPolicy 为 NO_MATCH | AC-1.6 |
-| EX-4 | padding 负值 Clamp | padding 传入负值 | 值被 Clamp 到 0 | AC-4.7 |
-| EX-5 | NaN 输入 | CalcLength 内部 Dimension 值为 NaN | NormalizeToPx 返回 false（NaN >= 0 为 false），该维度按未设置处理 | — |
-| EX-6 | Infinity 输入 | CalcLength 内部 Dimension 值为 Infinity | NormalizeToPx 返回 true（Infinity >= 0 为 true），值被接受为 selfIdealSize | — |
-| EX-7 | 百分比参照为 0 | 父节点未设置显式尺寸，percentReference 为 0 | 百分比计算结果为 0，组件对应维度为 0 | AC-6.2 |
-| EX-8 | calc() 结果为负 | calc() 表达式计算结果 < 0 | NormalizeToPx 返回 false（result >= 0 失败），该维度按未设置处理 | AC-7.4 |
-| EX-9 | 负值阈值精度 | 传入极小负值如 -0.0005 | LessNotEqual 阈值为 -0.001，-0.0005 不被视为负值（不触发 EX-1/EX-2），被当作有效值 0 附近处理 | — |
-
----
-
-## 恢复契约
-
-| 编号 | 触发条件 | 恢复策略 | 恢复结果 | 约束 |
-|------|----------|----------|----------|------|
-| RC-1 | NormalizeToPx 转换失败（返回 false） | 对应维度不设置 selfIdealSize（保持 std::nullopt） | 组件该维度按 MATCH_CONTENT 或父约束决定 | 无超时 |
-| RC-2 | 负值触发 ClearWidthOrHeight | 清除 selfIdealSize 对应维度 + 重置 LayoutPolicy 为 NO_MATCH | 组件回退到未设置该维度的状态 | 仅 API ≥ 12 |
+| 规则ID | 类型 | 触发条件 | 预期行为 | 边界/约束 | 关联AC |
+|--------|------|----------|----------|-----------|--------|
+| R-1 | 行为 | 适用于所有 FrameNode | 所有组件均继承 CommonMethod，支持 width/height/size/constraintSize/padding/margin 属性 | — | AC-1.1~AC-5.8 |
+| R-2 | 行为 | 所有接受 Length 参数的属性 | Length 类型支持 number(vp)、string('100px'/'50%'/'calc()')、Resource 三种形式 | — | AC-1.3~1.5 |
+| R-3 | 行为 | selfIdealSize 被 Clamp 到 [min, max] | constraintSize 的 min/max 约束优先于 width/height 的 selfIdealSize | — | AC-3.2, AC-3.3 |
+| R-4 | 行为 | padding+border 是 width/height 的一部分 | 组件采用 border-box 模型：width/height 包含 padding 和 border | — | AC-4.5 |
+| R-5 | 行为 | margin 减少本节点的可用布局空间 | margin 从父级约束中扣除后传递给本节点 | — | AC-5.4, AC-5.5 |
+| R-6 | 行为 | 父节点需要有确定尺寸 | 百分比参照系为父节点 contentConstraint 中的 percentReference（等于父节点 parentIdealSize 减去 padding 和 border） | — | AC-6.1~6.4 |
+| R-7 | 行为 | 传入 number 类型 | width(number) 默认单位为 vp，转换为像素：px = value × vpScale | CalcLength | AC-1.3 |
+| R-8 | 行为 | 传入 string 类型 | width(string) 根据后缀解析单位：'px'→PX, 'vp'→VP, 'fp'→FP, 'lpx'→LPX, '%'→PERCENT, 'calc()'→CALC | CalcLength | AC-1.4 |
+| R-9 | 行为 | 任何尺寸属性变更 | 设置 width/height 触发 PROPERTY_UPDATE_MEASURE 标记，下一帧对脏节点执行 Measure | LayoutProperty | AC-1.1 |
+| R-10 | 行为 | 调用 SetWidth 时保留已有 height | width/height 存储在 calcLayoutConstraint_->selfIdealSize 中，设置其中一个维度时保留另一维度的值 | MeasureProperty | AC-1.1, AC-1.2 |
+| R-11 | 行为 | 调用 SetSize | size({width, height}) 内部分别调用 JsWidth 和 JsHeight；任一字段缺失（undefined）时该维度会被清除（ClearWidthOrHeight），而非保留原值 | MeasureProperty | AC-2.1~2.3 |
+| R-12 | 行为 | 调用 SetConstraintSize | constraintSize 的四个字段分别存储在 calcLayoutConstraint_->minSize 和 maxSize 中 | MeasureProperty | AC-3.1 |
+| R-13 | 行为 | Measure 阶段 | CheckSelfIdealSize 阶段执行 Clamp：selfIdealSize.width = clamp(selfIdealSize.width, minSize.width, maxSize.width) | LayoutConstraintF | AC-3.2, AC-3.3 |
+| R-14 | 行为 | min > max 边界条件 | constraintSize 中 minWidth > maxWidth 时，Clamp 结果等于 minSize（min 优先） | LayoutConstraintF | AC-3.4 |
+| R-15 | 行为 | 调用 SetPadding | padding(Length) 四个方向设置相同值；padding(Padding) 分别设置四个方向 | PaddingProperty | AC-4.1, AC-4.2 |
+| R-16 | 行为 | 负值输入 | padding 值为负数时 Clamp 到 0 | PaddingProperty | AC-4.7 |
+| R-17 | 行为 | padding+border > 显式宽度 | CheckBorderAndPadding：若 padding+border 总宽度 > selfIdealSize.width，则 selfIdealSize.width 扩展为 padding+border 总宽度 | LayoutConstraintF | AC-4.6 |
+| R-18 | 行为 | Measure 阶段 | UpdateContentConstraint：contentConstraint = layoutConstraint 减去 padding 和 border | LayoutConstraintF | AC-4.5 |
+| R-19 | 行为 | 调用 SetMargin | margin(Length) 四个方向设置相同值；margin(Margin) 分别设置四个方向 | MarginProperty | AC-5.1, AC-5.2 |
+| R-20 | 行为 | 负值输入 | margin 允许负值（不做 Clamp），负 margin 导致组件向对应方向偏移 | MarginProperty | AC-5.7 |
+| R-21 | 行为 | Measure 阶段 | UpdateLayoutConstraint 阶段：parentConstraint.maxSize -= margin; parentConstraint.percentReference -= margin | LayoutConstraintF | AC-5.4, AC-5.5 |
+| R-22 | 行为 | PERCENT 单位 | 百分比转换：NormalizeToPx 将 PERCENT 类型 CalcLength 按 value × percentReference 转换为像素 | CalcLength | AC-6.1 |
+| R-23 | 行为 | CALC 单位 | calc() 表达式通过 StringExpression::CalculateExp 计算，支持 +、-、*、/ 运算和混合单位 | CalcLength | AC-7.1~7.3 |
+| R-24 | 行为 | 调用 width(LayoutPolicy) (API 15+) | LayoutPolicy 通过 layoutPolicy_ 存储，枚举值为 NO_MATCH/MATCH_PARENT/WRAP_CONTENT/FIX_AT_IDEAL_SIZE | LayoutPolicyProperty | AC-8.1~8.4 |
+| R-25 | 异常 | width/height 传入负值且 target API ≥ 12 | 负值重置（API ≥ 12） | ClearWidthOrHeight：清除 selfIdealSize 对应维度，回退到默认行为（MATCH_CONTENT） | AC-1.7 |
+| R-26 | 异常 | width/height 传入负值且 target API < 12 | 负值 Clamp（API < 12） | 值被 Clamp 到 0.0 | AC-1.8 |
+| R-27 | 异常 | width/height 传入 undefined | undefined 重置 | ClearWidthOrHeight + 重置 LayoutPolicy 为 NO_MATCH | AC-1.6 |
+| R-28 | 异常 | padding 传入负值 | padding 负值 Clamp | 值被 Clamp 到 0 | AC-4.7 |
+| R-29 | 异常 | CalcLength 内部 Dimension 值为 NaN | NaN 输入 | NormalizeToPx 返回 false（NaN >= 0 为 false），该维度按未设置处理 | — |
+| R-30 | 异常 | CalcLength 内部 Dimension 值为 Infinity | Infinity 输入 | NormalizeToPx 返回 true（Infinity >= 0 为 true），值被接受为 selfIdealSize | — |
+| R-31 | 异常 | 父节点未设置显式尺寸，percentReference 为 0 | 百分比参照为 0 | 百分比计算结果为 0，组件对应维度为 0 | AC-6.2 |
+| R-32 | 异常 | calc() 表达式计算结果 < 0 | calc() 结果为负 | NormalizeToPx 返回 false（result >= 0 失败），该维度按未设置处理 | AC-7.4 |
+| R-33 | 异常 | 传入极小负值如 -0.0005 | 负值阈值精度 | LessNotEqual 阈值为 -0.001，-0.0005 不被视为负值（不触发 R-25/R-26），被当作有效值 0 附近处理 | — |
+| R-34 | 恢复 | NormalizeToPx 转换失败（返回 false） | 对应维度不设置 selfIdealSize（保持 std::nullopt） | 组件该维度按 MATCH_CONTENT 或父约束决定 | — |
+| R-35 | 恢复 | 负值触发 ClearWidthOrHeight | 清除 selfIdealSize 对应维度 + 重置 LayoutPolicy 为 NO_MATCH | 组件回退到未设置该维度的状态 | — |
 
 ---
 
@@ -248,15 +228,15 @@
 
 | 编号 | 对应规格项 | 验证方式 | 验证重点 |
 |------|------------|----------|----------|
-| VM-1 | FR-1, AC-1.3 | 单测 | number 类型 → vp 单位转换正确 |
-| VM-2 | FR-2, AC-1.4 | 单测 | string 类型解析各单位正确 |
-| VM-3 | FR-7, AC-3.2~3.4 | 单测 | constraintSize Clamp 逻辑正确 |
-| VM-4 | FR-11, AC-4.6 | 单测 | CheckBorderAndPadding 扩展逻辑 |
-| VM-5 | FR-15, AC-5.4~5.5 | 单测 | margin 扣除约束传播 |
-| VM-6 | FR-16, AC-6.1~6.4 | 单测 | 百分比参照系正确 |
-| VM-7 | FR-17, AC-7.1~7.4 | 单测 | calc() 表达式计算正确 |
-| VM-8 | EX-1~EX-3 | 单测 | 负值/undefined 处理正确（区分 API 版本） |
-| VM-9 | FR-18, AC-8.1~8.4 | 单测 | LayoutPolicy 生效 |
+| VM-1 | R-7, AC-1.3 | 单测 | number 类型 → vp 单位转换正确 |
+| VM-2 | R-8, AC-1.4 | 单测 | string 类型解析各单位正确 |
+| VM-3 | R-13, AC-3.2~3.4 | 单测 | constraintSize Clamp 逻辑正确 |
+| VM-4 | R-17, AC-4.6 | 单测 | CheckBorderAndPadding 扩展逻辑 |
+| VM-5 | R-21, AC-5.4~5.5 | 单测 | margin 扣除约束传播 |
+| VM-6 | R-22, AC-6.1~6.4 | 单测 | 百分比参照系正确 |
+| VM-7 | R-23, AC-7.1~7.4 | 单测 | calc() 表达式计算正确 |
+| VM-8 | R-25~R-27 | 单测 | 负值/undefined 处理正确（区分 API 版本） |
+| VM-9 | R-24, AC-8.1~8.4 | 单测 | LayoutPolicy 生效 |
 | VM-10 | 全量 | XTS/集成 | 端到端布局渲染尺寸正确 |
 
 ---
@@ -310,6 +290,16 @@
 
 ---
 
+## 接口规格
+
+### 接口定义
+
+> 本特性为已有实现补录，接口行为定义详见上方规则定义和用户故事。
+
+无新增接口规格。
+
+---
+
 ## 兼容性声明
 
 - **已有 API 行为变更:**
@@ -330,7 +320,7 @@
 | CalcLength 延迟转换 | 尺寸值以 CalcLength 存储，仅在 Measure 阶段转换为像素 | AC-1.1, AC-6.1, AC-7.1 |
 | border-box 模型 | selfIdealSize 包含 padding+border | AC-4.5, AC-4.6 |
 | 单向依赖 | API 层 → Property 层 → Layout 算法层，不可反向 | 全部 |
-| PROPERTY_UPDATE_MEASURE | 任何尺寸属性变更仅标记脏，不立即重新测量 | FR-3 |
+| PROPERTY_UPDATE_MEASURE | 任何尺寸属性变更仅标记脏，不立即重新测量 | R-9 |
 
 ---
 
@@ -340,6 +330,16 @@
 |------|-----------|----------|------|
 | 性能 | 单次 width/height 设置 + 标记脏 < 1μs；Measure 管线中 UpdateLayoutConstraint < 10μs | benchmark | — |
 | 内存 | MeasureProperty 使用 std::optional<CalcSize> 避免无用分配；LayoutConstraintF 为栈上值类型 | hidumper | — |
+
+---
+
+## 多设备适配声明
+
+| 设备类型 | 行为差异 | 规格/约束 | 验证方式 | 证据 |
+|----------|----------|-----------|----------|------|
+| 手机 | 无差异 | — | — | — |
+| 平板 | 无差异 | — | — | — |
+| 折叠屏 | 无差异 | — | — | — |
 
 ---
 

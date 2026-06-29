@@ -52,6 +52,24 @@
 | sdk-js | `api/@internal/component/ets/common.d.ts` | ArkTS 接口声明 | 类型定义 |
 | sdk-js | `api/@internal/component/ets/units.d.ts` | Length/SizeOptions/ConstraintSizeOptions 类型 | 类型定义 |
 
+### 调用链层级分析
+
+| 层 | 模块 | 职责 | 修改类型 |
+|----|------|------|----------|
+| JS Bridge | `declarative_frontend/jsview/js_view_abstract` | 解析 ArkTS 属性调用（JsWidth/JsHeight/JsPadding/JsMargin/JsPosition/JsOffset 等），参数校验、负值处理、API 版本分支 | 存量分析 |
+| C-API 定义 | `interfaces/native/native_node.h` | 定义 NDK 属性枚举（NODE_WIDTH/NODE_HEIGHT/NODE_PADDING/NODE_MARGIN/NODE_POSITION/NODE_OFFSET 等） | 存量分析 |
+| C-API 桥接 | `core/interfaces/native/node/node_common_modifier` | 将 C-API 调用转换为框架层 ViewAbstract::Set* 调用，执行参数单位转换 | 存量分析 |
+| API 层 | `core/components_ng/base/view_abstract` | 框架属性设置统一入口（SetWidth/SetHeight/SetPadding/SetMargin/SetPosition/SetOffset/SetFlexGrow 等），更新 LayoutProperty 或 RenderContext | 存量分析 |
+| Property 层 (尺寸) | `core/components_ng/property/measure_property` + `layout/layout_property` | 存储 CalcLength 格式的用户尺寸约束（MeasureProperty: selfIdealSize/minSize/maxSize），聚合 padding/margin | 存量分析 |
+| Property 层 (位置) | `core/components_ng/render/render_property` + `property/position_property` | 存储渲染位置属性（RenderPositionProperty: Position/Offset/Anchor/PositionEdges/OffsetEdges）和布局对齐属性（PositionProperty: Alignment/LayoutGravity） | 存量分析 |
+| Property 层 (Flex) | `core/components_ng/property/flex_property` + `property/magic_layout_property` | 存储 Flex 子项属性（FlexItemProperty: FlexGrow/FlexShrink/FlexBasis/AlignSelf/DisplayIndex）和权重属性（MagicItemProperty: LayoutWeight） | 存量分析 |
+| 约束构建 | `core/components_ng/layout/layout_property` | 约束管线：UpdateLayoutConstraint → SubtractMargin → CheckCalcLayoutConstraint → CheckSelfIdealSize → CheckBorderAndPadding → UpdateContentConstraint，CalcLength 转像素级 LayoutConstraintF | 存量分析 |
+| 布局调度 | `core/components_ng/base/frame_node` | Measure/Layout 调度入口，驱动约束构建和布局算法执行，管理脏标记和帧调度 | 存量分析 |
+| 布局算法 (默认) | `core/components_ng/layout/box_layout_algorithm` | 默认布局算法，消费 LayoutConstraintF 确定最终 frameSize，执行尺寸决策优先级：selfIdealSize > MATCH_PARENT > contentSize | 存量分析 |
+| 布局算法 (Flex) | `core/components_ng/pattern/flex/flex_layout_algorithm` + `wrap_layout_algorithm` + `linear_layout/linear_layout_algorithm` | Flex/Row/Column 布局算法，消费 FlexGrow/FlexShrink/FlexBasis/AlignSelf/LayoutWeight/DisplayPriority，执行 Weight/Priority/Grow-Shrink 三种模式选择 | 存量分析 |
+| 渲染定位 | `core/components_ng/render/adapter/rosen_render_context` | AdjustPaintRect 计算最终绘制矩形，消费 position/offset/markAnchor，按优先级（Position > PositionEdges > Offset > OffsetEdges > Anchor）确定 paintRect | 存量分析 |
+| 约束数据结构 | `core/components_ng/property/layout_constraint` | 像素级约束数据结构 LayoutConstraintF（minSize/maxSize/selfIdealSize/parentIdealSize/percentReference/scaleProperty） | 存量分析 |
+
 ### 适用架构规则
 
 | Rule ID | 适用原因 | 设计结论 | 验证方式 |
@@ -123,7 +141,7 @@
 
 ---
 
-## API 签名与权限
+## API 签名、Kit 与权限
 
 ### 新增 API
 

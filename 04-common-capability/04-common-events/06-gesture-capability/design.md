@@ -51,6 +51,19 @@
 | ace_engine | `frameworks/core/components_ng/gestures/recognizers/click_recognizer.*` | 双击识别与 pending 状态管理 | Feat-05: 双击 pending 豁免 |
 | ace_engine | `frameworks/core/components_ng/gestures/recognizers/swipe_recognizer.*` | swipe 识别与 pending 状态管理 | Feat-05: swipe pending 豁免 |
 
+### 调用链层级分析
+
+| 层 | 模块 | 职责 | 修改类型 |
+|----|------|------|----------|
+| JS Bridge 层 | `frameworks/bridge/declarative_frontend/jsview/js_gesture.h/.cpp` | ArkTS 手势 API 参数解析与校验（JSGesture、JSTapGesture 等），将 JS 参数转换为 C++ 调用 GestureModelNG | 存量：已有完整的 6 种基础手势 + GestureGroup 参数解析，Feat-01~04 不新增文件 |
+| Model 层 | `frameworks/core/components_ng/pattern/gesture/gesture_model_ng.h/.cpp` | GestureModelNG 桥接层：Create/Finish/SetOnActionFunc/SetPriority/SetGestureMask，将 JS Bridge 调用转为 Gesture 对象挂载到 ViewAbstract | 存量：已有完整的 GestureModelNG 实现，覆盖所有手势类型创建与回调设置 |
+| Gesture 定义层 | `frameworks/core/components_ng/gestures/` (tap_gesture.h, long_press_gesture.h, pan_gesture.h, pinch_gesture.h, rotation_gesture.h, swipe_gesture.h, gesture_group.h, gesture_info.h) | 手势类型数据结构定义（Gesture 基类及 6 种子类 + GestureGroup），承载 fingers/priority/mask/构造参数，提供 CreateRecognizer() 工厂方法 | 存量：Feat-01 六种基础手势 + Feat-02 GestureGroup 三种组合模式数据结构均已实现 |
+| Recognizer 层 | `frameworks/core/components_ng/gestures/recognizers/` (click_recognizer, long_press_recognizer, pan_recognizer, pinch_recognizer, rotation_recognizer, swipe_recognizer, sequenced_recognizer, parallel_recognizer, exclusive_recognizer, recognizer_group, multi_fingers_recognizer, gesture_recognizer) | 手势识别核心：RefereeState 状态机驱动，HandleTouchDown/Move/Up/Cancel 事件处理，阈值判定与回调触发；组合识别器管理子识别器竞争/顺序/并行逻辑 | 存量：Feat-01~02 已全量实现；Feat-05 需在 ClickRecognizer/SwipeRecognizer 增加 CanRemainPendingOnNewRoundDown() 豁免判定 |
+| Event Hub 层 | `frameworks/core/components_ng/event/gesture_event_hub.h/.cpp`, `response_ctrl.h/.cpp` | 组件级手势管理（AddGesture/AttachGesture/ProcessTouchTestHit），手势挂载入口，触摸事件分发给识别器；ResponseCtrl 实现 monopolizeEvents 首节点独占 | 存量：Feat-01 挂载 + Feat-04 拦截（onTouchIntercept/onGestureCollectIntercept/hitTestBehavior）均已实现 |
+| Referee 层 | `frameworks/core/components_ng/gestures/gesture_referee.h/.cpp` | 手势仲裁中枢：GestureScope 管理 per-touchId 竞争域，Adjudicate 流程（Accept/Pending/Reject），阻塞/解除阻塞，Delay 延迟接受，Bridge Mode | 存量：Feat-03 已全量实现；Feat-05 需新增 RecoverRecognizersOnNewRoundDown() 恢复入口 |
+| Pipeline 层 | `frameworks/core/pipeline_ng/pipeline_context.cpp`, `frameworks/core/common/event_manager.h/.cpp` | 触摸主流程调度（OnTouchEvent/CheckDownEvent/TouchTest/Dispatch），scope 注册与清理，CleanRefereeBeforeTouchTest 触发时序 | 存量：Feat-05 需在 EventManager::CleanRefereeBeforeTouchTest 增加新一轮首 down 恢复调用 |
+| C-API 层 | `interfaces/native/native_gesture.h`, `interfaces/native/node/gesture_impl.h/.cpp` | NDK 手势接口：createTapGesture/createLongPressGesture 等 6 种创建函数 + addGestureToNode 挂载函数，供多语言（C/C++）场景调用 | 存量：已有完整的 6 种基础手势 C-API，Feat-01~04 不新增 C-API |
+
 ### 适用架构规则
 
 | Rule ID | 适用原因 | 设计结论 | 验证方式 |
@@ -130,7 +143,7 @@
 | TASK-4 | Feat-04 手势拦截完整行为规格 | Feat-04-gesture-intercept-spec.md | TASK-1, TASK-3 |
 | TASK-5 | Feat-05 手势识别异常恢复增强 | Feat-05-gesture-recognizer-recovery-spec.md | TASK-1 |
 
-## API 签名与权限
+## API 签名、Kit 与权限
 
 ### 新增 API
 
