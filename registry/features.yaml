@@ -134,6 +134,11 @@ features:
   title: Text 尾部缩进
   spec: null
   status: 待补充
+- func_id: 05-01-02
+  id: Feat-01
+  title: Divider 组件全量规格 (vertical/color/strokeWidth/lineCap)
+  spec: 05-ui-components/01-layout-components/02-divider/Feat-01-divider-spec.md
+  status: Baselined
 - func_id: 05-04-06
   id: Feat-01
   title: Toggle 组件全量规格 (Switch/Checkbox/Button 三形态)

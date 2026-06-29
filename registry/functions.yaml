@@ -1546,7 +1546,7 @@ functions:
     id: '02'
     title: Divider
   path: 05-ui-components/01-layout-components/02-divider/
-  design: null
+  design: 05-ui-components/01-layout-components/02-divider/design.md
   status: active
 - id: 05-01-03
   l1:

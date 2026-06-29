@@ -138,7 +138,7 @@
 | 04 通用能力层 | 24 布局通用能力 | 01 像素取整能力 | `04-24-01` | `04-common-capability/24-layout-common-capability/01-pixel-rounding/` | *待补充* | 0 |
 | 04 通用能力层 | 25 热重载能力 | 01 热重载机制 | `04-25-01` | `04-common-capability/25-hot-reload/01-hot-reload-mechanism/` | *待补充* | 0 |
 | 05 组件层 | 01 布局类组件 | 01 Blank | `05-01-01` | `05-ui-components/01-layout-components/01-blank/` | [design.md](05-ui-components/01-layout-components/01-blank/design.md) | 1 |
-| 05 组件层 | 01 布局类组件 | 02 Divider | `05-01-02` | `05-ui-components/01-layout-components/02-divider/` | *待补充* | 0 |
+| 05 组件层 | 01 布局类组件 | 02 Divider | `05-01-02` | `05-ui-components/01-layout-components/02-divider/` | [design.md](05-ui-components/01-layout-components/02-divider/design.md) | 1 |
 | 05 组件层 | 01 布局类组件 | 03 Column | `05-01-03` | `05-ui-components/01-layout-components/03-column/` | *待补充* | 0 |
 | 05 组件层 | 01 布局类组件 | 04 ColumnSplit | `05-01-04` | `05-ui-components/01-layout-components/04-column-split/` | *待补充* | 0 |
 | 05 组件层 | 01 布局类组件 | 05 Flex | `05-01-05` | `05-ui-components/01-layout-components/05-flex/` | *待补充* | 0 |
@@ -905,6 +905,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Divider 组件全量规格 (vertical/color/strokeWidth/lineCap) | [Feat-01-divider-spec.md](05-ui-components/01-layout-components/02-divider/Feat-01-divider-spec.md) | Baselined |
 
 ### 05-01-03 Column
 
