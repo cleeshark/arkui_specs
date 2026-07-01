@@ -29,8 +29,12 @@ Options:
 EOF
 }
 
-log_progress() {
-  printf '\033[1;33m%s\033[0m\n' "$*"
+log_phase() {
+  printf '\033[1;36m%s\033[0m\n' "$*"
+}
+
+log_case() {
+  printf '\033[0;33m%s\033[0m\n' "$*"
 }
 
 log_summary_value() {
@@ -103,14 +107,14 @@ trap cleanup_run_xvfb EXIT
 
 cd "${SPEC_TEST_ROOT}"
 
-log_progress "[1/6] Build SpecTest HAP"
+log_phase "[1/5] Build SpecTest HAP"
 if [[ -n "${OPENHARMONY_ROOT}" ]]; then
   ./build.sh build --openharmony-root "${OPENHARMONY_ROOT}"
 else
   ./build.sh build
 fi
 
-log_progress "[2/6] Resolve case plan from manifests + main_pages route table"
+log_phase "[2/5] Resolve case plan from manifests + main_pages route table"
 python3 "${SCRIPT_DIR}/resolve_case_plan.py" \
   --spec-root "${SPEC_ROOT}" \
   --main-pages-json "${MAIN_PAGES_JSON}" \
@@ -118,7 +122,6 @@ python3 "${SCRIPT_DIR}/resolve_case_plan.py" \
   --case-id "${CASE_ID}" \
   --out "${PLAN_JSON}"
 
-log_progress "[3/6] Execute selected cases by url"
 python3 - <<'PY' "${PLAN_JSON}" > "${RUN_ROOT}/case_lines.txt"
 import base64, json, sys
 plan = json.load(open(sys.argv[1], encoding='utf-8'))
@@ -133,6 +136,42 @@ PY
 TOTAL="$(wc -l < "${RUN_ROOT}/case_lines.txt" | tr -d ' ')"
 IDX=0
 FAIL=0
+
+FIRST_URL="$(head -n1 "${RUN_ROOT}/case_lines.txt" | cut -f3)"
+PREVIEWER_BIN="$(resolve_previewer_bin "${SPEC_TEST_ROOT}" "${OPENHARMONY_ROOT}" || true)"
+PREVIEWER_NAME="$(resolve_previewer_name)"
+RUN_LOG="${RUN_ROOT}/previewer.log"
+
+if [[ -z "${PREVIEWER_BIN}" ]]; then
+  echo "Failed to resolve Previewer bin."
+  echo "Set PREVIEWER_BIN, or provide OHOS_BASE_SDK_HOME/DEVECO_SDK_HOME with previewer/common/bin."
+  exit 1
+fi
+
+log_phase "[3/5] Execute cases (${TOTAL} cases, persistent Previewer)"
+echo "  initial page: ${FIRST_URL}"
+PREVIEWER_PID="$(start_persistent_previewer "${PREVIEWER_BIN}" "${PREVIEWER_NAME}" "${HAP_PATH}" "${FIRST_URL}" "${RUN_LOG}")"
+
+cleanup_persistent() {
+  "${PREVIEWER_BIN}/PreviewerCLI" --name "${PREVIEWER_NAME}" -- --type action --command exit --version 1.0.1 >/dev/null 2>&1 || true
+  kill "${PREVIEWER_PID}" >/dev/null 2>&1 || true
+  wait "${PREVIEWER_PID}" >/dev/null 2>&1 || true
+}
+trap 'cleanup_persistent; cleanup_run_xvfb' EXIT
+
+if ! wait_for_load_page "${RUN_LOG}" 1 60; then
+  echo "Previewer initial load failed. Log: ${RUN_LOG}"
+  tail -n 120 "${RUN_LOG}" || true
+  exit 1
+fi
+
+LOAD_COUNT=1
+
+if ! run_previewer_action "${PREVIEWER_BIN}" "${PREVIEWER_NAME}" "inspectorDefault" "${RUN_ROOT}/inspector_warmup_response.txt"; then
+  echo "Failed to warm up PreviewerCLI action connection."
+  tail -n 120 "${RUN_ROOT}/inspector_warmup_response.txt" || true
+  exit 1
+fi
 
 while IFS=$'\t' read -r suite_id case_id url expected_file ops_b64; do
   IDX=$((IDX + 1))
@@ -156,10 +195,47 @@ if not isinstance(ops, list):
 out_file.write_text(json.dumps(ops, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 PY
 
-  log_progress "[3/6] [${IDX}/${TOTAL}] Collect inspector for ${suite_id}/${case_id}"
-  "${SCRIPT_DIR}/collect_inspector.sh" "${HAP_PATH}" "${CASE_OUT_DIR}" "${url}" "${ARCHIVE_SCREENSHOT}" "${OPERATIONS_FILE}"
+  if [[ "${IDX}" -gt 1 ]]; then
+    log_case "  [${IDX}/${TOTAL}] ${suite_id}/${case_id}"
+    if ! route_to_page "${PREVIEWER_BIN}" "${PREVIEWER_NAME}" "${url}" "${RUN_LOG}" "${LOAD_COUNT}"; then
+      echo "RouterReplace timeout for ${suite_id}/${case_id}" >&2
+      FAIL=$((FAIL + 1))
+      continue
+    fi
+    LOAD_COUNT=$((LOAD_COUNT + 1))
+  else
+    log_case "  [${IDX}/${TOTAL}] ${suite_id}/${case_id}"
+  fi
 
-  log_progress "[4/6] [${IDX}/${TOTAL}] Assert ${suite_id}/${case_id}"
+  if [[ -s "${OPERATIONS_FILE}" ]]; then
+    HAS_OPS="$(python3 -c "import json,sys; ops=json.load(open(sys.argv[1])); print('yes' if ops else 'no')" "${OPERATIONS_FILE}" 2>/dev/null || echo "no")"
+    if [[ "${HAS_OPS}" == "yes" ]]; then
+      if ! python3 "${SCRIPT_DIR}/execute_operations.py" \
+        --previewer-bin "${PREVIEWER_BIN}" \
+        --previewer-name "${PREVIEWER_NAME}" \
+        --operations-file "${OPERATIONS_FILE}" \
+        --output-log "${CASE_OUT_DIR}/operations_runtime_response.txt"; then
+        echo "Failed to execute operations for ${suite_id}/${case_id}" >&2
+      fi
+    fi
+  fi
+
+  if ! run_previewer_action "${PREVIEWER_BIN}" "${PREVIEWER_NAME}" "inspector" "${INSPECTOR_RAW}"; then
+    echo "Failed to get inspector for ${suite_id}/${case_id}" >&2
+    FAIL=$((FAIL + 1))
+    continue
+  fi
+
+  if ! rg -q "Response:" "${INSPECTOR_RAW}"; then
+    echo "Invalid inspector response for ${suite_id}/${case_id}" >&2
+    FAIL=$((FAIL + 1))
+    continue
+  fi
+
+  if [[ "${ARCHIVE_SCREENSHOT}" == "true" ]]; then
+    collect_screenshot_from_running "${PREVIEWER_BIN}" "${PREVIEWER_NAME}" "${SCREENSHOT_FILE}"
+  fi
+
   if ! python3 "${SCRIPT_DIR}/assert_cases.py" \
     --inspector-response "${INSPECTOR_RAW}" \
     --screenshot-file "${SCREENSHOT_FILE}" \
@@ -175,14 +251,14 @@ done < "${RUN_ROOT}/case_lines.txt"
 SUMMARY_JSON="${RUN_ROOT}/summary_report.json"
 SUMMARY_MD="${RUN_ROOT}/summary_report.md"
 
-log_progress "[5/6] Merge summary report"
+log_phase "[4/5] Merge summary report"
 python3 "${SCRIPT_DIR}/merge_report.py" \
   --run-root "${RUN_ROOT}" \
   --plan-json "${PLAN_JSON}" \
   --out-json "${SUMMARY_JSON}" \
   --out-md "${SUMMARY_MD}"
 
-log_progress "[6/6] Done"
+log_phase "[5/5] Done"
 echo "run_root=${RUN_ROOT}"
 echo "plan_json=${PLAN_JSON}"
 echo "summary_json=${SUMMARY_JSON}"

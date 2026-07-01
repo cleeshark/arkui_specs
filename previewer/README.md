@@ -177,6 +177,47 @@ Previewer 启动后，可使用 `PreviewerCLI` 发送 action 命令：
 ./PreviewerCLI --name "${PREVIEWER_NAME}" -- --type action --command exit --version 1.0.1
 ```
 
+### Router 路由控制
+
+Previewer 支持通过 CLI 触发 stage 应用的 router 路由跳转，语义等同于 ArkTS `router.pushUrl` / `router.replaceUrl` / `router.back`：
+
+```bash
+# router.pushUrl({ url: 'pages/Detail', params: { id: '42' } })
+./PreviewerCLI --name "${PREVIEWER_NAME}" -- --type action --command RouterPush \
+  --version 1.0.1 --args -url pages/Detail -params '{"id":"42"}'
+
+# router.replaceUrl({ url: 'pages/Login' })
+./PreviewerCLI --name "${PREVIEWER_NAME}" -- --type action --command RouterReplace \
+  --version 1.0.1 --args -url pages/Login
+
+# router.back()
+./PreviewerCLI --name "${PREVIEWER_NAME}" -- --type action --command RouterBack --version 1.0.1
+```
+
+参数说明：
+
+| 命令 | 必填 | 可选 | 说明 |
+|---|---|---|---|
+| `RouterPush` | `-url <page>` | `-params '<JSON>'` | 入栈新页面，`params` 为 JSON 字符串（例如 `'{"id":"42"}'`），可省略 |
+| `RouterReplace` | `-url <page>` | `-params '<JSON>'` | 替换当前页面，不入栈 |
+| `RouterBack` | — | — | 回退一页，等价于 `BackClicked`；栈空时行为由应用决定 |
+
+跳转后可用 `CurrentRouter` 查询当前页：
+
+```bash
+./PreviewerCLI --name "${PREVIEWER_NAME}" -- --type action --command CurrentRouter --version 1.0.1
+```
+
+在 `spec-test` 的 operations JSON 中，用现有 `action` op 即可，无需额外框架改动：
+
+```json
+[
+  { "op": "action", "command": "RouterPush",    "args": { "url": "pages/Detail", "params": "{\"id\":\"42\"}" } },
+  { "op": "wait",   "durationMs": 300 },
+  { "op": "action", "command": "RouterBack" }
+]
+```
+
 注意：
 
 - `Previewer -s` 与 `PreviewerCLI --name` 必须完全一致。

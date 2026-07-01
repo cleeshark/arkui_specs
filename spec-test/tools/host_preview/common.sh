@@ -48,6 +48,142 @@ cleanup_new_xvfb_processes() {
   done
 }
 
+run_previewer_action() {
+  local previewer_bin="$1"
+  local previewer_name="$2"
+  local command="$3"
+  local output_file="$4"
+  shift 4
+  local -a extra_args=("$@")
+
+  local attempt=0
+  local max_attempts=40
+  while [[ "${attempt}" -lt "${max_attempts}" ]]; do
+    attempt=$((attempt + 1))
+    if timeout 8s "${previewer_bin}/PreviewerCLI" --name "${previewer_name}" -- --type action --command "${command}" --version 1.0.1 "${extra_args[@]}" > "${output_file}" 2>&1; then
+      return 0
+    fi
+    if rg -qi "connect socket failed|Unable to connect to server socket|command pipe connect failed" "${output_file}" 2>/dev/null; then
+      sleep 0.1
+      continue
+    fi
+    return 1
+  done
+  return 1
+}
+
+count_load_page_success() {
+  local log_file="$1"
+  rg -c "LoadPage Success" "${log_file}" 2>/dev/null || echo "0"
+}
+
+wait_for_load_page() {
+  local log_file="$1"
+  local expected_count="$2"
+  local max_wait="${3:-30}"
+  local elapsed=0
+  while [[ "${elapsed}" -lt "${max_wait}" ]]; do
+    local current
+    current="$(count_load_page_success "${log_file}")"
+    if [[ "${current}" -ge "${expected_count}" ]]; then
+      return 0
+    fi
+    sleep 0.5
+    elapsed=$((elapsed + 1))
+  done
+  return 1
+}
+
+start_persistent_previewer() {
+  local previewer_bin="$1"
+  local previewer_name="$2"
+  local hap_path="$3"
+  local initial_url="$4"
+  local run_log="$5"
+
+  local command_pipe="/tmp/${previewer_name}_commandPipe"
+
+  while read -r pid _; do
+    kill "${pid}" >/dev/null 2>&1 || true
+  done < <(pgrep -af "./Previewer -s ${previewer_name}" || true)
+  sleep 1
+  rm -f "${command_pipe}"
+
+  xvfb-run -a "${previewer_bin}/Previewer" \
+    -s "${previewer_name}" \
+    -gui \
+    -hap "${hap_path}" \
+    -refresh region \
+    -cpm false \
+    -device phone \
+    -shape rect \
+    -sd 160 \
+    -or 432 936 \
+    -cr 432 936 \
+    -n entry \
+    -av ACE_2_0 \
+    -url "${initial_url}" \
+    -pages main_pages \
+    -pm Stage \
+    -l en_US \
+    -cm light \
+    -o portrait \
+    > "${run_log}" 2>&1 &
+  echo "$!"
+}
+
+route_to_page() {
+  local previewer_bin="$1"
+  local previewer_name="$2"
+  local url="$3"
+  local run_log="$4"
+  local load_count_before="$5"
+
+  local expected_count=$((load_count_before + 1))
+  local tmp_out
+  tmp_out="$(mktemp)"
+
+  if ! run_previewer_action "${previewer_bin}" "${previewer_name}" "RouterReplace" "${tmp_out}" --args -url "${url}"; then
+    rm -f "${tmp_out}"
+    return 1
+  fi
+  rm -f "${tmp_out}"
+
+  if ! wait_for_load_page "${run_log}" "${expected_count}" 30; then
+    return 1
+  fi
+  sleep 0.3
+  return 0
+}
+
+collect_screenshot_from_running() {
+  local previewer_bin="$1"
+  local previewer_name="$2"
+  local screenshot_file="$3"
+
+  local before_snapshot after_snapshot tmp_out
+  before_snapshot="$(mktemp)"
+  after_snapshot="$(mktemp)"
+  tmp_out="$(mktemp)"
+
+  find "${previewer_bin}" -maxdepth 1 -type f \
+    \( -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' \) \
+    -printf '%T@ %p\n' | sort -n > "${before_snapshot}" || true
+
+  if run_previewer_action "${previewer_bin}" "${previewer_name}" "ScreenShot" "${tmp_out}"; then
+    find "${previewer_bin}" -maxdepth 1 -type f \
+      \( -name '*.png' -o -name '*.jpg' -o -name '*.jpeg' \) \
+      -printf '%T@ %p\n' | sort -n > "${after_snapshot}" || true
+    local new_file
+    new_file="$(comm -13 "${before_snapshot}" "${after_snapshot}" | tail -n 1 | cut -d' ' -f2-)"
+    if [[ -n "${new_file}" && -f "${new_file}" ]]; then
+      cp -f "${new_file}" "${screenshot_file}"
+    fi
+  fi
+
+  rm -f "${before_snapshot}" "${after_snapshot}" "${tmp_out}"
+}
+
 resolve_previewer_bin() {
   local spec_test_root="$1"
   local explicit_openharmony_root="${2:-${OPENHARMONY_ROOT:-}}"
