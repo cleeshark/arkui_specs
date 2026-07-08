@@ -11,7 +11,7 @@
 | 优先级 | P0 |
 | 目标版本 | API 8 ~ API 26+ |
 | SIG 归属 | ArkUI SIG |
-| 状态 | Baselined（已有实现补录） |
+| 状态 | Baselined |
 | 复杂度 | 标准 |
 | lineage | new-on-legacy（已有实现的规格补录） |
 
@@ -224,18 +224,18 @@
 
 | 编号 | 对应规格项 | 验证方式 | 验证重点 |
 |------|-----------|----------|----------|
-| V-01 | AC-1.1 ~ AC-1.3 | UT | 三种 ToggleType 正确创建对应 Pattern |
-| V-02 | AC-1.4, AC-1.5 | UT | onChange 触发 + 双向绑定同步 |
-| V-03 | AC-1.6, R-19 | UT | disabled 状态行为 |
-| V-04 | AC-2.1 ~ AC-2.5 | UT | Switch 颜色属性设置与默认值 |
-| V-05 | AC-3.1 ~ AC-3.4 | UT | Button 颜色切换 + 形状版本差异 |
-| V-06 | AC-4.1 ~ AC-4.3 | UT + 手工 | 拖拽方向判定 + RTL 反转 |
-| V-07 | AC-4.4 ~ AC-4.5 | 手工 | 弹簧动画参数验证 |
-| V-08 | AC-5.1 ~ AC-5.4 | 手工 | Material 效果分级验证 |
-| V-09 | AC-6.1 ~ AC-6.3 | UT | 不同 API 版本布局约束 |
-| V-10 | AC-7.1 ~ AC-7.4 | UT | ContentModifier 集成行为 |
-| V-11 | AC-8.1 ~ AC-8.6 | C API UT | C API 属性和事件 |
-| V-12 | AC-9.1 ~ AC-9.4 | UT | 无障碍属性和操作 |
+| VM-1 | AC-1.1 ~ AC-1.3 | UT | 三种 ToggleType 正确创建对应 Pattern |
+| VM-2 | AC-1.4, AC-1.5 | UT | onChange 触发 + 双向绑定同步 |
+| VM-3 | AC-1.6, R-19 | UT | disabled 状态行为 |
+| VM-4 | AC-2.1 ~ AC-2.5 | UT | Switch 颜色属性设置与默认值 |
+| VM-5 | AC-3.1 ~ AC-3.4 | UT | Button 颜色切换 + 形状版本差异 |
+| VM-6 | AC-4.1 ~ AC-4.3 | UT + 手工 | 拖拽方向判定 + RTL 反转 |
+| VM-7 | AC-4.4 ~ AC-4.5 | 手工 | 弹簧动画参数验证 |
+| VM-8 | AC-5.1 ~ AC-5.4 | 手工 | Material 效果分级验证 |
+| VM-9 | AC-6.1 ~ AC-6.3 | UT | 不同 API 版本布局约束 |
+| VM-10 | AC-7.1 ~ AC-7.4 | UT | ContentModifier 集成行为 |
+| VM-11 | AC-8.1 ~ AC-8.6 | C API UT | C API 属性和事件 |
+| VM-12 | AC-9.1 ~ AC-9.4 | UT | 无障碍属性和操作 |
 
 ## API 变更分析
 
