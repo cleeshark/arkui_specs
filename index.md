@@ -150,12 +150,12 @@
 | 05 组件层 | 01 布局类组件 | 11 Stack | `05-01-11` | `05-ui-components/01-layout-components/11-stack/` | *待补充* | 0 |
 | 05 组件层 | 01 布局类组件 | 12 FolderStack | `05-01-12` | `05-ui-components/01-layout-components/12-folder-stack/` | *待补充* | 0 |
 | 05 组件层 | 01 布局类组件 | 13 DynamicLayout | `05-01-13` | `05-ui-components/01-layout-components/13-dynamic-layout/` | *待补充* | 0 |
-| 05 组件层 | 02 导航类组件 | 01 Navigation | `05-02-01` | `05-ui-components/02-navigation-components/01-navigation/` | *待补充* | 0 |
+| 05 组件层 | 02 导航类组件 | 01 Navigation | `05-02-01` | `05-ui-components/02-navigation-components/01-navigation/` | [design.md](05-ui-components/02-navigation-components/01-navigation/design.md) | 7 |
 | 05 组件层 | 02 导航类组件 | 02 NavRouter | `05-02-02` | `05-ui-components/02-navigation-components/02-nav-router/` | *待补充* | 0 |
 | 05 组件层 | 02 导航类组件 | 03 NavDestination | `05-02-03` | `05-ui-components/02-navigation-components/03-nav-destination/` | *待补充* | 0 |
 | 05 组件层 | 02 导航类组件 | 04 Stepper/SetpperItem | `05-02-04` | `05-ui-components/02-navigation-components/04-stepper-stepper-item/` | *待补充* | 0 |
 | 05 组件层 | 02 导航类组件 | 05 Navigator | `05-02-05` | `05-ui-components/02-navigation-components/05-navigator/` | *待补充* | 0 |
-| 05 组件层 | 02 导航类组件 | 06 SideBarContainer | `05-02-06` | `05-ui-components/02-navigation-components/06-sidebar-container/` | *待补充* | 0 |
+| 05 组件层 | 02 导航类组件 | 06 SideBarContainer | `05-02-06` | `05-ui-components/02-navigation-components/06-sidebar-container/` | [design.md](05-ui-components/02-navigation-components/06-sidebar-container/design.md) | 1 |
 | 05 组件层 | 03 滚动容器类组件 | 01 滚动公共能力 | `05-03-01` | `05-ui-components/03-scroll-container-components/01-scroll-common-capability/` | *待补充* | 0 |
 | 05 组件层 | 03 滚动容器类组件 | 02 AlaphabetIndexer | `05-03-02` | `05-ui-components/03-scroll-container-components/02-alphabet-indexer/` | *待补充* | 0 |
 | 05 组件层 | 03 滚动容器类组件 | 03 ScrollBar | `05-03-03` | `05-ui-components/03-scroll-container-components/03-scroll-bar/` | *待补充* | 0 |
@@ -163,8 +163,8 @@
 | 05 组件层 | 03 滚动容器类组件 | 05 List/ListItem/ListItemGroup | `05-03-05` | `05-ui-components/03-scroll-container-components/05-list-list-item-list-item-group/` | *待补充* | 0 |
 | 05 组件层 | 03 滚动容器类组件 | 06 Refresh | `05-03-06` | `05-ui-components/03-scroll-container-components/06-refresh/` | *待补充* | 0 |
 | 05 组件层 | 03 滚动容器类组件 | 07 Scroll | `05-03-07` | `05-ui-components/03-scroll-container-components/07-scroll/` | *待补充* | 0 |
-| 05 组件层 | 03 滚动容器类组件 | 08 Swiper | `05-03-08` | `05-ui-components/03-scroll-container-components/08-swiper/` | *待补充* | 0 |
-| 05 组件层 | 03 滚动容器类组件 | 09 Tabs/TabContent | `05-03-09` | `05-ui-components/03-scroll-container-components/09-tabs-tab-content/` | *待补充* | 0 |
+| 05 组件层 | 03 滚动容器类组件 | 08 Swiper | `05-03-08` | `05-ui-components/03-scroll-container-components/08-swiper/` | [design.md](05-ui-components/03-scroll-container-components/08-swiper/design.md) | 6 |
+| 05 组件层 | 03 滚动容器类组件 | 09 Tabs/TabContent | `05-03-09` | `05-ui-components/03-scroll-container-components/09-tabs-tab-content/` | [design.md](05-ui-components/03-scroll-container-components/09-tabs-tab-content/design.md) | 6 |
 | 05 组件层 | 03 滚动容器类组件 | 10 WaterFlow/FlowItem | `05-03-10` | `05-ui-components/03-scroll-container-components/10-water-flow-flow-item/` | *待补充* | 0 |
 | 05 组件层 | 04 输入表单类 | 01 Button | `05-04-01` | `05-ui-components/04-input-form-components/01-button/` | *待补充* | 0 |
 | 05 组件层 | 04 输入表单类 | 02 Checkbox/CheckboxGroup | `05-04-02` | `05-ui-components/04-input-form-components/02-checkbox-checkbox-group/` | *待补充* | 0 |
@@ -966,6 +966,13 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 创建与布局模式 | [Feat-01-navigation-creation-layout-mode-spec.md](05-ui-components/02-navigation-components/01-navigation/Feat-01-navigation-creation-layout-mode-spec.md) | Baselined |
+| Feat-02 | 标题栏配置 | [Feat-02-navigation-title-bar-spec.md](05-ui-components/02-navigation-components/01-navigation/Feat-02-navigation-title-bar-spec.md) | Baselined |
+| Feat-03 | 工具栏配置 | [Feat-03-navigation-toolbar-spec.md](05-ui-components/02-navigation-components/01-navigation/Feat-03-navigation-toolbar-spec.md) | Baselined |
+| Feat-04 | 路由栈管理 | [Feat-04-navigation-route-stack-spec.md](05-ui-components/02-navigation-components/01-navigation/Feat-04-navigation-route-stack-spec.md) | Baselined |
+| Feat-05 | 转场动画与自定义过渡 | [Feat-05-navigation-transition-spec.md](05-ui-components/02-navigation-components/01-navigation/Feat-05-navigation-transition-spec.md) | Baselined |
+| Feat-06 | 系统栏/安全区/分栏/恢复 | [Feat-06-navigation-system-bar-split-recovery-spec.md](05-ui-components/02-navigation-components/01-navigation/Feat-06-navigation-system-bar-split-recovery-spec.md) | Baselined |
+| Feat-07 | 事件回调与Modifier | [Feat-07-navigation-events-modifier-spec.md](05-ui-components/02-navigation-components/01-navigation/Feat-07-navigation-events-modifier-spec.md) | Baselined |
 
 ### 05-02-02 NavRouter
 
@@ -991,6 +998,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 全量规格 | [Feat-01-side-bar-container-full-spec.md](05-ui-components/02-navigation-components/06-sidebar-container/Feat-01-side-bar-container-full-spec.md) | Baselined |
 
 ### 05-03-01 滚动公共能力
 
@@ -1031,11 +1039,23 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 创建与布局属性 | [Feat-01-swiper-creation-layout-spec.md](05-ui-components/03-scroll-container-components/08-swiper/Feat-01-swiper-creation-layout-spec.md) | Baselined |
+| Feat-02 | 自动播放与指示器 | [Feat-02-swiper-autoplay-indicator-spec.md](05-ui-components/03-scroll-container-components/08-swiper/Feat-02-swiper-autoplay-indicator-spec.md) | Baselined |
+| Feat-03 | 动画与过渡 | [Feat-03-swiper-animation-transition-spec.md](05-ui-components/03-scroll-container-components/08-swiper/Feat-03-swiper-animation-transition-spec.md) | Baselined |
+| Feat-04 | 交互与控制器 | [Feat-04-swiper-interaction-controller-spec.md](05-ui-components/03-scroll-container-components/08-swiper/Feat-04-swiper-interaction-controller-spec.md) | Baselined |
+| Feat-05 | 事件回调 | [Feat-05-swiper-events-spec.md](05-ui-components/03-scroll-container-components/08-swiper/Feat-05-swiper-events-spec.md) | Baselined |
+| Feat-06 | C API 全量规格 | [Feat-06-swiper-capi-spec.md](05-ui-components/03-scroll-container-components/08-swiper/Feat-06-swiper-capi-spec.md) | Baselined |
 
 ### 05-03-09 Tabs/TabContent
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 创建与基础属性 | [Feat-01-tabs-creation-basic-properties-spec.md](05-ui-components/03-scroll-container-components/09-tabs-tab-content/Feat-01-tabs-creation-basic-properties-spec.md) | Baselined |
+| Feat-02 | 标签栏样式 | [Feat-02-tabs-bar-style-spec.md](05-ui-components/03-scroll-container-components/09-tabs-tab-content/Feat-02-tabs-bar-style-spec.md) | Baselined |
+| Feat-03 | 侧边栏模式 | [Feat-03-tabs-sidebar-mode-spec.md](05-ui-components/03-scroll-container-components/09-tabs-tab-content/Feat-03-tabs-sidebar-mode-spec.md) | Baselined |
+| Feat-04 | 动画与自定义过渡 | [Feat-04-tabs-animation-transition-spec.md](05-ui-components/03-scroll-container-components/09-tabs-tab-content/Feat-04-tabs-animation-transition-spec.md) | Baselined |
+| Feat-05 | 事件回调 | [Feat-05-tabs-events-spec.md](05-ui-components/03-scroll-container-components/09-tabs-tab-content/Feat-05-tabs-events-spec.md) | Baselined |
+| Feat-06 | 缓存与滚动控制 | [Feat-06-tabs-cache-scroll-spec.md](05-ui-components/03-scroll-container-components/09-tabs-tab-content/Feat-06-tabs-cache-scroll-spec.md) | Baselined |
 
 ### 05-03-10 WaterFlow/FlowItem
 
