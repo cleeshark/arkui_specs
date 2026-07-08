@@ -1702,7 +1702,7 @@ functions:
     id: '01'
     title: Navigation
   path: 05-ui-components/02-navigation-components/01-navigation/
-  design: null
+  design: 05-ui-components/02-navigation-components/01-navigation/design.md
   status: active
 - id: 05-02-02
   l1:
@@ -1767,7 +1767,7 @@ functions:
     id: '06'
     title: SideBarContainer
   path: 05-ui-components/02-navigation-components/06-sidebar-container/
-  design: null
+  design: 05-ui-components/02-navigation-components/06-sidebar-container/design.md
   status: active
 - id: 05-03-01
   l1:
@@ -1871,7 +1871,7 @@ functions:
     id: 08
     title: Swiper
   path: 05-ui-components/03-scroll-container-components/08-swiper/
-  design: null
+  design: 05-ui-components/03-scroll-container-components/08-swiper/design.md
   status: active
 - id: 05-03-09
   l1:
@@ -1884,7 +1884,7 @@ functions:
     id: 09
     title: Tabs/TabContent
   path: 05-ui-components/03-scroll-container-components/09-tabs-tab-content/
-  design: null
+  design: 05-ui-components/03-scroll-container-components/09-tabs-tab-content/design.md
   status: active
 - id: 05-03-10
   l1:
