@@ -1,13 +1,13 @@
 # 特性规格
 
-> Func-05-02-01-Feat-10 NavDestination 生命周期与事件回调：固化 onShown/onHidden/onBackPressed/onResult/onReady/onWillAppear/onWillDisappear/onWillShow/onWillHide/onActive/onInactive/onSaveState/onRestoreState/onNewParam 的行为规格。
+> Func-05-02-03-Feat-03 NavDestination 生命周期与事件回调：固化 onShown/onHidden/onBackPressed/onResult/onReady/onWillAppear/onWillDisappear/onWillShow/onWillHide/onActive/onInactive/onSaveState/onRestoreState/onNewParam 的行为规格。
 
 ## 概述
 
 | 属性 | 值 |
 |------|-----|
 | 特性名称 | NavDestination 生命周期与事件回调 |
-| 特性编号 | Func-05-02-01-Feat-10 |
+| 特性编号 | Func-05-02-03-Feat-03 |
 | 所属 Epic | 无（已有能力补录） |
 | 优先级 | P1 |
 | 目标版本 | API 10 起支持 onShown/onHidden/onBackPressed；API 11 起支持 onReady；API 12 起支持 onWillAppear/onWillDisappear/onWillShow/onWillHide；API 15 起支持 onResult；API 17 起支持 onActive/onInactive；API 19 起支持 onNewParam；API 21 起支持 VisibilityChangeReason.APP_STATE；API 26 起支持 onSaveState/onRestoreState |

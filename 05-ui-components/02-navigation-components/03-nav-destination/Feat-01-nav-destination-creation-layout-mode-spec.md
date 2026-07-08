@@ -4,7 +4,7 @@
 
 本规格定义 NavDestination 组件的创建与布局模式特性，涵盖 NavDestination 页面的三种创建方式（无参、builder、builder+navPathInfo）、NavDestinationMode 模式选择（STANDARD/DIALOG）、安全区与系统控制属性（ignoreLayoutSafeArea、preferredOrientation、enableStatusBar、enableNavigationIndicator、fullScreenOverlay）、滚动绑定（bindToScrollable、bindToNestedScrollable）以及 NavDestinationContext 上下文获取（onReady 回调及 NavDestinationContext 属性）。
 
-注册表标识：Func-05-02-01-Feat-08（目录内使用 Feat-01）。
+注册表标识：Func-05-02-03-Feat-01。
 
 ## 本次变更范围（Delta）
 

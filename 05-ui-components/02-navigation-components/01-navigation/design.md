@@ -9,7 +9,8 @@
 | Design ID | DESIGN-Func-05-02-01 |
 | 关联需求 | 已有能力补录（无独立 requirement.md） |
 | 关联 Epic | 无 |
-| 目标 Feature | Feat-01 创建与布局模式, Feat-02 标题栏配置, Feat-03 工具栏配置, Feat-04 路由栈管理, Feat-05 转场动画与自定义过渡, Feat-06 系统栏/安全区/分栏/恢复, Feat-07 事件回调与Modifier, Feat-08 NavDestination 创建与布局模式, Feat-09 NavDestination 标题栏与工具栏配置, Feat-10 NavDestination 生命周期与事件回调, Feat-11 NavDestination 模式/安全区/转场动画/状态恢复 |
+| 目标 Feature | Feat-01 创建与布局模式, Feat-02 标题栏配置, Feat-03 工具栏配置, Feat-04 路由栈管理, Feat-05 转场动画与自定义过渡, Feat-06 系统栏/安全区/分栏/恢复, Feat-07 事件回调与Modifier |
+| 关联组件 | NavDestination 作为子页面容器拥有独立 design.md → [../03-nav-destination/design.md](../03-nav-destination/design.md) |
 | 复杂度 | 复杂 |
 | 目标版本 | API 8 起支持，核心 API 集中于 API 9-12，部分增量 API 至 API 26 |
 | Owner | ArkUI SIG |
@@ -22,7 +23,7 @@
 | 问题陈述 | ArkUI 需要一个统一的导航容器组件，支持单页（Stack）、分栏（Split）和自适应（Auto/AUTO_WITH_ASPECT_RATIO）三种导航模式，并通过 NavPathStack 管理页面路由栈 |
 | 核心目标 | 提供 Navigation 容器组件，覆盖创建与布局模式、标题栏/工具栏配置、路由栈管理、转场动画、安全区避让、事件回调等 7 个功能域 |
 | P0 AC | Feat-01 ~ Feat-07 全量 AC |
-| 补充说明 | NavDestination 补录；（Feat-08~11）NavDestination 作为 Navigation 的子页面容器，与 Navigation 共享导航功能域 |
+| 补充说明 | NavDestination 作为 Navigation 的子页面容器，拥有独立功能域设计文档 → [../03-nav-destination/design.md](../03-nav-destination/design.md)；NavDestination 与 Navigation 共享 TitleBarPattern/NavToolbarPattern 子组件 |
 
 ## 上下文和现状
 
@@ -41,44 +42,20 @@
 | ace_engine | `frameworks/bridge/declarative_frontend/engine/jsi/nativeModule/arkts_native_navigation_bridge.cpp/.h` | ArkTS 桥接层，属性 Set/Reset 方法 | Feat-07 |
 | ace_engine | `frameworks/bridge/declarative_frontend/ark_modifier/src/navigation_modifier.ts` | ArkTS Modifier 定义 | Feat-07 |
 | ace_engine | `test/unittest/core/pattern/navigation/` | Navigation 单元测试 | 全量涉及 |
-| ace_engine | `frameworks/core/components_ng/pattern/navrouter/navdestination_pattern.cpp/.h` | NavDestinationPattern 主逻辑：生命周期管理、标题栏/工具栏委托、滚动绑定 | （Feat-08）新增 |
-| ace_engine | `frameworks/core/components_ng/pattern/navrouter/navdestination_model_ng.cpp/.h` | NavDestination NG Model 层：创建和属性设置 | （Feat-08）新增 |
-| ace_engine | `frameworks/core/components_ng/pattern/navrouter/navdestination_model_static.cpp/.h` | NavDestination 静态 Model 层 | （Feat-08）新增 |
-| ace_engine | `frameworks/core/components_ng/pattern/navrouter/navdestination_layout_property.h` | NavDestination 布局属性：hideTitleBar/hideToolBar/hideBackButton/ignoreLayoutSafeArea/fullScreenOverlay | （Feat-08）新增 |
-| ace_engine | `frameworks/core/components_ng/pattern/navrouter/navdestination_event_hub.h` | NavDestination 事件回调：onShown/onHidden/onBackPressed/onWillAppear/onWillDisAppear/onActive/onInactive/onSaveState/onRestoreState | （Feat-10）新增 |
-| ace_engine | `frameworks/core/components_ng/pattern/navrouter/navdestination_context.h` | NavDestinationContext 和 NavPathInfo：页面路径信息和上下文暴露 | （Feat-08）新增 |
-| ace_engine | `frameworks/core/components_ng/pattern/navigation/navdestination_pattern_base.cpp/.h` | NavDestinationPatternBase：标题栏/工具栏动画和滚动协调基类 | （Feat-08）新增 |
-| ace_engine | `frameworks/core/components_ng/pattern/navrouter/navdestination_group_node.h` | NavDestinationGroupNode：NavDestination 节点结构，持有 titleBar/toolBar/content 子节点 | （Feat-08）新增 |
-| ace_engine | `frameworks/bridge/declarative_frontend/jsview/js_navdestination.cpp/.h` | JS 桥接层，JSNavDestination 属性方法解析 | （Feat-08）新增 |
-| ace_engine | `frameworks/core/interfaces/native/node/nav_destination_modifier.cpp/.h` | C API 桥接层，NavDestinationModifier 属性设置 | （Feat-11）新增 |
-| ace_engine | `frameworks/core/interfaces/native/implementation/nav_destination_modifier.cpp` | C API 静态版桥接层，NavDestinationModelStatic 属性设置 | （Feat-11）新增 |
-| ace_engine | `interface/sdk-js/api/@internal/component/ets/nav_destination.d.ts` | NavDestination 公开 API 类型定义 | （Feat-08）存量分析 |
-| ace_engine | `interface/sdk-js/api/arkui/NavDestinationModifier.d.ts` | NavDestinationModifier 公开 API 类型定义 | （Feat-11）存量分析 |
 
 ### 调用链层级分析
 
 | 层 | 模块 | 职责 | 修改类型 |
 |----|------|------|----------|
-| 1. SDK 层 | `interface/sdk-js/api/@internal/component/ets/navigation.d.ts` | Navigation 公开 API 类型定义，包含 100+ 属性和事件声明（Feat-08）Navigation + NavDestination 双组件 SDK 定义 | 存量分析 |
+| 1. SDK 层 | `interface/sdk-js/api/@internal/component/ets/navigation.d.ts` | Navigation 公开 API 类型定义，包含 100+ 属性和事件声明 | 存量分析 |
 | 2. JSView 层 | `frameworks/bridge/declarative_frontend/jsview/js_navigation.cpp` | 解析 ArkTS Navigation() 构造参数及属性方法，参数类型校验与枚举映射，调用 NavigationModelNG 接口 | 存量分析 |
-| 3. Bridge 层 | `frameworks/bridge/declarative_frontend/engine/jsi/nativeModule/arkts_native_navigation_bridge.cpp` | ArkTS → C++ 桥接层，属性 Set/Reset 方法，将 JSI 值转换为 C++ 类型后调用 node_modifier（Feat-11）也用于 NavDestination C API 桥接 | 存量分析 |
+| 3. Bridge 层 | `frameworks/bridge/declarative_frontend/engine/jsi/nativeModule/arkts_native_navigation_bridge.cpp` | ArkTS → C++ 桥接层，属性 Set/Reset 方法，将 JSI 值转换为 C++ 类型后调用 node_modifier | 存量分析 |
 | 4. Model 层 | `frameworks/core/components_ng/pattern/navigation/navigation_model_ng.cpp` | 属性设置统一入口：所有 Set/Get 方法写入 LayoutProperty 或 Pattern 成员 | 存量分析 |
 | 5. Pattern 层 | `frameworks/core/components_ng/pattern/navigation/navigation_pattern.cpp` | 核心编排：导航模式管理、NavPathStack 协调、NavBar/Content 区域布局、安全区避让 | 存量分析 |
 | 6. Layout 层 | `frameworks/core/components_ng/pattern/navigation/navigation_layout_algorithm.cpp` | MeasureContent：根据 NavigationMode（Stack/Split/Auto）和 navBarWidth/navBarPosition/navBarWidthRange/minContentWidth 计算布局 | 存量分析 |
 | 7. Property 层 | `frameworks/core/components_ng/pattern/navigation/navigation_layout_property.h` | 存储触发 MEASURE/LAYOUT 的属性：mode、navBarWidth、navBarPosition、navBarWidthRange、minContentWidth、hideNavBar 等 | 存量分析 |
 | 8. Event 层 | `frameworks/core/components_ng/pattern/navigation/navigation_event_hub.h` | 事件回调存储与触发：onNavigationBarStateChange、onNavModeChange 等 | 存量分析 |
 | 9. Stack 层 | `frameworks/core/components_ng/pattern/navigation/navigation_stack.cpp` | NavPathStack 路由栈核心：push/pop/replace/clear/moveToTop/getParent 等栈操作 | 存量分析 |
-| 10. NavDest SDK 层 | `interface/sdk-js/api/@internal/component/ets/nav_destination.d.ts` | NavDestination 52 个公开 API 类型定义 | （Feat-08）存量分析 |
-| 11. NavDest JSView 层 | `frameworks/bridge/declarative_frontend/jsview/js_navdestination.cpp` | JSNavDestination 构造参数解析、属性方法调用、生命周期回调注册 | （Feat-08）存量分析 |
-| 12. NavDest Bridge 层 | `frameworks/core/interfaces/native/node/nav_destination_modifier.cpp` | C API → NavDestinationModelNG 属性设置桥接 | （Feat-11）存量分析 |
-| 13. NavDest Static Bridge | `frameworks/core/interfaces/native/implementation/nav_destination_modifier.cpp` | C API → NavDestinationModelStatic 静态版属性设置桥接 | （Feat-11）存量分析 |
-| 14. NavDest Model 层 | `frameworks/core/components_ng/pattern/navrouter/navdestination_model_ng.cpp/.h` | NavDestinationModelNG 创建和属性设置 | （Feat-08）存量分析 |
-| 15. NavDest Static Model | `frameworks/core/components_ng/pattern/navrouter/navdestination_model_static.cpp/.h` | NavDestinationModelStatic 全静态方法实现 | （Feat-11）存量分析 |
-| 16. NavDest Pattern 层 | `frameworks/core/components_ng/pattern/navrouter/navdestination_pattern.cpp/.h` | NavDestinationPattern 生命周期、标题栏/工具栏委托、滚动绑定 | （Feat-08）存量分析 |
-| 17. NavDest Pattern Base | `frameworks/core/components_ng/pattern/navigation/navdestination_pattern_base.cpp/.h` | NavDestinationPatternBase 标题栏/工具栏动画和滚动协调基类 | （Feat-08）存量分析 |
-| 18. NavDest Layout 层 | `frameworks/core/components_ng/pattern/navrouter/navdestination_layout_property.h` | NavDestinationLayoutProperty：hideTitleBar/hideToolBar/hideBackButton/ignoreLayoutSafeArea/fullScreenOverlay | （Feat-08）存量分析 |
-| 19. NavDest Event 层 | `frameworks/core/components_ng/pattern/navrouter/navdestination_event_hub.h` | NavDestinationEventHub：onShown/onHidden/onBackPressed/onWillAppear/onWillDisAppear/onActive/onInactive/onSaveState/onRestoreState | （Feat-10）存量分析 |
-| 20. NavDest Node 层 | `frameworks/core/components_ng/pattern/navrouter/navdestination_group_node.h` | NavDestinationGroupNode：titleBarNode/toolBarNode/contentNode 子节点管理 | （Feat-08）存量分析 |
 
 ### 适用架构规则
 
@@ -114,10 +91,6 @@
 | ADR-F5-1 | 自定义过渡回调机制 | customNavContentTransition 使用回调机制返回 NavigationAnimatedTransition，NavigationTransitionProxy 控制过渡进度 | 方案A：声明式动画配置（预设动画类型）；方案B：回调机制（开发者完全自定义动画） | 回调机制提供最大灵活性，开发者可完全自定义 push/pop 过渡效果；NavigationTransitionProxy 支持交互式过渡（手势驱动） | NavigationPattern 需管理 TransitionProxy 生命周期，timeout 保护防止动画卡住 |
 | ADR-F6-1 | BarStyle 与安全区联动 | BarStyle（STANDARD/STACK/SAFE_AREA_PADDING）与 IAvoidInfoListener 安全区避让联动 | 方案A：BarStyle 仅控制 NavBar 背景样式；方案B：BarStyle 同时控制 NavBar 与安全区的避让关系 | BarStyle 不仅是视觉样式，还影响 NavBar 与安全区的避让计算，STACK/SAFE_AREA_PADDING 改变 NavBar 布局行为 | NavigationLayoutAlgorithm 需根据 BarStyle 调整 NavBar 布局计算 |
 | ADR-F7-1 | NavigationModifier 桥接 | NavigationModifier 通过 C API 桥接层（arkts_native_navigation_bridge.cpp）将属性写入 NavigationLayoutProperty | 方案A：仅 JSView 层桥接；方案B：JSView + C API 双路径桥接 | C API 桥接层支持 NDK 场景和静态版前端（ArkTS Modifier），与 JSView 层并行覆盖动态版和静态版 | arkts_native_navigation_bridge.cpp 和 js_navigation.cpp 双路径需分别维护 |
-| ADR-F8-1 | NavDestination 作为 Navigation 子页面 | NavDestination 是 Navigation 的子页面容器，由 NavPathStack push/pop 管理生命周期，与 Navigation 共享导航功能域设计文档 | 方案A：NavDestination 拥有独立 design.md；方案B：合并到 Navigation design.md | NavDestination 与 Navigation 在功能域上紧密耦合（标题栏/工具栏/安全区/转场共用子组件），合并设计文档避免重复 | NavDestination Feat-08~11 注册在 FuncID 05-02-01 |
-| ADR-F9-1 | NavDestination 标题栏/工具栏委托 | NavDestinationPattern 委托 TitleBarPattern/NavToolbarPattern 子组件处理标题栏和工具栏渲染与动画 | 方案A：NavDestinationPattern 内部实现标题栏/工具栏逻辑；方案B：委托独立子组件 Pattern | 委托子组件符合组件化原则，TitleBarPattern 和 NavToolbarPattern 同时服务 Navigation NavBar 和 NavDestination | NavDestinationPattern 通过 MountTitleBar/MountToolBar 创建子节点 |
-| ADR-F10-1 | NavDestination 生命周期事件丰富度 | NavDestination 支持 10+ 生命周期事件（onShown/onHidden/onWillAppear/onWillDisAppear/onWillShow/onWillHide/onActive/onInactive/onBackPressed/onReady）+ 状态保存/恢复（onSaveState/onRestoreState，API 26） | 方案A：仅支持 onShown/onHidden/onBackPressed 三种核心事件；方案B：完整生命周期链 | 完整生命周期链支持精细的页面状态管理，onWill* 系列回调允许开发者提前准备资源 | NavDestinationEventHub 存储并触发所有生命周期回调 |
-| ADR-F11-1 | NavDestination 双版 Model 分流 | NavDestinationModelNG（动态版，使用 ViewStackProcessor + 单例模式）和 NavDestinationModelStatic（静态版，全静态方法直接操作 FrameNode）双路径覆盖 | 方案A：仅 NavDestinationModelNG；方案B：双路径分流 | 静态版前端（ArkTS 静态版）不使用 ViewStackProcessor，需全静态方法直接操作 FrameNode + ShallowBuilder 懒渲染 | NavDestinationModelStatic::CreateFrameNode 直接创建 FrameNode |
 
 ## 设计骨架
 
@@ -160,10 +133,6 @@
 | TASK-IMPL-5 | 转场动画与 TransitionProxy 实现 | Feat-05 Spec | customNavContentTransition 回调与 NavigationTransitionProxy 交互式过渡 |
 | TASK-IMPL-6 | 系统栏/BarStyle/分栏特性实现 | Feat-06 Spec | systemBarStyle/BarStyle/divider/enableDragBar/splitPlaceholder/recoverable 属性设置 |
 | TASK-IMPL-7 | 事件回调与 NavigationModifier 桥接 | Feat-07 Spec | onTitleModeChange/onNavBarStateChange/onNavigationModeChange 回调与 C API 桥接 |
-| Feat-08-nav-destination-creation-layout-mode-spec.md | 固化 NavDestination 创建与布局模式行为规格 | 本 Design | 完整行为规格与 AC |
-| Feat-09-nav-destination-title-toolbar-spec.md | 固化 NavDestination 标题栏与工具栏配置行为规格 | 本 Design | 完整行为规格与 AC |
-| Feat-10-nav-destination-lifecycle-events-spec.md | 固化 NavDestination 生命周期与事件回调行为规格 | 本 Design | 完整行为规格与 AC |
-| Feat-11-nav-destination-mode-safe-area-transition-recovery-spec.md | 固化 NavDestination 模式/安全区/转场动画/状态恢复行为规格 | 本 Design | 完整行为规格与 AC |
 
 ---
 
@@ -228,43 +197,6 @@
 | `onNavBarStateChange(callback): NavigationAttribute` | Public | 注册导航栏状态变化回调 | Feat-07 |
 | `onNavigationModeChange(callback): NavigationAttribute` | Public | 注册导航模式变化回调 | Feat-07 |
 | `NavigationModifier` | Public | Navigation 属性修改器（C API 桥接） | Feat-07 |
-| `NavDestination(): NavDestinationAttribute` | Public | NavDestination 无参创建 | Feat-08 |
-| `NavDestination(builder: CustomBuilder, navPathInfo?: NavPathInfo): NavDestinationAttribute` | Public | NavDestination 带内容构建器和路径信息创建 | Feat-08 |
-| `mode(value: NavDestinationMode): NavDestinationAttribute` | Public | 设置 NavDestination 模式（STANDARD/DIALOG） | Feat-08 |
-| `ignoreLayoutSafeArea(types?: Array<LayoutSafeAreaType>, edges?: Array<LayoutSafeAreaEdge>): NavDestinationAttribute` | Public | NavDestination 安全区扩展 | Feat-08 |
-| `fullScreenOverlay(fullScreenOverlay: Optional<boolean>): NavDestinationAttribute` | Public | 分栏模式下全屏覆盖 | Feat-08 |
-| `preferredOrientation(orientation: Optional<Orientation>): NavDestinationAttribute` | Public | NavDestination 页面方向 | Feat-08 |
-| `enableStatusBar(enabled: Optional<boolean>, animated?: boolean): NavDestinationAttribute` | Public | NavDestination 状态栏显隐 | Feat-08 |
-| `enableNavigationIndicator(enabled: Optional<boolean>): NavDestinationAttribute` | Public | NavDestination 导航指示器显隐 | Feat-08 |
-| `bindToScrollable(scrollers: Array<Scroller>): NavDestinationAttribute` | Public | 绑定滚动容器 | Feat-08 |
-| `bindToNestedScrollable(scrollInfos: Array<NestedScrollInfo>): NavDestinationAttribute` | Public | 绑定嵌套滚动容器 | Feat-08 |
-| `title(value: string \| CustomBuilder \| NavDestinationCommonTitle \| NavDestinationCustomTitle \| Resource, options?: NavigationTitleOptions): NavDestinationAttribute` | Public | NavDestination 标题栏标题 | Feat-09 |
-| `hideTitleBar(hide: boolean, animated?: boolean): NavDestinationAttribute` | Public | 隐藏/显示 NavDestination 标题栏 | Feat-09 |
-| `hideBackButton(hide: Optional<boolean>): NavDestinationAttribute` | Public | 隐藏/显示 NavDestination 返回按钮 | Feat-09 |
-| `backButtonIcon(value: ResourceStr \| PixelMap \| SymbolGlyphModifier, accessibilityText?: ResourceStr): NavDestinationAttribute` | Public | 设置返回按钮图标 | Feat-09 |
-| `menus(value: Array<NavigationMenuItem> \| CustomBuilder, options?: NavigationMenuOptions): NavDestinationAttribute` | Public | NavDestination 标题栏菜单项 | Feat-09 |
-| `toolbarConfiguration(toolbarParam: Array<ToolbarItem> \| CustomBuilder, options?: NavigationToolbarOptions): NavDestinationAttribute` | Public | NavDestination 工具栏菜单项 | Feat-09 |
-| `hideToolBar(hide: boolean, animated?: boolean): NavDestinationAttribute` | Public | 隐藏/显示 NavDestination 工具栏 | Feat-09 |
-| `onShown(callback: Callback<VisibilityChangeReason>): NavDestinationAttribute` | Public | NavDestination 页面显示回调 | Feat-10 |
-| `onHidden(callback: Callback<VisibilityChangeReason>): NavDestinationAttribute` | Public | NavDestination 页面隐藏回调 | Feat-10 |
-| `onBackPressed(callback: () => boolean): NavDestinationAttribute` | Public | NavDestination 返回按钮拦截回调 | Feat-10 |
-| `onResult(callback: Optional<Callback<ESObject>>): NavDestinationAttribute` | Public | NavDestination pop 结果回调 | Feat-10 |
-| `onReady(callback: Callback<NavDestinationContext>): NavDestinationAttribute` | Public | NavDestination 就绪回调 | Feat-10 |
-| `onWillAppear(callback: Callback<void>): NavDestinationAttribute` | Public | NavDestination 即将出现回调 | Feat-10 |
-| `onWillDisappear(callback: Callback<void>): NavDestinationAttribute` | Public | NavDestination 即将消失回调 | Feat-10 |
-| `onWillShow(callback: Callback<void>): NavDestinationAttribute` | Public | NavDestination 即将显示回调 | Feat-10 |
-| `onWillHide(callback: Callback<void>): NavDestinationAttribute` | Public | NavDestination 即将隐藏回调 | Feat-10 |
-| `onActive(callback: Optional<Callback<NavDestinationActiveReason>>): NavDestinationAttribute` | Public | NavDestination 激活回调 | Feat-10 |
-| `onInactive(callback: Optional<Callback<NavDestinationActiveReason>>): NavDestinationAttribute` | Public | NavDestination 非激活回调 | Feat-10 |
-| `onSaveState(callback: Optional<SaveStateCallback>): NavDestinationAttribute` | Public | NavDestination 状态保存回调 | Feat-10 |
-| `onRestoreState(callback: Optional<RestoreStateCallback>): NavDestinationAttribute` | Public | NavDestination 状态恢复回调 | Feat-10 |
-| `onNewParam(callback: Optional<Callback<ESObject>>): NavDestinationAttribute` | Public | NavDestination 参数更新回调 | Feat-10 |
-| `systemBarStyle(style: Optional<SystemBarStyle>): NavDestinationAttribute` | Public | NavDestination 系统栏样式 | Feat-11 |
-| `recoverable(recoverable: Optional<boolean>): NavDestinationAttribute` | Public | NavDestination 应用终止恢复 | Feat-11 |
-| `systemTransition(type: NavigationSystemTransitionType): NavDestinationAttribute` | Public | NavDestination 系统转场动画类型 | Feat-11 |
-| `customTransition(delegate: NavDestinationTransitionDelegate): NavDestinationAttribute` | Public | NavDestination 自定义转场动画 | Feat-11 |
-| `NavDestinationModifier` | Public | NavDestination 属性修改器（C API 桥接） | Feat-11 |
-| `NavDestinationContext` | Public | NavDestination 上下文对象（pathInfo/pathStack/navDestinationId/mode/getConfigInRouteMap） | Feat-11 |
 
 ### 变更/废弃 API
 
@@ -331,59 +263,7 @@ graph TB
     NAV_STATIC --> Pattern
 ```
 
-#### NavDestination 架构图（Feat-08~11）
-
-```mermaid
-graph TB
-    subgraph NavDestSDK["NavDest SDK 层"]
-        NAVDEST_DTS["nav_destination.d.ts<br/>52 API 定义"]
-    end
-    subgraph NavDestJSView["NavDest JSView 层"]
-        JS_NAVDEST["js_navdestination.cpp<br/>构造参数解析 + 属性方法调用"]
-    end
-    subgraph NavDestBridge["NavDest Bridge 层"]
-        NAVDEST_MOD["nav_destination_modifier.cpp<br/>C API Set/Reset 方法桥接"]
-    end
-    subgraph NavDestStaticBridge["NavDest Static Bridge"]
-        NAVDEST_IMPL["nav_destination_modifier.cpp (implementation)<br/>NavDestinationModelStatic 属性设置"]
-    end
-    subgraph NavDestModel["NavDest Model 层"]
-        NAVDEST_MODEL_NG["NavDestinationModelNG<br/>Create + Set/Get 属性"]
-        NAVDEST_MODEL_STATIC["NavDestinationModelStatic<br/>CreateFrameNode + 静态方法"]
-    end
-    subgraph NavDestPattern["NavDest Pattern 层"]
-        NAVDEST_PAT["NavDestinationPattern<br/>生命周期 + 标题栏/工具栏委托 + 滚动绑定"]
-        NAVDEST_BASE["NavDestinationPatternBase<br/>标题栏/工具栏动画基类 + 滚动协调"]
-    end
-    subgraph NavDestSub["NavDest 子组件"]
-        TITLEBAR["TitleBarPattern<br/>标题栏渲染与布局"]
-        TOOLBAR["NavToolbarPattern<br/>工具栏渲染与布局"]
-    end
-    subgraph NavDestProp["NavDest Property 层"]
-        NAVDEST_LP["NavDestinationLayoutProperty<br/>hideTitleBar/hideToolBar/hideBackButton/..."]
-    end
-    subgraph NavDestEvent["NavDest Event 层"]
-        NAVDEST_EH["NavDestinationEventHub<br/>onShown/onHidden/onBackPressed/..."]
-    end
-    subgraph NavDestNode["NavDest Node 层"]
-        NAVDEST_NODE["NavDestinationGroupNode<br/>titleBarNode/toolBarNode/contentNode"]
-    end
-    subgraph NavDestCtx["NavDest Context"]
-        NAVDEST_CTX["NavDestinationContext<br/>pathInfo/pathStack/navDestinationId"]
-    end
-    NavDestSDK --> NavDestJSView
-    NavDestSDK --> NavDestBridge
-    NavDestJSView --> NavDestModel
-    NavDestBridge --> NavDestModel
-    NavDestStaticBridge --> NavDestModel
-    NavDestModel --> NavDestPattern
-    NavDestModel --> NavDestProp
-    NavDestPattern --> NavDestSub
-    NavDestPattern --> NavDestNode
-    NavDestPattern --> NavDestCtx
-    NavDestPattern --> NavDestEvent
-    NavDestSub --> NavDestProp
-```
+> NavDestination 拥有独立架构图和数据模型，详见 [../03-nav-destination/design.md](../03-nav-destination/design.md)。
 
 ### 数据模型设计
 
@@ -432,101 +312,7 @@ struct NavigationLayoutProperty : LayoutProperty {
 };
 ```
 
-#### NavDestination 数据模型（Feat-08）
-
-**ArkTS (API 层类型)**
-
-```typescript
-interface NavDestinationInterface {
-  (): NavDestinationAttribute;
-  (builder: CustomBuilder, navPathInfo?: NavPathInfo): NavDestinationAttribute;
-}
-
-interface NavDestinationAttribute extends CommonMethod<NavDestinationAttribute> {
-  title(value: string | CustomBuilder | NavDestinationCommonTitle | NavDestinationCustomTitle | Resource, options?: NavigationTitleOptions): NavDestinationAttribute;
-  hideTitleBar(hide: boolean, animated?: boolean): NavDestinationAttribute;
-  hideBackButton(hide: Optional<boolean>): NavDestinationAttribute;
-  backButtonIcon(value: ResourceStr | PixelMap | SymbolGlyphModifier, accessibilityText?: ResourceStr): NavDestinationAttribute;
-  menus(value: Array<NavigationMenuItem> | CustomBuilder, options?: NavigationMenuOptions): NavDestinationAttribute;
-  toolbarConfiguration(toolbarParam: Array<ToolbarItem> | CustomBuilder, options?: NavigationToolbarOptions): NavDestinationAttribute;
-  hideToolBar(hide: boolean, animated?: boolean): NavDestinationAttribute;
-  mode(value: NavDestinationMode): NavDestinationAttribute;
-  ignoreLayoutSafeArea(types?: Array<LayoutSafeAreaType>, edges?: Array<LayoutSafeAreaEdge>): NavDestinationAttribute;
-  systemBarStyle(style: Optional<SystemBarStyle>): NavDestinationAttribute;
-  recoverable(recoverable: Optional<boolean>): NavDestinationAttribute;
-  systemTransition(type: NavigationSystemTransitionType): NavDestinationAttribute;
-  customTransition(delegate: NavDestinationTransitionDelegate): NavDestinationAttribute;
-  fullScreenOverlay(fullScreenOverlay: Optional<boolean>): NavDestinationAttribute;
-  preferredOrientation(orientation: Optional<Orientation>): NavDestinationAttribute;
-  enableStatusBar(enabled: Optional<boolean>, animated?: boolean): NavDestinationAttribute;
-  enableNavigationIndicator(enabled: Optional<boolean>): NavDestinationAttribute;
-  onShown(callback: Callback<VisibilityChangeReason>): NavDestinationAttribute;
-  onHidden(callback: Callback<VisibilityChangeReason>): NavDestinationAttribute;
-  onBackPressed(callback: () => boolean): NavDestinationAttribute;
-  onResult(callback: Optional<Callback<ESObject>>): NavDestinationAttribute;
-  onReady(callback: Callback<NavDestinationContext>): NavDestinationAttribute;
-  onWillAppear(callback: Callback<void>): NavDestinationAttribute;
-  onWillDisappear(callback: Callback<void>): NavDestinationAttribute;
-  onWillShow(callback: Callback<void>): NavDestinationAttribute;
-  onWillHide(callback: Callback<void>): NavDestinationAttribute;
-  onActive(callback: Optional<Callback<NavDestinationActiveReason>>): NavDestinationAttribute;
-  onInactive(callback: Optional<Callback<NavDestinationActiveReason>>): NavDestinationAttribute;
-  onSaveState(callback: Optional<SaveStateCallback>): NavDestinationAttribute;
-  onRestoreState(callback: Optional<RestoreStateCallback>): NavDestinationAttribute;
-  onNewParam(callback: Optional<Callback<ESObject>>): NavDestinationAttribute;
-  bindToScrollable(scrollers: Array<Scroller>): NavDestinationAttribute;
-  bindToNestedScrollable(scrollInfos: Array<NestedScrollInfo>): NavDestinationAttribute;
-}
-
-enum NavDestinationMode {
-  STANDARD = 0,
-  DIALOG = 1
-}
-
-interface NavDestinationCommonTitle {
-  main: string | Resource;
-  sub: string | Resource;
-}
-
-interface NavDestinationCustomTitle {
-  builder: CustomBuilder;
-  height: TitleHeight | Length;
-}
-
-interface NavDestinationContext {
-  pathInfo: NavPathInfo;
-  pathStack: NavPathStack;
-  navDestinationId?: string;
-  mode?: NavDestinationMode;
-  getConfigInRouteMap(): Record<string, Object>;
-}
-```
-
-**C++ (框架层结构)**
-
-```cpp
-// NavDestinationLayoutProperty
-struct NavDestinationLayoutProperty : NavDestinationLayoutPropertyBase {
-  ACE_DEFINE_PROPERTY_GROUP_NO_DEFAULT(HideTitleBar, bool, PROPERTY_UPDATE_MEASURE)
-  ACE_DEFINE_PROPERTY_GROUP_NO_DEFAULT(HideToolBar, bool, PROPERTY_UPDATE_MEASURE)
-  ACE_DEFINE_PROPERTY_GROUP_NO_DEFAULT(HideBackButton, bool, PROPERTY_UPDATE_MEASURE)
-  ACE_DEFINE_PROPERTY_GROUP_NO_DEFAULT(IgnoreLayoutSafeArea, IgnoreLayoutSafeAreaOpts, PROPERTY_UPDATE_MEASURE)
-  ACE_DEFINE_PROPERTY_GROUP_NO_DEFAULT(FullScreenOverlay, bool, PROPERTY_UPDATE_MEASURE)
-  ACE_DEFINE_PROPERTY_GROUP_NO_DEFAULT(NoPixMap, bool, PROPERTY_UPDATE_MEASURE)
-  ACE_DEFINE_PROPERTY_GROUP_NO_DEFAULT(ImageSource, ImageSourceInfo, PROPERTY_UPDATE_MEASURE)
-  ACE_DEFINE_PROPERTY_GROUP_NO_DEFAULT(PixelMap, RefPtr<PixelMap>, PROPERTY_UPDATE_MEASURE)
-};
-
-// NavDestinationContext
-struct NavDestinationContext : AceType {
-  int32_t index_ = -1;
-  uint64_t navDestinationId_ = 0;
-  NavDestinationMode mode_;
-  RefPtr<NavPathInfo> pathInfo_;
-  WeakPtr<NavigationStack> navigationStack_;
-  WeakPtr<NavDestinationPattern> navDestinationPattern_;
-};
-```
+> NavDestination 数据模型详见 [../03-nav-destination/design.md](../03-nav-destination/design.md)。
 
 ### 线程与并发模型
 
@@ -536,10 +322,6 @@ struct NavDestinationContext : AceType {
 | NavPathStack 操作 | UI | UI | push/pop 等栈操作在 UI 线程执行 |
 | 安全区避让计算 | UI | UI | IAvoidInfoListener 回调在 UI 线程 |
 | 模式切换动画 | UI → Render | UI → Render | enableModeChangeAnimation 动画在渲染管线中执行 |
-| NavDestination 属性设置 (Set*) | UI | UI | 直接写入 Property |
-| NavDestination 生命周期回调触发 | UI | UI | Pattern 状态变化时触发 EventHub |
-| NavDestination 安全区避让计算 | UI | UI | IAvoidInfoListener + CustomSafeAreaExpander |
-| NavDestination 标题栏/工具栏动画 | UI → Render | UI → Render | BarTranslateState 协调 translate+opacity |
 
 ## 详细设计
 
@@ -690,100 +472,7 @@ NavigationEventHub 提供 onNavigationBarStateChange、onNavModeChange、onNavBa
 - 属性通过 C API 桥接层（arkts_native_navigation_bridge.cpp）写入 NavigationLayoutProperty
 - NavigationModelStatic 提供静态版 Model 实现，与 NavigationModelNG 并行
 
-### NavDestination 创建与布局模式
-
-NavDestination 创建入口：`NavDestinationModelNG::Create()` 创建 NavDestinationGroupNode（tag=V2::NAVDESTINATION_ETS_TAG），包含 titleBarNode、contentNode、toolBarNode 三个子节点。NavDestination 支持 STANDARD 和 DIALOG 两种模式。
-
-**NavDestination 创建方式：**
-- 无参创建：`NavDestination()` 创建空 NavDestination，后续通过 builder 设置内容
-- 带 builder 创建：`NavDestination(builder: CustomBuilder)` 创建带内容的 NavDestination
-- 带 builder + navPathInfo 创建：`NavDestination(builder: CustomBuilder, navPathInfo: NavPathInfo)` 创建带内容和路径信息的 NavDestination
-
-**NavDestinationMode 行为差异：**
-- **STANDARD 模式**（默认）：NavDestination 在 Navigation Content 区域正常显示，全屏宽度
-- **DIALOG 模式**：NavDestination 以对话框形式显示，宽度受限，背景色默认透明（除非开发者显式设置 backgroundColor）
-
-**NavDestination 安全区避让**：`ignoreLayoutSafeArea` 控制 NavDestination 是否避让系统安全区（状态栏/导航栏）。API >= VERSION_ELEVEN 自动避让 SAFE_AREA_TYPE_SYSTEM | SAFE_AREA_TYPE_CUTOUT, SAFE_AREA_EDGE_ALL。
-
-**滚动绑定**：`bindToScrollable` 和 `bindToNestedScrollable` 将 NavDestination 与内部可滚动组件绑定，实现标题栏/工具栏的滑动手势联动隐藏。
-
-**NavDestinationContext**：通过 `onReady` 回调暴露 NavDestinationContext 对象，包含 pathInfo（路径信息）、pathStack（路由栈引用）、navDestinationId（唯一 ID）、mode（当前模式）、getConfigInRouteMap（获取路由映射配置）。
-
-**系统控制属性：**
-- preferredOrientation（API 19）：设置页面显示方向
-- enableStatusBar（API 19）：控制状态栏显隐，支持动画过渡
-- enableNavigationIndicator（API 19）：控制导航指示器显隐
-- fullScreenOverlay（API 26）：分栏模式下 NavDestination 是否全屏覆盖（overlay 模式下 content 和 overlay 容器重排序）
-
-### NavDestination 标题栏与工具栏配置
-
-NavDestination 的标题栏和工具栏配置与 Navigation 的 NavBar 配置共享子组件（TitleBarPattern、NavToolbarPattern），但通过 NavDestinationPattern 委托管理。
-
-**title 类型分流（与 Navigation NavBar 类似）：**
-- string/Resource：直接设置字符串标题
-- CustomBuilder：设置自定义构建标题
-- NavDestinationCommonTitle：设置结构化标题（main + sub）
-- NavDestinationCustomTitle：设置自定义构建标题（builder + height）
-
-**hideTitleBar 动画参数（API 13 新增）**：animated=true 时标题栏隐藏/显示播放过渡动画。NavDestinationPattern 通过 BarTranslateState（TRANSLATE_ZERO/TRANSLATE_HEIGHT）协调标题栏的 translate 和 opacity 动画。
-
-**返回按钮可见性约束**：
-- hideBackButton=true 时强制隐藏
-- hideTitleBar=true 且 BarTranslateState=NONE 时，返回按钮随标题栏一起隐藏
-- SPLIT 模式下栈顶 index==0 时返回按钮隐藏
-- NavBar 被隐藏时 NavDestination 返回按钮也隐藏
-
-**menus 类型分流**：
-- Array<NavigationMenuItem>：按列表显示菜单项
-- CustomBuilder：自定义构建菜单内容
-- API 19 新增 NavigationMenuOptions 配置更多按钮选项
-
-**toolbarConfiguration 类型分流**：
-- Array<ToolbarItem>：按列表显示工具栏项
-- CustomBuilder：自定义构建工具栏内容
-
-**hideToolBar 动画参数（API 13 新增）**：与 hideTitleBar 动画机制一致。
-
-### NavDestination 生命周期与事件回调
-
-NavDestinationEventHub 存储并触发所有生命周期回调，NavDestinationState 枚举定义状态（NONE=-1, ON_SHOWN=0, ON_HIDDEN=1, ON_APPEAR=2, ON_DISAPPEAR=3, ON_WILL_SHOW=4, ON_WILL_HIDE=5, ON_WILL_APPEAR=6, ON_WILL_DISAPPEAR=7, ON_ACTIVE=8, ON_INACTIVE=9, ON_BACKPRESS=100）。
-
-**核心生命周期事件链：**
-1. onWillAppear → NavDestination 即将出现（转场动画开始前）
-2. onWillShow → NavDestination 即将显示（转场动画播放时）
-3. onShown → NavDestination 已显示（转场动画完成后），回调参数 VisibilityChangeReason（TRANSITION=0, CONTENT_COVER=1, APP_STATE=2）
-4. onWillHide → NavDestination 即将隐藏
-5. onWillDisappear → NavDestination 即将消失
-6. onHidden → NavDestination 已隐藏，回调参数 VisibilityChangeReason
-
-**激活/非激活事件（API 17 新增）**：
-- onActive：NavDestination 成为活跃页面，回调参数 NavDestinationActiveReason（TRANSITION=0, CONTENT_COVER=1, SHEET=2, DIALOG=3, OVERLAY=4, APP_STATE=5）
-- onInactive：NavDestination 成为非活跃页面
-
-**其他事件：**
-- onBackPressed：返回按钮拦截，返回 true 表示拦截（不执行默认 pop），返回 false 表示不拦截
-- onResult：pop 结果回调（API 15 新增），携带 PopInfo 参数
-- onReady：NavDestinationContext 就绪回调（API 11 新增）
-- onNewParam：singleton 模式下参数更新回调（API 19 新增）
-
-**状态保存/恢复（API 26 新增）：**
-- onSaveState：开发者自定义状态保存回调，返回 Record<string, Object> | null
-- onRestoreState：开发者自定义状态恢复回调，参数为 Record<string, Object> | null
-
-### NavDestination 模式/安全区/转场动画/状态恢复
-
-**systemBarStyle**：NavDestination 级别系统栏样式配置，影响状态栏颜色/样式。NavDestinationPattern 持有 backupStyle_ 和 currStyle_ 管理 SystemBarStyle 的设置和恢复。
-
-**recoverable**（API 14 新增）：应用终止后 NavDestination 状态是否可恢复。与 Navigation 的 recoverable 联动。
-
-**转场动画**：
-- **systemTransition**（API 14 新增）：设置系统预定义转场动画类型（NavigationSystemTransitionType：DEFAULT/NONE/TITLE/CONTENT/FADE/EXPLODE/SLIDE_RIGHT/SLIDE_BOTTOM）
-- **customTransition**（API 15 新增）：设置自定义转场动画，NavDestinationTransitionDelegate 回调返回 NavDestinationTransition 对象（包含 onTransitionEnd/duration/curve/delay/event）
-
-**C API 桥接（NavDestinationModifier）**：
-- NavDestinationModifier 通过 C API 桥接层将属性写入 NavDestinationLayoutProperty
-- 支持动态版（nav_destination_modifier.cpp → NavDestinationModelNG）和静态版（implementation/nav_destination_modifier.cpp → NavDestinationModelStatic）
-- 静态版使用 ShallowBuilder + CallbackHelper 实现懒渲染和异步 builder dispatch
+> NavDestination 的创建与布局模式、标题栏与工具栏配置、生命周期与事件回调、模式/安全区/转场动画/状态恢复的详细设计均已移至独立 design.md → [../03-nav-destination/design.md](../03-nav-destination/design.md)。
 
 ## 风险和开放问题
 
@@ -797,12 +486,6 @@ NavDestinationEventHub 存储并触发所有生命周期回调，NavDestinationS
 | NavPathStack 与 Navigation 生命周期绑定 | 架构 | 中 | 开发者传入的 NavPathStack 需确保在 Navigation 存活期间有效，栈变更需及时通知 Pattern | ArkUI SIG |
 | enableModeChangeAnimation 默认行为 | 兼容性 | 低 | 默认开启模式切换动画，关闭时需显式设置 false | ArkUI SIG |
 | configuration(NavigationConfiguration) 新增 | API | 低 | API 26 新增 configuration 属性，需标注 @since 版本 | ArkUI SIG |
-| NavDestination 未组件化 | 架构 | 中 | JSView 和 C API 双路径共存，需分别维护，待组件化改造时统一 | ArkUI SIG |
-| NavDestination DIALOG 模式背景色默认透明 | 兼容性 | 中 | DIALOG 模式 backgroundColor 默认为 TRANSPARENT，与 STANDARD 模式不同，需明确文档化 | ArkUI SIG |
-| NavDestination 生命周期回调线程安全 | 架构 | 低 | OnAttachToMainTreeMultiThread/OnDetachFromMainTreeMultiThread 提供多线程安全路径 | ArkUI SIG |
-| NavDestination 双版 Model 分流 | 可维护性 | 中 | NavDestinationModelNG 和 NavDestinationModelStatic 双路径需分别维护 | ArkUI SIG |
-| fullScreenOverlay 重排序 | 兼容性 | 低 | fullScreenOverlay=true 时 NavDestination 在 content 和 overlay 容器间重排序，触发 Navigation 重计算 | ArkUI SIG |
-| NavDestinationContext getConfigInRouteMap 版本差异 | API | 低 | getConfigInRouteMap 从 API 12 起支持，API 12 之前 NavDestinationContext 不包含此方法 | ArkUI SIG |
 
 ## 设计审批
 

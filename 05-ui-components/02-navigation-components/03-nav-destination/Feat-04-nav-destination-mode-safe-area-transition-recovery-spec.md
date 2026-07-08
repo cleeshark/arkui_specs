@@ -2,7 +2,7 @@
 
 | 字段 | 值 |
 |------|------|
-| 功能编号 | Func-05-02-01-Feat-11 |
+| 功能编号 | Func-05-02-03-Feat-04 |
 | 所属功能域 | 05-ui-components / 02-navigation-components / 03-nav-destination |
 | Spec ID | Feat-04 |
 | 版本 | 1.0 |

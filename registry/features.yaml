@@ -244,23 +244,23 @@ features:
   title: 全量规格
   spec: 05-ui-components/02-navigation-components/06-sidebar-container/Feat-01-side-bar-container-full-spec.md
   status: Baselined
-- func_id: 05-02-01
-  id: Feat-08
-  title: 创建与布局模式
+- func_id: 05-02-03
+  id: Feat-01
+  title: NavDestination 创建与布局模式
   spec: 05-ui-components/02-navigation-components/03-nav-destination/Feat-01-nav-destination-creation-layout-mode-spec.md
-  status: Baselined（已有实现补录）
-- func_id: 05-02-01
-  id: Feat-09
-  title: 标题栏与工具栏配置
+  status: Baselined
+- func_id: 05-02-03
+  id: Feat-02
+  title: NavDestination 标题栏与工具栏配置
   spec: 05-ui-components/02-navigation-components/03-nav-destination/Feat-02-nav-destination-title-toolbar-spec.md
-  status: Baselined（已有实现补录）
-- func_id: 05-02-01
-  id: Feat-10
-  title: 生命周期与事件回调
+  status: Baselined
+- func_id: 05-02-03
+  id: Feat-03
+  title: NavDestination 生命周期与事件回调
   spec: 05-ui-components/02-navigation-components/03-nav-destination/Feat-03-nav-destination-lifecycle-events-spec.md
-  status: Baselined（已有实现补录）
-- func_id: 05-02-01
-  id: Feat-11
-  title: 模式/安全区/转场动画/状态恢复
+  status: Baselined
+- func_id: 05-02-03
+  id: Feat-04
+  title: NavDestination 模式/安全区/转场动画/状态恢复
   spec: 05-ui-components/02-navigation-components/03-nav-destination/Feat-04-nav-destination-mode-safe-area-transition-recovery-spec.md
-  status: Baselined（已有实现补录）
+  status: Baselined
