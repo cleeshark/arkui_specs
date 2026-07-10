@@ -157,7 +157,7 @@
 | 05 组件层 | 02 导航类组件 | 05 Navigator | `05-02-05` | `05-ui-components/02-navigation-components/05-navigator/` | *待补充* | 0 |
 | 05 组件层 | 02 导航类组件 | 06 SideBarContainer | `05-02-06` | `05-ui-components/02-navigation-components/06-sidebar-container/` | [design.md](05-ui-components/02-navigation-components/06-sidebar-container/design.md) | 1 |
 | 05 组件层 | 03 滚动容器类组件 | 01 滚动公共能力 | `05-03-01` | `05-ui-components/03-scroll-container-components/01-scroll-common-capability/` | *待补充* | 0 |
-| 05 组件层 | 03 滚动容器类组件 | 02 AlaphabetIndexer | `05-03-02` | `05-ui-components/03-scroll-container-components/02-alphabet-indexer/` | *待补充* | 0 |
+| 05 组件层 | 03 滚动容器类组件 | 02 AlaphabetIndexer | `05-03-02` | `05-ui-components/03-scroll-container-components/02-alphabet-indexer/` | [design.md](05-ui-components/03-scroll-container-components/02-alphabet-indexer/design.md) | 2 |
 | 05 组件层 | 03 滚动容器类组件 | 03 ScrollBar | `05-03-03` | `05-ui-components/03-scroll-container-components/03-scroll-bar/` | *待补充* | 0 |
 | 05 组件层 | 03 滚动容器类组件 | 04 Grid/GridItem | `05-03-04` | `05-ui-components/03-scroll-container-components/04-grid-grid-item/` | *待补充* | 0 |
 | 05 组件层 | 03 滚动容器类组件 | 05 List/ListItem/ListItemGroup | `05-03-05` | `05-ui-components/03-scroll-container-components/05-list-list-item-list-item-group/` | *待补充* | 0 |
@@ -1013,6 +1013,8 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | AlphabetIndexer 创建与基础样式 | [Feat-01-alphabet-indexer-creation-basic-style-spec.md](05-ui-components/03-scroll-container-components/02-alphabet-indexer/Feat-01-alphabet-indexer-creation-basic-style-spec.md) | Baselined |
+| Feat-02 | AlphabetIndexer Popup样式与交互 | [Feat-02-alphabet-indexer-popup-style-interaction-spec.md](05-ui-components/03-scroll-container-components/02-alphabet-indexer/Feat-02-alphabet-indexer-popup-style-interaction-spec.md) | Baselined |
 
 ### 05-03-03 ScrollBar
 

@@ -1793,7 +1793,7 @@ functions:
     id: '02'
     title: AlaphabetIndexer
   path: 05-ui-components/03-scroll-container-components/02-alphabet-indexer/
-  design: null
+  design: 05-ui-components/03-scroll-container-components/02-alphabet-indexer/design.md
   status: active
 - id: 05-03-03
   l1:
