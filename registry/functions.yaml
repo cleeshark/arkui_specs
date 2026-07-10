@@ -1728,7 +1728,7 @@ functions:
     id: '03'
     title: NavDestination
   path: 05-ui-components/02-navigation-components/03-nav-destination/
-  design: null
+  design: 05-ui-components/02-navigation-components/03-nav-destination/design.md
   status: active
 - id: 05-02-04
   l1:

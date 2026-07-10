@@ -152,7 +152,7 @@
 | 05 组件层 | 01 布局类组件 | 13 DynamicLayout | `05-01-13` | `05-ui-components/01-layout-components/13-dynamic-layout/` | *待补充* | 0 |
 | 05 组件层 | 02 导航类组件 | 01 Navigation | `05-02-01` | `05-ui-components/02-navigation-components/01-navigation/` | [design.md](05-ui-components/02-navigation-components/01-navigation/design.md) | 7 |
 | 05 组件层 | 02 导航类组件 | 02 NavRouter | `05-02-02` | `05-ui-components/02-navigation-components/02-nav-router/` | *待补充* | 0 |
-| 05 组件层 | 02 导航类组件 | 03 NavDestination | `05-02-03` | `05-ui-components/02-navigation-components/03-nav-destination/` | *待补充* | 0 |
+| 05 组件层 | 02 导航类组件 | 03 NavDestination | `05-02-03` | `05-ui-components/02-navigation-components/03-nav-destination/` | [design.md](05-ui-components/02-navigation-components/03-nav-destination/design.md) | 4 |
 | 05 组件层 | 02 导航类组件 | 04 Stepper/SetpperItem | `05-02-04` | `05-ui-components/02-navigation-components/04-stepper-stepper-item/` | *待补充* | 0 |
 | 05 组件层 | 02 导航类组件 | 05 Navigator | `05-02-05` | `05-ui-components/02-navigation-components/05-navigator/` | *待补充* | 0 |
 | 05 组件层 | 02 导航类组件 | 06 SideBarContainer | `05-02-06` | `05-ui-components/02-navigation-components/06-sidebar-container/` | [design.md](05-ui-components/02-navigation-components/06-sidebar-container/design.md) | 1 |
@@ -983,6 +983,10 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | NavDestination 创建与布局模式 | [Feat-01-nav-destination-creation-layout-mode-spec.md](05-ui-components/02-navigation-components/03-nav-destination/Feat-01-nav-destination-creation-layout-mode-spec.md) | Baselined |
+| Feat-02 | NavDestination 标题栏与工具栏配置 | [Feat-02-nav-destination-title-toolbar-spec.md](05-ui-components/02-navigation-components/03-nav-destination/Feat-02-nav-destination-title-toolbar-spec.md) | Baselined |
+| Feat-03 | NavDestination 生命周期与事件回调 | [Feat-03-nav-destination-lifecycle-events-spec.md](05-ui-components/02-navigation-components/03-nav-destination/Feat-03-nav-destination-lifecycle-events-spec.md) | Baselined |
+| Feat-04 | NavDestination 模式/安全区/转场动画/状态恢复 | [Feat-04-nav-destination-mode-safe-area-transition-recovery-spec.md](05-ui-components/02-navigation-components/03-nav-destination/Feat-04-nav-destination-mode-safe-area-transition-recovery-spec.md) | Baselined |
 
 ### 05-02-04 Stepper/SetpperItem
 

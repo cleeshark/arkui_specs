@@ -10,6 +10,7 @@
 | 关联需求 | 已有能力补录（无独立 requirement.md） |
 | 关联 Epic | 无 |
 | 目标 Feature | Feat-01 创建与布局模式, Feat-02 标题栏配置, Feat-03 工具栏配置, Feat-04 路由栈管理, Feat-05 转场动画与自定义过渡, Feat-06 系统栏/安全区/分栏/恢复, Feat-07 事件回调与Modifier |
+| 关联组件 | NavDestination 作为子页面容器拥有独立 design.md → [../03-nav-destination/design.md](../03-nav-destination/design.md) |
 | 复杂度 | 复杂 |
 | 目标版本 | API 8 起支持，核心 API 集中于 API 9-12，部分增量 API 至 API 26 |
 | Owner | ArkUI SIG |
@@ -22,6 +23,7 @@
 | 问题陈述 | ArkUI 需要一个统一的导航容器组件，支持单页（Stack）、分栏（Split）和自适应（Auto/AUTO_WITH_ASPECT_RATIO）三种导航模式，并通过 NavPathStack 管理页面路由栈 |
 | 核心目标 | 提供 Navigation 容器组件，覆盖创建与布局模式、标题栏/工具栏配置、路由栈管理、转场动画、安全区避让、事件回调等 7 个功能域 |
 | P0 AC | Feat-01 ~ Feat-07 全量 AC |
+| 补充说明 | NavDestination 作为 Navigation 的子页面容器，拥有独立功能域设计文档 → [../03-nav-destination/design.md](../03-nav-destination/design.md)；NavDestination 与 Navigation 共享 TitleBarPattern/NavToolbarPattern 子组件 |
 
 ## 上下文和现状
 
@@ -261,6 +263,8 @@ graph TB
     NAV_STATIC --> Pattern
 ```
 
+> NavDestination 拥有独立架构图和数据模型，详见 [../03-nav-destination/design.md](../03-nav-destination/design.md)。
+
 ### 数据模型设计
 
 **ArkTS (API 层类型)**
@@ -307,6 +311,8 @@ struct NavigationLayoutProperty : LayoutProperty {
   std::optional<bool> propHideNavBar_;
 };
 ```
+
+> NavDestination 数据模型详见 [../03-nav-destination/design.md](../03-nav-destination/design.md)。
 
 ### 线程与并发模型
 
@@ -465,6 +471,8 @@ NavigationEventHub 提供 onNavigationBarStateChange、onNavModeChange、onNavBa
 - applyNormalAttribute(instance: NavigationAttribute)：将 Modifier 属性应用到 NavigationAttribute 实例
 - 属性通过 C API 桥接层（arkts_native_navigation_bridge.cpp）写入 NavigationLayoutProperty
 - NavigationModelStatic 提供静态版 Model 实现，与 NavigationModelNG 并行
+
+> NavDestination 的创建与布局模式、标题栏与工具栏配置、生命周期与事件回调、模式/安全区/转场动画/状态恢复的详细设计均已移至独立 design.md → [../03-nav-destination/design.md](../03-nav-destination/design.md)。
 
 ## 风险和开放问题
 
