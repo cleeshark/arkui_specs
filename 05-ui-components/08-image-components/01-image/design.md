@@ -1,6 +1,6 @@
 # 架构设计
 
-> Image 组件功能域的架构设计文档，补录已有实现。
+> Image 组件功能域的架构设计文档，补录并统一当前 ace_engine 已实现能力。
 
 ## 设计元数据
 
@@ -9,9 +9,9 @@
 | Design ID | DESIGN-Func-05-08-01 |
 | 关联需求 | 已有能力补录（无独立 requirement.md） |
 | 关联 Epic | 无 |
-| 目标 Feature | Feat-01 核心显示属性, Feat-02 颜色与效果, Feat-03 高级功能, Feat-04 事件回调, Feat-05 基础内存优化 |
+| 目标 Feature | Feat-01 核心显示属性, Feat-02 颜色与效果, Feat-03 高级功能, Feat-04 事件回调, Feat-05 基础内存与加载上下文生命周期 |
 | 复杂度 | 复杂 |
-| 目标版本 | API 7 起支持 |
+| 目标版本 | API 7 起支持，API 9/11/12/14/21/22/23/26 分批扩展 |
 | Owner | ArkUI SIG |
 | 状态 | Baselined（已有实现补录） |
 
@@ -19,8 +19,9 @@
 
 | 项 | 补充说明 |
 |----|----------|
-| 核心目标 | 提供 Image 组件，支持多源图片显示（31 个属性 + 3 个事件），覆盖图片加载、渲染、效果、事件回调和高级功能 |
-| Feat-05 补充 | 对 Image 组件进行基础内存优化：通过 shared_ptr 共享 ImageDfxConfig 和 ImageSourceInfo、移除冗余 pixmapBuffer_ 成员，预计单节点节省 ~2,376B |
+| 核心目标 | 提供 Image 组件，支持多源图片显示、解码尺寸控制、缩放重复、颜色效果、AI/高级能力、事件回调和内部加载上下文生命周期管理 |
+| API 覆盖 | 动态 ArkTS、静态 ArkTS 与 NDK/C API 多范式覆盖；含 Image 构造重载、`reloadKey`、`ImageAIOptions`、`ImageAlt`、`setImageOptions`、30+ 属性、3 个 ArkTS 事件和 4 个 NDK Image 节点事件 |
+| Feat-05 补充 | 固化当前实现的 ImageSourceInfo 值语义、ImageLoadingContext 资源释放、MakeCanvasImage 重建判定和 alt/altError 清理；未落地的 shared_ptr/AltState/bitmask 优化仅作为开放问题记录 |
 
 ## 上下文和现状
 
@@ -28,61 +29,66 @@
 
 | 仓库 | 模块/路径 | 当前职责 | 本 Feature 影响 |
 |------|-----------|----------|-----------------|
-| ace_engine | `frameworks/core/components_ng/pattern/image/image_pattern.h/.cpp` | ImagePattern 主逻辑，持有 ImageLoadingContext，编排加载/渲染生命周期 | 核心调度层 |
-| ace_engine | `frameworks/core/components_ng/pattern/image/image_layout_property.h/.cpp` | 布局属性：src, alt, objectFit, autoResize, sourceSize, orientation 等 | Feat-01 |
-| ace_engine | `frameworks/core/components_ng/pattern/image/image_render_property.h/.cpp` | 渲染属性：colorFilter, objectRepeat, fillColor, hdrBrightness 等 | Feat-02 |
-| ace_engine | `frameworks/core/components_ng/pattern/image/image_event_hub.h` | 事件回调：onComplete, onError, onFinish | Feat-04 |
-| ace_engine | `frameworks/core/components_ng/pattern/image/image_layout_algorithm.h/.cpp` | 布局算法，根据 objectFit 和图片尺寸计算组件尺寸 | Feat-01 |
-| ace_engine | `frameworks/core/components_ng/pattern/image/image_paint_method.h/.cpp` | 绘制方法，创建 ImageContentModifier | Feat-01/02 |
-| ace_engine | `frameworks/core/components_ng/pattern/image/image_content_modifier.h/.cpp` | 内容绘制 modifier，执行 CanvasImage 渲染 | Feat-01/02 |
-| ace_engine | `frameworks/core/components_ng/pattern/image/image_model_ng.h/.cpp` | NG Model，所有属性的 Set/Get 方法 | API 层 |
-| ace_engine | `frameworks/bridge/declarative_frontend/engine/jsi/nativeModule/arkts_native_image_bridge.h/.cpp` | ArkTS 桥接层，34 个 Set/Reset 方法 | 桥接层 |
+| ace_engine | `frameworks/bridge/declarative_frontend/jsview/js_image.cpp` | 动态 ArkTS Image 构造、属性和事件解析，处理 `reloadKey`、`ImageAlt`、onComplete/onError/onFinish 等 JSView 入口 | Feat-01/03/04 |
+| ace_engine | `frameworks/bridge/declarative_frontend/engine/jsi/nativeModule/arkts_native_image_bridge.cpp` | ArkTS native bridge，属性参数解析后调用 node modifier/Model | Feat-01/02/03 |
+| ace_engine | `frameworks/core/components_ng/pattern/image/image_model_ng.cpp` | NG Model，动态/NDK 属性写入 LayoutProperty、RenderProperty、Pattern 成员或 EventHub | Feat-01~04 |
+| ace_engine | `frameworks/core/components_ng/pattern/image/image_model_static.cpp` | 静态 ArkTS Model，静态 Image 构造、`setImageOptions` 和静态属性写入 | Feat-01~03 |
+| ace_engine | `frameworks/core/components_ng/pattern/image/image_layout_property.h` | 布局属性：src/alt/ImageAlt、objectFit、autoResize、sourceSize、orientation、fitOriginalSize 等 | Feat-01/05 |
+| ace_engine | `frameworks/core/components_ng/pattern/image/image_render_property.h` | 渲染属性：objectRepeat、renderMode、fillColor、colorFilter、dynamicRangeMode、hdrBrightness、imageMatrix、resizable、contentTransition 等 | Feat-02/03 |
+| ace_engine | `frameworks/core/components_ng/pattern/image/image_pattern.h/.cpp` | ImagePattern 主逻辑：加载编排、事件触发、alt/altError 回退、AI 分析、拖拽、DFX、内部状态生命周期 | Feat-01/03/04/05 |
+| ace_engine | `frameworks/core/components_ng/image_provider/image_loading_context.h/.cpp` | ImageLoadingContext 状态机：持有 source/image object/canvas image，管理下载进度、MakeCanvasImage、OnUnloaded/OnLoadSuccess/OnLoadFail | Feat-05 |
+| ace_engine | `frameworks/core/image/image_source_info.h/.cpp` | 图片源统一抽象：src/resource/pixelmap/buffer/cacheKey/reloadKey/supportSvg2/DFX 配置和相等比较 | Feat-01/05 |
+| ace_engine | `frameworks/core/interfaces/native/node/node_image_modifier.cpp` | NDK Image 属性与事件实现，映射 `NODE_IMAGE_*` 属性和事件到 ImageModelNG | Feat-01~04 |
+| ace_engine | `interfaces/native/native_node.h` | NDK C API 枚举声明，包含 Image 属性和 Image 节点事件 payload 合约 | Feat-01~04 |
 
 ### 调用链层级分析
 
 | 层 | 模块 | 职责 | 修改类型 |
 |----|------|------|----------|
-| ArkTS 动态版 JSView 入口 | `bridge/declarative_frontend/jsview/js_image.cpp` | 解析 ArkTS Image() 构造参数及 31 个属性方法，参数类型校验与枚举映射，调用 ImageModel 接口 | 存量分析 |
-| ArkTS 动态版 Bridge 层 | `bridge/declarative_frontend/engine/jsi/nativeModule/arkts_native_image_bridge.cpp` | ArkTS → C++ 桥接层，约 34 组 Set/Reset 方法，将 JSI 值转换为 C++ 类型后调用 node_modifier | 存量分析 |
-| C API NDK 入口 | `interfaces/native/node/style_modifier.cpp` | NDK 公开 C API：SetImageSrc、SetImageMatrix、SetImageRotateOrientation 等，ArkUI_AttributeItem 参数校验 | 存量分析 |
-| C API node_modifier | `core/interfaces/native/node/node_image_modifier.cpp` | 内部 C API 实现：Set/Reset/Get 全量属性方法，参数默认值定义，调用 ImageModelNG 静态方法 | 存量分析 |
-| Model 层 | `core/components_ng/pattern/image/image_model_ng.cpp` | 属性设置统一入口：所有 Set/Get 方法写入 LayoutProperty、RenderProperty 或 Pattern 成员 | 存量分析 |
-| LayoutProperty 层 | `core/components_ng/pattern/image/image_layout_property.h` | 存储触发 MEASURE/LAYOUT 的属性：src、alt、objectFit、autoResize、sourceSize、orientation 等 | 存量分析 |
-| RenderProperty 层 | `core/components_ng/pattern/image/image_render_property.h` | 存储触发 RENDER 的属性：colorFilter、objectRepeat、fillColor、hdrBrightness、dynamicRangeMode 等 | 存量分析 |
-| Pattern 层 | `core/components_ng/pattern/image/image_pattern.cpp` | 核心编排（约 3155 行）：加载生命周期驱动、ImageLoadingContext 创建与回调、事件触发、alt 三级回退、动画管理、内存回收 | 存量分析 |
-| ImageLoadingContext | `core/components_ng/image_provider/image_loading_context.cpp` | 异步加载状态机（UNLOADED→DATA_LOADING→DATA_READY→MAKE_CANVAS_IMAGE→SUCCESS/FAIL），协调 ImageProvider 与 ImageObject | 存量分析 |
-| Layout 算法层 | `core/components_ng/pattern/image/image_layout_algorithm.cpp` | MeasureContent：根据 ImageFit（18 种枚举）、图片 intrinsic size 与容器约束计算组件尺寸 | 存量分析 |
-| Paint 层 | `core/components_ng/pattern/image/image_paint_method.cpp` | 绘制配置：创建 ImageContentModifier，更新 borderRadius 裁剪、HDR 亮度、SVG 渲染参数 | 存量分析 |
-| 图片源与解码层 | `core/image/image_source_info.cpp` + `core/components_ng/image_provider/image_provider.cpp` | 图片源统一抽象（resource/network/pixelmap/SVG/base64）、4 级缓存策略、后台线程解码与 GPU 纹理上传 | 存量分析 |
+| SDK 类型定义 | `interface/sdk-js/api/@internal/component/ets/image.d.ts` | 动态 ArkTS API 合约，包含 API 7~26 的 Image 构造、属性、事件和版本说明 | 存量分析 |
+| 静态 SDK 类型定义 | `interface/sdk-js/api/arkui/component/image.static.d.ets` | 静态 ArkTS ImageAttribute、构造和 `setImageOptions` 合约 | 存量分析 |
+| ArkTS 动态 JSView | `frameworks/bridge/declarative_frontend/jsview/js_image.cpp` | 解析 Image() 参数、JS 属性参数和事件回调，转换为 Model 调用 | 存量分析 |
+| ArkTS native bridge | `frameworks/bridge/declarative_frontend/engine/jsi/nativeModule/arkts_native_image_bridge.cpp` | ArkTS/JSI 值到 C++ 类型转换，覆盖颜色、sourceSize、矩阵、滤镜等属性 | 存量分析 |
+| NDK C API 声明 | `interfaces/native/native_node.h` | 暴露 `NODE_IMAGE_*` 属性和事件枚举，定义 C API payload | 存量分析 |
+| NDK node modifier | `frameworks/core/interfaces/native/node/node_image_modifier.cpp` | NDK 属性/事件落到 ImageModelNG，含 onComplete/onError/onSvgPlayFinish/onDownloadProgress 数据映射 | 存量分析 |
+| Model 层 | `frameworks/core/components_ng/pattern/image/image_model_ng.cpp`, `image_model_static.cpp` | 统一属性设置入口，决定写入 LayoutProperty/RenderProperty/Pattern/EventHub | 存量分析 |
+| Property 层 | `image_layout_property.h`, `image_render_property.h` | 按布局和渲染 dirty flag 分层保存属性 | 存量分析 |
+| Pattern 层 | `image_pattern.h/.cpp` | 加载、回退、事件、AI、拖拽和 DFX 的主编排层 | 存量分析 |
+| LoadingContext 层 | `image_loading_context.h/.cpp` | 异步加载状态机和 CanvasImage 生成/复用逻辑 | Feat-05 补充分析 |
+| SourceInfo 层 | `image_source_info.h/.cpp` | 图片源值对象、reloadKey、pixmapBuffer、cacheKey 和比较逻辑 | Feat-05 补充分析 |
+| Layout/Paint 层 | `image_layout_algorithm.cpp`, `image_paint_method.cpp`, `image_content_modifier.cpp` | objectFit 测量、绘制配置和 CanvasImage 渲染 | 存量分析 |
 
 ### 适用架构规则
 
 | Rule ID | 适用原因 | 设计结论 | 验证方式 |
 |---------|----------|----------|----------|
-| OH-ARCH-LAYERING | Image 涉及 API 层 → Layout Property → Layout Algorithm → Render | 单向调用，无反向依赖 | 代码评审 |
-| OH-ARCH-API-LEVEL | 部分 API 在 API 9/11/12 有增强 | 各属性标注 @since 版本 | API 评审/XTS |
-| OH-ARCH-COMPONENT-BUILD | Image 属于 ace_core_ng | 无需新增 target | 构建验证 |
+| OH-ARCH-LAYERING | Image 涉及 SDK/Bridge/Model/Property/Pattern/Loading/Paint 多层 | 保持单向调用，属性写入不越层访问渲染对象 | 代码审查 |
+| OH-ARCH-API-LEVEL | Image API 从 API 7 起多版本演进 | 外部 API 行为以 `.d.ts/.static.d.ets` 为准，源码差异进入风险表 | API 审查/XTS |
+| OH-ARCH-COMPONENT-BUILD | Image 属于 `ace_core_ng` 组件实现 | 本次仅规格补录，无新增 BUILD.gn target | 构建检查 |
+| OH-ARCH-CAPI | NDK 节点事件 payload 是 ABI 相关合约 | 仅记录现有 `data[]` 下标和错误码，不变更 C API | C API UT |
 
 ## 不涉及项承接
 
 | 维度 | 设计结论 |
 |------|----------|
-| 性能 | 是 — 展开：autoResize 功率对齐、syncLoad 控制线程模型、图片加载管线已在 04-01-01 覆盖 |
-| 安全与权限 | N/A |
-| 兼容性 | 是 — 展开：autoResize 默认值 API 9 vs 后续版本差异，需标注 |
-| IPC/跨进程 | N/A |
+| 性能 | 展开：autoResize、sourceSize、syncLoad、MakeCanvasImageIfNeed 和 LoadingContext 生命周期属于现有性能/内存基线 |
+| 安全与权限 | N/A；Image 公开 API 无新增权限 |
+| 兼容性 | 展开：API 版本差异、SDK/源码差异、NDK payload 粒度差异均在规格和风险表标注 |
+| IPC/跨进程 | N/A；ImageSourceInfo、ImageDfxConfig、ImageLoadingContext 为内部结构 |
+| 公共 API 变更 | N/A；本次为已有能力补录，不修改 SDK/NDK 签名 |
 
 ## 关键设计决策
 
 | 决策 ID | 问题 | 推荐方案 | 探索过的替代方案 | 取舍理由 | 影响 |
 |---------|------|----------|-----------------|----------|------|
-| ADR-1 | Image 属性分哪几层存储 | 布局属性（LayoutProperty）、渲染属性（RenderProperty）、Pattern 成员变量三层分离 | 方案A：全部放在 LayoutProperty（渲染变更也触发重测）；方案B：全部放在 Pattern（无法利用属性继承） | 布局属性触发 MEASURE/LAYOUT，渲染属性仅触发 RENDER，Pattern 成员无 dirty flag。分层减少不必要的重测 | `image_layout_property.h` / `image_render_property.h` / `image_pattern.h` |
-| ADR-2 | objectFit 默认值为 COVER | COVER 保持图片比例填满容器，裁剪溢出部分 | 方案A：CONTAIN（留白）；方案B：FILL（拉伸变形） | COVER 是最常见的图片展示模式，对齐 Android/iOS 默认行为 | `image_layout_property.cpp:87` |
-| ADR-3 | autoResize 默认值双重逻辑 | JSON 反序列化默认 false；Pattern 构造时 autoResizeDefault_=true | 方案A：统一 false（浪费内存）；方案B：统一 true（可能过度解码） | 未显式设置时 Pattern 使用 true（启用功率对齐优化），显式设置 false 时关闭 | `image_layout_property.cpp:30` / `image_pattern.h:425` |
-| ADR-4 | 图片加载与渲染管线的关系 | ImagePattern 持有 ImageLoadingContext（在 04-01-01 中规格化），通过回调驱动属性更新和重绘 | 方案A：Image 组件直接管理加载（逻辑耦合）；方案B：完全独立加载器（回调复杂） | ImagePattern 作为加载管线的消费者，通过 LoadNotifier 回调获取加载结果，职责清晰 | 图片加载机制已在 Func-04-01-01 中规格化 |
-| ADR-F5-1 | ImageDfxConfig（~152B）在单节点中存在 5-6 份拷贝，浪费内存 | 将 ImagePattern、ImageLoadingContext、ImageObject、CanvasImage 中的 ImageDfxConfig 从值类型改为 `std::shared_ptr<ImageDfxConfig>` 共享 | 方案A：保持值拷贝（浪费 ~576B/节点）；方案B：unique_ptr 转移所有权（不适用多持有者场景） | 单节点从 5-6 份降至 1 份，节省 ~576B；空指针访问需添加保护 | `image_pattern.h`, `image_loading_context.h` |
-| ADR-F5-2 | ImageSourceInfo（~448B）在单节点中存在 5 份拷贝（ImageLayoutProperty 4 个 optional + ImageLoadingContext 1 份） | ImageLayoutProperty 中 4 个 ImageSourceInfo 属性从 `std::optional<ImageSourceInfo>` 改为 `std::shared_ptr<ImageSourceInfo>` 存储，保留旧 API 兼容，新增 `GetImageSourceInfoShared()` 返回 shared_ptr | 方案A：保持 optional 值拷贝（浪费 ~2,240B/节点）；方案B：仅减少 optional 个数（节省有限） | 单节点 ImageSourceInfo 从 ~2,240B 降至 ~536B；shared_ptr 共享后需确保不可变（copy-on-write） | `image_layout_property.h` |
-| ADR-F5-3 | `const uint8_t* pixmapBuffer_`（8B）缓存了 `pixmap_->GetPixels()` 指针，冗余 | 移除该成员，在相等比较中用 `pixmap_->GetPixels()` 直接调用 | 方案A：保留缓存指针（多占 8B 且有过时风险） | 零成本消除冗余字段，调用开销可忽略 | `image_source_info.h` |
+| ADR-1 | Image 属性分哪几层存储 | 布局属性、渲染属性、Pattern 成员/EventHub 分层保存 | 全部放 LayoutProperty；全部放 Pattern | 布局属性触发 MEASURE/LAYOUT，渲染属性仅触发 RENDER，Pattern 成员保存不适合 dirty flag 的运行态状态 | `image_layout_property.h`, `image_render_property.h`, `image_pattern.h` |
+| ADR-2 | objectFit 默认值 | 默认 COVER | 默认 CONTAIN；默认 FILL | COVER 保持比例填满容器，和当前 `ImageLayoutProperty` 默认一致 | `image_layout_property.cpp:87` |
+| ADR-3 | autoResize 默认值存在路径差异 | 保留当前 API/SceneBoard/Pattern 逻辑并在规格中显式记录 | 文档中统一成单一默认值 | 源码存在历史兼容逻辑，当前实现即规格，不能静默改写 | `image_pattern.cpp:2679-2693` |
+| ADR-4 | Image 加载由谁编排 | ImagePattern 持有 ImageLoadingContext，并通过 LoadNotifier 接收数据就绪、成功、失败和完成回调 | ImagePattern 直接管理 ImageProvider；完全独立加载器 | Pattern 负责组件生命周期，LoadingContext 负责加载状态机，职责边界清晰 | `image_pattern.cpp:1145-1152`, `image_loading_context.h:204-234` |
+| ADR-F4-1 | 事件回调如何派发 | ArkTS 事件注册到 ImageEventHub；NDK 事件由 node_image_modifier 转为 ArkUINodeEvent | 在 LoadingContext 内直接持有 ArkTS/NDK 回调 | EventHub 隔离组件事件，NDK payload 由 C API 层统一转换 | `image_event_hub.h:36-75`, `node_image_modifier.cpp:1660-1725` |
+| ADR-F5-1 | ImageSourceInfo 当前是否共享 | 以当前值语义作为规格基线：LayoutProperty 与 LoadingContext 都按值保存 ImageSourceInfo | 把规格写成 shared_ptr 优化目标 | 当前源码未实现 shared_ptr 共享；规格必须反映真实实现 | `image_layout_property.h:50-65`, `image_loading_context.h:204`, `image_source_info.h:146-174` |
+| ADR-F5-2 | 替代图资源如何释放 | 主图加载成功后调用 ClearAltData 清理 alt/altError 上下文、图像和 rect | 保持替代图直到 Pattern 析构 | 主图恢复后替代图资源不应继续被 Pattern 强持有 | `image_pattern.cpp:411-422`, `image_pattern.cpp:525` |
+| ADR-F5-3 | CanvasImage 何时重建 | MakeCanvasImageIfNeed 按 autoResize/imageFit/sourceSize/firstLoad/sizeLevel 判定，MAKE_CANVAS_IMAGE 状态下使用 pending task | 每次 dstSize 变化都重建 | 减少频繁尺寸变化下的重复 CanvasImage 创建，同时保持切片 rect 同步 | `image_loading_context.cpp:330-360` |
 
 ## 设计骨架
 
@@ -90,75 +96,90 @@
 
 | 骨架项 | 目标 | 不包含 | 验证方式 |
 |--------|------|--------|----------|
-| 属性三层存储 | LayoutProperty / RenderProperty / Pattern 分层 | 各属性内部实现细节 | 代码审查 |
-| objectFit 布局算法 | 18 种 ImageFit 的尺寸计算 | ImageMatrix 变换 | 单元测试 |
-| 事件回调数据结构 | ImageCompleteEvent / ImageError 字段 | 回调内部实现 | 单元测试 |
+| API 与多范式入口 | 动态 ArkTS、静态 ArkTS、NDK C API 的入口和版本差异 | 修改 SDK 签名 | API 审查 |
+| 属性三层存储 | LayoutProperty / RenderProperty / Pattern/EventHub 分层 | 重构属性存储结构 | 代码审查 |
+| objectFit 布局算法 | 18 种 ImageFit 的尺寸计算 | ImageMatrix 绘制矩阵细节 | 单元测试 |
+| 颜色效果渲染 | fillColor、colorFilter、HDR、contentTransition、pointLight 等效果 | 底层 Drawing 实现 | XTS/代码审查 |
+| 高级能力 | resizable、AI analyzer、syncLoad、draggable、supportSvg2、enhancedImageQuality | AI 服务能力实现 | XTS/代码审查 |
+| 事件回调 | ArkTS 3 事件与 NDK 4 节点事件 payload | 新增事件类型 | XTS/C API UT |
+| 内存与生命周期 | ImageSourceInfo 值语义、LoadingContext 生命周期、alt 清理和 MakeCanvasImage 重用 | 未落地内存优化 | 单元测试/代码审查 |
 
 ### 骨架 Spec 拆分
 
 | Task ID | 目标 | 受影响文件 | AC |
 |---------|------|-----------|-----|
-| TASK-SKELETON-1 | objectFit 布局计算验证 | `image_layout_algorithm.cpp` | Feat-01 AC |
-| TASK-SKELETON-2 | 颜色效果渲染验证 | `image_content_modifier.cpp` | Feat-02 AC |
-| TASK-SKELETON-3 | 事件回调触发验证 | `image_event_hub.h`, `image_pattern.cpp` | Feat-04 AC |
+| TASK-SKELETON-1 | 核心显示属性与构造入口验证 | `js_image.cpp`, `image_model_ng.cpp`, `image_layout_property.h` | Feat-01 AC |
+| TASK-SKELETON-2 | 颜色效果渲染验证 | `image_render_property.h`, `image_paint_method.cpp`, `image_content_modifier.cpp` | Feat-02 AC |
+| TASK-SKELETON-3 | 高级功能验证 | `image_pattern.cpp`, `image_model_static.cpp`, `node_image_modifier.cpp` | Feat-03 AC |
+| TASK-SKELETON-4 | 事件回调触发与 payload 验证 | `image_event_hub.h`, `image_pattern.cpp`, `node_image_modifier.cpp` | Feat-04 AC |
+| TASK-SKELETON-5 | 内存生命周期验证 | `image_source_info.*`, `image_loading_context.*`, `image_pattern.*` | Feat-05 AC |
 
 ## 后续 Task 拆分
 
 | Spec | 目的 | 依赖 | 输出 |
 |------|------|------|------|
-| Feat-01-image-core-display-spec.md | 固化核心显示属性行为规格 | 本 Design + 04-01-01 图片加载机制 | 完整行为规格与 AC |
-| Feat-02-image-color-effects-spec.md | 固化颜色与效果属性行为规格 | 本 Design | 完整行为规格与 AC |
-| Feat-03-image-advanced-spec.md | 固化高级功能属性行为规格 | 本 Design | 完整行为规格与 AC |
-| Feat-04-image-events-spec.md | 固化事件回调行为规格 | 本 Design | 完整行为规格与 AC |
-| Feat-05-image-base-memory-opt-spec.md | 固化基础内存优化规格（ImageDfxConfig/ImageSourceInfo shared_ptr 共享、移除 pixmapBuffer_） | 本 Design（ADR-F5-1/F5-2/F5-3） | 完整行为规格与 AC |
-
----
+| Feat-01-image-core-display-spec.md | 固化核心显示属性、Image 构造、reloadKey、ImageAlt 和静态 setImageOptions 行为 | 本 Design + 图片加载机制 | 完整行为规格与 AC |
+| Feat-02-image-color-effects-spec.md | 固化 fillColor、colorFilter、dynamicRangeMode、hdrBrightness、imageMatrix、edgeAntialiasing、antialiased、contentTransition、pointLight 行为 | 本 Design | 完整行为规格与 AC |
+| Feat-03-image-advanced-spec.md | 固化 resizable、AI analyzer、syncLoad、copyOption、draggable、supportSvg2、privacySensitive、enhancedImageQuality 行为 | 本 Design | 完整行为规格与 AC |
+| Feat-04-image-events-spec.md | 固化 ArkTS 事件和 NDK Image 节点事件 payload | 本 Design | 完整行为规格与 AC |
+| Feat-05-image-base-memory-opt-spec.md | 固化当前基础内存与加载上下文生命周期，不包含未落地优化作为 AC | 本 Design | 完整行为规格与 AC |
 
 ## API 签名、Kit 与权限
 
 ### 新增 API
 
+> 本表为已有 Image API 面补录，不表示本次代码新增 API。权限、SysCap 和 @since 以 SDK `.d.ts/.static.d.ets` 与 `native_node.h` 为准。
+
 | API 签名 | 类型 | 功能描述 | 关联 Feat |
 |----------|------|----------|----------|
-| `Image(src: PixelMap \| ResourceStr \| DrawableDescriptor, options?)` | Public | Image 组件构造函数 | Feat-01 |
-| `alt(value: string \| Resource \| PixelMap \| ImageAlt): T` | Public | 设置占位图/错误图 | Feat-01 |
-| `objectFit(value: ImageFit): T` | Public | 设置图片缩放模式（默认 COVER） | Feat-01 |
+| `Image(src: PixelMap \| ResourceStr \| DrawableDescriptor \| ImageContent, reloadKey?)` | Public | Image 动态构造，API 12 支持 ImageContent，API 26 支持 reloadKey | Feat-01 |
+| `Image(src, imageAIOptions?, reloadKey?)` | Public | 构造时绑定 ImageAIOptions 和可选 reloadKey | Feat-01/03 |
+| `setImageOptions(src, imageAIOptions?, reloadKey?)` | Public static | 静态 ArkTS builder 形态设置图片源、AI 选项和 reloadKey | Feat-01 |
+| `alt(value: ResourceStr \| PixelMap \| ImageAlt \| undefined): T` | Public | 设置占位图、错误图和 ImageAlt placeholder/error | Feat-01 |
+| `objectFit(value: ImageFit): T` | Public | 设置图片缩放模式（默认 COVER，含 18 种枚举） | Feat-01 |
 | `objectRepeat(value: ImageRepeat): T` | Public | 设置图片重复模式 | Feat-01 |
-| `renderMode(value: ImageRenderMode): T` | Public | 设置渲染模式（ORIGINAL/TEMPLATE） | Feat-01 |
-| `autoResize(value: boolean): T` | Public | 设置是否自动调整解码尺寸 | Feat-01 |
+| `renderMode(value: ImageRenderMode): T` | Public | 设置原始/模板渲染模式 | Feat-01 |
+| `autoResize(value: boolean): T` | Public | 设置是否按组件尺寸自动调整解码尺寸 | Feat-01 |
 | `sourceSize(value: ImageSourceSize): T` | Public | 设置解码目标尺寸 | Feat-01 |
-| `interpolation(value: ImageInterpolation): T` | Public | 设置插值质量 | Feat-01 |
-| `fitOriginalSize(value: boolean): T` | Public | 设置是否适应原始图片尺寸 | Feat-01 |
 | `orientation(value: ImageRotateOrientation): T` | Public | 设置图片旋转方向 | Feat-01 |
-| `fillColor(value: ResourceColor): T` | Public | 设置 SVG 填充颜色 | Feat-02 |
-| `colorFilter(value: ColorFilter): T` | Public | 设置颜色滤镜矩阵 | Feat-02 |
+| `fitOriginalSize(value: boolean): T` | Public | 设置是否按原始图尺寸测量 | Feat-01 |
+| `interpolation(value: ImageInterpolation): T` | Public | 设置缩放插值质量 | Feat-01 |
+| `fillColor(value: ResourceColor \| ColorContent \| ColorMetrics): T` | Public | 设置 SVG 填充颜色，支持 reset/P3 输入 | Feat-02 |
+| `colorFilter(value: ColorFilter \| DrawingColorFilter \| ResourceColor): T` | Public | 设置颜色矩阵或 DrawingColorFilter，API 26 支持 ResourceColor | Feat-02 |
 | `dynamicRangeMode(value: DynamicRangeMode): T` | Public | 设置动态范围模式 | Feat-02 |
 | `hdrBrightness(value: number): T` | Public | 设置 HDR 亮度 | Feat-02 |
-| `imageMatrix(value: Matrix4Transit): T` | Public | 设置变换矩阵 | Feat-02 |
-| `edgeAntialiasing(value: number): T` | Public | 设置边缘抗锯齿 | Feat-02 |
-| `antialiased(value: boolean): T` | Public | 设置抗锯齿 | Feat-02 |
-| `contentTransition(value: ContentTransitionEffect): T` | Public | 设置内容过渡效果 | Feat-02 |
-| `resizable(value: ResizableOptions): T` | Public | 设置可拉伸配置 | Feat-03 |
-| `enableAnalyzer(value: boolean): T` | Public | 启用图片分析器 | Feat-03 |
-| `copyOption(value: CopyOptions): T` | Public | 设置复制选项 | Feat-03 |
+| `imageMatrix(value: Matrix4Transit): T` | Public | 设置矩阵变换 | Feat-02 |
+| `edgeAntialiasing(value: number): T` | System | 设置 SVG 边缘抗锯齿范围 | Feat-02 |
+| `antialiased(value: Optional<boolean>): T` | Public | 设置 pixel map 图片边缘抗锯齿 | Feat-02 |
+| `contentTransition(value: ContentTransitionEffect): T` | Public | 设置图片内容切换过渡 | Feat-02 |
+| `pointLight(value: PointLightStyle): T` | System | 设置通用 RenderContext 点光源效果 | Feat-02 |
+| `resizable(value: ResizableOptions): T` | Public | 设置切片/网格拉伸配置 | Feat-03 |
+| `enableAnalyzer(value: boolean): T` | Public | 启用图片 AI 分析器 | Feat-03 |
+| `analyzerConfig(config: ImageAnalyzerConfig): T` | System | 设置 AI 分析类型 | Feat-03 |
+| `copyOption(value: CopyOptions): T` | Public | 设置图片复制选项 | Feat-03 |
+| `draggable(value: boolean): T` | Public | 设置图片拖拽开关 | Feat-03 |
 | `syncLoad(value: boolean): T` | Public | 设置同步加载 | Feat-03 |
-| `matchTextDirection(value: boolean): T` | Public | 设置匹配文本方向 | Feat-03 |
-| `supportSvg2(value: boolean): T` | Public | 启用 SVG2 支持 | Feat-03 |
+| `matchTextDirection(value: boolean): T` | Public | 设置是否匹配文本方向 | Feat-03 |
+| `supportSvg2(value: boolean): T` | Public | 启用增强 SVG2 解析 | Feat-03 |
 | `privacySensitive(value: boolean): T` | Public | 设置隐私敏感标记 | Feat-03 |
-| `enhancedImageQuality(value: ResolutionQuality): T` | Public | 设置增强图像质量 | Feat-03 |
-| `onComplete(callback: ImageOnCompleteCallback): T` | Public | 图片加载完成回调 | Feat-04 |
+| `enhancedImageQuality(value: ResolutionQuality): T` | System | 设置增强图片质量 | Feat-03 |
+| `onComplete(callback: ImageOnCompleteCallback): T` | Public | 图片数据加载/解码成功回调 | Feat-04 |
 | `onError(callback: ImageErrorCallback): T` | Public | 图片加载失败回调 | Feat-04 |
-| `onFinish(callback: VoidCallback): T` | Public | 图片加载结束回调 | Feat-04 |
+| `onFinish(callback: VoidCallback): T` | Public | SDK 合约为 SVG 动画播放完成回调 | Feat-04 |
+| `NODE_IMAGE_ON_COMPLETE` | Public C API | NDK 图片成功事件，返回 9 个 data 槽位 | Feat-04 |
+| `NODE_IMAGE_ON_ERROR` | Public C API | NDK 图片失败事件，当前实现固定返回 401 | Feat-04 |
+| `NODE_IMAGE_ON_SVG_PLAY_FINISH` | Public C API | NDK SVG 动画播放完成事件 | Feat-04 |
+| `NODE_IMAGE_ON_DOWNLOAD_PROGRESS` | Public C API | NDK 网络图片下载进度事件 | Feat-04 |
 
 ### 变更/废弃 API
 
-无。
+无。本次为规格补录，不修改 SDK/NDK 声明。
 
 ## 构建系统影响
 
 ### BUILD.gn 变更
 
-无新增 target。Image 组件已在 `ace_core_ng_source_set` 中。
+无新增 target。Image 组件已纳入现有 ace_engine 构建目标。
 
 ### bundle.json 变更
 
@@ -170,47 +191,62 @@
 
 ```mermaid
 graph TB
-    subgraph API["ArkTS API 层"]
-        IMG["Image(src)"]
-        ATTR["31 个属性方法<br/>3 个事件回调"]
+    subgraph SDK["SDK 合约"]
+        DTS["image.d.ts<br/>动态 ArkTS"]
+        SDTS["image.static.d.ets<br/>静态 ArkTS"]
+        CAPI["native_node.h<br/>NDK 属性/事件"]
+    end
+    subgraph Bridge["前端桥接"]
+        JSIMG["js_image.cpp"]
+        ARKBR["arkts_native_image_bridge.cpp"]
+        NODEMOD["node_image_modifier.cpp"]
     end
     subgraph Model["Model 层"]
-        IMNG["ImageModelNG<br/>所有 Set/Get"]
+        IMNG["ImageModelNG"]
+        IMSTATIC["ImageModelStatic"]
     end
-    subgraph Pattern["Pattern 层"]
-        IP["ImagePattern<br/>加载编排 + 状态管理"]
-        ILC["ImageLoadingContext<br/>状态机驱动"]
-    end
-    subgraph Property["属性层"]
-        ILP["ImageLayoutProperty<br/>src/alt/objectFit/..."]
-        IRP["ImageRenderProperty<br/>colorFilter/repeat/..."]
-    end
-    subgraph Layout["布局层"]
-        ILA["ImageLayoutAlgorithm<br/>objectFit 尺寸计算"]
-    end
-    subgraph Render["渲染层"]
-        ICM["ImageContentModifier<br/>CanvasImage 绘制"]
-    end
-    subgraph Events["事件层"]
+    subgraph State["属性与状态"]
+        ILP["ImageLayoutProperty<br/>ImageSourceInfo/ObjectFit/SourceSize"]
+        IRP["ImageRenderProperty<br/>Color/Matrix/HDR/Transition"]
+        IP["ImagePattern<br/>运行态/事件/alt/DFX"]
         IEH["ImageEventHub<br/>onComplete/onError/onFinish"]
     end
-    IMG --> IMNG
-    ATTR --> IMNG
+    subgraph Loading["加载与源信息"]
+        ISI["ImageSourceInfo<br/>src/pixelmap/reloadKey/DFX"]
+        ILC["ImageLoadingContext<br/>状态机/CanvasImage/进度"]
+        IPROV["ImageProvider<br/>缓存/下载/解码"]
+    end
+    subgraph Render["布局与绘制"]
+        ILA["ImageLayoutAlgorithm"]
+        IPM["ImagePaintMethod"]
+        ICM["ImageContentModifier"]
+    end
+    DTS --> JSIMG
+    SDTS --> IMSTATIC
+    CAPI --> NODEMOD
+    JSIMG --> IMNG
+    ARKBR --> NODEMOD
+    NODEMOD --> IMNG
+    IMSTATIC --> ILP
+    IMSTATIC --> IRP
     IMNG --> ILP
     IMNG --> IRP
     IMNG --> IP
+    IMNG --> IEH
     IP --> ILC
-    IP --> ILA
-    IP --> ICM
     IP --> IEH
-    ILA --> ILP
-    ICM --> IRP
+    ILP --> ISI
+    ILC --> ISI
+    ILC --> IPROV
+    IP --> ILA
+    IP --> IPM
+    IPM --> ICM
 ```
 
 ### 数据模型设计
 
 ```typescript
-// ArkTS 类型定义
+// ArkTS 公开事件与参数类型摘要
 interface ImageSourceSize { width: number; height: number }
 interface ImageAlt { placeholder?: ResourceStr | PixelMap; error?: ResourceStr | PixelMap }
 interface ImageCompleteEvent {
@@ -222,35 +258,52 @@ interface ImageCompleteEvent {
 }
 interface ImageError {
   componentWidth: number; componentHeight: number;
-  message: string; error?: BusinessError;
+  message: string; error?: BusinessError; downloadInfo?: object;
 }
+```
+
+```cpp
+// 当前内部持有模型摘要
+class ImageSourceInfo {
+    std::string src_;
+    std::shared_ptr<std::string> srcRef_;
+    RefPtr<PixelMap> pixmap_;
+    std::shared_ptr<uint8_t[]> buffer_;
+    const uint8_t* pixmapBuffer_;
+    NG::ImageDfxConfig imageDfxConfig_;
+    std::optional<std::string> reloadKey_;
+};
+
+class ImageLoadingContext {
+    ImageSourceInfo src_;
+    RefPtr<ImageObject> imageObj_;
+    RefPtr<CanvasImage> canvasImage_;
+    LoadNotifier notifiers_;
+    std::unique_ptr<SizeF> sourceSizePtr_;
+};
 ```
 
 ### 线程与并发模型
 
 | 操作 | 发起线程 | 回调线程 | 说明 |
 |------|----------|----------|------|
-| 属性设置 (Set*) | UI | UI | 直接写入 Property |
-| 图片加载 | UI → BG | BG → UI | 通过 ImageLoadingContext |
-| 事件回调 | UI | UI | 由 Pattern 在加载回调中触发 |
+| 属性设置 | UI | UI | Bridge/Model 直接写 Property、Pattern 或 EventHub |
+| 图片下载/解码 | UI 发起，后台执行 | UI 通知 | ImageProvider 下载/解码后通过 ImageUtils 投递 UI 任务 |
+| MakeCanvasImage | UI | UI | LoadingContext 根据状态立即执行或缓存 pending task |
+| 事件回调 | UI | UI | ImagePattern/EventHub 或 node modifier 同步派发 |
+| 下载进度 | 下载回调 | UI | ImageProvider 进度回调通过 DownloadOnProgress 转发到 LoadingContext |
 
 ## 详细设计
 
 ### 属性三层存储模型
 
-Image 组件的 31 个属性分布在三个存储层：
+Image 组件属性按更新影响分布在三类存储位置：
 
-**层 1 — LayoutProperty**（触发 MEASURE/LAYOUT）：
-- src, alt, objectFit, autoResize, sourceSize, fitOriginalSize, orientation, verticalAlign, isYUVDecode
-- → `image_layout_property.h`
-
-**层 2 — RenderProperty**（触发 RENDER）：
-- objectRepeat, renderMode, colorFilter, fillColor, dynamicRangeMode, hdrBrightness, imageMatrix, edgeAntialiasing, antialiased, contentTransition, resizable
-- → `image_render_property.h`
-
-**层 3 — Pattern 成员**（无 dirty flag，需手动标记）：
-- syncLoad, copyOption, interpolation, enableAnalyzer, supportSvg2, imageQuality, smoothEdge
-- → `image_pattern.h`
+| 存储层 | 代表属性/状态 | dirty flag/触发方式 | 证据 |
+|--------|---------------|-------------------|------|
+| LayoutProperty | ImageSourceInfo、Alt、AltError、AltPlaceholder、objectFit、autoResize、sourceSize、fitOriginalSize、orientation、isYUVDecode | MEASURE/LAYOUT/NORMAL/BY_CHILD_REQUEST | `image_layout_property.h:50-65` |
+| RenderProperty | objectRepeat、renderMode、fillColor、colorFilter、dynamicRangeMode、hdrBrightness、imageMatrix、edgeAntialiasing、antialiased、contentTransition、resizable | PROPERTY_UPDATE_RENDER 或 paint property 更新 | `image_render_property.h` |
+| Pattern/EventHub | syncLoad、copyOption、interpolation、enableAnalyzer、supportSvg2、imageQuality、draggable、onProgressCallback、onComplete/onError/onFinish | 无统一 dirty flag，按具体逻辑手动触发 | `image_pattern.h:380-425`, `image_event_hub.h:36-75` |
 
 ### objectFit 布局算法
 
@@ -268,42 +321,75 @@ Image 组件的 31 个属性分布在三个存储层：
 | TOP_LEFT(7)~BOTTOM_END(15) | 9 宫格定位 | 容器约束尺寸 | 对应方位对齐 |
 | MATRIX(17) | 使用 imageMatrix 变换 | 容器约束尺寸 | 矩阵变换 |
 
-→ `image_layout_algorithm.cpp`
-
 ### 事件触发时序
 
+```mermaid
+sequenceDiagram
+    participant Provider as ImageProvider/LoadingContext
+    participant Pattern as ImagePattern
+    participant Hub as ImageEventHub
+    participant NDK as node_image_modifier
+    Provider->>Pattern: onDataReadyComplete(src)
+    Pattern->>Hub: FireCompleteEvent(loadingStatus=0)
+    Provider->>Pattern: onLoadSuccess(src)
+    Pattern->>Pattern: MoveCanvasImage + SetImagePaintConfig + ClearAltData
+    Pattern->>Hub: FireCompleteEvent(loadingStatus=1)
+    Pattern->>NDK: NODE_IMAGE_ON_COMPLETE data[0..8]
+    Provider->>Pattern: onLoadFail(src, error)
+    Pattern->>Pattern: LoadAltErrorImage if configured
+    Pattern->>Hub: FireErrorEvent
+    Pattern->>NDK: NODE_IMAGE_ON_ERROR data[0]=401
+    Pattern->>Pattern: PrepareAnimation(non-static CanvasImage)
+    Pattern->>Hub: FireFinishEvent
+    Pattern->>NDK: NODE_IMAGE_ON_SVG_PLAY_FINISH
 ```
-ImagePattern::OnImageLoadSuccess(canvasImage)
-  → stores canvasImage, srcRect, dstRect
-  → MarkDirty(PROPERTY_UPDATE_RENDER)
-  → fires onComplete with ImageCompleteEvent
 
-ImagePattern::OnImageLoadFail(errorMsg, errorInfo)
-  → fires onError with ImageError
-  → tries alt image (if alt set)
-  → if alt also fails, fires onFinish
+关键约束：
+- onComplete 有 `loadingStatus=0` 和 `loadingStatus=1` 两个触发点：`image_pattern.cpp:234-247`, `image_pattern.cpp:548-555`。
+- onError 在失败后可先启动 AltError 加载，再派发失败事件：`image_pattern.cpp:722-729`。
+- SDK 合约将 onFinish 限定为 SVG 动画完成，源码当前对非静态 CanvasImage 注册 finish 回调：`image.d.ts:1669-1686`, `image_pattern.cpp:259-280`。
+- NDK 下载进度事件只在进度回调存在时由 ImageProvider/LoadingContext 转发：`image_provider.cpp:439-447`, `node_image_modifier.cpp:1712-1725`。
 
-ImagePattern::OnImageLoadSuccess (after render)
-  → fires onFinish (after both success and alt-error paths complete)
-```
+### 基础内存与加载上下文生命周期
 
-→ `image_pattern.cpp`
+当前实现的内存基线是值语义与 RefPtr 混合持有：
+
+| 对象 | 当前持有方式 | 生命周期规则 | 证据 |
+|------|-------------|--------------|------|
+| ImageSourceInfo | LayoutProperty 与 ImageLoadingContext 均按值保存 | src/pixelmap/buffer/reloadKey/DFX 配置参与比较和加载判定 | `image_source_info.h:146-174`, `image_loading_context.h:204` |
+| PixelMap source | `RefPtr<PixelMap> pixmap_` + `pixmapBuffer_` 缓存像素地址 | 相等比较同时检查 pixmapBuffer 和 raw pixel map | `image_source_info.cpp:150-195`, `image_source_info.cpp:276-278` |
+| ImageLoadingContext | 持有 src、ImageObject、CanvasImage、LoadNotifier、rect/size、sourceSizePtr | OnUnloaded 清空 imageObj/canvasImage/rect/size；StaticImageObject 成功后 ClearData | `image_loading_context.cpp:90-108` |
+| CanvasImage 重建 | `MakeCanvasImageIfNeed` 控制 | autoResize/imageFit/sourceSize/firstLoad/sizeLevel 变化触发，MAKE_CANVAS_IMAGE 状态下缓存 pending task | `image_loading_context.cpp:330-360` |
+| alt/altError | Pattern 分别持有独立 LoadingContext、CanvasImage 和 rect | 主图成功后 ClearAltData 释放替代图相关对象 | `image_pattern.h:394-403`, `image_pattern.cpp:411-422` |
+| ImageDfxConfig | Pattern、ImageSourceInfo、CanvasImage 按值传递/保存 | 当前未共享，DFX 日志和 CanvasImage 配置使用值副本 | `image_pattern.h:413-415`, `image_loading_context.cpp:34-40` |
+
+未落地优化不作为设计基线：当前源码仍保留 `pixmapBuffer_`、ImageSourceInfo 值属性项、ImageLoadingContext `src_` 值成员、Pattern 中三份 ImageDfxConfig 和分散的 alt/altError 字段。后续如要做 shared_ptr/AltState/bitmask 优化，应另起需求并以本规格的可见行为为回归基线。
+
+### 颜色效果与高级能力分派
+
+颜色效果和高级能力不统一存储：
+- fillColor/colorFilter/dynamicRangeMode/hdrBrightness/imageMatrix/edgeAntialiasing/antialiased/contentTransition 主要落到 RenderProperty 或绘制配置。
+- pointLight 是 system API，写通用 RenderContext 点光源属性，`native_node.h` 没有 `NODE_IMAGE_POINT_LIGHT` 专属枚举。
+- enableAnalyzer/analyzerConfig/ImageAIOptions 进入 ImageAnalyzerManager；draggable 进入通用 GestureHub/FrameNode 拖拽状态；supportSvg2 写 Pattern 成员并传给 LoadingContext。
+- enhancedImageQuality 动态 JSView 缺省/非法值走 LOW，静态 API undefined 走 NONE，这是范式差异。
 
 ## 风险和开放问题
 
 | 项 | 类型 | 影响 | 处理方式 | Owner |
 |----|------|------|----------|-------|
-| autoResize 默认值双重逻辑 | 兼容性 | 中 | JSON 反序列化默认 false，Pattern 构造默认 true；未显式设置时行为取决于路径 | ArkUI SIG |
-| objectFit 18 种枚举值 | API | 低 | 包含 9 宫格定位（TOP_LEFT~BOTTOM_END）和 MATRIX 模式，部分模式开发者不熟悉 | 文档/标注 |
-| colorFilter 双类型（ColorFilter/DrawingColorFilter） | 架构 | 低 | 同时支持数组矩阵和 DrawingColorFilter 对象，桥接层按类型分派 | 标注 |
-| 图片加载管线跨功能域依赖 | 架构 | 中 | Image 组件依赖 04-01-01 的加载管线，管线行为变更可能影响 Image 组件表现 | ArkUI SIG |
-| interpolation 默认值不一致 | 枚举 | 低 | 属性定义默认 NONE(0)，Pattern 字段默认 LOW(1)，实际使用 Pattern 字段值 | 标注 |
-| ImageDfxConfig shared_ptr 空指针访问 | 内存优化 | 低 | shared_ptr 共享后下游持有者需添加空指针保护，避免未初始化访问 | ArkUI SIG |
-| ImageSourceInfo shared_ptr 共享后可变性 | 内存优化 | 中 | shared_ptr 共享 ImageSourceInfo 后需确保不可变语义（copy-on-write），否则一处修改影响所有持有者 | ArkUI SIG |
+| autoResize 默认值双重逻辑 | 兼容性 | 中 | JSON 反序列化默认 false，Pattern/SceneBoard 路径存在不同默认值；规格按源码分支记录 | ArkUI SIG |
+| orientation undefined/null SDK 与 JSView 差异 | 兼容性 | 中 | SDK 声明 undefined/null 为 AUTO，JSView 参数缺失或非法时回退 UP；在 Feat-01 标注差异 | ArkUI SIG |
+| supportSvg2 动态修改差异 | 兼容性 | 中 | SDK 声明 Image 创建后不能动态改变，Model 仍提供 setter 写 Pattern 成员；规格记录为 SDK/实现风险 | ArkUI SIG |
+| enhancedImageQuality 动静态默认差异 | 兼容性 | 低 | 动态 JSView 缺省/非法值为 LOW，静态 undefined 为 NONE；XTS 需分范式覆盖 | ArkUI SIG |
+| onFinish SDK/源码范围差异 | 兼容性 | 中 | SDK/C API 合约限定 SVG 动画完成，源码对非静态 CanvasImage 设置 finish 回调；规格显式记录，不修改实现 | ArkUI SIG |
+| NDK onError 信息粒度 | C API | 低 | `native_node.h` 声明错误码含 401/103101，当前 node modifier 固定填 401；ArkTS 仍可通过 ImageErrorInfo 获取细分错误 | ArkUI SIG |
+| Feat-05 历史优化草稿未落地 | 规格维护 | 中 | shared_ptr 共享 ImageSourceInfo/ImageDfxConfig、AltState、bool bitmask 均未在当前源码实现；已从 AC/ADR 移除并作为未来优化开放问题 | ArkUI SIG |
+| ImageSourceInfo 值拷贝内存基线 | 内存 | 中 | 当前值语义会复制 src/pixelmap/buffer/reloadKey/DFX 配置；后续优化必须保持 reloadKey、pixmapBuffer 比较和 source 匹配语义 | ArkUI SIG |
+| 图片加载管线跨功能域依赖 | 架构 | 中 | Image 组件依赖 ImageProvider/LoadingContext/缓存下载管线，管线行为变更可能影响 Image 规格 | ArkUI SIG |
 
 ## 设计审批
 
-- [x] 需求基线已确认，设计覆盖 P0/P1 AC
+- [x] 需求基线已确认，设计覆盖 Feat-01~Feat-05
 - [x] 不涉及项已承接，N/A 和展开项都有结论
 - [x] 涉及仓和模块职责清楚
 - [x] 适用架构规则已识别并形成设计结论

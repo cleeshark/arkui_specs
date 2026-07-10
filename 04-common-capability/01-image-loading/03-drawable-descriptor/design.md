@@ -21,10 +21,10 @@
 
 | 项 | 补充说明（如需） |
 |----|------------------|
-| TS API 覆盖 5 个类 + 3 接口/枚举 | DrawableDescriptor / Layered / PixelMap / Animated / Picture |
+| TS API 覆盖 5 个类 + 4 个接口 + 1 个枚举 | DrawableDescriptor / Layered / PixelMap / Animated / Picture；LoadedResult / AnimationOptions / AnimationController / HdrCompositionConfig；AnimationStopMode |
 | C API 覆盖 20+ 函数 | 生命周期、PixelMap 访问、动画配置、动画控制 |
 | 跨前端 Bridge 覆盖 4 个函数 | NAPI 通道 2 个 + ANI 通道 2 个 |
-| 核心实现为 frameworks/core/drawable | 6 个类：Base + 4 子类 + Info + Loader |
+| 核心实现为 frameworks/core/drawable | 5 个 descriptor 类：Base + Layered + Animated + PixelMap + Picture；另含 Info + Loader |
 | 旧 inner_api 桥接层保留 | 作为 NAPI 到新核心的过渡层 |
 
 ## 上下文和现状
@@ -46,7 +46,7 @@
 
 | 层 | 模块 | 职责 | 修改类型 |
 |----|------|------|----------|
-| TS API | `@ohos.arkui.drawableDescriptor.d.ts` / `.static.d.ets` | 5 个类 + 3 接口/枚举的 TS API 声明（Dynamic + Static） | 无修改（规格补录） |
+| TS API | `@ohos.arkui.drawableDescriptor.d.ts` / `.static.d.ets` | 5 个类 + 4 个接口 + 1 个枚举的 TS API 声明（Dynamic + Static） | 无修改（规格补录） |
 | NAPI 桥接 | `interfaces/inner_api/drawable_descriptor/js_drawable_descriptor.cpp/.h` | TS→NAPI 入口，JsDrawableDescriptor 绑定，Init/Wrap/Unwrap | 无修改（规格补录） |
 | 旧 inner_api | `interfaces/inner_api/drawable_descriptor/drawable_descriptor.cpp/.h` | 旧架构 Napi::DrawableDescriptor / LayeredDrawableDescriptor / Factory，NAPI 到新核心的过渡层 | 无修改（规格补录） |
 | Bridge 层 | `interfaces/inner_api/drawable_descriptor/drawable_bridge.cpp/.h` | NAPI/ANI 通道桥接函数（CreateDrawableC/GetPixelMapC/引用计数管理） | 无修改（规格补录） |
@@ -81,7 +81,7 @@
 | 深色模式 | 不适用——资源选择由 ResourceManager 负责，DrawableDescriptor 不感知主题 |
 | 多窗口/分屏 | 不适用——DrawableDescriptor 不感知窗口状态 |
 | 多用户 | 不适用——不涉及用户数据隔离 |
-| 版本升级 | API 版本差异见兼容性声明。关键版本节点: 10(基础)/12(动画+C API)/21(AnimationController)/22(C动画控制)/23(Static)/24(StopMode)/26(release+Pictue+HDR) |
+| 版本升级 | API 版本差异见兼容性声明。关键版本节点: 10(基础)/12(动画+C API)/21(AnimationController)/22(C动画控制)/23(Static)/24(StopMode)/26(release+Picture+HDR) |
 | 生态兼容 | C API 自 @since 12 起保持 ABI 兼容；TS API 为 System API，不承诺应用级兼容 |
 
 ## 关键设计决策
@@ -93,7 +93,7 @@
 | ADR-3 | 同一 AnimatedDrawableDescriptor 被多组件共享时动画状态如何管理？ | 每个 nodeId 独立维护 ControlledAnimator（`unordered_map<int32_t, RefPtr<ControlledAnimator>>`） | 共享单一 animator 状态；或禁止多组件共享 | per-node 独立状态支持"同一数据源、不同播放进度"的场景，是图标动画的常见需求 | `animators_` map 随组件绑定/解绑增删；内存开销与绑定组件数成正比 |
 | ADR-4 | C API 中 ArkTS→Native 的 DrawableDescriptor 传递方向？ | 单向：仅 ArkTS→Native。Native 侧不可创建子类型 DrawableDescriptor | 双向传递（Native 可创建并传回 ArkTS） | C API 仅提供从 PixelMap 创建基础包装的能力；子类型创建依赖资源管理系统，Native 侧不具备该上下文 | Bridge 函数 4 个（NAPI*2 + ANI*2），方向均为 get from ArkTS value → ArkUI_DrawableDescriptor* |
 | ADR-5 | 资源加载路径如何统一？ | `DrawableDescriptorInfo` 解析 src 类型（RESOURCE/BASE64/FILE）→ `DrawableDescriptorLoader` 统一加载为 `MediaData` | 各子类自行解析加载 | 集中式加载便于错误处理一致性和缓存策略统一 | 支持 AnimatedDrawableDescriptor(src: ResourceStr) 和 PixelMapDrawableDescriptor(src: ResourceStr) |
-| ADR-6 | 内存释放模型？ | TS 侧: API 26 新增 `release()`/`isReleased()` 显式释放 + GC fallback。C 侧: `OH_ArkUI_DrawableDescriptor_Dispose` 显式释放。Bridge 层引用计数 `IncreaseRefCountDrawableC`/`DecreaseRefCountDrawableC` | 纯 GC 管理；或纯手动管理 | 显式 release 允许大数据（PixelMap）提前释放，GC 保证兼容性。引用计数防止 Bridge 传递时过早销毁 | release 后调用任何方法抛出 BusinessError 111002 |
+| ADR-6 | 内存释放模型？ | TS 侧: API 26 新增 `release()`/`isReleased()` 显式释放 + GC fallback。C 侧: `OH_ArkUI_DrawableDescriptor_Dispose` 显式释放。Bridge 层引用计数 `IncreaseRefCountDrawableC`/`DecreaseRefCountDrawableC` | 纯 GC 管理；或纯手动管理 | 显式 release 允许大数据（PixelMap）提前释放，GC 保证兼容性。引用计数防止 Bridge 传递时过早销毁 | Dynamic release 后访问抛出 BusinessError 111002；Static release 后返回 `undefined` 或宽高 -1 |
 
 ## 设计骨架
 
@@ -128,14 +128,16 @@
 
 | API 签名 | 类型 | d.ts 位置 | 权限要求 | SysCap |
 |----------|------|-----------|----------|--------|
-| `class DrawableDescriptor` | System | `@ohos.arkui.drawableDescriptor.d.ts:83` | 无 | `SystemCapability.ArkUI.ArkUI.Full` |
-| `class LayeredDrawableDescriptor extends DrawableDescriptor` | System | `@ohos.arkui.drawableDescriptor.d.ts:199` | 无 | `SystemCapability.ArkUI.ArkUI.Full` |
-| `class PixelMapDrawableDescriptor extends DrawableDescriptor` | System | `@ohos.arkui.drawableDescriptor.d.ts:332` | 无 | `SystemCapability.ArkUI.ArkUI.Full` |
-| `class AnimatedDrawableDescriptor extends DrawableDescriptor` | System | `@ohos.arkui.drawableDescriptor.d.ts:545` | 无 | `SystemCapability.ArkUI.ArkUI.Full` |
-| `class PictureDrawableDescriptor extends DrawableDescriptor` | System | `@ohos.arkui.drawableDescriptor.d.ts:613` | 无 | `SystemCapability.ArkUI.ArkUI.Full` |
-| `interface AnimationOptions` | System | `@ohos.arkui.drawableDescriptor.d.ts:408` | 无 | `SystemCapability.ArkUI.ArkUI.Full` |
-| `interface AnimationController` | System | `@ohos.arkui.drawableDescriptor.d.ts:477` | 无 | `SystemCapability.ArkUI.ArkUI.Full` |
-| `enum AnimationStopMode` | System | `@ohos.arkui.drawableDescriptor.d.ts:375` | 无 | `SystemCapability.ArkUI.ArkUI.Full` |
+| `interface DrawableDescriptorLoadedResult` | System | `@ohos.arkui.drawableDescriptor.d.ts:40` | 无 | `SystemCapability.ArkUI.ArkUI.Full` |
+| `class DrawableDescriptor` | System | `@ohos.arkui.drawableDescriptor.d.ts:77` | 无 | `SystemCapability.ArkUI.ArkUI.Full` |
+| `class LayeredDrawableDescriptor extends DrawableDescriptor` | System | `@ohos.arkui.drawableDescriptor.d.ts:189` | 无 | `SystemCapability.ArkUI.ArkUI.Full` |
+| `class PixelMapDrawableDescriptor extends DrawableDescriptor` | System | `@ohos.arkui.drawableDescriptor.d.ts:290` | 无 | `SystemCapability.ArkUI.ArkUI.Full` |
+| `enum AnimationStopMode` | System | `@ohos.arkui.drawableDescriptor.d.ts:327` | 无 | `SystemCapability.ArkUI.ArkUI.Full` |
+| `interface AnimationOptions` | System | `@ohos.arkui.drawableDescriptor.d.ts:360` | 无 | `SystemCapability.ArkUI.ArkUI.Full` |
+| `interface AnimationController` | System | `@ohos.arkui.drawableDescriptor.d.ts:453` | 无 | `SystemCapability.ArkUI.ArkUI.Full` |
+| `class AnimatedDrawableDescriptor extends DrawableDescriptor` | System | `@ohos.arkui.drawableDescriptor.d.ts:522` | 无 | `SystemCapability.ArkUI.ArkUI.Full` |
+| `interface HdrCompositionConfig` | System | `@ohos.arkui.drawableDescriptor.d.ts:584` | 无 | `SystemCapability.ArkUI.ArkUI.Full` |
+| `class PictureDrawableDescriptor extends DrawableDescriptor` | System | `@ohos.arkui.drawableDescriptor.d.ts:605` | 无 | `SystemCapability.ArkUI.ArkUI.Full` |
 
 **C API：**
 
@@ -594,7 +596,8 @@ ANI Bridge: 同理，从 `ani_object` 提取。
 | 新旧双架构共存增加维护成本 | 架构 | 中 | 旧 inner_api 层逐步废弃，新功能仅在新核心实现。长期迁移到纯 Ace::DrawableDescriptor。inner_api/drawable_descriptor/ 下的 adapter/base/core/loader/utils 已废弃 | ArkUI SIG |
 | C API 不支持 DrawableType 查询 | API | 低 | Native 侧使用时需预先知道类型（创建时已确定）。如需类型查询可后续扩展 C API | ArkUI SIG |
 | AnimatedDrawableDescriptor per-node map 无限增长 | 性能 | 低 | 组件解绑时通过 UnRegisterUpdateCallback 移除。长期运行需监控 map 大小 | ArkUI SIG |
-| Dynamic vs Static API 签名差异 | 兼容性 | 低 | 差异为语言特性约束（如 `undefined` 支持），语义等价。已记录在兼容性声明中 | ArkUI SIG |
+| Dynamic vs Static API 签名差异 | 兼容性 | 低 | Static getter 明确允许 `undefined`，Dynamic getter 多为非 optional。已记录在兼容性声明中 | ArkUI SIG |
+| Dynamic vs Static release 后行为差异 | 兼容性 | 中 | Dynamic SDK 定义 release 后访问抛 111002；Static 实现返回 `undefined` 或宽高 -1。作为既有行为保留并在 spec 中显式标注 | ArkUI SIG |
 | PictureDrawableDescriptor HDR 合成依赖硬件能力 | 兼容性 | 中 | 在不支持 HDR 的设备上 `getPixelMap()` 返回 SDR 版本 | ArkUI SIG |
 
 ## 设计审批

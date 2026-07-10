@@ -193,7 +193,7 @@
 | 05 组件层 | 07 模态类组件 | 02 全模态弹窗 | `05-07-02` | `05-ui-components/07-modal-components/02-full-modal/` | *待补充* | 0 |
 | 05 组件层 | 07 模态类组件 | 03 Panel | `05-07-03` | `05-ui-components/07-modal-components/03-panel/` | *待补充* | 0 |
 | 05 组件层 | 08 图片类组件 | 01 Image | `05-08-01` | `05-ui-components/08-image-components/01-image/` | [design.md](05-ui-components/08-image-components/01-image/design.md) | 5 |
-| 05 组件层 | 08 图片类组件 | 02 ImageAnimator | `05-08-02` | `05-ui-components/08-image-components/02-image-animator/` | *待补充* | 0 |
+| 05 组件层 | 08 图片类组件 | 02 ImageAnimator | `05-08-02` | `05-ui-components/08-image-components/02-image-animator/` | [design.md](05-ui-components/08-image-components/02-image-animator/design.md) | 3 |
 | 05 组件层 | 08 图片类组件 | 03 MediaCachedImage | `05-08-03` | `05-ui-components/08-image-components/03-media-cached-image/` | *待补充* | 0 |
 | 05 组件层 | 09 文本类组件 | 01 Marquee | `05-09-01` | `05-ui-components/09-text-components/01-marquee/` | *待补充* | 0 |
 | 05 组件层 | 09 文本类组件 | 02 RichEditor | `05-09-02` | `05-ui-components/09-text-components/02-rich-editor/` | *待补充* | 0 |
@@ -1205,12 +1205,15 @@
 | Feat-02 | 颜色与效果 | [Feat-02-image-color-effects-spec.md](05-ui-components/08-image-components/01-image/Feat-02-image-color-effects-spec.md) | Baselined |
 | Feat-03 | 高级功能 | [Feat-03-image-advanced-spec.md](05-ui-components/08-image-components/01-image/Feat-03-image-advanced-spec.md) | Baselined |
 | Feat-04 | 事件回调 | [Feat-04-image-events-spec.md](05-ui-components/08-image-components/01-image/Feat-04-image-events-spec.md) | Baselined |
-| Feat-05 | Image 组件基础内存优化 | [Feat-05-image-base-memory-opt-spec.md](05-ui-components/08-image-components/01-image/Feat-05-image-base-memory-opt-spec.md) | Draft |
+| Feat-05 | Image 组件基础内存与加载上下文生命周期 | [Feat-05-image-base-memory-opt-spec.md](05-ui-components/08-image-components/01-image/Feat-05-image-base-memory-opt-spec.md) | Baselined |
 
 ### 05-08-02 ImageAnimator
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | ImageAnimator 帧数据与显示缓存 | [Feat-01-image-animator-frame-data-cache-spec.md](05-ui-components/08-image-components/02-image-animator/Feat-01-image-animator-frame-data-cache-spec.md) | Baselined |
+| Feat-02 | ImageAnimator 播放控制与可见性联动 | [Feat-02-image-animator-playback-control-spec.md](05-ui-components/08-image-components/02-image-animator/Feat-02-image-animator-playback-control-spec.md) | Baselined |
+| Feat-03 | ImageAnimator 事件回调与多范式接口 | [Feat-03-image-animator-events-interfaces-spec.md](05-ui-components/08-image-components/02-image-animator/Feat-03-image-animator-events-interfaces-spec.md) | Baselined |
 
 ### 05-08-03 MediaCachedImage
 

@@ -2261,7 +2261,7 @@ functions:
     id: '02'
     title: ImageAnimator
   path: 05-ui-components/08-image-components/02-image-animator/
-  design: null
+  design: 05-ui-components/08-image-components/02-image-animator/design.md
   status: active
 - id: 05-08-03
   l1:
