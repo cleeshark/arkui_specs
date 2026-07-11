@@ -304,3 +304,18 @@ features:
   title: NavDestination 模式/安全区/转场动画/状态恢复
   spec: 05-ui-components/02-navigation-components/03-nav-destination/Feat-04-nav-destination-mode-safe-area-transition-recovery-spec.md
   status: Baselined
+- func_id: 05-13-02
+  id: Feat-01
+  title: 显示、播放与事件
+  spec: 05-ui-components/13-platform-components/02-video/Feat-01-video-display-playback-events-spec.md
+  status: Baselined
+- func_id: 05-13-02
+  id: Feat-02
+  title: 控制器与全屏
+  spec: 05-ui-components/13-platform-components/02-video/Feat-02-video-controller-fullscreen-spec.md
+  status: Baselined
+- func_id: 05-13-02
+  id: Feat-03
+  title: 高级能力（AI/Poster/快捷键）
+  spec: 05-ui-components/13-platform-components/02-video/Feat-03-video-advanced-capabilities-spec.md
+  status: Baselined

@@ -225,7 +225,7 @@
 | 05 组件层 | 12 显示嵌入组件 | 06 SecurityUIExtensionComponent | `05-12-06` | `05-ui-components/12-embedded-display-components/06-security-ui-extension-component/` | *待补充* | 0 |
 | 05 组件层 | 12 显示嵌入组件 | 07 DynamicComponent | `05-12-07` | `05-ui-components/12-embedded-display-components/07-dynamic-component/` | *待补充* | 0 |
 | 05 组件层 | 13 平台类组件 | 01 XComponent | `05-13-01` | `05-ui-components/13-platform-components/01-xcomponent/` | *待补充* | 0 |
-| 05 组件层 | 13 平台类组件 | 02 Video | `05-13-02` | `05-ui-components/13-platform-components/02-video/` | *待补充* | 0 |
+| 05 组件层 | 13 平台类组件 | 02 Video | `05-13-02` | `05-ui-components/13-platform-components/02-video/` | [design.md](05-ui-components/13-platform-components/02-video/design.md) | 3 |
 | 05 组件层 | 14 绘制类组件 | 01 Shape相关 | `05-14-01` | `05-ui-components/14-drawing-components/01-shape/` | *待补充* | 0 |
 | 05 组件层 | 14 绘制类组件 | 02 Canvas | `05-14-02` | `05-ui-components/14-drawing-components/02-canvas/` | *待补充* | 0 |
 | 05 组件层 | 14 绘制类组件 | 03 OffscreenCanvas | `05-14-03` | `05-ui-components/14-drawing-components/03-offscreen-canvas/` | *待补充* | 0 |
@@ -1387,6 +1387,9 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 显示、播放与事件 | [Feat-01-video-display-playback-events-spec.md](05-ui-components/13-platform-components/02-video/Feat-01-video-display-playback-events-spec.md) | Baselined |
+| Feat-02 | 控制器与全屏 | [Feat-02-video-controller-fullscreen-spec.md](05-ui-components/13-platform-components/02-video/Feat-02-video-controller-fullscreen-spec.md) | Baselined |
+| Feat-03 | 高级能力（AI/Poster/快捷键） | [Feat-03-video-advanced-capabilities-spec.md](05-ui-components/13-platform-components/02-video/Feat-03-video-advanced-capabilities-spec.md) | Baselined |
 
 ### 05-14-01 Shape相关
 

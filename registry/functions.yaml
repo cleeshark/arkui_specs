@@ -2677,7 +2677,7 @@ functions:
     id: '02'
     title: Video
   path: 05-ui-components/13-platform-components/02-video/
-  design: null
+  design: 05-ui-components/13-platform-components/02-video/design.md
   status: active
 - id: 05-14-01
   l1:
