@@ -159,6 +159,31 @@ features:
   title: Toggle 组件全量规格
   spec: 05-ui-components/04-input-form-components/06-toggle/Feat-01-toggle-spec.md
   status: Baselined
+- func_id: 05-05-01
+  id: Feat-01
+  title: CalendarPicker 组件全量规格
+  spec: 05-ui-components/05-picker-components/01-calendar-calendar-picker/Feat-01-calendar-picker-full-spec.md
+  status: Baselined
+- func_id: 05-05-02
+  id: Feat-01
+  title: DatePicker 组件全量规格
+  spec: 05-ui-components/05-picker-components/02-date-picker/Feat-01-date-picker-full-spec.md
+  status: Baselined
+- func_id: 05-05-03
+  id: Feat-01
+  title: TextPicker 组件全量规格
+  spec: 05-ui-components/05-picker-components/03-text-picker/Feat-01-text-picker-full-spec.md
+  status: Baselined
+- func_id: 05-05-04
+  id: Feat-01
+  title: TimePicker 组件全量规格
+  spec: 05-ui-components/05-picker-components/04-time-picker/Feat-01-time-picker-full-spec.md
+  status: Baselined
+- func_id: 05-05-06
+  id: Feat-01
+  title: UIPickerComponent/Picker 组件全量规格
+  spec: 05-ui-components/05-picker-components/06-picker/Feat-01-uipicker-component-full-spec.md
+  status: Baselined
 - func_id: 05-02-01
   id: Feat-01
   title: 创建与布局模式
