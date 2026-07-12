@@ -262,6 +262,17 @@
 
 ## 验证映射
 
+| VM编号 | 关联用户故事 | 验证手段 | 验证要点 |
+|-------|-------------|---------|---------|
+| VM-1 | US-1 flexGrow (AC-1.1~1.6) | 单元测试 + XTS | 剩余空间按比例分配；undefined 重置；与 layoutWeight 互斥 |
+| VM-2 | US-2 flexShrink (AC-2.1~2.6) | 单元测试 + XTS | 溢出空间按比例收缩；Row/Flex 默认值差异；C API Reset |
+| VM-3 | US-3 flexBasis (AC-3.1~3.7) | 单元测试 + XTS + 代码评审 | 主轴基础尺寸；字符串/undefined/百分比（拒绝→AUTO）处理 |
+| VM-4 | US-4 alignSelf (AC-4.1~4.9) | 单元测试 + XTS | 交叉轴对齐覆盖；STRETCH 二次测量；BASELINE 对齐；越界→AUTO |
+| VM-5 | US-5 layoutWeight (AC-5.1~5.8) | 单元测试 + XTS | 按权重分配；API 12 int/float 类型差异；与 flexGrow 互斥 |
+| VM-6 | US-6 displayPriority (AC-6.1~6.8) | 单元测试 + C API | 显示优先级；空间淘汰；undefined/负值处理；C API Reset |
+
+### 逐 AC 验证用例
+
 | AC编号 | 验证类型 | 验证位置/用例 |
 |-------|----------|--------------|
 | AC-1.1 | 单元测试 | `test/unittest/core/pattern/flex/flex_new_test_ng_second_part.cpp` (flexGrow 分配) |

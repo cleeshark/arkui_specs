@@ -1,13 +1,15 @@
 # Feat-04: NavDestination 模式/安全区/转场动画/状态恢复
 
-| 字段 | 值 |
-|------|------|
-| 功能编号 | Func-05-02-03-Feat-04 |
-| 所属功能域 | 05-ui-components / 02-navigation-components / 03-nav-destination |
-| Spec ID | Feat-04 |
-| 版本 | 1.0 |
-| 状态 | Defined |
-| 覆盖 API 版本 | @since 12 (systemBarStyle, NavDestinationModifier), @since 14 (recoverable, systemTransition), @since 15 (customTransition, EXPLODE/SLIDE_RIGHT/SLIDE_BOTTOM), @since 23 (NavDestinationModifier.static) |
+| 属性 | 值 |
+|------|-----|
+| 特性名称 | NavDestination 模式/安全区/转场动画/状态恢复 |
+| 特性编号 | Func-05-02-03-Feat-04 |
+| 所属 Epic | 无（已有能力补录） |
+| 优先级 | P0 |
+| 目标版本 | API 12 起（systemBarStyle/NavDestinationModifier）；API 14（recoverable/systemTransition）；API 15（customTransition）；API 23（Modifier.static） |
+| SIG 归属 | ArkUI SIG |
+| 状态 | Baselined |
+| 复杂度 | 复杂 |
 
 ---
 
@@ -379,16 +381,16 @@
 
 ## 7 测试要点
 
-| 测试项 | 覆盖点 | 方法 |
-|--------|--------|------|
-| systemBarStyle backup/restore | backupStyle_ 保存, currStyle_ 应用, OnDetachFromMainTree 重置 | UT: 模拟 push→set→pop 流程验证 restore |
-| recoverable 默认值 | 默认 true, 设置 false 后 CanRecovery=false | UT: 检查 SetRecoverable(false) → CanRecovery() |
-| HOME/RELATED 通知 | OnDetachFromMainTree 仅对 HOME/RELATED 触发 | UT: 不同 NavDestinationType 的 detach 行为 |
-| systemTransition enum | 内部值 vs JS 值映射 | UT: 验证 static C API JS→内部映射 |
-| customTransition 回调 | NavigationOperation + isEnter 组合 | UT: PUSH+enter, POP+exit 回调触发 |
-| fullScreenOverlay | Navigation dirty + 容器切换 | UT: SPLIT 模式 overlay/content 容器切换 |
-| C API Modifier | dynamic + static setter/resetter | C API UT: linux_unittest_capi |
-| getConfigInRouteMap | JS 桥接方法 | UT: JSNavDestinationContext.GetRouteInfo |
+| VM编号 | 测试项 | 覆盖点 | 方法 |
+|--------|--------|--------|------|
+| VM-1 | systemBarStyle backup/restore | backupStyle_ 保存, currStyle_ 应用, OnDetachFromMainTree 重置 | UT: 模拟 push→set→pop 流程验证 restore |
+| VM-2 | recoverable 默认值 | 默认 true, 设置 false 后 CanRecovery=false | UT: 检查 SetRecoverable(false) → CanRecovery() |
+| VM-3 | HOME/RELATED 通知 | OnDetachFromMainTree 仅对 HOME/RELATED 触发 | UT: 不同 NavDestinationType 的 detach 行为 |
+| VM-4 | systemTransition enum | 内部值 vs JS 值映射 | UT: 验证 static C API JS→内部映射 |
+| VM-5 | customTransition 回调 | NavigationOperation + isEnter 组合 | UT: PUSH+enter, POP+exit 回调触发 |
+| VM-6 | fullScreenOverlay | Navigation dirty + 容器切换 | UT: SPLIT 模式 overlay/content 容器切换 |
+| VM-7 | C API Modifier | dynamic + static setter/resetter | C API UT: linux_unittest_capi |
+| VM-8 | getConfigInRouteMap | JS 桥接方法 | UT: JSNavDestinationContext.GetRouteInfo |
 
 ---
 
@@ -400,3 +402,24 @@
 | @since 14 | recoverable, systemTransition, fullScreenOverlay |
 | @since 15 | customTransition, EXPLODE, SLIDE_RIGHT, SLIDE_BOTTOM |
 | @since 23 | NavDestinationModifier.static (static C API bridge) |
+
+---
+
+## context-references
+
+```yaml
+context-queries:
+  - repo: "openharmony/ace_engine"
+    query: "NavDestination systemBarStyle backup/restore 与 recoverable 状态恢复机制"
+  - repo: "openharmony/ace_engine"
+    query: "NavDestination systemTransition/customTransition 转场动画与 fullScreenOverlay 实现"
+  - repo: "openharmony/interface_sdk-js"
+    query: "NavDestinationModifier systemBarStyle/recoverable/systemTransition/customTransition API 签名与版本"
+```
+
+**关键文档：**
+- 实现核心: `frameworks/core/components_ng/pattern/navrouter/navdestination_pattern.cpp`
+- 属性与节点: `frameworks/core/components_ng/pattern/navrouter/navdestination_group_node.h`、`frameworks/core/components_ng/pattern/navigation/navigation_declaration.h`
+- C API dynamic modifier: `frameworks/core/interfaces/native/node/nav_destination_modifier.cpp`
+- C API static modifier: `frameworks/core/interfaces/native/implementation/nav_destination_modifier.cpp`
+- SDK 声明: `interface/sdk-js/api/arkui/NavDestinationModifier.d.ts`

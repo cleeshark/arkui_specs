@@ -3,7 +3,7 @@
 | 字段 | 内容 |
 |------|------|
 | 特性名称 | ImageAnimator 事件回调与多范式接口 |
-| 特性编号 | 05-08-02/Feat-03 |
+| 特性编号 | Func-05-08-02-Feat-03 |
 | 所属 Epic | 无 |
 | 优先级 | P0 |
 | 目标版本 | Dynamic API 7+；ImageAnimatorModifier Dynamic API 12+/20 crossplatform；Static API 23+；Static style builder API 26+；NDK API 12+ |

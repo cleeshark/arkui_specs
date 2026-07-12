@@ -5,7 +5,7 @@
 | 字段 | 内容 |
 |------|------|
 | 特性名称 | UIPickerComponent/Picker 组件全量规格 |
-| 特性编号 | Feat-01 |
+| 特性编号 | Func-05-05-06-Feat-01 |
 | FuncID | 05-05-06 |
 | 所属 Epic | 无 |
 | 优先级 | P0 |

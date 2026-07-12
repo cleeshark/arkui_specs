@@ -61,6 +61,23 @@ print('missing_registered_paths', missing)
 PY
 ```
 
+## Spec Content Validation
+
+`tools/validate_specs.py` checks the spec documents themselves (not the registry). It is the specs-repo counterpart of the spec checks in `docs/validate_context.py`, so a Feat spec passes or fails identically under either tool. The generated `site/` tree is excluded from the scan.
+
+```bash
+python3 tools/validate_specs.py              # print every finding
+python3 tools/validate_specs.py --quiet      # print only the summary
+python3 tools/validate_specs.py --warnings-as-errors
+```
+
+It reports:
+
+- `index.md`: every registered Spec link resolves to an existing file; every `| Feat-` row has at least four columns and a valid status (`Draft` / `Baselined` / `Deprecated`); `待补充` rows are warnings.
+- Each `Feat-NN-*-spec.md`: a valid `| 状态 | <status> |` row (or `status:` header); an overview metadata table with the required fields `特性名称` / `特性编号` / `优先级` / `目标版本` / `复杂度` (plus `状态`), where `特性编号` matches `Func-NN-NN-NN-Feat-NN` and `优先级` is `P0`–`P3`; a `## context-references` section; at least one `AC-<n>` marker; at least one `VM-<n>` marker; when `Baselined`, no `TODO` / `TBD` / `待定` placeholder text (self-audit lines are recognized and skipped); and in the `## 本次变更范围（Delta）` section, every table must use the exact header `| 类型 | 内容 | 说明 |` with `类型` cells being `ADDED` / `MODIFIED` / `REMOVED`.
+
+A few legacy specs predate the current template and currently trip this check (missing status row, missing VM entries, etc.). Treat new errors as real and fix the spec rather than relaxing the rule; `--quiet` returns a non-zero exit code only when errors remain.
+
 ## Adding Content
 
 ### Add A Functional Domain
@@ -241,6 +258,7 @@ After an add, update, or delete task, make sure all of this is true:
 ```text
 python3 tools/generate_index.py --check passes
 python3 tools/generate_site.py passes
+python3 tools/validate_specs.py --quiet reports no new errors on the specs you touched
 Every design.md on disk is registered in functions.yaml
 Every Feat-*.md on disk is registered in features.yaml
 Every registered design/spec path exists on disk

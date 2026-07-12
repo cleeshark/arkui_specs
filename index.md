@@ -170,7 +170,7 @@
 | 05 组件层 | 04 输入表单类 | 02 Checkbox/CheckboxGroup | `05-04-02` | `05-ui-components/04-input-form-components/02-checkbox-checkbox-group/` | *待补充* | 0 |
 | 05 组件层 | 04 输入表单类 | 03 Rating | `05-04-03` | `05-ui-components/04-input-form-components/03-rating/` | *待补充* | 0 |
 | 05 组件层 | 04 输入表单类 | 04 Radio | `05-04-04` | `05-ui-components/04-input-form-components/04-radio/` | *待补充* | 0 |
-| 05 组件层 | 04 输入表单类 | 05 Slider | `05-04-05` | `05-ui-components/04-input-form-components/05-slider/` | *待补充* | 0 |
+| 05 组件层 | 04 输入表单类 | 05 Slider | `05-04-05` | `05-ui-components/04-input-form-components/05-slider/` | [design.md](05-ui-components/04-input-form-components/05-slider/design.md) | 4 |
 | 05 组件层 | 04 输入表单类 | 06 Toggle | `05-04-06` | `05-ui-components/04-input-form-components/06-toggle/` | [design.md](05-ui-components/04-input-form-components/06-toggle/design.md) | 1 |
 | 05 组件层 | 05 选择类组件 | 01 Calendar/CalendarPicker | `05-05-01` | `05-ui-components/05-picker-components/01-calendar-calendar-picker/` | [design.md](05-ui-components/05-picker-components/01-calendar-calendar-picker/design.md) | 1 |
 | 05 组件层 | 05 选择类组件 | 02 DatePicker | `05-05-02` | `05-ui-components/05-picker-components/02-date-picker/` | [design.md](05-ui-components/05-picker-components/02-date-picker/design.md) | 1 |
@@ -198,7 +198,7 @@
 | 05 组件层 | 09 文本类组件 | 01 Marquee | `05-09-01` | `05-ui-components/09-text-components/01-marquee/` | *待补充* | 0 |
 | 05 组件层 | 09 文本类组件 | 02 RichEditor | `05-09-02` | `05-ui-components/09-text-components/02-rich-editor/` | *待补充* | 0 |
 | 05 组件层 | 09 文本类组件 | 03 Search | `05-09-03` | `05-ui-components/09-text-components/03-search/` | *待补充* | 0 |
-| 05 组件层 | 09 文本类组件 | 04 Text | `05-09-04` | `05-ui-components/09-text-components/04-text/` | [design.md](05-ui-components/09-text-components/04-text/design.md) | 8 |
+| 05 组件层 | 09 文本类组件 | 04 Text | `05-09-04` | `05-ui-components/09-text-components/04-text/` | [design.md](05-ui-components/09-text-components/04-text/design.md) | 7 |
 | 05 组件层 | 09 文本类组件 | 05 TextArea | `05-09-05` | `05-ui-components/09-text-components/05-text-area/` | *待补充* | 0 |
 | 05 组件层 | 09 文本类组件 | 06 Span类 | `05-09-06` | `05-ui-components/09-text-components/06-span-components/` | *待补充* | 0 |
 | 05 组件层 | 09 文本类组件 | 07 SymbolGlyph | `05-09-07` | `05-ui-components/09-text-components/07-symbol-glyph/` | *待补充* | 0 |
@@ -1090,6 +1090,10 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 创建、数值范围与布局样式 | [Feat-01-slider-creation-range-layout-spec.md](05-ui-components/04-input-form-components/05-slider/Feat-01-slider-creation-range-layout-spec.md) | Baselined |
+| Feat-02 | 轨道、滑块与步点视觉 | [Feat-02-slider-track-block-step-visual-spec.md](05-ui-components/04-input-form-components/05-slider/Feat-02-slider-track-block-step-visual-spec.md) | Baselined |
+| Feat-03 | 交互模式、事件与反馈 | [Feat-03-slider-interaction-events-feedback-spec.md](05-ui-components/04-input-form-components/05-slider/Feat-03-slider-interaction-events-feedback-spec.md) | Baselined |
+| Feat-04 | 提示、自定义内容与无障碍内容 | [Feat-04-slider-tips-custom-accessibility-spec.md](05-ui-components/04-input-form-components/05-slider/Feat-04-slider-tips-custom-accessibility-spec.md) | Baselined |
 
 ### 05-04-06 Toggle
 
@@ -1251,7 +1255,6 @@
 | Feat-05 | 选择与复制 | [Feat-05-selection-copy-spec.md](05-ui-components/09-text-components/04-text/Feat-05-selection-copy-spec.md) | Baselined |
 | Feat-06 | 系统能力（数据检测、隐私、震感） | [Feat-06-system-capabilities-spec.md](05-ui-components/09-text-components/04-text/Feat-06-system-capabilities-spec.md) | Baselined |
 | Feat-07 | 事件回调 (onCopy/onWillCopy/onTextSelectionChange/onMarqueeStateChange) | [Feat-07-event-callbacks-spec.md](05-ui-components/09-text-components/04-text/Feat-07-event-callbacks-spec.md) | Baselined |
-| Feat-08 | Text 尾部缩进 | *待补充* | 待补充 |
 
 ### 05-09-05 TextArea
 

@@ -5,7 +5,7 @@
 | 字段 | 值 |
 |------|-----|
 | 特性名称 | Video 高级能力（AI 分析 / Poster / 快捷键） |
-| 特性编号 | 05-13-02 · Feat-03 |
+| 特性编号 | Func-05-13-02-Feat-03 |
 | 所属 Epic | 无（已有能力补录） |
 | 优先级 | P1 |
 | 目标版本 | API 12（enableAnalyzer/analyzerConfig/imageAIOptions）～ API 21（PosterOptions.contentTransitionEffect） |

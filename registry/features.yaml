@@ -144,15 +144,30 @@ features:
   title: 事件回调 (onCopy/onWillCopy/onTextSelectionChange/onMarqueeStateChange)
   spec: 05-ui-components/09-text-components/04-text/Feat-07-event-callbacks-spec.md
   status: Baselined
-- func_id: 05-09-04
-  id: Feat-08
-  title: Text 尾部缩进
-  spec: null
-  status: 待补充
 - func_id: 05-01-02
   id: Feat-01
   title: Divider 组件全量规格
   spec: 05-ui-components/01-layout-components/02-divider/Feat-01-divider-spec.md
+  status: Baselined
+- func_id: 05-04-05
+  id: Feat-01
+  title: 创建、数值范围与布局样式
+  spec: 05-ui-components/04-input-form-components/05-slider/Feat-01-slider-creation-range-layout-spec.md
+  status: Baselined
+- func_id: 05-04-05
+  id: Feat-02
+  title: 轨道、滑块与步点视觉
+  spec: 05-ui-components/04-input-form-components/05-slider/Feat-02-slider-track-block-step-visual-spec.md
+  status: Baselined
+- func_id: 05-04-05
+  id: Feat-03
+  title: 交互模式、事件与反馈
+  spec: 05-ui-components/04-input-form-components/05-slider/Feat-03-slider-interaction-events-feedback-spec.md
+  status: Baselined
+- func_id: 05-04-05
+  id: Feat-04
+  title: 提示、自定义内容与无障碍内容
+  spec: 05-ui-components/04-input-form-components/05-slider/Feat-04-slider-tips-custom-accessibility-spec.md
   status: Baselined
 - func_id: 05-04-06
   id: Feat-01

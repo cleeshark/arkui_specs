@@ -5,7 +5,7 @@
 | 字段 | 内容 |
 |------|------|
 | 特性名称 | 事件回调 (onCopy/onWillCopy/onTextSelectionChange/onMarqueeStateChange) |
-| 特性编号 | Feat-07 |
+| 特性编号 | Func-05-09-04-Feat-07 |
 | 所属 Epic | 无（已有能力补录） |
 | 优先级 | P1 |
 | 目标版本 | API 11 起支持，API 18/26.0.0 有新增 |

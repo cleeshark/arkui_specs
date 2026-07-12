@@ -3,7 +3,7 @@
 | 字段 | 内容 |
 |------|------|
 | 特性名称 | ImageAnimator 播放控制与可见性联动 |
-| 特性编号 | 05-08-02/Feat-02 |
+| 特性编号 | Func-05-08-02-Feat-02 |
 | 所属 Epic | 无 |
 | 优先级 | P0 |
 | 目标版本 | Dynamic API 7+；`monitorInvisibleArea` Dynamic API 17+；Static API 23+；NDK API 12+ |

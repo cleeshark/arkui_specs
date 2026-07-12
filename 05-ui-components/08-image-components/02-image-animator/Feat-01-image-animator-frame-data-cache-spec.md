@@ -3,7 +3,7 @@
 | 字段 | 内容 |
 |------|------|
 | 特性名称 | ImageAnimator 帧数据与显示缓存 |
-| 特性编号 | 05-08-02/Feat-01 |
+| 特性编号 | Func-05-08-02-Feat-01 |
 | 所属 Epic | 无 |
 | 优先级 | P0 |
 | 目标版本 | Dynamic API 7+；PixelMap API 12+；Static API 23+；NDK API 12+ |

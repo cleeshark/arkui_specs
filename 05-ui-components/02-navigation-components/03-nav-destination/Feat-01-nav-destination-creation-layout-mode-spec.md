@@ -6,23 +6,32 @@
 
 注册表标识：Func-05-02-03-Feat-01。
 
+| 属性 | 值 |
+|------|-----|
+| 特性名称 | NavDestination 创建与布局模式 |
+| 特性编号 | Func-05-02-03-Feat-01 |
+| 优先级 | P0 |
+| 目标版本 | API 9 起（创建）；mode/安全区/系统控制 @since 11/12/19；fullScreenOverlay @since 26 |
+| 状态 | Baselined |
+| 复杂度 | 复杂 |
+
 ## 本次变更范围（Delta）
 
-| Delta 编号 | 描述 | API 版本 |
+| 类型 | 内容 | 说明 |
 |---|---|---|
-| D-1 | NavDestination() 无参创建 | @since 9 |
-| D-2 | NavDestination(builder) 带 builder 创建 | @since 10 |
-| D-3 | NavDestination(builder, navPathInfo) 带 builder+navPathInfo 创建 | @since 11 |
-| D-4 | mode(NavDestinationMode) STANDARD/DIALOG 模式选择 | @since 11（STANDARD），DIALOG @since 12 |
-| D-5 | ignoreLayoutSafeArea(types, edges) 安全区忽略 | @since 12 |
-| D-6 | fullScreenOverlay(Optional\<boolean\>) 全屏覆盖 | @since 26 |
-| D-7 | preferredOrientation(Optional\<Orientation\>) 页面方向 | @since 19 |
-| D-8 | enableStatusBar(Optional\<boolean\>, animated?: boolean) 状态栏控制 | @since 19 |
-| D-9 | enableNavigationIndicator(Optional\<boolean\>) 导航指示器控制 | @since 19 |
-| D-10 | bindToScrollable(Array\<Scroller\>) 滚动绑定 | @since 14 |
-| D-11 | bindToNestedScrollable(Array\<NestedScrollInfo\>) 嵌套滚动绑定 | @since 14 |
-| D-12 | NavDestinationContext 属性（pathInfo, pathStack, navDestinationId, mode, getConfigInRouteMap） | @since 11/12 |
-| D-13 | onReady(Callback\<NavDestinationContext\>) 上下文就绪回调 | @since 11 |
+| ADDED | D-1 NavDestination() 无参创建 | @since 9 |
+| ADDED | D-2 NavDestination(builder) 带 builder 创建 | @since 10 |
+| ADDED | D-3 NavDestination(builder, navPathInfo) 带 builder+navPathInfo 创建 | @since 11 |
+| ADDED | D-4 mode(NavDestinationMode) STANDARD/DIALOG 模式选择 | @since 11（STANDARD），DIALOG @since 12 |
+| ADDED | D-5 ignoreLayoutSafeArea(types, edges) 安全区忽略 | @since 12 |
+| ADDED | D-6 fullScreenOverlay(Optional\<boolean\>) 全屏覆盖 | @since 26 |
+| ADDED | D-7 preferredOrientation(Optional\<Orientation\>) 页面方向 | @since 19 |
+| ADDED | D-8 enableStatusBar(Optional\<boolean\>, animated?: boolean) 状态栏控制 | @since 19 |
+| ADDED | D-9 enableNavigationIndicator(Optional\<boolean\>) 导航指示器控制 | @since 19 |
+| ADDED | D-10 bindToScrollable(Array\<Scroller\>) 滚动绑定 | @since 14 |
+| ADDED | D-11 bindToNestedScrollable(Array\<NestedScrollInfo\>) 嵌套滚动绑定 | @since 14 |
+| ADDED | D-12 NavDestinationContext 属性（pathInfo, pathStack, navDestinationId, mode, getConfigInRouteMap） | @since 11/12 |
+| ADDED | D-13 onReady(Callback\<NavDestinationContext\>) 上下文就绪回调 | @since 11 |
 
 ## 输入文档
 
@@ -195,22 +204,22 @@
 
 ## 验证映射
 
-| 规则 | UT 测试点 | 测试路径 |
-|---|---|---|
-| R-1 | Create() 无参路径创建 NavDestinationGroupNode | `test/unittest/components_ng/navdestination/navdestination_model_ng_test.cpp` |
-| R-2 | Create(deepRenderFunc) 带 ShallowBuilder 创建 | 同上 |
-| R-3 | Create(builder, navPathInfo) 双参创建并设置 pathInfo | 同上 |
-| R-4 | 默认 mode 为 STANDARD | `test/unittest/components_ng/navdestination/navdestination_group_node_test.cpp` |
-| R-5 | DIALOG 模式 backgroundColor 为 TRANSPARENT | `test/unittest/components_ng/navdestination/navdestination_pattern_test.cpp` |
-| R-6 | STANDARD 模式 backgroundColor 为 theme 默认 | 同上 |
-| R-7 | 用户自定义 backgroundColor 不被覆盖 | 同上 |
-| R-8 | 非数字 mode 参数默认 STANDARD | JS UT |
-| R-9~R-11 | DIALOG 模式系统控制不生效 | `test/unittest/components_ng/navdestination/navdestination_pattern_test.cpp` |
-| R-13 | ignoreLayoutSafeArea 作用于 contentNode | C API UT: `capi_all_modifiers_test` |
-| R-17~R-19 | fullScreenOverlay 触发容器重排列 | `test/unittest/components_ng/navdestination/navdestination_pattern_test.cpp` |
-| R-21~R-28 | preferredOrientation/enableStatusBar/enableNavigationIndicator 条件限制 | 同上 |
-| R-29~R-35 | 滚动绑定与解绑 | `test/unittest/components_ng/navdestination/navdestination_scrollable_processor_test.cpp` |
-| R-36~R-44 | NavDestinationContext 属性与 onReady | JS UT + C API UT |
+| VM编号 | 规则 | UT 测试点 | 测试路径 |
+|---|---|---|---|
+| VM-1 | R-1 | Create() 无参路径创建 NavDestinationGroupNode | `test/unittest/components_ng/navdestination/navdestination_model_ng_test.cpp` |
+| VM-2 | R-2 | Create(deepRenderFunc) 带 ShallowBuilder 创建 | 同上 |
+| VM-3 | R-3 | Create(builder, navPathInfo) 双参创建并设置 pathInfo | 同上 |
+| VM-4 | R-4 | 默认 mode 为 STANDARD | `test/unittest/components_ng/navdestination/navdestination_group_node_test.cpp` |
+| VM-5 | R-5 | DIALOG 模式 backgroundColor 为 TRANSPARENT | `test/unittest/components_ng/navdestination/navdestination_pattern_test.cpp` |
+| VM-6 | R-6 | STANDARD 模式 backgroundColor 为 theme 默认 | 同上 |
+| VM-7 | R-7 | 用户自定义 backgroundColor 不被覆盖 | 同上 |
+| VM-8 | R-8 | 非数字 mode 参数默认 STANDARD | JS UT |
+| VM-9 | R-9~R-11 | DIALOG 模式系统控制不生效 | `test/unittest/components_ng/navdestination/navdestination_pattern_test.cpp` |
+| VM-10 | R-13 | ignoreLayoutSafeArea 作用于 contentNode | C API UT: `capi_all_modifiers_test` |
+| VM-11 | R-17~R-19 | fullScreenOverlay 触发容器重排列 | `test/unittest/components_ng/navdestination/navdestination_pattern_test.cpp` |
+| VM-12 | R-21~R-28 | preferredOrientation/enableStatusBar/enableNavigationIndicator 条件限制 | 同上 |
+| VM-13 | R-29~R-35 | 滚动绑定与解绑 | `test/unittest/components_ng/navdestination/navdestination_scrollable_processor_test.cpp` |
+| VM-14 | R-36~R-44 | NavDestinationContext 属性与 onReady | JS UT + C API UT |
 
 ## API 变更分析
 
@@ -449,7 +458,7 @@
 | 检查项 | 结果 |
 |---|---|
 | 所有断言是否有 file:line 引用 | 是 |
-| 是否存在 TBD/placeholder | 否 |
+| 是否存在占位符（TBD/TODO/待定） | 无 |
 | API 版本标注是否完整 | 是 |
 | 异常/边界场景是否覆盖 | 是 |
 | 恢复路径是否覆盖 | 是 |

@@ -1962,7 +1962,7 @@ functions:
     id: '05'
     title: Slider
   path: 05-ui-components/04-input-form-components/05-slider/
-  design: null
+  design: 05-ui-components/04-input-form-components/05-slider/design.md
   status: active
 - id: 05-04-06
   l1:

@@ -5,7 +5,7 @@
 | 字段 | 内容 |
 |------|------|
 | 特性名称 | Toggle 组件全量规格 (Switch/Checkbox/Button 三形态) |
-| 特性编号 | Feat-01 |
+| 特性编号 | Func-05-04-06-Feat-01 |
 | FuncID | 05-04-06 |
 | 所属 Epic | 无 |
 | 优先级 | P0 |

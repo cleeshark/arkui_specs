@@ -2,15 +2,16 @@
 
 ## 概述
 
-| 字段 | 内容 |
-|------|------|
-| Feature ID | Feat-01（FuncID 03-01-01） |
-| Linked Design | DESIGN-Func-03-01-01（specs/03-engine-framework/01-render-pipeline/01-basic-render-pipeline/design.md） |
-| Linked Epic | 无 |
-| Complexity | 复杂 |
-| Target Version | API 9 及以后（以 master HEAD 实现为基线） |
-| Owner | ArkUI SIG / 渲染管线团队 |
-| Status | Baselined（已有实现补录） |
+| 属性 | 值 |
+|------|-----|
+| 特性名称 | 渲染主流程 |
+| 特性编号 | Func-03-01-01-Feat-01 |
+| 所属 Epic | 无（已有实现补录） |
+| 优先级 | P0 |
+| 目标版本 | API 9 及以后（以 master HEAD 实现为基线） |
+| SIG 归属 | ArkUI SIG / 渲染管线团队 |
+| 状态 | Baselined |
+| 复杂度 | 复杂 |
 
 > 本 Feat 仅锁定 NG 框架（components_ng + pipeline_ng）渲染主流程编排，不涉及 Classic（components_v2 / pipeline）。覆盖 VSync 接收、Build、Measure/Layout、Render/Paint、RS 提交全链路的**顺序与边界**；各阶段内部算法细节由 Feat-02..05 拆分。
 
@@ -201,18 +202,18 @@
 
 ## 验证映射
 
-| AC编号 | 类型 | 位置 / 用例名 |
-|-------|------|---------------|
-| AC-1.1 / AC-1.2 | 单元测试 | test/unittest/core/pipeline/pipeline_context_test_ng.cpp（FlushVsync / OnVsyncEvent 系列） |
-| AC-1.3 / R-29 | 单元测试 | 待补充 — 当前无 ForceFlushVsync 专用 ut；建议在 test/unittest/core/pipeline/ 下新增 `frameCount=UINT64_MAX` 场景 |
-| AC-1.4 / R-8 | HiTrace 验证 | bytrace 抓取 `UIVsyncTask` / `BeginFlushBuild` |
-| AC-2.1 / AC-2.2 / AC-2.3 | 代码评审 | pipeline_context.cpp 直接对照 |
-| AC-2.4 | 单元测试 | test/unittest/core/pipeline/pipeline_context_test_ng.cpp 焦点相关用例 |
-| AC-3.1..3.4 | 单元测试 | test/unittest/core/pipeline/pipeline_context_test_ng.cpp（FlushBuild / FlushDirtyNodeUpdate） |
-| AC-4.1..4.5 | 单元测试 | 待补充 — 当前无 ui_task_scheduler 专用 ut；建议在 test/unittest/core/pipeline/ 下新增 |
-| AC-5.1..5.3 | 单元测试 | test/unittest/core/base/frame_node_test_ng.cpp；paint_wrapper ut 待补充 |
-| AC-6.1..6.4 | 单元测试 | 待补充 — 当前无 rosen_window 专用 ut；建议在 test/unittest/core/render/ 下新增 |
-| AC-7.1..7.4 | 单元测试 | 待补充 — 同 AC-6.1..6.4，rosen_window ut 待补充 |
+| VM编号 | AC / 规则 | 验证手段 | 位置 / 用例名 |
+|-------|----------|---------|---------------|
+| VM-1 | AC-1.1 / AC-1.2 | 单元测试 | test/unittest/core/pipeline/pipeline_context_test_ng.cpp（FlushVsync / OnVsyncEvent 系列） |
+| VM-2 | AC-1.3 / R-29 | 单元测试 | 待补充 — 当前无 ForceFlushVsync 专用 ut；建议在 test/unittest/core/pipeline/ 下新增 `frameCount=UINT64_MAX` 场景 |
+| VM-3 | AC-1.4 / R-8 | HiTrace 验证 | bytrace 抓取 `UIVsyncTask` / `BeginFlushBuild` |
+| VM-4 | AC-2.1 / AC-2.2 / AC-2.3 | 代码评审 | pipeline_context.cpp 直接对照 |
+| VM-5 | AC-2.4 | 单元测试 | test/unittest/core/pipeline/pipeline_context_test_ng.cpp 焦点相关用例 |
+| VM-6 | AC-3.1..3.4 | 单元测试 | test/unittest/core/pipeline/pipeline_context_test_ng.cpp（FlushBuild / FlushDirtyNodeUpdate） |
+| VM-7 | AC-4.1..4.5 | 单元测试 | 待补充 — 当前无 ui_task_scheduler 专用 ut；建议在 test/unittest/core/pipeline/ 下新增 |
+| VM-8 | AC-5.1..5.3 | 单元测试 | test/unittest/core/base/frame_node_test_ng.cpp；paint_wrapper ut 待补充 |
+| VM-9 | AC-6.1..6.4 | 单元测试 | 待补充 — 当前无 rosen_window 专用 ut；建议在 test/unittest/core/render/ 下新增 |
+| VM-10 | AC-7.1..7.4 | 单元测试 | 待补充 — 同 AC-6.1..6.4，rosen_window ut 待补充 |
 
 > 注：已标注路径为仓内现有测试文件；标记"待补充"的为当前不存在的测试，纳入后续 Feat 拆分的测试补录任务。
 
