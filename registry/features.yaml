@@ -334,3 +334,13 @@ features:
   title: 高级能力（AI/Poster/快捷键）
   spec: 05-ui-components/13-platform-components/02-video/Feat-03-video-advanced-capabilities-spec.md
   status: Baselined
+- func_id: 05-03-02
+  id: Feat-01
+  title: AlphabetIndexer 创建与基础样式
+  spec: 05-ui-components/03-scroll-container-components/02-alphabet-indexer/Feat-01-alphabet-indexer-creation-basic-style-spec.md
+  status: Baselined
+- func_id: 05-03-02
+  id: Feat-02
+  title: AlphabetIndexer Popup样式与交互
+  spec: 05-ui-components/03-scroll-container-components/02-alphabet-indexer/Feat-02-alphabet-indexer-popup-style-interaction-spec.md
+  status: Baselined
