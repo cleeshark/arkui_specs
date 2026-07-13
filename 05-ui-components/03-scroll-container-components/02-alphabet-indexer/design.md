@@ -1,5 +1,5 @@
-# 架构设计
-> 确认目标仓和模块的架构约束、关键设计决策、Spec 拆分方向。
+# AlphabetIndexer 架构设计
+> AlphabetIndexer（字母索引导航条）组件的架构约束、属性存储分层、Popup 定位与折叠算法、关键设计决策与 Spec 拆分方向。
 
 ## 设计元数据
 
@@ -77,20 +77,22 @@
 
 | Rule ID | 适用原因 | 设计结论 | 验证方式 |
 |---------|----------|----------|----------|
-| OH-ARCH-LAYERING | 属性从 JS→Bridge→Model→Property 逐层传递 | 调用方向严格单向向下；无反向调用 | 代码评审/依赖检查 |
-| OH-ARCH-SUBSYSTEM | AlphabetIndexer 属于 arkui 子系统内部 | 不涉及跨子系统调用 | 代码评审 |
-| OH-ARCH-API-LEVEL | Dynamic API (7+), Static API (23+), NDK C-API (Arc 变体 26+) | 三个 API 级别并行存在；NDK 仅暴露 Arc 变体 | API 评审/XTS |
-| OH-ARCH-COMPONENT-BUILD | Indexer 作为 DynamicModule 按需加载 | BUILD.gn 已配置；无新增依赖 | 构建验证 |
-| OH-ARCH-ERROR-LOG | 无错误码定义；异常通过日志和默认值兜底 | 日志为 hilog DEBUG 级别；不新增错误码 | hilog |
+| OH-ARCH-LAYERING | 属性从 JS→Bridge→Model→Property 逐层传递；基础样式存 LayoutProperty（NORMAL/MEASURE flag），Popup 样式存 PaintProperty（RENDER/MEASURE flag） | 调用方向严格单向向下；color 触发 NORMAL 重绘，popupColor 触发 RENDER 重绘，itemSize 触发 MEASURE 重布局 | 代码评审/依赖检查 |
+| OH-ARCH-SUBSYSTEM | AlphabetIndexer 属于 arkui 子系统内部，仅通过 DynamicModule 按需加载 | 不涉及跨子系统调用；IndexerDynamicModule 注册 "Indexer" 模块入口 | 代码评审 |
+| OH-ARCH-API-LEVEL | Dynamic API (7+), Static API (23+), NDK C-API 仅 Arc 变体 (26+) 三个级别并行 | 三个 API 级别并行存在；NDK 仅暴露 ARKUI_NODE_ARC_ALPHABET_INDEXER(node type 23)，线性 AlphabetIndexer 无 NDK 入口 | API 评审/XTS |
+| OH-ARCH-COMPONENT-BUILD | AlphabetIndexer 源码在 ace_core_ng_source_set，未组件化；DynamicModule 按需加载 | 无新增 BUILD.gn target；arkalphabetindexer.js + AlphabetIndexerModifier.ts 为前端动态模块 | 构建验证 |
+| OH-ARCH-ERROR-LOG | AlphabetIndexer 无错误码定义；selected 越界自动钳位，空数组不崩溃 | 异常通过钳位兜底（selected<0 → 0，selected>length → length-1）；日志为 hilog DEBUG 级 DumpInfo | 单测/hilog |
 
 ## 不涉及项承接
 
-| 维度 | 设计结论 |
-|------|----------|
-| ArcAlphabetIndexer 变体 | 本 spec 仅覆盖线性 AlphabetIndexer；Arc 变体逻辑独立，不在此 spec 范围 |
-| CJ Frontend | CJ AlphabetIndexer FFI 存在但不在本 spec 覆盖范围 |
-| Legacy components/ 路径 | 旧版 DOM/Component/Element/Render 组件仅做兼容，不做新规格 |
-| contentModifier | AlphabetIndexer 不支持自定义 contentModifier（仅 Arc 变体有） |
+| 维度 | 需求阶段结论 | 设计阶段处理方式 | 设计结论 |
+|------|---------|-------------|----------|
+| 性能 | 展开 | 展开设计 | onSelect 同步回调无延迟；AutoCollapse 折叠计算仅在 OnModifyDone 和 height 变化时执行，不持续消耗 |
+| 安全与权限 | N/A | 保持 N/A | AlphabetIndexer 无权限要求 |
+| 兼容性 | 展开 | 展开设计 | API 12 多项默认值变更（padding 2vp→4vp、popupBackground 纯白→半透明灰、itemBorderRadius theme→8vp、popup 折叠态最大 4→3 项）需标注 |
+| IPC/跨进程 | N/A | 保持 N/A | AlphabetIndexer 为纯 UI 组件 |
+| 构建与部件 | N/A | 保持 N/A | AlphabetIndexer 未组件化，源码在 ace_core_ng_source_set |
+| API/SDK | 展开 | 展开设计 | 27 个属性 + 3 个事件回调需与 SDK .d.ts 交叉验证；onSelected @deprecated since 8 与源码实际行为不一致需标注 |
 
 ## 关键设计决策
 
