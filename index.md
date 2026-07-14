@@ -101,7 +101,7 @@
 | 04 通用能力层 | 06 自定义节点能力 | 06 NodeAdapter | `04-06-06` | `04-common-capability/06-custom-node/06-node-adapter/` | *待补充* | 0 |
 | 04 通用能力层 | 06 自定义节点能力 | 07 TypedFrameNode | `04-06-07` | `04-common-capability/06-custom-node/07-typed-frame-node/` | *待补充* | 0 |
 | 04 通用能力层 | 07 迁移恢复 | 01 分布式路由迁移能力 | `04-07-01` | `04-common-capability/07-migration-recovery/01-distributed-router-migration/` | *待补充* | 0 |
-| 04 通用能力层 | 07 迁移恢复 | 02 路由栈恢复 | `04-07-02` | `04-common-capability/07-migration-recovery/02-router-stack-recovery/` | *待补充* | 0 |
+| 04 通用能力层 | 07 迁移恢复 | 02 路由栈恢复 | `04-07-02` | `04-common-capability/07-migration-recovery/02-router-stack-recovery/` | [design.md](04-common-capability/07-migration-recovery/02-router-stack-recovery/design.md) | 1 |
 | 04 通用能力层 | 07 迁移恢复 | 03 组件迁移机制 | `04-07-03` | `04-common-capability/07-migration-recovery/03-component-migration/` | *待补充* | 0 |
 | 04 通用能力层 | 08 根视图 | 01 窗口工具栏 | `04-08-01` | `04-common-capability/08-root-view/01-window-toolbar/` | *待补充* | 0 |
 | 04 通用能力层 | 08 根视图 | 02 元服务AppBar | `04-08-02` | `04-common-capability/08-root-view/02-atomic-service-appbar/` | *待补充* | 0 |
@@ -122,7 +122,7 @@
 | 04 通用能力层 | 14 输入交互 | 04 键盘控制 | `04-14-04` | `04-common-capability/14-input-interaction/04-keyboard-control/` | *待补充* | 0 |
 | 04 通用能力层 | 14 输入交互 | 05 自动补全能力（AutoFill） | `04-14-05` | `04-common-capability/14-input-interaction/05-autofill/` | *待补充* | 0 |
 | 04 通用能力层 | 15 路由机制 | 01 路由管理 | `04-15-01` | `04-common-capability/15-router-mechanism/01-router-management/` | [design.md](04-common-capability/15-router-mechanism/01-router-management/design.md) | 2 |
-| 04 通用能力层 | 15 路由机制 | 03 命名路由 | `04-15-03` | `04-common-capability/15-router-mechanism/03-named-router/` | [design.md](04-common-capability/15-router-mechanism/03-named-router/design.md) | 1 |
+| 04 通用能力层 | 15 路由机制 | 02 命名路由 | `04-15-02` | `04-common-capability/15-router-mechanism/02-named-router/` | [design.md](04-common-capability/15-router-mechanism/02-named-router/design.md) | 1 |
 | 04 通用能力层 | 16 UIAppearance | 01 UIAppearance | `04-16-01` | `04-common-capability/16-ui-appearance/01-ui-appearance/` | *待补充* | 0 |
 | 04 通用能力层 | 17 嵌入显示能力 | 01 UIExtension机制 | `04-17-01` | `04-common-capability/17-embedded-display/01-ui-extension/` | *待补充* | 0 |
 | 04 通用能力层 | 17 嵌入显示能力 | 02 IsolateComponent机制 | `04-17-02` | `04-common-capability/17-embedded-display/02-isolate-component/` | *待补充* | 0 |
@@ -719,6 +719,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 路由栈保存与恢复机制 | [Feat-01-router-stack-save-restore-spec.md](04-common-capability/07-migration-recovery/02-router-stack-recovery/Feat-01-router-stack-save-restore-spec.md) | Draft |
 
 ### 04-07-03 组件迁移机制
 
@@ -822,11 +823,11 @@
 | Feat-01 | 路由跳转与替换 | [Feat-01-router-push-replace-back-spec.md](04-common-capability/15-router-mechanism/01-router-management/Feat-01-router-push-replace-back-spec.md) | Baselined |
 | Feat-02 | 路由栈查询与弹窗拦截 | [Feat-02-router-stack-query-alert-spec.md](04-common-capability/15-router-mechanism/01-router-management/Feat-02-router-stack-query-alert-spec.md) | Baselined |
 
-### 04-15-03 命名路由
+### 04-15-02 命名路由
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | 命名路由跳转与替换 | [Feat-01-named-router-push-replace-spec.md](04-common-capability/15-router-mechanism/03-named-router/Feat-01-named-router-push-replace-spec.md) | Baselined |
+| Feat-01 | 命名路由跳转与替换 | [Feat-01-named-router-push-replace-spec.md](04-common-capability/15-router-mechanism/02-named-router/Feat-01-named-router-push-replace-spec.md) | Baselined |
 
 ### 04-16-01 UIAppearance
 

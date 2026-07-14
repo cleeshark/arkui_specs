@@ -6,7 +6,7 @@
 
 | Field | Content |
 |-------|---------|
-| Design ID | DESIGN-Func-04-15-03 |
+| Design ID | DESIGN-Func-04-15-02 |
 | 关联需求 | 已有能力补录（无独立 requirement.md） |
 | 关联 Epic | 无 |
 | 目标 Feature | Feat-01（命名路由跳转与替换） |
