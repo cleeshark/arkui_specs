@@ -1338,7 +1338,7 @@ functions:
     id: '03'
     title: 命名路由
   path: 04-common-capability/15-router-mechanism/03-named-router/
-  design: null
+  design: 04-common-capability/15-router-mechanism/03-named-router/design.md
   status: active
 - id: 04-16-01
   l1:
