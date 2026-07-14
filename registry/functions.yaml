@@ -1325,7 +1325,7 @@ functions:
     id: '01'
     title: 路由管理
   path: 04-common-capability/15-router-mechanism/01-router-management/
-  design: null
+  design: 04-common-capability/15-router-mechanism/01-router-management/design.md
   status: active
 - id: 04-15-03
   l1:

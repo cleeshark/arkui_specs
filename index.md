@@ -121,7 +121,7 @@
 | 04 通用能力层 | 14 输入交互 | 03 文本交互 | `04-14-03` | `04-common-capability/14-input-interaction/03-text-interaction/` | *待补充* | 0 |
 | 04 通用能力层 | 14 输入交互 | 04 键盘控制 | `04-14-04` | `04-common-capability/14-input-interaction/04-keyboard-control/` | *待补充* | 0 |
 | 04 通用能力层 | 14 输入交互 | 05 自动补全能力（AutoFill） | `04-14-05` | `04-common-capability/14-input-interaction/05-autofill/` | *待补充* | 0 |
-| 04 通用能力层 | 15 路由机制 | 01 路由管理 | `04-15-01` | `04-common-capability/15-router-mechanism/01-router-management/` | *待补充* | 2 |
+| 04 通用能力层 | 15 路由机制 | 01 路由管理 | `04-15-01` | `04-common-capability/15-router-mechanism/01-router-management/` | [design.md](04-common-capability/15-router-mechanism/01-router-management/design.md) | 2 |
 | 04 通用能力层 | 15 路由机制 | 03 命名路由 | `04-15-03` | `04-common-capability/15-router-mechanism/03-named-router/` | [design.md](04-common-capability/15-router-mechanism/03-named-router/design.md) | 1 |
 | 04 通用能力层 | 16 UIAppearance | 01 UIAppearance | `04-16-01` | `04-common-capability/16-ui-appearance/01-ui-appearance/` | *待补充* | 0 |
 | 04 通用能力层 | 17 嵌入显示能力 | 01 UIExtension机制 | `04-17-01` | `04-common-capability/17-embedded-display/01-ui-extension/` | *待补充* | 0 |
