@@ -344,3 +344,23 @@ features:
   title: AlphabetIndexer Popup样式与交互
   spec: 05-ui-components/03-scroll-container-components/02-alphabet-indexer/Feat-02-alphabet-indexer-popup-style-interaction-spec.md
   status: Baselined
+- func_id: 04-15-01
+  id: Feat-01
+  title: 路由跳转与替换
+  spec: 04-common-capability/15-router-mechanism/01-router-management/Feat-01-router-push-replace-back-spec.md
+  status: Baselined
+- func_id: 04-15-01
+  id: Feat-02
+  title: 路由栈查询与弹窗拦截
+  spec: 04-common-capability/15-router-mechanism/01-router-management/Feat-02-router-stack-query-alert-spec.md
+  status: Baselined
+- func_id: 04-07-02
+  id: Feat-01
+  title: 路由栈保存与恢复机制
+  spec: 04-common-capability/07-migration-recovery/02-router-stack-recovery/Feat-01-router-stack-save-restore-spec.md
+  status: Draft
+- func_id: 04-15-02
+  id: Feat-01
+  title: 命名路由跳转与替换
+  spec: 04-common-capability/15-router-mechanism/02-named-router/Feat-01-named-router-push-replace-spec.md
+  status: Baselined

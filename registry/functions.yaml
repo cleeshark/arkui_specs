@@ -1065,7 +1065,7 @@ functions:
     id: '02'
     title: 路由栈恢复
   path: 04-common-capability/07-migration-recovery/02-router-stack-recovery/
-  design: null
+  design: 04-common-capability/07-migration-recovery/02-router-stack-recovery/design.md
   status: active
 - id: 04-07-03
   l1:
@@ -1325,9 +1325,9 @@ functions:
     id: '01'
     title: 路由管理
   path: 04-common-capability/15-router-mechanism/01-router-management/
-  design: null
+  design: 04-common-capability/15-router-mechanism/01-router-management/design.md
   status: active
-- id: 04-15-03
+- id: 04-15-02
   l1:
     id: '04'
     title: 通用能力层
@@ -1335,10 +1335,10 @@ functions:
     id: '15'
     title: 路由机制
   l3:
-    id: '03'
+    id: '02'
     title: 命名路由
-  path: 04-common-capability/15-router-mechanism/03-named-router/
-  design: null
+  path: 04-common-capability/15-router-mechanism/02-named-router/
+  design: 04-common-capability/15-router-mechanism/02-named-router/design.md
   status: active
 - id: 04-16-01
   l1:
