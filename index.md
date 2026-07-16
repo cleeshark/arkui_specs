@@ -178,17 +178,17 @@
 | 05 组件层 | 05 选择类组件 | 04 TimePicker | `05-05-04` | `05-ui-components/05-picker-components/04-time-picker/` | [design.md](05-ui-components/05-picker-components/04-time-picker/design.md) | 1 |
 | 05 组件层 | 05 选择类组件 | 05 Select | `05-05-05` | `05-ui-components/05-picker-components/05-select/` | *待补充* | 0 |
 | 05 组件层 | 05 选择类组件 | 06 Picker | `05-05-06` | `05-ui-components/05-picker-components/06-picker/` | [design.md](05-ui-components/05-picker-components/06-picker/design.md) | 1 |
-| 05 组件层 | 06 弹窗类组件 | 01 Menu/MenuItem/MenuItemGroup | `05-06-01` | `05-ui-components/06-popup-components/01-menu-menu-item-menu-item-group/` | *待补充* | 0 |
+| 05 组件层 | 06 弹窗类组件 | 01 Menu/MenuItem/MenuItemGroup | `05-06-01` | `05-ui-components/06-popup-components/01-menu-menu-item-menu-item-group/` | [design.md](05-ui-components/06-popup-components/01-menu-menu-item-menu-item-group/design.md) | 3 |
 | 05 组件层 | 06 弹窗类组件 | 02 警告弹窗 | `05-06-02` | `05-ui-components/06-popup-components/02-alert-dialog/` | *待补充* | 0 |
 | 05 组件层 | 06 弹窗类组件 | 03 列表选择弹窗 | `05-06-03` | `05-ui-components/06-popup-components/03-list-selection-dialog/` | *待补充* | 0 |
-| 05 组件层 | 06 弹窗类组件 | 04 自定义弹窗 | `05-06-04` | `05-ui-components/06-popup-components/04-custom-dialog/` | *待补充* | 0 |
+| 05 组件层 | 06 弹窗类组件 | 04 自定义弹窗 | `05-06-04` | `05-ui-components/06-popup-components/04-custom-dialog/` | [design.md](05-ui-components/06-popup-components/04-custom-dialog/design.md) | 3 |
 | 05 组件层 | 06 弹窗类组件 | 05 CalendarPickerDialog | `05-06-05` | `05-ui-components/06-popup-components/05-calendar-picker-dialog/` | *待补充* | 0 |
 | 05 组件层 | 06 弹窗类组件 | 06 DatePickerDialog | `05-06-06` | `05-ui-components/06-popup-components/06-date-picker-dialog/` | *待补充* | 0 |
 | 05 组件层 | 06 弹窗类组件 | 07 TimePickerDialog | `05-06-07` | `05-ui-components/06-popup-components/07-time-picker-dialog/` | *待补充* | 0 |
 | 05 组件层 | 06 弹窗类组件 | 08 TextPickerDialog | `05-06-08` | `05-ui-components/06-popup-components/08-text-picker-dialog/` | *待补充* | 0 |
 | 05 组件层 | 06 弹窗类组件 | 09 ContextMenu接口 | `05-06-09` | `05-ui-components/06-popup-components/09-context-menu/` | *待补充* | 0 |
 | 05 组件层 | 06 弹窗类组件 | 10 promptAction接口 | `05-06-10` | `05-ui-components/06-popup-components/10-prompt-action/` | *待补充* | 0 |
-| 05 组件层 | 06 弹窗类组件 | 11 popup弹窗 | `05-06-11` | `05-ui-components/06-popup-components/11-popup/` | *待补充* | 0 |
+| 05 组件层 | 06 弹窗类组件 | 11 popup弹窗 | `05-06-11` | `05-ui-components/06-popup-components/11-popup/` | [design.md](05-ui-components/06-popup-components/11-popup/design.md) | 2 |
 | 05 组件层 | 07 模态类组件 | 01 半模态弹窗 | `05-07-01` | `05-ui-components/07-modal-components/01-sheet-modal/` | *待补充* | 0 |
 | 05 组件层 | 07 模态类组件 | 02 全模态弹窗 | `05-07-02` | `05-ui-components/07-modal-components/02-full-modal/` | *待补充* | 0 |
 | 05 组件层 | 07 模态类组件 | 03 Panel | `05-07-03` | `05-ui-components/07-modal-components/03-panel/` | *待补充* | 0 |
@@ -257,7 +257,7 @@
 | 07 前端层 | 01 ArkTS高级组件 | 13 FullScreenLaunchComponent | `07-01-13` | `07-frontend/01-arkts-advanced-components/13-full-screen-launch-component/` | *待补充* | 0 |
 | 07 前端层 | 01 ArkTS高级组件 | 14 GridObjectSortComponent | `07-01-14` | `07-frontend/01-arkts-advanced-components/14-grid-object-sort-component/` | *待补充* | 0 |
 | 07 前端层 | 01 ArkTS高级组件 | 15 ProgressButton | `07-01-15` | `07-frontend/01-arkts-advanced-components/15-progress-button/` | *待补充* | 0 |
-| 07 前端层 | 01 ArkTS高级组件 | 16 Popup | `07-01-16` | `07-frontend/01-arkts-advanced-components/16-popup/` | *待补充* | 0 |
+| 07 前端层 | 01 ArkTS高级组件 | 16 Popup | `07-01-16` | `07-frontend/01-arkts-advanced-components/16-popup/` | [design.md](07-frontend/01-arkts-advanced-components/16-popup/design.md) | 1 |
 | 07 前端层 | 01 ArkTS高级组件 | 17 SegmentButton | `07-01-17` | `07-frontend/01-arkts-advanced-components/17-segment-button/` | *待补充* | 0 |
 | 07 前端层 | 01 ArkTS高级组件 | 18 SelectionMenu | `07-01-18` | `07-frontend/01-arkts-advanced-components/18-selection-menu/` | *待补充* | 0 |
 | 07 前端层 | 01 ArkTS高级组件 | 19 SelectTitleBar | `07-01-19` | `07-frontend/01-arkts-advanced-components/19-select-title-bar/` | *待补充* | 0 |
@@ -1147,6 +1147,9 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | bindMenu/bindContextMenu 绑定与触发机制 | [Feat-01-bind-menu-trigger-spec.md](05-ui-components/06-popup-components/01-menu-menu-item-menu-item-group/Feat-01-bind-menu-trigger-spec.md) | Baselined |
+| Feat-02 | Menu/MenuItem/MenuItemGroup 创建与属性 | [Feat-02-menu-creation-properties-spec.md](05-ui-components/06-popup-components/01-menu-menu-item-menu-item-group/Feat-02-menu-creation-properties-spec.md) | Baselined |
+| Feat-03 | 子菜单展开、布局避让、动画与预览 | [Feat-03-submenu-layout-animation-spec.md](05-ui-components/06-popup-components/01-menu-menu-item-menu-item-group/Feat-03-submenu-layout-animation-spec.md) | Baselined |
 
 ### 05-06-02 警告弹窗
 
@@ -1162,6 +1165,9 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | CustomDialogController 生命周期与布局属性及命令式弹窗 API | [Feat-01-custom-dialog-lifecycle-layout-spec.md](05-ui-components/06-popup-components/04-custom-dialog/Feat-01-custom-dialog-lifecycle-layout-spec.md) | Baselined |
+| Feat-02 | AlertDialog/ActionSheet 命令式 API | [Feat-02-alert-action-sheet-spec.md](05-ui-components/06-popup-components/04-custom-dialog/Feat-02-alert-action-sheet-spec.md) | Baselined |
+| Feat-03 | Dialog C API（ArkUI_NativeDialogAPI_1/2/3、OH_ArkUI_CustomDialog 函数族） | [Feat-03-dialog-capi-spec.md](05-ui-components/06-popup-components/04-custom-dialog/Feat-03-dialog-capi-spec.md) | Baselined |
 
 ### 05-06-05 CalendarPickerDialog
 
@@ -1197,6 +1203,8 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | bindPopup 属性绑定与气泡布局 | [Feat-01-bind-popup-bubble-layout-spec.md](05-ui-components/06-popup-components/11-popup/Feat-01-bind-popup-bubble-layout-spec.md) | Baselined |
+| Feat-02 | 命令式 Popup API (openPopup / updatePopup / closePopup) | [Feat-02-imperative-popup-api-spec.md](05-ui-components/06-popup-components/11-popup/Feat-02-imperative-popup-api-spec.md) | Baselined |
 
 ### 05-07-01 半模态弹窗
 
@@ -1560,6 +1568,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Popup 高级组件全量规格 | [Feat-01-popup-advanced-full-spec.md](07-frontend/01-arkts-advanced-components/16-popup/Feat-01-popup-advanced-full-spec.md) | Baselined |
 
 ### 07-01-17 SegmentButton
 

@@ -369,3 +369,48 @@ features:
   title: 多实例管理全能力
   spec: 03-engine-framework/06-multi-instance-management/01-multi-instance-management/Feat-01-multi-instance-management-spec.md
   status: Baselined
+- func_id: 05-06-01
+  id: Feat-01
+  title: bindMenu/bindContextMenu 绑定与触发机制
+  spec: 05-ui-components/06-popup-components/01-menu-menu-item-menu-item-group/Feat-01-bind-menu-trigger-spec.md
+  status: Baselined
+- func_id: 05-06-01
+  id: Feat-02
+  title: Menu/MenuItem/MenuItemGroup 创建与属性
+  spec: 05-ui-components/06-popup-components/01-menu-menu-item-menu-item-group/Feat-02-menu-creation-properties-spec.md
+  status: Baselined
+- func_id: 05-06-01
+  id: Feat-03
+  title: 子菜单展开、布局避让、动画与预览
+  spec: 05-ui-components/06-popup-components/01-menu-menu-item-menu-item-group/Feat-03-submenu-layout-animation-spec.md
+  status: Baselined
+- func_id: 05-06-04
+  id: Feat-01
+  title: CustomDialogController 生命周期与布局属性及命令式弹窗 API
+  spec: 05-ui-components/06-popup-components/04-custom-dialog/Feat-01-custom-dialog-lifecycle-layout-spec.md
+  status: Baselined
+- func_id: 05-06-04
+  id: Feat-02
+  title: AlertDialog/ActionSheet 命令式 API
+  spec: 05-ui-components/06-popup-components/04-custom-dialog/Feat-02-alert-action-sheet-spec.md
+  status: Baselined
+- func_id: 05-06-04
+  id: Feat-03
+  title: Dialog C API（ArkUI_NativeDialogAPI_1/2/3、OH_ArkUI_CustomDialog 函数族）
+  spec: 05-ui-components/06-popup-components/04-custom-dialog/Feat-03-dialog-capi-spec.md
+  status: Baselined
+- func_id: 05-06-11
+  id: Feat-01
+  title: bindPopup 属性绑定与气泡布局
+  spec: 05-ui-components/06-popup-components/11-popup/Feat-01-bind-popup-bubble-layout-spec.md
+  status: Baselined
+- func_id: 05-06-11
+  id: Feat-02
+  title: 命令式 Popup API (openPopup / updatePopup / closePopup)
+  spec: 05-ui-components/06-popup-components/11-popup/Feat-02-imperative-popup-api-spec.md
+  status: Baselined
+- func_id: 07-01-16
+  id: Feat-01
+  title: Popup 高级组件全量规格
+  spec: 07-frontend/01-arkts-advanced-components/16-popup/Feat-01-popup-advanced-full-spec.md
+  status: Baselined
