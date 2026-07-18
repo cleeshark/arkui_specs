@@ -149,6 +149,26 @@ features:
   title: Divider 组件全量规格
   spec: 05-ui-components/01-layout-components/02-divider/Feat-01-divider-spec.md
   status: Baselined
+- func_id: 05-01-03
+  id: Feat-01
+  title: Column 创建、尺寸与子项间距
+  spec: 05-ui-components/01-layout-components/03-column/Feat-01-column-creation-size-space-spec.md
+  status: Baselined
+- func_id: 05-01-03
+  id: Feat-02
+  title: Column 对齐与反向排列
+  spec: 05-ui-components/01-layout-components/03-column/Feat-02-column-alignment-reverse-spec.md
+  status: Baselined
+- func_id: 05-01-03
+  id: Feat-03
+  title: Column 多范式接口与版本兼容
+  spec: 05-ui-components/01-layout-components/03-column/Feat-03-column-multi-paradigm-version-spec.md
+  status: Baselined
+- func_id: 05-01-03
+  id: Feat-04
+  title: Column PointLight 系统光效
+  spec: 05-ui-components/01-layout-components/03-column/Feat-04-column-point-light-spec.md
+  status: Baselined
 - func_id: 05-04-05
   id: Feat-01
   title: 创建、数值范围与布局样式

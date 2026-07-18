@@ -139,7 +139,7 @@
 | 04 通用能力层 | 25 热重载能力 | 01 热重载机制 | `04-25-01` | `04-common-capability/25-hot-reload/01-hot-reload-mechanism/` | *待补充* | 0 |
 | 05 组件层 | 01 布局类组件 | 01 Blank | `05-01-01` | `05-ui-components/01-layout-components/01-blank/` | [design.md](05-ui-components/01-layout-components/01-blank/design.md) | 1 |
 | 05 组件层 | 01 布局类组件 | 02 Divider | `05-01-02` | `05-ui-components/01-layout-components/02-divider/` | [design.md](05-ui-components/01-layout-components/02-divider/design.md) | 1 |
-| 05 组件层 | 01 布局类组件 | 03 Column | `05-01-03` | `05-ui-components/01-layout-components/03-column/` | *待补充* | 0 |
+| 05 组件层 | 01 布局类组件 | 03 Column | `05-01-03` | `05-ui-components/01-layout-components/03-column/` | [design.md](05-ui-components/01-layout-components/03-column/design.md) | 4 |
 | 05 组件层 | 01 布局类组件 | 04 ColumnSplit | `05-01-04` | `05-ui-components/01-layout-components/04-column-split/` | *待补充* | 0 |
 | 05 组件层 | 01 布局类组件 | 05 Flex | `05-01-05` | `05-ui-components/01-layout-components/05-flex/` | *待补充* | 0 |
 | 05 组件层 | 01 布局类组件 | 06 GridCol | `05-01-06` | `05-ui-components/01-layout-components/06-grid-col/` | *待补充* | 0 |
@@ -915,6 +915,10 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Column 创建、尺寸与子项间距 | [Feat-01-column-creation-size-space-spec.md](05-ui-components/01-layout-components/03-column/Feat-01-column-creation-size-space-spec.md) | Baselined |
+| Feat-02 | Column 对齐与反向排列 | [Feat-02-column-alignment-reverse-spec.md](05-ui-components/01-layout-components/03-column/Feat-02-column-alignment-reverse-spec.md) | Baselined |
+| Feat-03 | Column 多范式接口与版本兼容 | [Feat-03-column-multi-paradigm-version-spec.md](05-ui-components/01-layout-components/03-column/Feat-03-column-multi-paradigm-version-spec.md) | Baselined |
+| Feat-04 | Column PointLight 系统光效 | [Feat-04-column-point-light-spec.md](05-ui-components/01-layout-components/03-column/Feat-04-column-point-light-spec.md) | Baselined |
 
 ### 05-01-04 ColumnSplit
 

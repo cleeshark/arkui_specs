@@ -1559,7 +1559,7 @@ functions:
     id: '03'
     title: Column
   path: 05-ui-components/01-layout-components/03-column/
-  design: null
+  design: 05-ui-components/01-layout-components/03-column/design.md
   status: active
 - id: 05-01-04
   l1:
