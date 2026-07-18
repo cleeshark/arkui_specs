@@ -169,6 +169,161 @@ features:
   title: Column PointLight 系统光效
   spec: 05-ui-components/01-layout-components/03-column/Feat-04-column-point-light-spec.md
   status: Baselined
+- func_id: 05-01-05
+  id: Feat-01
+  title: Flex 单行弹性布局与轴向对齐
+  spec: 05-ui-components/01-layout-components/05-flex/Feat-01-flex-single-line-axis-layout-spec.md
+  status: Baselined
+- func_id: 05-01-05
+  id: Feat-02
+  title: Flex 多行换行与内容对齐
+  spec: 05-ui-components/01-layout-components/05-flex/Feat-02-flex-wrap-content-alignment-spec.md
+  status: Baselined
+- func_id: 05-01-05
+  id: Feat-03
+  title: Flex 主轴与交叉轴间距
+  spec: 05-ui-components/01-layout-components/05-flex/Feat-03-flex-main-cross-space-spec.md
+  status: Baselined
+- func_id: 05-01-05
+  id: Feat-04
+  title: Flex 多范式接口与版本兼容
+  spec: 05-ui-components/01-layout-components/05-flex/Feat-04-flex-multi-paradigm-version-spec.md
+  status: Baselined
+- func_id: 05-01-05
+  id: Feat-05
+  title: Flex PointLight 系统光效
+  spec: 05-ui-components/01-layout-components/05-flex/Feat-05-flex-point-light-spec.md
+  status: Baselined
+- func_id: 05-01-06
+  id: Feat-01
+  title: GridCol 创建与响应式占列
+  spec: 05-ui-components/01-layout-components/06-grid-col/Feat-01-grid-col-creation-responsive-span-spec.md
+  status: Baselined
+- func_id: 05-01-06
+  id: Feat-02
+  title: GridCol 偏移、排序与协同布局
+  spec: 05-ui-components/01-layout-components/06-grid-col/Feat-02-grid-col-offset-order-layout-spec.md
+  status: Baselined
+- func_id: 05-01-06
+  id: Feat-03
+  title: GridCol 多范式接口与版本兼容
+  spec: 05-ui-components/01-layout-components/06-grid-col/Feat-03-grid-col-multi-paradigm-version-spec.md
+  status: Baselined
+- func_id: 05-01-07
+  id: Feat-01
+  title: GridRow 列系统与间距
+  spec: 05-ui-components/01-layout-components/07-grid-row/Feat-01-grid-row-columns-gutter-spec.md
+  status: Baselined
+- func_id: 05-01-07
+  id: Feat-02
+  title: GridRow 响应式断点与变更事件
+  spec: 05-ui-components/01-layout-components/07-grid-row/Feat-02-grid-row-breakpoints-event-spec.md
+  status: Baselined
+- func_id: 05-01-07
+  id: Feat-03
+  title: GridRow 排列、换行、对齐与 RTL
+  spec: 05-ui-components/01-layout-components/07-grid-row/Feat-03-grid-row-arrangement-alignment-rtl-spec.md
+  status: Baselined
+- func_id: 05-01-07
+  id: Feat-04
+  title: GridRow 多范式接口与版本兼容
+  spec: 05-ui-components/01-layout-components/07-grid-row/Feat-04-grid-row-multi-paradigm-version-spec.md
+  status: Baselined
+- func_id: 05-01-08
+  id: Feat-01
+  title: RelativeContainer 锚定与自适应尺寸
+  spec: 05-ui-components/01-layout-components/08-relative-container/Feat-01-relative-container-anchor-auto-size-spec.md
+  status: Baselined
+- func_id: 05-01-08
+  id: Feat-02
+  title: RelativeContainer 依赖图、循环检测与偏置
+  spec: 05-ui-components/01-layout-components/08-relative-container/Feat-02-relative-container-dependency-bias-spec.md
+  status: Baselined
+- func_id: 05-01-08
+  id: Feat-03
+  title: RelativeContainer 辅助线、屏障与 RTL
+  spec: 05-ui-components/01-layout-components/08-relative-container/Feat-03-relative-container-guideline-barrier-spec.md
+  status: Baselined
+- func_id: 05-01-08
+  id: Feat-04
+  title: RelativeContainer 链式布局与权重
+  spec: 05-ui-components/01-layout-components/08-relative-container/Feat-04-relative-container-chain-weight-spec.md
+  status: Baselined
+- func_id: 05-01-08
+  id: Feat-05
+  title: RelativeContainer 多范式与原生接口兼容
+  spec: 05-ui-components/01-layout-components/08-relative-container/Feat-05-relative-container-multi-paradigm-native-spec.md
+  status: Baselined
+- func_id: 05-01-09
+  id: Feat-01
+  title: Row 创建、尺寸与子项间距
+  spec: 05-ui-components/01-layout-components/09-row/Feat-01-row-creation-size-space-spec.md
+  status: Baselined
+- func_id: 05-01-09
+  id: Feat-02
+  title: Row 对齐与反向排列
+  spec: 05-ui-components/01-layout-components/09-row/Feat-02-row-alignment-reverse-spec.md
+  status: Baselined
+- func_id: 05-01-09
+  id: Feat-03
+  title: Row 多范式接口与版本兼容
+  spec: 05-ui-components/01-layout-components/09-row/Feat-03-row-multi-paradigm-version-spec.md
+  status: Baselined
+- func_id: 05-01-09
+  id: Feat-04
+  title: Row PointLight 系统光效
+  spec: 05-ui-components/01-layout-components/09-row/Feat-04-row-point-light-spec.md
+  status: Baselined
+- func_id: 05-01-11
+  id: Feat-01
+  title: Stack 叠放布局、尺寸与对齐
+  spec: 05-ui-components/01-layout-components/11-stack/Feat-01-stack-overlay-layout-alignment-spec.md
+  status: Baselined
+- func_id: 05-01-11
+  id: Feat-02
+  title: Stack 子节点分帧加载与多范式接口
+  spec: 05-ui-components/01-layout-components/11-stack/Feat-02-stack-sync-load-multi-paradigm-spec.md
+  status: Baselined
+- func_id: 05-01-11
+  id: Feat-03
+  title: Stack PointLight 系统光效
+  spec: 05-ui-components/01-layout-components/11-stack/Feat-03-stack-point-light-spec.md
+  status: Baselined
+- func_id: 05-01-12
+  id: Feat-01
+  title: FolderStack 创建、分区与折痕避让
+  spec: 05-ui-components/01-layout-components/12-folder-stack/Feat-01-folder-stack-partition-crease-avoidance-spec.md
+  status: Baselined
+- func_id: 05-01-12
+  id: Feat-02
+  title: FolderStack 折叠与悬停状态事件
+  spec: 05-ui-components/01-layout-components/12-folder-stack/Feat-02-folder-stack-fold-hover-events-spec.md
+  status: Baselined
+- func_id: 05-01-12
+  id: Feat-03
+  title: FolderStack 过渡动画、自动旋转与接口兼容
+  spec: 05-ui-components/01-layout-components/12-folder-stack/Feat-03-folder-stack-animation-auto-rotation-spec.md
+  status: Baselined
+- func_id: 05-01-13
+  id: Feat-01
+  title: DynamicLayout 容器创建与运行时算法切换
+  spec: 05-ui-components/01-layout-components/13-dynamic-layout/Feat-01-dynamic-layout-runtime-switching-spec.md
+  status: Baselined
+- func_id: 05-01-13
+  id: Feat-02
+  title: DynamicLayout 行列线性布局算法
+  spec: 05-ui-components/01-layout-components/13-dynamic-layout/Feat-02-dynamic-layout-linear-algorithms-spec.md
+  status: Baselined
+- func_id: 05-01-13
+  id: Feat-03
+  title: DynamicLayout 堆叠与网格布局算法
+  spec: 05-ui-components/01-layout-components/13-dynamic-layout/Feat-03-dynamic-layout-stack-grid-algorithms-spec.md
+  status: Baselined
+- func_id: 05-01-13
+  id: Feat-04
+  title: DynamicLayout 自定义测量与布局算法
+  spec: 05-ui-components/01-layout-components/13-dynamic-layout/Feat-04-dynamic-layout-custom-algorithm-spec.md
+  status: Baselined
 - func_id: 05-04-05
   id: Feat-01
   title: 创建、数值范围与布局样式

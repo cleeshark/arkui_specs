@@ -141,15 +141,15 @@
 | 05 组件层 | 01 布局类组件 | 02 Divider | `05-01-02` | `05-ui-components/01-layout-components/02-divider/` | [design.md](05-ui-components/01-layout-components/02-divider/design.md) | 1 |
 | 05 组件层 | 01 布局类组件 | 03 Column | `05-01-03` | `05-ui-components/01-layout-components/03-column/` | [design.md](05-ui-components/01-layout-components/03-column/design.md) | 4 |
 | 05 组件层 | 01 布局类组件 | 04 ColumnSplit | `05-01-04` | `05-ui-components/01-layout-components/04-column-split/` | *待补充* | 0 |
-| 05 组件层 | 01 布局类组件 | 05 Flex | `05-01-05` | `05-ui-components/01-layout-components/05-flex/` | *待补充* | 0 |
-| 05 组件层 | 01 布局类组件 | 06 GridCol | `05-01-06` | `05-ui-components/01-layout-components/06-grid-col/` | *待补充* | 0 |
-| 05 组件层 | 01 布局类组件 | 07 GridRow | `05-01-07` | `05-ui-components/01-layout-components/07-grid-row/` | *待补充* | 0 |
-| 05 组件层 | 01 布局类组件 | 08 RelativeContainer | `05-01-08` | `05-ui-components/01-layout-components/08-relative-container/` | *待补充* | 0 |
-| 05 组件层 | 01 布局类组件 | 09 Row | `05-01-09` | `05-ui-components/01-layout-components/09-row/` | *待补充* | 0 |
+| 05 组件层 | 01 布局类组件 | 05 Flex | `05-01-05` | `05-ui-components/01-layout-components/05-flex/` | [design.md](05-ui-components/01-layout-components/05-flex/design.md) | 5 |
+| 05 组件层 | 01 布局类组件 | 06 GridCol | `05-01-06` | `05-ui-components/01-layout-components/06-grid-col/` | [design.md](05-ui-components/01-layout-components/06-grid-col/design.md) | 3 |
+| 05 组件层 | 01 布局类组件 | 07 GridRow | `05-01-07` | `05-ui-components/01-layout-components/07-grid-row/` | [design.md](05-ui-components/01-layout-components/07-grid-row/design.md) | 4 |
+| 05 组件层 | 01 布局类组件 | 08 RelativeContainer | `05-01-08` | `05-ui-components/01-layout-components/08-relative-container/` | [design.md](05-ui-components/01-layout-components/08-relative-container/design.md) | 5 |
+| 05 组件层 | 01 布局类组件 | 09 Row | `05-01-09` | `05-ui-components/01-layout-components/09-row/` | [design.md](05-ui-components/01-layout-components/09-row/design.md) | 4 |
 | 05 组件层 | 01 布局类组件 | 10 RowSplit | `05-01-10` | `05-ui-components/01-layout-components/10-row-split/` | *待补充* | 0 |
-| 05 组件层 | 01 布局类组件 | 11 Stack | `05-01-11` | `05-ui-components/01-layout-components/11-stack/` | *待补充* | 0 |
-| 05 组件层 | 01 布局类组件 | 12 FolderStack | `05-01-12` | `05-ui-components/01-layout-components/12-folder-stack/` | *待补充* | 0 |
-| 05 组件层 | 01 布局类组件 | 13 DynamicLayout | `05-01-13` | `05-ui-components/01-layout-components/13-dynamic-layout/` | *待补充* | 0 |
+| 05 组件层 | 01 布局类组件 | 11 Stack | `05-01-11` | `05-ui-components/01-layout-components/11-stack/` | [design.md](05-ui-components/01-layout-components/11-stack/design.md) | 3 |
+| 05 组件层 | 01 布局类组件 | 12 FolderStack | `05-01-12` | `05-ui-components/01-layout-components/12-folder-stack/` | [design.md](05-ui-components/01-layout-components/12-folder-stack/design.md) | 3 |
+| 05 组件层 | 01 布局类组件 | 13 DynamicLayout | `05-01-13` | `05-ui-components/01-layout-components/13-dynamic-layout/` | [design.md](05-ui-components/01-layout-components/13-dynamic-layout/design.md) | 4 |
 | 05 组件层 | 02 导航类组件 | 01 Navigation | `05-02-01` | `05-ui-components/02-navigation-components/01-navigation/` | [design.md](05-ui-components/02-navigation-components/01-navigation/design.md) | 7 |
 | 05 组件层 | 02 导航类组件 | 02 NavRouter | `05-02-02` | `05-ui-components/02-navigation-components/02-nav-router/` | *待补充* | 0 |
 | 05 组件层 | 02 导航类组件 | 03 NavDestination | `05-02-03` | `05-ui-components/02-navigation-components/03-nav-destination/` | [design.md](05-ui-components/02-navigation-components/03-nav-destination/design.md) | 4 |
@@ -929,26 +929,47 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Flex 单行弹性布局与轴向对齐 | [Feat-01-flex-single-line-axis-layout-spec.md](05-ui-components/01-layout-components/05-flex/Feat-01-flex-single-line-axis-layout-spec.md) | Baselined |
+| Feat-02 | Flex 多行换行与内容对齐 | [Feat-02-flex-wrap-content-alignment-spec.md](05-ui-components/01-layout-components/05-flex/Feat-02-flex-wrap-content-alignment-spec.md) | Baselined |
+| Feat-03 | Flex 主轴与交叉轴间距 | [Feat-03-flex-main-cross-space-spec.md](05-ui-components/01-layout-components/05-flex/Feat-03-flex-main-cross-space-spec.md) | Baselined |
+| Feat-04 | Flex 多范式接口与版本兼容 | [Feat-04-flex-multi-paradigm-version-spec.md](05-ui-components/01-layout-components/05-flex/Feat-04-flex-multi-paradigm-version-spec.md) | Baselined |
+| Feat-05 | Flex PointLight 系统光效 | [Feat-05-flex-point-light-spec.md](05-ui-components/01-layout-components/05-flex/Feat-05-flex-point-light-spec.md) | Baselined |
 
 ### 05-01-06 GridCol
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | GridCol 创建与响应式占列 | [Feat-01-grid-col-creation-responsive-span-spec.md](05-ui-components/01-layout-components/06-grid-col/Feat-01-grid-col-creation-responsive-span-spec.md) | Baselined |
+| Feat-02 | GridCol 偏移、排序与协同布局 | [Feat-02-grid-col-offset-order-layout-spec.md](05-ui-components/01-layout-components/06-grid-col/Feat-02-grid-col-offset-order-layout-spec.md) | Baselined |
+| Feat-03 | GridCol 多范式接口与版本兼容 | [Feat-03-grid-col-multi-paradigm-version-spec.md](05-ui-components/01-layout-components/06-grid-col/Feat-03-grid-col-multi-paradigm-version-spec.md) | Baselined |
 
 ### 05-01-07 GridRow
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | GridRow 列系统与间距 | [Feat-01-grid-row-columns-gutter-spec.md](05-ui-components/01-layout-components/07-grid-row/Feat-01-grid-row-columns-gutter-spec.md) | Baselined |
+| Feat-02 | GridRow 响应式断点与变更事件 | [Feat-02-grid-row-breakpoints-event-spec.md](05-ui-components/01-layout-components/07-grid-row/Feat-02-grid-row-breakpoints-event-spec.md) | Baselined |
+| Feat-03 | GridRow 排列、换行、对齐与 RTL | [Feat-03-grid-row-arrangement-alignment-rtl-spec.md](05-ui-components/01-layout-components/07-grid-row/Feat-03-grid-row-arrangement-alignment-rtl-spec.md) | Baselined |
+| Feat-04 | GridRow 多范式接口与版本兼容 | [Feat-04-grid-row-multi-paradigm-version-spec.md](05-ui-components/01-layout-components/07-grid-row/Feat-04-grid-row-multi-paradigm-version-spec.md) | Baselined |
 
 ### 05-01-08 RelativeContainer
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | RelativeContainer 锚定与自适应尺寸 | [Feat-01-relative-container-anchor-auto-size-spec.md](05-ui-components/01-layout-components/08-relative-container/Feat-01-relative-container-anchor-auto-size-spec.md) | Baselined |
+| Feat-02 | RelativeContainer 依赖图、循环检测与偏置 | [Feat-02-relative-container-dependency-bias-spec.md](05-ui-components/01-layout-components/08-relative-container/Feat-02-relative-container-dependency-bias-spec.md) | Baselined |
+| Feat-03 | RelativeContainer 辅助线、屏障与 RTL | [Feat-03-relative-container-guideline-barrier-spec.md](05-ui-components/01-layout-components/08-relative-container/Feat-03-relative-container-guideline-barrier-spec.md) | Baselined |
+| Feat-04 | RelativeContainer 链式布局与权重 | [Feat-04-relative-container-chain-weight-spec.md](05-ui-components/01-layout-components/08-relative-container/Feat-04-relative-container-chain-weight-spec.md) | Baselined |
+| Feat-05 | RelativeContainer 多范式与原生接口兼容 | [Feat-05-relative-container-multi-paradigm-native-spec.md](05-ui-components/01-layout-components/08-relative-container/Feat-05-relative-container-multi-paradigm-native-spec.md) | Baselined |
 
 ### 05-01-09 Row
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Row 创建、尺寸与子项间距 | [Feat-01-row-creation-size-space-spec.md](05-ui-components/01-layout-components/09-row/Feat-01-row-creation-size-space-spec.md) | Baselined |
+| Feat-02 | Row 对齐与反向排列 | [Feat-02-row-alignment-reverse-spec.md](05-ui-components/01-layout-components/09-row/Feat-02-row-alignment-reverse-spec.md) | Baselined |
+| Feat-03 | Row 多范式接口与版本兼容 | [Feat-03-row-multi-paradigm-version-spec.md](05-ui-components/01-layout-components/09-row/Feat-03-row-multi-paradigm-version-spec.md) | Baselined |
+| Feat-04 | Row PointLight 系统光效 | [Feat-04-row-point-light-spec.md](05-ui-components/01-layout-components/09-row/Feat-04-row-point-light-spec.md) | Baselined |
 
 ### 05-01-10 RowSplit
 
@@ -959,16 +980,26 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Stack 叠放布局、尺寸与对齐 | [Feat-01-stack-overlay-layout-alignment-spec.md](05-ui-components/01-layout-components/11-stack/Feat-01-stack-overlay-layout-alignment-spec.md) | Baselined |
+| Feat-02 | Stack 子节点分帧加载与多范式接口 | [Feat-02-stack-sync-load-multi-paradigm-spec.md](05-ui-components/01-layout-components/11-stack/Feat-02-stack-sync-load-multi-paradigm-spec.md) | Baselined |
+| Feat-03 | Stack PointLight 系统光效 | [Feat-03-stack-point-light-spec.md](05-ui-components/01-layout-components/11-stack/Feat-03-stack-point-light-spec.md) | Baselined |
 
 ### 05-01-12 FolderStack
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | FolderStack 创建、分区与折痕避让 | [Feat-01-folder-stack-partition-crease-avoidance-spec.md](05-ui-components/01-layout-components/12-folder-stack/Feat-01-folder-stack-partition-crease-avoidance-spec.md) | Baselined |
+| Feat-02 | FolderStack 折叠与悬停状态事件 | [Feat-02-folder-stack-fold-hover-events-spec.md](05-ui-components/01-layout-components/12-folder-stack/Feat-02-folder-stack-fold-hover-events-spec.md) | Baselined |
+| Feat-03 | FolderStack 过渡动画、自动旋转与接口兼容 | [Feat-03-folder-stack-animation-auto-rotation-spec.md](05-ui-components/01-layout-components/12-folder-stack/Feat-03-folder-stack-animation-auto-rotation-spec.md) | Baselined |
 
 ### 05-01-13 DynamicLayout
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | DynamicLayout 容器创建与运行时算法切换 | [Feat-01-dynamic-layout-runtime-switching-spec.md](05-ui-components/01-layout-components/13-dynamic-layout/Feat-01-dynamic-layout-runtime-switching-spec.md) | Baselined |
+| Feat-02 | DynamicLayout 行列线性布局算法 | [Feat-02-dynamic-layout-linear-algorithms-spec.md](05-ui-components/01-layout-components/13-dynamic-layout/Feat-02-dynamic-layout-linear-algorithms-spec.md) | Baselined |
+| Feat-03 | DynamicLayout 堆叠与网格布局算法 | [Feat-03-dynamic-layout-stack-grid-algorithms-spec.md](05-ui-components/01-layout-components/13-dynamic-layout/Feat-03-dynamic-layout-stack-grid-algorithms-spec.md) | Baselined |
+| Feat-04 | DynamicLayout 自定义测量与布局算法 | [Feat-04-dynamic-layout-custom-algorithm-spec.md](05-ui-components/01-layout-components/13-dynamic-layout/Feat-04-dynamic-layout-custom-algorithm-spec.md) | Baselined |
 
 ### 05-02-01 Navigation
 
