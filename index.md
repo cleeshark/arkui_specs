@@ -50,7 +50,7 @@
 | 03 引擎框架层 | 03 资源主题 | 04 资源动态切换 | `03-03-04` | `03-engine-framework/03-resource-theme/04-resource-dynamic-switching/` | *待补充* | 0 |
 | 03 引擎框架层 | 04 事件框架 | 01 事件基础框架 | `03-04-01` | `03-engine-framework/04-event-framework/01-event-base-framework/` | *待补充* | 0 |
 | 03 引擎框架层 | 04 事件框架 | 02 拖拽框架 | `03-04-02` | `03-engine-framework/04-event-framework/02-drag-framework/` | *待补充* | 0 |
-| 03 引擎框架层 | 05 窗口机制 | 01 窗口机制 | `03-05-01` | `03-engine-framework/05-window-mechanism/01-window-mechanism/` | *待补充* | 0 |
+| 03 引擎框架层 | 05 窗口机制 | 01 窗口机制 | `03-05-01` | `03-engine-framework/05-window-mechanism/01-window-mechanism/` | [design.md](03-engine-framework/05-window-mechanism/01-window-mechanism/design.md) | 4 |
 | 03 引擎框架层 | 05 窗口机制 | 02 子窗机制 | `03-05-02` | `03-engine-framework/05-window-mechanism/02-subwindow-mechanism/` | *待补充* | 0 |
 | 03 引擎框架层 | 06 多实例管理 | 01 多实例管理 | `03-06-01` | `03-engine-framework/06-multi-instance-management/01-multi-instance-management/` | *待补充* | 0 |
 | 03 引擎框架层 | 07 无障碍机制 | 01 无障碍能力 | `03-07-01` | `03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/` | *待补充* | 0 |
@@ -453,6 +453,10 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Window抽象与RosenWindow创建初始化 | [Feat-01-window-abstraction-rosen-window-init-spec.md](03-engine-framework/05-window-mechanism/01-window-mechanism/Feat-01-window-abstraction-rosen-window-init-spec.md) | Baselined |
+| Feat-02 | 窗口生命周期与前后台状态转换 | [Feat-02-window-lifecycle-state-transition-spec.md](03-engine-framework/05-window-mechanism/01-window-mechanism/Feat-02-window-lifecycle-state-transition-spec.md) | Baselined |
+| Feat-03 | 多实例窗口与全局管线 | [Feat-03-multi-instance-global-pipeline-spec.md](03-engine-framework/05-window-mechanism/01-window-mechanism/Feat-03-multi-instance-global-pipeline-spec.md) | Baselined |
+| Feat-04 | 特殊窗口类型 | [Feat-04-special-window-types-spec.md](03-engine-framework/05-window-mechanism/01-window-mechanism/Feat-04-special-window-types-spec.md) | Baselined |
 
 ### 03-05-02 子窗机制
 

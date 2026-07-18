@@ -9,6 +9,26 @@ features:
   title: 渲染主流程
   spec: 03-engine-framework/01-render-pipeline/01-basic-render-pipeline/Feat-01-render-main-flow-spec.md
   status: Baselined
+- func_id: 03-05-01
+  id: Feat-01
+  title: Window抽象与RosenWindow创建初始化
+  spec: 03-engine-framework/05-window-mechanism/01-window-mechanism/Feat-01-window-abstraction-rosen-window-init-spec.md
+  status: Baselined
+- func_id: 03-05-01
+  id: Feat-02
+  title: 窗口生命周期与前后台状态转换
+  spec: 03-engine-framework/05-window-mechanism/01-window-mechanism/Feat-02-window-lifecycle-state-transition-spec.md
+  status: Baselined
+- func_id: 03-05-01
+  id: Feat-03
+  title: 多实例窗口与全局管线
+  spec: 03-engine-framework/05-window-mechanism/01-window-mechanism/Feat-03-multi-instance-global-pipeline-spec.md
+  status: Baselined
+- func_id: 03-05-01
+  id: Feat-04
+  title: 特殊窗口类型
+  spec: 03-engine-framework/05-window-mechanism/01-window-mechanism/Feat-04-special-window-types-spec.md
+  status: Baselined
 - func_id: 04-01-01
   id: Feat-01
   title: 图片加载机制

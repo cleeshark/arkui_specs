@@ -402,7 +402,7 @@ functions:
     id: '01'
     title: 窗口机制
   path: 03-engine-framework/05-window-mechanism/01-window-mechanism/
-  design: null
+  design: 03-engine-framework/05-window-mechanism/01-window-mechanism/design.md
   status: active
 - id: 03-05-02
   l1:
