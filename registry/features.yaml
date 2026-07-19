@@ -364,3 +364,8 @@ features:
   title: 命名路由跳转与替换
   spec: 04-common-capability/15-router-mechanism/02-named-router/Feat-01-named-router-push-replace-spec.md
   status: Baselined
+- func_id: 03-06-01
+  id: Feat-01
+  title: 多实例管理全能力
+  spec: 03-engine-framework/06-multi-instance-management/01-multi-instance-management/Feat-01-multi-instance-management-spec.md
+  status: Baselined
