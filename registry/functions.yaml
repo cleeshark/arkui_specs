@@ -1910,7 +1910,7 @@ functions:
     id: '01'
     title: Button
   path: 05-ui-components/04-input-form-components/01-button/
-  design: null
+  design: 05-ui-components/04-input-form-components/01-button/design.md
   status: active
 - id: 05-04-02
   l1:
@@ -1923,7 +1923,7 @@ functions:
     id: '02'
     title: Checkbox/CheckboxGroup
   path: 05-ui-components/04-input-form-components/02-checkbox-checkbox-group/
-  design: null
+  design: 05-ui-components/04-input-form-components/02-checkbox-checkbox-group/design.md
   status: active
 - id: 05-04-03
   l1:
@@ -1949,7 +1949,7 @@ functions:
     id: '04'
     title: Radio
   path: 05-ui-components/04-input-form-components/04-radio/
-  design: null
+  design: 05-ui-components/04-input-form-components/04-radio/design.md
   status: active
 - id: 05-04-05
   l1:
@@ -2040,7 +2040,7 @@ functions:
     id: '05'
     title: Select
   path: 05-ui-components/05-picker-components/05-select/
-  design: null
+  design: 05-ui-components/05-picker-components/05-select/design.md
   status: active
 - id: 05-05-06
   l1:
@@ -2183,7 +2183,7 @@ functions:
     id: '10'
     title: promptAction接口
   path: 05-ui-components/06-popup-components/10-prompt-action/
-  design: null
+  design: 05-ui-components/06-popup-components/10-prompt-action/design.md
   status: active
 - id: 05-06-11
   l1:
@@ -3704,5 +3704,5 @@ functions:
     id: '01'
     title: 弧形组件
   path: 10-product-customization/01-wearable/01-arc-component/
-  design: null
+  design: 10-product-customization/01-wearable/01-arc-component/design.md
   status: active
