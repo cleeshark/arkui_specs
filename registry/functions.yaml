@@ -2066,7 +2066,7 @@ functions:
     id: '01'
     title: Menu/MenuItem/MenuItemGroup
   path: 05-ui-components/06-popup-components/01-menu-menu-item-menu-item-group/
-  design: null
+  design: 05-ui-components/06-popup-components/01-menu-menu-item-menu-item-group/design.md
   status: active
 - id: 05-06-02
   l1:
@@ -2105,7 +2105,7 @@ functions:
     id: '04'
     title: 自定义弹窗
   path: 05-ui-components/06-popup-components/04-custom-dialog/
-  design: null
+  design: 05-ui-components/06-popup-components/04-custom-dialog/design.md
   status: active
 - id: 05-06-05
   l1:
@@ -2196,7 +2196,7 @@ functions:
     id: '11'
     title: popup弹窗
   path: 05-ui-components/06-popup-components/11-popup/
-  design: null
+  design: 05-ui-components/06-popup-components/11-popup/design.md
   status: active
 - id: 05-07-01
   l1:
@@ -3093,7 +3093,7 @@ functions:
     id: '16'
     title: Popup
   path: 07-frontend/01-arkts-advanced-components/16-popup/
-  design: null
+  design: 07-frontend/01-arkts-advanced-components/16-popup/design.md
   status: active
 - id: 07-01-17
   l1:
