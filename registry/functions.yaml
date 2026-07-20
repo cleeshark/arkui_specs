@@ -428,7 +428,7 @@ functions:
     id: '01'
     title: 多实例管理
   path: 03-engine-framework/06-multi-instance-management/01-multi-instance-management/
-  design: null
+  design: 03-engine-framework/06-multi-instance-management/01-multi-instance-management/design.md
   status: active
 - id: 03-07-01
   l1:

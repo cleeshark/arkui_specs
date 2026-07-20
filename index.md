@@ -52,7 +52,7 @@
 | 03 引擎框架层 | 04 事件框架 | 02 拖拽框架 | `03-04-02` | `03-engine-framework/04-event-framework/02-drag-framework/` | *待补充* | 0 |
 | 03 引擎框架层 | 05 窗口机制 | 01 窗口机制 | `03-05-01` | `03-engine-framework/05-window-mechanism/01-window-mechanism/` | *待补充* | 0 |
 | 03 引擎框架层 | 05 窗口机制 | 02 子窗机制 | `03-05-02` | `03-engine-framework/05-window-mechanism/02-subwindow-mechanism/` | *待补充* | 0 |
-| 03 引擎框架层 | 06 多实例管理 | 01 多实例管理 | `03-06-01` | `03-engine-framework/06-multi-instance-management/01-multi-instance-management/` | *待补充* | 0 |
+| 03 引擎框架层 | 06 多实例管理 | 01 多实例管理 | `03-06-01` | `03-engine-framework/06-multi-instance-management/01-multi-instance-management/` | [design.md](03-engine-framework/06-multi-instance-management/01-multi-instance-management/design.md) | 1 |
 | 03 引擎框架层 | 07 无障碍机制 | 01 无障碍能力 | `03-07-01` | `03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/` | *待补充* | 0 |
 | 03 引擎框架层 | 07 无障碍机制 | 02 Inspector | `03-07-02` | `03-engine-framework/07-accessibility-mechanism/02-inspector/` | *待补充* | 0 |
 | 03 引擎框架层 | 08 DFX | 01 日志 | `03-08-01` | `03-engine-framework/08-dfx/01-logging/` | *待补充* | 0 |
@@ -463,6 +463,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 多实例管理全能力 | [Feat-01-multi-instance-management-spec.md](03-engine-framework/06-multi-instance-management/01-multi-instance-management/Feat-01-multi-instance-management-spec.md) | Baselined |
 
 ### 03-07-01 无障碍能力
 
