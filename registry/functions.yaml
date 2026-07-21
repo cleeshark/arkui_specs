@@ -1559,7 +1559,7 @@ functions:
     id: '03'
     title: Column
   path: 05-ui-components/01-layout-components/03-column/
-  design: null
+  design: 05-ui-components/01-layout-components/03-column/design.md
   status: active
 - id: 05-01-04
   l1:
@@ -1585,7 +1585,7 @@ functions:
     id: '05'
     title: Flex
   path: 05-ui-components/01-layout-components/05-flex/
-  design: null
+  design: 05-ui-components/01-layout-components/05-flex/design.md
   status: active
 - id: 05-01-06
   l1:
@@ -1598,7 +1598,7 @@ functions:
     id: '06'
     title: GridCol
   path: 05-ui-components/01-layout-components/06-grid-col/
-  design: null
+  design: 05-ui-components/01-layout-components/06-grid-col/design.md
   status: active
 - id: 05-01-07
   l1:
@@ -1611,7 +1611,7 @@ functions:
     id: '07'
     title: GridRow
   path: 05-ui-components/01-layout-components/07-grid-row/
-  design: null
+  design: 05-ui-components/01-layout-components/07-grid-row/design.md
   status: active
 - id: 05-01-08
   l1:
@@ -1624,7 +1624,7 @@ functions:
     id: 08
     title: RelativeContainer
   path: 05-ui-components/01-layout-components/08-relative-container/
-  design: null
+  design: 05-ui-components/01-layout-components/08-relative-container/design.md
   status: active
 - id: 05-01-09
   l1:
@@ -1637,7 +1637,7 @@ functions:
     id: 09
     title: Row
   path: 05-ui-components/01-layout-components/09-row/
-  design: null
+  design: 05-ui-components/01-layout-components/09-row/design.md
   status: active
 - id: 05-01-10
   l1:
@@ -1663,7 +1663,7 @@ functions:
     id: '11'
     title: Stack
   path: 05-ui-components/01-layout-components/11-stack/
-  design: null
+  design: 05-ui-components/01-layout-components/11-stack/design.md
   status: active
 - id: 05-01-12
   l1:
@@ -1676,7 +1676,7 @@ functions:
     id: '12'
     title: FolderStack
   path: 05-ui-components/01-layout-components/12-folder-stack/
-  design: null
+  design: 05-ui-components/01-layout-components/12-folder-stack/design.md
   status: active
 - id: 05-01-13
   l1:
@@ -1689,7 +1689,7 @@ functions:
     id: '13'
     title: DynamicLayout
   path: 05-ui-components/01-layout-components/13-dynamic-layout/
-  design: null
+  design: 05-ui-components/01-layout-components/13-dynamic-layout/design.md
   status: active
 - id: 05-02-01
   l1:
