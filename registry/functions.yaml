@@ -194,7 +194,7 @@ functions:
     id: '01'
     title: 动效框架
   path: 03-engine-framework/02-animation-capability/01-animation-framework/
-  design: null
+  design: 03-engine-framework/02-animation-capability/01-animation-framework/design.md
   status: active
 - id: 03-02-02
   l1:
@@ -207,7 +207,7 @@ functions:
     id: '02'
     title: 属性动画
   path: 03-engine-framework/02-animation-capability/02-property-animation/
-  design: null
+  design: 03-engine-framework/02-animation-capability/02-property-animation/design.md
   status: active
 - id: 03-02-03
   l1:
@@ -220,7 +220,7 @@ functions:
     id: '03'
     title: 显式动画
   path: 03-engine-framework/02-animation-capability/03-explicit-animation/
-  design: null
+  design: 03-engine-framework/02-animation-capability/03-explicit-animation/design.md
   status: active
 - id: 03-02-04
   l1:
@@ -233,7 +233,7 @@ functions:
     id: '04'
     title: 关键帧动画
   path: 03-engine-framework/02-animation-capability/04-keyframe-animation/
-  design: null
+  design: 03-engine-framework/02-animation-capability/04-keyframe-animation/design.md
   status: active
 - id: 03-02-05
   l1:
@@ -246,7 +246,7 @@ functions:
     id: '05'
     title: 转场动画
   path: 03-engine-framework/02-animation-capability/05-transition-animation/
-  design: null
+  design: 03-engine-framework/02-animation-capability/05-transition-animation/design.md
   status: active
 - id: 03-02-06
   l1:
@@ -259,7 +259,7 @@ functions:
     id: '06'
     title: 共享元素动画
   path: 03-engine-framework/02-animation-capability/06-shared-transition/
-  design: null
+  design: 03-engine-framework/02-animation-capability/06-shared-transition/design.md
   status: active
 - id: 03-02-07
   l1:
@@ -272,7 +272,7 @@ functions:
     id: '07'
     title: 组件共享元素动画
   path: 03-engine-framework/02-animation-capability/07-geometry-transition/
-  design: null
+  design: 03-engine-framework/02-animation-capability/07-geometry-transition/design.md
   status: active
 - id: 03-02-08
   l1:
@@ -285,7 +285,7 @@ functions:
     id: 08
     title: 路径动画
   path: 03-engine-framework/02-animation-capability/08-motion-path/
-  design: null
+  design: 03-engine-framework/02-animation-capability/08-motion-path/design.md
   status: active
 - id: 03-02-09
   l1:
@@ -298,7 +298,7 @@ functions:
     id: 09
     title: 物理动画
   path: 03-engine-framework/02-animation-capability/09-physics-animation/
-  design: null
+  design: 03-engine-framework/02-animation-capability/09-physics-animation/design.md
   status: active
 - id: 03-02-10
   l1:
@@ -311,7 +311,7 @@ functions:
     id: '10'
     title: 动画接口
   path: 03-engine-framework/02-animation-capability/10-animation-interface/
-  design: null
+  design: 03-engine-framework/02-animation-capability/10-animation-interface/design.md
   status: active
 - id: 03-03-01
   l1:
