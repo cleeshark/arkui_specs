@@ -434,3 +434,38 @@ features:
   title: Popup 高级组件全量规格
   spec: 07-frontend/01-arkts-advanced-components/16-popup/Feat-01-popup-advanced-full-spec.md
   status: Baselined
+- func_id: 05-04-01
+  id: Feat-01
+  title: Button 组件全量规格
+  spec: 05-ui-components/04-input-form-components/01-button/Feat-01-button-full-spec.md
+  status: Baselined
+- func_id: 05-04-02
+  id: Feat-01
+  title: Checkbox/CheckboxGroup 组件全量规格
+  spec: 05-ui-components/04-input-form-components/02-checkbox-checkbox-group/Feat-01-checkbox-full-spec.md
+  status: Baselined
+- func_id: 05-04-04
+  id: Feat-01
+  title: Radio/RadioGroup 组件全量规格
+  spec: 05-ui-components/04-input-form-components/04-radio/Feat-01-radio-full-spec.md
+  status: Baselined
+- func_id: 05-05-05
+  id: Feat-01
+  title: Select 组件全量规格
+  spec: 05-ui-components/05-picker-components/05-select/Feat-01-select-full-spec.md
+  status: Baselined
+- func_id: 05-06-10
+  id: Feat-01
+  title: promptAction 接口全量规格 (Toast/Dialog/OpenMenu)
+  spec: 05-ui-components/06-popup-components/10-prompt-action/Feat-01-prompt-action-full-spec.md
+  status: Baselined
+- func_id: 10-01-01
+  id: Feat-01
+  title: ArcSlider 弧形滑块组件全量规格
+  spec: 10-product-customization/01-wearable/01-arc-component/Feat-01-arc-slider-full-spec.md
+  status: Baselined
+- func_id: 10-01-01
+  id: Feat-02
+  title: ArcButton 弧形按钮组件全量规格
+  spec: 10-product-customization/01-wearable/01-arc-component/Feat-02-arc-button-full-spec.md
+  status: Baselined

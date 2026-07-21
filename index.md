@@ -166,17 +166,17 @@
 | 05 组件层 | 03 滚动容器类组件 | 08 Swiper | `05-03-08` | `05-ui-components/03-scroll-container-components/08-swiper/` | [design.md](05-ui-components/03-scroll-container-components/08-swiper/design.md) | 6 |
 | 05 组件层 | 03 滚动容器类组件 | 09 Tabs/TabContent | `05-03-09` | `05-ui-components/03-scroll-container-components/09-tabs-tab-content/` | [design.md](05-ui-components/03-scroll-container-components/09-tabs-tab-content/design.md) | 6 |
 | 05 组件层 | 03 滚动容器类组件 | 10 WaterFlow/FlowItem | `05-03-10` | `05-ui-components/03-scroll-container-components/10-water-flow-flow-item/` | *待补充* | 0 |
-| 05 组件层 | 04 输入表单类 | 01 Button | `05-04-01` | `05-ui-components/04-input-form-components/01-button/` | *待补充* | 0 |
-| 05 组件层 | 04 输入表单类 | 02 Checkbox/CheckboxGroup | `05-04-02` | `05-ui-components/04-input-form-components/02-checkbox-checkbox-group/` | *待补充* | 0 |
+| 05 组件层 | 04 输入表单类 | 01 Button | `05-04-01` | `05-ui-components/04-input-form-components/01-button/` | [design.md](05-ui-components/04-input-form-components/01-button/design.md) | 1 |
+| 05 组件层 | 04 输入表单类 | 02 Checkbox/CheckboxGroup | `05-04-02` | `05-ui-components/04-input-form-components/02-checkbox-checkbox-group/` | [design.md](05-ui-components/04-input-form-components/02-checkbox-checkbox-group/design.md) | 1 |
 | 05 组件层 | 04 输入表单类 | 03 Rating | `05-04-03` | `05-ui-components/04-input-form-components/03-rating/` | *待补充* | 0 |
-| 05 组件层 | 04 输入表单类 | 04 Radio | `05-04-04` | `05-ui-components/04-input-form-components/04-radio/` | *待补充* | 0 |
+| 05 组件层 | 04 输入表单类 | 04 Radio | `05-04-04` | `05-ui-components/04-input-form-components/04-radio/` | [design.md](05-ui-components/04-input-form-components/04-radio/design.md) | 1 |
 | 05 组件层 | 04 输入表单类 | 05 Slider | `05-04-05` | `05-ui-components/04-input-form-components/05-slider/` | [design.md](05-ui-components/04-input-form-components/05-slider/design.md) | 4 |
 | 05 组件层 | 04 输入表单类 | 06 Toggle | `05-04-06` | `05-ui-components/04-input-form-components/06-toggle/` | [design.md](05-ui-components/04-input-form-components/06-toggle/design.md) | 1 |
 | 05 组件层 | 05 选择类组件 | 01 Calendar/CalendarPicker | `05-05-01` | `05-ui-components/05-picker-components/01-calendar-calendar-picker/` | [design.md](05-ui-components/05-picker-components/01-calendar-calendar-picker/design.md) | 1 |
 | 05 组件层 | 05 选择类组件 | 02 DatePicker | `05-05-02` | `05-ui-components/05-picker-components/02-date-picker/` | [design.md](05-ui-components/05-picker-components/02-date-picker/design.md) | 1 |
 | 05 组件层 | 05 选择类组件 | 03 TextPicker | `05-05-03` | `05-ui-components/05-picker-components/03-text-picker/` | [design.md](05-ui-components/05-picker-components/03-text-picker/design.md) | 1 |
 | 05 组件层 | 05 选择类组件 | 04 TimePicker | `05-05-04` | `05-ui-components/05-picker-components/04-time-picker/` | [design.md](05-ui-components/05-picker-components/04-time-picker/design.md) | 1 |
-| 05 组件层 | 05 选择类组件 | 05 Select | `05-05-05` | `05-ui-components/05-picker-components/05-select/` | *待补充* | 0 |
+| 05 组件层 | 05 选择类组件 | 05 Select | `05-05-05` | `05-ui-components/05-picker-components/05-select/` | [design.md](05-ui-components/05-picker-components/05-select/design.md) | 1 |
 | 05 组件层 | 05 选择类组件 | 06 Picker | `05-05-06` | `05-ui-components/05-picker-components/06-picker/` | [design.md](05-ui-components/05-picker-components/06-picker/design.md) | 1 |
 | 05 组件层 | 06 弹窗类组件 | 01 Menu/MenuItem/MenuItemGroup | `05-06-01` | `05-ui-components/06-popup-components/01-menu-menu-item-menu-item-group/` | [design.md](05-ui-components/06-popup-components/01-menu-menu-item-menu-item-group/design.md) | 3 |
 | 05 组件层 | 06 弹窗类组件 | 02 警告弹窗 | `05-06-02` | `05-ui-components/06-popup-components/02-alert-dialog/` | *待补充* | 0 |
@@ -187,7 +187,7 @@
 | 05 组件层 | 06 弹窗类组件 | 07 TimePickerDialog | `05-06-07` | `05-ui-components/06-popup-components/07-time-picker-dialog/` | *待补充* | 0 |
 | 05 组件层 | 06 弹窗类组件 | 08 TextPickerDialog | `05-06-08` | `05-ui-components/06-popup-components/08-text-picker-dialog/` | *待补充* | 0 |
 | 05 组件层 | 06 弹窗类组件 | 09 ContextMenu接口 | `05-06-09` | `05-ui-components/06-popup-components/09-context-menu/` | *待补充* | 0 |
-| 05 组件层 | 06 弹窗类组件 | 10 promptAction接口 | `05-06-10` | `05-ui-components/06-popup-components/10-prompt-action/` | *待补充* | 0 |
+| 05 组件层 | 06 弹窗类组件 | 10 promptAction接口 | `05-06-10` | `05-ui-components/06-popup-components/10-prompt-action/` | [design.md](05-ui-components/06-popup-components/10-prompt-action/design.md) | 1 |
 | 05 组件层 | 06 弹窗类组件 | 11 popup弹窗 | `05-06-11` | `05-ui-components/06-popup-components/11-popup/` | [design.md](05-ui-components/06-popup-components/11-popup/design.md) | 2 |
 | 05 组件层 | 07 模态类组件 | 01 半模态弹窗 | `05-07-01` | `05-ui-components/07-modal-components/01-sheet-modal/` | *待补充* | 0 |
 | 05 组件层 | 07 模态类组件 | 02 全模态弹窗 | `05-07-02` | `05-ui-components/07-modal-components/02-full-modal/` | *待补充* | 0 |
@@ -304,7 +304,7 @@
 | 09 开发者工具 | 03 开发者文档 | 02 API指南文档 | `09-03-02` | `09-developer-tools/03-developer-docs/02-api-guide-docs/` | *待补充* | 0 |
 | 09 开发者工具 | 04 Sample应用 | 01 能力示范sample | `09-04-01` | `09-developer-tools/04-sample-apps/01-capability-sample/` | *待补充* | 0 |
 | 09 开发者工具 | 05 ComponnetTest | 01 ComponnetTest测试框架 | `09-05-01` | `09-developer-tools/05-component-test/01-component-test-framework/` | *待补充* | 0 |
-| 10 产品化定制 | 01 穿戴 | 01 弧形组件 | `10-01-01` | `10-product-customization/01-wearable/01-arc-component/` | *待补充* | 0 |
+| 10 产品化定制 | 01 穿戴 | 01 弧形组件 | `10-01-01` | `10-product-customization/01-wearable/01-arc-component/` | [design.md](10-product-customization/01-wearable/01-arc-component/design.md) | 2 |
 
 > 新增功能域时请在此表中按编号顺序添加行；未创建的设计文档以 `待补充` 标记。
 
@@ -1081,11 +1081,13 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Button 组件全量规格 | [Feat-01-button-full-spec.md](05-ui-components/04-input-form-components/01-button/Feat-01-button-full-spec.md) | Baselined |
 
 ### 05-04-02 Checkbox/CheckboxGroup
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Checkbox/CheckboxGroup 组件全量规格 | [Feat-01-checkbox-full-spec.md](05-ui-components/04-input-form-components/02-checkbox-checkbox-group/Feat-01-checkbox-full-spec.md) | Baselined |
 
 ### 05-04-03 Rating
 
@@ -1096,6 +1098,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Radio/RadioGroup 组件全量规格 | [Feat-01-radio-full-spec.md](05-ui-components/04-input-form-components/04-radio/Feat-01-radio-full-spec.md) | Baselined |
 
 ### 05-04-05 Slider
 
@@ -1140,6 +1143,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Select 组件全量规格 | [Feat-01-select-full-spec.md](05-ui-components/05-picker-components/05-select/Feat-01-select-full-spec.md) | Baselined |
 
 ### 05-05-06 Picker
 
@@ -1202,6 +1206,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | promptAction 接口全量规格 (Toast/Dialog/OpenMenu) | [Feat-01-prompt-action-full-spec.md](05-ui-components/06-popup-components/10-prompt-action/Feat-01-prompt-action-full-spec.md) | Baselined |
 
 ### 05-06-11 popup弹窗
 
@@ -1808,6 +1813,8 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | ArcSlider 弧形滑块组件全量规格 | [Feat-01-arc-slider-full-spec.md](10-product-customization/01-wearable/01-arc-component/Feat-01-arc-slider-full-spec.md) | Baselined |
+| Feat-02 | ArcButton 弧形按钮组件全量规格 | [Feat-02-arc-button-full-spec.md](10-product-customization/01-wearable/01-arc-component/Feat-02-arc-button-full-spec.md) | Baselined |
 
 ---
 
