@@ -644,3 +644,8 @@ features:
   title: ArcButton 弧形按钮组件全量规格
   spec: 10-product-customization/01-wearable/01-arc-component/Feat-02-arc-button-full-spec.md
   status: Baselined
+- func_id: 03-01-02
+  id: Feat-01
+  title: 子管线与多容器 VSync 协调
+  spec: 03-engine-framework/01-render-pipeline/02-multi-level-render-pipeline/Feat-01-sub-pipeline-multi-container-vsync-coordination-spec.md
+  status: Draft

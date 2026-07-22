@@ -33,7 +33,7 @@
 | 02 跨平台适配层 | 01 跨平台适配层 | 04 预览器平台适配 | `02-01-04` | `02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/` | *待补充* | 0 |
 | 02 跨平台适配层 | 02 渲染后端适配 | 01 渲染后端适配 | `02-02-01` | `02-cross-platform/02-render-backend-adapter/01-render-backend-adapter/` | *待补充* | 0 |
 | 03 引擎框架层 | 01 渲染管线 | 01 渲染管线 | `03-01-01` | `03-engine-framework/01-render-pipeline/01-basic-render-pipeline/` | [design.md](03-engine-framework/01-render-pipeline/01-basic-render-pipeline/design.md) | 1 |
-| 03 引擎框架层 | 01 渲染管线 | 02 多级渲染管线 | `03-01-02` | `03-engine-framework/01-render-pipeline/02-multi-level-render-pipeline/` | *待补充* | 0 |
+| 03 引擎框架层 | 01 渲染管线 | 02 多级渲染管线 | `03-01-02` | `03-engine-framework/01-render-pipeline/02-multi-level-render-pipeline/` | [design.md](03-engine-framework/01-render-pipeline/02-multi-level-render-pipeline/design.md) | 1 |
 | 03 引擎框架层 | 02 动效能力 | 01 动效框架 | `03-02-01` | `03-engine-framework/02-animation-capability/01-animation-framework/` | *待补充* | 0 |
 | 03 引擎框架层 | 02 动效能力 | 02 属性动画 | `03-02-02` | `03-engine-framework/02-animation-capability/02-property-animation/` | *待补充* | 0 |
 | 03 引擎框架层 | 02 动效能力 | 03 显式动画 | `03-02-03` | `03-engine-framework/02-animation-capability/03-explicit-animation/` | *待补充* | 0 |
@@ -368,6 +368,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 子管线与多容器 VSync 协调 | [Feat-01-sub-pipeline-multi-container-vsync-coordination-spec.md](03-engine-framework/01-render-pipeline/02-multi-level-render-pipeline/Feat-01-sub-pipeline-multi-container-vsync-coordination-spec.md) | Draft |
 
 ### 03-02-01 动效框架
 
