@@ -514,6 +514,46 @@ features:
   title: NavDestination 模式/安全区/转场动画/状态恢复
   spec: 05-ui-components/02-navigation-components/03-nav-destination/Feat-04-nav-destination-mode-safe-area-transition-recovery-spec.md
   status: Baselined
+- func_id: 05-13-01
+  id: Feat-01
+  title: 创建、类型与表面生命周期（核心）
+  spec: 05-ui-components/13-platform-components/01-xcomponent/Feat-01-creation-type-surface-lifecycle-spec.md
+  status: Baselined
+- func_id: 05-13-01
+  id: Feat-02
+  title: XComponentController 表面与画布控制
+  spec: 05-ui-components/13-platform-components/01-xcomponent/Feat-02-controller-surface-canvas-spec.md
+  status: Baselined
+- func_id: 05-13-01
+  id: Feat-03
+  title: 经典 NDK 输入事件（touch/mouse/key/focus/blur/hover）
+  spec: 05-ui-components/13-platform-components/01-xcomponent/Feat-03-ndk-input-events-spec.md
+  status: Baselined
+- func_id: 05-13-01
+  id: Feat-04
+  title: SurfaceHolder/SurfaceCallback V2 表面模型
+  spec: 05-ui-components/13-platform-components/01-xcomponent/Feat-04-surface-holder-v2-spec.md
+  status: Baselined
+- func_id: 05-13-01
+  id: Feat-05
+  title: 帧率与显示同步（DisplaySync）
+  spec: 05-ui-components/13-platform-components/01-xcomponent/Feat-05-frame-rate-display-sync-spec.md
+  status: Baselined
+- func_id: 05-13-01
+  id: Feat-06
+  title: HDR 亮度与背景色
+  spec: 05-ui-components/13-platform-components/01-xcomponent/Feat-06-hdr-brightness-background-spec.md
+  status: Baselined
+- func_id: 05-13-01
+  id: Feat-07
+  title: AI 图像分析（analyzer）
+  spec: 05-ui-components/13-platform-components/01-xcomponent/Feat-07-ai-image-analyzer-spec.md
+  status: Baselined
+- func_id: 05-13-01
+  id: Feat-08
+  title: 无障碍 provider
+  spec: 05-ui-components/13-platform-components/01-xcomponent/Feat-08-accessibility-provider-spec.md
+  status: Baselined
 - func_id: 05-13-02
   id: Feat-01
   title: 显示、播放与事件
