@@ -27,7 +27,7 @@
 | 01 架构通用设计 | 01 架构设计 | 02 目录结构 | `01-01-02` | `01-architecture/01-architecture-design/02-directory-structure/` | *待补充* | 0 |
 | 01 架构通用设计 | 01 架构设计 | 03 部件化 | `01-01-03` | `01-architecture/01-architecture-design/03-modularization/` | *待补充* | 0 |
 | 01 架构通用设计 | 02 架构优化 | 01 产品化解耦 | `01-02-01` | `01-architecture/02-architecture-optimization/01-product-decoupling/` | *待补充* | 0 |
-| 02 跨平台适配层 | 01 跨平台适配层 | 01 OH平台适配 | `02-01-01` | `02-cross-platform/01-platform-adapter/01-oh-platform-adapter/` | *待补充* | 0 |
+| 02 跨平台适配层 | 01 跨平台适配层 | 01 OH平台适配 | `02-01-01` | `02-cross-platform/01-platform-adapter/01-oh-platform-adapter/` | [design.md](02-cross-platform/01-platform-adapter/01-oh-platform-adapter/design.md) | 5 |
 | 02 跨平台适配层 | 01 跨平台适配层 | 02 Android平台适配 | `02-01-02` | `02-cross-platform/01-platform-adapter/02-android-platform-adapter/` | *待补充* | 0 |
 | 02 跨平台适配层 | 01 跨平台适配层 | 03 iOS平台适配 | `02-01-03` | `02-cross-platform/01-platform-adapter/03-ios-platform-adapter/` | *待补充* | 0 |
 | 02 跨平台适配层 | 01 跨平台适配层 | 04 预览器平台适配 | `02-01-04` | `02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/` | *待补充* | 0 |
@@ -337,6 +337,11 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Rosen渲染后端适配 | [Feat-01-rosen-render-backend-spec.md](02-cross-platform/01-platform-adapter/01-oh-platform-adapter/Feat-01-rosen-render-backend-spec.md) | Baselined |
+| Feat-02 | 窗口与子窗口适配 | [Feat-02-window-subwindow-spec.md](02-cross-platform/01-platform-adapter/01-oh-platform-adapter/Feat-02-window-subwindow-spec.md) | Baselined |
+| Feat-03 | 资源与字体适配 | [Feat-03-resource-font-spec.md](02-cross-platform/01-platform-adapter/01-oh-platform-adapter/Feat-03-resource-font-spec.md) | Baselined |
+| Feat-04 | 平台抽象基类与构建适配 | [Feat-04-platform-abstraction-build-spec.md](02-cross-platform/01-platform-adapter/01-oh-platform-adapter/Feat-04-platform-abstraction-build-spec.md) | Baselined |
+| Feat-05 | 无障碍与DFX适配 | [Feat-05-accessibility-dfx-spec.md](02-cross-platform/01-platform-adapter/01-oh-platform-adapter/Feat-05-accessibility-dfx-spec.md) | Baselined |
 
 ### 02-01-02 Android平台适配
 

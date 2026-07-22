@@ -103,7 +103,7 @@ functions:
     id: '01'
     title: OH平台适配
   path: 02-cross-platform/01-platform-adapter/01-oh-platform-adapter/
-  design: null
+  design: 02-cross-platform/01-platform-adapter/01-oh-platform-adapter/design.md
   status: active
 - id: 02-01-02
   l1:
