@@ -34,16 +34,16 @@
 | 02 跨平台适配层 | 02 渲染后端适配 | 01 渲染后端适配 | `02-02-01` | `02-cross-platform/02-render-backend-adapter/01-render-backend-adapter/` | *待补充* | 0 |
 | 03 引擎框架层 | 01 渲染管线 | 01 渲染管线 | `03-01-01` | `03-engine-framework/01-render-pipeline/01-basic-render-pipeline/` | [design.md](03-engine-framework/01-render-pipeline/01-basic-render-pipeline/design.md) | 1 |
 | 03 引擎框架层 | 01 渲染管线 | 02 多级渲染管线 | `03-01-02` | `03-engine-framework/01-render-pipeline/02-multi-level-render-pipeline/` | [design.md](03-engine-framework/01-render-pipeline/02-multi-level-render-pipeline/design.md) | 1 |
-| 03 引擎框架层 | 02 动效能力 | 01 动效框架 | `03-02-01` | `03-engine-framework/02-animation-capability/01-animation-framework/` | *待补充* | 0 |
-| 03 引擎框架层 | 02 动效能力 | 02 属性动画 | `03-02-02` | `03-engine-framework/02-animation-capability/02-property-animation/` | *待补充* | 0 |
-| 03 引擎框架层 | 02 动效能力 | 03 显式动画 | `03-02-03` | `03-engine-framework/02-animation-capability/03-explicit-animation/` | *待补充* | 0 |
-| 03 引擎框架层 | 02 动效能力 | 04 关键帧动画 | `03-02-04` | `03-engine-framework/02-animation-capability/04-keyframe-animation/` | *待补充* | 0 |
-| 03 引擎框架层 | 02 动效能力 | 05 转场动画 | `03-02-05` | `03-engine-framework/02-animation-capability/05-transition-animation/` | *待补充* | 0 |
-| 03 引擎框架层 | 02 动效能力 | 06 共享元素动画 | `03-02-06` | `03-engine-framework/02-animation-capability/06-shared-transition/` | *待补充* | 0 |
-| 03 引擎框架层 | 02 动效能力 | 07 组件共享元素动画 | `03-02-07` | `03-engine-framework/02-animation-capability/07-geometry-transition/` | *待补充* | 0 |
-| 03 引擎框架层 | 02 动效能力 | 08 路径动画 | `03-02-08` | `03-engine-framework/02-animation-capability/08-motion-path/` | *待补充* | 0 |
-| 03 引擎框架层 | 02 动效能力 | 09 物理动画 | `03-02-09` | `03-engine-framework/02-animation-capability/09-physics-animation/` | *待补充* | 0 |
-| 03 引擎框架层 | 02 动效能力 | 10 动画接口 | `03-02-10` | `03-engine-framework/02-animation-capability/10-animation-interface/` | *待补充* | 0 |
+| 03 引擎框架层 | 02 动效能力 | 01 动效框架 | `03-02-01` | `03-engine-framework/02-animation-capability/01-animation-framework/` | [design.md](03-engine-framework/02-animation-capability/01-animation-framework/design.md) | 1 |
+| 03 引擎框架层 | 02 动效能力 | 02 属性动画 | `03-02-02` | `03-engine-framework/02-animation-capability/02-property-animation/` | [design.md](03-engine-framework/02-animation-capability/02-property-animation/design.md) | 1 |
+| 03 引擎框架层 | 02 动效能力 | 03 显式动画 | `03-02-03` | `03-engine-framework/02-animation-capability/03-explicit-animation/` | [design.md](03-engine-framework/02-animation-capability/03-explicit-animation/design.md) | 1 |
+| 03 引擎框架层 | 02 动效能力 | 04 关键帧动画 | `03-02-04` | `03-engine-framework/02-animation-capability/04-keyframe-animation/` | [design.md](03-engine-framework/02-animation-capability/04-keyframe-animation/design.md) | 1 |
+| 03 引擎框架层 | 02 动效能力 | 05 转场动画 | `03-02-05` | `03-engine-framework/02-animation-capability/05-transition-animation/` | [design.md](03-engine-framework/02-animation-capability/05-transition-animation/design.md) | 1 |
+| 03 引擎框架层 | 02 动效能力 | 06 共享元素动画 | `03-02-06` | `03-engine-framework/02-animation-capability/06-shared-transition/` | [design.md](03-engine-framework/02-animation-capability/06-shared-transition/design.md) | 1 |
+| 03 引擎框架层 | 02 动效能力 | 07 组件共享元素动画 | `03-02-07` | `03-engine-framework/02-animation-capability/07-geometry-transition/` | [design.md](03-engine-framework/02-animation-capability/07-geometry-transition/design.md) | 1 |
+| 03 引擎框架层 | 02 动效能力 | 08 路径动画 | `03-02-08` | `03-engine-framework/02-animation-capability/08-motion-path/` | [design.md](03-engine-framework/02-animation-capability/08-motion-path/design.md) | 1 |
+| 03 引擎框架层 | 02 动效能力 | 09 物理动画 | `03-02-09` | `03-engine-framework/02-animation-capability/09-physics-animation/` | [design.md](03-engine-framework/02-animation-capability/09-physics-animation/design.md) | 1 |
+| 03 引擎框架层 | 02 动效能力 | 10 动画接口 | `03-02-10` | `03-engine-framework/02-animation-capability/10-animation-interface/` | [design.md](03-engine-framework/02-animation-capability/10-animation-interface/design.md) | 1 |
 | 03 引擎框架层 | 03 资源主题 | 01 资源访问 | `03-03-01` | `03-engine-framework/03-resource-theme/01-resource-access/` | *待补充* | 0 |
 | 03 引擎框架层 | 03 资源主题 | 02 主题分层访问 | `03-03-02` | `03-engine-framework/03-resource-theme/02-theme-layered-access/` | *待补充* | 0 |
 | 03 引擎框架层 | 03 资源主题 | 03 Theme框架 | `03-03-03` | `03-engine-framework/03-resource-theme/03-theme-framework/` | *待补充* | 0 |
@@ -374,51 +374,61 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 动效框架全量规格 | [Feat-01-animation-framework-spec.md](03-engine-framework/02-animation-capability/01-animation-framework/Feat-01-animation-framework-spec.md) | Baselined |
 
 ### 03-02-02 属性动画
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 属性动画全量规格 | [Feat-01-property-animation-spec.md](03-engine-framework/02-animation-capability/02-property-animation/Feat-01-property-animation-spec.md) | Baselined |
 
 ### 03-02-03 显式动画
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 显式动画全量规格 | [Feat-01-explicit-animation-spec.md](03-engine-framework/02-animation-capability/03-explicit-animation/Feat-01-explicit-animation-spec.md) | Baselined |
 
 ### 03-02-04 关键帧动画
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 关键帧动画全量规格 | [Feat-01-keyframe-animation-spec.md](03-engine-framework/02-animation-capability/04-keyframe-animation/Feat-01-keyframe-animation-spec.md) | Baselined |
 
 ### 03-02-05 转场动画
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 转场动画全量规格 | [Feat-01-transition-animation-spec.md](03-engine-framework/02-animation-capability/05-transition-animation/Feat-01-transition-animation-spec.md) | Baselined |
 
 ### 03-02-06 共享元素动画
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 共享元素动画全量规格 | [Feat-01-shared-transition-spec.md](03-engine-framework/02-animation-capability/06-shared-transition/Feat-01-shared-transition-spec.md) | Baselined |
 
 ### 03-02-07 组件共享元素动画
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 组件共享元素动画全量规格 | [Feat-01-geometry-transition-spec.md](03-engine-framework/02-animation-capability/07-geometry-transition/Feat-01-geometry-transition-spec.md) | Baselined |
 
 ### 03-02-08 路径动画
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 路径动画全量规格 | [Feat-01-motion-path-spec.md](03-engine-framework/02-animation-capability/08-motion-path/Feat-01-motion-path-spec.md) | Baselined |
 
 ### 03-02-09 物理动画
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 物理动画全量规格 | [Feat-01-physics-animation-spec.md](03-engine-framework/02-animation-capability/09-physics-animation/Feat-01-physics-animation-spec.md) | Baselined |
 
 ### 03-02-10 动画接口
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 动画接口全量规格 | [Feat-01-animation-interface-spec.md](03-engine-framework/02-animation-capability/10-animation-interface/Feat-01-animation-interface-spec.md) | Baselined |
 
 ### 03-03-01 资源访问
 
