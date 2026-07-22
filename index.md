@@ -44,14 +44,14 @@
 | 03 引擎框架层 | 02 动效能力 | 08 路径动画 | `03-02-08` | `03-engine-framework/02-animation-capability/08-motion-path/` | [design.md](03-engine-framework/02-animation-capability/08-motion-path/design.md) | 1 |
 | 03 引擎框架层 | 02 动效能力 | 09 物理动画 | `03-02-09` | `03-engine-framework/02-animation-capability/09-physics-animation/` | [design.md](03-engine-framework/02-animation-capability/09-physics-animation/design.md) | 1 |
 | 03 引擎框架层 | 02 动效能力 | 10 动画接口 | `03-02-10` | `03-engine-framework/02-animation-capability/10-animation-interface/` | [design.md](03-engine-framework/02-animation-capability/10-animation-interface/design.md) | 1 |
-| 03 引擎框架层 | 03 资源主题 | 01 资源访问 | `03-03-01` | `03-engine-framework/03-resource-theme/01-resource-access/` | *待补充* | 0 |
-| 03 引擎框架层 | 03 资源主题 | 02 主题分层访问 | `03-03-02` | `03-engine-framework/03-resource-theme/02-theme-layered-access/` | *待补充* | 0 |
-| 03 引擎框架层 | 03 资源主题 | 03 Theme框架 | `03-03-03` | `03-engine-framework/03-resource-theme/03-theme-framework/` | *待补充* | 0 |
-| 03 引擎框架层 | 03 资源主题 | 04 资源动态切换 | `03-03-04` | `03-engine-framework/03-resource-theme/04-resource-dynamic-switching/` | *待补充* | 0 |
+| 03 引擎框架层 | 03 资源主题 | 01 资源访问 | `03-03-01` | `03-engine-framework/03-resource-theme/01-resource-access/` | [design.md](03-engine-framework/03-resource-theme/01-resource-access/design.md) | 3 |
+| 03 引擎框架层 | 03 资源主题 | 02 主题分层访问 | `03-03-02` | `03-engine-framework/03-resource-theme/02-theme-layered-access/` | [design.md](03-engine-framework/03-resource-theme/02-theme-layered-access/design.md) | 1 |
+| 03 引擎框架层 | 03 资源主题 | 03 Theme框架 | `03-03-03` | `03-engine-framework/03-resource-theme/03-theme-framework/` | [design.md](03-engine-framework/03-resource-theme/03-theme-framework/design.md) | 2 |
+| 03 引擎框架层 | 03 资源主题 | 04 资源动态切换 | `03-03-04` | `03-engine-framework/03-resource-theme/04-resource-dynamic-switching/` | [design.md](03-engine-framework/03-resource-theme/04-resource-dynamic-switching/design.md) | 1 |
 | 03 引擎框架层 | 04 事件框架 | 01 事件基础框架 | `03-04-01` | `03-engine-framework/04-event-framework/01-event-base-framework/` | *待补充* | 0 |
 | 03 引擎框架层 | 04 事件框架 | 02 拖拽框架 | `03-04-02` | `03-engine-framework/04-event-framework/02-drag-framework/` | *待补充* | 0 |
 | 03 引擎框架层 | 05 窗口机制 | 01 窗口机制 | `03-05-01` | `03-engine-framework/05-window-mechanism/01-window-mechanism/` | [design.md](03-engine-framework/05-window-mechanism/01-window-mechanism/design.md) | 4 |
-| 03 引擎框架层 | 05 窗口机制 | 02 子窗机制 | `03-05-02` | `03-engine-framework/05-window-mechanism/02-subwindow-mechanism/` | *待补充* | 0 |
+| 03 引擎框架层 | 05 窗口机制 | 02 子窗机制 | `03-05-02` | `03-engine-framework/05-window-mechanism/02-subwindow-mechanism/` | [design.md](03-engine-framework/05-window-mechanism/02-subwindow-mechanism/design.md) | 3 |
 | 03 引擎框架层 | 06 多实例管理 | 01 多实例管理 | `03-06-01` | `03-engine-framework/06-multi-instance-management/01-multi-instance-management/` | [design.md](03-engine-framework/06-multi-instance-management/01-multi-instance-management/design.md) | 1 |
 | 03 引擎框架层 | 07 无障碍机制 | 01 无障碍能力 | `03-07-01` | `03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/` | *待补充* | 0 |
 | 03 引擎框架层 | 07 无障碍机制 | 02 Inspector | `03-07-02` | `03-engine-framework/07-accessibility-mechanism/02-inspector/` | *待补充* | 0 |
@@ -438,21 +438,28 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 资源访问内部机制 | [Feat-01-resource-access-spec.md](03-engine-framework/03-resource-theme/01-resource-access/Feat-01-resource-access-spec.md) | Baselined |
+| Feat-02 | 资源访问公开能力（$r/$rawfile 解析层） | [Feat-02-resource-public-access-spec.md](03-engine-framework/03-resource-theme/01-resource-access/Feat-02-resource-public-access-spec.md) | Draft |
+| Feat-03 | 资源分层与 Override 适配器 | [Feat-03-resource-override-layering-spec.md](03-engine-framework/03-resource-theme/01-resource-access/Feat-03-resource-override-layering-spec.md) | Draft |
 
 ### 03-03-02 主题分层访问
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 主题分层访问全量规格 | [Feat-01-theme-layered-access-spec.md](03-engine-framework/03-resource-theme/02-theme-layered-access/Feat-01-theme-layered-access-spec.md) | Baselined |
 
 ### 03-03-03 Theme框架
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Theme框架全量规格 | [Feat-01-theme-framework-spec.md](03-engine-framework/03-resource-theme/03-theme-framework/Feat-01-theme-framework-spec.md) | Baselined |
+| Feat-02 | @ohos.arkui.theme 公开主题 API | [Feat-02-arkui-theme-public-api-spec.md](03-engine-framework/03-resource-theme/03-theme-framework/Feat-02-arkui-theme-public-api-spec.md) | Draft |
 
 ### 03-03-04 资源动态切换
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 资源动态切换全量规格 | [Feat-01-resource-dynamic-switching-spec.md](03-engine-framework/03-resource-theme/04-resource-dynamic-switching/Feat-01-resource-dynamic-switching-spec.md) | Baselined |
 
 ### 03-04-01 事件基础框架
 
@@ -477,6 +484,9 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 子窗抽象与 Manager 核心 | [Feat-01-subwindow-mechanism-spec.md](03-engine-framework/05-window-mechanism/02-subwindow-mechanism/Feat-01-subwindow-mechanism-spec.md) | Baselined |
+| Feat-02 | 子窗类型路由与弹窗状态机 | [Feat-02-subwindow-routing-state-spec.md](03-engine-framework/05-window-mechanism/02-subwindow-mechanism/Feat-02-subwindow-routing-state-spec.md) | Draft |
+| Feat-03 | 子窗布局交互与多端适配 | [Feat-03-subwindow-layout-adaptation-spec.md](03-engine-framework/05-window-mechanism/02-subwindow-mechanism/Feat-03-subwindow-layout-adaptation-spec.md) | Draft |
 
 ### 03-06-01 多实例管理
 

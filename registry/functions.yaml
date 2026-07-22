@@ -324,7 +324,7 @@ functions:
     id: '01'
     title: 资源访问
   path: 03-engine-framework/03-resource-theme/01-resource-access/
-  design: null
+  design: 03-engine-framework/03-resource-theme/01-resource-access/design.md
   status: active
 - id: 03-03-02
   l1:
@@ -337,7 +337,7 @@ functions:
     id: '02'
     title: 主题分层访问
   path: 03-engine-framework/03-resource-theme/02-theme-layered-access/
-  design: null
+  design: 03-engine-framework/03-resource-theme/02-theme-layered-access/design.md
   status: active
 - id: 03-03-03
   l1:
@@ -350,7 +350,7 @@ functions:
     id: '03'
     title: Theme框架
   path: 03-engine-framework/03-resource-theme/03-theme-framework/
-  design: null
+  design: 03-engine-framework/03-resource-theme/03-theme-framework/design.md
   status: active
 - id: 03-03-04
   l1:
@@ -363,7 +363,7 @@ functions:
     id: '04'
     title: 资源动态切换
   path: 03-engine-framework/03-resource-theme/04-resource-dynamic-switching/
-  design: null
+  design: 03-engine-framework/03-resource-theme/04-resource-dynamic-switching/design.md
   status: active
 - id: 03-04-01
   l1:
@@ -415,7 +415,7 @@ functions:
     id: '02'
     title: 子窗机制
   path: 03-engine-framework/05-window-mechanism/02-subwindow-mechanism/
-  design: null
+  design: 03-engine-framework/05-window-mechanism/02-subwindow-mechanism/design.md
   status: active
 - id: 03-06-01
   l1:
