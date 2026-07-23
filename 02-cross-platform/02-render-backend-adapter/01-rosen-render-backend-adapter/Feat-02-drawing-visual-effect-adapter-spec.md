@@ -20,7 +20,7 @@
 ## 输入文档
 
 - 源码路径：`frameworks/core/components_ng/render/adapter/` + `frameworks/core/components_ng/image/`
-- 设计文档：`02-cross-platform/02-render-backend-adapter/01-render-backend-adapter/design.md`
+- 设计文档：`02-cross-platform/02-render-backend-adapter/01-rosen-render-backend-adapter/design.md`
 
 ## 用户故事
 

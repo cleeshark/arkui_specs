@@ -153,9 +153,9 @@ functions:
     title: 渲染后端适配
   l3:
     id: '01'
-    title: 渲染后端适配
-  path: 02-cross-platform/02-render-backend-adapter/01-render-backend-adapter/
-  design: 02-cross-platform/02-render-backend-adapter/01-render-backend-adapter/design.md
+    title: Rosen渲染后端对接
+  path: 02-cross-platform/02-render-backend-adapter/01-rosen-render-backend-adapter/
+  design: 02-cross-platform/02-render-backend-adapter/01-rosen-render-backend-adapter/design.md
   status: active
 - id: 03-01-01
   l1:

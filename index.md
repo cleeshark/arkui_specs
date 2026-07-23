@@ -31,7 +31,7 @@
 | 02 跨平台适配层 | 01 跨平台适配层 | 02 Android平台适配 | `02-01-02` | `02-cross-platform/01-platform-adapter/02-android-platform-adapter/` | *待补充* | 0 |
 | 02 跨平台适配层 | 01 跨平台适配层 | 03 iOS平台适配 | `02-01-03` | `02-cross-platform/01-platform-adapter/03-ios-platform-adapter/` | *待补充* | 0 |
 | 02 跨平台适配层 | 01 跨平台适配层 | 04 预览器平台适配 | `02-01-04` | `02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/` | *待补充* | 0 |
-| 02 跨平台适配层 | 02 渲染后端适配 | 01 渲染后端适配 | `02-02-01` | `02-cross-platform/02-render-backend-adapter/01-render-backend-adapter/` | [design.md](02-cross-platform/02-render-backend-adapter/01-render-backend-adapter/design.md) | 3 |
+| 02 跨平台适配层 | 02 渲染后端适配 | 01 Rosen渲染后端对接 | `02-02-01` | `02-cross-platform/02-render-backend-adapter/01-rosen-render-backend-adapter/` | [design.md](02-cross-platform/02-render-backend-adapter/01-rosen-render-backend-adapter/design.md) | 3 |
 | 03 引擎框架层 | 01 渲染管线 | 01 渲染管线 | `03-01-01` | `03-engine-framework/01-render-pipeline/01-basic-render-pipeline/` | [design.md](03-engine-framework/01-render-pipeline/01-basic-render-pipeline/design.md) | 1 |
 | 03 引擎框架层 | 01 渲染管线 | 02 多级渲染管线 | `03-01-02` | `03-engine-framework/01-render-pipeline/02-multi-level-render-pipeline/` | [design.md](03-engine-framework/01-render-pipeline/02-multi-level-render-pipeline/design.md) | 1 |
 | 03 引擎框架层 | 02 动效能力 | 01 动效框架 | `03-02-01` | `03-engine-framework/02-animation-capability/01-animation-framework/` | [design.md](03-engine-framework/02-animation-capability/01-animation-framework/design.md) | 1 |
@@ -354,13 +354,13 @@
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
 
-### 02-02-01 渲染后端适配
+### 02-02-01 Rosen渲染后端对接
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | 渲染后端核心架构 | [Feat-01-render-backend-core-architecture-spec.md](02-cross-platform/02-render-backend-adapter/01-render-backend-adapter/Feat-01-render-backend-core-architecture-spec.md) | Baselined |
-| Feat-02 | 绘制与视效适配 | [Feat-02-drawing-visual-effect-adapter-spec.md](02-cross-platform/02-render-backend-adapter/01-render-backend-adapter/Feat-02-drawing-visual-effect-adapter-spec.md) | Baselined |
-| Feat-03 | 动画桥接适配 | [Feat-03-animation-bridge-adapter-spec.md](02-cross-platform/02-render-backend-adapter/01-render-backend-adapter/Feat-03-animation-bridge-adapter-spec.md) | Baselined |
+| Feat-01 | 渲染后端核心架构 | [Feat-01-render-backend-core-architecture-spec.md](02-cross-platform/02-render-backend-adapter/01-rosen-render-backend-adapter/Feat-01-render-backend-core-architecture-spec.md) | Baselined |
+| Feat-02 | 绘制与视效适配 | [Feat-02-drawing-visual-effect-adapter-spec.md](02-cross-platform/02-render-backend-adapter/01-rosen-render-backend-adapter/Feat-02-drawing-visual-effect-adapter-spec.md) | Baselined |
+| Feat-03 | 动画桥接适配 | [Feat-03-animation-bridge-adapter-spec.md](02-cross-platform/02-render-backend-adapter/01-rosen-render-backend-adapter/Feat-03-animation-bridge-adapter-spec.md) | Baselined |
 
 ### 03-01-01 渲染管线
 

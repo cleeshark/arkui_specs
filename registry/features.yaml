@@ -12,17 +12,17 @@ features:
 - func_id: 02-02-01
   id: Feat-01
   title: 渲染后端核心架构
-  spec: 02-cross-platform/02-render-backend-adapter/01-render-backend-adapter/Feat-01-render-backend-core-architecture-spec.md
+  spec: 02-cross-platform/02-render-backend-adapter/01-rosen-render-backend-adapter/Feat-01-render-backend-core-architecture-spec.md
   status: Baselined
 - func_id: 02-02-01
   id: Feat-02
   title: 绘制与视效适配
-  spec: 02-cross-platform/02-render-backend-adapter/01-render-backend-adapter/Feat-02-drawing-visual-effect-adapter-spec.md
+  spec: 02-cross-platform/02-render-backend-adapter/01-rosen-render-backend-adapter/Feat-02-drawing-visual-effect-adapter-spec.md
   status: Baselined
 - func_id: 02-02-01
   id: Feat-03
   title: 动画桥接适配
-  spec: 02-cross-platform/02-render-backend-adapter/01-render-backend-adapter/Feat-03-animation-bridge-adapter-spec.md
+  spec: 02-cross-platform/02-render-backend-adapter/01-rosen-render-backend-adapter/Feat-03-animation-bridge-adapter-spec.md
   status: Baselined
 - func_id: 03-01-01
   id: Feat-01

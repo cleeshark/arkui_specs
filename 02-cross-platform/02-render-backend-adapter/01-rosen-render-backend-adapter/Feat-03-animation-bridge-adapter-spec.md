@@ -20,7 +20,7 @@
 ## 输入文档
 
 - 源码路径：`frameworks/core/animation/` + `frameworks/core/animation/rosen_animation_utils.cpp` + `frameworks/core/animation/fake_animation_utils.cpp`
-- 设计文档：`02-cross-platform/02-render-backend-adapter/01-render-backend-adapter/design.md`
+- 设计文档：`02-cross-platform/02-render-backend-adapter/01-rosen-render-backend-adapter/design.md`
 
 ## 用户故事
 
