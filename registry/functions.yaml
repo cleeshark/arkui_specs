@@ -1195,7 +1195,7 @@ functions:
     id: '01'
     title: UIContext接口
   path: 04-common-capability/12-ui-context/01-ui-context-interface/
-  design: null
+  design: 04-common-capability/12-ui-context/01-ui-context-interface/design.md
   status: active
 - id: 04-12-02
   l1:
@@ -1208,7 +1208,7 @@ functions:
     id: '02'
     title: Ability上下文
   path: 04-common-capability/12-ui-context/02-ability-context/
-  design: null
+  design: 04-common-capability/12-ui-context/02-ability-context/design.md
   status: active
 - id: 04-12-03
   l1:
@@ -1221,7 +1221,7 @@ functions:
     id: '03'
     title: Frame回调接口
   path: 04-common-capability/12-ui-context/03-frame-callback/
-  design: null
+  design: 04-common-capability/12-ui-context/03-frame-callback/design.md
   status: active
 - id: 04-13-01
   l1:

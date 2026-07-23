@@ -774,3 +774,34 @@ features:
   title: 动画接口全量规格
   spec: 03-engine-framework/02-animation-capability/10-animation-interface/Feat-01-animation-interface-spec.md
   status: Baselined
+- func_id: 04-12-01
+  id: Feat-01
+  title: UIContext入口架构与实例路由
+  spec: 04-common-capability/12-ui-context/01-ui-context-interface/Feat-01-uicontext-entry-architecture-instance-routing-spec.md
+  status: Baselined
+- func_id: 04-12-01
+  id: Feat-02
+  title: UIContext实例解析与作用域调度
+  spec: 04-common-capability/12-ui-context/01-ui-context-interface/Feat-02-uicontext-instance-resolution-scoped-task-spec.md
+  status: Baselined
+- func_id: 04-12-01
+  id: Feat-03
+  title: 子对象工厂与直接方法
+  spec: 04-common-capability/12-ui-context/01-ui-context-interface/Feat-03-uicontext-sub-factory-direct-methods-spec.md
+  status: Baselined
+- func_id: 04-12-01
+  id: Feat-04
+  title: C-API UIContextHandle接口
+  spec: 04-common-capability/12-ui-context/01-ui-context-interface/Feat-04-capi-uicontext-handle-spec.md
+  status: Baselined
+
+- func_id: 04-12-02
+  id: Feat-01
+  title: Ability上下文与窗口信息
+  spec: 04-common-capability/12-ui-context/02-ability-context/Feat-01-ability-context-window-info-spec.md
+  status: Baselined
+- func_id: 04-12-03
+  id: Feat-01
+  title: Frame回调与帧调度
+  spec: 04-common-capability/12-ui-context/03-frame-callback/Feat-01-frame-callback-scheduling-spec.md
+  status: Baselined
