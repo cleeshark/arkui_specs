@@ -466,8 +466,8 @@ functions:
   l3:
     id: '01'
     title: 日志
-  path: 03-engine-framework/08-dfx/01-logging/
-  design: null
+  path: 03-engine-framework/08-dfx-foundation/01-logging/
+  design: 03-engine-framework/08-dfx-foundation/01-logging/design.md
   status: active
 - id: 03-08-02
   l1:
@@ -479,8 +479,8 @@ functions:
   l3:
     id: '02'
     title: 内存管理
-  path: 03-engine-framework/08-dfx/02-memory-management/
-  design: null
+  path: 03-engine-framework/08-dfx-foundation/02-memory-management/
+  design: 03-engine-framework/08-dfx-foundation/02-memory-management/design.md
   status: active
 - id: 03-08-03
   l1:
@@ -492,8 +492,8 @@ functions:
   l3:
     id: '03'
     title: Trace打点
-  path: 03-engine-framework/08-dfx/03-trace/
-  design: null
+  path: 03-engine-framework/08-dfx-foundation/03-trace/
+  design: 03-engine-framework/08-dfx-foundation/03-trace/design.md
   status: active
 - id: 03-08-04
   l1:
@@ -505,8 +505,8 @@ functions:
   l3:
     id: '04'
     title: Dump机制
-  path: 03-engine-framework/08-dfx/04-dump-mechanism/
-  design: null
+  path: 03-engine-framework/08-dfx-foundation/04-dump-mechanism/
+  design: 03-engine-framework/08-dfx-foundation/04-dump-mechanism/design.md
   status: active
 - id: 03-08-05
   l1:
@@ -518,7 +518,7 @@ functions:
   l3:
     id: '05'
     title: Benchmark
-  path: 03-engine-framework/08-dfx/05-benchmark/
+  path: 03-engine-framework/08-dfx-foundation/05-benchmark/
   design: null
   status: active
 - id: 03-08-06
@@ -531,8 +531,8 @@ functions:
   l3:
     id: '06'
     title: 布局边界显示
-  path: 03-engine-framework/08-dfx/06-layout-boundary-display/
-  design: null
+  path: 03-engine-framework/08-dfx-foundation/06-layout-boundary-display/
+  design: 03-engine-framework/08-dfx-foundation/06-layout-boundary-display/design.md
   status: active
 - id: 04-01-01
   l1:
