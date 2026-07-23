@@ -2664,7 +2664,7 @@ functions:
     id: '01'
     title: XComponent
   path: 05-ui-components/13-platform-components/01-xcomponent/
-  design: null
+  design: 05-ui-components/13-platform-components/01-xcomponent/design.md
   status: active
 - id: 05-13-02
   l1:

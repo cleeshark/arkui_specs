@@ -224,7 +224,7 @@
 | 05 组件层 | 12 显示嵌入组件 | 05 IsolatedComponent | `05-12-05` | `05-ui-components/12-embedded-display-components/05-isolated-component/` | *待补充* | 0 |
 | 05 组件层 | 12 显示嵌入组件 | 06 SecurityUIExtensionComponent | `05-12-06` | `05-ui-components/12-embedded-display-components/06-security-ui-extension-component/` | *待补充* | 0 |
 | 05 组件层 | 12 显示嵌入组件 | 07 DynamicComponent | `05-12-07` | `05-ui-components/12-embedded-display-components/07-dynamic-component/` | *待补充* | 0 |
-| 05 组件层 | 13 平台类组件 | 01 XComponent | `05-13-01` | `05-ui-components/13-platform-components/01-xcomponent/` | *待补充* | 0 |
+| 05 组件层 | 13 平台类组件 | 01 XComponent | `05-13-01` | `05-ui-components/13-platform-components/01-xcomponent/` | [design.md](05-ui-components/13-platform-components/01-xcomponent/design.md) | 8 |
 | 05 组件层 | 13 平台类组件 | 02 Video | `05-13-02` | `05-ui-components/13-platform-components/02-video/` | [design.md](05-ui-components/13-platform-components/02-video/design.md) | 3 |
 | 05 组件层 | 14 绘制类组件 | 01 Shape相关 | `05-14-01` | `05-ui-components/14-drawing-components/01-shape/` | *待补充* | 0 |
 | 05 组件层 | 14 绘制类组件 | 02 Canvas | `05-14-02` | `05-ui-components/14-drawing-components/02-canvas/` | *待补充* | 0 |
@@ -1480,6 +1480,14 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 创建、类型与表面生命周期（核心） | [Feat-01-creation-type-surface-lifecycle-spec.md](05-ui-components/13-platform-components/01-xcomponent/Feat-01-creation-type-surface-lifecycle-spec.md) | Baselined |
+| Feat-02 | XComponentController 表面与画布控制 | [Feat-02-controller-surface-canvas-spec.md](05-ui-components/13-platform-components/01-xcomponent/Feat-02-controller-surface-canvas-spec.md) | Baselined |
+| Feat-03 | 经典 NDK 输入事件（touch/mouse/key/focus/blur/hover） | [Feat-03-ndk-input-events-spec.md](05-ui-components/13-platform-components/01-xcomponent/Feat-03-ndk-input-events-spec.md) | Baselined |
+| Feat-04 | SurfaceHolder/SurfaceCallback V2 表面模型 | [Feat-04-surface-holder-v2-spec.md](05-ui-components/13-platform-components/01-xcomponent/Feat-04-surface-holder-v2-spec.md) | Baselined |
+| Feat-05 | 帧率与显示同步（DisplaySync） | [Feat-05-frame-rate-display-sync-spec.md](05-ui-components/13-platform-components/01-xcomponent/Feat-05-frame-rate-display-sync-spec.md) | Baselined |
+| Feat-06 | HDR 亮度与背景色 | [Feat-06-hdr-brightness-background-spec.md](05-ui-components/13-platform-components/01-xcomponent/Feat-06-hdr-brightness-background-spec.md) | Baselined |
+| Feat-07 | AI 图像分析（analyzer） | [Feat-07-ai-image-analyzer-spec.md](05-ui-components/13-platform-components/01-xcomponent/Feat-07-ai-image-analyzer-spec.md) | Baselined |
+| Feat-08 | 无障碍 provider | [Feat-08-accessibility-provider-spec.md](05-ui-components/13-platform-components/01-xcomponent/Feat-08-accessibility-provider-spec.md) | Baselined |
 
 ### 05-13-02 Video
 
