@@ -14,7 +14,7 @@
 | 04 | `04-common-capability` | 通用能力层 | 通用属性、通用事件、自定义扩展、自定义节点、路由、焦点、输入交互等通用能力 |
 | 05 | `05-ui-components` | 组件层 | 布局、导航、滚动容器、表单、选择、弹窗、文本、图片、绘制等组件 |
 | 06 | `06-common-interface` | 通用接口层 | 前端桥接、Inner 接口、其它范式接入 |
-| 07 | `07-frontend` | 前端层 | ArkTS 高级组件、状态管理、自定义组件、生成式 UI |
+| 07 | `07-frontend` | 前端层 | ArkTS 高级组件、状态管理、自定义组件、渲染控制、响应式环境变量、生成式 UI |
 | 08 | `08-ndk` | NDK | Node C-API、XComponent C-API 等 NDK 接口 |
 | 09 | `09-developer-tools` | 开发者工具 | 预览器、工具链、开发者文档、Sample、ComponentTest |
 | 10 | `10-product-customization` | 产品化定制 | 穿戴等产品化定制能力 |
@@ -268,21 +268,35 @@
 | 07 前端层 | 01 ArkTS高级组件 | 24 ToolBar | `07-01-24` | `07-frontend/01-arkts-advanced-components/24-tool-bar/` | *待补充* | 0 |
 | 07 前端层 | 01 ArkTS高级组件 | 25 TreeView | `07-01-25` | `07-frontend/01-arkts-advanced-components/25-tree-view/` | *待补充* | 0 |
 | 07 前端层 | 01 ArkTS高级组件 | 26 FoldSplitContainer | `07-01-26` | `07-frontend/01-arkts-advanced-components/26-fold-split-container/` | *待补充* | 0 |
-| 07 前端层 | 02 状态管理框架 | 01 组件状态管理 | `07-02-01` | `07-frontend/02-state-management/01-component-state-management/` | *待补充* | 0 |
-| 07 前端层 | 02 状态管理框架 | 02 应用状态管理 | `07-02-02` | `07-frontend/02-state-management/02-application-state-management/` | *待补充* | 0 |
-| 07 前端层 | 02 状态管理框架 | 03 数据同步 | `07-02-03` | `07-frontend/02-state-management/03-data-synchronization/` | *待补充* | 0 |
-| 07 前端层 | 02 状态管理框架 | 04 状态管理V2 | `07-02-04` | `07-frontend/02-state-management/04-state-management-v2/` | *待补充* | 0 |
-| 07 前端层 | 02 状态管理框架 | 05 ArkTS静态化 | `07-02-05` | `07-frontend/02-state-management/05-arkts-staticization/` | *待补充* | 0 |
-| 07 前端层 | 03 自定义组件 | 01 组件化 | `07-03-01` | `07-frontend/03-custom-components/01-componentization/` | *待补充* | 0 |
-| 07 前端层 | 03 自定义组件 | 02 页面生命周期 | `07-03-02` | `07-frontend/03-custom-components/02-page-lifecycle/` | *待补充* | 0 |
-| 07 前端层 | 03 自定义组件 | 03 组件扩展 | `07-03-03` | `07-frontend/03-custom-components/03-component-extension/` | *待补充* | 0 |
-| 07 前端层 | 03 自定义组件 | 04 渲染控制语法 | `07-03-04` | `07-frontend/03-custom-components/04-render-control-syntax/` | *待补充* | 0 |
-| 07 前端层 | 03 自定义组件 | 05 LazyForEach | `07-03-05` | `07-frontend/03-custom-components/05-lazy-foreach/` | *待补充* | 0 |
-| 07 前端层 | 03 自定义组件 | 06 自定义测量/布局 | `07-03-06` | `07-frontend/03-custom-components/06-custom-measure-layout/` | *待补充* | 0 |
-| 07 前端层 | 03 自定义组件 | 07 组件复用前端 | `07-03-07` | `07-frontend/03-custom-components/07-frontend-component-reuse/` | *待补充* | 0 |
+| 07 前端层 | 02 状态管理框架 | 01 状态管理V1组件内状态管理 | `07-02-01` | `07-frontend/02-state-management/01-v1-component-state/` | [design.md](07-frontend/02-state-management/01-v1-component-state/design.md) | 9 |
+| 07 前端层 | 02 状态管理框架 | 02 状态管理V1数据对象内状态管理 | `07-02-02` | `07-frontend/02-state-management/02-v1-data-object-state/` | [design.md](07-frontend/02-state-management/02-v1-data-object-state/design.md) | 1 |
+| 07 前端层 | 02 状态管理框架 | 03 状态管理V1应用内状态管理 | `07-02-03` | `07-frontend/02-state-management/03-v1-app-state/` | [design.md](07-frontend/02-state-management/03-v1-app-state/design.md) | 4 |
+| 07 前端层 | 02 状态管理框架 | 04 状态管理V2组件内状态管理 | `07-02-04` | `07-frontend/02-state-management/04-v2-component-state/` | [design.md](07-frontend/02-state-management/04-v2-component-state/design.md) | 5 |
+| 07 前端层 | 02 状态管理框架 | 05 状态管理V2数据对象内状态管理 | `07-02-05` | `07-frontend/02-state-management/05-v2-data-object-state/` | [design.md](07-frontend/02-state-management/05-v2-data-object-state/design.md) | 2 |
+| 07 前端层 | 02 状态管理框架 | 06 状态管理V2应用内状态管理 | `07-02-06` | `07-frontend/02-state-management/06-v2-app-state/` | [design.md](07-frontend/02-state-management/06-v2-app-state/design.md) | 2 |
+| 07 前端层 | 02 状态管理框架 | 07 状态管理辅助接口 | `07-02-07` | `07-frontend/02-state-management/07-state-management-utilities/` | [design.md](07-frontend/02-state-management/07-state-management-utilities/design.md) | 2 |
+| 07 前端层 | 02 状态管理框架 | 08 静态V1组件内状态管理 | `07-02-08` | `07-frontend/02-state-management/08-static-v1-component-state/` | [design.md](07-frontend/02-state-management/08-static-v1-component-state/design.md) | 6 |
+| 07 前端层 | 02 状态管理框架 | 09 静态V1数据对象内状态管理 | `07-02-09` | `07-frontend/02-state-management/09-static-v1-data-object-state/` | [design.md](07-frontend/02-state-management/09-static-v1-data-object-state/design.md) | 2 |
+| 07 前端层 | 02 状态管理框架 | 10 静态V1应用内状态管理 | `07-02-10` | `07-frontend/02-state-management/10-static-v1-app-state/` | [design.md](07-frontend/02-state-management/10-static-v1-app-state/design.md) | 5 |
+| 07 前端层 | 02 状态管理框架 | 11 静态V2组件内状态管理 | `07-02-11` | `07-frontend/02-state-management/11-static-v2-component-state/` | [design.md](07-frontend/02-state-management/11-static-v2-component-state/design.md) | 4 |
+| 07 前端层 | 02 状态管理框架 | 12 静态V2数据对象内状态管理 | `07-02-12` | `07-frontend/02-state-management/12-static-v2-data-object-state/` | [design.md](07-frontend/02-state-management/12-static-v2-data-object-state/design.md) | 1 |
+| 07 前端层 | 02 状态管理框架 | 13 静态V2应用内状态管理 | `07-02-13` | `07-frontend/02-state-management/13-static-v2-app-state/` | [design.md](07-frontend/02-state-management/13-static-v2-app-state/design.md) | 2 |
+| 07 前端层 | 02 状态管理框架 | 14 状态管理互操作 | `07-02-14` | `07-frontend/02-state-management/14-state-management-interop/` | [design.md](07-frontend/02-state-management/14-state-management-interop/design.md) | 5 |
+| 07 前端层 | 03 自定义组件 | 01 组件化 | `07-03-01` | `07-frontend/03-custom-components/01-componentization/` | [design.md](07-frontend/03-custom-components/01-componentization/design.md) | 1 |
+| 07 前端层 | 03 自定义组件 | 02 自定义组件生命周期 | `07-03-02` | `07-frontend/03-custom-components/02-component-lifecycle/` | [design.md](07-frontend/03-custom-components/02-component-lifecycle/design.md) | 1 |
+| 07 前端层 | 03 自定义组件 | 03 自定义组件复用 | `07-03-03` | `07-frontend/03-custom-components/03-component-reuse/` | [design.md](07-frontend/03-custom-components/03-component-reuse/design.md) | 1 |
+| 07 前端层 | 03 自定义组件 | 04 自定义组件冻结 | `07-03-04` | `07-frontend/03-custom-components/04-component-freeze/` | [design.md](07-frontend/03-custom-components/04-component-freeze/design.md) | 1 |
+| 07 前端层 | 03 自定义组件 | 05 自定义测量/布局 | `07-03-05` | `07-frontend/03-custom-components/05-custom-measure-layout/` | *待补充* | 0 |
+| 07 前端层 | 03 自定义组件 | 06 组件扩展 | `07-03-06` | `07-frontend/03-custom-components/06-component-extension/` | *待补充* | 0 |
+| 07 前端层 | 03 自定义组件 | 07 静态自定义组件状态相关 | `07-03-07` | `07-frontend/03-custom-components/07-static-custom-component-state/` | [design.md](07-frontend/03-custom-components/07-static-custom-component-state/design.md) | 0 |
 | 07 前端层 | 04 生成式UI | 01 A2UI标准协议 | `07-04-01` | `07-frontend/04-generative-ui/01-a2ui-standard-protocol/` | *待补充* | 0 |
 | 07 前端层 | 04 生成式UI | 02 A2UI扩展协议 | `07-04-02` | `07-frontend/04-generative-ui/02-a2ui-extension-protocol/` | *待补充* | 0 |
 | 07 前端层 | 04 生成式UI | 03 A2UI高级垂域组件 | `07-04-03` | `07-frontend/04-generative-ui/03-a2ui-advanced-domain-components/` | *待补充* | 0 |
+| 07 前端层 | 05 渲染控制 | 01 渲染控制语法 | `07-05-01` | `07-frontend/05-render-control/01-render-control-syntax/` | *待补充* | 0 |
+| 07 前端层 | 05 渲染控制 | 02 LazyForEach | `07-05-02` | `07-frontend/05-render-control/02-lazy-foreach/` | *待补充* | 0 |
+| 07 前端层 | 05 渲染控制 | 03 Repeat | `07-05-03` | `07-frontend/05-render-control/03-repeat/` | *待补充* | 0 |
+| 07 前端层 | 06 响应式环境变量 | 01 系统环境变量 | `07-06-01` | `07-frontend/06-reactive-env/01-system-env/` | *待补充* | 0 |
+| 07 前端层 | 06 响应式环境变量 | 02 自定义环境变量 | `07-06-02` | `07-frontend/06-reactive-env/02-custom-env/` | *待补充* | 0 |
 | 08 NDK | 01 Node C-API | 01 基础机制NativeModule | `08-01-01` | `08-ndk/01-node-c-api/01-native-module-base/` | *待补充* | 0 |
 | 08 NDK | 01 Node C-API | 02 组件API | `08-01-02` | `08-ndk/01-node-c-api/02-component-api/` | *待补充* | 0 |
 | 08 NDK | 01 Node C-API | 03 动效NativeAnimate | `08-01-03` | `08-ndk/01-node-c-api/03-native-animate/` | *待补充* | 0 |
@@ -1721,62 +1735,161 @@
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
 
-### 07-02-01 组件状态管理
+### 07-02-01 状态管理V1组件内状态管理
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | V1 依赖收集与变更通知核心机制 | [Feat-01-v1-dependency-collection-and-change-notification-spec.md](07-frontend/02-state-management/01-v1-component-state/Feat-01-v1-dependency-collection-and-change-notification-spec.md) | Baselined |
+| Feat-02 | @State 组件私有状态 | [Feat-02-state-decorator-spec.md](07-frontend/02-state-management/01-v1-component-state/Feat-02-state-decorator-spec.md) | Baselined |
+| Feat-03 | @Prop/@Link 父子单向/双向同步 | [Feat-03-prop-link-decorators-spec.md](07-frontend/02-state-management/01-v1-component-state/Feat-03-prop-link-decorators-spec.md) | Baselined |
+| Feat-04 | @Provide/@Consume 跨层级同步 | [Feat-04-provide-consume-decorators-spec.md](07-frontend/02-state-management/01-v1-component-state/Feat-04-provide-consume-decorators-spec.md) | Baselined |
+| Feat-05 | @ObjectLink 嵌套对象共享引用 | [Feat-05-objectlink-spec.md](07-frontend/02-state-management/01-v1-component-state/Feat-05-objectlink-spec.md) | Baselined |
+| Feat-06 | @Watch 变更回调与组件冻结 | [Feat-06-watch-and-component-freeze-spec.md](07-frontend/02-state-management/01-v1-component-state/Feat-06-watch-and-component-freeze-spec.md) | Baselined |
+| Feat-07 | SubscribableAbstract 自定义可观察类型 | [Feat-07-subscribable-abstract-spec.md](07-frontend/02-state-management/01-v1-component-state/Feat-07-subscribable-abstract-spec.md) | Baselined |
+| Feat-08 | 状态管理调试与渲染基础设施 | [Feat-08-debug-render-infra-spec.md](07-frontend/02-state-management/01-v1-component-state/Feat-08-debug-render-infra-spec.md) | Baselined |
+| Feat-09 | elmtId 全链路同步与 C++ 宿主集成 | [Feat-09-elmtid-sync-cpp-host-spec.md](07-frontend/02-state-management/01-v1-component-state/Feat-09-elmtid-sync-cpp-host-spec.md) | Baselined |
 
-### 07-02-02 应用状态管理
-
-| FeatID | 特性名称 | Spec 文件 | 状态 |
-|--------|----------|-----------|------|
-
-### 07-02-03 数据同步
-
-| FeatID | 特性名称 | Spec 文件 | 状态 |
-|--------|----------|-----------|------|
-
-### 07-02-04 状态管理V2
-
-| FeatID | 特性名称 | Spec 文件 | 状态 |
-|--------|----------|-----------|------|
-
-### 07-02-05 ArkTS静态化
+### 07-02-02 状态管理V1数据对象内状态管理
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | @Observed/@Track 数据对象观测与属性级追踪 | [Feat-01-observed-track-spec.md](07-frontend/02-state-management/02-v1-data-object-state/Feat-01-observed-track-spec.md) | Baselined |
+
+### 07-02-03 状态管理V1应用内状态管理
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | LocalStorage 页面级存储 | [Feat-01-localstorage-spec.md](07-frontend/02-state-management/03-v1-app-state/Feat-01-localstorage-spec.md) | Baselined |
+| Feat-02 | AppStorage 全局存储与存储装饰器 | [Feat-02-appstorage-spec.md](07-frontend/02-state-management/03-v1-app-state/Feat-02-appstorage-spec.md) | Baselined |
+| Feat-03 | PersistentStorage 磁盘持久化 | [Feat-03-persistent-storage-spec.md](07-frontend/02-state-management/03-v1-app-state/Feat-03-persistent-storage-spec.md) | Baselined |
+| Feat-04 | Environment 设备环境变量 | [Feat-04-environment-spec.md](07-frontend/02-state-management/03-v1-app-state/Feat-04-environment-spec.md) | Baselined |
+
+### 07-02-04 状态管理V2组件内状态管理
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | ObserveV2 核心机制 | [Feat-01-observev2-core-mechanism-spec.md](07-frontend/02-state-management/04-v2-component-state/Feat-01-observev2-core-mechanism-spec.md) | Baselined |
+| Feat-02 | @Local/@Param/@Once/@Event 组件状态输入输出 | [Feat-02-local-param-once-event-decorators-spec.md](07-frontend/02-state-management/04-v2-component-state/Feat-02-local-param-once-event-decorators-spec.md) | Baselined |
+| Feat-03 | @Provider/@Consumer V2 跨层同步 | [Feat-03-provider-consumer-decorators-spec.md](07-frontend/02-state-management/04-v2-component-state/Feat-03-provider-consumer-decorators-spec.md) | Baselined |
+| Feat-04 | V1↔V2 迁移与混用规则 | [Feat-04-v1-v2-migration-spec.md](07-frontend/02-state-management/04-v2-component-state/Feat-04-v1-v2-migration-spec.md) | Baselined |
+| Feat-05 | ConfigureStateMgmt 特性开关 | [Feat-05-configure-state-mgmt-spec.md](07-frontend/02-state-management/04-v2-component-state/Feat-05-configure-state-mgmt-spec.md) | Baselined |
+
+### 07-02-05 状态管理V2数据对象内状态管理
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | @ObservedV2/@Trace 可观察数据模型 | [Feat-01-observedv2-trace-decorators-spec.md](07-frontend/02-state-management/05-v2-data-object-state/Feat-01-observedv2-trace-decorators-spec.md) | Baselined |
+| Feat-02 | @Computed/@Monitor/@SyncMonitor 计算与监听 | [Feat-02-computed-monitor-syncmonitor-decorators-spec.md](07-frontend/02-state-management/05-v2-data-object-state/Feat-02-computed-monitor-syncmonitor-decorators-spec.md) | Baselined |
+
+### 07-02-06 状态管理V2应用内状态管理
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | AppStorageV2 内存全局存储 | [Feat-01-appstoragev2-spec.md](07-frontend/02-state-management/06-v2-app-state/Feat-01-appstoragev2-spec.md) | Baselined |
+| Feat-02 | PersistenceV2 磁盘持久化与 @Type/DataCoder | [Feat-02-persistencev2-spec.md](07-frontend/02-state-management/06-v2-app-state/Feat-02-persistencev2-spec.md) | Baselined |
+
+### 07-02-07 状态管理辅助接口
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | UIUtils 对象工具 | [Feat-01-uiutils-object-tools-spec.md](07-frontend/02-state-management/07-state-management-utilities/Feat-01-uiutils-object-tools-spec.md) | Baselined |
+| Feat-02 | UIUtils 监听与同步刷新 | [Feat-02-uiutils-monitor-flush-spec.md](07-frontend/02-state-management/07-state-management-utilities/Feat-02-uiutils-monitor-flush-spec.md) | Baselined |
+
+### 07-02-08 静态V1组件内状态管理
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | V1 核心机制与 IStateMgmtFactory 工厂 | *待补充* | 待补充 |
+| Feat-02 | @State/@Prop/@PropRef 组件内与父子单向同步 | *待补充* | 待补充 |
+| Feat-03 | @Link 父子双向同步 | *待补充* | 待补充 |
+| Feat-04 | @Provide/@Consume 跨层级同步 | *待补充* | 待补充 |
+| Feat-05 | @ObjectLink 嵌套对象共享引用 | *待补充* | 待补充 |
+| Feat-06 | @Watch 变更回调 | *待补充* | 待补充 |
+
+### 07-02-09 静态V1数据对象内状态管理
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | @Observed InterfaceProxyHandler 代理与内置容器观测 | *待补充* | 待补充 |
+| Feat-02 | @Track 属性级精确追踪 | *待补充* | 待补充 |
+
+### 07-02-10 静态V1应用内状态管理
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | LocalStorage 页面级存储 | *待补充* | 待补充 |
+| Feat-02 | AppStorage 全局存储 | *待补充* | 待补充 |
+| Feat-03 | PersistentStorage 磁盘持久化 | *待补充* | 待补充 |
+| Feat-04 | Environment 设备环境变量 | *待补充* | 待补充 |
+| Feat-05 | 存储联动装饰器（@StorageLink/@StorageProp/@StoragePropRef/@LocalStorageLink/@LocalStoragePropRef） | *待补充* | 待补充 |
+
+### 07-02-11 静态V2组件内状态管理
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | V2 核心机制（DecoratedV2VariableBase + StateUpdateLoop + autoProxyObject） | *待补充* | 待补充 |
+| Feat-02 | @Local/@Param/@ParamOnce/@Provider/@Consumer 组件状态输入输出 | *待补充* | 待补充 |
+| Feat-03 | @Monitor/@SyncMonitor 路径感知监听 | *待补充* | 待补充 |
+| Feat-04 | @Computed 惰性计算属性 | *待补充* | 待补充 |
+
+### 07-02-12 静态V2数据对象内状态管理
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | @ObservedV2/@Trace V2 可观察数据模型（UIPlugin 转换 MutableStateMeta） | *待补充* | 待补充 |
+
+### 07-02-13 静态V2应用内状态管理
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | AppStorageV2 内存全局存储 | *待补充* | 待补充 |
+| Feat-02 | PersistenceV2 磁盘持久化与 V2CollectionCoder | *待补充* | 待补充 |
+
+### 07-02-14 状态管理互操作
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | 互操作核心机制（InteropState + openInterop + register 回调） | *待补充* | 待补充 |
+| Feat-02 | 跨前端存储互操作 | *待补充* | 待补充 |
+| Feat-03 | 跨前端组件互操作 | *待补充* | 待补充 |
+| Feat-04 | 跨前端状态代理 | *待补充* | 待补充 |
+| Feat-05 | Builder 与 Binding 互操作 | *待补充* | 待补充 |
 
 ### 07-03-01 组件化
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | @Component/@ComponentV2 自定义组件声明与创建 | [Feat-01-component-declaration-creation-spec.md](07-frontend/03-custom-components/01-componentization/Feat-01-component-declaration-creation-spec.md) | Baselined |
 
-### 07-03-02 页面生命周期
+### 07-03-02 自定义组件生命周期
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | 自定义组件生命周期 | [Feat-01-component-lifecycle-spec.md](07-frontend/03-custom-components/02-component-lifecycle/Feat-01-component-lifecycle-spec.md) | Baselined |
+
+### 07-03-03 自定义组件复用
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | 自定义组件复用机制 | [Feat-01-component-reuse-spec.md](07-frontend/03-custom-components/03-component-reuse/Feat-01-component-reuse-spec.md) | Baselined |
+
+### 07-03-04 自定义组件冻结
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | 自定义组件冻结机制 | [Feat-01-component-freeze-spec.md](07-frontend/03-custom-components/04-component-freeze/Feat-01-component-freeze-spec.md) | Baselined |
+
+### 07-03-05 自定义测量/布局
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
 
-### 07-03-03 组件扩展
+### 07-03-06 组件扩展
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
 
-### 07-03-04 渲染控制语法
-
-| FeatID | 特性名称 | Spec 文件 | 状态 |
-|--------|----------|-----------|------|
-
-### 07-03-05 LazyForEach
-
-| FeatID | 特性名称 | Spec 文件 | 状态 |
-|--------|----------|-----------|------|
-
-### 07-03-06 自定义测量/布局
-
-| FeatID | 特性名称 | Spec 文件 | 状态 |
-|--------|----------|-----------|------|
-
-### 07-03-07 组件复用前端
+### 07-03-07 静态自定义组件状态相关
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
@@ -1792,6 +1905,31 @@
 |--------|----------|-----------|------|
 
 ### 07-04-03 A2UI高级垂域组件
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+
+### 07-05-01 渲染控制语法
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+
+### 07-05-02 LazyForEach
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+
+### 07-05-03 Repeat
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+
+### 07-06-01 系统环境变量
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+
+### 07-06-02 自定义环境变量
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
