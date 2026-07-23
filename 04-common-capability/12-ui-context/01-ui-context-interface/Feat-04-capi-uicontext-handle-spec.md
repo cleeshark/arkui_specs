@@ -331,6 +331,8 @@
 | 错误码 | 无错误码 |
 | 关联 AC | AC-04.1.1 |
 
+**前端路径说明**: 声明于 native_node.h (统一路径，NAPI 和 ANI 前端均可访问)。相关桥接入口: NAPI counterpart OH_ArkUI_GetContextFromNapiValue (native_node_napi.h:58); ANI counterpart OH_ArkUI_NativeModule_GetContextFromAniValue (native_node_ani.h:48)
+
 **参数约束**
 
 | 参数 | 类型 | 必填 | 默认值 | 约束条件 |
@@ -372,6 +374,10 @@
 | 1 | 传入有效 env+value | 返回堆分配的 ArkUI_Context，.id = instanceId | AC-04.1.3 |
 | 2 | 获取后尝试释放 | 无 Destroy API，内存泄漏 | AC-04.1.9 |
 
+**NAPI 桥接调用链**: NAPI napi_value → native_node_napi.cpp:174-208 (从 napi_value 提取 instanceId_ 字段) → new ArkUI_Context{instanceId_} → 返回 ArkUI_ContextHandle
+
+**ANI counterpart**: OH_ArkUI_NativeModule_GetContextFromAniValue (native_node_ani.h:48, native_node_ani.cpp:229-244) — 功能相同，从 ani_object 提取 instanceId_
+
 ---
 
 **OH_ArkUI_NativeModule_GetContextFromAniValue**
@@ -397,6 +403,10 @@
 |---|----------|----------|---------|
 | 1 | 传入有效 ani_env+ani_object | 返回堆分配的 ArkUI_Context，.id = instanceId | AC-04.1.4 |
 | 2 | 获取后尝试释放 | 无 Destroy API，内存泄漏 | AC-04.1.9 |
+
+**ANI 桥接调用链**: ANI ani_env + ani_object → native_node_ani.cpp:229-244 (从 ani_object 提取 instanceId_ 字段) → new ArkUI_Context{instanceId_} → 返回 ArkUI_ContextHandle
+
+**NAPI counterpart**: OH_ArkUI_GetContextFromNapiValue (native_node_napi.h:58, native_node_napi.cpp:174-208) — 功能相同，从 napi_value 提取 instanceId_
 
 ---
 
@@ -513,6 +523,8 @@
 | 错误码 | 0 (SUCCESS) |
 | 关联 AC | AC-04.2.5 |
 
+**前端路径说明**: 此 API 仅通过 NAPI 路径暴露（声明于 native_node_napi.h:375），当前无 ANI 桥接声明（native_node_ani.h 未包含此函数）
+
 **参数约束**
 
 | 参数 | 类型 | 必填 | 默认值 | 约束条件 |
@@ -538,6 +550,8 @@
 | 开放范围 | Public (@since 20) |
 | 错误码 | 0 (SUCCESS) |
 | 关联 AC | AC-04.2.6 |
+
+**前端路径说明**: 此 API 仅通过 NAPI 路径暴露（声明于 native_node_napi.h:394），当前无 ANI 桥接声明（native_node_ani.h 未包含此函数）
 
 **参数约束**
 
@@ -670,14 +684,14 @@
 
 | 参数 | 类型 | 必填 | 默认值 | 约束条件 |
 |------|------|------|--------|---------|
-| uiContext | ArkUI_ContextHandle | 是 | 无 | TYPE CONFUSION: reinterpret_cast 到 ArkUIContext* |
+| uiContext | ArkUI_ContextHandle | 是 | 无 | TYPE CONFUSION: reinterpret_cast 到 ArkUIContext*；此 TYPE CONFUSION 同时影响 NAPI 和 ANI 路径，因两种路径均通过 ArkUI_ContextHandle（仅含 int32_t id）桥接到 C++ ArkUIContext 类 |
 
 **行为场景**
 
 | # | 触发条件 | 预期行为 | 关联 AC |
 |---|----------|----------|---------|
 | 1 | 传入 uiContext | reinterpret_cast ArkUI_Context* → ArkUIContext*，创建拖拽动作 | AC-04.4.1 |
-| 2 | TYPE CONFUSION cast | ArkUI_Context* (8字节) → ArkUIContext* (丰富C++类)，C++ UB | AC-04.4.5 |
+| 2 | TYPE CONFUSION cast | ArkUI_Context* (8字节) → ArkUIContext* (丰富C++类)，C++ UB；此 cast 同时影响 NAPI 和 ANI 两条前端路径 | AC-04.4.5 |
 
 ---
 
@@ -892,6 +906,8 @@
 | 开放范围 | Public (@since 26) |
 | 错误码 | 0 (SUCCESS) |
 | 关联 AC | AC-04.6.3 |
+
+**前端路径说明**: 此 API 仅通过 NAPI 路径暴露（声明于 native_node_napi.h:409），当前无 ANI 桥接声明（native_node_ani.h 未包含此函数）
 
 **参数约束**
 

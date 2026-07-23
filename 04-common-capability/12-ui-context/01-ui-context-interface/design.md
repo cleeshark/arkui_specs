@@ -12,7 +12,7 @@
 | 日期 | 2026-07-23 |
 | 目标版本 | API 10–26 |
 | 复杂度 | 关键 |
-| 关联 Feat | Feat-01: UIContext入口架构与实例路由, Feat-02: UIContext实例解析与作用域调度, Feat-03: 子对象工厂与直接方法, Feat-04: C-API UIContextHandle接口, Feat-05: UIContext Kit层内部接口与委托实现 |
+| 关联 Feat | Feat-01: UIContext入口架构与实例路由, Feat-02: UIContext实例解析与作用域调度, Feat-03: 子对象工厂与直接方法, Feat-04: C-API UIContextHandle接口 |
 
 ## 需求基线
 
@@ -66,6 +66,7 @@
 
 | 属性 | 值 |
 |------|-----|
+| 决策ID | ADR-F1-1 |
 | 决策 | UIContext 纯虚接口 + UIContextImpl 持 PipelineContext* context_ 原指针全委托，不持业务状态 |
 | 上下文 | Kit 层需要统一入口访问 PipelineContext 子系统能力，但不应直接暴露 PipelineContext |
 | 探索过的替代方案 | A) UIContext 直接持有各子系统 RefPtr；B) UIContext 作为独立子系统 |
@@ -89,7 +90,8 @@ UIContextImpl 仅持 `context_`(NG::PipelineContext* 原指针) 和 `overlayMana
 三层路由实现：
 1. Kit层（C++内部）: `ContainerScope(context_->GetInstanceId())` RAII guard
 2. ArkTS静态前端: `ArkUIAniModule._Common_Sync_InstanceId(instanceId_)` / `_Common_Restore_InstanceId()`
-3. C-API层: `reinterpret_cast<ArkUI_Context*>(handle)->id` → `ContainerScope(id)`
+3. ArkTS动态前端: `withInstanceId(instanceId, callback)` → `__JSScopeUtil__.syncInstanceId(instanceId)` / `__JSScopeUtil__.restoreInstanceId()` (js_scope_util.cpp:55-94)
+4. C-API层: `reinterpret_cast<ArkUI_Context*>(handle)->id` → `ContainerScope(id)`
 
 ### ADR-3: 惰性创建与缓存 (Feat-01 baseline)
 
@@ -101,6 +103,10 @@ UIContextImpl 仅持 `context_`(NG::PipelineContext* 原指针) 和 `overlayMana
 | 取舍理由 | A 增加 PipelineContext 初始化成本；B 增加桥接层复杂度；lazy-init 最简 |
 | 影响 | UIContextImpl 的 context_ 可能在 Reset() 后为 nullptr；overlayManager_ 同样依赖 context_ |
 | 源码引用 | pipeline_context.cpp:7924-7931（GetUIContext 惰性创建），pipeline_context.h:1649（uiContextImpl_ 成员），ui_context_impl.cpp:114-122（GetOverlayManager 惰性创建） |
+
+双前端缓存对比：
+- **静态前端**: UIContextUtil::contextMap_ 按 instanceId 缓存 UIContext 对象（UIContextUtil.ets:21-23），getOrCreateUIContextById 先查缓存不存在则 new UIContext(id) 并存入
+- **动态前端**: UIContextHelper::uiContextMap_ 按 instanceId 缓存 JSValueRef Global 引用（ui_context_helper.h:34, ui_context_helper.cpp:41-54），GetUIContext 查缓存不存在时建立 ContainerScope(instanceId) 并调用 ArkTSUtils::GetContext(vm) → __getUIContext__(instanceId) 创建后存入（jsUIContext.js:2050-2052）
 
 ### ADR-4: 多实例解析策略 (Feat-02 incremental)
 
@@ -160,33 +166,33 @@ InstanceIdGenReason → ResolveStrategy 映射：
 
 Window-Free Container 特征：PseudoEventCallback（无真实窗口事件）、width=0 height=0、usePlatformAsUIThread=true useUIAsJSThread=true（单线程模型）、isDynamicRender_=true（不参与前台/焦点追踪）。
 
-### ADR-7: Kit::UIContext Interface Segregation (Feat-05 incremental)
+### ADR-7: Kit::UIContext Interface Segregation (Feat-01 baseline 概述)
 
 | 属性 | 值 |
 |------|-----|
-| 决策ID | ADR-F5-1 |
-| 决策 | Kit::UIContext 纯虚基类定义 31 个虚拟方法，按 11 个功能域组织；UIContextImpl 逐一委托到 PipelineContext 子系统，按需建立 ContainerScope |
-| 上下文 | Kit 层需要为引擎内部组件提供统一 UI 能力访问入口，同时保持接口职责清晰 |
+| 决策ID | ADR-F1-2 |
+| 决策 | Kit::UIContext 纯虚基类定义 39 个虚拟方法，按功能域组织；UIContextImpl 逐一委托到 PipelineContext 子系统，按需建立 ContainerScope |
+| 上下文 | Kit 层需要为引擎内部组件提供统一 UI 能力访问入口；本 Feat 仅做概述级描述，不独立展开 |
 | 探索过的替代方案 | A) 每个功能域独立接口类；B) 一个大接口包含所有方法 |
 | 取舍理由 | A 过度碎片化增加使用复杂度；B 缺乏功能域组织但实际可行；当前选择 B 但按域组织方法声明 |
 | 影响 | 新增纯虚方法需 UIContextImpl override；OverlayManager 子体系 4 方法独立纯虚类 |
-| 源码引用 | ui_context.h:45-102（31 虚方法声明），ui_context_impl.h:32-88（UIContextImpl 声明），overlay_manager.h:28-43（OverlayManager 4 虚方法） |
+| 源码引用 | ui_context.h:45-102（39 虚方法声明），ui_context_impl.h:32-88（UIContextImpl 声明），overlay_manager.h:28-43（OverlayManager 4 虚方法） |
 
-功能域分组：
+Kit::UIContext 纯虚接口核心方法分组（概述级，不独立展开）：
 
 | 域 | 方法数 | 代表方法 |
 |----|--------|----------|
 | 任务调度 | 3 | RunScopeUITaskSync, RunScopeUITask, RunScopeUIDelayedTask |
 | 页面操作 | 1 | OnBackPressed |
-| UI 信息查询 | 5 | GetLocalColorMode, GetColorMode, GetFontScale, GetConfigPerform, GetInstanceId |
-| 暗色/反色 | 2 | HasDarkResource, GetInvertFunc |
-| Overlay 管理 | 1 | GetOverlayManager |
+| UI 信息查询 | 3 | GetLocalColorMode, GetColorMode, GetFontScale |
+| 暗色/配置/身份 | 4 | GetConfigPerform, GetInstanceId, HasDarkResource, GetInvertFunc |
+| Overlay 管理 | 1 | GetOverlayManager → Kit::OverlayManager(4虚方法) |
 | 管线任务 | 2 | AddAfterLayoutTask, RequestFrame |
-| API 版本 | 4 | GetApiTargetVersion, GreatOrEqualTargetAPIVersion, ContainerModal 三方法 |
+| API 版本/容器模态 | 5 | GetApiTargetVersion, GreatOrEqualTargetAPIVersion, ContainerModal 三方法 |
 | 生命周期回调 | 2 | RegisterArkUIObjectLifecycleCallback, Unregister |
-| Token/Display/Window | 4 | GetToken, GetDisplayInfo, GetWindowMode, GetIsMidScene, IsAccessibilityEnabled |
-| Surface/Fold/Rotation 回调 | 7 | Register/Unregister SurfaceChanged, FoldStatus, RotationEnd, AddWindowSizeChange |
-| 子对象工厂路由守卫 | (Feat-03) | 约 20 个 getXxx + 直接方法 |
+| Token/Display/Window | 5 | GetToken, GetDisplayInfo, GetWindowMode, GetIsMidScene, IsAccessibilityEnabled |
+| Surface/Fold/Rotation | 7 | Register/Unregister SurfaceChanged, FoldStatus, RotationEnd, AddWindowSizeChange |
+| 静态工厂 | 1 | UIContext::Current() |
 
 ### ADR-F3-1: 子对象工厂统一路由守卫 (Feat-03 incremental)
 
@@ -198,7 +204,7 @@ Window-Free Container 特征：PseudoEventCallback（无真实窗口事件）、
 | 探索过的替代方案 | A) 子对象不持有 instanceId，每次调用从 ContainerScope 获取 |
 | 取舍理由 | A 在异步回调中无法获取正确 instanceId；子对象绑定 instanceId + Sync/Restore 最可靠 |
 | 影响 | 约 40+ 处 Sync_InstanceId 需与 Restore_InstanceId 精确配对，遗漏导致实例 ID 混淆 |
-| 源码引用 | UIContextImpl.ets:108-124（FontImpl.registerFont Sync/Restore），@ohos.arkui.UIContext.ts:765-782（构造器创建 18+ delegate 子对象），@ohos.arkui.UIContext.ts:873-876（isFollowingSystemFontScale Sync/Restore） |
+| 源码引用 | UIContextImpl.ets:108-124（FontImpl.registerFont Sync/Restore），@ohos.arkui.UIContext.ts:765-782（构造器创建 18+ delegate 子对象），@ohos.arkui.UIContext.ts:873-876（isFollowingSystemFontScale Sync/Restore），jsUIContext.js:2036-2043（withInstanceId 函数定义），jsUIContext.js:425-427（动态前端构造器仅存 instanceId_），js_scope_util.cpp:55-71（SyncInstanceId → ContainerScope::UpdateCurrent），js_scope_util.cpp:73-94（RestoreInstanceId → ContainerScope::UpdateCurrent） |
 
 ### ADR-F2-3: 隔离线程独立容器集 (Feat-02 incremental)
 
@@ -225,6 +231,28 @@ Window-Free Container 特征：PseudoEventCallback（无真实窗口事件）、
 | 源码引用 | ace_engine.h:84-85（destroyedUIContextCache_ + UIContextCacheInfo），ace_engine.cpp:150-158（AddToDestroyedCache 淘汰逻辑） |
 
 ## 架构图
+
+### ADR-8: 静态/动态前端双路径实例路由 (baseline)
+
+| 属性 | 值 |
+|------|-----|
+| 决策 | UIContext 实例路由在静态前端和动态前端分别通过不同桥接层实现，但行为语义一致 |
+| 上下文 | 两种前端范式并行运行，需确保行为一致 |
+| 探索过的替代方案 | A) 统一为单一桥接层 |
+| 取舍理由 | A 需改造已有前端架构，成本高；双路径桥接+行为一致验证更务实 |
+| 影响 | 所有 API 规格文档需同时标注两条路径的源码引用；ANI 函数指针 6 条 + js_scope_util NAPI 7 条需对齐 |
+| 源码引用 | ArkUIAniModule.ts:124-126, js_scope_util.h:25-38, ani_api.h:685-689, arkoala_api.h:9725 |
+
+双路径对比：
+
+| 维度 | 静态前端 | 动态前端 |
+|------|-----------|-----------|
+| 实例路由 | ArkUIAniModule._Common_Sync_InstanceId(instanceId_) / _Common_Restore_InstanceId() (静态前端每个delegate方法) | withInstanceId(instanceId, callback) → __JSScopeUtil__.syncInstanceId(instanceId) / restoreInstanceId() (动态前端每个delegate方法) |
+| 桥接层 | ANI 函数指针 (ani_api.h:685-689, arkoala_api.h:9725) | NAPI (js_scope_util.cpp:126-134) |
+| 缓存 | UIContextUtil.contextMap_ (UIContextUtil.ets:21) | UIContextHelper.uiContextMap_ (ui_context_helper.h:34) |
+| C-API获取 | OH_ArkUI_NativeModule_GetContextFromAniValue (ANI路径) | OH_ArkUI_GetContextFromNapiValue (NAPI路径) |
+| 子对象工厂 | getXxx → new Impl(instanceId_) → Sync/Restore | getXxx → new Wrapper(instanceId) → withInstanceId → NAPI |
+| 目标层 | ContainerScope(id) RAII → PipelineContext | ContainerScope(id) RAII → PipelineContext |
 
 ### 全局架构
 
@@ -361,15 +389,25 @@ graph TD
         FactoryMethod["getXxx 工厂方法<br/>约 20 个"]
         DirectMethod["直接方法<br/>animateTo/showDialog/vp2px 等"]
     end
-    subgraph 子对象Impl
+    subgraph 静态前端子对象Impl
         Router["RouterImpl instanceId_"]
         PromptAction["PromptActionImpl instanceId_"]
         OverlayManager["OverlayManagerImpl instanceId_"]
         Others["其他 Impl 类 instanceId_"]
     end
-    subgraph 路由守卫
+    subgraph 静态前端路由守卫
         Sync["Sync_InstanceId instanceId_"]
         Restore["Restore_InstanceId"]
+    end
+    subgraph 动态前端子对象
+        JsRouter["Router instanceId_"]
+        JsPromptAction["PromptAction instanceId_"]
+        JsOverlayManager["OverlayManager instanceId_"]
+        JsOthers["其他 Wrapper 类 instanceId_"]
+    end
+    subgraph 动态前端路由守卫
+        WithInstanceId["withInstanceId(instanceId, callback)"]
+        JSScopeUtil["__JSScopeUtil__.syncInstanceId/restoreInstanceId"]
     end
     subgraph 离屏渲染
         DetachedRoot["DetachedRootEntryManager"]
@@ -385,14 +423,26 @@ graph TD
     UIContext --> FactoryMethod --> PromptAction
     UIContext --> FactoryMethod --> OverlayManager
     UIContext --> FactoryMethod --> Others
+    UIContext --> FactoryMethod --> JsRouter
+    UIContext --> FactoryMethod --> JsPromptAction
+    UIContext --> FactoryMethod --> JsOverlayManager
+    UIContext --> FactoryMethod --> JsOthers
     UIContext --> DirectMethod --> Sync
+    UIContext --> DirectMethod --> WithInstanceId
     Router --> Sync
     PromptAction --> Sync
     OverlayManager --> Sync
     Others --> Sync
     Sync --> Restore
     Sync --> PipelineCtx
+    JsRouter --> WithInstanceId
+    JsPromptAction --> WithInstanceId
+    JsOverlayManager --> WithInstanceId
+    JsOthers --> WithInstanceId
+    WithInstanceId --> JSScopeUtil
+    JSScopeUtil --> PipelineCtx
     PromptAction -->|openCustomDialog委托| OverlayManager
+    JsPromptAction -->|openCustomDialog委托| JsOverlayManager
     DetachedRoot --> CreateRoot
     DetachedRoot --> DestroyRoot
     CreateRoot --> PipelineCtx
@@ -470,16 +520,64 @@ NDK Application → OH_ArkUI_RunTaskInScope(uiContext, userData, callback)
   → ~ContainerScope() [恢复 currentId_]
 ```
 
-典型调用链（ArkTS getRouter().pushUrl）：
+典型调用链（ArkTS 静态前端 getRouter().pushUrl）：
 
 ```
-ArkTS App → uiContext.getRouter()
+ArkTS 静态前端 App → uiContext.getRouter()
   → new RouterImpl(this.instanceId_) [或缓存返回]
   → router.pushUrl(options)
     → ArkUIAniModule._Common_Sync_InstanceId(this.instanceId_) [切换 currentId_]
     → RouterImpl native pushUrl 调用
     → PageRouterManager::PushUrl() [通过 currentId_ 路由到正确实例]
     → ArkUIAniModule._Common_Restore_InstanceId() [恢复 currentId_]
+```
+
+典型调用链（ArkTS 动态前端 getRouter().pushUrl）：
+
+```
+ArkTS 动态前端 App → uiContext.getRouter()
+  → new Router(this.instanceId_) [每次 getter 创建新对象]
+  → router.pushUrl(options)
+    → withInstanceId(this.instanceId_, () => { ... })
+      → __JSScopeUtil__.syncInstanceId(instanceId_) [切换 currentId_ via js_scope_util.cpp:55-71]
+      → globalThis.requireNapi('router').push(options)
+      → __JSScopeUtil__.restoreInstanceId() [恢复 currentId_ via js_scope_util.cpp:73-94]
+```
+
+典型调用链（动态前端 UIContextHelper 缓存获取）：
+
+```
+动态前端引擎 → CallGetUIContextFunc(instanceId)
+  → UIContextHelper::GetUIContext(vm, instanceId)
+    → uiContextMap_.find(instanceId) [查缓存]
+    → 缓存不存在: ContainerScope(instanceId) [RAII 切换]
+    → ArkTSUtils::GetContext(vm) → JS __getUIContext__(instanceId)
+    → jsUIContext.js: __getUIContext__(instanceId) → new UIContext(instanceId)
+    → UIContextHelper::AddUIContext(vm, instanceId, uiContext) [存入 uiContextMap_]
+    → ~ContainerScope() [恢复 currentId_]
+```
+
+典型调用链（动态前端 resolveUIContext）：
+
+```
+动态前端 App → UIContext.resolveUIContext()
+  → __JSScopeUtil__.resolveUIContext()
+    → js_scope_util.cpp JSScopeUtil::ResolveUIContext(info)
+    → ContainerScope::CurrentIdWithReason() [解析链 SCOPE→UNDEFINED→SINGLETON→ACTIVE→FOREGROUND→DEFAULT]
+    → GetMainInstanceId(pair.first) [子容器 ID 映射到主容器 ID]
+    → 返回 [instanceId, reason] 二元组
+  → new ResolvedUIContext(contextInfo[0], contextInfo[1]) [jsUIContext.js:1133-1138]
+```
+
+典型调用链（动态前端 runScopedTask）：
+
+```
+动态前端 App → uiContext.runScopedTask(callback)
+  → jsUIContext.js:721-726
+  → withInstanceId(this.instanceId_, callback)
+    → __JSScopeUtil__.syncInstanceId(instanceId_) [切换 currentId_]
+    → callback() [执行用户回调]
+    → __JSScopeUtil__.restoreInstanceId() [finally 恢复 currentId_]
 ```
 
 ## 设计骨架与任务分解
@@ -531,15 +629,6 @@ ArkTS App → uiContext.getRouter()
 | TASK-F04-6 | animateTo / keyframeAnimateTo / createAnimator vtable | native_animate.h:98-102, animate_impl.cpp:25,67,164 | AC-04.5.1~AC-04.5.4 |
 | TASK-F04-7 | SetForceDarkConfig / EnableEventPassthrough / GetPageRootNodeHandleByContext | node_utils.cpp:808,1068, native_node_napi.cpp:734 | AC-04.6.1~AC-04.6.4 |
 
-### Feat-05: UIContext Kit层内部接口与委托实现
-
-| Task ID | 目标 | 受影响文件 | AC 范围 |
-|---------|------|-----------|---------|
-| TASK-F05-1 | Kit::UIContext 31 虚方法纯虚接口规格化归档 | ui_context.h:45-102 | AC-1.1~AC-5.2 |
-| TASK-F05-2 | Kit::UIContextImpl 全委托实现 + CHECK_NULL 安全降级 | ui_context_impl.h:32-88, ui_context_impl.cpp:38-304 | AC-1.1~AC-6.2 |
-| TASK-F05-3 | Kit::OverlayManager 4 虚方法 + OverlayManagerImpl 委托 + DynamicCast 桥接 | overlay_manager.h:28-43, overlay_manager_impl.cpp:24-85 | AC-3.1~AC-3.2 |
-| TASK-F05-4 | PipelineContext::GetUIContext() 惰性工厂 + Destroy 时 Reset | pipeline_context.cpp:7924-7931, pipeline_context.cpp:6005 | AC-6.1~AC-6.2 |
-| TASK-F05-5 | ANI 原生接口 5 函数指针 + arkoala_api.h runScopedTask | ani_api.h:685-689, arkoala_api.h:9725 | AC-7.1 |
 
 ## 兼容性约束
 
@@ -589,6 +678,6 @@ ArkTS App → uiContext.getRouter()
 - [x] 风险和开放问题有 Owner
 - [x] 架构图使用 Mermaid 语法
 - [x] 资源所有权矩阵完整
-- [x] 调用链层级分析含 Kit/C-API/ArkTS 三条典型路径
+- [x] 调用链层级分析含 Kit/C-API/ArkTS 静态前端三条典型路径 + 动态前端四条典型路径（withInstanceId, UIContextHelper缓存, resolveUIContext, runScopedTask）
 
-**结论:** 通过（已有实现补录，5-Feat 增量合并结构）
+**结论:** 通过（已有实现补录，4-Feat 增量合并结构，Kit::UIContext 仅在 Feat-01 概述）

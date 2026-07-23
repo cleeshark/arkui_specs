@@ -719,11 +719,7 @@ features:
   title: C-API UIContextHandle接口
   spec: 04-common-capability/12-ui-context/01-ui-context-interface/Feat-04-capi-uicontext-handle-spec.md
   status: Baselined
-- func_id: 04-12-01
-  id: Feat-05
-  title: UIContext Kit层内部接口与委托实现
-  spec: 04-common-capability/12-ui-context/01-ui-context-interface/Feat-05-uicontext-kit-inner-interface-delegation-spec.md
-  status: Baselined
+
 - func_id: 04-12-02
   id: Feat-01
   title: Ability上下文与窗口信息

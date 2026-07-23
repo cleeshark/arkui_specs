@@ -111,7 +111,7 @@
 | 04 通用能力层 | 11 组件信息获取 | 01 ComponentUtils | `04-11-01` | `04-common-capability/11-component-info/01-component-utils/` | *待补充* | 0 |
 | 04 通用能力层 | 11 组件信息获取 | 02 无感监听（observer） | `04-11-02` | `04-common-capability/11-component-info/02-observer/` | *待补充* | 0 |
 | 04 通用能力层 | 11 组件信息获取 | 03 布局回调（inspector） | `04-11-03` | `04-common-capability/11-component-info/03-inspector-layout-callback/` | *待补充* | 0 |
-| 04 通用能力层 | 12 UI上下文 | 01 UIContext接口 | `04-12-01` | `04-common-capability/12-ui-context/01-ui-context-interface/` | [design.md](04-common-capability/12-ui-context/01-ui-context-interface/design.md) | 5 |
+| 04 通用能力层 | 12 UI上下文 | 01 UIContext接口 | `04-12-01` | `04-common-capability/12-ui-context/01-ui-context-interface/` | [design.md](04-common-capability/12-ui-context/01-ui-context-interface/design.md) | 4 |
 | 04 通用能力层 | 12 UI上下文 | 02 Ability上下文 | `04-12-02` | `04-common-capability/12-ui-context/02-ability-context/` | [design.md](04-common-capability/12-ui-context/02-ability-context/design.md) | 1 |
 | 04 通用能力层 | 12 UI上下文 | 03 Frame回调接口 | `04-12-03` | `04-common-capability/12-ui-context/03-frame-callback/` | [design.md](04-common-capability/12-ui-context/03-frame-callback/design.md) | 1 |
 | 04 通用能力层 | 13 字体文本 | 01 字体注册 | `04-13-01` | `04-common-capability/13-font-text/01-font-registration/` | *待补充* | 0 |
@@ -790,7 +790,6 @@
 | Feat-02 | UIContext实例解析与作用域调度 | [Feat-02-uicontext-instance-resolution-scoped-task-spec.md](04-common-capability/12-ui-context/01-ui-context-interface/Feat-02-uicontext-instance-resolution-scoped-task-spec.md) | Baselined |
 | Feat-03 | 子对象工厂与直接方法 | [Feat-03-uicontext-sub-factory-direct-methods-spec.md](04-common-capability/12-ui-context/01-ui-context-interface/Feat-03-uicontext-sub-factory-direct-methods-spec.md) | Baselined |
 | Feat-04 | C-API UIContextHandle接口 | [Feat-04-capi-uicontext-handle-spec.md](04-common-capability/12-ui-context/01-ui-context-interface/Feat-04-capi-uicontext-handle-spec.md) | Baselined |
-| Feat-05 | UIContext Kit层内部接口与委托实现 | [Feat-05-uicontext-kit-inner-interface-delegation-spec.md](04-common-capability/12-ui-context/01-ui-context-interface/Feat-05-uicontext-kit-inner-interface-delegation-spec.md) | Baselined |
 
 ### 04-12-02 Ability上下文
 
