@@ -29,6 +29,81 @@ features:
   title: 特殊窗口类型
   spec: 03-engine-framework/05-window-mechanism/01-window-mechanism/Feat-04-special-window-types-spec.md
   status: Baselined
+- func_id: 03-08-01
+  id: Feat-01
+  title: LogWrapper核心框架与HiLog适配
+  spec: 03-engine-framework/08-dfx-foundation/01-logging/Feat-01-log-wrapper-core-spec.md
+  status: Baselined
+- func_id: 03-08-01
+  id: Feat-02
+  title: 日志控制开关与前端日志桥接
+  spec: 03-engine-framework/08-dfx-foundation/01-logging/Feat-02-log-control-frontend-bridge-spec.md
+  status: Baselined
+- func_id: 03-08-01
+  id: Feat-03
+  title: HiSysEvent事件上报与异常诊断
+  spec: 03-engine-framework/08-dfx-foundation/01-logging/Feat-03-hisysevent-report-spec.md
+  status: Baselined
+- func_id: 03-08-02
+  id: Feat-01
+  title: RefPtr/WeakPtr/AceType引用计数智能指针
+  spec: 03-engine-framework/08-dfx-foundation/02-memory-management/Feat-01-refptr-weakptr-ace-type-spec.md
+  status: Baselined
+- func_id: 03-08-02
+  id: Feat-02
+  title: MemoryMonitor调试分配监控
+  spec: 03-engine-framework/08-dfx-foundation/02-memory-management/Feat-02-memory-monitor-spec.md
+  status: Baselined
+- func_id: 03-08-02
+  id: Feat-03
+  title: NG MemoryManager内存回收管线
+  spec: 03-engine-framework/08-dfx-foundation/02-memory-management/Feat-03-ng-memory-manager-recycle-spec.md
+  status: Baselined
+- func_id: 03-08-02
+  id: Feat-04
+  title: 系统内存压力监听与全局GC
+  spec: 03-engine-framework/08-dfx-foundation/02-memory-management/Feat-04-memory-pressure-global-gc-spec.md
+  status: Baselined
+- func_id: 03-08-03
+  id: Feat-01
+  title: ACE Trace核心框架与FrameTrace适配
+  spec: 03-engine-framework/08-dfx-foundation/03-trace/Feat-01-ace-trace-core-frame-trace-spec.md
+  status: Baselined
+- func_id: 03-08-03
+  id: Feat-02
+  title: 帧调度报告与Jank检测
+  spec: 03-engine-framework/08-dfx-foundation/03-trace/Feat-02-frame-report-jank-spec.md
+  status: Baselined
+- func_id: 03-08-03
+  id: Feat-03
+  title: 性能检查与阈值监控
+  spec: 03-engine-framework/08-dfx-foundation/03-trace/Feat-03-perf-check-threshold-spec.md
+  status: Baselined
+- func_id: 03-08-04
+  id: Feat-01
+  title: DumpLog核心引擎与Pipeline命令路由
+  spec: 03-engine-framework/08-dfx-foundation/04-dump-mechanism/Feat-01-dump-log-pipeline-routing-spec.md
+  status: Baselined
+- func_id: 03-08-04
+  id: Feat-02
+  title: Inspector树形诊断系统
+  spec: 03-engine-framework/08-dfx-foundation/04-dump-mechanism/Feat-02-inspector-tree-diagnostic-spec.md
+  status: Baselined
+- func_id: 03-08-04
+  id: Feat-03
+  title: SimplifiedInspector与简化树
+  spec: 03-engine-framework/08-dfx-foundation/04-dump-mechanism/Feat-03-simplified-inspector-spec.md
+  status: Baselined
+- func_id: 03-08-04
+  id: Feat-04
+  title: 可访问性Dump与事件Dump
+  spec: 03-engine-framework/08-dfx-foundation/04-dump-mechanism/Feat-04-accessibility-event-dump-spec.md
+  status: Baselined
+- func_id: 03-08-06
+  id: Feat-01
+  title: 布局边界显示调试能力
+  spec: 03-engine-framework/08-dfx-foundation/06-layout-boundary-display/Feat-01-layout-boundary-display-spec.md
+  status: Draft
 - func_id: 04-01-01
   id: Feat-01
   title: 图片加载机制

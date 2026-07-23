@@ -55,12 +55,12 @@
 | 03 引擎框架层 | 06 多实例管理 | 01 多实例管理 | `03-06-01` | `03-engine-framework/06-multi-instance-management/01-multi-instance-management/` | [design.md](03-engine-framework/06-multi-instance-management/01-multi-instance-management/design.md) | 1 |
 | 03 引擎框架层 | 07 无障碍机制 | 01 无障碍能力 | `03-07-01` | `03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/` | *待补充* | 0 |
 | 03 引擎框架层 | 07 无障碍机制 | 02 Inspector | `03-07-02` | `03-engine-framework/07-accessibility-mechanism/02-inspector/` | *待补充* | 0 |
-| 03 引擎框架层 | 08 DFX | 01 日志 | `03-08-01` | `03-engine-framework/08-dfx/01-logging/` | *待补充* | 0 |
-| 03 引擎框架层 | 08 DFX | 02 内存管理 | `03-08-02` | `03-engine-framework/08-dfx/02-memory-management/` | *待补充* | 0 |
-| 03 引擎框架层 | 08 DFX | 03 Trace打点 | `03-08-03` | `03-engine-framework/08-dfx/03-trace/` | *待补充* | 0 |
-| 03 引擎框架层 | 08 DFX | 04 Dump机制 | `03-08-04` | `03-engine-framework/08-dfx/04-dump-mechanism/` | *待补充* | 0 |
-| 03 引擎框架层 | 08 DFX | 05 Benchmark | `03-08-05` | `03-engine-framework/08-dfx/05-benchmark/` | *待补充* | 0 |
-| 03 引擎框架层 | 08 DFX | 06 布局边界显示 | `03-08-06` | `03-engine-framework/08-dfx/06-layout-boundary-display/` | *待补充* | 0 |
+| 03 引擎框架层 | 08 DFX | 01 日志 | `03-08-01` | `03-engine-framework/08-dfx-foundation/01-logging/` | [design.md](03-engine-framework/08-dfx-foundation/01-logging/design.md) | 3 |
+| 03 引擎框架层 | 08 DFX | 02 内存管理 | `03-08-02` | `03-engine-framework/08-dfx-foundation/02-memory-management/` | [design.md](03-engine-framework/08-dfx-foundation/02-memory-management/design.md) | 4 |
+| 03 引擎框架层 | 08 DFX | 03 Trace打点 | `03-08-03` | `03-engine-framework/08-dfx-foundation/03-trace/` | [design.md](03-engine-framework/08-dfx-foundation/03-trace/design.md) | 3 |
+| 03 引擎框架层 | 08 DFX | 04 Dump机制 | `03-08-04` | `03-engine-framework/08-dfx-foundation/04-dump-mechanism/` | [design.md](03-engine-framework/08-dfx-foundation/04-dump-mechanism/design.md) | 4 |
+| 03 引擎框架层 | 08 DFX | 05 Benchmark | `03-08-05` | `03-engine-framework/08-dfx-foundation/05-benchmark/` | *待补充* | 0 |
+| 03 引擎框架层 | 08 DFX | 06 布局边界显示 | `03-08-06` | `03-engine-framework/08-dfx-foundation/06-layout-boundary-display/` | [design.md](03-engine-framework/08-dfx-foundation/06-layout-boundary-display/design.md) | 1 |
 | 04 通用能力层 | 01 图片加载能力 | 01 图片加载机制 | `04-01-01` | `04-common-capability/01-image-loading/01-image-loading-mechanism/` | [design.md](04-common-capability/01-image-loading/01-image-loading-mechanism/design.md) | 1 |
 | 04 通用能力层 | 01 图片加载能力 | 02 Svg解析 | `04-01-02` | `04-common-capability/01-image-loading/02-svg-parsing/` | *待补充* | 0 |
 | 04 通用能力层 | 01 图片加载能力 | 03 DrawableDescriptor 能力 | `04-01-03` | `04-common-capability/01-image-loading/03-drawable-descriptor/` | [design.md](04-common-capability/01-image-loading/03-drawable-descriptor/design.md) | 1 |
@@ -483,21 +483,35 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | LogWrapper核心框架与HiLog适配 | [Feat-01-log-wrapper-core-spec.md](03-engine-framework/08-dfx-foundation/01-logging/Feat-01-log-wrapper-core-spec.md) | Baselined |
+| Feat-02 | 日志控制开关与前端日志桥接 | [Feat-02-log-control-frontend-bridge-spec.md](03-engine-framework/08-dfx-foundation/01-logging/Feat-02-log-control-frontend-bridge-spec.md) | Baselined |
+| Feat-03 | HiSysEvent事件上报与异常诊断 | [Feat-03-hisysevent-report-spec.md](03-engine-framework/08-dfx-foundation/01-logging/Feat-03-hisysevent-report-spec.md) | Baselined |
 
 ### 03-08-02 内存管理
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | RefPtr/WeakPtr/AceType引用计数智能指针 | [Feat-01-refptr-weakptr-ace-type-spec.md](03-engine-framework/08-dfx-foundation/02-memory-management/Feat-01-refptr-weakptr-ace-type-spec.md) | Baselined |
+| Feat-02 | MemoryMonitor调试分配监控 | [Feat-02-memory-monitor-spec.md](03-engine-framework/08-dfx-foundation/02-memory-management/Feat-02-memory-monitor-spec.md) | Baselined |
+| Feat-03 | NG MemoryManager内存回收管线 | [Feat-03-ng-memory-manager-recycle-spec.md](03-engine-framework/08-dfx-foundation/02-memory-management/Feat-03-ng-memory-manager-recycle-spec.md) | Baselined |
+| Feat-04 | 系统内存压力监听与全局GC | [Feat-04-memory-pressure-global-gc-spec.md](03-engine-framework/08-dfx-foundation/02-memory-management/Feat-04-memory-pressure-global-gc-spec.md) | Baselined |
 
 ### 03-08-03 Trace打点
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | ACE Trace核心框架与FrameTrace适配 | [Feat-01-ace-trace-core-frame-trace-spec.md](03-engine-framework/08-dfx-foundation/03-trace/Feat-01-ace-trace-core-frame-trace-spec.md) | Baselined |
+| Feat-02 | 帧调度报告与Jank检测 | [Feat-02-frame-report-jank-spec.md](03-engine-framework/08-dfx-foundation/03-trace/Feat-02-frame-report-jank-spec.md) | Baselined |
+| Feat-03 | 性能检查与阈值监控 | [Feat-03-perf-check-threshold-spec.md](03-engine-framework/08-dfx-foundation/03-trace/Feat-03-perf-check-threshold-spec.md) | Baselined |
 
 ### 03-08-04 Dump机制
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | DumpLog核心引擎与Pipeline命令路由 | [Feat-01-dump-log-pipeline-routing-spec.md](03-engine-framework/08-dfx-foundation/04-dump-mechanism/Feat-01-dump-log-pipeline-routing-spec.md) | Baselined |
+| Feat-02 | Inspector树形诊断系统 | [Feat-02-inspector-tree-diagnostic-spec.md](03-engine-framework/08-dfx-foundation/04-dump-mechanism/Feat-02-inspector-tree-diagnostic-spec.md) | Baselined |
+| Feat-03 | SimplifiedInspector与简化树 | [Feat-03-simplified-inspector-spec.md](03-engine-framework/08-dfx-foundation/04-dump-mechanism/Feat-03-simplified-inspector-spec.md) | Baselined |
+| Feat-04 | 可访问性Dump与事件Dump | [Feat-04-accessibility-event-dump-spec.md](03-engine-framework/08-dfx-foundation/04-dump-mechanism/Feat-04-accessibility-event-dump-spec.md) | Baselined |
 
 ### 03-08-05 Benchmark
 
@@ -508,6 +522,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 布局边界显示调试能力 | [Feat-01-layout-boundary-display-spec.md](03-engine-framework/08-dfx-foundation/06-layout-boundary-display/Feat-01-layout-boundary-display-spec.md) | Draft |
 
 ### 04-01-01 图片加载机制
 
