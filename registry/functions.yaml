@@ -117,7 +117,7 @@ functions:
     title: Android平台适配
   path: 02-cross-platform/01-platform-adapter/02-android-platform-adapter/
   design: null
-  status: active
+  status: 待补充
 - id: 02-01-03
   l1:
     id: '02'
@@ -130,7 +130,7 @@ functions:
     title: iOS平台适配
   path: 02-cross-platform/01-platform-adapter/03-ios-platform-adapter/
   design: null
-  status: active
+  status: 待补充
 - id: 02-01-04
   l1:
     id: '02'
@@ -143,7 +143,7 @@ functions:
     title: 预览器平台适配
   path: 02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/
   design: null
-  status: active
+  status: 待补充
 - id: 02-02-01
   l1:
     id: '02'
@@ -155,7 +155,7 @@ functions:
     id: '01'
     title: 渲染后端适配
   path: 02-cross-platform/02-render-backend-adapter/01-render-backend-adapter/
-  design: null
+  design: 02-cross-platform/02-render-backend-adapter/01-render-backend-adapter/design.md
   status: active
 - id: 03-01-01
   l1:
