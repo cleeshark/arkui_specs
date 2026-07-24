@@ -584,7 +584,7 @@ functions:
     id: '01'
     title: 安全区机制
   path: 04-common-capability/02-safe-area/01-safe-area-mechanism/
-  design: null
+  design: 04-common-capability/02-safe-area/01-safe-area-mechanism/design.md
   status: active
 - id: 04-03-01
   l1:
@@ -1572,7 +1572,7 @@ functions:
     id: '04'
     title: ColumnSplit
   path: 05-ui-components/01-layout-components/04-column-split/
-  design: null
+  design: 05-ui-components/01-layout-components/04-column-split/design.md
   status: active
 - id: 05-01-05
   l1:
@@ -1650,7 +1650,7 @@ functions:
     id: '10'
     title: RowSplit
   path: 05-ui-components/01-layout-components/10-row-split/
-  design: null
+  design: 05-ui-components/01-layout-components/10-row-split/design.md
   status: active
 - id: 05-01-11
   l1:
@@ -2688,9 +2688,9 @@ functions:
     title: 绘制类组件
   l3:
     id: '01'
-    title: Shape相关
+    title: Shape
   path: 05-ui-components/14-drawing-components/01-shape/
-  design: null
+  design: 05-ui-components/14-drawing-components/01-shape/design.md
   status: active
 - id: 05-14-02
   l1:
@@ -2703,7 +2703,7 @@ functions:
     id: '02'
     title: Canvas
   path: 05-ui-components/14-drawing-components/02-canvas/
-  design: null
+  design: 05-ui-components/14-drawing-components/02-canvas/design.md
   status: active
 - id: 05-14-03
   l1:
@@ -2716,7 +2716,7 @@ functions:
     id: '03'
     title: OffscreenCanvas
   path: 05-ui-components/14-drawing-components/03-offscreen-canvas/
-  design: null
+  design: 05-ui-components/14-drawing-components/03-offscreen-canvas/design.md
   status: active
 - id: 05-15-01
   l1:

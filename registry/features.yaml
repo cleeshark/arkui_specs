@@ -154,6 +154,31 @@ features:
   title: DrawableDescriptor 能力 (TS + C API)
   spec: 04-common-capability/01-image-loading/03-drawable-descriptor/Feat-01-drawable-descriptor-spec.md
   status: Baselined
+- func_id: 04-02-01
+  id: Feat-01
+  title: 安全区数据源聚合与窗口同步
+  spec: 04-common-capability/02-safe-area/01-safe-area-mechanism/Feat-01-safe-area-source-window-sync-spec.md
+  status: Baselined
+- func_id: 04-02-01
+  id: Feat-02
+  title: 渲染安全区扩展
+  spec: 04-common-capability/02-safe-area/01-safe-area-mechanism/Feat-02-render-safe-area-expansion-spec.md
+  status: Baselined
+- func_id: 04-02-01
+  id: Feat-03
+  title: 组件级安全区内边距与 SAE 累积
+  spec: 04-common-capability/02-safe-area/01-safe-area-mechanism/Feat-03-safe-area-padding-sae-accumulation-spec.md
+  status: Baselined
+- func_id: 04-02-01
+  id: Feat-04
+  title: 布局安全区忽略与多阶段调度
+  spec: 04-common-capability/02-safe-area/01-safe-area-mechanism/Feat-04-ignore-layout-safe-area-scheduling-spec.md
+  status: Baselined
+- func_id: 04-02-01
+  id: Feat-05
+  title: 键盘安全区联动与页面避让
+  spec: 04-common-capability/02-safe-area/01-safe-area-mechanism/Feat-05-keyboard-safe-area-page-avoidance-spec.md
+  status: Baselined
 - func_id: 04-03-01
   id: Feat-01
   title: 尺寸属性 (width/height/size/constraintSize/padding/margin)
@@ -319,6 +344,21 @@ features:
   title: Column PointLight 系统光效
   spec: 05-ui-components/01-layout-components/03-column/Feat-04-column-point-light-spec.md
   status: Baselined
+- func_id: 05-01-04
+  id: Feat-01
+  title: ColumnSplit 垂直分割布局与分隔线绘制
+  spec: 05-ui-components/01-layout-components/04-column-split/Feat-01-column-split-vertical-layout-rendering-spec.md
+  status: Baselined
+- func_id: 05-01-04
+  id: Feat-02
+  title: ColumnSplit 可拖拽调整与边界约束
+  spec: 05-ui-components/01-layout-components/04-column-split/Feat-02-column-split-resizeable-drag-spec.md
+  status: Baselined
+- func_id: 05-01-04
+  id: Feat-03
+  title: ColumnSplit 分隔线边距
+  spec: 05-ui-components/01-layout-components/04-column-split/Feat-03-column-split-divider-margin-spec.md
+  status: Baselined
 - func_id: 05-01-05
   id: Feat-01
   title: Flex 单行弹性布局与轴向对齐
@@ -423,6 +463,16 @@ features:
   id: Feat-04
   title: Row PointLight 系统光效
   spec: 05-ui-components/01-layout-components/09-row/Feat-04-row-point-light-spec.md
+  status: Baselined
+- func_id: 05-01-10
+  id: Feat-01
+  title: RowSplit 水平分割布局与分隔线绘制
+  spec: 05-ui-components/01-layout-components/10-row-split/Feat-01-row-split-horizontal-layout-rendering-spec.md
+  status: Baselined
+- func_id: 05-01-10
+  id: Feat-02
+  title: RowSplit 可拖拽调整与边界约束
+  spec: 05-ui-components/01-layout-components/10-row-split/Feat-02-row-split-resizeable-drag-spec.md
   status: Baselined
 - func_id: 05-01-11
   id: Feat-01
@@ -698,6 +748,86 @@ features:
   id: Feat-03
   title: 高级能力（AI/Poster/快捷键）
   spec: 05-ui-components/13-platform-components/02-video/Feat-03-video-advanced-capabilities-spec.md
+  status: Baselined
+- func_id: 05-14-01
+  id: Feat-01
+  title: Shape 容器、视口与 Mesh
+  spec: 05-ui-components/14-drawing-components/01-shape/Feat-01-shape-container-viewport-mesh-spec.md
+  status: Baselined
+- func_id: 05-14-01
+  id: Feat-02
+  title: Shape 通用绘制样式
+  spec: 05-ui-components/14-drawing-components/01-shape/Feat-02-shape-common-paint-style-spec.md
+  status: Baselined
+- func_id: 05-14-01
+  id: Feat-03
+  title: Shape 基础闭合图形
+  spec: 05-ui-components/14-drawing-components/01-shape/Feat-03-shape-basic-closed-geometry-spec.md
+  status: Baselined
+- func_id: 05-14-01
+  id: Feat-04
+  title: Shape 点集图形
+  spec: 05-ui-components/14-drawing-components/01-shape/Feat-04-shape-point-geometry-spec.md
+  status: Baselined
+- func_id: 05-14-01
+  id: Feat-05
+  title: Shape Path 命令绘制
+  spec: 05-ui-components/14-drawing-components/01-shape/Feat-05-shape-path-commands-spec.md
+  status: Baselined
+- func_id: 05-14-01
+  id: Feat-06
+  title: Shape 多范式与 Modifier
+  spec: 05-ui-components/14-drawing-components/01-shape/Feat-06-shape-multi-paradigm-modifier-spec.md
+  status: Baselined
+- func_id: 05-14-02
+  id: Feat-01
+  title: Canvas 组件、上下文与生命周期
+  spec: 05-ui-components/14-drawing-components/02-canvas/Feat-01-canvas-component-context-lifecycle-spec.md
+  status: Baselined
+- func_id: 05-14-02
+  id: Feat-02
+  title: Canvas 路径几何与裁剪
+  spec: 05-ui-components/14-drawing-components/02-canvas/Feat-02-canvas-path-geometry-clipping-spec.md
+  status: Baselined
+- func_id: 05-14-02
+  id: Feat-03
+  title: Canvas 绘制样式与合成
+  spec: 05-ui-components/14-drawing-components/02-canvas/Feat-03-canvas-paint-style-composition-spec.md
+  status: Baselined
+- func_id: 05-14-02
+  id: Feat-04
+  title: Canvas 状态栈与几何变换
+  spec: 05-ui-components/14-drawing-components/02-canvas/Feat-04-canvas-state-transform-spec.md
+  status: Baselined
+- func_id: 05-14-02
+  id: Feat-05
+  title: Canvas 文本绘制与度量
+  spec: 05-ui-components/14-drawing-components/02-canvas/Feat-05-canvas-text-rendering-metrics-spec.md
+  status: Baselined
+- func_id: 05-14-02
+  id: Feat-06
+  title: Canvas 图像与像素交换
+  spec: 05-ui-components/14-drawing-components/02-canvas/Feat-06-canvas-image-pixel-interchange-spec.md
+  status: Baselined
+- func_id: 05-14-02
+  id: Feat-07
+  title: Canvas 图像分析与多范式兼容
+  spec: 05-ui-components/14-drawing-components/02-canvas/Feat-07-canvas-image-analysis-multi-paradigm-spec.md
+  status: Baselined
+- func_id: 05-14-03
+  id: Feat-01
+  title: OffscreenCanvas 离屏表面与上下文
+  spec: 05-ui-components/14-drawing-components/03-offscreen-canvas/Feat-01-offscreen-canvas-surface-context-spec.md
+  status: Baselined
+- func_id: 05-14-03
+  id: Feat-02
+  title: OffscreenCanvas 离屏二维绘制上下文
+  spec: 05-ui-components/14-drawing-components/03-offscreen-canvas/Feat-02-offscreen-canvas-rendering-context-spec.md
+  status: Baselined
+- func_id: 05-14-03
+  id: Feat-03
+  title: OffscreenCanvas 图像导出与转移
+  spec: 05-ui-components/14-drawing-components/03-offscreen-canvas/Feat-03-offscreen-canvas-export-transfer-spec.md
   status: Baselined
 - func_id: 05-03-02
   id: Feat-01
