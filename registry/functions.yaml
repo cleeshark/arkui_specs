@@ -558,7 +558,7 @@ functions:
     id: '02'
     title: Svg解析
   path: 04-common-capability/01-image-loading/02-svg-parsing/
-  design: null
+  design: 04-common-capability/01-image-loading/02-svg-parsing/design.md
   status: active
 - id: 04-01-03
   l1:
@@ -714,7 +714,7 @@ functions:
     id: '10'
     title: 图片相关属性
   path: 04-common-capability/03-common-attributes/10-image-related-attributes/
-  design: null
+  design: 04-common-capability/03-common-attributes/10-image-related-attributes/design.md
   status: active
 - id: 04-03-11
   l1:
@@ -1494,7 +1494,7 @@ functions:
     id: '01'
     title: Image分析能力
   path: 04-common-capability/23-ai-capability/01-image-analysis/
-  design: null
+  design: 04-common-capability/23-ai-capability/01-image-analysis/design.md
   status: active
 - id: 04-24-01
   l1:
@@ -2118,7 +2118,7 @@ functions:
     id: '05'
     title: CalendarPickerDialog
   path: 05-ui-components/06-popup-components/05-calendar-picker-dialog/
-  design: null
+  design: 05-ui-components/06-popup-components/05-calendar-picker-dialog/design.md
   status: active
 - id: 05-06-06
   l1:
@@ -2131,7 +2131,7 @@ functions:
     id: '06'
     title: DatePickerDialog
   path: 05-ui-components/06-popup-components/06-date-picker-dialog/
-  design: null
+  design: 05-ui-components/06-popup-components/06-date-picker-dialog/design.md
   status: active
 - id: 05-06-07
   l1:
@@ -2144,7 +2144,7 @@ functions:
     id: '07'
     title: TimePickerDialog
   path: 05-ui-components/06-popup-components/07-time-picker-dialog/
-  design: null
+  design: 05-ui-components/06-popup-components/07-time-picker-dialog/design.md
   status: active
 - id: 05-06-08
   l1:
@@ -2157,7 +2157,7 @@ functions:
     id: 08
     title: TextPickerDialog
   path: 05-ui-components/06-popup-components/08-text-picker-dialog/
-  design: null
+  design: 05-ui-components/06-popup-components/08-text-picker-dialog/design.md
   status: active
 - id: 05-06-09
   l1:

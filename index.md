@@ -62,7 +62,7 @@
 | 03 引擎框架层 | 08 DFX | 05 Benchmark | `03-08-05` | `03-engine-framework/08-dfx-foundation/05-benchmark/` | *待补充* | 0 |
 | 03 引擎框架层 | 08 DFX | 06 布局边界显示 | `03-08-06` | `03-engine-framework/08-dfx-foundation/06-layout-boundary-display/` | [design.md](03-engine-framework/08-dfx-foundation/06-layout-boundary-display/design.md) | 1 |
 | 04 通用能力层 | 01 图片加载能力 | 01 图片加载机制 | `04-01-01` | `04-common-capability/01-image-loading/01-image-loading-mechanism/` | [design.md](04-common-capability/01-image-loading/01-image-loading-mechanism/design.md) | 1 |
-| 04 通用能力层 | 01 图片加载能力 | 02 Svg解析 | `04-01-02` | `04-common-capability/01-image-loading/02-svg-parsing/` | *待补充* | 0 |
+| 04 通用能力层 | 01 图片加载能力 | 02 Svg解析 | `04-01-02` | `04-common-capability/01-image-loading/02-svg-parsing/` | [design.md](04-common-capability/01-image-loading/02-svg-parsing/design.md) | 4 |
 | 04 通用能力层 | 01 图片加载能力 | 03 DrawableDescriptor 能力 | `04-01-03` | `04-common-capability/01-image-loading/03-drawable-descriptor/` | [design.md](04-common-capability/01-image-loading/03-drawable-descriptor/design.md) | 1 |
 | 04 通用能力层 | 02 安全区机制 | 01 安全区机制 | `04-02-01` | `04-common-capability/02-safe-area/01-safe-area-mechanism/` | *待补充* | 0 |
 | 04 通用能力层 | 03 通用属性 | 01 布局属性 | `04-03-01` | `04-common-capability/03-common-attributes/01-layout-attributes/` | [design.md](04-common-capability/03-common-attributes/01-layout-attributes/design.md) | 3 |
@@ -74,7 +74,7 @@
 | 04 通用能力层 | 03 通用属性 | 07 样式属性 | `04-03-07` | `04-common-capability/03-common-attributes/07-style-attributes/` | *待补充* | 0 |
 | 04 通用能力层 | 03 通用属性 | 08 基础单位 | `04-03-08` | `04-common-capability/03-common-attributes/08-basic-units/` | *待补充* | 0 |
 | 04 通用能力层 | 03 通用属性 | 09 无障碍属性 | `04-03-09` | `04-common-capability/03-common-attributes/09-accessibility-attributes/` | *待补充* | 0 |
-| 04 通用能力层 | 03 通用属性 | 10 图片相关属性 | `04-03-10` | `04-common-capability/03-common-attributes/10-image-related-attributes/` | *待补充* | 0 |
+| 04 通用能力层 | 03 通用属性 | 10 图片相关属性 | `04-03-10` | `04-common-capability/03-common-attributes/10-image-related-attributes/` | [design.md](04-common-capability/03-common-attributes/10-image-related-attributes/design.md) | 1 |
 | 04 通用能力层 | 03 通用属性 | 11 文本通用属性 | `04-03-11` | `04-common-capability/03-common-attributes/11-text-common-attributes/` | *待补充* | 0 |
 | 04 通用能力层 | 04 通用事件 | 01 触摸事件 | `04-04-01` | `04-common-capability/04-common-events/01-touch-events/` | *待补充* | 0 |
 | 04 通用能力层 | 04 通用事件 | 02 按键事件 | `04-04-02` | `04-common-capability/04-common-events/02-key-events/` | *待补充* | 0 |
@@ -134,7 +134,7 @@
 | 04 通用能力层 | 21 适老化 | 01 大字体 | `04-21-01` | `04-common-capability/21-aging-adaptation/01-large-font/` | *待补充* | 0 |
 | 04 通用能力层 | 22 国际化能力 | 01 多语言能力 | `04-22-01` | `04-common-capability/22-internationalization/01-multilingual/` | *待补充* | 0 |
 | 04 通用能力层 | 22 国际化能力 | 02 镜像能力 | `04-22-02` | `04-common-capability/22-internationalization/02-mirroring/` | *待补充* | 0 |
-| 04 通用能力层 | 23 AI能力 | 01 Image分析能力 | `04-23-01` | `04-common-capability/23-ai-capability/01-image-analysis/` | *待补充* | 0 |
+| 04 通用能力层 | 23 AI能力 | 01 Image分析能力 | `04-23-01` | `04-common-capability/23-ai-capability/01-image-analysis/` | [design.md](04-common-capability/23-ai-capability/01-image-analysis/design.md) | 2 |
 | 04 通用能力层 | 24 布局通用能力 | 01 像素取整能力 | `04-24-01` | `04-common-capability/24-layout-common-capability/01-pixel-rounding/` | *待补充* | 0 |
 | 04 通用能力层 | 25 热重载能力 | 01 热重载机制 | `04-25-01` | `04-common-capability/25-hot-reload/01-hot-reload-mechanism/` | *待补充* | 0 |
 | 05 组件层 | 01 布局类组件 | 01 Blank | `05-01-01` | `05-ui-components/01-layout-components/01-blank/` | [design.md](05-ui-components/01-layout-components/01-blank/design.md) | 1 |
@@ -182,10 +182,10 @@
 | 05 组件层 | 06 弹窗类组件 | 02 警告弹窗 | `05-06-02` | `05-ui-components/06-popup-components/02-alert-dialog/` | *待补充* | 0 |
 | 05 组件层 | 06 弹窗类组件 | 03 列表选择弹窗 | `05-06-03` | `05-ui-components/06-popup-components/03-list-selection-dialog/` | *待补充* | 0 |
 | 05 组件层 | 06 弹窗类组件 | 04 自定义弹窗 | `05-06-04` | `05-ui-components/06-popup-components/04-custom-dialog/` | [design.md](05-ui-components/06-popup-components/04-custom-dialog/design.md) | 3 |
-| 05 组件层 | 06 弹窗类组件 | 05 CalendarPickerDialog | `05-06-05` | `05-ui-components/06-popup-components/05-calendar-picker-dialog/` | *待补充* | 0 |
-| 05 组件层 | 06 弹窗类组件 | 06 DatePickerDialog | `05-06-06` | `05-ui-components/06-popup-components/06-date-picker-dialog/` | *待补充* | 0 |
-| 05 组件层 | 06 弹窗类组件 | 07 TimePickerDialog | `05-06-07` | `05-ui-components/06-popup-components/07-time-picker-dialog/` | *待补充* | 0 |
-| 05 组件层 | 06 弹窗类组件 | 08 TextPickerDialog | `05-06-08` | `05-ui-components/06-popup-components/08-text-picker-dialog/` | *待补充* | 0 |
+| 05 组件层 | 06 弹窗类组件 | 05 CalendarPickerDialog | `05-06-05` | `05-ui-components/06-popup-components/05-calendar-picker-dialog/` | [design.md](05-ui-components/06-popup-components/05-calendar-picker-dialog/design.md) | 1 |
+| 05 组件层 | 06 弹窗类组件 | 06 DatePickerDialog | `05-06-06` | `05-ui-components/06-popup-components/06-date-picker-dialog/` | [design.md](05-ui-components/06-popup-components/06-date-picker-dialog/design.md) | 1 |
+| 05 组件层 | 06 弹窗类组件 | 07 TimePickerDialog | `05-06-07` | `05-ui-components/06-popup-components/07-time-picker-dialog/` | [design.md](05-ui-components/06-popup-components/07-time-picker-dialog/design.md) | 1 |
+| 05 组件层 | 06 弹窗类组件 | 08 TextPickerDialog | `05-06-08` | `05-ui-components/06-popup-components/08-text-picker-dialog/` | [design.md](05-ui-components/06-popup-components/08-text-picker-dialog/design.md) | 1 |
 | 05 组件层 | 06 弹窗类组件 | 09 ContextMenu接口 | `05-06-09` | `05-ui-components/06-popup-components/09-context-menu/` | *待补充* | 0 |
 | 05 组件层 | 06 弹窗类组件 | 10 promptAction接口 | `05-06-10` | `05-ui-components/06-popup-components/10-prompt-action/` | [design.md](05-ui-components/06-popup-components/10-prompt-action/design.md) | 1 |
 | 05 组件层 | 06 弹窗类组件 | 11 popup弹窗 | `05-06-11` | `05-ui-components/06-popup-components/11-popup/` | [design.md](05-ui-components/06-popup-components/11-popup/design.md) | 2 |
@@ -549,6 +549,10 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | SVG DOM、标签、属性与样式解析 | [Feat-01-svg-dom-parsing-spec.md](04-common-capability/01-image-loading/02-svg-parsing/Feat-01-svg-dom-parsing-spec.md) | Baselined |
+| Feat-02 | SVG 坐标缩放、基础图形与文本绘制 | [Feat-02-svg-coordinate-shape-text-spec.md](04-common-capability/01-image-loading/02-svg-parsing/Feat-02-svg-coordinate-shape-text-spec.md) | Baselined |
+| Feat-03 | SVG 引用、渐变、裁剪、遮罩与滤镜效果 | [Feat-03-svg-reference-effects-spec.md](04-common-capability/01-image-loading/02-svg-parsing/Feat-03-svg-reference-effects-spec.md) | Baselined |
+| Feat-04 | SVG 动画、版本兼容与 Image 集成 | [Feat-04-svg-animation-image-integration-spec.md](04-common-capability/01-image-loading/02-svg-parsing/Feat-04-svg-animation-image-integration-spec.md) | Baselined |
 
 ### 04-01-03 DrawableDescriptor 能力
 
@@ -614,6 +618,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 背景图片通用属性 | [Feat-01-background-image-attributes-spec.md](04-common-capability/03-common-attributes/10-image-related-attributes/Feat-01-background-image-attributes-spec.md) | Baselined |
 
 ### 04-03-11 文本通用属性
 
@@ -929,6 +934,8 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Image 分析开关、配置与支持条件 | [Feat-01-image-analyzer-support-spec.md](04-common-capability/23-ai-capability/01-image-analysis/Feat-01-image-analyzer-support-spec.md) | Baselined |
+| Feat-02 | Image Analyzer Overlay 生命周期与跨组件管理 | [Feat-02-image-analyzer-overlay-lifecycle-spec.md](04-common-capability/23-ai-capability/01-image-analysis/Feat-02-image-analyzer-overlay-lifecycle-spec.md) | Baselined |
 
 ### 04-24-01 像素取整能力
 
@@ -1252,21 +1259,25 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | CalendarPickerDialog 完整能力 | [Feat-01-calendar-picker-dialog-spec.md](05-ui-components/06-popup-components/05-calendar-picker-dialog/Feat-01-calendar-picker-dialog-spec.md) | Baselined |
 
 ### 05-06-06 DatePickerDialog
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | DatePickerDialog 完整能力 | [Feat-01-date-picker-dialog-spec.md](05-ui-components/06-popup-components/06-date-picker-dialog/Feat-01-date-picker-dialog-spec.md) | Baselined |
 
 ### 05-06-07 TimePickerDialog
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | TimePickerDialog 完整能力 | [Feat-01-time-picker-dialog-spec.md](05-ui-components/06-popup-components/07-time-picker-dialog/Feat-01-time-picker-dialog-spec.md) | Baselined |
 
 ### 05-06-08 TextPickerDialog
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | TextPickerDialog 完整能力 | [Feat-01-text-picker-dialog-spec.md](05-ui-components/06-popup-components/08-text-picker-dialog/Feat-01-text-picker-dialog-spec.md) | Baselined |
 
 ### 05-06-09 ContextMenu接口
 

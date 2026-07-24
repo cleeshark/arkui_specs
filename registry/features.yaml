@@ -129,6 +129,26 @@ features:
   title: 图片加载机制
   spec: 04-common-capability/01-image-loading/01-image-loading-mechanism/Feat-01-image-loading-mechanism-spec.md
   status: Baselined
+- func_id: 04-01-02
+  id: Feat-01
+  title: SVG DOM、标签、属性与样式解析
+  spec: 04-common-capability/01-image-loading/02-svg-parsing/Feat-01-svg-dom-parsing-spec.md
+  status: Baselined
+- func_id: 04-01-02
+  id: Feat-02
+  title: SVG 坐标缩放、基础图形与文本绘制
+  spec: 04-common-capability/01-image-loading/02-svg-parsing/Feat-02-svg-coordinate-shape-text-spec.md
+  status: Baselined
+- func_id: 04-01-02
+  id: Feat-03
+  title: SVG 引用、渐变、裁剪、遮罩与滤镜效果
+  spec: 04-common-capability/01-image-loading/02-svg-parsing/Feat-03-svg-reference-effects-spec.md
+  status: Baselined
+- func_id: 04-01-02
+  id: Feat-04
+  title: SVG 动画、版本兼容与 Image 集成
+  spec: 04-common-capability/01-image-loading/02-svg-parsing/Feat-04-svg-animation-image-integration-spec.md
+  status: Baselined
 - func_id: 04-01-03
   id: Feat-01
   title: DrawableDescriptor 能力 (TS + C API)
@@ -153,6 +173,21 @@ features:
   id: Feat-01
   title: 图像效果
   spec: 04-common-capability/03-common-attributes/02-visual-effect-attributes/Feat-01-image-effects-spec.md
+  status: Baselined
+- func_id: 04-03-10
+  id: Feat-01
+  title: 背景图片通用属性
+  spec: 04-common-capability/03-common-attributes/10-image-related-attributes/Feat-01-background-image-attributes-spec.md
+  status: Baselined
+- func_id: 04-23-01
+  id: Feat-01
+  title: Image 分析开关、配置与支持条件
+  spec: 04-common-capability/23-ai-capability/01-image-analysis/Feat-01-image-analyzer-support-spec.md
+  status: Baselined
+- func_id: 04-23-01
+  id: Feat-02
+  title: Image Analyzer Overlay 生命周期与跨组件管理
+  spec: 04-common-capability/23-ai-capability/01-image-analysis/Feat-02-image-analyzer-overlay-lifecycle-spec.md
   status: Baselined
 - func_id: 04-04-06
   id: Feat-01
@@ -728,6 +763,26 @@ features:
   id: Feat-03
   title: Dialog C API（ArkUI_NativeDialogAPI_1/2/3、OH_ArkUI_CustomDialog 函数族）
   spec: 05-ui-components/06-popup-components/04-custom-dialog/Feat-03-dialog-capi-spec.md
+  status: Baselined
+- func_id: 05-06-05
+  id: Feat-01
+  title: CalendarPickerDialog 完整能力
+  spec: 05-ui-components/06-popup-components/05-calendar-picker-dialog/Feat-01-calendar-picker-dialog-spec.md
+  status: Baselined
+- func_id: 05-06-06
+  id: Feat-01
+  title: DatePickerDialog 完整能力
+  spec: 05-ui-components/06-popup-components/06-date-picker-dialog/Feat-01-date-picker-dialog-spec.md
+  status: Baselined
+- func_id: 05-06-07
+  id: Feat-01
+  title: TimePickerDialog 完整能力
+  spec: 05-ui-components/06-popup-components/07-time-picker-dialog/Feat-01-time-picker-dialog-spec.md
+  status: Baselined
+- func_id: 05-06-08
+  id: Feat-01
+  title: TextPickerDialog 完整能力
+  spec: 05-ui-components/06-popup-components/08-text-picker-dialog/Feat-01-text-picker-dialog-spec.md
   status: Baselined
 - func_id: 05-06-11
   id: Feat-01
