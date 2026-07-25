@@ -623,7 +623,7 @@ functions:
     id: '03'
     title: 基础属性
   path: 04-common-capability/03-common-attributes/03-basic-attributes/
-  design: null
+  design: 04-common-capability/03-common-attributes/03-basic-attributes/design.md
   status: active
 - id: 04-03-04
   l1:
