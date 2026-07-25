@@ -644,6 +644,66 @@ features:
   title: NavDestination 模式/安全区/转场动画/状态恢复
   spec: 05-ui-components/02-navigation-components/03-nav-destination/Feat-04-nav-destination-mode-safe-area-transition-recovery-spec.md
   status: Baselined
+- func_id: 05-12-01
+  id: Feat-01
+  title: PluginComponent创建/模板/数据与事件回调
+  spec: 05-ui-components/12-embedded-display-components/01-plugin-component/Feat-01-plugin-component-creation-events-spec.md
+  status: Baselined
+- func_id: 05-12-01
+  id: Feat-02
+  title: PluginComponent跨组件Push/Request Manager
+  spec: 05-ui-components/12-embedded-display-components/01-plugin-component/Feat-02-plugin-component-manager-spec.md
+  status: Baselined
+- func_id: 05-12-02
+  id: Feat-01
+  title: AbilityComponent完整规格（已废弃补录）
+  spec: null
+  status: Draft
+- func_id: 05-12-03
+  id: Feat-01
+  title: UIExtensionComponent创建/选项/Proxy通信
+  spec: 05-ui-components/12-embedded-display-components/03-ui-extension-component/Feat-01-ui-extension-creation-proxy-spec.md
+  status: Baselined
+- func_id: 05-12-03
+  id: Feat-02
+  title: UIExtensionComponent事件回调
+  spec: 05-ui-components/12-embedded-display-components/03-ui-extension-component/Feat-02-ui-extension-events-spec.md
+  status: Baselined
+- func_id: 05-12-03
+  id: Feat-03
+  title: UIExtensionComponent废弃事件与兼容性
+  spec: 05-ui-components/12-embedded-display-components/03-ui-extension-component/Feat-03-ui-extension-deprecated-compat-spec.md
+  status: Baselined
+- func_id: 05-12-04
+  id: Feat-01
+  title: EmbeddedComponent创建/选项/DPI策略
+  spec: 05-ui-components/12-embedded-display-components/04-embedded-component/Feat-01-embedded-creation-dpi-spec.md
+  status: Baselined
+- func_id: 05-12-04
+  id: Feat-02
+  title: EmbeddedComponent事件回调
+  spec: 05-ui-components/12-embedded-display-components/04-embedded-component/Feat-02-embedded-events-spec.md
+  status: Baselined
+- func_id: 05-12-05
+  id: Feat-01
+  title: IsolatedComponent完整规格
+  spec: 05-ui-components/12-embedded-display-components/05-isolated-component/Feat-01-isolated-component-spec.md
+  status: Baselined
+- func_id: 05-12-06
+  id: Feat-01
+  title: SecurityUIExtensionComponent创建/Proxy/安全策略
+  spec: 05-ui-components/12-embedded-display-components/06-security-ui-extension-component/Feat-01-security-creation-proxy-spec.md
+  status: Baselined
+- func_id: 05-12-06
+  id: Feat-02
+  title: SecurityUIExtensionComponent事件回调
+  spec: 05-ui-components/12-embedded-display-components/06-security-ui-extension-component/Feat-02-security-events-spec.md
+  status: Baselined
+- func_id: 05-12-07
+  id: Feat-01
+  title: DynamicComponent完整规格
+  spec: 05-ui-components/12-embedded-display-components/07-dynamic-component/Feat-01-dynamic-component-spec.md
+  status: Baselined
 - func_id: 05-13-01
   id: Feat-01
   title: 创建、类型与表面生命周期（核心）

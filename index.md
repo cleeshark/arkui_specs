@@ -217,13 +217,13 @@
 | 05 组件层 | 10 信息展示类组件 | 10 Counter | `05-10-10` | `05-ui-components/10-information-display-components/10-counter/` | *待补充* | 0 |
 | 05 组件层 | 11 卡片框架组件 | 01 FormComponent | `05-11-01` | `05-ui-components/11-card-framework-components/01-form-component/` | *待补充* | 0 |
 | 05 组件层 | 11 卡片框架组件 | 02 FormLink | `05-11-02` | `05-ui-components/11-card-framework-components/02-form-link/` | *待补充* | 0 |
-| 05 组件层 | 12 显示嵌入组件 | 01 PluginComponent | `05-12-01` | `05-ui-components/12-embedded-display-components/01-plugin-component/` | *待补充* | 0 |
-| 05 组件层 | 12 显示嵌入组件 | 02 AbilityComponent | `05-12-02` | `05-ui-components/12-embedded-display-components/02-ability-component/` | *待补充* | 0 |
-| 05 组件层 | 12 显示嵌入组件 | 03 UIExtensionComponent | `05-12-03` | `05-ui-components/12-embedded-display-components/03-ui-extension-component/` | *待补充* | 0 |
-| 05 组件层 | 12 显示嵌入组件 | 04 EmbeddedComponent | `05-12-04` | `05-ui-components/12-embedded-display-components/04-embedded-component/` | *待补充* | 0 |
-| 05 组件层 | 12 显示嵌入组件 | 05 IsolatedComponent | `05-12-05` | `05-ui-components/12-embedded-display-components/05-isolated-component/` | *待补充* | 0 |
-| 05 组件层 | 12 显示嵌入组件 | 06 SecurityUIExtensionComponent | `05-12-06` | `05-ui-components/12-embedded-display-components/06-security-ui-extension-component/` | *待补充* | 0 |
-| 05 组件层 | 12 显示嵌入组件 | 07 DynamicComponent | `05-12-07` | `05-ui-components/12-embedded-display-components/07-dynamic-component/` | *待补充* | 0 |
+| 05 组件层 | 12 显示嵌入组件 | 01 PluginComponent | `05-12-01` | `05-ui-components/12-embedded-display-components/01-plugin-component/` | [design.md](05-ui-components/12-embedded-display-components/01-plugin-component/design.md) | 2 |
+| 05 组件层 | 12 显示嵌入组件 | 02 AbilityComponent | `05-12-02` | `05-ui-components/12-embedded-display-components/02-ability-component/` | *待补充* | 1 |
+| 05 组件层 | 12 显示嵌入组件 | 03 UIExtensionComponent | `05-12-03` | `05-ui-components/12-embedded-display-components/03-ui-extension-component/` | [design.md](05-ui-components/12-embedded-display-components/03-ui-extension-component/design.md) | 3 |
+| 05 组件层 | 12 显示嵌入组件 | 04 EmbeddedComponent | `05-12-04` | `05-ui-components/12-embedded-display-components/04-embedded-component/` | [design.md](05-ui-components/12-embedded-display-components/04-embedded-component/design.md) | 2 |
+| 05 组件层 | 12 显示嵌入组件 | 05 IsolatedComponent | `05-12-05` | `05-ui-components/12-embedded-display-components/05-isolated-component/` | [design.md](05-ui-components/12-embedded-display-components/05-isolated-component/design.md) | 1 |
+| 05 组件层 | 12 显示嵌入组件 | 06 SecurityUIExtensionComponent | `05-12-06` | `05-ui-components/12-embedded-display-components/06-security-ui-extension-component/` | [design.md](05-ui-components/12-embedded-display-components/06-security-ui-extension-component/design.md) | 2 |
+| 05 组件层 | 12 显示嵌入组件 | 07 DynamicComponent | `05-12-07` | `05-ui-components/12-embedded-display-components/07-dynamic-component/` | [design.md](05-ui-components/12-embedded-display-components/07-dynamic-component/design.md) | 1 |
 | 05 组件层 | 13 平台类组件 | 01 XComponent | `05-13-01` | `05-ui-components/13-platform-components/01-xcomponent/` | [design.md](05-ui-components/13-platform-components/01-xcomponent/design.md) | 8 |
 | 05 组件层 | 13 平台类组件 | 02 Video | `05-13-02` | `05-ui-components/13-platform-components/02-video/` | [design.md](05-ui-components/13-platform-components/02-video/design.md) | 3 |
 | 05 组件层 | 14 绘制类组件 | 01 Shape相关 | `05-14-01` | `05-ui-components/14-drawing-components/01-shape/` | *待补充* | 0 |
@@ -1456,36 +1456,48 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | PluginComponent创建/模板/数据与事件回调 | [Feat-01-plugin-component-creation-events-spec.md](05-ui-components/12-embedded-display-components/01-plugin-component/Feat-01-plugin-component-creation-events-spec.md) | Baselined |
+| Feat-02 | PluginComponent跨组件Push/Request Manager | [Feat-02-plugin-component-manager-spec.md](05-ui-components/12-embedded-display-components/01-plugin-component/Feat-02-plugin-component-manager-spec.md) | Baselined |
 
 ### 05-12-02 AbilityComponent
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | AbilityComponent完整规格（已废弃补录） | *待补充* | Draft |
 
 ### 05-12-03 UIExtensionComponent
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | UIExtensionComponent创建/选项/Proxy通信 | [Feat-01-ui-extension-creation-proxy-spec.md](05-ui-components/12-embedded-display-components/03-ui-extension-component/Feat-01-ui-extension-creation-proxy-spec.md) | Baselined |
+| Feat-02 | UIExtensionComponent事件回调 | [Feat-02-ui-extension-events-spec.md](05-ui-components/12-embedded-display-components/03-ui-extension-component/Feat-02-ui-extension-events-spec.md) | Baselined |
+| Feat-03 | UIExtensionComponent废弃事件与兼容性 | [Feat-03-ui-extension-deprecated-compat-spec.md](05-ui-components/12-embedded-display-components/03-ui-extension-component/Feat-03-ui-extension-deprecated-compat-spec.md) | Baselined |
 
 ### 05-12-04 EmbeddedComponent
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | EmbeddedComponent创建/选项/DPI策略 | [Feat-01-embedded-creation-dpi-spec.md](05-ui-components/12-embedded-display-components/04-embedded-component/Feat-01-embedded-creation-dpi-spec.md) | Baselined |
+| Feat-02 | EmbeddedComponent事件回调 | [Feat-02-embedded-events-spec.md](05-ui-components/12-embedded-display-components/04-embedded-component/Feat-02-embedded-events-spec.md) | Baselined |
 
 ### 05-12-05 IsolatedComponent
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | IsolatedComponent完整规格 | [Feat-01-isolated-component-spec.md](05-ui-components/12-embedded-display-components/05-isolated-component/Feat-01-isolated-component-spec.md) | Baselined |
 
 ### 05-12-06 SecurityUIExtensionComponent
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | SecurityUIExtensionComponent创建/Proxy/安全策略 | [Feat-01-security-creation-proxy-spec.md](05-ui-components/12-embedded-display-components/06-security-ui-extension-component/Feat-01-security-creation-proxy-spec.md) | Baselined |
+| Feat-02 | SecurityUIExtensionComponent事件回调 | [Feat-02-security-events-spec.md](05-ui-components/12-embedded-display-components/06-security-ui-extension-component/Feat-02-security-events-spec.md) | Baselined |
 
 ### 05-12-07 DynamicComponent
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | DynamicComponent完整规格 | [Feat-01-dynamic-component-spec.md](05-ui-components/12-embedded-display-components/07-dynamic-component/Feat-01-dynamic-component-spec.md) | Baselined |
 
 ### 05-13-01 XComponent
 
