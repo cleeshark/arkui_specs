@@ -1169,7 +1169,7 @@ functions:
     id: '02'
     title: 无感监听（observer）
   path: 04-common-capability/11-component-info/02-observer/
-  design: null
+  design: 04-common-capability/11-component-info/02-observer/design.md
   status: active
 - id: 04-11-03
   l1:
