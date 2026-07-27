@@ -123,7 +123,7 @@ features:
   id: Feat-01
   title: 布局边界显示调试能力
   spec: 03-engine-framework/08-dfx-foundation/06-layout-boundary-display/Feat-01-layout-boundary-display-spec.md
-  status: Draft
+  status: Baselined
 - func_id: 04-01-01
   id: Feat-01
   title: 图片加载机制
@@ -968,7 +968,7 @@ features:
   id: Feat-01
   title: 子管线与多容器 VSync 协调
   spec: 03-engine-framework/01-render-pipeline/02-multi-level-render-pipeline/Feat-01-sub-pipeline-multi-container-vsync-coordination-spec.md
-  status: Draft
+  status: Baselined
 - func_id: 03-02-01
   id: Feat-01
   title: 动效框架全量规格
