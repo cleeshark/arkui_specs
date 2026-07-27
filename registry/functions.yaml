@@ -26,7 +26,7 @@ top_levels:
 - id: '07'
   slug: 07-frontend
   title: 前端层
-  description: ArkTS 高级组件、状态管理、自定义组件、生成式 UI
+  description: ArkTS 高级组件、状态管理、自定义组件、渲染控制、响应式环境变量、生成式 UI
 - id: 08
   slug: 08-ndk
   title: NDK
@@ -3234,9 +3234,9 @@ functions:
     title: 状态管理框架
   l3:
     id: '01'
-    title: 组件状态管理
-  path: 07-frontend/02-state-management/01-component-state-management/
-  design: null
+    title: 状态管理V1组件内状态管理
+  path: 07-frontend/02-state-management/01-v1-component-state/
+  design: 07-frontend/02-state-management/01-v1-component-state/design.md
   status: active
 - id: 07-02-02
   l1:
@@ -3247,9 +3247,9 @@ functions:
     title: 状态管理框架
   l3:
     id: '02'
-    title: 应用状态管理
-  path: 07-frontend/02-state-management/02-application-state-management/
-  design: null
+    title: 状态管理V1数据对象内状态管理
+  path: 07-frontend/02-state-management/02-v1-data-object-state/
+  design: 07-frontend/02-state-management/02-v1-data-object-state/design.md
   status: active
 - id: 07-02-03
   l1:
@@ -3260,9 +3260,9 @@ functions:
     title: 状态管理框架
   l3:
     id: '03'
-    title: 数据同步
-  path: 07-frontend/02-state-management/03-data-synchronization/
-  design: null
+    title: 状态管理V1应用内状态管理
+  path: 07-frontend/02-state-management/03-v1-app-state/
+  design: 07-frontend/02-state-management/03-v1-app-state/design.md
   status: active
 - id: 07-02-04
   l1:
@@ -3273,9 +3273,9 @@ functions:
     title: 状态管理框架
   l3:
     id: '04'
-    title: 状态管理V2
-  path: 07-frontend/02-state-management/04-state-management-v2/
-  design: null
+    title: 状态管理V2组件内状态管理
+  path: 07-frontend/02-state-management/04-v2-component-state/
+  design: 07-frontend/02-state-management/04-v2-component-state/design.md
   status: active
 - id: 07-02-05
   l1:
@@ -3286,9 +3286,126 @@ functions:
     title: 状态管理框架
   l3:
     id: '05'
-    title: ArkTS静态化
-  path: 07-frontend/02-state-management/05-arkts-staticization/
-  design: null
+    title: 状态管理V2数据对象内状态管理
+  path: 07-frontend/02-state-management/05-v2-data-object-state/
+  design: 07-frontend/02-state-management/05-v2-data-object-state/design.md
+  status: active
+- id: 07-02-06
+  l1:
+    id: '07'
+    title: 前端层
+  l2:
+    id: '02'
+    title: 状态管理框架
+  l3:
+    id: '06'
+    title: 状态管理V2应用内状态管理
+  path: 07-frontend/02-state-management/06-v2-app-state/
+  design: 07-frontend/02-state-management/06-v2-app-state/design.md
+  status: active
+- id: 07-02-07
+  l1:
+    id: '07'
+    title: 前端层
+  l2:
+    id: '02'
+    title: 状态管理框架
+  l3:
+    id: '07'
+    title: 状态管理辅助接口
+  path: 07-frontend/02-state-management/07-state-management-utilities/
+  design: 07-frontend/02-state-management/07-state-management-utilities/design.md
+  status: active
+- id: 07-02-08
+  l1:
+    id: '07'
+    title: 前端层
+  l2:
+    id: '02'
+    title: 状态管理框架
+  l3:
+    id: '08'
+    title: 静态V1组件内状态管理
+  path: 07-frontend/02-state-management/08-static-v1-component-state/
+  design: 07-frontend/02-state-management/08-static-v1-component-state/design.md
+  status: active
+- id: 07-02-09
+  l1:
+    id: '07'
+    title: 前端层
+  l2:
+    id: '02'
+    title: 状态管理框架
+  l3:
+    id: '09'
+    title: 静态V1数据对象内状态管理
+  path: 07-frontend/02-state-management/09-static-v1-data-object-state/
+  design: 07-frontend/02-state-management/09-static-v1-data-object-state/design.md
+  status: active
+- id: 07-02-10
+  l1:
+    id: '07'
+    title: 前端层
+  l2:
+    id: '02'
+    title: 状态管理框架
+  l3:
+    id: '10'
+    title: 静态V1应用内状态管理
+  path: 07-frontend/02-state-management/10-static-v1-app-state/
+  design: 07-frontend/02-state-management/10-static-v1-app-state/design.md
+  status: active
+- id: 07-02-11
+  l1:
+    id: '07'
+    title: 前端层
+  l2:
+    id: '02'
+    title: 状态管理框架
+  l3:
+    id: '11'
+    title: 静态V2组件内状态管理
+  path: 07-frontend/02-state-management/11-static-v2-component-state/
+  design: 07-frontend/02-state-management/11-static-v2-component-state/design.md
+  status: active
+- id: 07-02-12
+  l1:
+    id: '07'
+    title: 前端层
+  l2:
+    id: '02'
+    title: 状态管理框架
+  l3:
+    id: '12'
+    title: 静态V2数据对象内状态管理
+  path: 07-frontend/02-state-management/12-static-v2-data-object-state/
+  design: 07-frontend/02-state-management/12-static-v2-data-object-state/design.md
+  status: active
+- id: 07-02-13
+  l1:
+    id: '07'
+    title: 前端层
+  l2:
+    id: '02'
+    title: 状态管理框架
+  l3:
+    id: '13'
+    title: 静态V2应用内状态管理
+  path: 07-frontend/02-state-management/13-static-v2-app-state/
+  design: 07-frontend/02-state-management/13-static-v2-app-state/design.md
+  status: active
+- id: 07-02-14
+  l1:
+    id: '07'
+    title: 前端层
+  l2:
+    id: '02'
+    title: 状态管理框架
+  l3:
+    id: '14'
+    title: 状态管理互操作
+  path: 07-frontend/02-state-management/14-state-management-interop/
+  design: 07-frontend/02-state-management/14-state-management-interop/design.md
   status: active
 - id: 07-03-01
   l1:
@@ -3301,7 +3418,7 @@ functions:
     id: '01'
     title: 组件化
   path: 07-frontend/03-custom-components/01-componentization/
-  design: null
+  design: 07-frontend/03-custom-components/01-componentization/design.md
   status: active
 - id: 07-03-02
   l1:
@@ -3312,9 +3429,9 @@ functions:
     title: 自定义组件
   l3:
     id: '02'
-    title: 页面生命周期
-  path: 07-frontend/03-custom-components/02-page-lifecycle/
-  design: null
+    title: 自定义组件生命周期
+  path: 07-frontend/03-custom-components/02-component-lifecycle/
+  design: 07-frontend/03-custom-components/02-component-lifecycle/design.md
   status: active
 - id: 07-03-03
   l1:
@@ -3325,9 +3442,9 @@ functions:
     title: 自定义组件
   l3:
     id: '03'
-    title: 组件扩展
-  path: 07-frontend/03-custom-components/03-component-extension/
-  design: null
+    title: 自定义组件复用
+  path: 07-frontend/03-custom-components/03-component-reuse/
+  design: 07-frontend/03-custom-components/03-component-reuse/design.md
   status: active
 - id: 07-03-04
   l1:
@@ -3338,9 +3455,9 @@ functions:
     title: 自定义组件
   l3:
     id: '04'
-    title: 渲染控制语法
-  path: 07-frontend/03-custom-components/04-render-control-syntax/
-  design: null
+    title: 自定义组件冻结
+  path: 07-frontend/03-custom-components/04-component-freeze/
+  design: 07-frontend/03-custom-components/04-component-freeze/design.md
   status: active
 - id: 07-03-05
   l1:
@@ -3351,8 +3468,8 @@ functions:
     title: 自定义组件
   l3:
     id: '05'
-    title: LazyForEach
-  path: 07-frontend/03-custom-components/05-lazy-foreach/
+    title: 自定义测量/布局
+  path: 07-frontend/03-custom-components/05-custom-measure-layout/
   design: null
   status: active
 - id: 07-03-06
@@ -3364,8 +3481,8 @@ functions:
     title: 自定义组件
   l3:
     id: '06'
-    title: 自定义测量/布局
-  path: 07-frontend/03-custom-components/06-custom-measure-layout/
+    title: 组件扩展
+  path: 07-frontend/03-custom-components/06-component-extension/
   design: null
   status: active
 - id: 07-03-07
@@ -3377,9 +3494,9 @@ functions:
     title: 自定义组件
   l3:
     id: '07'
-    title: 组件复用前端
-  path: 07-frontend/03-custom-components/07-frontend-component-reuse/
-  design: null
+    title: 静态自定义组件状态相关
+  path: 07-frontend/03-custom-components/07-static-custom-component-state/
+  design: 07-frontend/03-custom-components/07-static-custom-component-state/design.md
   status: active
 - id: 07-04-01
   l1:
@@ -3418,6 +3535,71 @@ functions:
     id: '03'
     title: A2UI高级垂域组件
   path: 07-frontend/04-generative-ui/03-a2ui-advanced-domain-components/
+  design: null
+  status: active
+- id: 07-05-01
+  l1:
+    id: '07'
+    title: 前端层
+  l2:
+    id: '05'
+    title: 渲染控制
+  l3:
+    id: '01'
+    title: 渲染控制语法
+  path: 07-frontend/05-render-control/01-render-control-syntax/
+  design: null
+  status: active
+- id: 07-05-02
+  l1:
+    id: '07'
+    title: 前端层
+  l2:
+    id: '05'
+    title: 渲染控制
+  l3:
+    id: '02'
+    title: LazyForEach
+  path: 07-frontend/05-render-control/02-lazy-foreach/
+  design: null
+  status: active
+- id: 07-05-03
+  l1:
+    id: '07'
+    title: 前端层
+  l2:
+    id: '05'
+    title: 渲染控制
+  l3:
+    id: '03'
+    title: Repeat
+  path: 07-frontend/05-render-control/03-repeat/
+  design: null
+  status: active
+- id: 07-06-01
+  l1:
+    id: '07'
+    title: 前端层
+  l2:
+    id: '06'
+    title: 响应式环境变量
+  l3:
+    id: '01'
+    title: 系统环境变量
+  path: 07-frontend/06-reactive-env/01-system-env/
+  design: null
+  status: active
+- id: 07-06-02
+  l1:
+    id: '07'
+    title: 前端层
+  l2:
+    id: '06'
+    title: 响应式环境变量
+  l3:
+    id: '02'
+    title: 自定义环境变量
+  path: 07-frontend/06-reactive-env/02-custom-env/
   design: null
   status: active
 - id: 08-01-01

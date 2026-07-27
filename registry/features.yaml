@@ -1109,3 +1109,273 @@ features:
   title: 无感监听接口全覆盖
   spec: 04-common-capability/11-component-info/02-observer/Feat-02-observer-api-full-coverage-spec.md
   status: Baselined
+- func_id: 07-02-01
+  id: Feat-01
+  title: V1 依赖收集与变更通知核心机制
+  spec: 07-frontend/02-state-management/01-v1-component-state/Feat-01-v1-dependency-collection-and-change-notification-spec.md
+  status: Baselined
+- func_id: 07-02-01
+  id: Feat-02
+  title: '@State 组件私有状态'
+  spec: 07-frontend/02-state-management/01-v1-component-state/Feat-02-state-decorator-spec.md
+  status: Baselined
+- func_id: 07-02-01
+  id: Feat-03
+  title: '@Prop/@Link 父子单向/双向同步'
+  spec: 07-frontend/02-state-management/01-v1-component-state/Feat-03-prop-link-decorators-spec.md
+  status: Baselined
+- func_id: 07-02-01
+  id: Feat-04
+  title: '@Provide/@Consume 跨层级同步'
+  spec: 07-frontend/02-state-management/01-v1-component-state/Feat-04-provide-consume-decorators-spec.md
+  status: Baselined
+- func_id: 07-02-01
+  id: Feat-05
+  title: '@ObjectLink 嵌套对象共享引用'
+  spec: 07-frontend/02-state-management/01-v1-component-state/Feat-05-objectlink-spec.md
+  status: Baselined
+- func_id: 07-02-01
+  id: Feat-06
+  title: '@Watch 变更回调与组件冻结'
+  spec: 07-frontend/02-state-management/01-v1-component-state/Feat-06-watch-and-component-freeze-spec.md
+  status: Baselined
+- func_id: 07-02-01
+  id: Feat-07
+  title: SubscribableAbstract 自定义可观察类型
+  spec: 07-frontend/02-state-management/01-v1-component-state/Feat-07-subscribable-abstract-spec.md
+  status: Baselined
+- func_id: 07-02-01
+  id: Feat-08
+  title: 状态管理调试与渲染基础设施
+  spec: 07-frontend/02-state-management/01-v1-component-state/Feat-08-debug-render-infra-spec.md
+  status: Baselined
+- func_id: 07-02-01
+  id: Feat-09
+  title: elmtId 全链路同步与 C++ 宿主集成
+  spec: 07-frontend/02-state-management/01-v1-component-state/Feat-09-elmtid-sync-cpp-host-spec.md
+  status: Baselined
+- func_id: 07-02-02
+  id: Feat-01
+  title: '@Observed/@Track 数据对象观测与属性级追踪'
+  spec: 07-frontend/02-state-management/02-v1-data-object-state/Feat-01-observed-track-spec.md
+  status: Baselined
+- func_id: 07-02-03
+  id: Feat-01
+  title: LocalStorage 页面级存储
+  spec: 07-frontend/02-state-management/03-v1-app-state/Feat-01-localstorage-spec.md
+  status: Baselined
+- func_id: 07-02-03
+  id: Feat-02
+  title: AppStorage 全局存储与存储装饰器
+  spec: 07-frontend/02-state-management/03-v1-app-state/Feat-02-appstorage-spec.md
+  status: Baselined
+- func_id: 07-02-03
+  id: Feat-03
+  title: PersistentStorage 磁盘持久化
+  spec: 07-frontend/02-state-management/03-v1-app-state/Feat-03-persistent-storage-spec.md
+  status: Baselined
+- func_id: 07-02-03
+  id: Feat-04
+  title: Environment 设备环境变量
+  spec: 07-frontend/02-state-management/03-v1-app-state/Feat-04-environment-spec.md
+  status: Baselined
+- func_id: 07-02-04
+  id: Feat-01
+  title: ObserveV2 核心机制
+  spec: 07-frontend/02-state-management/04-v2-component-state/Feat-01-observev2-core-mechanism-spec.md
+  status: Baselined
+- func_id: 07-02-04
+  id: Feat-02
+  title: '@Local/@Param/@Once/@Event 组件状态输入输出'
+  spec: 07-frontend/02-state-management/04-v2-component-state/Feat-02-local-param-once-event-decorators-spec.md
+  status: Baselined
+- func_id: 07-02-04
+  id: Feat-03
+  title: '@Provider/@Consumer V2 跨层同步'
+  spec: 07-frontend/02-state-management/04-v2-component-state/Feat-03-provider-consumer-decorators-spec.md
+  status: Baselined
+- func_id: 07-02-04
+  id: Feat-04
+  title: V1↔V2 迁移与混用规则
+  spec: 07-frontend/02-state-management/04-v2-component-state/Feat-04-v1-v2-migration-spec.md
+  status: Baselined
+- func_id: 07-02-04
+  id: Feat-05
+  title: ConfigureStateMgmt 特性开关
+  spec: 07-frontend/02-state-management/04-v2-component-state/Feat-05-configure-state-mgmt-spec.md
+  status: Baselined
+- func_id: 07-02-05
+  id: Feat-01
+  title: '@ObservedV2/@Trace 可观察数据模型'
+  spec: 07-frontend/02-state-management/05-v2-data-object-state/Feat-01-observedv2-trace-decorators-spec.md
+  status: Baselined
+- func_id: 07-02-05
+  id: Feat-02
+  title: '@Computed/@Monitor/@SyncMonitor 计算与监听'
+  spec: 07-frontend/02-state-management/05-v2-data-object-state/Feat-02-computed-monitor-syncmonitor-decorators-spec.md
+  status: Baselined
+- func_id: 07-02-06
+  id: Feat-01
+  title: AppStorageV2 内存全局存储
+  spec: 07-frontend/02-state-management/06-v2-app-state/Feat-01-appstoragev2-spec.md
+  status: Baselined
+- func_id: 07-02-06
+  id: Feat-02
+  title: PersistenceV2 磁盘持久化与 @Type/DataCoder
+  spec: 07-frontend/02-state-management/06-v2-app-state/Feat-02-persistencev2-spec.md
+  status: Baselined
+- func_id: 07-02-07
+  id: Feat-01
+  title: UIUtils 对象工具
+  spec: 07-frontend/02-state-management/07-state-management-utilities/Feat-01-uiutils-object-tools-spec.md
+  status: Baselined
+- func_id: 07-02-07
+  id: Feat-02
+  title: UIUtils 监听与同步刷新
+  spec: 07-frontend/02-state-management/07-state-management-utilities/Feat-02-uiutils-monitor-flush-spec.md
+  status: Baselined
+- func_id: 07-02-08
+  id: Feat-01
+  title: V1 核心机制与 IStateMgmtFactory 工厂
+  spec: null
+  status: 待补充
+- func_id: 07-02-08
+  id: Feat-02
+  title: '@State/@Prop/@PropRef 组件内与父子单向同步'
+  spec: null
+  status: 待补充
+- func_id: 07-02-08
+  id: Feat-03
+  title: '@Link 父子双向同步'
+  spec: null
+  status: 待补充
+- func_id: 07-02-08
+  id: Feat-04
+  title: '@Provide/@Consume 跨层级同步'
+  spec: null
+  status: 待补充
+- func_id: 07-02-08
+  id: Feat-05
+  title: '@ObjectLink 嵌套对象共享引用'
+  spec: null
+  status: 待补充
+- func_id: 07-02-08
+  id: Feat-06
+  title: '@Watch 变更回调'
+  spec: null
+  status: 待补充
+- func_id: 07-02-09
+  id: Feat-01
+  title: '@Observed InterfaceProxyHandler 代理与内置容器观测'
+  spec: null
+  status: 待补充
+- func_id: 07-02-09
+  id: Feat-02
+  title: '@Track 属性级精确追踪'
+  spec: null
+  status: 待补充
+- func_id: 07-02-10
+  id: Feat-01
+  title: LocalStorage 页面级存储
+  spec: null
+  status: 待补充
+- func_id: 07-02-10
+  id: Feat-02
+  title: AppStorage 全局存储
+  spec: null
+  status: 待补充
+- func_id: 07-02-10
+  id: Feat-03
+  title: PersistentStorage 磁盘持久化
+  spec: null
+  status: 待补充
+- func_id: 07-02-10
+  id: Feat-04
+  title: Environment 设备环境变量
+  spec: null
+  status: 待补充
+- func_id: 07-02-10
+  id: Feat-05
+  title: 存储联动装饰器（@StorageLink/@StorageProp/@StoragePropRef/@LocalStorageLink/@LocalStoragePropRef）
+  spec: null
+  status: 待补充
+- func_id: 07-02-11
+  id: Feat-01
+  title: V2 核心机制（DecoratedV2VariableBase + StateUpdateLoop + autoProxyObject）
+  spec: null
+  status: 待补充
+- func_id: 07-02-11
+  id: Feat-02
+  title: '@Local/@Param/@ParamOnce/@Provider/@Consumer 组件状态输入输出'
+  spec: null
+  status: 待补充
+- func_id: 07-02-11
+  id: Feat-03
+  title: '@Monitor/@SyncMonitor 路径感知监听'
+  spec: null
+  status: 待补充
+- func_id: 07-02-11
+  id: Feat-04
+  title: '@Computed 惰性计算属性'
+  spec: null
+  status: 待补充
+- func_id: 07-02-12
+  id: Feat-01
+  title: '@ObservedV2/@Trace V2 可观察数据模型（UIPlugin 转换 MutableStateMeta）'
+  spec: null
+  status: 待补充
+- func_id: 07-02-13
+  id: Feat-01
+  title: AppStorageV2 内存全局存储
+  spec: null
+  status: 待补充
+- func_id: 07-02-13
+  id: Feat-02
+  title: PersistenceV2 磁盘持久化与 V2CollectionCoder
+  spec: null
+  status: 待补充
+- func_id: 07-02-14
+  id: Feat-01
+  title: 互操作核心机制（InteropState + openInterop + register 回调）
+  spec: null
+  status: 待补充
+- func_id: 07-02-14
+  id: Feat-02
+  title: 跨前端存储互操作
+  spec: null
+  status: 待补充
+- func_id: 07-02-14
+  id: Feat-03
+  title: 跨前端组件互操作
+  spec: null
+  status: 待补充
+- func_id: 07-02-14
+  id: Feat-04
+  title: 跨前端状态代理
+  spec: null
+  status: 待补充
+- func_id: 07-02-14
+  id: Feat-05
+  title: Builder 与 Binding 互操作
+  spec: null
+  status: 待补充
+- func_id: 07-03-01
+  id: Feat-01
+  title: '@Component/@ComponentV2 自定义组件声明与创建'
+  spec: 07-frontend/03-custom-components/01-componentization/Feat-01-component-declaration-creation-spec.md
+  status: Baselined
+- func_id: 07-03-02
+  id: Feat-01
+  title: 自定义组件生命周期
+  spec: 07-frontend/03-custom-components/02-component-lifecycle/Feat-01-component-lifecycle-spec.md
+  status: Baselined
+- func_id: 07-03-03
+  id: Feat-01
+  title: 自定义组件复用机制
+  spec: 07-frontend/03-custom-components/03-component-reuse/Feat-01-component-reuse-spec.md
+  status: Baselined
+- func_id: 07-03-04
+  id: Feat-01
+  title: 自定义组件冻结机制
+  spec: 07-frontend/03-custom-components/04-component-freeze/Feat-01-component-freeze-spec.md
+  status: Baselined
