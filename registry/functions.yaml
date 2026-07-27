@@ -441,7 +441,7 @@ functions:
     id: '01'
     title: 无障碍能力
   path: 03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/
-  design: null
+  design: 03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/design.md
   status: active
 - id: 03-07-02
   l1:

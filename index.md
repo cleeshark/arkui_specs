@@ -53,7 +53,7 @@
 | 03 引擎框架层 | 05 窗口机制 | 01 窗口机制 | `03-05-01` | `03-engine-framework/05-window-mechanism/01-window-mechanism/` | [design.md](03-engine-framework/05-window-mechanism/01-window-mechanism/design.md) | 4 |
 | 03 引擎框架层 | 05 窗口机制 | 02 子窗机制 | `03-05-02` | `03-engine-framework/05-window-mechanism/02-subwindow-mechanism/` | *待补充* | 0 |
 | 03 引擎框架层 | 06 多实例管理 | 01 多实例管理 | `03-06-01` | `03-engine-framework/06-multi-instance-management/01-multi-instance-management/` | [design.md](03-engine-framework/06-multi-instance-management/01-multi-instance-management/design.md) | 1 |
-| 03 引擎框架层 | 07 无障碍机制 | 01 无障碍能力 | `03-07-01` | `03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/` | *待补充* | 0 |
+| 03 引擎框架层 | 07 无障碍机制 | 01 无障碍能力 | `03-07-01` | `03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/` | [design.md](03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/design.md) | 7 |
 | 03 引擎框架层 | 07 无障碍机制 | 02 Inspector | `03-07-02` | `03-engine-framework/07-accessibility-mechanism/02-inspector/` | *待补充* | 0 |
 | 03 引擎框架层 | 08 DFX | 01 日志 | `03-08-01` | `03-engine-framework/08-dfx-foundation/01-logging/` | [design.md](03-engine-framework/08-dfx-foundation/01-logging/design.md) | 3 |
 | 03 引擎框架层 | 08 DFX | 02 内存管理 | `03-08-02` | `03-engine-framework/08-dfx-foundation/02-memory-management/` | [design.md](03-engine-framework/08-dfx-foundation/02-memory-management/design.md) | 4 |
@@ -488,6 +488,13 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 无障碍元素信息查询响应 | [Feat-01-accessibility-element-info-query-spec.md](03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-01-accessibility-element-info-query-spec.md) | Draft |
+| Feat-02 | 无障碍动作执行 | [Feat-02-accessibility-action-execution-spec.md](03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-02-accessibility-action-execution-spec.md) | Draft |
+| Feat-03 | 无障碍焦点移动 | [Feat-03-accessibility-focus-move-spec.md](03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-03-accessibility-focus-move-spec.md) | Draft |
+| Feat-04 | 无障碍悬停探测 | [Feat-04-accessibility-hover-exploration-spec.md](03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-04-accessibility-hover-exploration-spec.md) | Draft |
+| Feat-05 | 无障碍子树注册与跨进程接入 | [Feat-05-accessibility-childtree-cross-process-spec.md](03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-05-accessibility-childtree-cross-process-spec.md) | Draft |
+| Feat-06 | 应用自绘组件无障碍接入（NDK Provider） | [Feat-06-accessibility-native-provider-spec.md](03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-06-accessibility-native-provider-spec.md) | Draft |
+| Feat-07 | 无障碍事件通知 | [Feat-07-accessibility-event-notification-spec.md](03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-07-accessibility-event-notification-spec.md) | Draft |
 
 ### 03-07-02 Inspector
 

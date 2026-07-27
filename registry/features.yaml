@@ -49,6 +49,41 @@ features:
   title: 特殊窗口类型
   spec: 03-engine-framework/05-window-mechanism/01-window-mechanism/Feat-04-special-window-types-spec.md
   status: Baselined
+- func_id: 03-07-01
+  id: Feat-01
+  title: 无障碍元素信息查询响应
+  spec: 03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-01-accessibility-element-info-query-spec.md
+  status: Draft
+- func_id: 03-07-01
+  id: Feat-02
+  title: 无障碍动作执行
+  spec: 03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-02-accessibility-action-execution-spec.md
+  status: Draft
+- func_id: 03-07-01
+  id: Feat-03
+  title: 无障碍焦点移动
+  spec: 03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-03-accessibility-focus-move-spec.md
+  status: Draft
+- func_id: 03-07-01
+  id: Feat-04
+  title: 无障碍悬停探测
+  spec: 03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-04-accessibility-hover-exploration-spec.md
+  status: Draft
+- func_id: 03-07-01
+  id: Feat-05
+  title: 无障碍子树注册与跨进程接入
+  spec: 03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-05-accessibility-childtree-cross-process-spec.md
+  status: Draft
+- func_id: 03-07-01
+  id: Feat-06
+  title: 应用自绘组件无障碍接入（NDK Provider）
+  spec: 03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-06-accessibility-native-provider-spec.md
+  status: Draft
+- func_id: 03-07-01
+  id: Feat-07
+  title: 无障碍事件通知
+  spec: 03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-07-accessibility-event-notification-spec.md
+  status: Draft
 - func_id: 03-08-01
   id: Feat-01
   title: LogWrapper核心框架与HiLog适配
