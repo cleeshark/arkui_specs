@@ -64,7 +64,7 @@
 | 04 通用能力层 | 01 图片加载能力 | 01 图片加载机制 | `04-01-01` | `04-common-capability/01-image-loading/01-image-loading-mechanism/` | [design.md](04-common-capability/01-image-loading/01-image-loading-mechanism/design.md) | 1 |
 | 04 通用能力层 | 01 图片加载能力 | 02 Svg解析 | `04-01-02` | `04-common-capability/01-image-loading/02-svg-parsing/` | [design.md](04-common-capability/01-image-loading/02-svg-parsing/design.md) | 4 |
 | 04 通用能力层 | 01 图片加载能力 | 03 DrawableDescriptor 能力 | `04-01-03` | `04-common-capability/01-image-loading/03-drawable-descriptor/` | [design.md](04-common-capability/01-image-loading/03-drawable-descriptor/design.md) | 1 |
-| 04 通用能力层 | 02 安全区机制 | 01 安全区机制 | `04-02-01` | `04-common-capability/02-safe-area/01-safe-area-mechanism/` | *待补充* | 0 |
+| 04 通用能力层 | 02 安全区机制 | 01 安全区机制 | `04-02-01` | `04-common-capability/02-safe-area/01-safe-area-mechanism/` | [design.md](04-common-capability/02-safe-area/01-safe-area-mechanism/design.md) | 5 |
 | 04 通用能力层 | 03 通用属性 | 01 布局属性 | `04-03-01` | `04-common-capability/03-common-attributes/01-layout-attributes/` | [design.md](04-common-capability/03-common-attributes/01-layout-attributes/design.md) | 3 |
 | 04 通用能力层 | 03 通用属性 | 02 视效属性 | `04-03-02` | `04-common-capability/03-common-attributes/02-visual-effect-attributes/` | [design.md](04-common-capability/03-common-attributes/02-visual-effect-attributes/design.md) | 1 |
 | 04 通用能力层 | 03 通用属性 | 03 基础属性 | `04-03-03` | `04-common-capability/03-common-attributes/03-basic-attributes/` | *待补充* | 0 |
@@ -140,13 +140,13 @@
 | 05 组件层 | 01 布局类组件 | 01 Blank | `05-01-01` | `05-ui-components/01-layout-components/01-blank/` | [design.md](05-ui-components/01-layout-components/01-blank/design.md) | 1 |
 | 05 组件层 | 01 布局类组件 | 02 Divider | `05-01-02` | `05-ui-components/01-layout-components/02-divider/` | [design.md](05-ui-components/01-layout-components/02-divider/design.md) | 1 |
 | 05 组件层 | 01 布局类组件 | 03 Column | `05-01-03` | `05-ui-components/01-layout-components/03-column/` | [design.md](05-ui-components/01-layout-components/03-column/design.md) | 4 |
-| 05 组件层 | 01 布局类组件 | 04 ColumnSplit | `05-01-04` | `05-ui-components/01-layout-components/04-column-split/` | *待补充* | 0 |
+| 05 组件层 | 01 布局类组件 | 04 ColumnSplit | `05-01-04` | `05-ui-components/01-layout-components/04-column-split/` | [design.md](05-ui-components/01-layout-components/04-column-split/design.md) | 3 |
 | 05 组件层 | 01 布局类组件 | 05 Flex | `05-01-05` | `05-ui-components/01-layout-components/05-flex/` | [design.md](05-ui-components/01-layout-components/05-flex/design.md) | 5 |
 | 05 组件层 | 01 布局类组件 | 06 GridCol | `05-01-06` | `05-ui-components/01-layout-components/06-grid-col/` | [design.md](05-ui-components/01-layout-components/06-grid-col/design.md) | 3 |
 | 05 组件层 | 01 布局类组件 | 07 GridRow | `05-01-07` | `05-ui-components/01-layout-components/07-grid-row/` | [design.md](05-ui-components/01-layout-components/07-grid-row/design.md) | 4 |
 | 05 组件层 | 01 布局类组件 | 08 RelativeContainer | `05-01-08` | `05-ui-components/01-layout-components/08-relative-container/` | [design.md](05-ui-components/01-layout-components/08-relative-container/design.md) | 5 |
 | 05 组件层 | 01 布局类组件 | 09 Row | `05-01-09` | `05-ui-components/01-layout-components/09-row/` | [design.md](05-ui-components/01-layout-components/09-row/design.md) | 4 |
-| 05 组件层 | 01 布局类组件 | 10 RowSplit | `05-01-10` | `05-ui-components/01-layout-components/10-row-split/` | *待补充* | 0 |
+| 05 组件层 | 01 布局类组件 | 10 RowSplit | `05-01-10` | `05-ui-components/01-layout-components/10-row-split/` | [design.md](05-ui-components/01-layout-components/10-row-split/design.md) | 2 |
 | 05 组件层 | 01 布局类组件 | 11 Stack | `05-01-11` | `05-ui-components/01-layout-components/11-stack/` | [design.md](05-ui-components/01-layout-components/11-stack/design.md) | 3 |
 | 05 组件层 | 01 布局类组件 | 12 FolderStack | `05-01-12` | `05-ui-components/01-layout-components/12-folder-stack/` | [design.md](05-ui-components/01-layout-components/12-folder-stack/design.md) | 3 |
 | 05 组件层 | 01 布局类组件 | 13 DynamicLayout | `05-01-13` | `05-ui-components/01-layout-components/13-dynamic-layout/` | [design.md](05-ui-components/01-layout-components/13-dynamic-layout/design.md) | 4 |
@@ -226,9 +226,9 @@
 | 05 组件层 | 12 显示嵌入组件 | 07 DynamicComponent | `05-12-07` | `05-ui-components/12-embedded-display-components/07-dynamic-component/` | *待补充* | 0 |
 | 05 组件层 | 13 平台类组件 | 01 XComponent | `05-13-01` | `05-ui-components/13-platform-components/01-xcomponent/` | [design.md](05-ui-components/13-platform-components/01-xcomponent/design.md) | 8 |
 | 05 组件层 | 13 平台类组件 | 02 Video | `05-13-02` | `05-ui-components/13-platform-components/02-video/` | [design.md](05-ui-components/13-platform-components/02-video/design.md) | 3 |
-| 05 组件层 | 14 绘制类组件 | 01 Shape相关 | `05-14-01` | `05-ui-components/14-drawing-components/01-shape/` | *待补充* | 0 |
-| 05 组件层 | 14 绘制类组件 | 02 Canvas | `05-14-02` | `05-ui-components/14-drawing-components/02-canvas/` | *待补充* | 0 |
-| 05 组件层 | 14 绘制类组件 | 03 OffscreenCanvas | `05-14-03` | `05-ui-components/14-drawing-components/03-offscreen-canvas/` | *待补充* | 0 |
+| 05 组件层 | 14 绘制类组件 | 01 Shape | `05-14-01` | `05-ui-components/14-drawing-components/01-shape/` | [design.md](05-ui-components/14-drawing-components/01-shape/design.md) | 6 |
+| 05 组件层 | 14 绘制类组件 | 02 Canvas | `05-14-02` | `05-ui-components/14-drawing-components/02-canvas/` | [design.md](05-ui-components/14-drawing-components/02-canvas/design.md) | 7 |
+| 05 组件层 | 14 绘制类组件 | 03 OffscreenCanvas | `05-14-03` | `05-ui-components/14-drawing-components/03-offscreen-canvas/` | [design.md](05-ui-components/14-drawing-components/03-offscreen-canvas/design.md) | 3 |
 | 05 组件层 | 15 主题组件 | 01 WithTheme | `05-15-01` | `05-ui-components/15-theme-components/01-with-theme/` | *待补充* | 0 |
 | 05 组件层 | 16 自定义占位组件 | 01 NodeContainer | `05-16-01` | `05-ui-components/16-custom-placeholder-components/01-node-container/` | *待补充* | 0 |
 | 05 组件层 | 16 自定义占位组件 | 02 ContentSlot | `05-16-02` | `05-ui-components/16-custom-placeholder-components/02-content-slot/` | *待补充* | 0 |
@@ -564,6 +564,11 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 安全区数据源聚合与窗口同步 | [Feat-01-safe-area-source-window-sync-spec.md](04-common-capability/02-safe-area/01-safe-area-mechanism/Feat-01-safe-area-source-window-sync-spec.md) | Baselined |
+| Feat-02 | 渲染安全区扩展 | [Feat-02-render-safe-area-expansion-spec.md](04-common-capability/02-safe-area/01-safe-area-mechanism/Feat-02-render-safe-area-expansion-spec.md) | Baselined |
+| Feat-03 | 组件级安全区内边距与 SAE 累积 | [Feat-03-safe-area-padding-sae-accumulation-spec.md](04-common-capability/02-safe-area/01-safe-area-mechanism/Feat-03-safe-area-padding-sae-accumulation-spec.md) | Baselined |
+| Feat-04 | 布局安全区忽略与多阶段调度 | [Feat-04-ignore-layout-safe-area-scheduling-spec.md](04-common-capability/02-safe-area/01-safe-area-mechanism/Feat-04-ignore-layout-safe-area-scheduling-spec.md) | Baselined |
+| Feat-05 | 键盘安全区联动与页面避让 | [Feat-05-keyboard-safe-area-page-avoidance-spec.md](04-common-capability/02-safe-area/01-safe-area-mechanism/Feat-05-keyboard-safe-area-page-avoidance-spec.md) | Baselined |
 
 ### 04-03-01 布局属性
 
@@ -974,6 +979,9 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | ColumnSplit 垂直分割布局与分隔线绘制 | [Feat-01-column-split-vertical-layout-rendering-spec.md](05-ui-components/01-layout-components/04-column-split/Feat-01-column-split-vertical-layout-rendering-spec.md) | Baselined |
+| Feat-02 | ColumnSplit 可拖拽调整与边界约束 | [Feat-02-column-split-resizeable-drag-spec.md](05-ui-components/01-layout-components/04-column-split/Feat-02-column-split-resizeable-drag-spec.md) | Baselined |
+| Feat-03 | ColumnSplit 分隔线边距 | [Feat-03-column-split-divider-margin-spec.md](05-ui-components/01-layout-components/04-column-split/Feat-03-column-split-divider-margin-spec.md) | Baselined |
 
 ### 05-01-05 Flex
 
@@ -1025,6 +1033,8 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | RowSplit 水平分割布局与分隔线绘制 | [Feat-01-row-split-horizontal-layout-rendering-spec.md](05-ui-components/01-layout-components/10-row-split/Feat-01-row-split-horizontal-layout-rendering-spec.md) | Baselined |
+| Feat-02 | RowSplit 可拖拽调整与边界约束 | [Feat-02-row-split-resizeable-drag-spec.md](05-ui-components/01-layout-components/10-row-split/Feat-02-row-split-resizeable-drag-spec.md) | Baselined |
 
 ### 05-01-11 Stack
 
@@ -1510,20 +1520,36 @@
 | Feat-02 | 控制器与全屏 | [Feat-02-video-controller-fullscreen-spec.md](05-ui-components/13-platform-components/02-video/Feat-02-video-controller-fullscreen-spec.md) | Baselined |
 | Feat-03 | 高级能力（AI/Poster/快捷键） | [Feat-03-video-advanced-capabilities-spec.md](05-ui-components/13-platform-components/02-video/Feat-03-video-advanced-capabilities-spec.md) | Baselined |
 
-### 05-14-01 Shape相关
+### 05-14-01 Shape
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Shape 容器、视口与 Mesh | [Feat-01-shape-container-viewport-mesh-spec.md](05-ui-components/14-drawing-components/01-shape/Feat-01-shape-container-viewport-mesh-spec.md) | Baselined |
+| Feat-02 | Shape 通用绘制样式 | [Feat-02-shape-common-paint-style-spec.md](05-ui-components/14-drawing-components/01-shape/Feat-02-shape-common-paint-style-spec.md) | Baselined |
+| Feat-03 | Shape 基础闭合图形 | [Feat-03-shape-basic-closed-geometry-spec.md](05-ui-components/14-drawing-components/01-shape/Feat-03-shape-basic-closed-geometry-spec.md) | Baselined |
+| Feat-04 | Shape 点集图形 | [Feat-04-shape-point-geometry-spec.md](05-ui-components/14-drawing-components/01-shape/Feat-04-shape-point-geometry-spec.md) | Baselined |
+| Feat-05 | Shape Path 命令绘制 | [Feat-05-shape-path-commands-spec.md](05-ui-components/14-drawing-components/01-shape/Feat-05-shape-path-commands-spec.md) | Baselined |
+| Feat-06 | Shape 多范式与 Modifier | [Feat-06-shape-multi-paradigm-modifier-spec.md](05-ui-components/14-drawing-components/01-shape/Feat-06-shape-multi-paradigm-modifier-spec.md) | Baselined |
 
 ### 05-14-02 Canvas
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Canvas 组件、上下文与生命周期 | [Feat-01-canvas-component-context-lifecycle-spec.md](05-ui-components/14-drawing-components/02-canvas/Feat-01-canvas-component-context-lifecycle-spec.md) | Baselined |
+| Feat-02 | Canvas 路径几何与裁剪 | [Feat-02-canvas-path-geometry-clipping-spec.md](05-ui-components/14-drawing-components/02-canvas/Feat-02-canvas-path-geometry-clipping-spec.md) | Baselined |
+| Feat-03 | Canvas 绘制样式与合成 | [Feat-03-canvas-paint-style-composition-spec.md](05-ui-components/14-drawing-components/02-canvas/Feat-03-canvas-paint-style-composition-spec.md) | Baselined |
+| Feat-04 | Canvas 状态栈与几何变换 | [Feat-04-canvas-state-transform-spec.md](05-ui-components/14-drawing-components/02-canvas/Feat-04-canvas-state-transform-spec.md) | Baselined |
+| Feat-05 | Canvas 文本绘制与度量 | [Feat-05-canvas-text-rendering-metrics-spec.md](05-ui-components/14-drawing-components/02-canvas/Feat-05-canvas-text-rendering-metrics-spec.md) | Baselined |
+| Feat-06 | Canvas 图像与像素交换 | [Feat-06-canvas-image-pixel-interchange-spec.md](05-ui-components/14-drawing-components/02-canvas/Feat-06-canvas-image-pixel-interchange-spec.md) | Baselined |
+| Feat-07 | Canvas 图像分析与多范式兼容 | [Feat-07-canvas-image-analysis-multi-paradigm-spec.md](05-ui-components/14-drawing-components/02-canvas/Feat-07-canvas-image-analysis-multi-paradigm-spec.md) | Baselined |
 
 ### 05-14-03 OffscreenCanvas
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | OffscreenCanvas 离屏表面与上下文 | [Feat-01-offscreen-canvas-surface-context-spec.md](05-ui-components/14-drawing-components/03-offscreen-canvas/Feat-01-offscreen-canvas-surface-context-spec.md) | Baselined |
+| Feat-02 | OffscreenCanvas 离屏二维绘制上下文 | [Feat-02-offscreen-canvas-rendering-context-spec.md](05-ui-components/14-drawing-components/03-offscreen-canvas/Feat-02-offscreen-canvas-rendering-context-spec.md) | Baselined |
+| Feat-03 | OffscreenCanvas 图像导出与转移 | [Feat-03-offscreen-canvas-export-transfer-spec.md](05-ui-components/14-drawing-components/03-offscreen-canvas/Feat-03-offscreen-canvas-export-transfer-spec.md) | Baselined |
 
 ### 05-15-01 WithTheme
 
