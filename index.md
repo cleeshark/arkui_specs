@@ -372,7 +372,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | 子管线与多容器 VSync 协调 | [Feat-01-sub-pipeline-multi-container-vsync-coordination-spec.md](03-engine-framework/01-render-pipeline/02-multi-level-render-pipeline/Feat-01-sub-pipeline-multi-container-vsync-coordination-spec.md) | Draft |
+| Feat-01 | 子管线与多容器 VSync 协调 | [Feat-01-sub-pipeline-multi-container-vsync-coordination-spec.md](03-engine-framework/01-render-pipeline/02-multi-level-render-pipeline/Feat-01-sub-pipeline-multi-container-vsync-coordination-spec.md) | Baselined |
 
 ### 03-02-01 动效框架
 
@@ -537,7 +537,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | 布局边界显示调试能力 | [Feat-01-layout-boundary-display-spec.md](03-engine-framework/08-dfx-foundation/06-layout-boundary-display/Feat-01-layout-boundary-display-spec.md) | Draft |
+| Feat-01 | 布局边界显示调试能力 | [Feat-01-layout-boundary-display-spec.md](03-engine-framework/08-dfx-foundation/06-layout-boundary-display/Feat-01-layout-boundary-display-spec.md) | Baselined |
 
 ### 04-01-01 图片加载机制
 
