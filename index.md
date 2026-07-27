@@ -30,7 +30,7 @@
 | 02 跨平台适配层 | 01 跨平台适配层 | 01 OH平台适配 | `02-01-01` | `02-cross-platform/01-platform-adapter/01-oh-platform-adapter/` | [design.md](02-cross-platform/01-platform-adapter/01-oh-platform-adapter/design.md) | 1 |
 | 02 跨平台适配层 | 01 跨平台适配层 | 02 Android平台适配 | `02-01-02` | `02-cross-platform/01-platform-adapter/02-android-platform-adapter/` | *待补充* | 0 |
 | 02 跨平台适配层 | 01 跨平台适配层 | 03 iOS平台适配 | `02-01-03` | `02-cross-platform/01-platform-adapter/03-ios-platform-adapter/` | *待补充* | 0 |
-| 02 跨平台适配层 | 01 跨平台适配层 | 04 预览器平台适配 | `02-01-04` | `02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/` | *待补充* | 0 |
+| 02 跨平台适配层 | 01 跨平台适配层 | 04 预览器平台适配 | `02-01-04` | `02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/` | [design.md](02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/design.md) | 3 |
 | 02 跨平台适配层 | 02 渲染后端适配 | 01 Rosen渲染后端对接 | `02-02-01` | `02-cross-platform/02-render-backend-adapter/01-rosen-render-backend-adapter/` | [design.md](02-cross-platform/02-render-backend-adapter/01-rosen-render-backend-adapter/design.md) | 3 |
 | 03 引擎框架层 | 01 渲染管线 | 01 渲染管线 | `03-01-01` | `03-engine-framework/01-render-pipeline/01-basic-render-pipeline/` | [design.md](03-engine-framework/01-render-pipeline/01-basic-render-pipeline/design.md) | 1 |
 | 03 引擎框架层 | 01 渲染管线 | 02 多级渲染管线 | `03-01-02` | `03-engine-framework/01-render-pipeline/02-multi-level-render-pipeline/` | [design.md](03-engine-framework/01-render-pipeline/02-multi-level-render-pipeline/design.md) | 1 |
@@ -130,12 +130,12 @@
 | 04 通用能力层 | 17 嵌入显示能力 | 04 PluginComponent机制 | `04-17-04` | `04-common-capability/17-embedded-display/04-plugin-component/` | *待补充* | 0 |
 | 04 通用能力层 | 18 端侧渲染 | 01 同层渲染机制 | `04-18-01` | `04-common-capability/18-on-device-rendering/01-same-layer-rendering/` | *待补充* | 0 |
 | 04 通用能力层 | 19 组件复用 | 01 组件复用框架 | `04-19-01` | `04-common-capability/19-component-reuse/01-component-reuse-framework/` | [design.md](04-common-capability/19-component-reuse/01-component-reuse-framework/design.md) | 4 |
-| 04 通用能力层 | 20 媒体查询能力 | 01 MediaQuery | `04-20-01` | `04-common-capability/20-media-query/01-media-query/` | *待补充* | 0 |
+| 04 通用能力层 | 20 媒体查询能力 | 01 MediaQuery | `04-20-01` | `04-common-capability/20-media-query/01-media-query/` | [design.md](04-common-capability/20-media-query/01-media-query/design.md) | 1 |
 | 04 通用能力层 | 21 适老化 | 01 大字体 | `04-21-01` | `04-common-capability/21-aging-adaptation/01-large-font/` | *待补充* | 0 |
 | 04 通用能力层 | 22 国际化能力 | 01 多语言能力 | `04-22-01` | `04-common-capability/22-internationalization/01-multilingual/` | *待补充* | 0 |
 | 04 通用能力层 | 22 国际化能力 | 02 镜像能力 | `04-22-02` | `04-common-capability/22-internationalization/02-mirroring/` | *待补充* | 0 |
 | 04 通用能力层 | 23 AI能力 | 01 Image分析能力 | `04-23-01` | `04-common-capability/23-ai-capability/01-image-analysis/` | [design.md](04-common-capability/23-ai-capability/01-image-analysis/design.md) | 2 |
-| 04 通用能力层 | 24 布局通用能力 | 01 像素取整能力 | `04-24-01` | `04-common-capability/24-layout-common-capability/01-pixel-rounding/` | *待补充* | 0 |
+| 04 通用能力层 | 24 布局通用能力 | 01 像素取整能力 | `04-24-01` | `04-common-capability/24-layout-common-capability/01-pixel-rounding/` | [design.md](04-common-capability/24-layout-common-capability/01-pixel-rounding/design.md) | 1 |
 | 04 通用能力层 | 25 热重载能力 | 01 热重载机制 | `04-25-01` | `04-common-capability/25-hot-reload/01-hot-reload-mechanism/` | *待补充* | 0 |
 | 05 组件层 | 01 布局类组件 | 01 Blank | `05-01-01` | `05-ui-components/01-layout-components/01-blank/` | [design.md](05-ui-components/01-layout-components/01-blank/design.md) | 1 |
 | 05 组件层 | 01 布局类组件 | 02 Divider | `05-01-02` | `05-ui-components/01-layout-components/02-divider/` | [design.md](05-ui-components/01-layout-components/02-divider/design.md) | 1 |
@@ -286,7 +286,7 @@
 | 07 前端层 | 03 自定义组件 | 02 自定义组件生命周期 | `07-03-02` | `07-frontend/03-custom-components/02-component-lifecycle/` | [design.md](07-frontend/03-custom-components/02-component-lifecycle/design.md) | 1 |
 | 07 前端层 | 03 自定义组件 | 03 自定义组件复用 | `07-03-03` | `07-frontend/03-custom-components/03-component-reuse/` | [design.md](07-frontend/03-custom-components/03-component-reuse/design.md) | 1 |
 | 07 前端层 | 03 自定义组件 | 04 自定义组件冻结 | `07-03-04` | `07-frontend/03-custom-components/04-component-freeze/` | [design.md](07-frontend/03-custom-components/04-component-freeze/design.md) | 1 |
-| 07 前端层 | 03 自定义组件 | 05 自定义测量/布局 | `07-03-05` | `07-frontend/03-custom-components/05-custom-measure-layout/` | *待补充* | 0 |
+| 07 前端层 | 03 自定义组件 | 05 自定义测量/布局 | `07-03-05` | `07-frontend/03-custom-components/05-custom-measure-layout/` | [design.md](07-frontend/03-custom-components/05-custom-measure-layout/design.md) | 1 |
 | 07 前端层 | 03 自定义组件 | 06 组件扩展 | `07-03-06` | `07-frontend/03-custom-components/06-component-extension/` | *待补充* | 0 |
 | 07 前端层 | 03 自定义组件 | 07 静态自定义组件状态相关 | `07-03-07` | `07-frontend/03-custom-components/07-static-custom-component-state/` | [design.md](07-frontend/03-custom-components/07-static-custom-component-state/design.md) | 0 |
 | 07 前端层 | 04 生成式UI | 01 A2UI标准协议 | `07-04-01` | `07-frontend/04-generative-ui/01-a2ui-standard-protocol/` | *待补充* | 0 |
@@ -367,6 +367,9 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 预览器平台发现与构建配置 | [Feat-01-previewer-platform-build-spec.md](02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/Feat-01-previewer-platform-build-spec.md) | Baselined |
+| Feat-02 | 预览器运行入口与平台服务替身 | [Feat-02-previewer-runtime-mock-spec.md](02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/Feat-02-previewer-runtime-mock-spec.md) | Baselined |
+| Feat-03 | 预览器 SDK 与资源打包 | [Feat-03-previewer-sdk-packaging-spec.md](02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/Feat-03-previewer-sdk-packaging-spec.md) | Baselined |
 
 ### 02-02-01 Rosen渲染后端对接
 
@@ -964,6 +967,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | MediaQuery 媒体条件匹配与监听生命周期 | [Feat-01-media-query-listener-spec.md](04-common-capability/20-media-query/01-media-query/Feat-01-media-query-listener-spec.md) | Baselined |
 
 ### 04-21-01 大字体
 
@@ -991,6 +995,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 像素取整策略与布局渲染传播 | [Feat-01-pixel-rounding-policy-propagation-spec.md](04-common-capability/24-layout-common-capability/01-pixel-rounding/Feat-01-pixel-rounding-policy-propagation-spec.md) | Baselined |
 
 ### 04-25-01 热重载机制
 
@@ -1956,6 +1961,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 自定义组件测量与子项放置 | [Feat-01-custom-measure-layout-spec.md](07-frontend/03-custom-components/05-custom-measure-layout/Feat-01-custom-measure-layout-spec.md) | Baselined |
 
 ### 07-03-06 组件扩展
 
