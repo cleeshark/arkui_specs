@@ -1019,6 +1019,56 @@ features:
   title: 动画接口全量规格
   spec: 03-engine-framework/02-animation-capability/10-animation-interface/Feat-01-animation-interface-spec.md
   status: Baselined
+- func_id: 03-03-01
+  id: Feat-01
+  title: 资源访问内部机制
+  spec: 03-engine-framework/03-resource-theme/01-resource-access/Feat-01-resource-access-spec.md
+  status: Baselined
+- func_id: 03-03-01
+  id: Feat-02
+  title: 资源访问公开能力（$r/$rawfile 解析层）
+  spec: 03-engine-framework/03-resource-theme/01-resource-access/Feat-02-resource-public-access-spec.md
+  status: Draft
+- func_id: 03-03-01
+  id: Feat-03
+  title: 资源分层与 Override 适配器
+  spec: 03-engine-framework/03-resource-theme/01-resource-access/Feat-03-resource-override-layering-spec.md
+  status: Draft
+- func_id: 03-03-02
+  id: Feat-01
+  title: 主题分层访问全量规格
+  spec: 03-engine-framework/03-resource-theme/02-theme-layered-access/Feat-01-theme-layered-access-spec.md
+  status: Baselined
+- func_id: 03-03-03
+  id: Feat-01
+  title: Theme框架全量规格
+  spec: 03-engine-framework/03-resource-theme/03-theme-framework/Feat-01-theme-framework-spec.md
+  status: Baselined
+- func_id: 03-03-03
+  id: Feat-02
+  title: '@ohos.arkui.theme 公开主题 API'
+  spec: 03-engine-framework/03-resource-theme/03-theme-framework/Feat-02-arkui-theme-public-api-spec.md
+  status: Draft
+- func_id: 03-03-04
+  id: Feat-01
+  title: 资源动态切换全量规格
+  spec: 03-engine-framework/03-resource-theme/04-resource-dynamic-switching/Feat-01-resource-dynamic-switching-spec.md
+  status: Baselined
+- func_id: 03-05-02
+  id: Feat-01
+  title: 子窗抽象与 Manager 核心
+  spec: 03-engine-framework/05-window-mechanism/02-subwindow-mechanism/Feat-01-subwindow-mechanism-spec.md
+  status: Baselined
+- func_id: 03-05-02
+  id: Feat-02
+  title: 子窗类型路由与弹窗状态机
+  spec: 03-engine-framework/05-window-mechanism/02-subwindow-mechanism/Feat-02-subwindow-routing-state-spec.md
+  status: Draft
+- func_id: 03-05-02
+  id: Feat-03
+  title: 子窗布局交互与多端适配
+  spec: 03-engine-framework/05-window-mechanism/02-subwindow-mechanism/Feat-03-subwindow-layout-adaptation-spec.md
+  status: Draft
 - func_id: 04-12-01
   id: Feat-01
   title: UIContext入口架构与实例路由
