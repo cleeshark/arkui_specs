@@ -1529,3 +1529,68 @@ features:
   title: AbilityComponent 跨进程能力嵌入（已废弃）
   spec: 05-ui-components/12-embedded-display-components/02-ability-component/Feat-01-ability-component-cross-process-embed-deprecated-spec.md
   status: Baselined
+- func_id: 04-03-05
+  id: Feat-01
+  title: 弹窗类属性（bindPopup/bindMenu/bindContextMenu）
+  spec: 04-common-capability/03-common-attributes/05-popup-attributes/Feat-01-popup-attributes-spec.md
+  status: Baselined
+- func_id: 04-03-06
+  id: Feat-01
+  title: 模态属性（bindSheet/bindContentCover）
+  spec: 04-common-capability/03-common-attributes/06-modal-attributes/Feat-01-modal-attributes-spec.md
+  status: Baselined
+- func_id: 04-03-08
+  id: Feat-01
+  title: 基础单位（vp/fp/px/lpx/percent/Dimension）
+  spec: 04-common-capability/03-common-attributes/08-basic-units/Feat-01-basic-units-spec.md
+  status: Baselined
+- func_id: 04-05-03
+  id: Feat-01
+  title: 表单类组件自定义内容（ContentModifier）
+  spec: 04-common-capability/05-custom-extension/03-content-modifier-form/Feat-01-content-modifier-form-spec.md
+  status: Baselined
+- func_id: 04-05-04
+  id: Feat-01
+  title: 信息展示类组件自定义内容（ContentModifier）
+  spec: 04-common-capability/05-custom-extension/04-content-modifier-display/Feat-01-content-modifier-display-spec.md
+  status: Baselined
+- func_id: 04-16-01
+  id: Feat-01
+  title: UIAppearance（深浅色模式与外观管理）
+  spec: 04-common-capability/16-ui-appearance/01-ui-appearance/Feat-01-ui-appearance-spec.md
+  status: Baselined
+- func_id: 05-04-03
+  id: Feat-01
+  title: Rating 组件全量规格
+  spec: 05-ui-components/04-input-form-components/03-rating/Feat-01-rating-full-spec.md
+  status: Baselined
+- func_id: 05-06-02
+  id: Feat-01
+  title: AlertDialog 警告弹窗全量规格
+  spec: 05-ui-components/06-popup-components/02-alert-dialog/Feat-01-alert-dialog-full-spec.md
+  status: Baselined
+- func_id: 05-06-03
+  id: Feat-01
+  title: ActionSheet 列表选择弹窗全量规格
+  spec: 05-ui-components/06-popup-components/03-list-selection-dialog/Feat-01-list-selection-dialog-full-spec.md
+  status: Baselined
+- func_id: 05-06-09
+  id: Feat-01
+  title: ContextMenu 接口全量规格
+  spec: 05-ui-components/06-popup-components/09-context-menu/Feat-01-context-menu-full-spec.md
+  status: Baselined
+- func_id: 05-07-01
+  id: Feat-01
+  title: bindSheet 半模态弹窗全量规格
+  spec: 05-ui-components/07-modal-components/01-sheet-modal/Feat-01-sheet-modal-full-spec.md
+  status: Baselined
+- func_id: 05-07-02
+  id: Feat-01
+  title: bindContentCover 全模态弹窗全量规格
+  spec: 05-ui-components/07-modal-components/02-full-modal/Feat-01-full-modal-full-spec.md
+  status: Baselined
+- func_id: 05-15-01
+  id: Feat-01
+  title: WithTheme 主题作用域组件全量规格
+  spec: 05-ui-components/15-theme-components/01-with-theme/Feat-01-with-theme-full-spec.md
+  status: Baselined

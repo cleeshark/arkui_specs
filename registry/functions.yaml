@@ -649,7 +649,7 @@ functions:
     id: '05'
     title: 弹窗类属性
   path: 04-common-capability/03-common-attributes/05-popup-attributes/
-  design: null
+  design: 04-common-capability/03-common-attributes/05-popup-attributes/design.md
   status: active
 - id: 04-03-06
   l1:
@@ -662,7 +662,7 @@ functions:
     id: '06'
     title: 模态属性
   path: 04-common-capability/03-common-attributes/06-modal-attributes/
-  design: null
+  design: 04-common-capability/03-common-attributes/06-modal-attributes/design.md
   status: active
 - id: 04-03-07
   l1:
@@ -688,7 +688,7 @@ functions:
     id: 08
     title: 基础单位
   path: 04-common-capability/03-common-attributes/08-basic-units/
-  design: null
+  design: 04-common-capability/03-common-attributes/08-basic-units/design.md
   status: active
 - id: 04-03-09
   l1:
@@ -909,7 +909,7 @@ functions:
     id: '03'
     title: 自定义内容 -（表单类组件）
   path: 04-common-capability/05-custom-extension/03-content-modifier-form/
-  design: null
+  design: 04-common-capability/05-custom-extension/03-content-modifier-form/design.md
   status: active
 - id: 04-05-04
   l1:
@@ -922,7 +922,7 @@ functions:
     id: '04'
     title: 自定义内容 -（信息展示类）
   path: 04-common-capability/05-custom-extension/04-content-modifier-display/
-  design: null
+  design: 04-common-capability/05-custom-extension/04-content-modifier-display/design.md
   status: active
 - id: 04-05-05
   l1:
@@ -1351,7 +1351,7 @@ functions:
     id: '01'
     title: UIAppearance
   path: 04-common-capability/16-ui-appearance/01-ui-appearance/
-  design: null
+  design: 04-common-capability/16-ui-appearance/01-ui-appearance/design.md
   status: active
 - id: 04-17-01
   l1:
@@ -1936,7 +1936,7 @@ functions:
     id: '03'
     title: Rating
   path: 05-ui-components/04-input-form-components/03-rating/
-  design: null
+  design: 05-ui-components/04-input-form-components/03-rating/design.md
   status: active
 - id: 05-04-04
   l1:
@@ -2079,7 +2079,7 @@ functions:
     id: '02'
     title: 警告弹窗
   path: 05-ui-components/06-popup-components/02-alert-dialog/
-  design: null
+  design: 05-ui-components/06-popup-components/02-alert-dialog/design.md
   status: active
 - id: 05-06-03
   l1:
@@ -2092,7 +2092,7 @@ functions:
     id: '03'
     title: 列表选择弹窗
   path: 05-ui-components/06-popup-components/03-list-selection-dialog/
-  design: null
+  design: 05-ui-components/06-popup-components/03-list-selection-dialog/design.md
   status: active
 - id: 05-06-04
   l1:
@@ -2170,7 +2170,7 @@ functions:
     id: 09
     title: ContextMenu接口
   path: 05-ui-components/06-popup-components/09-context-menu/
-  design: null
+  design: 05-ui-components/06-popup-components/09-context-menu/design.md
   status: active
 - id: 05-06-10
   l1:
@@ -2209,7 +2209,7 @@ functions:
     id: '01'
     title: 半模态弹窗
   path: 05-ui-components/07-modal-components/01-sheet-modal/
-  design: null
+  design: 05-ui-components/07-modal-components/01-sheet-modal/design.md
   status: active
 - id: 05-07-02
   l1:
@@ -2222,7 +2222,7 @@ functions:
     id: '02'
     title: 全模态弹窗
   path: 05-ui-components/07-modal-components/02-full-modal/
-  design: null
+  design: 05-ui-components/07-modal-components/02-full-modal/design.md
   status: active
 - id: 05-07-03
   l1:
@@ -2729,7 +2729,7 @@ functions:
     id: '01'
     title: WithTheme
   path: 05-ui-components/15-theme-components/01-with-theme/
-  design: null
+  design: 05-ui-components/15-theme-components/01-with-theme/design.md
   status: active
 - id: 05-16-01
   l1:
