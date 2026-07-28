@@ -453,8 +453,8 @@
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
 | Feat-01 | 资源访问内部机制 | [Feat-01-resource-access-spec.md](03-engine-framework/03-resource-theme/01-resource-access/Feat-01-resource-access-spec.md) | Baselined |
-| Feat-02 | 资源访问公开能力（$r/$rawfile 解析层） | [Feat-02-resource-public-access-spec.md](03-engine-framework/03-resource-theme/01-resource-access/Feat-02-resource-public-access-spec.md) | Draft |
-| Feat-03 | 资源分层与 Override 适配器 | [Feat-03-resource-override-layering-spec.md](03-engine-framework/03-resource-theme/01-resource-access/Feat-03-resource-override-layering-spec.md) | Draft |
+| Feat-02 | 资源访问公开能力（$r/$rawfile 解析层） | [Feat-02-resource-public-access-spec.md](03-engine-framework/03-resource-theme/01-resource-access/Feat-02-resource-public-access-spec.md) | Baselined |
+| Feat-03 | 资源分层与 Override 适配器 | [Feat-03-resource-override-layering-spec.md](03-engine-framework/03-resource-theme/01-resource-access/Feat-03-resource-override-layering-spec.md) | Baselined |
 
 ### 03-03-02 主题分层访问
 
@@ -467,7 +467,7 @@
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
 | Feat-01 | Theme框架全量规格 | [Feat-01-theme-framework-spec.md](03-engine-framework/03-resource-theme/03-theme-framework/Feat-01-theme-framework-spec.md) | Baselined |
-| Feat-02 | @ohos.arkui.theme 公开主题 API | [Feat-02-arkui-theme-public-api-spec.md](03-engine-framework/03-resource-theme/03-theme-framework/Feat-02-arkui-theme-public-api-spec.md) | Draft |
+| Feat-02 | @ohos.arkui.theme 公开主题 API | [Feat-02-arkui-theme-public-api-spec.md](03-engine-framework/03-resource-theme/03-theme-framework/Feat-02-arkui-theme-public-api-spec.md) | Baselined |
 
 ### 03-03-04 资源动态切换
 
@@ -499,8 +499,8 @@
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
 | Feat-01 | 子窗抽象与 Manager 核心 | [Feat-01-subwindow-mechanism-spec.md](03-engine-framework/05-window-mechanism/02-subwindow-mechanism/Feat-01-subwindow-mechanism-spec.md) | Baselined |
-| Feat-02 | 子窗类型路由与弹窗状态机 | [Feat-02-subwindow-routing-state-spec.md](03-engine-framework/05-window-mechanism/02-subwindow-mechanism/Feat-02-subwindow-routing-state-spec.md) | Draft |
-| Feat-03 | 子窗布局交互与多端适配 | [Feat-03-subwindow-layout-adaptation-spec.md](03-engine-framework/05-window-mechanism/02-subwindow-mechanism/Feat-03-subwindow-layout-adaptation-spec.md) | Draft |
+| Feat-02 | 子窗类型路由与弹窗状态机 | [Feat-02-subwindow-routing-state-spec.md](03-engine-framework/05-window-mechanism/02-subwindow-mechanism/Feat-02-subwindow-routing-state-spec.md) | Baselined |
+| Feat-03 | 子窗布局交互与多端适配 | [Feat-03-subwindow-layout-adaptation-spec.md](03-engine-framework/05-window-mechanism/02-subwindow-mechanism/Feat-03-subwindow-layout-adaptation-spec.md) | Baselined |
 
 ### 03-06-01 多实例管理
 

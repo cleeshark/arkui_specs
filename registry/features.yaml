@@ -1063,12 +1063,12 @@ features:
   id: Feat-02
   title: 资源访问公开能力（$r/$rawfile 解析层）
   spec: 03-engine-framework/03-resource-theme/01-resource-access/Feat-02-resource-public-access-spec.md
-  status: Draft
+  status: Baselined
 - func_id: 03-03-01
   id: Feat-03
   title: 资源分层与 Override 适配器
   spec: 03-engine-framework/03-resource-theme/01-resource-access/Feat-03-resource-override-layering-spec.md
-  status: Draft
+  status: Baselined
 - func_id: 03-03-02
   id: Feat-01
   title: 主题分层访问全量规格
@@ -1083,7 +1083,7 @@ features:
   id: Feat-02
   title: '@ohos.arkui.theme 公开主题 API'
   spec: 03-engine-framework/03-resource-theme/03-theme-framework/Feat-02-arkui-theme-public-api-spec.md
-  status: Draft
+  status: Baselined
 - func_id: 03-03-04
   id: Feat-01
   title: 资源动态切换全量规格
@@ -1098,12 +1098,12 @@ features:
   id: Feat-02
   title: 子窗类型路由与弹窗状态机
   spec: 03-engine-framework/05-window-mechanism/02-subwindow-mechanism/Feat-02-subwindow-routing-state-spec.md
-  status: Draft
+  status: Baselined
 - func_id: 03-05-02
   id: Feat-03
   title: 子窗布局交互与多端适配
   spec: 03-engine-framework/05-window-mechanism/02-subwindow-mechanism/Feat-03-subwindow-layout-adaptation-spec.md
-  status: Draft
+  status: Baselined
 - func_id: 04-12-01
   id: Feat-01
   title: UIContext入口架构与实例路由
