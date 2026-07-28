@@ -54,7 +54,7 @@
 | 03 引擎框架层 | 05 窗口机制 | 02 子窗机制 | `03-05-02` | `03-engine-framework/05-window-mechanism/02-subwindow-mechanism/` | [design.md](03-engine-framework/05-window-mechanism/02-subwindow-mechanism/design.md) | 3 |
 | 03 引擎框架层 | 06 多实例管理 | 01 多实例管理 | `03-06-01` | `03-engine-framework/06-multi-instance-management/01-multi-instance-management/` | [design.md](03-engine-framework/06-multi-instance-management/01-multi-instance-management/design.md) | 1 |
 | 03 引擎框架层 | 07 无障碍机制 | 01 无障碍能力 | `03-07-01` | `03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/` | [design.md](03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/design.md) | 7 |
-| 03 引擎框架层 | 07 无障碍机制 | 02 Inspector | `03-07-02` | `03-engine-framework/07-accessibility-mechanism/02-inspector/` | [design.md](03-engine-framework/07-accessibility-mechanism/02-inspector/design.md) | 0 |
+| 03 引擎框架层 | 07 无障碍机制 | 02 Inspector | `03-07-02` | `03-engine-framework/07-accessibility-mechanism/02-inspector/` | [design.md](03-engine-framework/07-accessibility-mechanism/02-inspector/design.md) | 2 |
 | 03 引擎框架层 | 08 DFX | 01 日志 | `03-08-01` | `03-engine-framework/08-dfx-foundation/01-logging/` | [design.md](03-engine-framework/08-dfx-foundation/01-logging/design.md) | 3 |
 | 03 引擎框架层 | 08 DFX | 02 内存管理 | `03-08-02` | `03-engine-framework/08-dfx-foundation/02-memory-management/` | [design.md](03-engine-framework/08-dfx-foundation/02-memory-management/design.md) | 4 |
 | 03 引擎框架层 | 08 DFX | 03 Trace打点 | `03-08-03` | `03-engine-framework/08-dfx-foundation/03-trace/` | [design.md](03-engine-framework/08-dfx-foundation/03-trace/design.md) | 3 |
@@ -110,7 +110,7 @@
 | 04 通用能力层 | 10 组件截图 | 01 离屏截图 | `04-10-01` | `04-common-capability/10-component-screenshot/01-offscreen-screenshot/` | *待补充* | 0 |
 | 04 通用能力层 | 11 组件信息获取 | 01 ComponentUtils | `04-11-01` | `04-common-capability/11-component-info/01-component-utils/` | *待补充* | 0 |
 | 04 通用能力层 | 11 组件信息获取 | 02 无感监听（observer） | `04-11-02` | `04-common-capability/11-component-info/02-observer/` | [design.md](04-common-capability/11-component-info/02-observer/design.md) | 2 |
-| 04 通用能力层 | 11 组件信息获取 | 03 布局回调（inspector） | `04-11-03` | `04-common-capability/11-component-info/03-inspector-layout-callback/` | [design.md](04-common-capability/11-component-info/03-inspector-layout-callback/design.md) | 0 |
+| 04 通用能力层 | 11 组件信息获取 | 03 布局回调（inspector） | `04-11-03` | `04-common-capability/11-component-info/03-inspector-layout-callback/` | [design.md](04-common-capability/11-component-info/03-inspector-layout-callback/design.md) | 1 |
 | 04 通用能力层 | 12 UI上下文 | 01 UIContext接口 | `04-12-01` | `04-common-capability/12-ui-context/01-ui-context-interface/` | [design.md](04-common-capability/12-ui-context/01-ui-context-interface/design.md) | 4 |
 | 04 通用能力层 | 12 UI上下文 | 02 Ability上下文 | `04-12-02` | `04-common-capability/12-ui-context/02-ability-context/` | [design.md](04-common-capability/12-ui-context/02-ability-context/design.md) | 1 |
 | 04 通用能力层 | 12 UI上下文 | 03 Frame回调接口 | `04-12-03` | `04-common-capability/12-ui-context/03-frame-callback/` | [design.md](04-common-capability/12-ui-context/03-frame-callback/design.md) | 1 |
@@ -527,6 +527,8 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 同步树转储与属性过滤 | [Feat-01-sync-tree-dump-filter-spec.md](03-engine-framework/07-accessibility-mechanism/02-inspector/Feat-01-sync-tree-dump-filter-spec.md) | Baselined |
+| Feat-02 | 公共 API 与异步采集 | [Feat-02-public-api-async-spec.md](03-engine-framework/07-accessibility-mechanism/02-inspector/Feat-02-public-api-async-spec.md) | Baselined |
 
 ### 03-08-01 日志
 
@@ -900,6 +902,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | ComponentObserver 布局/绘制回调 | [Feat-01-component-observer-callback-spec.md](04-common-capability/11-component-info/03-inspector-layout-callback/Feat-01-component-observer-callback-spec.md) | Baselined |
 
 ### 04-12-01 UIContext接口
 

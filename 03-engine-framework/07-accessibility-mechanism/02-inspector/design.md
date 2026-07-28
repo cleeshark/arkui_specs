@@ -9,11 +9,11 @@
 | Design ID | DESIGN-Func-03-07-02 |
 | 关联需求 | 已有能力补录（无独立 requirement.md） |
 | 关联 Epic | 无 |
-| 目标 Feature | 待拆分（Feat-01 组件树序列化核心、Feat-02 公共 API 与过滤、Feat-03 异步采集与 UiSession 为候选方向，本设计仅给出骨架） |
+| 目标 Feature | Feat-01 同步树转储与属性过滤、Feat-02 公共 API(NAPI/ANI)与异步采集 |
 | 复杂度 | 复杂 |
 | 目标版本 | API 10 起（getInspectorTree/getInspectorByKey/sendEventByKey 动态 bridge），ANI 富 API 随静态前端落地 |
 | Owner | ArkUI SIG / 引擎框架 |
-| 状态 | Draft（design 补录；Feat 规格待补，故为 Draft） |
+| 状态 | Baselined（已有实现补录；Feat-01/02 已补） |
 
 ## 需求基线
 
@@ -126,6 +126,6 @@
 - [x] 适用架构规则已识别并形成设计结论
 - [x] 关键设计决策有理由和影响说明
 - [x] 风险和开放问题有 Owner
-- [ ] Feat 规格已补齐（本设计为 Draft，Feat 补齐后升 Baselined）
+- [x] Feat 规格已补齐（Feat-01/02 已 Baselined）
 
-**结论:** Draft（design 已补录，Feat 规格待补）
+**结论:** Baselined（已有实现补录，Feat-01/02 已补）

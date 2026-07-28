@@ -9,11 +9,11 @@
 | Design ID | DESIGN-Func-04-11-03 |
 | 关联需求 | 已有能力补录（无独立 requirement.md） |
 | 关联 Epic | 无 |
-| 目标 Feature | 待拆分（Feat-01 ComponentObserver 注册与分发为候选方向，本设计仅给出骨架） |
+| 目标 Feature | Feat-01 ComponentObserver 布局/绘制回调 |
 | 复杂度 | 一般 |
 | 目标版本 | API 10 起（createComponentObserver，layout/draw 回调） |
 | Owner | ArkUI SIG / 通用能力 |
-| 状态 | Draft（design 补录；Feat 规格待补） |
+| 状态 | Baselined（已有实现补录；Feat-01 已补） |
 
 ## 需求基线
 
@@ -117,6 +117,6 @@
 - [x] 适用架构规则已识别并形成设计结论
 - [x] 关键设计决策有理由和影响说明
 - [x] 风险和开放问题有 Owner
-- [ ] Feat 规格已补齐（本设计为 Draft，Feat 补齐后升 Baselined）
+- [x] Feat 规格已补齐（Feat-01 已 Baselined）
 
-**结论:** Draft（design 已补录，Feat 规格待补）
+**结论:** Baselined（已有实现补录，Feat-01 已补）
