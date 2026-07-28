@@ -299,6 +299,46 @@ features:
   title: 手势识别异常恢复增强
   spec: 04-common-capability/04-common-events/06-gesture-capability/Feat-05-gesture-recognizer-recovery-spec.md
   status: Draft
+- func_id: 04-05-01
+  id: Feat-01
+  title: DrawModifier 装配与组件门控
+  spec: 04-common-capability/05-custom-extension/01-draw-modifier/Feat-01-draw-modifier-mounting-gating-spec.md
+  status: Baselined
+- func_id: 04-05-01
+  id: Feat-02
+  title: 分层绘制回调分发
+  spec: 04-common-capability/05-custom-extension/01-draw-modifier/Feat-02-draw-modifier-layered-dispatch-spec.md
+  status: Baselined
+- func_id: 04-05-01
+  id: Feat-03
+  title: 主动刷新机制
+  spec: 04-common-capability/05-custom-extension/01-draw-modifier/Feat-03-draw-modifier-invalidate-refresh-spec.md
+  status: Baselined
+- func_id: 04-05-02
+  id: Feat-01
+  title: AttributeModifier 装配与状态监听
+  spec: 04-common-capability/05-custom-extension/02-dynamic-attributes/Feat-01-attribute-modifier-mounting-state-spec.md
+  status: Baselined
+- func_id: 04-05-02
+  id: Feat-02
+  title: 多状态属性应用与按位分发
+  spec: 04-common-capability/05-custom-extension/02-dynamic-attributes/Feat-02-attribute-modifier-multi-state-dispatch-spec.md
+  status: Baselined
+- func_id: 04-05-05
+  id: Feat-01
+  title: 自定义属性设置读取与双存储
+  spec: 04-common-capability/05-custom-extension/05-custom-property/Feat-01-custom-property-set-read-storage-spec.md
+  status: Baselined
+- func_id: 04-05-06
+  id: Feat-01
+  title: 命令式 Modifier 基类与类体系
+  spec: 04-common-capability/05-custom-extension/06-component-modifier/Feat-01-common-modifier-class-system-spec.md
+  status: Baselined
+- func_id: 04-05-06
+  id: Feat-02
+  title: ModifierWithKey 装配与 ModifierUtils
+  spec: 04-common-capability/05-custom-extension/06-component-modifier/Feat-02-modifier-with-key-utils-spec.md
+  status: Baselined
 - func_id: 05-01-01
   id: Feat-01
   title: Blank 组件
