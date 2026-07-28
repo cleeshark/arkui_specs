@@ -1379,3 +1379,118 @@ features:
   title: 自定义组件冻结机制
   spec: 07-frontend/03-custom-components/04-component-freeze/Feat-01-component-freeze-spec.md
   status: Baselined
+- func_id: 07-05-02
+  id: Feat-01
+  title: LazyForEach 核心语法与按需渲染
+  spec: 07-frontend/05-render-control/02-lazy-foreach/Feat-01-lazy-foreach-core-syntax-and-on-demand-rendering-spec.md
+  status: Baselined
+- func_id: 07-05-02
+  id: Feat-02
+  title: 数据源契约与单条变更通知
+  spec: 07-frontend/05-render-control/02-lazy-foreach/Feat-02-data-source-contract-and-single-change-notification-spec.md
+  status: Baselined
+- func_id: 07-05-02
+  id: Feat-03
+  title: 批量数据集变更 onDatasetChange
+  spec: 07-frontend/05-render-control/02-lazy-foreach/Feat-03-ondatasetchange-bulk-operations-spec.md
+  status: Baselined
+- func_id: 07-05-02
+  id: Feat-04
+  title: 选项策略与内存/冻结优化
+  spec: 07-frontend/05-render-control/02-lazy-foreach/Feat-04-options-strategy-memory-and-freeze-optimization-spec.md
+  status: Baselined
+- func_id: 07-05-02
+  id: Feat-05
+  title: 拖拽排序 onMove
+  spec: 07-frontend/05-render-control/02-lazy-foreach/Feat-05-onmove-drag-reorder-spec.md
+  status: Baselined
+- func_id: 07-05-03
+  id: Feat-01
+  title: Repeat 核心语法与非虚拟渲染
+  spec: 07-frontend/05-render-control/03-repeat/Feat-01-repeat-core-syntax-and-non-virtual-rendering-spec.md
+  status: Baselined
+- func_id: 07-05-03
+  id: Feat-02
+  title: Repeat 虚拟滚动（v2；v1 已废弃）
+  spec: 07-frontend/05-render-control/03-repeat/Feat-02-repeat-virtual-scroll-v1-v2-spec.md
+  status: Baselined
+- func_id: 07-05-03
+  id: Feat-03
+  title: Repeat 模板化渲染与复用
+  spec: 07-frontend/05-render-control/03-repeat/Feat-03-repeat-template-rendering-and-reuse-spec.md
+  status: Baselined
+- func_id: 07-05-03
+  id: Feat-04
+  title: Repeat 内存优化策略
+  spec: 07-frontend/05-render-control/03-repeat/Feat-04-repeat-memory-optimization-strategy-spec.md
+  status: Baselined
+- func_id: 07-05-01
+  id: Feat-01
+  title: if/else 条件渲染语法
+  spec: 07-frontend/05-render-control/01-render-control-syntax/Feat-01-if-else-conditional-rendering-spec.md
+  status: Baselined
+- func_id: 07-05-01
+  id: Feat-02
+  title: ForEach 循环渲染语法
+  spec: 07-frontend/05-render-control/01-render-control-syntax/Feat-02-foreach-loop-rendering-spec.md
+  status: Baselined
+- func_id: 07-05-01
+  id: Feat-03
+  title: 渲染控制语法共享框架
+  spec: 07-frontend/05-render-control/01-render-control-syntax/Feat-03-shared-syntax-node-framework-spec.md
+  status: Baselined
+- func_id: 05-16-01
+  id: Feat-01
+  title: NodeContainer 渲染宿主与 FrameNode 桥接
+  spec: 05-ui-components/16-custom-placeholder-components/01-node-container/Feat-01-node-container-render-host-and-framenode-bridge-spec.md
+  status: Baselined
+- func_id: 05-16-01
+  id: Feat-02
+  title: NodeController 生命周期回调
+  spec: 05-ui-components/16-custom-placeholder-components/01-node-container/Feat-02-nodecontroller-lifecycle-callbacks-spec.md
+  status: Baselined
+- func_id: 05-16-01
+  id: Feat-03
+  title: 复用与纹理导出
+  spec: 05-ui-components/16-custom-placeholder-components/01-node-container/Feat-03-reuse-and-texture-export-spec.md
+  status: Baselined
+- func_id: 04-19-01
+  id: Feat-01
+  title: UINode 复用生命周期与可复用节点判定
+  spec: 04-common-capability/19-component-reuse/01-component-reuse-framework/Feat-01-uinode-reuse-lifecycle-and-reusable-node-judgment-spec.md
+  status: Baselined
+- func_id: 04-19-01
+  id: Feat-02
+  title: reuseId 节点池与 engine↔TS 桥接
+  spec: 04-common-capability/19-component-reuse/01-component-reuse-framework/Feat-02-reuseid-node-pool-and-engine-ts-bridge-spec.md
+  status: Baselined
+- func_id: 04-19-01
+  id: Feat-03
+  title: RecycleDummyNode 与 DisableRecycle 机制
+  spec: 04-common-capability/19-component-reuse/01-component-reuse-framework/Feat-03-recycle-dummy-node-and-disable-recycle-spec.md
+  status: Baselined
+- func_id: 04-19-01
+  id: Feat-04
+  title: 公开复用池 API 与内存优化（@since26）
+  spec: 04-common-capability/19-component-reuse/01-component-reuse-framework/Feat-04-public-reuse-pool-api-and-memory-optimization-spec.md
+  status: Baselined
+- func_id: 05-16-02
+  id: Feat-01
+  title: ContentSlot 语法节点与 NodeContent 内容管理
+  spec: 05-ui-components/16-custom-placeholder-components/02-content-slot/Feat-01-contentslot-syntax-node-and-nodecontent-management-spec.md
+  status: Baselined
+- func_id: 04-06-06
+  id: Feat-01
+  title: NodeAdapter ArkTS 前端规格
+  spec: 04-common-capability/06-custom-node/06-node-adapter/Feat-01-nodeadapter-arkts-frontend-spec.md
+  status: Baselined
+- func_id: 04-06-01
+  id: Feat-01
+  title: 占位组件交叉引用
+  spec: 04-common-capability/06-custom-node/01-placeholder-component/Feat-01-placeholder-component-cross-reference-spec.md
+  status: Baselined
+- func_id: 05-12-02
+  id: Feat-01
+  title: AbilityComponent 跨进程能力嵌入（已废弃）
+  spec: 05-ui-components/12-embedded-display-components/02-ability-component/Feat-01-ability-component-cross-process-embed-deprecated-spec.md
+  status: Baselined
