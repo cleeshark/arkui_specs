@@ -1,6 +1,6 @@
 # 特性规格
 
-> Func-04-05-03-Feat-01 表单类组件自定义内容：固化 ContentModifier 基础契约及 Button/Checkbox/CheckboxGroup/Radio/Select/Slider/Toggle 七个表单组件的 contentModifier() 方法、Configuration 字段、triggerClick/triggerChange 回调、reset/Optional 变体与动态模块加载的行为规格。
+> Func-04-05-03-Feat-01 表单类组件自定义内容：固化 ContentModifier 基础契约及 Button/Checkbox/CheckboxGroup/Radio/Rating/Select/Slider/Toggle 八个表单组件的 contentModifier() 方法、Configuration 字段、triggerClick/triggerChange 回调、reset/Optional 变体与动态模块加载的行为规格。
 
 ## 概述
 
@@ -10,7 +10,7 @@
 | 特性编号 | Func-04-05-03-Feat-01 |
 | 所属 Epic | 无（已有能力补录） |
 | 优先级 | P0 |
-| 目标版本 | API 12 起支持动态版本，API 18 起 Optional 变体，API 21 起 CheckboxGroup |
+| 目标版本 | API 12 起支持动态版本，API 18 起 Rating/Checkbox/Radio/Select Optional 变体，API 21 起 CheckboxGroup |
 | SIG 归属 | ArkUI SIG |
 | 状态 | Baselined |
 | 复杂度 | 中等 |
@@ -116,7 +116,19 @@
 | AC-7.2 | WHEN API >= 18 THEN Select menuItemContentModifier 支持可选变体（`select.d.ts:955`） | 边界 |
 | AC-7.3 | WHEN Select 使用 menuItemContentModifier 而非 contentModifier THEN 方法名与组件名不一致但行为一致 | 正常 |
 
-### US-8: reset/动态模块加载
+### US-8: Rating contentModifier
+
+**作为** 应用开发者,
+**我想要** 通过 `.contentModifier()` 为 Rating 设置自定义内容,
+**以便** 自定义评分组件外观并保留评分变更语义。
+
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-8.1 | WHEN 调用 `rating.d.ts:459` contentModifier() THEN RatingPattern 存储 makeFunc_ 并触发 FireBuilder | 正常 |
+| AC-8.2 | WHEN RatingConfiguration 定义于 `rating_model_ng.h:25` THEN 包含 starNum_/isIndicator_/rating_/stepSize_ 字段和 triggerChange 回调 | 正常 |
+| AC-8.3 | WHEN API >= 18 THEN Rating contentModifier 支持可选变体（`rating.d.ts:476`），传 undefined 清除 modifier | 边界 |
+
+### US-9: reset/动态模块加载
 
 **作为** 应用开发者,
 **我想要** 重置 contentModifier 并了解动态模块加载机制,
@@ -124,9 +136,9 @@
 
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
-| AC-8.1 | WHEN makeFunc_ 为空 THEN FireBuilder 移除 contentModifierNode_ 并恢复默认渲染 | 恢复 |
-| AC-8.2 | WHEN 首次访问 contentModifier THEN DynamicModuleHelper 按组件名动态加载 shared library 并缓存结果 | 正常 |
-| AC-8.3 | WHEN CheckboxGroup API >= 21 THEN contentModifier（`checkboxgroup.d.ts:471`）支持 CheckBoxGroupConfiguration（name/status/triggerChange） | 边界 |
+| AC-9.1 | WHEN makeFunc_ 为空 THEN FireBuilder 移除 contentModifierNode_ 并恢复默认渲染 | 恢复 |
+| AC-9.2 | WHEN 首次访问 contentModifier THEN DynamicModuleHelper 按组件名动态加载 shared library 并缓存结果 | 正常 |
+| AC-9.3 | WHEN CheckboxGroup API >= 21 THEN contentModifier（`checkboxgroup.d.ts:471`）支持 CheckBoxGroupConfiguration（name/status/triggerChange） | 边界 |
 
 ---
 
@@ -156,9 +168,12 @@
 | AC-7.1 | US-7 | R-19 | 单元测试 select_pattern_test_ng.cpp |
 | AC-7.2 | US-7 | R-10 | 代码审查 select.d.ts:955 |
 | AC-7.3 | US-7 | R-20 | 代码审查 select.d.ts:931 |
-| AC-8.1 | US-8 | R-21 | 代码审查 button_pattern.cpp:1439 |
-| AC-8.2 | US-8 | R-22 | 代码审查 button_dynamic_module.cpp:77-84 |
-| AC-8.3 | US-8 | R-23 | 代码审查 checkboxgroup.d.ts:471 |
+| AC-8.1 | US-8 | R-24 | 单元测试 rating_content_modifier_test_ng.cpp |
+| AC-8.2 | US-8 | R-25 | 代码审查 rating_model_ng.h:25 |
+| AC-8.3 | US-8 | R-26 | 代码审查 rating.d.ts:476 |
+| AC-9.1 | US-9 | R-21 | 代码审查 button_pattern.cpp:1439 |
+| AC-9.2 | US-9 | R-22 | 代码审查 button_dynamic_module.cpp:77-84 |
+| AC-9.3 | US-9 | R-23 | 代码审查 checkboxgroup.d.ts:471 |
 
 ## 规则定义
 
@@ -188,7 +203,10 @@
 | R-20 | 行为 | `select.d.ts:931` | Select 使用 menuItemContentModifier 方法名（非 contentModifier） | — | AC-7.3 |
 | R-21 | 恢复 | `button_pattern.cpp:1439` | makeFunc_ 为空时 FireBuilder 移除 contentModifierNode_ 恢复默认 | — | AC-8.1 |
 | R-22 | 行为 | `button_dynamic_module.cpp:77-84` | DynamicModuleHelper 按组件名动态加载，GetCustomModifier("contentModifier")，std::call_once 缓存 | — | AC-8.2 |
-| R-23 | 边界 | `checkboxgroup.d.ts:471` | CheckboxGroup contentModifier @since 21，CheckBoxGroupConfiguration(name/status/triggerChange) | @since 21 | AC-8.3 |
+| R-23 | 边界 | `checkboxgroup.d.ts:471` | CheckboxGroup contentModifier @since 21，CheckBoxGroupConfiguration(name/status/triggerChange) | @since 21 | AC-9.3 |
+| R-24 | 行为 | `rating.d.ts:459` | Rating contentModifier 设置 makeFunc_ 并触发 FireBuilder | @since 12 | AC-8.1 |
+| R-25 | 行为 | `rating_model_ng.h:25` | RatingConfiguration 包含 starNum_/isIndicator_/rating_/stepSize_ 和 triggerChange | — | AC-8.2 |
+| R-26 | 边界 | `rating.d.ts:476` | API >= 18 Rating contentModifier 支持 Optional 变体 | @since 18 | AC-8.3 |
 
 ---
 
@@ -203,7 +221,8 @@
 | VM-5 | US-5 Slider (AC-5.1~5.3) | 单元测试 + 代码审查 | SliderConfiguration 字段；triggerChange 回调；状态快照更新 |
 | VM-6 | US-6 Toggle (AC-6.1~6.3) | 单元测试 + 代码审查 | ToggleConfiguration 字段；triggerChange 回调；继承关系 |
 | VM-7 | US-7 Select (AC-7.1~7.3) | 单元测试 + 代码审查 | MenuItemConfiguration 字段；Optional 变体；方法命名 |
-| VM-8 | US-8 reset/动态加载 (AC-8.1~8.3) | 代码审查 | makeFunc_ 为空恢复默认；动态模块加载；CheckboxGroup @since 21 |
+| VM-8 | US-8 Rating (AC-8.1~8.3) | 单元测试 + 代码审查 | RatingConfiguration 字段；triggerChange 回调；Optional 变体 |
+| VM-9 | US-9 reset/动态加载 (AC-9.1~9.3) | 代码审查 | makeFunc_ 为空恢复默认；动态模块加载；CheckboxGroup @since 21 |
 
 ### 逐 AC 验证用例
 
@@ -231,9 +250,12 @@
 | AC-7.1 | 单元测试 | `test/unittest/core/pattern/select/select_pattern_test_ng.cpp` |
 | AC-7.2 | 代码审查 | `interface/sdk-js/api/@internal/component/ets/select.d.ts:955` |
 | AC-7.3 | 代码审查 | `interface/sdk-js/api/@internal/component/ets/select.d.ts:931` |
-| AC-8.1 | 代码审查 | `frameworks/core/components_ng/pattern/button/button_pattern.cpp:1439` |
-| AC-8.2 | 代码审查 | `frameworks/bridge/declarative_frontend/arkts_native/button_dynamic_module.cpp:77-84` |
-| AC-8.3 | 代码审查 | `interface/sdk-js/api/@internal/component/ets/checkboxgroup.d.ts:471` |
+| AC-8.1 | 单元测试 | `test/unittest/core/pattern/rating/rating_content_modifier_test_ng.cpp` |
+| AC-8.2 | 代码审查 | `frameworks/core/components_ng/pattern/rating/rating_model_ng.h:25` |
+| AC-8.3 | 代码审查 | `interface/sdk-js/api/@internal/component/ets/rating.d.ts:476` |
+| AC-9.1 | 代码审查 | `frameworks/core/components_ng/pattern/button/button_pattern.cpp:1439` |
+| AC-9.2 | 代码审查 | `frameworks/bridge/declarative_frontend/arkts_native/button_dynamic_module.cpp:77-84` |
+| AC-9.3 | 代码审查 | `interface/sdk-js/api/@internal/component/ets/checkboxgroup.d.ts:471` |
 
 ---
 
@@ -268,6 +290,8 @@ interface CommonConfiguration<T> {
 | CheckboxGroup | `contentModifier(modifier: ContentModifier<CheckBoxGroupConfiguration>): CheckboxGroupAttribute` | checkboxgroup.d.ts:471 | 21 |
 | Radio | `contentModifier(modifier: ContentModifier<RadioConfiguration>): RadioAttribute` | radio.d.ts:340 | 12 |
 | Radio | `contentModifier(modifier: Optional<ContentModifier<RadioConfiguration>>): RadioAttribute` | radio.d.ts:357 | 18 |
+| Rating | `contentModifier(modifier: ContentModifier<RatingConfiguration>): RatingAttribute` | rating.d.ts:459 | 12 |
+| Rating | `contentModifier(modifier: Optional<ContentModifier<RatingConfiguration>>): RatingAttribute` | rating.d.ts:476 | 18 |
 | Select | `menuItemContentModifier(modifier: ContentModifier<MenuItemConfiguration>): SelectAttribute` | select.d.ts:931 | 12 |
 | Select | `menuItemContentModifier(modifier: Optional<ContentModifier<MenuItemConfiguration>>): SelectAttribute` | select.d.ts:955 | 18 |
 | Slider | `contentModifier(modifier: ContentModifier<SliderConfiguration>): SliderAttribute` | slider.d.ts:1238 | 12 |
@@ -281,6 +305,7 @@ interface CommonConfiguration<T> {
 | CheckBoxConfiguration | name: string, selected: boolean | triggerChange: Callback | checkbox.d.ts:84 |
 | CheckBoxGroupConfiguration | name: string, status: SelectStatus | triggerChange: Callback | checkboxgroup.d.ts:188 |
 | RadioConfiguration | value: string, checked: boolean | triggerChange: Callback | radio.d.ts:370 |
+| RatingConfiguration | rating: number, indicator: boolean, stars: number, stepSize: number | triggerChange: Callback | rating.d.ts:203 |
 | MenuItemConfiguration | value: ResourceStr, icon: Optional\<ResourceStr\>, symbolIcon: Optional\<SymbolGlyphModifier\>, selected: boolean | — | select.d.ts:1265 |
 | SliderConfiguration | value: number, min: number, max: number, step: number | triggerChange: Callback | slider.d.ts:505 |
 | ToggleConfiguration | isOn: boolean, enabled: boolean | triggerChange: Callback | toggle.d.ts:203 |
@@ -306,7 +331,7 @@ interface CommonConfiguration<T> {
 | API 版本 | 行为差异 | 影响 | 迁移指导 |
 |----------|----------|------|----------|
 | API 12 | 所有表单组件（除 CheckboxGroup）contentModifier 动态版本首次引入 | 新增能力，无兼容性问题 | — |
-| API 18 | Checkbox/Radio/Select 增加 Optional 变体重载 | 新增重载，旧版非 optional 仍可用 | 旧代码无需迁移，新代码可用 Optional 传 undefined 清除 |
+| API 18 | Rating/Checkbox/Radio/Select 增加 Optional 变体重载 | 新增重载，旧版非 optional 仍可用 | 旧代码无需迁移，新代码可用 Optional 传 undefined 清除 |
 | API 21 | CheckboxGroup contentModifier 引入 | 新增能力 | 需 API 21 及以上设备 |
 
 ---
@@ -351,7 +376,7 @@ interface CommonConfiguration<T> {
 | 深色模式 | 无差异，自定义内容颜色由开发者控制 |
 | 多窗口分屏 | 无差异 |
 | 多用户 | 无差异 |
-| 版本升级 | 是，API 12→18→21 版本演进引入 Optional 变体和 CheckboxGroup |
+| 版本升级 | 是，API 12→18→21 版本演进引入 Rating/Checkbox/Radio/Select Optional 变体和 CheckboxGroup |
 | 生态兼容 | 是，动态模块加载需 DynamicModuleHelper 支持 |
 
 ---
@@ -382,6 +407,7 @@ interface CommonConfiguration<T> {
 | `frameworks/core/components_ng/pattern/checkbox/checkbox_model_ng.h` | CheckBoxConfiguration |
 | `frameworks/core/components_ng/pattern/checkboxgroup/checkboxgroup_model_ng.h` | CheckBoxGroupConfiguration |
 | `frameworks/core/components_ng/pattern/radio/radio_model_ng.h` | RadioConfiguration |
+| `frameworks/core/components_ng/pattern/rating/rating_model_ng.h` | RatingConfiguration（starNum_/isIndicator_/rating_/stepSize_） |
 | `frameworks/core/components_ng/pattern/select/select_model_ng.h` | MenuItemConfiguration |
 | `frameworks/core/components_ng/pattern/slider/slider_model_ng.h` | SliderConfiguration |
 | `frameworks/bridge/declarative_frontend/arkts_native/arkts_native_button_bridge.cpp` | SetContentModifierBuilder Bridge |
@@ -396,6 +422,8 @@ interface CommonConfiguration<T> {
 |------|------|
 | `test/unittest/core/pattern/button/button_content_modifier_test_ng.cpp` | Button ContentModifier 单元测试 |
 | `test/unittest/core/pattern/checkbox/checkbox_content_modifier_test_ng.cpp` | Checkbox ContentModifier 单元测试 |
+| `test/unittest/core/pattern/radio/radio_pattern_test_ng.cpp` | Radio ContentModifier 单元测试 |
+| `test/unittest/core/pattern/rating/rating_content_modifier_test_ng.cpp` | Rating ContentModifier 单元测试 |
 | `test/unittest/core/pattern/slider/slider_content_modifier_test_ng.cpp` | Slider ContentModifier 单元测试 |
 | `test/unittest/core/pattern/toggle/toggle_content_modifier_test_ng.cpp` | Toggle ContentModifier 单元测试 |
 

@@ -1,6 +1,6 @@
 # 架构设计
 
-> 表单类组件 ContentModifier 允许开发者用自定义 Builder 替换 Button/Checkbox/CheckboxGroup/Radio/Select/Slider/Toggle 的默认渲染内容，通过 Configuration 对象暴露组件状态与触发回调。
+> 表单类组件 ContentModifier 允许开发者用自定义 Builder 替换 Button/Checkbox/CheckboxGroup/Radio/Rating/Select/Slider/Toggle 的默认渲染内容，通过 Configuration 对象暴露组件状态与触发回调。
 
 ## 设计元数据
 

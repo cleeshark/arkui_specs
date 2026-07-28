@@ -1303,7 +1303,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | ActionSheet 列表选择弹窗全量规格 | [Feat-01-list-selection-dialog-full-spec.md](05-ui-components/06-popup-components/03-list-selection-dialog/Feat-01-list-selection-dialog-full-spec.md) | Baselined |
+| Feat-01 | ActionSheet 列表选择弹窗全量规格 | [Feat-01-action-sheet-full-spec.md](05-ui-components/06-popup-components/03-list-selection-dialog/Feat-01-action-sheet-full-spec.md) | Baselined |
 
 ### 05-06-04 自定义弹窗
 

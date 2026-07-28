@@ -98,7 +98,7 @@
 
 | Task ID | 目标 | 受影响文件 | 依赖 |
 |---------|------|------------|------|
-| TASK-1 | ActionSheet 全部行为规格 | Feat-01-list-selection-dialog-full-spec.md | 无 |
+| TASK-1 | ActionSheet 全部行为规格 | Feat-01-action-sheet-full-spec.md | 无 |
 
 ## API 签名、Kit 与权限
 

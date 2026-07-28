@@ -1572,7 +1572,7 @@ features:
 - func_id: 05-06-03
   id: Feat-01
   title: ActionSheet 列表选择弹窗全量规格
-  spec: 05-ui-components/06-popup-components/03-list-selection-dialog/Feat-01-list-selection-dialog-full-spec.md
+  spec: 05-ui-components/06-popup-components/03-list-selection-dialog/Feat-01-action-sheet-full-spec.md
   status: Baselined
 - func_id: 05-06-09
   id: Feat-01

@@ -1,6 +1,6 @@
 # 架构设计
 
-> 信息展示类组件 ContentModifier 允许开发者用自定义 Builder 替换 DataPanel/Gauge/Progress/Rating/LoadingProgress/TextClock/TextTimer 的默认渲染内容，通过 Configuration 对象暴露组件状态与触发回调。
+> 信息展示类组件 ContentModifier 允许开发者用自定义 Builder 替换 DataPanel/Gauge/Progress/LoadingProgress/TextClock/TextTimer 的默认渲染内容，通过 Configuration 对象暴露组件状态与触发回调。
 
 ## 设计元数据
 
@@ -11,7 +11,7 @@
 | 关联 Epic | 无 |
 | 目标 Feature | Feat-01 信息展示类组件自定义内容 |
 | 复杂度 | 中等 |
-| 目标版本 | API 12 起支持动态版本，API 18 起 Rating Optional 变体 |
+| 目标版本 | API 12 起支持动态版本 |
 | Owner | ArkUI SIG |
 | 状态 | Baselined（已有实现补录） |
 
@@ -20,8 +20,8 @@
 | 字段 | 内容 |
 |------|------|
 | 问题陈述 | 信息展示类组件需要支持自定义内容替换原生渲染，同时保留组件的状态语义和事件触发能力 |
-| 核心目标 | （Feat-01）提供 7 个展示组件的 contentModifier() 方法，每个组件通过 Configuration 暴露状态字段与 triggerChange 回调 |
-| P0 AC | AC-1.1 ~ AC-1.3（DataPanel）、AC-2.1 ~ AC-2.3（Gauge）、AC-3.1 ~ AC-3.3（Progress）、AC-4.1 ~ AC-4.3（Rating）、AC-5.1 ~ AC-5.3（LoadingProgress）、AC-6.1 ~ AC-6.3（TextClock）、AC-7.1 ~ AC-7.3（TextTimer）、AC-8.1 ~ AC-8.2（动态加载/reset） |
+| 核心目标 | （Feat-01）提供 6 个展示组件的 contentModifier() 方法，每个组件通过 Configuration 暴露状态字段与 triggerChange 回调 |
+| P0 AC | AC-1.1 ~ AC-1.3（DataPanel）、AC-2.1 ~ AC-2.3（Gauge）、AC-3.1 ~ AC-3.3（Progress）、AC-4.1 ~ AC-4.3（LoadingProgress）、AC-5.1 ~ AC-5.3（TextClock）、AC-6.1 ~ AC-6.3（TextTimer）、AC-7.1 ~ AC-7.2（动态加载/reset） |
 
 ## 上下文和现状
 
@@ -33,7 +33,6 @@
 | ace_engine | `frameworks/core/components_ng/pattern/data_panel/` | DataPanel Pattern + Model + Bridge | 全量涉及 |
 | ace_engine | `frameworks/core/components_ng/pattern/gauge/` | Gauge Pattern + Model | 全量涉及 |
 | ace_engine | `frameworks/core/components_ng/pattern/progress/` | Progress Pattern + Model | 全量涉及 |
-| ace_engine | `frameworks/core/components_ng/pattern/rating/` | Rating Pattern + Model | 全量涉及 |
 | ace_engine | `frameworks/core/components_ng/pattern/loading_progress/` | LoadingProgress Pattern + Model | 全量涉及 |
 | ace_engine | `frameworks/core/components_ng/pattern/text_clock/` | TextClock Pattern + Model | 全量涉及 |
 | ace_engine | `frameworks/core/components_ng/pattern/text_timer/` | TextTimer Pattern + Model | 全量涉及 |
@@ -74,11 +73,9 @@
 
 | 决策 ID | 问题 | 推荐方案 | 探索过的替代方案 | 取舍理由 | 影响 |
 |---------|------|----------|------------------|----------|------|
-| ADR-1 | 展示组件 Configuration 如何暴露数据状态 | 通过 values/value/maxValue/rating 等字段暴露组件当前状态 | 直接传递 FrameNode 让开发者读取属性 | Configuration 提供稳定 ABI，不暴露内部实现 | 每个组件需定义独立 Configuration 类 |
+| ADR-1 | 展示组件 Configuration 如何暴露数据状态 | 通过 values/value/maxValue/enableLoading 等字段暴露组件当前状态 | 直接传递 FrameNode 让开发者读取属性 | Configuration 提供稳定 ABI，不暴露内部实现 | 每个组件需定义独立 Configuration 类 |
 | ADR-2 | TextClock/TextTimer 的动态时间字段如何处理 | TextClockConfiguration 包含 timeValue，TextTimerConfiguration 包含 elapsedTime | 仅暴露静态配置 | 动态时间字段允许自定义内容实时反映计时状态 | timeValue/elapsedTime 随计时更新触发 makeFunc_ 重新调用 |
 | ADR-3 | DataPanel Configuration 中 values 类型 | 使用 std::vector\<double\> 传递数据数组 | 使用 string 编码 | double 数组直接映射 SDK number[] 类型 | DataPanelConfiguration 持有 values_ 引用 |
-| ADR-4 | Rating contentModifier API 18 Optional 变体 | 增加可选参数重载 | 统一非 optional 版本 | Optional 变体允许传 undefined 清除 modifier | SDK 类型签名分两个重载 |
-| ADR-5 | triggerChange 回调设计 | RatingConfiguration 持有 triggerChange，开发者调用后触发原生评分变更 | 直接修改 Configuration 字段 | 回调模式保证状态一致性 | Configuration 字段为只读快照 |
 
 ## 设计骨架
 
@@ -96,9 +93,9 @@
 | Task ID | 目标 | 受影响文件 | AC |
 |---------|------|------------|-----|
 | TASK-SKELETON-1 | DataPanel/Gauge/Progress Configuration + contentModifier | 各组件 model_ng.h, pattern.cpp | AC-1.1~3.3 |
-| TASK-SKELETON-2 | Rating/LoadingProgress Configuration + contentModifier | 各组件 model_ng.h, pattern.cpp | AC-4.1~5.3 |
-| TASK-SKELETON-3 | TextClock/TextTimer Configuration + contentModifier | 各组件 model_ng.h, pattern.cpp | AC-6.1~7.3 |
-| TASK-SKELETON-4 | 动态模块加载 + reset + Rating Optional | content_modifier_helper_accessor.cpp, rating.d.ts | AC-8.1~8.2 |
+| TASK-SKELETON-2 | LoadingProgress Configuration + contentModifier | loading_progress_model_ng.h, pattern.cpp | AC-4.1~4.3 |
+| TASK-SKELETON-3 | TextClock/TextTimer Configuration + contentModifier | 各组件 model_ng.h, pattern.cpp | AC-5.1~6.3 |
+| TASK-SKELETON-4 | 动态模块加载 + reset | content_modifier_helper_accessor.cpp | AC-7.1~7.2 |
 
 ## 后续 Task 拆分
 
@@ -187,15 +184,6 @@ interface DataPanelConfiguration extends CommonConfiguration {
     values: number[];
     maxValue: number;
 }
-
-// rating.d.ts:203 (@since 12)
-interface RatingConfiguration extends CommonConfiguration {
-    rating: number;
-    indicator: boolean;
-    stars: number;
-    stepSize: number;
-    triggerChange: Callback;
-}
 ```
 
 **C++ (框架层结构)**
@@ -232,7 +220,6 @@ class ProgressConfiguration : public CommonConfiguration {
 | DataPanel | DataPanelConfiguration | values_/maxValue_ | — | data_panel_model_ng.h:37 |
 | Gauge | GaugeConfiguration | value_/min_/max_ | — | gauge_model_ng.h:23 |
 | Progress | ProgressConfiguration | value_/total_ | — | progress_date.h:110 |
-| Rating | RatingConfiguration | starNum_/isIndicator_/rating_/stepSize_ | triggerChange | rating_model_ng.h:25 |
 | LoadingProgress | LoadingProgressConfiguration | enableloading_ | — | loading_progress_model_ng.h:28 |
 | TextClock | TextClockConfiguration | timeZoneOffset_/started_/timeValue_ | — | text_clock_model_ng.h:24 |
 | TextTimer | TextTimerConfiguration | count_/isCountDown_/started_/elapsedTime_/startTime_ | — | text_timer_model_ng.h:24 |
@@ -289,7 +276,7 @@ class ProgressConfiguration : public CommonConfiguration {
 
 | 项 | 类型 | 影响 | 处理方式 | Owner |
 |----|------|------|----------|-------|
-| Rating Optional 变体 API 18 | 兼容性 | 中 | 在兼容性声明中标注，旧代码非 optional 版本仍可用 | ArkUI SIG |
+| Rating 已移至 04-05-03 表单类 | 架构 | 低 | Rating 为输入表单类组件，其 ContentModifier 归属 04-05-03 | ArkUI SIG |
 | 动态模块加载失败时回退默认渲染 | 异常 | 中 | makeFunc_ 为空时 FireBuilder 移除自定义节点恢复默认 | ArkUI SIG |
 | TextClock/TextTimer 时间字段触发频繁重建 | 性能 | 低 | timeValue/elapsedTime 变更触发 makeFunc_ 重新调用，可能有性能开销 | ArkUI SIG |
 | triggerChange 回调为只读快照 | 架构 | 低 | Configuration 字段不反映回调后的状态变更，需开发者自行同步 | ArkUI SIG |
