@@ -1,6 +1,6 @@
 # 架构设计
 
-> 表单类组件 ContentModifier 允许开发者用自定义 Builder 替换 Button/Checkbox/CheckboxGroup/Radio/Rating/Select/Slider/Toggle 的默认渲染内容，通过 Configuration 对象暴露组件状态与触发回调。
+> 表单类组件 ContentModifier 允许开发者用自定义 Builder 替换 Button/Checkbox/CheckboxGroup/Radio/Select/Slider/Toggle 的默认渲染内容，通过 Configuration 对象暴露组件状态与触发回调。
 
 ## 设计元数据
 
@@ -29,7 +29,6 @@
 
 | 仓库 | 模块路径 | 当前职责 | 本 Feature 影响 |
 |------|----------|----------|-----------------|
-| ace_engine | `frameworks/core/components_ng/base/modifier.h` | ContentModifier 基类定义 | 全量涉及 |
 | ace_engine | `frameworks/core/components_ng/base/common_configuration.h` | CommonConfiguration 及各组件 Configuration | 全量涉及 |
 | ace_engine | `frameworks/core/components_ng/pattern/button/` | Button Pattern + Model + Bridge | 全量涉及 |
 | ace_engine | `frameworks/core/components_ng/pattern/checkbox/` | Checkbox/CheckboxGroup Pattern + Model | 全量涉及 |
@@ -96,7 +95,7 @@
 
 | Task ID | 目标 | 受影响文件 | AC |
 |---------|------|------------|-----|
-| TASK-SKELETON-1 | ContentModifier 基类 + CommonConfiguration | `modifier.h`, `common_configuration.h` | AC-1.1 ~ AC-1.4 |
+| TASK-SKELETON-1 | ContentModifier 基础契约 + CommonConfiguration | `common.d.ts`, `common_configuration.h` | AC-1.1 ~ AC-1.2 |
 | TASK-SKELETON-2 | Button/Checkbox/Radio Configuration + contentModifier | 各组件 model_ng.h, pattern.cpp | AC-2.1~3.3, AC-4.1~5.3 |
 | TASK-SKELETON-3 | Select/Slider/Toggle Configuration + contentModifier | 各组件 model_ng.h, pattern.cpp | AC-6.1~7.3 |
 | TASK-SKELETON-4 | reset/Optional 变体 + 动态模块加载 | 各组件 d.ts, dynamic_module.cpp | AC-8.1 ~ AC-8.3 |
@@ -210,13 +209,6 @@ interface ButtonConfiguration extends CommonConfiguration {
 **C++ (框架层结构)**
 
 ```cpp
-// modifier.h:327
-class ContentModifier : public Modifier {
-    virtual void onDraw(DrawingContext& Context) = 0;
-    void AttachProperty(const RefPtr<PropertyBase>& prop);
-    void SetContentChange();  // changeCount_ +1 触发重渲染
-};
-
 // common_configuration.h:22
 class CommonConfiguration {
     bool enabled_ = false;
@@ -231,15 +223,16 @@ class ButtonConfiguration : public CommonConfiguration {
 
 ## 详细设计
 
-### ContentModifier 基类契约
+### 组件 contentModifier() 后端机制
 
-**入口**: `modifier.h:327-391`
+> **注意**：`modifier.h` 中的 `ContentModifier` 绘制基类属于 NG Modifier 绘制系统（onDraw/AttachProperty），与组件对外的 `contentModifier()` API 无关联。组件 `contentModifier()` 的 C++ 后端是 Pattern 层机制。
 
-ContentModifier 继承 Modifier，提供：
-- `onDraw(DrawingContext&)`: 纯虚函数，子类实现自定义绘制
-- `AttachProperty(prop)`: 将属性注册到 `attachedProperties_`，属性变更时触发重渲染
-- `SetContentChange()`: 递增 `changeCount_`（PropertyInt），通知渲染系统内容已变更
-- `SetExtensionHandler(handler)`: 设置扩展处理器
+组件 `contentModifier()` 的后端实现基于 Pattern 层：
+- **makeFunc_**: `std::optional<XxxMakeCallback>`，存储开发者传入的 Builder 回调
+- **contentModifierNode_**: `RefPtr<FrameNode>`，自定义内容节点
+- **BuildContentModifierNode()**: 从 PaintProperty/EventHub 读取状态构造 Configuration，调用 makeFunc_ 生成节点
+- **FireBuilder()**: makeFunc_ 为空时移除 contentModifierNode_ 恢复默认渲染
+- **UseContentModifier()**: 检查 contentModifierNode_ != nullptr
 
 ### Configuration 对象设计
 

@@ -1,6 +1,6 @@
 # 特性规格
 
-> Func-04-05-04-Feat-01 信息展示类组件自定义内容：固化 DataPanel/Gauge/Progress/LoadingProgress/TextClock/TextTimer 六个展示组件的 contentModifier() 方法、Configuration 字段、triggerChange 回调、动态模块加载与 reset 的行为规格。
+> Func-04-05-04-Feat-01 信息展示类组件自定义内容：固化 DataPanel/Gauge/Progress/Rating/LoadingProgress/TextClock/TextTimer 七个展示组件的 contentModifier() 方法、Configuration 字段、triggerChange 回调、动态模块加载与 reset 的行为规格。
 
 ## 概述
 
@@ -10,7 +10,7 @@
 | 特性编号 | Func-04-05-04-Feat-01 |
 | 所属 Epic | 无（已有能力补录） |
 | 优先级 | P0 |
-| 目标版本 | API 12 起支持动态版本 |
+| 目标版本 | API 12 起支持动态版本，API 18 起 Rating Optional 变体 |
 | SIG 归属 | ArkUI SIG |
 | 状态 | Baselined |
 | 复杂度 | 中等 |
@@ -67,7 +67,19 @@
 | AC-3.2 | WHEN ProgressConfiguration 定义于 `progress_date.h:110` THEN 包含 value_(默认 0) 和 total_(默认 100) 字段 | 边界 |
 | AC-3.3 | WHEN ProgressConfiguration 构造 THEN value 默认为 0，total 默认为 100 | 边界 |
 
-### US-4: LoadingProgress contentModifier
+### US-4: Rating contentModifier
+
+**作为** 应用开发者,
+**我想要** 通过 `.contentModifier()` 为 Rating 设置自定义内容,
+**以便** 自定义评分组件外观并保留评分变更语义。
+
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-4.1 | WHEN 调用 `rating.d.ts:459` contentModifier() THEN RatingPattern 存储 makeFunc_ 并触发 FireBuilder | 正常 |
+| AC-4.2 | WHEN RatingConfiguration 定义于 `rating_model_ng.h:25` THEN 包含 starNum_/isIndicator_/rating_/stepSize_ 字段和 triggerChange 回调 | 正常 |
+| AC-4.3 | WHEN API >= 18 THEN Rating contentModifier 支持可选变体（`rating.d.ts:476`），传 undefined 清除 modifier | 边界 |
+
+### US-5: LoadingProgress contentModifier
 
 **作为** 应用开发者,
 **我想要** 通过 `.contentModifier()` 为 LoadingProgress 设置自定义内容,
@@ -75,11 +87,11 @@
 
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
-| AC-4.1 | WHEN 调用 `loading_progress.d.ts:160` contentModifier() THEN LoadingProgressPattern 存储 makeFunc_ 并触发 FireBuilder | 正常 |
-| AC-4.2 | WHEN LoadingProgressConfiguration 定义于 `loading_progress_model_ng.h:28` THEN 包含 enableloading_ 字段（默认 true） | 边界 |
-| AC-4.3 | WHEN enableLoading 默认为 true THEN Configuration 中 enableloading_ 默认为 true | 边界 |
+| AC-5.1 | WHEN 调用 `loading_progress.d.ts:160` contentModifier() THEN LoadingProgressPattern 存储 makeFunc_ 并触发 FireBuilder | 正常 |
+| AC-5.2 | WHEN LoadingProgressConfiguration 定义于 `loading_progress_model_ng.h:28` THEN 包含 enableloading_ 字段（默认 true） | 边界 |
+| AC-5.3 | WHEN enableLoading 默认为 true THEN Configuration 中 enableloading_ 默认为 true | 边界 |
 
-### US-5: TextClock contentModifier
+### US-6: TextClock contentModifier
 
 **作为** 应用开发者,
 **我想要** 通过 `.contentModifier()` 为 TextClock 设置自定义内容,
@@ -87,11 +99,11 @@
 
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
-| AC-5.1 | WHEN 调用 `text_clock.d.ts:457` contentModifier() THEN TextClockPattern 存储 makeFunc_ 并触发 FireBuilder | 正常 |
-| AC-5.2 | WHEN TextClockConfiguration 定义于 `text_clock_model_ng.h:24` THEN 包含 timeZoneOffset_([-14,12])/started_(默认 true)/timeValue_ 字段 | 边界 |
-| AC-5.3 | WHEN timeZoneOffset 超出 [-14,12] 范围 THEN 按系统约束处理 | 异常 |
+| AC-6.1 | WHEN 调用 `text_clock.d.ts:457` contentModifier() THEN TextClockPattern 存储 makeFunc_ 并触发 FireBuilder | 正常 |
+| AC-6.2 | WHEN TextClockConfiguration 定义于 `text_clock_model_ng.h:24` THEN 包含 timeZoneOffset_([-14,12])/started_(默认 true)/timeValue_ 字段 | 边界 |
+| AC-6.3 | WHEN timeZoneOffset 超出 [-14,12] 范围 THEN 按系统约束处理 | 异常 |
 
-### US-6: TextTimer contentModifier
+### US-7: TextTimer contentModifier
 
 **作为** 应用开发者,
 **我想要** 通过 `.contentModifier()` 为 TextTimer 设置自定义内容,
@@ -99,11 +111,11 @@
 
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
-| AC-6.1 | WHEN 调用 `text_timer.d.ts:443` contentModifier() THEN TextTimerPattern 存储 makeFunc_ 并触发 FireBuilder | 正常 |
-| AC-6.2 | WHEN TextTimerConfiguration 定义于 `text_timer_model_ng.h:24` THEN 包含 count_(默认 60000，max 86400000)/isCountDown_/started_/elapsedTime_/startTime_ 字段 | 边界 |
-| AC-6.3 | WHEN count 超过 86400000 THEN 按最大值约束处理 | 异常 |
+| AC-7.1 | WHEN 调用 `text_timer.d.ts:443` contentModifier() THEN TextTimerPattern 存储 makeFunc_ 并触发 FireBuilder | 正常 |
+| AC-7.2 | WHEN TextTimerConfiguration 定义于 `text_timer_model_ng.h:24` THEN 包含 count_(默认 60000，max 86400000)/isCountDown_/started_/elapsedTime_/startTime_ 字段 | 边界 |
+| AC-7.3 | WHEN count 超过 86400000 THEN 按最大值约束处理 | 异常 |
 
-### US-7: 动态模块加载与 reset
+### US-8: 动态模块加载与 reset
 
 **作为** 应用开发者,
 **我想要** 重置 contentModifier 并了解动态模块加载机制,
@@ -111,8 +123,8 @@
 
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
-| AC-7.1 | WHEN makeFunc_ 为空 THEN FireBuilder 移除 contentModifierNode_ 并恢复默认渲染（`data_panel_pattern.cpp:93-96`） | 恢复 |
-| AC-7.2 | WHEN 首次访问 contentModifier THEN GetDataPanelModifierWithCache 通过 DynamicModuleHelper 动态加载并缓存（`content_modifier_helper_accessor.cpp:132-147`） | 正常 |
+| AC-8.1 | WHEN makeFunc_ 为空 THEN FireBuilder 移除 contentModifierNode_ 并恢复默认渲染（`data_panel_pattern.cpp:93-96`） | 恢复 |
+| AC-8.2 | WHEN 首次访问 contentModifier THEN GetDataPanelModifierWithCache 通过 DynamicModuleHelper 动态加载并缓存（`content_modifier_helper_accessor.cpp:132-147`） | 正常 |
 
 ---
 
@@ -129,17 +141,20 @@
 | AC-3.1 | US-3 | R-7 | 单元测试 progress_content_modifier_test_ng.cpp |
 | AC-3.2 | US-3 | R-8 | 代码审查 progress_date.h:110 |
 | AC-3.3 | US-3 | R-9 | 代码审查 progress.d.ts:893 |
-| AC-4.1 | US-4 | R-10 | 单元测试 loading_progress_setbuilder_test_ng.cpp |
-| AC-4.2 | US-4 | R-11 | 代码审查 loading_progress_model_ng.h:28 |
-| AC-4.3 | US-4 | R-12 | 代码审查 loading_progress.d.ts:173 |
-| AC-5.1 | US-5 | R-13 | 单元测试 text_clock_content_modifier_test_ng.cpp |
-| AC-5.2 | US-5 | R-14 | 代码审查 text_clock_model_ng.h:24 |
-| AC-5.3 | US-5 | R-15 | 代码审查 text_clock.d.ts:82 |
-| AC-6.1 | US-6 | R-16 | 单元测试 text_timer_builder_test_ng.cpp |
-| AC-6.2 | US-6 | R-17 | 代码审查 text_timer_model_ng.h:24 |
-| AC-6.3 | US-6 | R-18 | 代码审查 text_timer.d.ts:96 |
-| AC-7.1 | US-7 | R-19 | 代码审查 data_panel_pattern.cpp:93-96 |
-| AC-7.2 | US-7 | R-20 | 代码审查 content_modifier_helper_accessor.cpp:132-147 |
+| AC-4.1 | US-4 | R-10 | 单元测试 rating_content_modifier_test_ng.cpp |
+| AC-4.2 | US-4 | R-11 | 代码审查 rating_model_ng.h:25 |
+| AC-4.3 | US-4 | R-12 | 代码审查 rating.d.ts:476 |
+| AC-5.1 | US-5 | R-13 | 单元测试 loading_progress_setbuilder_test_ng.cpp |
+| AC-5.2 | US-5 | R-14 | 代码审查 loading_progress_model_ng.h:28 |
+| AC-5.3 | US-5 | R-15 | 代码审查 loading_progress.d.ts:173 |
+| AC-6.1 | US-6 | R-16 | 单元测试 text_clock_content_modifier_test_ng.cpp |
+| AC-6.2 | US-6 | R-17 | 代码审查 text_clock_model_ng.h:24 |
+| AC-6.3 | US-6 | R-18 | 代码审查 text_clock.d.ts:82 |
+| AC-7.1 | US-7 | R-19 | 单元测试 text_timer_builder_test_ng.cpp |
+| AC-7.2 | US-7 | R-20 | 代码审查 text_timer_model_ng.h:24 |
+| AC-7.3 | US-7 | R-21 | 代码审查 text_timer.d.ts:96 |
+| AC-8.1 | US-8 | R-22 | 代码审查 data_panel_pattern.cpp:93-96 |
+| AC-8.2 | US-8 | R-23 | 代码审查 content_modifier_helper_accessor.cpp:132-147 |
 
 ## 规则定义
 
@@ -156,17 +171,20 @@
 | R-7 | 行为 | `progress.d.ts:881` | Progress contentModifier 设置 makeFunc_ 并触发 FireBuilder | @since 12 | AC-3.1 |
 | R-8 | 边界 | `progress_date.h:110` | ProgressConfiguration 包含 value_/total_ | — | AC-3.2 |
 | R-9 | 边界 | `progress.d.ts:893` | value 默认 0，total 默认 100 | — | AC-3.3 |
-| R-10 | 行为 | `loading_progress.d.ts:160` | LoadingProgress contentModifier 设置 makeFunc_ 并触发 FireBuilder | @since 12 | AC-4.1 |
-| R-11 | 边界 | `loading_progress_model_ng.h:28` | LoadingProgressConfiguration 包含 enableloading_ | — | AC-4.2 |
-| R-12 | 边界 | `loading_progress.d.ts:173` | enableLoading 默认 true | — | AC-4.3 |
-| R-13 | 行为 | `text_clock.d.ts:457` | TextClock contentModifier 设置 makeFunc_ 并触发 FireBuilder | @since 12 | AC-5.1 |
-| R-14 | 边界 | `text_clock_model_ng.h:24` | TextClockConfiguration 包含 timeZoneOffset_/started_/timeValue_ | timeZoneOffset 范围 [-14,12], started 默认 true | AC-5.2 |
-| R-15 | 异常 | `text_clock.d.ts:82` | timeZoneOffset 超出 [-14,12] 时按系统约束处理 | — | AC-5.3 |
-| R-16 | 行为 | `text_timer.d.ts:443` | TextTimer contentModifier 设置 makeFunc_ 并触发 FireBuilder | @since 12 | AC-6.1 |
-| R-17 | 边界 | `text_timer_model_ng.h:24` | TextTimerConfiguration 包含 count_/isCountDown_/started_/elapsedTime_/startTime_ | count 默认 60000, max 86400000 | AC-6.2 |
-| R-18 | 异常 | `text_timer.d.ts:96` | count 超过 86400000 时按最大值约束处理 | — | AC-6.3 |
-| R-19 | 恢复 | `data_panel_pattern.cpp:93-96` | makeFunc_ 为空时 FireBuilder 移除 contentModifierNode_ 恢复默认 | — | AC-7.1 |
-| R-20 | 行为 | `content_modifier_helper_accessor.cpp:132-147` | GetDataPanelModifierWithCache 通过 DynamicModuleHelper 动态加载，std::call_once 缓存 | — | AC-7.2 |
+| R-10 | 行为 | `rating.d.ts:459` | Rating contentModifier 设置 makeFunc_ 并触发 FireBuilder | @since 12 | AC-4.1 |
+| R-11 | 行为 | `rating_model_ng.h:25` | RatingConfiguration 包含 starNum_/isIndicator_/rating_/stepSize_ 和 triggerChange | — | AC-4.2 |
+| R-12 | 边界 | `rating.d.ts:476` | API >= 18 Rating contentModifier 支持 Optional 变体 | @since 18 | AC-4.3 |
+| R-13 | 行为 | `loading_progress.d.ts:160` | LoadingProgress contentModifier 设置 makeFunc_ 并触发 FireBuilder | @since 12 | AC-5.1 |
+| R-14 | 边界 | `loading_progress_model_ng.h:28` | LoadingProgressConfiguration 包含 enableloading_ | — | AC-5.2 |
+| R-15 | 边界 | `loading_progress.d.ts:173` | enableLoading 默认 true | — | AC-5.3 |
+| R-16 | 行为 | `text_clock.d.ts:457` | TextClock contentModifier 设置 makeFunc_ 并触发 FireBuilder | @since 12 | AC-6.1 |
+| R-17 | 边界 | `text_clock_model_ng.h:24` | TextClockConfiguration 包含 timeZoneOffset_/started_/timeValue_ | timeZoneOffset 范围 [-14,12], started 默认 true | AC-6.2 |
+| R-18 | 异常 | `text_clock.d.ts:82` | timeZoneOffset 超出 [-14,12] 时按系统约束处理 | — | AC-6.3 |
+| R-19 | 行为 | `text_timer.d.ts:443` | TextTimer contentModifier 设置 makeFunc_ 并触发 FireBuilder | @since 12 | AC-7.1 |
+| R-20 | 边界 | `text_timer_model_ng.h:24` | TextTimerConfiguration 包含 count_/isCountDown_/started_/elapsedTime_/startTime_ | count 默认 60000, max 86400000 | AC-7.2 |
+| R-21 | 异常 | `text_timer.d.ts:96` | count 超过 86400000 时按最大值约束处理 | — | AC-7.3 |
+| R-22 | 恢复 | `data_panel_pattern.cpp:93-96` | makeFunc_ 为空时 FireBuilder 移除 contentModifierNode_ 恢复默认 | — | AC-8.1 |
+| R-23 | 行为 | `content_modifier_helper_accessor.cpp:132-147` | GetDataPanelModifierWithCache 通过 DynamicModuleHelper 动态加载，std::call_once 缓存 | — | AC-8.2 |
 
 ---
 
@@ -177,10 +195,11 @@
 | VM-1 | US-1 DataPanel (AC-1.1~1.3) | 单元测试 + 代码审查 | DataPanelConfiguration 字段；BuildContentModifierNode 流程 |
 | VM-2 | US-2 Gauge (AC-2.1~2.3) | 单元测试 + 代码审查 | GaugeConfiguration 字段；值变更快照更新 |
 | VM-3 | US-3 Progress (AC-3.1~3.3) | 单元测试 + 代码审查 | ProgressConfiguration 字段；默认值 |
-| VM-4 | US-4 LoadingProgress (AC-4.1~4.3) | 单元测试 + 代码审查 | LoadingProgressConfiguration 字段；默认值 |
-| VM-5 | US-5 TextClock (AC-5.1~5.3) | 单元测试 + 代码审查 | TextClockConfiguration 字段；时区范围约束 |
-| VM-6 | US-6 TextTimer (AC-6.1~6.3) | 单元测试 + 代码审查 | TextTimerConfiguration 字段；count 范围约束 |
-| VM-7 | US-7 动态加载/reset (AC-7.1~7.2) | 代码审查 | makeFunc_ 为空恢复默认；动态模块加载缓存 |
+| VM-4 | US-4 Rating (AC-4.1~4.3) | 单元测试 + 代码审查 | RatingConfiguration 字段；triggerChange 回调；Optional 变体 |
+| VM-5 | US-5 LoadingProgress (AC-5.1~5.3) | 单元测试 + 代码审查 | LoadingProgressConfiguration 字段；默认值 |
+| VM-6 | US-6 TextClock (AC-6.1~6.3) | 单元测试 + 代码审查 | TextClockConfiguration 字段；时区范围约束 |
+| VM-7 | US-7 TextTimer (AC-7.1~7.3) | 单元测试 + 代码审查 | TextTimerConfiguration 字段；count 范围约束 |
+| VM-8 | US-8 动态加载/reset (AC-8.1~8.2) | 代码审查 | makeFunc_ 为空恢复默认；动态模块加载缓存 |
 
 ### 逐 AC 验证用例
 
@@ -195,17 +214,20 @@
 | AC-3.1 | 单元测试 | `test/unittest/core/pattern/progress/progress_content_modifier_test_ng.cpp` |
 | AC-3.2 | 代码审查 | `frameworks/core/components_ng/pattern/progress/progress_date.h:110` |
 | AC-3.3 | 代码审查 | `interface/sdk-js/api/@internal/component/ets/progress.d.ts:893` |
-| AC-4.1 | 单元测试 | `test/unittest/core/pattern/loading_progress/loading_progress_setbuilder_test_ng.cpp` |
-| AC-4.2 | 代码审查 | `frameworks/core/components_ng/pattern/loading_progress/loading_progress_model_ng.h:28` |
-| AC-4.3 | 代码审查 | `interface/sdk-js/api/@internal/component/ets/loading_progress.d.ts:173` |
-| AC-5.1 | 单元测试 | `test/unittest/core/pattern/text_clock/text_clock_content_modifier_test_ng.cpp` |
-| AC-5.2 | 代码审查 | `frameworks/core/components_ng/pattern/text_clock/text_clock_model_ng.h:24` |
-| AC-5.3 | 代码审查 | `interface/sdk-js/api/@internal/component/ets/text_clock.d.ts:82` |
-| AC-6.1 | 单元测试 | `test/unittest/core/pattern/text_timer/text_timer_builder_test_ng.cpp` |
-| AC-6.2 | 代码审查 | `frameworks/core/components_ng/pattern/text_timer/text_timer_model_ng.h:24` |
-| AC-6.3 | 代码审查 | `interface/sdk-js/api/@internal/component/ets/text_timer.d.ts:96` |
-| AC-7.1 | 代码审查 | `frameworks/core/components_ng/pattern/data_panel/data_panel_pattern.cpp:93-96` |
-| AC-7.2 | 代码审查 | `frameworks/bridge/declarative_frontend/arkts_native/content_modifier_helper_accessor.cpp:132-147` |
+| AC-4.1 | 单元测试 | `test/unittest/core/pattern/rating/rating_content_modifier_test_ng.cpp` |
+| AC-4.2 | 代码审查 | `frameworks/core/components_ng/pattern/rating/rating_model_ng.h:25` |
+| AC-4.3 | 代码审查 | `interface/sdk-js/api/@internal/component/ets/rating.d.ts:476` |
+| AC-5.1 | 单元测试 | `test/unittest/core/pattern/loading_progress/loading_progress_setbuilder_test_ng.cpp` |
+| AC-5.2 | 代码审查 | `frameworks/core/components_ng/pattern/loading_progress/loading_progress_model_ng.h:28` |
+| AC-5.3 | 代码审查 | `interface/sdk-js/api/@internal/component/ets/loading_progress.d.ts:173` |
+| AC-6.1 | 单元测试 | `test/unittest/core/pattern/text_clock/text_clock_content_modifier_test_ng.cpp` |
+| AC-6.2 | 代码审查 | `frameworks/core/components_ng/pattern/text_clock/text_clock_model_ng.h:24` |
+| AC-6.3 | 代码审查 | `interface/sdk-js/api/@internal/component/ets/text_clock.d.ts:82` |
+| AC-7.1 | 单元测试 | `test/unittest/core/pattern/text_timer/text_timer_builder_test_ng.cpp` |
+| AC-7.2 | 代码审查 | `frameworks/core/components_ng/pattern/text_timer/text_timer_model_ng.h:24` |
+| AC-7.3 | 代码审查 | `interface/sdk-js/api/@internal/component/ets/text_timer.d.ts:96` |
+| AC-8.1 | 代码审查 | `frameworks/core/components_ng/pattern/data_panel/data_panel_pattern.cpp:93-96` |
+| AC-8.2 | 代码审查 | `frameworks/bridge/declarative_frontend/arkts_native/content_modifier_helper_accessor.cpp:132-147` |
 
 ---
 
@@ -222,6 +244,8 @@
 | DataPanel | `contentModifier(modifier: ContentModifier<DataPanelConfiguration>): DataPanelAttribute` | data_panel.d.ts:400 | 12 |
 | Gauge | `contentModifier(modifier: ContentModifier<GaugeConfiguration>): GaugeAttribute` | gauge.d.ts:440 | 12 |
 | Progress | `contentModifier(modifier: ContentModifier<ProgressConfiguration>): ProgressAttribute` | progress.d.ts:881 | 12 |
+| Rating | `contentModifier(modifier: ContentModifier<RatingConfiguration>): RatingAttribute` | rating.d.ts:459 | 12 |
+| Rating | `contentModifier(modifier: Optional<ContentModifier<RatingConfiguration>>): RatingAttribute` | rating.d.ts:476 | 18 |
 | LoadingProgress | `contentModifier(modifier: ContentModifier<LoadingProgressConfiguration>): LoadingProgressAttribute` | loading_progress.d.ts:160 | 12 |
 | TextClock | `contentModifier(modifier: ContentModifier<TextClockConfiguration>): TextClockAttribute` | text_clock.d.ts:457 | 12 |
 | TextTimer | `contentModifier(modifier: ContentModifier<TextTimerConfiguration>): TextTimerAttribute` | text_timer.d.ts:443 | 12 |
@@ -233,6 +257,7 @@
 | DataPanelConfiguration | values: number[], maxValue: number | — | data_panel.d.ts:244 |
 | GaugeConfiguration | value: number, min: number, max: number | — | gauge.d.ts:196 |
 | ProgressConfiguration | value: number(默认0), total: number(默认100) | — | progress.d.ts:893 |
+| RatingConfiguration | rating: number, indicator: boolean, stars: number, stepSize: number | triggerChange | rating.d.ts:203 |
 | LoadingProgressConfiguration | enableLoading: boolean(默认true) | — | loading_progress.d.ts:173 |
 | TextClockConfiguration | timeZoneOffset: number([-14,12]), started: boolean(默认true), timeValue: Date | — | text_clock.d.ts:82 |
 | TextTimerConfiguration | count: number(默认60000,max86400000), isCountDown: boolean, started: boolean, elapsedTime: number | — | text_timer.d.ts:96 |
@@ -258,6 +283,7 @@
 | API 版本 | 行为差异 | 影响 | 迁移指导 |
 |----------|----------|------|----------|
 | API 12 | 所有展示组件 contentModifier 动态版本首次引入 | 新增能力，无兼容性问题 | — |
+| API 18 | Rating 增加 Optional 变体重载 | 新增重载，旧版非 optional 仍可用 | 旧代码无需迁移，新代码可用 Optional 传 undefined 清除 |
 
 ---
 
@@ -301,7 +327,7 @@
 | 深色模式 | 无差异，自定义内容颜色由开发者控制 |
 | 多窗口分屏 | 无差异 |
 | 多用户 | 无差异 |
-| 版本升级 | 是，API 12 版本演进引入展示组件 contentModifier |
+| 版本升级 | 是，API 12→18 版本演进引入 Rating Optional 变体 |
 | 生态兼容 | 是，动态模块加载需 DynamicModuleHelper 支持 |
 
 ---
@@ -325,11 +351,11 @@
 
 | 文件 | 说明 |
 |------|------|
-| `frameworks/core/components_ng/base/modifier.h` | ContentModifier 基类（onDraw/AttachProperty/SetContentChange） |
 | `frameworks/core/components_ng/pattern/data_panel/data_panel_pattern.cpp` | DataPanel Pattern apply 机制（FireBuilder/BuildContentModifierNode） |
 | `frameworks/core/components_ng/pattern/data_panel/data_panel_model_ng.h` | DataPanelConfiguration（values_/maxValue_） |
 | `frameworks/core/components_ng/pattern/gauge/gauge_model_ng.h` | GaugeConfiguration（value_/min_/max_） |
 | `frameworks/core/components_ng/pattern/progress/progress_date.h` | ProgressConfiguration（value_/total_） |
+| `frameworks/core/components_ng/pattern/rating/rating_model_ng.h` | RatingConfiguration（starNum_/isIndicator_/rating_/stepSize_） |
 | `frameworks/core/components_ng/pattern/loading_progress/loading_progress_model_ng.h` | LoadingProgressConfiguration（enableloading_） |
 | `frameworks/core/components_ng/pattern/text_clock/text_clock_model_ng.h` | TextClockConfiguration（timeZoneOffset_/started_/timeValue_） |
 | `frameworks/core/components_ng/pattern/text_timer/text_timer_model_ng.h` | TextTimerConfiguration（count_/isCountDown_/started_/elapsedTime_/startTime_） |
@@ -338,6 +364,7 @@
 | `interface/sdk-js/api/@internal/component/ets/data_panel.d.ts` | DataPanel SDK API 定义 |
 | `interface/sdk-js/api/@internal/component/ets/gauge.d.ts` | Gauge SDK API 定义 |
 | `interface/sdk-js/api/@internal/component/ets/progress.d.ts` | Progress SDK API 定义 |
+| `interface/sdk-js/api/@internal/component/ets/rating.d.ts` | Rating SDK API 定义 |
 | `interface/sdk-js/api/@internal/component/ets/loading_progress.d.ts` | LoadingProgress SDK API 定义 |
 | `interface/sdk-js/api/@internal/component/ets/text_clock.d.ts` | TextClock SDK API 定义 |
 | `interface/sdk-js/api/@internal/component/ets/text_timer.d.ts` | TextTimer SDK API 定义 |
@@ -348,6 +375,7 @@
 |------|------|
 | `test/unittest/core/pattern/data_panel/data_panel_content_modifier_test_ng.cpp` | DataPanel ContentModifier 单元测试 |
 | `test/unittest/core/pattern/progress/progress_content_modifier_test_ng.cpp` | Progress ContentModifier 单元测试 |
+| `test/unittest/core/pattern/rating/rating_content_modifier_test_ng.cpp` | Rating ContentModifier 单元测试 |
 | `test/unittest/core/pattern/text_clock/text_clock_content_modifier_test_ng.cpp` | TextClock ContentModifier 单元测试 |
 
 ### SDK 文档
