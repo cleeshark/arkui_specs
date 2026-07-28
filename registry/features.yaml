@@ -199,6 +199,41 @@ features:
   title: 图像效果
   spec: 04-common-capability/03-common-attributes/02-visual-effect-attributes/Feat-01-image-effects-spec.md
   status: Baselined
+- func_id: 04-03-03
+  id: Feat-01
+  title: 组件标识与显隐
+  spec: 04-common-capability/03-common-attributes/03-basic-attributes/Feat-01-component-id-visibility-spec.md
+  status: Baselined
+- func_id: 04-03-03
+  id: Feat-02
+  title: 背景设置
+  spec: 04-common-capability/03-common-attributes/03-basic-attributes/Feat-02-background-setting-spec.md
+  status: Baselined
+- func_id: 04-03-03
+  id: Feat-03
+  title: 渲染与复用
+  spec: 04-common-capability/03-common-attributes/03-basic-attributes/Feat-03-render-reuse-spec.md
+  status: Baselined
+- func_id: 04-03-03
+  id: Feat-04
+  title: 浮层
+  spec: 04-common-capability/03-common-attributes/03-basic-attributes/Feat-04-overlay-spec.md
+  status: Baselined
+- func_id: 04-03-03
+  id: Feat-05
+  title: 焦点属性
+  spec: 04-common-capability/03-common-attributes/03-basic-attributes/Feat-05-focus-attribute-spec.md
+  status: Baselined
+- func_id: 04-03-07
+  id: Feat-01
+  title: 状态效果
+  spec: 04-common-capability/03-common-attributes/07-style-attributes/Feat-01-state-effect-spec.md
+  status: Baselined
+- func_id: 04-03-07
+  id: Feat-02
+  title: 动态属性设置（attributeModifier）
+  spec: 04-common-capability/03-common-attributes/07-style-attributes/Feat-02-attribute-modifier-spec.md
+  status: Baselined
 - func_id: 04-03-10
   id: Feat-01
   title: 背景图片通用属性

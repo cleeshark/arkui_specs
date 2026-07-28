@@ -67,11 +67,11 @@
 | 04 通用能力层 | 02 安全区机制 | 01 安全区机制 | `04-02-01` | `04-common-capability/02-safe-area/01-safe-area-mechanism/` | [design.md](04-common-capability/02-safe-area/01-safe-area-mechanism/design.md) | 5 |
 | 04 通用能力层 | 03 通用属性 | 01 布局属性 | `04-03-01` | `04-common-capability/03-common-attributes/01-layout-attributes/` | [design.md](04-common-capability/03-common-attributes/01-layout-attributes/design.md) | 3 |
 | 04 通用能力层 | 03 通用属性 | 02 视效属性 | `04-03-02` | `04-common-capability/03-common-attributes/02-visual-effect-attributes/` | [design.md](04-common-capability/03-common-attributes/02-visual-effect-attributes/design.md) | 1 |
-| 04 通用能力层 | 03 通用属性 | 03 基础属性 | `04-03-03` | `04-common-capability/03-common-attributes/03-basic-attributes/` | *待补充* | 0 |
+| 04 通用能力层 | 03 通用属性 | 03 基础属性 | `04-03-03` | `04-common-capability/03-common-attributes/03-basic-attributes/` | [design.md](04-common-capability/03-common-attributes/03-basic-attributes/design.md) | 5 |
 | 04 通用能力层 | 03 通用属性 | 04 交互属性 | `04-03-04` | `04-common-capability/03-common-attributes/04-interaction-attributes/` | *待补充* | 0 |
 | 04 通用能力层 | 03 通用属性 | 05 弹窗类属性 | `04-03-05` | `04-common-capability/03-common-attributes/05-popup-attributes/` | *待补充* | 0 |
 | 04 通用能力层 | 03 通用属性 | 06 模态属性 | `04-03-06` | `04-common-capability/03-common-attributes/06-modal-attributes/` | *待补充* | 0 |
-| 04 通用能力层 | 03 通用属性 | 07 样式属性 | `04-03-07` | `04-common-capability/03-common-attributes/07-style-attributes/` | *待补充* | 0 |
+| 04 通用能力层 | 03 通用属性 | 07 样式属性 | `04-03-07` | `04-common-capability/03-common-attributes/07-style-attributes/` | [design.md](04-common-capability/03-common-attributes/07-style-attributes/design.md) | 2 |
 | 04 通用能力层 | 03 通用属性 | 08 基础单位 | `04-03-08` | `04-common-capability/03-common-attributes/08-basic-units/` | *待补充* | 0 |
 | 04 通用能力层 | 03 通用属性 | 09 无障碍属性 | `04-03-09` | `04-common-capability/03-common-attributes/09-accessibility-attributes/` | *待补充* | 0 |
 | 04 通用能力层 | 03 通用属性 | 10 图片相关属性 | `04-03-10` | `04-common-capability/03-common-attributes/10-image-related-attributes/` | [design.md](04-common-capability/03-common-attributes/10-image-related-attributes/design.md) | 1 |
@@ -612,6 +612,11 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 组件标识与显隐 | [Feat-01-component-id-visibility-spec.md](04-common-capability/03-common-attributes/03-basic-attributes/Feat-01-component-id-visibility-spec.md) | Baselined |
+| Feat-02 | 背景设置 | [Feat-02-background-setting-spec.md](04-common-capability/03-common-attributes/03-basic-attributes/Feat-02-background-setting-spec.md) | Baselined |
+| Feat-03 | 渲染与复用 | [Feat-03-render-reuse-spec.md](04-common-capability/03-common-attributes/03-basic-attributes/Feat-03-render-reuse-spec.md) | Baselined |
+| Feat-04 | 浮层 | [Feat-04-overlay-spec.md](04-common-capability/03-common-attributes/03-basic-attributes/Feat-04-overlay-spec.md) | Baselined |
+| Feat-05 | 焦点属性 | [Feat-05-focus-attribute-spec.md](04-common-capability/03-common-attributes/03-basic-attributes/Feat-05-focus-attribute-spec.md) | Baselined |
 
 ### 04-03-04 交互属性
 
@@ -632,6 +637,8 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 状态效果 | [Feat-01-state-effect-spec.md](04-common-capability/03-common-attributes/07-style-attributes/Feat-01-state-effect-spec.md) | Baselined |
+| Feat-02 | 动态属性设置（attributeModifier） | [Feat-02-attribute-modifier-spec.md](04-common-capability/03-common-attributes/07-style-attributes/Feat-02-attribute-modifier-spec.md) | Baselined |
 
 ### 04-03-08 基础单位
 
