@@ -69,10 +69,10 @@
 | 04 通用能力层 | 03 通用属性 | 02 视效属性 | `04-03-02` | `04-common-capability/03-common-attributes/02-visual-effect-attributes/` | [design.md](04-common-capability/03-common-attributes/02-visual-effect-attributes/design.md) | 1 |
 | 04 通用能力层 | 03 通用属性 | 03 基础属性 | `04-03-03` | `04-common-capability/03-common-attributes/03-basic-attributes/` | [design.md](04-common-capability/03-common-attributes/03-basic-attributes/design.md) | 5 |
 | 04 通用能力层 | 03 通用属性 | 04 交互属性 | `04-03-04` | `04-common-capability/03-common-attributes/04-interaction-attributes/` | *待补充* | 0 |
-| 04 通用能力层 | 03 通用属性 | 05 弹窗类属性 | `04-03-05` | `04-common-capability/03-common-attributes/05-popup-attributes/` | *待补充* | 0 |
-| 04 通用能力层 | 03 通用属性 | 06 模态属性 | `04-03-06` | `04-common-capability/03-common-attributes/06-modal-attributes/` | *待补充* | 0 |
+| 04 通用能力层 | 03 通用属性 | 05 弹窗类属性 | `04-03-05` | `04-common-capability/03-common-attributes/05-popup-attributes/` | [design.md](04-common-capability/03-common-attributes/05-popup-attributes/design.md) | 1 |
+| 04 通用能力层 | 03 通用属性 | 06 模态属性 | `04-03-06` | `04-common-capability/03-common-attributes/06-modal-attributes/` | [design.md](04-common-capability/03-common-attributes/06-modal-attributes/design.md) | 1 |
 | 04 通用能力层 | 03 通用属性 | 07 样式属性 | `04-03-07` | `04-common-capability/03-common-attributes/07-style-attributes/` | [design.md](04-common-capability/03-common-attributes/07-style-attributes/design.md) | 2 |
-| 04 通用能力层 | 03 通用属性 | 08 基础单位 | `04-03-08` | `04-common-capability/03-common-attributes/08-basic-units/` | *待补充* | 0 |
+| 04 通用能力层 | 03 通用属性 | 08 基础单位 | `04-03-08` | `04-common-capability/03-common-attributes/08-basic-units/` | [design.md](04-common-capability/03-common-attributes/08-basic-units/design.md) | 1 |
 | 04 通用能力层 | 03 通用属性 | 09 无障碍属性 | `04-03-09` | `04-common-capability/03-common-attributes/09-accessibility-attributes/` | *待补充* | 0 |
 | 04 通用能力层 | 03 通用属性 | 10 图片相关属性 | `04-03-10` | `04-common-capability/03-common-attributes/10-image-related-attributes/` | [design.md](04-common-capability/03-common-attributes/10-image-related-attributes/design.md) | 1 |
 | 04 通用能力层 | 03 通用属性 | 11 文本通用属性 | `04-03-11` | `04-common-capability/03-common-attributes/11-text-common-attributes/` | *待补充* | 0 |
@@ -89,8 +89,8 @@
 | 04 通用能力层 | 04 通用事件 | 11 交互归一化 | `04-04-11` | `04-common-capability/04-common-events/11-interaction-normalization/` | *待补充* | 0 |
 | 04 通用能力层 | 05 自定义扩展能力 | 01 动态绘制属性 | `04-05-01` | `04-common-capability/05-custom-extension/01-draw-modifier/` | *待补充* | 0 |
 | 04 通用能力层 | 05 自定义扩展能力 | 02 动态属性 | `04-05-02` | `04-common-capability/05-custom-extension/02-dynamic-attributes/` | *待补充* | 0 |
-| 04 通用能力层 | 05 自定义扩展能力 | 03 自定义内容 -（表单类组件） | `04-05-03` | `04-common-capability/05-custom-extension/03-content-modifier-form/` | *待补充* | 0 |
-| 04 通用能力层 | 05 自定义扩展能力 | 04 自定义内容 -（信息展示类） | `04-05-04` | `04-common-capability/05-custom-extension/04-content-modifier-display/` | *待补充* | 0 |
+| 04 通用能力层 | 05 自定义扩展能力 | 03 自定义内容 -（表单类组件） | `04-05-03` | `04-common-capability/05-custom-extension/03-content-modifier-form/` | [design.md](04-common-capability/05-custom-extension/03-content-modifier-form/design.md) | 1 |
+| 04 通用能力层 | 05 自定义扩展能力 | 04 自定义内容 -（信息展示类） | `04-05-04` | `04-common-capability/05-custom-extension/04-content-modifier-display/` | [design.md](04-common-capability/05-custom-extension/04-content-modifier-display/design.md) | 1 |
 | 04 通用能力层 | 05 自定义扩展能力 | 05 自定义属性 | `04-05-05` | `04-common-capability/05-custom-extension/05-custom-property/` | *待补充* | 0 |
 | 04 通用能力层 | 05 自定义扩展能力 | 06 组件Modifier | `04-05-06` | `04-common-capability/05-custom-extension/06-component-modifier/` | *待补充* | 0 |
 | 04 通用能力层 | 06 自定义节点能力 | 01 占位组件 | `04-06-01` | `04-common-capability/06-custom-node/01-placeholder-component/` | [design.md](04-common-capability/06-custom-node/01-placeholder-component/design.md) | 1 |
@@ -123,7 +123,7 @@
 | 04 通用能力层 | 14 输入交互 | 05 自动补全能力（AutoFill） | `04-14-05` | `04-common-capability/14-input-interaction/05-autofill/` | *待补充* | 0 |
 | 04 通用能力层 | 15 路由机制 | 01 路由管理 | `04-15-01` | `04-common-capability/15-router-mechanism/01-router-management/` | [design.md](04-common-capability/15-router-mechanism/01-router-management/design.md) | 2 |
 | 04 通用能力层 | 15 路由机制 | 02 命名路由 | `04-15-02` | `04-common-capability/15-router-mechanism/02-named-router/` | [design.md](04-common-capability/15-router-mechanism/02-named-router/design.md) | 1 |
-| 04 通用能力层 | 16 UIAppearance | 01 UIAppearance | `04-16-01` | `04-common-capability/16-ui-appearance/01-ui-appearance/` | *待补充* | 0 |
+| 04 通用能力层 | 16 UIAppearance | 01 UIAppearance | `04-16-01` | `04-common-capability/16-ui-appearance/01-ui-appearance/` | [design.md](04-common-capability/16-ui-appearance/01-ui-appearance/design.md) | 1 |
 | 04 通用能力层 | 17 嵌入显示能力 | 01 UIExtension机制 | `04-17-01` | `04-common-capability/17-embedded-display/01-ui-extension/` | *待补充* | 0 |
 | 04 通用能力层 | 17 嵌入显示能力 | 02 IsolateComponent机制 | `04-17-02` | `04-common-capability/17-embedded-display/02-isolate-component/` | *待补充* | 0 |
 | 04 通用能力层 | 17 嵌入显示能力 | 03 From卡片机制 | `04-17-03` | `04-common-capability/17-embedded-display/03-form-card/` | *待补充* | 0 |
@@ -168,7 +168,7 @@
 | 05 组件层 | 03 滚动容器类组件 | 10 WaterFlow/FlowItem | `05-03-10` | `05-ui-components/03-scroll-container-components/10-water-flow-flow-item/` | *待补充* | 0 |
 | 05 组件层 | 04 输入表单类 | 01 Button | `05-04-01` | `05-ui-components/04-input-form-components/01-button/` | [design.md](05-ui-components/04-input-form-components/01-button/design.md) | 1 |
 | 05 组件层 | 04 输入表单类 | 02 Checkbox/CheckboxGroup | `05-04-02` | `05-ui-components/04-input-form-components/02-checkbox-checkbox-group/` | [design.md](05-ui-components/04-input-form-components/02-checkbox-checkbox-group/design.md) | 1 |
-| 05 组件层 | 04 输入表单类 | 03 Rating | `05-04-03` | `05-ui-components/04-input-form-components/03-rating/` | *待补充* | 0 |
+| 05 组件层 | 04 输入表单类 | 03 Rating | `05-04-03` | `05-ui-components/04-input-form-components/03-rating/` | [design.md](05-ui-components/04-input-form-components/03-rating/design.md) | 1 |
 | 05 组件层 | 04 输入表单类 | 04 Radio | `05-04-04` | `05-ui-components/04-input-form-components/04-radio/` | [design.md](05-ui-components/04-input-form-components/04-radio/design.md) | 1 |
 | 05 组件层 | 04 输入表单类 | 05 Slider | `05-04-05` | `05-ui-components/04-input-form-components/05-slider/` | [design.md](05-ui-components/04-input-form-components/05-slider/design.md) | 4 |
 | 05 组件层 | 04 输入表单类 | 06 Toggle | `05-04-06` | `05-ui-components/04-input-form-components/06-toggle/` | [design.md](05-ui-components/04-input-form-components/06-toggle/design.md) | 1 |
@@ -179,18 +179,18 @@
 | 05 组件层 | 05 选择类组件 | 05 Select | `05-05-05` | `05-ui-components/05-picker-components/05-select/` | [design.md](05-ui-components/05-picker-components/05-select/design.md) | 1 |
 | 05 组件层 | 05 选择类组件 | 06 Picker | `05-05-06` | `05-ui-components/05-picker-components/06-picker/` | [design.md](05-ui-components/05-picker-components/06-picker/design.md) | 1 |
 | 05 组件层 | 06 弹窗类组件 | 01 Menu/MenuItem/MenuItemGroup | `05-06-01` | `05-ui-components/06-popup-components/01-menu-menu-item-menu-item-group/` | [design.md](05-ui-components/06-popup-components/01-menu-menu-item-menu-item-group/design.md) | 3 |
-| 05 组件层 | 06 弹窗类组件 | 02 警告弹窗 | `05-06-02` | `05-ui-components/06-popup-components/02-alert-dialog/` | *待补充* | 0 |
-| 05 组件层 | 06 弹窗类组件 | 03 列表选择弹窗 | `05-06-03` | `05-ui-components/06-popup-components/03-list-selection-dialog/` | *待补充* | 0 |
+| 05 组件层 | 06 弹窗类组件 | 02 警告弹窗 | `05-06-02` | `05-ui-components/06-popup-components/02-alert-dialog/` | [design.md](05-ui-components/06-popup-components/02-alert-dialog/design.md) | 1 |
+| 05 组件层 | 06 弹窗类组件 | 03 列表选择弹窗 | `05-06-03` | `05-ui-components/06-popup-components/03-list-selection-dialog/` | [design.md](05-ui-components/06-popup-components/03-list-selection-dialog/design.md) | 1 |
 | 05 组件层 | 06 弹窗类组件 | 04 自定义弹窗 | `05-06-04` | `05-ui-components/06-popup-components/04-custom-dialog/` | [design.md](05-ui-components/06-popup-components/04-custom-dialog/design.md) | 3 |
 | 05 组件层 | 06 弹窗类组件 | 05 CalendarPickerDialog | `05-06-05` | `05-ui-components/06-popup-components/05-calendar-picker-dialog/` | [design.md](05-ui-components/06-popup-components/05-calendar-picker-dialog/design.md) | 1 |
 | 05 组件层 | 06 弹窗类组件 | 06 DatePickerDialog | `05-06-06` | `05-ui-components/06-popup-components/06-date-picker-dialog/` | [design.md](05-ui-components/06-popup-components/06-date-picker-dialog/design.md) | 1 |
 | 05 组件层 | 06 弹窗类组件 | 07 TimePickerDialog | `05-06-07` | `05-ui-components/06-popup-components/07-time-picker-dialog/` | [design.md](05-ui-components/06-popup-components/07-time-picker-dialog/design.md) | 1 |
 | 05 组件层 | 06 弹窗类组件 | 08 TextPickerDialog | `05-06-08` | `05-ui-components/06-popup-components/08-text-picker-dialog/` | [design.md](05-ui-components/06-popup-components/08-text-picker-dialog/design.md) | 1 |
-| 05 组件层 | 06 弹窗类组件 | 09 ContextMenu接口 | `05-06-09` | `05-ui-components/06-popup-components/09-context-menu/` | *待补充* | 0 |
+| 05 组件层 | 06 弹窗类组件 | 09 ContextMenu接口 | `05-06-09` | `05-ui-components/06-popup-components/09-context-menu/` | [design.md](05-ui-components/06-popup-components/09-context-menu/design.md) | 1 |
 | 05 组件层 | 06 弹窗类组件 | 10 promptAction接口 | `05-06-10` | `05-ui-components/06-popup-components/10-prompt-action/` | [design.md](05-ui-components/06-popup-components/10-prompt-action/design.md) | 1 |
 | 05 组件层 | 06 弹窗类组件 | 11 popup弹窗 | `05-06-11` | `05-ui-components/06-popup-components/11-popup/` | [design.md](05-ui-components/06-popup-components/11-popup/design.md) | 2 |
-| 05 组件层 | 07 模态类组件 | 01 半模态弹窗 | `05-07-01` | `05-ui-components/07-modal-components/01-sheet-modal/` | *待补充* | 0 |
-| 05 组件层 | 07 模态类组件 | 02 全模态弹窗 | `05-07-02` | `05-ui-components/07-modal-components/02-full-modal/` | *待补充* | 0 |
+| 05 组件层 | 07 模态类组件 | 01 半模态弹窗 | `05-07-01` | `05-ui-components/07-modal-components/01-sheet-modal/` | [design.md](05-ui-components/07-modal-components/01-sheet-modal/design.md) | 1 |
+| 05 组件层 | 07 模态类组件 | 02 全模态弹窗 | `05-07-02` | `05-ui-components/07-modal-components/02-full-modal/` | [design.md](05-ui-components/07-modal-components/02-full-modal/design.md) | 1 |
 | 05 组件层 | 07 模态类组件 | 03 Panel | `05-07-03` | `05-ui-components/07-modal-components/03-panel/` | *待补充* | 0 |
 | 05 组件层 | 08 图片类组件 | 01 Image | `05-08-01` | `05-ui-components/08-image-components/01-image/` | [design.md](05-ui-components/08-image-components/01-image/design.md) | 5 |
 | 05 组件层 | 08 图片类组件 | 02 ImageAnimator | `05-08-02` | `05-ui-components/08-image-components/02-image-animator/` | [design.md](05-ui-components/08-image-components/02-image-animator/design.md) | 3 |
@@ -229,7 +229,7 @@
 | 05 组件层 | 14 绘制类组件 | 01 Shape | `05-14-01` | `05-ui-components/14-drawing-components/01-shape/` | [design.md](05-ui-components/14-drawing-components/01-shape/design.md) | 6 |
 | 05 组件层 | 14 绘制类组件 | 02 Canvas | `05-14-02` | `05-ui-components/14-drawing-components/02-canvas/` | [design.md](05-ui-components/14-drawing-components/02-canvas/design.md) | 7 |
 | 05 组件层 | 14 绘制类组件 | 03 OffscreenCanvas | `05-14-03` | `05-ui-components/14-drawing-components/03-offscreen-canvas/` | [design.md](05-ui-components/14-drawing-components/03-offscreen-canvas/design.md) | 3 |
-| 05 组件层 | 15 主题组件 | 01 WithTheme | `05-15-01` | `05-ui-components/15-theme-components/01-with-theme/` | *待补充* | 0 |
+| 05 组件层 | 15 主题组件 | 01 WithTheme | `05-15-01` | `05-ui-components/15-theme-components/01-with-theme/` | [design.md](05-ui-components/15-theme-components/01-with-theme/design.md) | 1 |
 | 05 组件层 | 16 自定义占位组件 | 01 NodeContainer | `05-16-01` | `05-ui-components/16-custom-placeholder-components/01-node-container/` | [design.md](05-ui-components/16-custom-placeholder-components/01-node-container/design.md) | 3 |
 | 05 组件层 | 16 自定义占位组件 | 02 ContentSlot | `05-16-02` | `05-ui-components/16-custom-placeholder-components/02-content-slot/` | [design.md](05-ui-components/16-custom-placeholder-components/02-content-slot/design.md) | 1 |
 | 06 通用接口层 | 01 前端桥接 | 01 跨语言封装 | `06-01-01` | `06-common-interface/01-frontend-bridge/01-cross-language-wrapper/` | *待补充* | 0 |
@@ -453,8 +453,8 @@
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
 | Feat-01 | 资源访问内部机制 | [Feat-01-resource-access-spec.md](03-engine-framework/03-resource-theme/01-resource-access/Feat-01-resource-access-spec.md) | Baselined |
-| Feat-02 | 资源访问公开能力（$r/$rawfile 解析层） | [Feat-02-resource-public-access-spec.md](03-engine-framework/03-resource-theme/01-resource-access/Feat-02-resource-public-access-spec.md) | Draft |
-| Feat-03 | 资源分层与 Override 适配器 | [Feat-03-resource-override-layering-spec.md](03-engine-framework/03-resource-theme/01-resource-access/Feat-03-resource-override-layering-spec.md) | Draft |
+| Feat-02 | 资源访问公开能力（$r/$rawfile 解析层） | [Feat-02-resource-public-access-spec.md](03-engine-framework/03-resource-theme/01-resource-access/Feat-02-resource-public-access-spec.md) | Baselined |
+| Feat-03 | 资源分层与 Override 适配器 | [Feat-03-resource-override-layering-spec.md](03-engine-framework/03-resource-theme/01-resource-access/Feat-03-resource-override-layering-spec.md) | Baselined |
 
 ### 03-03-02 主题分层访问
 
@@ -467,7 +467,7 @@
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
 | Feat-01 | Theme框架全量规格 | [Feat-01-theme-framework-spec.md](03-engine-framework/03-resource-theme/03-theme-framework/Feat-01-theme-framework-spec.md) | Baselined |
-| Feat-02 | @ohos.arkui.theme 公开主题 API | [Feat-02-arkui-theme-public-api-spec.md](03-engine-framework/03-resource-theme/03-theme-framework/Feat-02-arkui-theme-public-api-spec.md) | Draft |
+| Feat-02 | @ohos.arkui.theme 公开主题 API | [Feat-02-arkui-theme-public-api-spec.md](03-engine-framework/03-resource-theme/03-theme-framework/Feat-02-arkui-theme-public-api-spec.md) | Baselined |
 
 ### 03-03-04 资源动态切换
 
@@ -499,8 +499,8 @@
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
 | Feat-01 | 子窗抽象与 Manager 核心 | [Feat-01-subwindow-mechanism-spec.md](03-engine-framework/05-window-mechanism/02-subwindow-mechanism/Feat-01-subwindow-mechanism-spec.md) | Baselined |
-| Feat-02 | 子窗类型路由与弹窗状态机 | [Feat-02-subwindow-routing-state-spec.md](03-engine-framework/05-window-mechanism/02-subwindow-mechanism/Feat-02-subwindow-routing-state-spec.md) | Draft |
-| Feat-03 | 子窗布局交互与多端适配 | [Feat-03-subwindow-layout-adaptation-spec.md](03-engine-framework/05-window-mechanism/02-subwindow-mechanism/Feat-03-subwindow-layout-adaptation-spec.md) | Draft |
+| Feat-02 | 子窗类型路由与弹窗状态机 | [Feat-02-subwindow-routing-state-spec.md](03-engine-framework/05-window-mechanism/02-subwindow-mechanism/Feat-02-subwindow-routing-state-spec.md) | Baselined |
+| Feat-03 | 子窗布局交互与多端适配 | [Feat-03-subwindow-layout-adaptation-spec.md](03-engine-framework/05-window-mechanism/02-subwindow-mechanism/Feat-03-subwindow-layout-adaptation-spec.md) | Baselined |
 
 ### 03-06-01 多实例管理
 
@@ -627,11 +627,13 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 弹窗类属性（bindPopup/bindMenu/bindContextMenu） | [Feat-01-popup-attributes-spec.md](04-common-capability/03-common-attributes/05-popup-attributes/Feat-01-popup-attributes-spec.md) | Baselined |
 
 ### 04-03-06 模态属性
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 模态属性（bindSheet/bindContentCover） | [Feat-01-modal-attributes-spec.md](04-common-capability/03-common-attributes/06-modal-attributes/Feat-01-modal-attributes-spec.md) | Baselined |
 
 ### 04-03-07 样式属性
 
@@ -644,6 +646,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 基础单位（vp/fp/px/lpx/percent/Dimension） | [Feat-01-basic-units-spec.md](04-common-capability/03-common-attributes/08-basic-units/Feat-01-basic-units-spec.md) | Baselined |
 
 ### 04-03-09 无障碍属性
 
@@ -735,11 +738,13 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 表单类组件自定义内容（ContentModifier） | [Feat-01-content-modifier-form-spec.md](04-common-capability/05-custom-extension/03-content-modifier-form/Feat-01-content-modifier-form-spec.md) | Baselined |
 
 ### 04-05-04 自定义内容 -（信息展示类）
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 信息展示类组件自定义内容（ContentModifier） | [Feat-01-content-modifier-display-spec.md](04-common-capability/05-custom-extension/04-content-modifier-display/Feat-01-content-modifier-display-spec.md) | Baselined |
 
 ### 04-05-05 自定义属性
 
@@ -919,6 +924,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | UIAppearance（深浅色模式与外观管理） | [Feat-01-ui-appearance-spec.md](04-common-capability/16-ui-appearance/01-ui-appearance/Feat-01-ui-appearance-spec.md) | Baselined |
 
 ### 04-17-01 UIExtension机制
 
@@ -1220,6 +1226,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Rating 组件全量规格 | [Feat-01-rating-full-spec.md](05-ui-components/04-input-form-components/03-rating/Feat-01-rating-full-spec.md) | Baselined |
 
 ### 05-04-04 Radio
 
@@ -1290,11 +1297,13 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | AlertDialog 警告弹窗全量规格 | [Feat-01-alert-dialog-full-spec.md](05-ui-components/06-popup-components/02-alert-dialog/Feat-01-alert-dialog-full-spec.md) | Baselined |
 
 ### 05-06-03 列表选择弹窗
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | ActionSheet 列表选择弹窗全量规格 | [Feat-01-action-sheet-full-spec.md](05-ui-components/06-popup-components/03-list-selection-dialog/Feat-01-action-sheet-full-spec.md) | Baselined |
 
 ### 05-06-04 自定义弹窗
 
@@ -1332,6 +1341,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | ContextMenu 接口全量规格 | [Feat-01-context-menu-full-spec.md](05-ui-components/06-popup-components/09-context-menu/Feat-01-context-menu-full-spec.md) | Baselined |
 
 ### 05-06-10 promptAction接口
 
@@ -1350,11 +1360,13 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | bindSheet 半模态弹窗全量规格 | [Feat-01-sheet-modal-full-spec.md](05-ui-components/07-modal-components/01-sheet-modal/Feat-01-sheet-modal-full-spec.md) | Baselined |
 
 ### 05-07-02 全模态弹窗
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | bindContentCover 全模态弹窗全量规格 | [Feat-01-full-modal-full-spec.md](05-ui-components/07-modal-components/02-full-modal/Feat-01-full-modal-full-spec.md) | Baselined |
 
 ### 05-07-03 Panel
 
@@ -1593,6 +1605,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | WithTheme 主题作用域组件全量规格 | [Feat-01-with-theme-full-spec.md](05-ui-components/15-theme-components/01-with-theme/Feat-01-with-theme-full-spec.md) | Baselined |
 
 ### 05-16-01 NodeContainer
 
