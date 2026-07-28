@@ -86,10 +86,10 @@
 
 | 骨架项 | 目标 | 不包含 | 验证方式 |
 |--------|------|--------|----------|
-| ContentModifier 基类 | onDraw/AttachProperty/SetContentChange | 具体组件 Configuration | 代码审查 |
+| ContentModifier\<T\> SDK 接口 | applyContent() 返回 WrappedBuilder | modifier.h 绘制基类（不涉及） | 代码审查 |
 | CommonConfiguration | enabled 字段 | 组件特有字段 | 代码审查 |
 | 各组件 Configuration | 组件状态字段 + trigger 回调 | Pattern 布局逻辑 | 单元测试 |
-| Pattern apply 机制 | makeFunc_ + contentModifierNode_ 管理 | 默认渲染逻辑 | 单元测试 |
+| Pattern apply 机制 | makeFunc_ + contentModifierNode_ + BuildContentModifierNode + FireBuilder | 默认渲染逻辑 | 单元测试 |
 
 ### 骨架 Spec 拆分
 
