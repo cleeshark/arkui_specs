@@ -71,7 +71,7 @@
 | 04 通用能力层 | 03 通用属性 | 04 交互属性 | `04-03-04` | `04-common-capability/03-common-attributes/04-interaction-attributes/` | *待补充* | 0 |
 | 04 通用能力层 | 03 通用属性 | 05 弹窗类属性 | `04-03-05` | `04-common-capability/03-common-attributes/05-popup-attributes/` | *待补充* | 0 |
 | 04 通用能力层 | 03 通用属性 | 06 模态属性 | `04-03-06` | `04-common-capability/03-common-attributes/06-modal-attributes/` | *待补充* | 0 |
-| 04 通用能力层 | 03 通用属性 | 07 样式属性 | `04-03-07` | `04-common-capability/03-common-attributes/07-style-attributes/` | *待补充* | 0 |
+| 04 通用能力层 | 03 通用属性 | 07 样式属性 | `04-03-07` | `04-common-capability/03-common-attributes/07-style-attributes/` | [design.md](04-common-capability/03-common-attributes/07-style-attributes/design.md) | 2 |
 | 04 通用能力层 | 03 通用属性 | 08 基础单位 | `04-03-08` | `04-common-capability/03-common-attributes/08-basic-units/` | *待补充* | 0 |
 | 04 通用能力层 | 03 通用属性 | 09 无障碍属性 | `04-03-09` | `04-common-capability/03-common-attributes/09-accessibility-attributes/` | *待补充* | 0 |
 | 04 通用能力层 | 03 通用属性 | 10 图片相关属性 | `04-03-10` | `04-common-capability/03-common-attributes/10-image-related-attributes/` | [design.md](04-common-capability/03-common-attributes/10-image-related-attributes/design.md) | 1 |
@@ -109,7 +109,7 @@
 | 04 通用能力层 | 09 焦点框架 | 01 焦点机制 | `04-09-01` | `04-common-capability/09-focus-framework/01-focus-mechanism/` | *待补充* | 0 |
 | 04 通用能力层 | 10 组件截图 | 01 离屏截图 | `04-10-01` | `04-common-capability/10-component-screenshot/01-offscreen-screenshot/` | *待补充* | 0 |
 | 04 通用能力层 | 11 组件信息获取 | 01 ComponentUtils | `04-11-01` | `04-common-capability/11-component-info/01-component-utils/` | *待补充* | 0 |
-| 04 通用能力层 | 11 组件信息获取 | 02 无感监听（observer） | `04-11-02` | `04-common-capability/11-component-info/02-observer/` | *待补充* | 0 |
+| 04 通用能力层 | 11 组件信息获取 | 02 无感监听（observer） | `04-11-02` | `04-common-capability/11-component-info/02-observer/` | [design.md](04-common-capability/11-component-info/02-observer/design.md) | 2 |
 | 04 通用能力层 | 11 组件信息获取 | 03 布局回调（inspector） | `04-11-03` | `04-common-capability/11-component-info/03-inspector-layout-callback/` | *待补充* | 0 |
 | 04 通用能力层 | 12 UI上下文 | 01 UIContext接口 | `04-12-01` | `04-common-capability/12-ui-context/01-ui-context-interface/` | [design.md](04-common-capability/12-ui-context/01-ui-context-interface/design.md) | 4 |
 | 04 通用能力层 | 12 UI上下文 | 02 Ability上下文 | `04-12-02` | `04-common-capability/12-ui-context/02-ability-context/` | [design.md](04-common-capability/12-ui-context/02-ability-context/design.md) | 1 |
@@ -585,9 +585,9 @@
 |--------|----------|-----------|------|
 | Feat-01 | 组件标识与显隐 | [Feat-01-component-id-visibility-spec.md](04-common-capability/03-common-attributes/03-basic-attributes/Feat-01-component-id-visibility-spec.md) | Baselined |
 | Feat-02 | 背景设置 | [Feat-02-background-setting-spec.md](04-common-capability/03-common-attributes/03-basic-attributes/Feat-02-background-setting-spec.md) | Baselined |
-| Feat-03 | 浮层 | [Feat-03-overlay-spec.md](04-common-capability/03-common-attributes/03-basic-attributes/Feat-03-overlay-spec.md) | Baselined |
-| Feat-04 | 渲染与复用 | [Feat-04-render-reuse-spec.md](04-common-capability/03-common-attributes/03-basic-attributes/Feat-04-render-reuse-spec.md) | Baselined |
-| Feat-05 | 状态效果与自定义 | [Feat-05-state-effect-custom-spec.md](04-common-capability/03-common-attributes/03-basic-attributes/Feat-05-state-effect-custom-spec.md) | Baselined |
+| Feat-03 | 渲染与复用 | [Feat-03-render-reuse-spec.md](04-common-capability/03-common-attributes/03-basic-attributes/Feat-03-render-reuse-spec.md) | Baselined |
+| Feat-04 | 浮层 | [Feat-04-overlay-spec.md](04-common-capability/03-common-attributes/03-basic-attributes/Feat-04-overlay-spec.md) | Baselined |
+| Feat-05 | 焦点属性 | [Feat-05-focus-attribute-spec.md](04-common-capability/03-common-attributes/03-basic-attributes/Feat-05-focus-attribute-spec.md) | Baselined |
 
 ### 04-03-04 交互属性
 
@@ -608,6 +608,8 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 状态效果 | [Feat-01-state-effect-spec.md](04-common-capability/03-common-attributes/07-style-attributes/Feat-01-state-effect-spec.md) | Baselined |
+| Feat-02 | 动态属性设置（attributeModifier） | [Feat-02-attribute-modifier-spec.md](04-common-capability/03-common-attributes/07-style-attributes/Feat-02-attribute-modifier-spec.md) | Baselined |
 
 ### 04-03-08 基础单位
 
@@ -805,6 +807,8 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 无感监听核心架构 | [Feat-01-observer-core-architecture-spec.md](04-common-capability/11-component-info/02-observer/Feat-01-observer-core-architecture-spec.md) | Baselined |
+| Feat-02 | 无感监听接口全覆盖 | [Feat-02-observer-api-full-coverage-spec.md](04-common-capability/11-component-info/02-observer/Feat-02-observer-api-full-coverage-spec.md) | Baselined |
 
 ### 04-11-03 布局回调（inspector）
 

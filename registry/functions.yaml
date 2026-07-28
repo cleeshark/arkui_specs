@@ -675,7 +675,7 @@ functions:
     id: '07'
     title: 样式属性
   path: 04-common-capability/03-common-attributes/07-style-attributes/
-  design: null
+  design: 04-common-capability/03-common-attributes/07-style-attributes/design.md
   status: active
 - id: 04-03-08
   l1:
@@ -1169,7 +1169,7 @@ functions:
     id: '02'
     title: 无感监听（observer）
   path: 04-common-capability/11-component-info/02-observer/
-  design: null
+  design: 04-common-capability/11-component-info/02-observer/design.md
   status: active
 - id: 04-11-03
   l1:

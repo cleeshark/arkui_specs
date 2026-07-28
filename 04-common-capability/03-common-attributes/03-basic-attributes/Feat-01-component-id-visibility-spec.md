@@ -23,7 +23,7 @@
 
 | 类型 | 内容 | 说明 |
 |------|------|------|
-| ADDED | id (string) | @since API 7，组件标识，存入 PipelineContext idMap |
+| ADDED | id (string) | @since API 7，组件标识，存入 ElementRegister inspectorIdMap_ |
 | ADDED | key (string) | 回收逻辑唯一键 |
 | ADDED | restoreId (int32_t) | 状态持久化恢复标识，默认值 -1 |
 | ADDED | uniqueId (int64_t) | 框架自动生成的唯一 ID，不可由开发者设置 |
@@ -44,6 +44,7 @@
 - **KB 路由**: `docs/pattern/common/`
 - **SDK 类型定义**:
   - ArkTS Dynamic: `interface/sdk-js/api/@ohos.arkui.UIContext.d.ts` 及各组件 common 方法
+  - ArkTS Static: `frameworks/bridge/arkts_frontend/koala_projects/arkoala-arkts/arkui-ohos/generated/framework/arkts/ArkUIGeneratedNativeModule.ets` (ANI 函数指针 `_CommonMethod_setVisibility`/`_CommonMethod_setId` 等)
   - C API / NDK: `interfaces/native/node/node_common_modifier.cpp`（SetVisibility、SetZIndex、SetInspectorLabel、SetObscured、SetAllowForceDark、SetRestoreId、SetClickDistance）
 
 > 需求基线、不涉及项、受影响子系统与仓库详见 proposal.md，本文档不重复摘录。
@@ -58,7 +59,7 @@
 
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
-| AC-1.1 | WHEN 设置 `.id('myButton')` THEN id 存入 PipelineContext idMap，可通过 GetElementById('myButton') 查找到该组件的 FrameNode | 正常 |
+| AC-1.1 | WHEN 设置 `.id('myButton')` THEN id 存入 ElementRegister inspectorIdMap_，可通过 GetAttachedFrameNodeById('myButton') 查找到该组件的 FrameNode | 正常 |
 | AC-1.2 | WHEN 设置 `.id('')` (空字符串) THEN id 不被存入 idMap（空字符串无效） | 边界 |
 | AC-1.3 | WHEN 同一页面内两个组件设置相同 id THEN 后注册的组件覆盖先前注册的同 id 映射 | 异常 |
 
@@ -100,8 +101,8 @@
 |--------|---------|------|
 | AC-4.1 | WHEN 设置 `.obscured([ObscuredReasons.PLACEHOLDER])` THEN 组件内容显示为占位内容（如文本显示为密码点、图片显示为占位图），且该组件区域在截图和录屏时被系统拦截 | 正常 |
 | AC-4.2 | WHEN obscured 设置在文本组件上且仅包含 PLACEHOLDER THEN 文本渲染为密码圆点样式（`text_paint_method.cpp:118-120`） | 正常 |
-| AC-4.3 | WHEN obscured 设置在图片组件上且仅包含 PLACEHOLDER THEN 图片显示为占位图而非原图（`image_pattern.cpp:1125, image_paint_method.cpp:132`） | 正常 |
-| AC-4.4 | WHEN obscured 设置在 Form 组件上 THEN Form 内容区域在截图/录屏时被系统拦截（`form_model_ng.cpp:95`） | 正常 |
+| AC-4.3 | WHEN obscured 设置在图片组件上且仅包含 PLACEHOLDER THEN 图片显示为占位图而非原图（`image_pattern.cpp:1512`） | 正常 |
+| AC-4.4 | WHEN obscured 设置在 Form 组件上 THEN Form 内容区域在截图/录屏时被系统拦截（`form_model_ng.cpp:103`） | 正常 |
 
 ### US-5: 设置 allowForceDark 控制深色模式
 
@@ -111,7 +112,7 @@
 
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
-| AC-5.1 | WHEN 设置 `.allowForceDark(true)` 且系统为深色模式 THEN 组件颜色被 ColorInverter 反转处理（`resource_parse_utils.cpp:191-192`） | 正常 |
+| AC-5.1 | WHEN 设置 `.allowForceDark(true)` 且系统为深色模式 THEN 组件颜色被 ColorInverter 反转处理（`resource_parse_utils.cpp:186` ColorInverter 调用，`191-192` allowForceDark 条件判断与颜色反转） | 正常 |
 | AC-5.2 | WHEN 设置 `.allowForceDark(false)` 且系统为深色模式 THEN 组件颜色不被反转，保持原始值 | 正常 |
 | AC-5.3 | WHEN 系统为浅色模式 THEN 无论 allowForceDark 设置为何值，颜色均不反转 | 边界 |
 
@@ -127,16 +128,14 @@
 | AC-6.2 | WHEN 未设置 restoreId THEN 默认值为 -1（`ui_node.h:1390` restoreId_ = -1） | 正常 |
 | AC-6.3 | WHEN 调用 GetRestoreInfo(restoreId) THEN 返回该 restoreId 对应组件的状态序列化字符串 | 正常 |
 
-## 验收追溯
-
 | AC编号 | 关联规则 | 关联 Task | 验证方式 | 证据 |
 |-------|----------|-----------|----------|------|
-| AC-1.1 ~ AC-1.3 | R-1 | — | UT | `pipeline_context.h` idMap |
-| AC-2.1 ~ AC-2.6 | R-2, R-7 | — | UT | `layout_property.cpp:1827` UpdateVisibility |
+| AC-1.1 ~ AC-1.3 | R-1 | — | UT | `element_register.h` inspectorIdMap_ |
+| AC-2.1 ~ AC-2.6 | R-2, R-6 | — | UT | `layout_property.cpp:1827` UpdateVisibility |
 | AC-3.1 ~ AC-3.4 | R-3 | — | UT | `render_context.h:708` propZIndex_ |
-| AC-4.1 ~ AC-4.4 | R-4 | — | UT + 手工 | `text_paint_method.cpp:118`, `image_pattern.cpp:1125` |
-| AC-5.1 ~ AC-5.3 | R-6 | — | UT + 手工 | `resource_parse_utils.cpp:191` |
-| AC-6.1 ~ AC-6.3 | — | — | UT | `pipeline_context.h:718-720` StoreNode/GetRestoreInfo |
+| AC-4.1 ~ AC-4.4 | R-4 | — | UT + 手工 | `text_paint_method.cpp:118`, `image_pattern.cpp:1512` |
+| AC-5.1 ~ AC-5.3 | R-5 | — | UT + 手工 | `resource_parse_utils.cpp:186,191` |
+| AC-6.1 ~ AC-6.3 | — | — | UT | `pipeline_context.h:722` StoreNode/GetRestoreInfo |
 
 ## 规则定义
 
@@ -144,12 +143,12 @@
 
 | 规则ID | 类型 | 触发条件 | 预期行为 | 边界/约束 | 关联AC |
 |--------|------|----------|----------|-----------|--------|
-| R-1 | 行为 | 设置 `.id(value)` | id 字符串存入 PipelineContext 的 idMap，可通过 GetElementById(value) 查找对应 FrameNode | 空字符串无效；同 id 后注册覆盖前注册 | AC-1.1 ~ AC-1.3 |
-| R-2 | 边界 | visibility 为 Hidden (INVISIBLE) vs None (GONE) | Hidden：组件透明但仍占布局空间，焦点不可聚焦；None：组件不参与布局，父容器不分配空间，等同于布局树中不存在 | Hidden 触发 PROPERTY_UPDATE_RENDER；None→Visible 需触发 measure | AC-2.2, AC-2.3, AC-2.5, AC-2.6 |
-| R-3 | 行为 | 设置 `.zIndex(n)` | zIndex 为渲染层级优先级，值更高的组件绘制在上层；存储于 RenderContext propZIndex_，默认值 0 | 负数值有效 | AC-3.1 ~ AC-3.4 |
-| R-4 | 行为 | 设置 `.obscured([ObscuredReasons.PLACEHOLDER])` | PLACEHOLDER 使组件内容替换为占位显示（文本→密码圆点，图片→占位图），且该组件区域在截图/录屏时被系统拦截显示为遮蔽 | ObscuredReasons 当前仅定义 PLACEHOLDER=0；文本和图片组件对 PLACEHOLDER 有独立渲染路径 | AC-4.1 ~ AC-4.4 |
-| R-6 | 行为 | 设置 `.allowForceDark(b)` | 深色模式下 allowForceDark=true 时 ColorInverter 反转颜色；allowForceDark=false 时保持原色；浅色模式下无论设置值均不反转 | 仅影响颜色反转逻辑，不影响其他深色模式适配 | AC-5.1 ~ AC-5.3 |
-| R-7 | 边界 | visibility 为 None (GONE) | 组件不参与布局计算，父容器在 measure 和 layout 时跳过该节点，不为其分配任何尺寸和位置；与 Hidden (INVISIBLE) 的核心区别：Hidden 占空间、None 不占空间 | Hidden→Visible 仅需 render 刷新；None→Visible 需重新 measure | AC-2.3, AC-2.5 |
+| R-1 | 行为 | 设置 `.id(value)` | id 字符串存入 ElementRegister 的 inspectorIdMap_（动态前端: `js_view_abstract.cpp JsViewAbstract::JsId` → `ViewAbstract::SetInspectorId`; 静态前端: `ArkUIGeneratedNativeModule.ets:462 _CommonMethod_setId` → `common_method_modifier.cpp:5091 SetIdImpl` → `ViewAbstract::SetInspectorId`; C-API: `node_common_modifier.cpp SetInspectorId`），可通过 GetAttachedFrameNodeById(value) 查找对应 FrameNode | 空字符串无效；同 id 后注册覆盖前注册 | AC-1.1 ~ AC-1.3 |
+| R-2 | 边界 | visibility 为 Hidden (INVISIBLE) vs None (GONE) | Hidden：组件透明但仍占布局空间，焦点不可聚焦；None：组件不参与布局，父容器不分配空间，等同于布局树中不存在（动态前端: `js_view_abstract.cpp JsVisibility`; 静态前端: `ArkUIGeneratedNativeModule.ets:386 _CommonMethod_setVisibility` → `common_method_modifier.cpp:4369 SetVisibilityImpl`; C-API: `node_common_modifier.cpp SetVisibility`） | Hidden 触发 PROPERTY_UPDATE_RENDER；None→Visible 需触发 measure | AC-2.2, AC-2.3, AC-2.5, AC-2.6 |
+| R-3 | 行为 | 设置 `.zIndex(n)` | zIndex 为渲染层级优先级，值更高的组件绘制在上层；存储于 RenderContext propZIndex_，默认值 0（动态前端: `js_view_abstract.cpp JsZIndex`; 静态前端: `ArkUIGeneratedNativeModule.ets:400 _CommonMethod_setZIndex` → `common_method_modifier.cpp:4455 SetZIndexImpl`; C-API: `node_common_modifier.cpp SetZIndex`） | 负数值有效 | AC-3.1 ~ AC-3.4 |
+| R-4 | 行为 | 设置 `.obscured([ObscuredReasons.PLACEHOLDER])` | PLACEHOLDER 使组件内容替换为占位显示（文本→密码圆点，图片→占位图），且该组件区域在截图/录屏时被系统拦截显示为遮蔽（动态前端: `js_view_abstract.cpp JsObscured`; 静态前端: `ArkUIGeneratedNativeModule.ets:502 _CommonMethod_setObscured` → `common_method_modifier.cpp:5414 SetObscuredImpl`; C-API: `node_common_modifier.cpp:5347-5350 SetObscured`） | ObscuredReasons 当前仅定义 PLACEHOLDER=0；文本和图片组件对 PLACEHOLDER 有独立渲染路径 | AC-4.1 ~ AC-4.4 |
+| R-5 | 行为 | 设置 `.allowForceDark(b)` | 深色模式下 allowForceDark=true 时 ColorInverter 反转颜色；allowForceDark=false 时保持原色；浅色模式下无论设置值均不反转（动态前端: `js_view_abstract.cpp JsAllowForceDark`; 静态前端: `ArkUIGeneratedNativeModule.ets:672 _CommonShapeMethod_setAllowForceDark` → `common_shape_static_modifier.cpp:153 SetAllowForceDarkImpl`; C-API: `node_common_modifier.cpp SetAllowForceDark`） | 仅影响颜色反转逻辑，不影响其他深色模式适配 | AC-5.1 ~ AC-5.3 |
+| R-6 | 边界 | visibility 为 None (GONE) | 组件不参与布局计算，父容器在 measure 和 layout 时跳过该节点，不为其分配任何尺寸和位置；与 Hidden (INVISIBLE) 的核心区别：Hidden 占空间、None 不占空间（双前端在 ViewAbstract::SetVisibility 汇合后行为一致） | Hidden→Visible 仅需 render 刷新；None→Visible 需重新 measure | AC-2.3, AC-2.5 |
 
 ## 验证映射
 
@@ -186,7 +185,8 @@ N/A，已有能力补录，API 行为无变化。
 | 枚举 | `Visibility.Visible` / `Visibility.Hidden` / `Visibility.None` |
 | @since | API 7 |
 | C API | `SetVisibility(ArkUINodeHandle node, Ark_Visibility value)` → `node_common_modifier.cpp` |
-| 内部映射 | Visible→VISIBLE(0), Hidden→INVISIBLE(1), None→GONE(2)（`constants.h:741-745`） |
+| 静态前端 | `_CommonMethod_setVisibility` → `common_method_modifier.cpp:4369` (SetVisibilityImpl) → `ViewAbstract::SetVisibility` |
+| 内部映射 | Visible→VISIBLE(0), Hidden→INVISIBLE(1), None→GONE(2)（`constants.h:742-746`） |
 | 行为场景 | Visible: 正常显示，参与布局和渲染；Hidden: 不可见但占布局空间，焦点不可聚焦；None: 不显示不占空间，从布局树移除 |
 | 更新机制 | Hidden→Visible: PROPERTY_UPDATE_RENDER（不触发 measure）；None→Visible: 需 measure 重算布局 |
 
@@ -198,9 +198,10 @@ N/A，已有能力补录，API 行为无变化。
 | 枚举 | `ObscuredReasons.PLACEHOLDER(0)` |
 | @since | API 12 |
 | C API | `SetObscured(ArkUINodeHandle node, ArkUI_Int32* reason, ArkUI_Int32 length)` → `node_common_modifier.cpp:5347-5350` |
+| 静态前端 | `_CommonMethod_setObscured` → `common_method_modifier.cpp:5414` (SetObscuredImpl) → `ViewAbstract::SetObscured` |
 | 内部类型 | `std::vector<ObscuredReasons>` 存于 RenderContext propObscured_（`render_context.cpp:251`） |
 | 行为场景 | PLACEHOLDER: 内容替换为占位（文本→圆点、图片→占位图），同时触发截图/录屏区域拦截 |
-| 组件适配 | Text: `text_paint_method.cpp:118-120`; Image: `image_pattern.cpp:1125, image_paint_method.cpp:132`; Form: `form_model_ng.cpp:95` |
+| 组件适配 | Text: `text_paint_method.cpp:118-120`; Image: `image_pattern.cpp:1512`; Form: `form_model_ng.cpp:103` |
 
 #### zIndex
 
@@ -209,16 +210,17 @@ N/A，已有能力补录，API 行为无变化。
 | 签名 | `.zIndex(value: number)` |
 | @since | API 7 |
 | C API | 通过 RenderContext propZIndex_ 存储（`render_context.h:708`） |
+| 静态前端 | `_CommonMethod_setZIndex` → `common_method_modifier.cpp:4455` (SetZIndexImpl) → `ViewAbstract::SetZIndex` |
 | 默认值 | 0 |
 | 行为场景 | 值越高绘制层级越高（后绘制覆盖先绘制）；负数有效；仅影响兄弟节点间的绘制顺序 |
 
 #### id / restoreId / inspectorLabel
 
-| 签名 | @since | 行为 |
-|------|--------|------|
-| `.id(value: string)` | API 7 | 存入 PipelineContext idMap，支持 GetElementById 查找 |
-| `.restoreId(value: number)` | — | 存入 UINode restoreId_（默认 -1），通过 PipelineContext StoreNode 注册，支持 GetRestoreInfo 状态恢复 |
-| `.inspectorLabel(value: string)` | API 12 | 存入 UINode inspectorLabel_，用于无障碍 inspector 标识 |
+| 签名 | @since | 静态前端 | 行为 |
+|------|--------|----------|------|
+| `.id(value: string)` | API 7 | `_CommonMethod_setId` → `common_method_modifier.cpp:5091` → `ViewAbstract::SetInspectorId` | 存入 ElementRegister inspectorIdMap_，支持 GetAttachedFrameNodeById 查找 |
+| `.restoreId(value: number)` | — | `_CommonMethod_setRestoreId` → `common_method_modifier.cpp:5099` → `ViewAbstract::SetRestoreId` | 存入 UINode restoreId_（默认 -1），通过 PipelineContext StoreNode 注册，支持 GetRestoreInfo 状态恢复 |
+| `.inspectorLabel(value: string)` | API 12 | `_CommonMethod_setInspectorLabel` → `common_method_modifier.cpp:7430` → `ViewAbstract::SetInspectorLabel` | 存入 UINode inspectorLabel_，用于无障碍 inspector 标识 |
 
 ## 兼容性声明
 
@@ -235,7 +237,8 @@ N/A，已有能力补录，API 行为无变化。
 | 公共属性架构 | 所有属性通过 ViewAbstract / CommonMethod 提供，不依赖具体组件 Pattern | 全部 |
 | 属性存储分层 | id/restoreId 存于 UINode；visibility 存于 LayoutProperty；zIndex/obscured 存于 RenderContext | 全部 |
 | C API 统一入口 | 所有属性通过 `node_common_modifier.cpp` 的 ArkUI_NodeModifier 提供设置/重置/获取函数 | 全部 |
-| 静态前端入口 | inspectorLabel/restoreId/allowForceDark 通过 `common_method_modifier.cpp` 和 `common_shape_static_modifier.cpp` 提供静态前端桥接 | — |
+| 静态前端 ANI 桥接 | visibility/zIndex/obscured/id/restoreId/inspectorLabel 通过 `ArkUIGeneratedNativeModule.ets` 的 `_CommonMethod_setXXX` ANI 函数指针 → `common_method_modifier.cpp` SetXXXImpl → ViewAbstract 汇合；allowForceDark 通过 `_CommonShapeMethod_setAllowForceDark` → `common_shape_static_modifier.cpp:153` SetAllowForceDarkImpl | 全部 |
+| 双前端汇合点 | 动态前端 (JSI/NAPI) 和静态前端 (ANI) 在 `ViewAbstract::SetXXX` 汇合，后续 Property→Render 行为一致 | 全部 |
 
 ## 非功能性需求
 
@@ -243,7 +246,7 @@ N/A，已有能力补录，API 行为无变化。
 |------|-----------|----------|------|
 | 性能 | visibility Hidden→Visible 切换仅触发 PROPERTY_UPDATE_RENDER，不触发全量 measure | 代码审查 | `layout_property.cpp:1827` UpdateVisibility |
 | 安全 | obscured PLACEHOLDER 使组件区域在截图/录屏时被系统拦截，保护隐私数据 | 手工 + 系统截图测试 | 系统截屏录屏拦截机制 |
-| 可靠性 | id 冲突时后注册覆盖，不崩溃 | UT | PipelineContext idMap |
+| 可靠性 | id 冲突时后注册覆盖，不崩溃 | UT | ElementRegister inspectorIdMap_ |
 | 问题定位 | FrameNode::ToJson 输出 id/inspectorLabel/zIndex/enableClickSoundEffect 用于调试 | 代码审查 | `frame_node.cpp:1767-1782` |
 
 > 性能指标中 visibility 变更的 PROPERTY_UPDATE_RENDER 是基于 LayoutProperty::UpdateVisibility 调用 OnVisibilityUpdate 后由属性更新标记决定，GONE→VISIBLE 需额外 measure。
@@ -277,8 +280,8 @@ Feature: 组件标识与显隐
   Scenario: 设置组件 id
     Given 一个 Text 组件
     When 设置 .id("headerTitle")
-    Then id="headerTitle" 存入 PipelineContext idMap
-    And GetElementById("headerTitle") 返回该 Text 的 FrameNode
+    Then id="headerTitle" 存入 ElementRegister inspectorIdMap_
+    And GetAttachedFrameNodeById("headerTitle") 返回该 Text 的 FrameNode
 
   Scenario: visibility Hidden 保留布局空间
     Given 一个 Column 包含两个 100x100 的子组件
@@ -324,6 +327,15 @@ Feature: 组件标识与显隐
     Then GetRestoreInfo(42) 返回该组件的状态序列化信息
 ```
 
+## 风险
+
+| 风险ID | 类型 | 描述 | 影响AC | 缓解策略 |
+|--------|------|------|--------|----------|
+| RK-1 | 行为 | id 冲突时后注册覆盖前注册，GetElementById 可能返回非预期节点 | AC-1.3 | 开发者需自行保证 id 唯一性；框架不做去重校验 |
+| RK-2 | 性能 | visibility None→Visible 切换需 measure 重算布局，可能引起短暂帧延迟 | AC-2.5 | 仅 None→Visible 触发；Hidden→Visible 仅 PROPERTY_UPDATE_RENDER |
+| RK-3 | 版本 | ObscuredReasons 当前仅定义 PLACEHOLDER=0，未来新增枚举值可能导致行为变更 | AC-4.1 | 新增值不影响 PLACEHOLDER 行为；枚举定义在 constants.h |
+| RK-4 | 认知 | allowForceDark 在浅色模式下不生效，开发者可能误认为任何模式下均控制颜色反转 | AC-5.3 | SDK JSDoc 应明确标注仅深色模式生效 |
+
 ## Spec 自审清单
 
 - [x] 无"待定""TBD""TODO"等占位符
@@ -346,7 +358,7 @@ context-queries:
   - repo: "openharmony/ace_engine"
     query: "allowForceDark ColorInverter 深色模式颜色反转"
   - repo: "openharmony/ace_engine"
-    query: "PipelineContext idMap GetElementById restoreId StoreNode"
+    query: "ElementRegister inspectorIdMap_ GetAttachedFrameNodeById restoreId StoreNode"
 ```
 
 **关键文档:**

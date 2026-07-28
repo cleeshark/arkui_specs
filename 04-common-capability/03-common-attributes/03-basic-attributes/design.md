@@ -9,7 +9,7 @@
 | Design ID | DESIGN-Func-04-03-03 |
 | 关联需求 | 已有能力补录（无独立 requirement.md） |
 | 关联 Epic | 无 |
-| 目标 Feature | Feat-01 组件标识与显隐, Feat-02 背景设置, Feat-03 浮层, Feat-04 渲染与复用, Feat-05 状态效果与自定义 |
+| 目标 Feature | Feat-01 组件标识与显隐, Feat-02 背景设置, Feat-03 渲染与复用, Feat-04 浮层, Feat-05 焦点属性 |
 | 复杂度 | 复杂 |
 | 目标版本 | API 7 起支持，API 7~21 多版本行为变更 |
 | Owner | ArkUI SIG |
@@ -19,9 +19,9 @@
 
 | 项 | 内容 |
 |----|------|
-| 问题陈述 | 开发者需要通过声明式 API 控制组件的标识、显隐、背景外观、浮层叠加、渲染行为复用控制、以及交互状态效果与自定义绘制 |
-| 核心目标 | （Feat-01）提供 id/key/restoreId/inspectorLabel/uniqueId 组件标识属性和 visibility/zIndex/obscured/allowForceDark/clickDistance/enableClickSoundEffect 显隐及辅助属性，支持组件定位、布局参与控制、隐私保护和无障碍交互；（Feat-02）提供 backgroundColor/backgroundImage/backgroundImageSize/backgroundImagePosition/backgroundBlurStyle/backdropBlur/backgroundEffect/backgroundBrightness/backgroundImageResizable/background(CustomBuilder) 背景设置属性，支持颜色/图像/模糊/亮度/可拉伸图/自定义浮层式背景；（Feat-03）提供 overlay 浮层属性，支持在组件之上叠加自定义内容并控制对齐和偏移；（Feat-04）提供 renderGroup/renderFit/freeze/useEffect/reuseId/reuse 渲染与复用属性，支持子树脏传播聚合、内容适配方式、RS 渲染冻结标记、动效开关和组件复用标识；（Feat-05）提供 stateStyles/hoverEffect/clickEffect/attributeModifier/customProperty/drawModifier 状态效果与自定义属性，支持按压/悬停/聚焦/禁用等状态样式、交互反馈效果、属性动态覆盖和自定义绘制 |
-| P0 AC | （Feat-01）id 可设置并通过 ElementRegister 查询；visibility 三态（Visible/Hidden/None）布局参与行为正确；zIndex 绘制层级生效；obscured 截图/录屏区域屏蔽；（Feat-02）backgroundColor 支持颜色和 ColorMetrics 动态颜色；backgroundImage 加载和位置/尺寸设置生效；background(CustomBuilder) 通过 PixelMap snapshot 渲染；（Feat-03）overlay 在组件之上叠加自定义内容，alignment/offset 定位生效；（Feat-04）renderGroup 子树变更聚合为组级重绘；freeze 设置 RS 渲染侧冻结标记；reuseId 标记组件复用身份；（Feat-05）stateStyles 按状态应用样式覆盖；attributeModifier 动态属性控制（与 stateStyles 在 ArkTS 层互斥）；drawModifier 自定义绘制生效 |
+| 问题陈述 | 开发者需要通过声明式 API 控制组件的标识、显隐、背景外观、浮层叠加、渲染行为复用控制、以及浮层叠加 |
+| 核心目标 | （Feat-01）提供 id/key/restoreId/inspectorLabel/uniqueId 组件标识属性和 visibility/zIndex/obscured/allowForceDark/clickDistance/enableClickSoundEffect 显隐及辅助属性，支持组件定位、布局参与控制、隐私保护和无障碍交互；（Feat-02）提供 backgroundColor/backgroundImage/backgroundImageSize/backgroundImagePosition/backgroundBlurStyle/backdropBlur/backgroundEffect/backgroundBrightness/backgroundImageResizable/background(CustomBuilder) 背景设置属性，支持颜色/图像/模糊/亮度/可拉伸图/自定义浮层式背景；（Feat-03）提供 renderGroup/renderFit/freeze/useEffect/reuseId/reuse 渲染与复用属性，支持子树脏传播聚合、内容适配方式、RS 渲染冻结标记、动效开关和组件复用标识；（Feat-04）提供 overlay 浮层属性，支持在组件之上叠加自定义内容并控制对齐和偏移 |
+| P0 AC | （Feat-01）id 可设置并通过 ElementRegister inspectorIdMap_ 查询；visibility 三态（Visible/Hidden/None）布局参与行为正确；zIndex 绘制层级生效；obscured 截图/录屏区域屏蔽；（Feat-02）backgroundColor 支持颜色和 ColorMetrics 动态颜色；backgroundImage 加载和位置/尺寸设置生效；background(CustomBuilder) 挂载子节点作为浮层式背景；（Feat-03）renderGroup 子树变更聚合为组级重绘；freeze 设置 RS 渲染侧冻结标记；reuseId 标记组件复用身份；（Feat-04）overlay 在组件之上叠加自定义内容，alignment/offset 定位生效 |
 
 ## 上下文和现状
 
@@ -30,33 +30,36 @@
 | 仓库 | 模块/路径 | 当前职责 | 本 Feature 影响 |
 |------|-----------|----------|-----------------|
 | ace_engine | `frameworks/core/components_ng/base/view_abstract.h/cpp` | API 入口，SetVisibility/SetBackgroundColor/SetOverlay/SetRenderGroup 等统一入口 | API 层 |
-| ace_engine | `frameworks/core/components_ng/render/render_context.h/cpp` | RenderContext 存储背景属性（backgroundColor/backgroundImage/backgroundImageSize/backgroundImagePosition/backgroundBlurStyle/backdropBlur/backgroundEffect/backgroundBrightness）、zIndex/obscured 等 | 核心数据结构（背景+隐私） |
-| ace_engine | `frameworks/core/components_ng/base/frame_node.h/cpp` | FrameNode 存储 overlayNode/backgroundNode 等；UINode（基类）存储 id/uniqueId/restoreId/inspectorLabel | 核心数据结构（浮层+背景节点） |
-| ace_engine | `frameworks/core/components_ng/pattern/pattern.cpp` | Pattern 处理 stateStyles/attributeModifier 状态切换和属性覆盖 | 状态效果管线 |
+| ace_engine | `frameworks/core/components_ng/render/render_context.h/cpp` | RenderContext 存储背景属性（backgroundColor/backgroundImage/backgroundImageSize/backgroundImagePosition/backgroundBlurStyle/backdropBlur/backgroundEffect/backgroundBrightness）、显隐属性（visibility/zIndex）、obscured 等 | 核心数据结构（背景+显隐+隐私） |
+| ace_engine | `frameworks/core/components_ng/base/frame_node.h/cpp` | FrameNode 存储 id/uniqueId/renderGroup/freeze/reuseId/overlayNode 等 | 核心数据结构（标识+渲染+复用+浮层） |
 | ace_engine | `frameworks/core/components_ng/property/property.h` | Property 存储框架（ACE_DEFINE_PROPERTY_GROUP_ITEM 宏） | 属性存储基础设施 |
-| ace_engine | `frameworks/bridge/declarative_frontend/jsview/js_view_abstract.cpp` | ArkTS 桥接层，参数解析与校验（SetVisibility/JsBackgroundColor/JsOverlay 等） | 输入校验 |
-| ace_engine | `interfaces/native/node/style_modifier.cpp` | C-API 到框架层桥接（SetVisibility/SetZIndex/SetBackgroundColor/SetRenderGroup/SetOverlay 等） | 多语言入口 |
+| ace_engine | `frameworks/bridge/declarative_frontend/jsview/js_view_abstract.cpp` | ArkTS 桥接层，参数解析与校验（JsVisibility/JsBackgroundColor/JsOverlay 等） | 输入校验 |
+| ace_engine | `interfaces/native/node/node_common_modifier.cpp` | C-API 到框架层桥接（SetVisibility/SetZIndex/SetObscured/SetBackgroundColor 等） | 多语言入口 |
 | ace_engine | `frameworks/core/pipeline/base/element_register.h` | ElementRegister 单例存储 id → FrameNode 映射（AddFrameNodeByInspectorId/GetAttachedFrameNodeById） | id 查找 |
 | ace_engine | `frameworks/core/components_ng/render/adapter/rosen_render_context.cpp` | Rosen 渲染上下文实现，消费背景/显隐/zIndex 属性进行绘制 | 渲染绘制层 |
 | ace_engine | `interfaces/native/native_node.h` | C-API (NDK) 接口定义 | NDK 枚举定义 |
+| ace_engine | `frameworks/core/interfaces/native/implementation/common_method_modifier.cpp` | ArkTS 静态前端 ANI 函数指针实现（CommonMethodModifier::SetXXXImpl），注册到 GENERATED_ArkUICommonMethodModifier 函数指针表 | 静态前端桥接 |
+| ace_engine | `frameworks/core/interfaces/native/generated/interface/arkoala_api_generated.h` | ArkTS 静态前端 C API 生成头文件（GENERATED_ArkUICommonMethodModifier struct 含 setBackgroundColor/setVisibility/setRenderGroup 等 400+ 函数指针字段） | 静态前端 API 定义 |
+| ace_engine | `frameworks/bridge/arkts_frontend/koala_projects/arkoala-arkts/arkui-ohos/generated/framework/arkts/ArkUIGeneratedNativeModule.ets` | ArkTS 静态前端 ETS 侧 @ani.unsafe.Direct 原生方法声明（_CommonMethod_setXXX） | 静态前端 ETS 入口 |
+| ace_engine | `frameworks/core/components_ng/pattern/shape/bridge/common_shape_static_modifier.cpp` | ArkTS 静态前端 CommonShape 方法 ANI 实现（SetAllowForceDarkImpl 等） | 静态前端 Shape 桥接 |
 | sdk-js | `api/@internal/component/ets/common.d.ts` | ArkTS 接口声明 | 类型定义 |
 
 ### 调用链层级分析
 
 | 层 | 模块 | 职责 | 修改类型 |
 |----|------|------|----------|
-| JS Bridge | `declarative_frontend/jsview/js_view_abstract` | 解析 ArkTS 属性调用（SetVisibility/JsBackgroundColor/JsOverlay/JsRenderGroup 等），参数校验、API 版本分支 | 存量分析 |
-| C-API 定义 | `interfaces/native/native_node.h` | 定义 NDK 属性枚举（NODE_VISIBILITY/NODE_Z_INDEX/NODE_BACKGROUND_COLOR/NODE_RENDER_GROUP/NODE_OVERLAY 等）；obscured/freeze 无独立 NDK 枚举 | 存量分析 |
-| C-API 桥接 | `interfaces/native/node/style_modifier` | 将 C-API 调用转换为框架层 ViewAbstract::Set* 调用，执行参数单位转换 | 存量分析 |
-| API 层 | `core/components_ng/base/view_abstract` | 框架属性设置统一入口（SetVisibility/SetBackgroundColor/SetOverlay/SetRenderGroup/SetFreeze 等），更新 LayoutProperty/RenderContext/FrameNode | 存量分析 |
-| Property 层 (显隐) | `core/components_ng/layout/layout_property` | 存储 visibility 属性（propVisibility_），通过 OnVisibilityUpdate 触发布局/渲染树刷新 | 存量分析 |
-| Property 层 (背景+隐私) | `core/components_ng/render/render_context` | 存储 RenderContext 内所有背景属性和 zIndex/obscured/freeze/renderGroup 等，通过 Has* 查询和 Get* 读取，触发 OnPropertyUpdate 回调 | 存量分析 |
-| Property 层 (标识+复用+浮层) | `core/components_ng/base/frame_node` + `custom_node_base` | FrameNode 存储 overlayNode_/backgroundNode_；UINode（基类）存储 id/restoreId/inspectorLabel；CustomNodeBase 存储 reuseId_ | 存量分析 |
-| Property 层 (状态) | `core/components_ng/event/state_style_manager` | StateStyleManager 管理 stateStyles 和 attributeModifier 状态回调，按组件状态（normal/pressed/focused/disabled）切换样式 | 存量分析 |
-| id 查找 | `core/pipeline/base/element_register` | ElementRegister 单例存储 id → FrameNode 映射（AddFrameNodeByInspectorId/GetAttachedFrameNodeById） | 存量分析 |
+| JS Bridge (动态前端) | `declarative_frontend/jsview/js_view_abstract` | 解析 ArkTS 属性调用（JsVisibility/JsBackgroundColor/JsOverlay/JsRenderGroup 等），参数校验、API 版本分支 | 存量分析 |
+| ArkTS Static Bridge | `arkts_frontend/koala_projects ArkUIGeneratedNativeModule.ets` → `common_method_modifier.cpp` | 静态前端 ANI 函数指针桥接（_CommonMethod_setVisibility → SetVisibilityImpl → ViewAbstract::SetVisibility），无 JSI/NAPI 中间层 | 存量分析 |
+| C-API 定义 | `interfaces/native/native_node.h` | 定义 NDK 属性枚举（NODE_VISIBILITY/NODE_Z_INDEX/NODE_BACKGROUND_COLOR/NODE_OBSCURED/NODE_RENDER_GROUP/NODE_OVERLAY 等） | 存量分析 |
+| C-API 桥接 | `core/interfaces/native/node/node_common_modifier` | 将 C-API 调用转换为框架层 ViewAbstract::Set* 调用，执行参数单位转换 | 存量分析 |
+| API 层 | `core/components_ng/base/view_abstract` | 框架属性设置统一入口（SetVisibility/SetBackgroundColor/SetOverlay/SetRenderGroup/SetFreeze 等），更新 RenderContext/FrameNode/Pattern | 存量分析 |
+| Property 层 (显隐+背景) | `core/components_ng/render/render_context` | 存储 RenderContext 内所有背景和显隐属性，通过 Has* 查询和 Get* 读取，触发 OnPropertyUpdate 回调 | 存量分析 |
+| Property 层 (标识+复用) | `core/components_ng/base/frame_node` | 存储 id/uniqueId/renderGroup_/freeze_/reuseId_/overlayNode_ 等，FrameNode 自身属性 | 存量分析 |
+| id 查找 | `core/components_ng/base/element_register` | ElementRegister inspectorIdMap_ 存储 id → FrameNode 映射，AddFrameNodeByInspectorId/GetAttachedFrameNodeById 管理 | 存量分析 |
 | 渲染绘制 | `core/components_ng/render/adapter/rosen_render_context` | Rosen 渲染上下文消费背景色/背景图/模糊/亮度/visibility/zIndex/obscured，设置到 RSNode | 存量分析 |
 | 浮层挂载 | `core/components_ng/base/frame_node` | overlayNode 作为子节点挂载到 FrameNode，在布局/渲染阶段叠加绘制 | 存量分析 |
-| 渲染控制 | RenderContext + FrameNode | renderGroup/freeze 存于 RenderContext（propRenderGroup_/propFreeze_），通过 RS 层生效；reuseId 存于 CustomNodeBase | 存量分析 |
+| 焦点属性 | `core/components_ng/event/focus_hub` + `focus_state` | FocusHub 管理 focusable/defaultFocus/focusScopeId；FocusState 管理 nextFocus/tabStop；FocusCallbackEvents 管理 tabIndex/focusOnTouch/groupDefaultFocus/事件回调 | 存量分析 |
+| 渲染控制 | `core/components_ng/base/frame_node` | renderGroup 控制子树脏传播聚合，freeze 设置 RS 渲染侧冻结标记（rsNode_->SetFreeze） | 存量分析 |
 
 ### 适用架构规则
 
@@ -80,12 +83,12 @@
 
 | 决策 ID | 问题 | 推荐方案 | 探索过的替代方案 | 取舍理由 | 影响 |
 |---------|------|----------|-----------------|------|------|
-| ADR-1 | visibility None vs Hidden 布局参与差异 | 三态 Visible/Hidden/None，不同布局行为：Visible 正常参与布局和渲染；Hidden 不可见但保留空间（触发 Measure/Layout 但从渲染树排除，不绘制），None 不可见且不参与布局（frameSize={0,0}、跳过子节点 Measure） | 方案A：Hidden 和 None 都不参与布局（Hidden 失去保留空间语义）；方案B：None 也参与布局（浪费计算资源） | 三态设计对齐 CSS visibility（visible/hidden）+ display（none）语义，兼顾开发者保留空间和节省性能两种需求 | visibility=Hidden 时 frameSize 正常但节点从 RS 渲染树排除；visibility=None/GONE 时 frameSize={0,0}，子节点不测量 |
-| ADR-2 | background(CustomBuilder) 双机制架构 | 两套独立存储与渲染路径并存：属性式背景（backgroundColor/backgroundImage 等）存储在 RenderContext，CustomBuilder 浮层式背景通过 PixelMap snapshot 渲染（builder 构建 Column 节点 → ComponentSnapshot 生成 PixelMap → BackgroundModifier 绘制在组件内容之下） | 方案A：统一到 RenderContext（CustomBuilder 无法转换为渲染属性）；方案B：统一到子节点挂载（backgroundColor 等无法作为子节点） | 属性式背景适合简单颜色/图像场景（性能好、渲染管线统一），CustomBuilder 适合复杂动态背景（需要布局能力后 snapshot）。两套机制覆盖不同使用场景 | 属性式背景和 CustomBuilder 浮层式背景独立存储、独立生效、互不干扰 |
+| ADR-1 | visibility None vs Hidden 布局参与差异 | 三态 Visible/Hidden/None，不同布局行为：Visible 正常参与布局，Hidden 不可见但保留空间（触发 Measure/Layout 但绘制透明），None 不可见且不参与布局（frameSize={0,0}、跳过子节点 Measure） | 方案A：Hidden 和 None 都不参与布局（Hidden 失去保留空间语义）；方案B：None 也参与布局（浪费计算资源） | 三态设计对齐 CSS visibility（visible/hidden）+ display（none）语义，兼顾开发者保留空间和节省性能两种需求 | visibility=Hidden 时 frameSize 正常但不可见；visibility=None/GONE 时 frameSize={0,0}，子节点不测量 |
+| ADR-2 | background(CustomBuilder) 双机制架构 | 两套独立存储路径并存：属性式背景（backgroundColor/backgroundImage 等）存储在 RenderContext，CustomBuilder 浮层式背景作为子节点挂载在 FrameNode | 方案A：统一到 RenderContext（CustomBuilder 无法转换为渲染属性）；方案B：统一到子节点挂载（backgroundColor 等无法作为子节点） | 属性式背景适合简单颜色/图像场景（性能好、渲染管线统一），CustomBuilder 适合复杂动态背景（需要布局能力）。两套机制覆盖不同使用场景 | 属性式背景和 CustomBuilder 浮层式背景独立存储、独立生效、互不干扰 |
 | ADR-3 | renderGroup 子树脏传播聚合 | 开启 renderGroup 时，子树任意节点变更聚合为组级重绘，整组重绘；关闭时恢复个体脏传播 | 方案A：始终个体传播（频繁微小变更时性能差）；方案B：始终组级传播（单个子节点变更浪费整组绘制） | renderGroup 为高频变更子树提供聚合绘制优化，适合列表项、卡片等频繁整体更新的场景 | renderGroup=true 时子树脏标记上溯到组根节点，统一重绘 |
-| ADR-4 | stateStyles 与 attributeModifier 关系 | ArkTS 层两者互斥：使用 attributeModifier 的组件调用 stateStyles 会抛出 BusinessError(100201)；C++ 回调层两者有序执行（inner stateStyles → user attributeModifier），attributeModifier 可通过 excludeInner 排除 stateStyles 回调 | 方案A：stateStyles 优先（Modifier 无法覆盖状态样式，灵活性不足）；方案B：两者互斥（开发者无法同时使用） | attributeModifier 提供更灵活的动态属性控制能力，在 C++ 回调层可以排除或覆盖 stateStyles 结果；ArkTS 层选择互斥以避免开发者困惑 | attributeModifier 与 stateStyles 在 ArkTS 层互斥；C++ 回调层 attributeModifier 后执行可覆盖 stateStyles |
-| ADR-5 | obscured 安全隐私机制 | ObscuredReasons 枚举当前仅定义 PLACEHOLDER，设置后组件内容替换为占位显示（文本→密码圆点，图片→占位图）且截图/录屏时区域显示为遮罩色 | 方案A：布尔值开关（无法区分场景）；方案B：权限要求（增加开发者负担） | PLACEHOLDER 同时触发内容占位替换和截图/录屏拦截，不引入权限要求降低开发者使用门槛 | 截图/录屏区域显示遮罩色，开发者通过 ObscuredReasons.PLACEHOLDER 指定屏蔽 |
-| ADR-6 | 背景设置与 04-03-02 范围重叠 | 04-03-03 按官方文档「基础属性 → 背景设置」分类覆盖 backgroundColor/backgroundImage/backgroundImageSize/backgroundImagePosition，04-03-02 后续调整范围以消除重叠 | 方案A：04-03-03 不覆盖重叠属性（官方分类不一致）；方案B：合并为单一功能域（破坏分类层级） | 官方文档将背景设置归入基础属性，按文档分类补录更准确。重叠属性在两个域交叉引用而非互斥 | backgroundColor 等在 04-03-03 和 04-03-02 中交叉引用 |
+| ADR-4 | obscured 安全隐私机制 | ObscuredReasons 枚举当前仅定义 PLACEHOLDER，设置后组件内容替换为占位显示（文本→密码圆点，图片→占位图）且截图/录屏时区域显示为遮罩色 | 方案A：布尔值开关（无法区分场景）；方案B：权限要求（增加开发者负担） | PLACEHOLDER 同时触发内容占位替换和截图/录屏拦截，不引入权限要求降低开发者使用门槛 | 截图/录屏区域显示遮罩色，开发者通过 ObscuredReasons.PLACEHOLDER 指定屏蔽 |
+| ADR-5 | 背景设置与 04-03-02 范围重叠 | 04-03-03 按官方文档「基础属性 → 背景设置」分类覆盖 backgroundColor/backgroundImage/backgroundImageSize/backgroundImagePosition，04-03-02 后续调整范围以消除重叠 | 方案A：04-03-03 不覆盖重叠属性（官方分类不一致）；方案B：合并为单一功能域（破坏分类层级） | 官方文档将背景设置归入基础属性，按文档分类补录更准确。重叠属性在两个域交叉引用而非互斥 | backgroundColor 等在 04-03-03 和 04-03-02 中交叉引用 |
+| ADR-6 | 基础属性双前端桥接架构 | 动态前端通过 JSI/NAPI (`js_view_abstract.cpp`) 桥接；静态前端通过 ANI 函数指针 (`ArkUIGeneratedNativeModule.ets` → `common_method_modifier.cpp`) 桥接；两路径在 `ViewAbstract::SetXXX` 汇合 | 方案A：仅动态前端（静态前端不覆盖基础属性）；方案B：统一为单桥接层（无法兼容两种运行时） | 动态/静态前端运行时架构不同（JSI vs ANI），必须在各自桥接层实现参数解析；汇合到 ViewAbstract 确保框架层行为一致 | 规格中每条规则/接口需标注双前端路径源码引用 |
 
 ## 设计骨架
 
@@ -94,10 +97,10 @@
 | 骨架项 | 目标 | 不包含 | 验证方式 |
 |--------|------|--------|----------|
 | 标识与显隐属性存储 | id→ElementRegister + UINode::propInspectorId_, visibility→LayoutProperty, zIndex/obscured→RenderContext, uniqueId→UINode | id 冲突解决策略 | 编译通过 + 属性读取正确 |
-| 背景属性存储 | backgroundColor/backgroundImage/blur/brightness→RenderContext, background(CustomBuilder)→PixelMap snapshot + BackgroundModifier | 背景图像解码/缓存机制 | 属性读取正确 |
+| 背景属性存储 | backgroundColor/backgroundImage/blur/brightness→RenderContext, background(CustomBuilder)→FrameNode 子节点 | 背景图像解码/缓存机制 | 属性读取正确 |
 | 浮层挂载机制 | overlay→FrameNode overlayNode_ 子节点 | overlay 布局算法内部细节 | overlay 内容正确叠加 |
-| 渲染控制属性 | renderGroup→RenderContext, freeze→RenderContext, reuseId→CustomNodeBase | renderGroup 聚合绘制的 RS 层细节 | 脏标记传播正确 |
-| 状态效果管线 | stateStyles/attributeModifier→StateStyleManager（C++ 回调层有序；ArkTS 层互斥）, drawModifier→Pattern | 各状态样式的具体属性值 | 状态切换时属性覆盖链正确 |
+| 焦点属性存储与导航 | focusable/tabIndex→FocusHub, nextFocus→FocusState, focusScopeId/Priority→FocusHub | 焦点域划分与导航算法 | 焦点可达性与导航正确 |
+| 渲染控制属性 | renderGroup→FrameNode, freeze→FrameNode, reuseId→FrameNode | renderGroup 聚合绘制的 RS 层细节 | 脏标记传播正确 |
 
 ### 骨架 Spec 拆分
 
@@ -112,9 +115,9 @@
 | baseline-design | 基础属性功能域设计基线 | 无 | 本 design.md |
 | Feat-01-component-id-visibility-spec.md | 固化 id/key/restoreId/inspectorLabel/uniqueId/visibility/zIndex/obscured/allowForceDark/clickDistance/enableClickSoundEffect 的行为规格 | 本 Design | 完整行为规格与 AC |
 | Feat-02-background-setting-spec.md | 固化 backgroundColor/backgroundImage/backgroundImageSize/backgroundImagePosition/backgroundBlurStyle/backdropBlur/backgroundEffect/backgroundBrightness/backgroundImageResizable/background(CustomBuilder) 的行为规格 | 本 Design | 完整行为规格与 AC |
-| Feat-03-overlay-spec.md | 固化 overlay(alignment/offset) 的行为规格 | 本 Design | 完整行为规格与 AC |
-| Feat-04-render-reuse-spec.md | 固化 renderGroup/renderFit/freeze/useEffect/reuseId/reuse 的行为规格 | 本 Design | 完整行为规格与 AC |
-| Feat-05-state-effect-custom-spec.md | 固化 stateStyles/hoverEffect/clickEffect/attributeModifier/customProperty/drawModifier 的行为规格 | 本 Design | 完整行为规格与 AC |
+| Feat-03-render-reuse-spec.md | 固化 renderGroup/renderFit/freeze/useEffect/reuseId/reuse 的行为规格 | 本 Design | 完整行为规格与 AC |
+| Feat-04-overlay-spec.md | 固化 overlay(alignment/offset) 的行为规格 | 本 Design | 完整行为规格与 AC |
+| Feat-05-focus-attribute-spec.md | 固化 focusable/tabIndex/defaultFocus/groupDefaultFocus/focusOnTouch/tabStop/focusBox/nextFocus/focusScopeId/focusScopePriority/onFocus/onBlur/onKeyEvent 的行为规格 | 本 Design | 完整行为规格与 AC |
 
 ---
 
@@ -155,80 +158,85 @@
 ```mermaid
 graph TB
     subgraph API["API 层"]
-        F1["Feat-01 组件标识与显隐<br/>id / visibility / zIndex / obscured / allowForceDark"]
-        F2["Feat-02 背景设置<br/>backgroundColor / backgroundImage… / background(CustomBuilder)"]
-        F3["Feat-03 浮层<br/>overlay + alignment / offset"]
-        F4["Feat-04 渲染与复用<br/>renderGroup / freeze / reuseId"]
-        F5["Feat-05 状态效果与自定义<br/>stateStyles / attributeModifier / drawModifier"]
+        F1["Feat-01 标识与显隐"]
+        F2["Feat-02 背景设置"]
+        F3["Feat-03 渲染与复用"]
+        F4["Feat-04 浮层"]
+        F5["Feat-05 焦点属性"]
+    end
+
+    subgraph BRIDGE["前端桥接层"]
+        DYN["动态前端 · js_view_abstract<br/>JsVisibility/JsBackgroundColor<br/>JsOverlay/JsRenderGroup<br/>JsFocusable"]
+        STATIC["静态前端 · ArkUIGeneratedNativeModule<br/>_CommonMethod_setVisibility<br/>_CommonMethod_setBackgroundColor<br/>_CommonMethod_setOverlay<br/>_CommonMethod_setFocusable"]
+        CAPI_BR["C-API · node_common_modifier<br/>SetVisibility/SetZIndex<br/>SetBackgroundColor/SetOverlay<br/>SetRenderGroup/SetFocusable"]
     end
 
     subgraph PROP["Property 层"]
-        LP["LayoutProperty<br/>visibility (VisibleType)"]
-        RC["RenderContext<br/>backgroundColor · backgroundImage · blur · brightness · freeze<br/>zIndex · obscured · renderGroup"]
-        FN["FrameNode<br/>overlayNode · backgroundNode_(RefPtr)"]
-        UIN["UINode（基类）<br/>id(propInspectorId_) · uniqueId(nodeId_)<br/>restoreId · inspectorLabel"]
-        CB["CustomNodeBase<br/>reuseId_"]
-        ER["ElementRegister<br/>id → FrameNode 映射"]
-        SSM["StateStyleManager<br/>stateStyles/attributeModifier 回调"]
+        LP["LayoutProperty · visibility"]
+        RC["RenderContext · bg/blur/zIndex/obscured/renderGroup/freeze"]
+        FN["FrameNode · overlayNode · backgroundNode_"]
+        UIN["UINode · id/uniqueId/restoreId"]
+        CB["CustomNodeBase · reuseId_"]
+        ER["ElementRegister · id→FrameNode"]
+        FH["FocusHub · focusable/tabIndex/defaultFocus/nextFocus/focusScopeId"]
     end
 
     subgraph LAYOUT["Layout 层"]
-        VIS_L["visibility 布局决策<br/>Visible→正常 · Hidden→保留空间 · None→{0,0}"]
-        CHILD_L["子节点布局<br/>overlayNode / background(CustomBuilder)<br/>按 alignment+offset 定位"]
+        VIS_L["visibility 决策 · Visible/Hidden/None"]
+        CHILD_L["子节点布局 · overlay/background(CustomBuilder)"]
     end
 
     subgraph RENDER["Render 层"]
-        BG_RS["背景→RS<br/>SetBackgroundColor · DrawImage · SetFilter"]
-        VIS_RS["显隐→RS<br/>SetVisible · SetZIndex · obscured 遮罩"]
-        RG_RS["renderGroup→RS<br/>子树脏聚合 · 整组重绘"]
-        FRZ_RS["freeze→RS<br/>rsNode_->SetFreeze"]
-        DM_RS["drawModifier→RS<br/>beforeDraw / afterDraw 回调"]
+        RS["属性→RSNode 同步 · 背景/显隐/renderGroup/freeze"]
     end
 
-    F1 -->|"ViewAbstract::Set*"| RC
+    API -->|"动态前端"| DYN
+    API -->|"静态前端"| STATIC
+    API -->|"NDK"| CAPI_BR
+    DYN -->|"ViewAbstract::Set*"| PROP
+    STATIC -->|"CommonMethodModifier<br/>SetXXXImpl<br/>→ ViewAbstract::Set*"| PROP
+    CAPI_BR -->|"ViewAbstract::Set*"| PROP
+
     F1 -->|"SetId"| UIN
     F1 -->|"SetVisibility"| LP
+    F1 -->|"Set*"| RC
     F2 -->|"属性式"| RC
     F2 -->|"CustomBuilder"| FN
-    F3 -->|"SetOverlay"| FN
-    F4 -->|"SetRenderGroup/SetFreeze"| RC
-    F4 -->|"SetReuseId"| CB
-    F5 -->|"StateStyleManager"| SSM
+    F3 -->|"SetRenderGroup/SetFreeze"| RC
+    F3 -->|"SetReuseId"| CB
+    F4 -->|"SetOverlay"| FN
+    F5 -->|"SetFocusable"| FH
 
     UIN -->|"id 注册"| ER
     LP -->|"visibility"| VIS_L
     FN -->|"overlayNode/backgroundNode"| CHILD_L
-    RC --> BG_RS
-    RC --> VIS_RS
-    RC --> FRZ_RS
-    RC --> RG_RS
-    SSM --> DM_RS
+    RC -->|"属性同步"| RS
 ```
 
 ### 数据流/控制流
 
 | 步骤 | 调用方 | 被调用方 | 数据/接口 | 说明 |
 |------|--------|----------|-----------|------|
-| 1 | 开发者 ArkTS | JSViewAbstract::SetVisibility | `VisibleType value` | 桥接层解析参数 |
-| 2 | JSViewAbstract | ViewAbstract::SetVisibility | `VisibleType` | 调用框架层 |
-| 3 | ViewAbstract | LayoutProperty::UpdateVisibility | `VisibleType` | 存储到 LayoutProperty，触发 OnVisibilityUpdate（非 GONE 间仅刷新渲染树；涉及 GONE 时触发 measure） |
+| 1 | 开发者 ArkTS（动态前端） | JSViewAbstract::JsVisibility | `VisibleType value` | 桥接层解析参数 |
+| 1s | 开发者 ArkTS（静态前端） | ArkUIGeneratedNativeModule._CommonMethod_setVisibility | `VisibleType value` | ANI 函数指针直接调用（`ArkUIGeneratedNativeModule.ets:386` → `common_method_modifier.cpp:4369`） |
+| 2 | JSViewAbstract / CommonMethodModifier | ViewAbstract::SetVisibility | `VisibleType` | 调用框架层（动态/静态前端在此汇合） |
+| 3 | ViewAbstract | RenderContext::UpdateVisibility | `VisibleType` | 存储到 RenderContext，标记 PROPERTY_UPDATE |
 | 4 | Pipeline | FrameNode::Measure | `parentConstraint` | 布局管线调度 |
-| 5 | FrameNode | visibility 布局决策 | `GetVisibility()` | Visible→正常测量；Hidden→正常测量但从渲染树排除；None→frameSize={0,0} |
-| 6 | FrameNode | RosenRenderContext::ApplyProperty + 渲染树同步 | `RenderContext + LayoutProperty` | 将背景/zIndex/obscured 应用到 RSNode；visibility 通过渲染树同步（非 GONE→MarkNeedSyncRenderTree, 涉及 GONE→MarkDirtyNode） |
-| 7 | 开发者 ArkTS | JSViewAbstract::JsBackgroundColor | `Color value` | 桥接层解析颜色参数 |
-| 8 | JSViewAbstract | ViewAbstract::SetBackgroundColor | `Color` | 调用框架层 |
+| 5 | FrameNode | visibility 布局决策 | `GetVisibility()` | Visible→正常测量；Hidden→测量但透明绘制；None→frameSize={0,0} |
+| 6 | FrameNode | RosenRenderContext::ApplyProperty | `RenderContext properties` | 将背景/显隐/zIndex 属性应用到 RSNode |
+| 7 | 开发者 ArkTS（动态前端） | JSViewAbstract::JsBackgroundColor | `Color value` | 桥接层解析颜色参数 |
+| 7s | 开发者 ArkTS（静态前端） | ArkUIGeneratedNativeModule._CommonMethod_setBackgroundColor | `Color value` | ANI 函数指针直接调用（`ArkUIGeneratedNativeModule.ets:236` → `common_method_modifier.cpp:2775`） |
+| 8 | JSViewAbstract / CommonMethodModifier | ViewAbstract::SetBackgroundColor | `Color` | 调用框架层（动态/静态前端在此汇合） |
 | 9 | ViewAbstract | RenderContext::UpdateBackgroundColor | `Color` | 存储到 RenderContext |
 | 10 | RosenRenderContext | RSNode::SetBackgroundColor | `Color` | 渲染层绘制背景色 |
-| 11 | 开发者 ArkTS | JSViewAbstract::JsOverlay | `OverlayOptions + builder` | 桥接层解析浮层参数 |
-| 12 | JSViewAbstract | ViewAbstract::SetOverlayBuilder | `builder + options` | 创建 overlay 子节点 |
+| 11 | 开发者 ArkTS（动态前端） | JSViewAbstract::JsOverlay | `OverlayOptions + builder` | 桥接层解析浮层参数 |
+| 11s | 开发者 ArkTS（静态前端） | ArkUIGeneratedNativeModule._CommonMethod_setOverlay | `Opt_Union_String_CustomNodeBuilder_ComponentContent + Opt_OverlayOptions` | ANI 函数指针直接调用（`ArkUIGeneratedNativeModule.ets:598` → `common_method_modifier.cpp:6324`） |
+| 12 | JSViewAbstract / CommonMethodModifier | ViewAbstract::SetOverlayBuilder | `builder + options` | 创建 overlay 子节点（动态/静态前端在此汇合） |
 | 13 | ViewAbstract | FrameNode::SetOverlayNode | `RefPtr<FrameNode>` | overlayNode 作为子节点挂载 |
-| 14 | 开发者 ArkTS | JSViewAbstract::JsRenderGroup | `bool value` | 桥接层解析参数 |
-| 15 | JSViewAbstract | ViewAbstract::SetRenderGroup | `bool` | 设置子树脏传播聚合开关 |
-| 16 | ViewAbstract | RenderContext::UpdateRenderGroup | `bool` | 存储到 RenderContext propRenderGroup_ |
-| 17 | 开发者 ArkTS | JSViewAbstract::JsStateStyles | `StateStyle object` | 桥接层解析状态样式 |
-| 18 | JSViewAbstract | ViewAbstract::SetStateStyles | `StateStyle` | 注册到 StateStyleManager inner 回调 |
-| 19 | 开发者 ArkTS | JSViewAbstract::attributeModifier | `AttributeModifier` | 桥接层解析 Modifier（与 stateStyles 互斥） |
-| 20 | StateStyleManager | HandleStateChangeInternal | `inner → frontend → user 回调链` | inner(stateStyles) → user(attributeModifier) 有序执行 |
+| 14 | 开发者 ArkTS（动态前端） | JSViewAbstract::JsRenderGroup | `bool value` | 桥接层解析参数 |
+| 14s | 开发者 ArkTS（静态前端） | ArkUIGeneratedNativeModule._CommonMethod_setRenderGroup | `bool value` | ANI 函数指针直接调用（`ArkUIGeneratedNativeModule.ets:360` → `common_method_modifier.cpp:4079`） |
+| 15 | JSViewAbstract / CommonMethodModifier | ViewAbstract::SetRenderGroup | `bool` | 设置子树脏传播聚合开关 |
+| 16 | ViewAbstract | FrameNode::SetRenderGroup | `bool` | 存储到 FrameNode |
 
 ### 算法与状态机
 
@@ -253,47 +261,12 @@ stateDiagram-v2
     state Hidden {
         [*] --> Measure : frameSize 正常
         Measure --> Layout : 布局偏移正常
-        Layout --> SkipDraw : 从渲染树排除<br/>不绘制但保留空间
+        Layout --> SkipDraw : 透明绘制<br/>不显示但保留空间
     }
     state None {
         [*] --> SkipMeasure : frameSize={0,0}<br/>子节点不测量
         SkipMeasure --> SkipLayout : 不参与布局
         SkipLayout --> SkipDraw : 不绘制
-    }
-```
-
-#### stateStyles 状态切换（C++ 回调层）；ArkTS 层 attributeModifier 与 stateStyles 互斥
-
-> **ArkTS 层**：使用 attributeModifier 的组件调用 `stateStyles()` 会抛出 `BusinessError(100201)`；两者互斥不可同时设置。
->
-> **C++ 回调层**：StateStyleManager 按 inner（stateStyles）→ frontend → user（attributeModifier）顺序执行回调；attributeModifier 可通过 excludeInner 排除 stateStyles 回调。
-
-```mermaid
-stateDiagram-v2
-    [*] --> Normal : 默认状态
-
-    Normal --> Pressed : 触摸按下
-    Normal --> Focused : 焦点获得
-    Normal --> Disabled : enabled=false
-    Pressed --> Normal : 触摸释放
-    Focused --> Normal : 焦点丢失
-    Disabled --> Normal : enabled=true
-
-    state Normal {
-        [*] --> ApplyNormalStyles : stateStyles.normal
-        ApplyNormalStyles --> ApplyModifier : attributeModifier.applyNormal()
-    }
-    state Pressed {
-        [*] --> ApplyPressedStyles : stateStyles.pressed
-        ApplyPressedStyles --> ApplyModifier : attributeModifier.applyPressed()
-    }
-    state Focused {
-        [*] --> ApplyFocusedStyles : stateStyles.focused
-        ApplyFocusedStyles --> ApplyModifier : attributeModifier.applyFocused()
-    }
-    state Disabled {
-        [*] --> ApplyDisabledStyles : stateStyles.disabled
-        ApplyDisabledStyles --> ApplyModifier : attributeModifier.applyDisabled()
     }
 ```
 
@@ -318,11 +291,11 @@ RefPtr<FrameNode> ElementRegister::GetInstance()->GetAttachedFrameNodeById(const
 
 | 属性 | 存储位置 | 类型 | 说明 |
 |------|----------|------|------|
-| id | UINode::propInspectorId_ + ElementRegister | string | 开发者设置，通过 ElementRegister 查找组件 |
-| key | UINode::propInspectorId_（与 id 共享存储）/ SyntaxItem::key_（ForEach 回收键） | string | .key() 与 .id() 共用 InspectorId 存储；ForEach 回收键在 SyntaxItem |
-| restoreId | UINode（FrameNode 继承） | int32_t | 状态持久化恢复标识，默认值 -1 |
-| uniqueId | UINode::nodeId_ (int32_t) / accessibilityId_ (int64_t) | int32_t / int64_t | nodeId_ 为框架自增 ID（int32_t）；accessibilityId_ 为无障碍 ID（int64_t） |
-| inspectorLabel | UINode（FrameNode 继承） | string | API 12+，无障碍 inspector 标签 |
+| id | ElementRegister::inspectorIdMap_ | string | 开发者设置，通过 AddFrameNodeByInspectorId 注册，GetAttachedFrameNodeById 查找 |
+| key | FrameNode | string | 回收逻辑唯一键 |
+| restoreId | FrameNode | int32_t | 状态持久化恢复标识，默认值 -1 |
+| uniqueId | FrameNode | int64_t | 框架自动生成的唯一 ID，不可由开发者设置 |
+| inspectorLabel | FrameNode | string | API 12+，无障碍 inspector 标签 |
 
 #### visibility 布局参与行为
 
@@ -331,19 +304,20 @@ visibility 的三种状态在布局管线中具有不同的行为：
 | visibility 状态 | ArkTS 枚举 | 引擎内部 | Measure 行为 | Layout 行为 | Draw 行为 | frameSize |
 |----------------|-----------|---------|-------------|------------|----------|-----------|
 | Visible | Visibility.Visible | VisibleType::VISIBLE | 正常测量 | 正常布局 | 正常绘制 | 正常尺寸 |
-| Hidden | Visibility.Hidden | VisibleType::INVISIBLE | 正常测量 | 正常布局 | 从渲染树排除（不绘制） | 正常尺寸（保留空间） |
+| Hidden | Visibility.Hidden | VisibleType::INVISIBLE | 正常测量 | 正常布局 | 透明绘制 | 正常尺寸（保留空间） |
 | None | Visibility.None | VisibleType::GONE | 跳过测量 | 跳过布局 | 跳过绘制 | {0, 0} |
 
 ```cpp
-// frame_node.cpp:6115 — GONE 路径（简化示意）
-if (layoutProperty_->GetVisibility().value_or(VisibleType::VISIBLE) == VisibleType::GONE) {
-    layoutAlgorithm_->SetSkipMeasure();   // 跳过子节点 Measure
-    layoutAlgorithm_->SetSkipLayout();    // 跳过子节点 Layout
-    geometryNode_->SetFrameSize(SizeF()); // frameSize = {0, 0}
-    return;                               // 不继续测量子节点
+// frame_node.cpp — visibility 对布局的影响
+if (visibility == VisibleType::GONE) {
+    // frameSize = {0, 0}，子节点不测量
+    geometryNode->SetFrameSize({0, 0});
+    return;  // 跳过子节点 Measure/Layout
 }
-// INVISIBLE 不匹配 GONE 检查，走正常 Measure/Layout 路径
-// 但在渲染树构建时（OnGenerateOneDepthVisibleFrameWithTransition）从 RSNode 子列表中排除
+if (visibility == VisibleType::INVISIBLE) {
+    // 正常 Measure/Layout，但绘制时透明
+    // frameSize 保持正常尺寸
+}
 ```
 
 #### obscured 隐私保护
@@ -355,13 +329,12 @@ obscured 通过 `ObscuredReasons` 枚举指定屏蔽场景：
 | PLACEHOLDER | 输入框占位文本/敏感内容 | 内容替换为占位显示（文本→密码圆点，图片→占位图）；截图/录屏时区域显示遮罩色 |
 
 ```cpp
-// view_abstract.cpp — SetObscured（简化示意，实际通过 ACE_UPDATE_NODE_RENDER_CONTEXT 宏调用）
+// view_abstract.cpp — SetObscured
 void ViewAbstract::SetObscured(FrameNode* frameNode, const std::vector<ObscuredReasons>& reasons)
 {
-    CHECK_NULL_VOID(frameNode);
-    // 宏展开为: frameNode->GetRenderContext()->UpdateObscured(reasons)
-    ACE_UPDATE_NODE_RENDER_CONTEXT(Obscured, reasons, frameNode);
-    frameNode->MarkDirtyNode(PROPERTY_UPDATE_RENDER);  // 标记节点脏，触发重绘
+    auto renderContext = frameNode->GetRenderContext();
+    renderContext->UpdateObscuredReasons(reasons);
+    // 截图/录屏时，RS 层对该区域应用遮罩
 }
 ```
 
@@ -372,22 +345,23 @@ void ViewAbstract::SetObscured(FrameNode* frameNode, const std::vector<ObscuredR
 背景设置存在两套独立机制：
 
 1. **属性式背景**：backgroundColor/backgroundImage/backgroundImageSize/backgroundImagePosition/backgroundBlurStyle/backdropBlur/backgroundEffect/backgroundBrightness/backgroundImageResizable，存储在 `RenderContext`，通过 RS 渲染管线绘制
-2. **浮层式背景**：background(CustomBuilder)，builder 构建内容被 snapshot 为 PixelMap 后通过 BackgroundModifier 渲染在组件内容之下；backgroundNode_ 作为 RefPtr 引用存储在 FrameNode 但不在渲染树中作为子节点
+2. **浮层式背景**：background(CustomBuilder)，作为子节点挂载在 FrameNode，在组件内容之下绘制
 
 ```mermaid
 graph TD
     BG_START["background 设置入口"]
     PROP_BG{"设置类型"}
     ATTR["属性式背景<br/>backgroundColor/backgroundImage<br/>backgroundBlurStyle/backdropBlur<br/>backgroundEffect/backgroundBrightness<br/>backgroundImageResizable"]
-    CB["浮层式背景<br/>background(CustomBuilder)<br/>→ builder 构建 Column 节点<br/>→ ComponentSnapshot 生成 PixelMap<br/>→ BackgroundModifier 绘制"]
+    CB["浮层式背景<br/>background(CustomBuilder)<br/>→ 创建子节点挂载<br/>→ 在内容之下绘制"]
     RC["RenderContext 存储"]
-    FN_BG["FrameNode backgroundNode_（RefPtr引用，非渲染树子节点）"]
+    FN_BG["FrameNode 子节点"]
     RS["RS 渲染管线<br/>SetBackgroundColor/SetFilter<br/>DrawImage"]
-    SNAPSHOT["Snapshot 管线<br/>CreateBackgroundPixelMap"]
+    LAYOUT_BG["布局管线<br/>子节点正常布局"]
+    RENDER_BG["绘制管线<br/>先背景子节点<br/>后组件内容"]
 
     BG_START --> PROP_BG
     PROP_BG -->|"属性式"| ATTR --> RC --> RS
-    PROP_BG -->|"CustomBuilder"| CB --> FN_BG --> SNAPSHOT --> RS
+    PROP_BG -->|"CustomBuilder"| CB --> FN_BG --> LAYOUT_BG --> RENDER_BG
 ```
 
 **关键背景属性存储：**
@@ -399,11 +373,11 @@ graph TD
 | backgroundImageSize | RenderContext | BackgroundImageSize | OnBackgroundImageSizeUpdate |
 | backgroundImagePosition | RenderContext | BackgroundImagePosition | OnBackgroundImagePositionUpdate |
 | backgroundBlurStyle | RenderContext | BlurStyleOption | OnBackgroundBlurStyleUpdate |
-| backdropBlur | RenderContext | Dimension (radius) + BlurOption | OnBackdropBlurUpdate |
+| backdropBlur | RenderContext | float (radius) | OnBackdropBlurUpdate |
 | backgroundEffect | RenderContext | EffectOption | — |
 | backgroundBrightness | RenderContext | BrightnessOption | — |
 | backgroundImageResizable | RenderContext | ImageResizableSlice | — |
-| background(CustomBuilder) | FrameNode backgroundNode_（RefPtr引用，非渲染树子节点） | CustomBuilder → PixelMap snapshot | ComponentSnapshot::Create → BackgroundModifier 绘制 |
+| background(CustomBuilder) | FrameNode 子节点 | CustomBuilder | 子节点创建/挂载 |
 
 ### 浮层
 
@@ -499,58 +473,6 @@ renderFit 控制组件内容在帧尺寸内的适配方式（对应 gravity 属�
 
 > 注：RenderFit 枚举值实际 16 个，超出官方文档标注的 10 个，需文档同步。
 
-### 状态效果与自定义
-
-#### stateStyles 状态样式覆盖链
-
-stateStyles 提供四种状态下的样式覆盖：
-
-| 状态 | 属性键 | 说明 |
-|------|--------|------|
-| normal | .normal | 默认状态样式 |
-| pressed | .pressed | 按压状态样式 |
-| focused | .focused | 焦点状态样式 |
-| disabled | .disabled | 禁用状态样式 |
-
-stateStyles 在组件状态变化时自动切换样式，由 Pattern 负责状态检测和样式应用。
-
-#### attributeModifier 动态属性控制（与 stateStyles 互斥）
-
-> **ArkTS 层互斥**：使用 attributeModifier 的组件调用 `stateStyles()` 会抛出 `BusinessError(100201)`，两者不可同时设置。
-
-attributeModifier 提供比 stateStyles 更灵活的动态属性控制。在 C++ 回调层，StateStyleManager 按 inner（stateStyles）→ user（attributeModifier）顺序执行；attributeModifier 可通过 `excludeInner` 排除 stateStyles 对同一状态的回调：
-
-```
-C++ 回调层应用顺序：inner stateStyles → user attributeModifier（可 excludeInner）→ 最终生效
-ArkTS 层：stateStyles 与 attributeModifier 互斥，不可同时使用
-```
-
-```mermaid
-graph TD
-    STATE["组件状态变化<br/>Normal/Pressed/Focused/Disabled"]
-    SS["Step 1: inner 回调<br/>stateStyles 按状态选择样式集<br/>pressed → pressedStyles<br/>focused → focusedStyles"]
-    AM["Step 2: user 回调<br/>attributeModifier 按状态调用 apply*<br/>applyNormal()/applyPressed()<br/>applyFocused()/applyDisabled()<br/>（可通过 excludeInner 排除 Step 1）"]
-    FINAL["最终生效属性<br/>ArkTS 层两者互斥<br/>C++ 回调层有序执行"]
-
-    STATE --> SS --> AM --> FINAL
-```
-
-#### hoverEffect / clickEffect 交互反馈
-
-| 属性 | 类型 | 说明 |
-|------|------|------|
-| hoverEffect | HoverEffectType | 悬停反馈效果类型（Auto/Scale/Highlight/None） |
-| clickEffect | — | 点击反馈效果 |
-
-#### drawModifier 自定义绘制
-
-drawModifier 提供自定义绘制回调，在组件绘制的 before/after 阶段插入自定义绘制逻辑：
-
-| 回调 | 触发时机 | 说明 |
-|------|----------|------|
-| beforeDraw | 组件内容绘制前 | 在内容下方绘制 |
-| afterDraw | 组件内容绘制后 | 在内容上方绘制 |
-
 ---
 
 ## 风险和开放问题
@@ -561,8 +483,7 @@ drawModifier 提供自定义绘制回调，在组件绘制的 before/after 阶�
 | RenderFit 枚举值 16 个超出官方文档标注 10 个 | API | 低 | 需文档同步，枚举值完整列表在规格中标注 | 文档 |
 | freeze 仅设置 RS 渲染侧属性 | API | 低 | freeze 通过 rsNode_->SetFreeze 设置，ACE 侧 Measure/Layout 不受影响；NDK 场景受限 | 标注 |
 | visibility None 布局参与行为与开发者直觉 | 兼容性 | 中 | None(GONE) 不参与布局（frameSize={0,0}），与 Hidden(INVISIBLE) 保留空间行为差异需明确标注 | ArkUI SIG |
-| background(CustomBuilder) 与属性式背景并存 | 架构 | 低 | CustomBuilder 通过 PixelMap snapshot 渲染而非子节点挂载；开发者可能困惑于两种机制的差异 | 文档/标注 |
-| attributeModifier 与 stateStyles 互斥 | 架构 | 中 | ArkTS 层两者互斥（BusinessError(100201)); C++ 回调层 attributeModifier 后执行可 excludeInner | 文档/标注 |
+| background(CustomBuilder) 与属性式背景并存 | 架构 | 低 | 两套独立存储路径并存，开发者可能困惑于两种机制的差异 | 文档/标注 |
 | obscured ObscuredReasons 枚举扩展性 | API | 低 | 当前仅 PLACEHOLDER，未来可能新增枚举值（如 SENSITIVE_DATA）以支持纯截图拦截不替换内容的场景 | ArkUI SIG |
 | renderGroup 聚合绘制的性能权衡 | 性能 | 低 | 开启后整组重绘，单个子节点变更时可能比个体传播更慢 | 标注 |
 

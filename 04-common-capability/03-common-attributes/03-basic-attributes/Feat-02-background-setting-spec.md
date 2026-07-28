@@ -29,9 +29,11 @@
 
 | 文档 | 路径 | 状态 |
 |------|------|------|
-| Design | `specs/04-common-capability/03-common-attributes/03-basic-attributes/design.md` | Draft |
+| Design | `specs/04-common-capability/03-common-attributes/03-basic-attributes/design.md` | Baselined |
 | SDK dynamic | `interface/sdk-js/api/@internal/component/ets/common.d.ts` | 已核验 |
 | ArkTS dynamic bridge | `frameworks/bridge/declarative_frontend/jsview/js_view_abstract.cpp` | 已核验 |
+| ArkTS static bridge (ANI) | `frameworks/core/interfaces/native/implementation/common_method_modifier.cpp` (SetBackgroundColorImpl:2775, SetBackgroundImage0Impl:2830, SetBackgroundBlurStyleImpl:6008, SetBackdropBlurImpl:6177, SetBackgroundEffectImpl:6029, SetBackgroundBrightnessImpl:5457, SetBackgroundImpl:5931, SetBackgroundImageResizableImpl:2905, SetBackgroundImageSizeImpl:2839, SetBackgroundImagePositionImpl:2854) | 已核验 |
+| ArkTS static ETS entry | `frameworks/bridge/arkts_frontend/koala_projects/arkoala-arkts/arkui-ohos/generated/framework/arkts/ArkUIGeneratedNativeModule.ets` (_CommonMethod_setBackgroundColor:236, _CommonMethod_setBackgroundImage0:240, _CommonMethod_setBackgroundBlurStyle:558, _CommonMethod_setBackdropBlur:584, _CommonMethod_setBackgroundEffect:560, _CommonMethod_setBackgroundBrightness:510, _CommonMethod_setBackground:552) | 已核验 |
 | Framework API | `frameworks/core/components_ng/base/view_abstract.cpp` | 已核验 |
 | RenderContext | `frameworks/core/components_ng/render/render_context.h` | 已核验 |
 | EffectOption/BlurStyleOption | `interfaces/inner_api/ace_kit/include/ui/properties/blur_style_option.h` | 已核验 |
@@ -70,7 +72,7 @@
 | AC-2.1 | WHEN 调用 `.backgroundImage(src: ResourceStr, repeat?: ImageRepeat)` THEN src 写入 RenderContext `BackgroundImage`（ImageSourceInfo），repeat 写入 `BackgroundImageRepeat` | 正常 |
 | AC-2.2 | WHEN 调用 `.backgroundImage(src: PixelMap)` THEN PixelMap 写入 ImageSourceInfo 作为背景图 | 正常 |
 | AC-2.3 | WHEN 调用 `.backgroundImage(src: ResourceStr | PixelMap, options?: BackgroundImageOptions)`（API 18+） THEN options 中 `syncLoad` 写入 `BackgroundImageSyncMode`，`repeat` 写入 `BackgroundImageRepeat` | 正常 |
-| AC-2.4 | WHEN 调用 `.backgroundImageSize(value: SizeOptions | ImageSize)` THEN 写入 RenderContext `BackgroundImageSize`；SizeOptions 指定宽高值，ImageSize 使用枚举值（Cover/Contain/Auto/None） | 正常 |
+| AC-2.4 | WHEN 调用 `.backgroundImageSize(value: SizeOptions | ImageSize)` THEN 写入 RenderContext `BackgroundImageSize`；SizeOptions 指定宽高值，ImageSize 使用枚举值（Cover/Contain/Auto/Fill，内部 BackgroundImageSizeType: CONTAIN=0,COVER=1,AUTO=2,FILL=3；C-API ArkUI_ImageSize: AUTO=0,COVER=1,CONTAIN=2） | 正常 |
 | AC-2.5 | WHEN 调用 `.backgroundImagePosition(value: Position | Alignment)` THEN 写入 RenderContext `BackgroundImagePosition`；Position 指定 x/y 坐标，Alignment 使用枚举值 | 正常 |
 | AC-2.6 | WHEN Native C-API 设置 `NODE_BACKGROUND_IMAGE` THEN `.string` 为图片地址，`.value[0]?.i32` 为 ImageRepeat 枚举值 | 正常 |
 | AC-2.7 | WHEN Native C-API 设置 `NODE_BACKGROUND_IMAGE_SIZE` THEN `.value[0].f32` 和 `.value[1].f32` 为宽高值（vp） | 正常 |
@@ -84,7 +86,7 @@
 
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
-| AC-3.1 | WHEN 调用 `.backgroundBlurStyle(value: BlurStyle, options?: BackgroundBlurStyleOptions)` THEN BlurStyleOption 写入 RenderContext `BackBlurStyle`；BlurStyle 枚举（Thin/Regular/Thick/BACKGROUND_* 等）封装预定义模糊参数 | 正常 |
+| AC-3.1 | WHEN 调用 `.backgroundBlurStyle(value: BlurStyle, options?: BackgroundBlurStyleOptions)` THEN BlurStyleOption 写入 RenderContext `BackBlurStyle`；同时清除已有的 `BackgroundEffect` 和 `BackBlurRadius`（互斥覆盖，`view_abstract.cpp:8410,8413`）；BlurStyle 枚举（Thin/Regular/Thick/BACKGROUND_* 等）封装预定义模糊参数 | 正常 |
 | AC-3.2 | WHEN 调用 `.backgroundBlurStyle(undefined)`（API 18+） THEN 背景模糊重置为默认（无模糊） | 异常 |
 | AC-3.3 | WHEN 调用 `.backgroundBlurStyle(style, options, sysOptions)`（API 19+） THEN sysOptions 的 `disableSystemAdaptation` 控制系统自适应调整 | 正常 |
 | AC-3.4 | WHEN 调用 `.backdropBlur(value: number, options?: BlurOptions)` THEN 写入 RenderContext `BackBlurRadius`（radius 为 Dimension）；同时清除已有的 `BackgroundEffect` 和 `BackBlurStyle`（互斥覆盖） | 正常 |
@@ -157,14 +159,14 @@
 
 | 规则ID | 类型 | 触发条件 | 预期行为 | 边界/约束 | 关联AC |
 |--------|------|----------|----------|-----------|--------|
-| R-1 | 行为 | 调用 backgroundColor | 颜色写入 RenderContext `BackgroundColor` + `PreBackgroundColor`，同时标记 LayoutProperty `IsUserSetBackgroundColor=true` | 默认值 `Color::TRANSPARENT` | AC-1.1, AC-1.2 |
-| R-2 | 行为 | 调用 backgroundImage + backgroundImageSize + backgroundImagePosition | 三个属性分别写入 RenderContext Background Property Group（`BackgroundImage`、`BackgroundImageRepeat`、`BackgroundImageSyncMode`、`BackgroundImageSize`、`BackgroundImagePosition`），渲染时组合绘制 | Background Property Group 统一管理 | AC-2.1~2.5 |
-| R-3 | 边界 | backdropBlur 与 backgroundBlurStyle 互斥 | 设置 backdropBlur 时清除已有 `BackgroundEffect` 和 `BackBlurStyle`；设置 backgroundBlurStyle 时不清除已有 backdropBlur（但后续 backdropBlur 会清除它） | 三者最后设置生效 | AC-3.9 |
+| R-1 | 行为 | 调用 backgroundColor | 颜色写入 RenderContext `BackgroundColor` + `PreBackgroundColor`，同时标记 LayoutProperty `IsUserSetBackgroundColor=true`（动态前端: `js_view_abstract.cpp JsBackgroundColor`; 静态前端: `ArkUIGeneratedNativeModule.ets:236 _CommonMethod_setBackgroundColor` → `common_method_modifier.cpp:2775 SetBackgroundColorImpl`; C-API: `node_common_modifier.cpp NODE_BACKGROUND_COLOR`） | 默认值 `Color::TRANSPARENT` | AC-1.1, AC-1.2 |
+| R-2 | 行为 | 调用 backgroundImage + backgroundImageSize + backgroundImagePosition | 三个属性分别写入 RenderContext Background Property Group（`BackgroundImage`、`BackgroundImageRepeat`、`BackgroundImageSyncMode`、`BackgroundImageSize`、`BackgroundImagePosition`），渲染时组合绘制（动态前端: `js_view_abstract.cpp JsBackgroundImage/JsBackgroundImageSize/JsBackgroundImagePosition`; 静态前端: `ArkUIGeneratedNativeModule.ets:240/242/244 _CommonMethod_setBackgroundImage0/_CommonMethod_setBackgroundImageSize/_CommonMethod_setBackgroundImagePosition` → `common_method_modifier.cpp:2830/2839/2854`; C-API: `node_common_modifier.cpp NODE_BACKGROUND_IMAGE/NODE_BACKGROUND_IMAGE_SIZE/NODE_BACKGROUND_IMAGE_POSITION`） | Background Property Group 统一管理 | AC-2.1~2.5 |
+| R-3 | 边界 | backdropBlur/backgroundBlurStyle/backgroundEffect 三者互斥 | 设置 backdropBlur 时清除已有 `BackgroundEffect` 和 `BackBlurStyle`（`view_abstract.cpp:5490,5494`）；设置 backgroundBlurStyle 时清除已有 `BackgroundEffect` 和 `BackBlurRadius`（`view_abstract.cpp:8410,8414`）；设置 backgroundEffect 时清除已有 `BackBlurRadius` 和 `BackBlurStyle`（动态前端: `js_view_abstract.cpp JsBackdropBlur/JsBackgroundBlurStyle`; 静态前端: `ArkUIGeneratedNativeModule.ets:584/558/560 _CommonMethod_setBackdropBlur/_CommonMethod_setBackgroundBlurStyle/_CommonMethod_setBackgroundEffect` → `common_method_modifier.cpp:6177/6008/6029`; 三者在 ViewAbstract 汇合后执行互斥清除逻辑） | 三者最后设置生效，每次设置均清除前两者 | AC-3.9 |
 | R-4 | 行为 | 调用 backgroundEffect | EffectOption 写入 RenderContext `BackgroundEffect`，同时清除已有 `BackBlurRadius` 和 `BackBlurStyle` | EffectOption 含 radius/saturation/brightness/color/adaptiveColor/blurOption/policy/inactiveColor | AC-3.6, AC-3.9 |
-| R-5 | 边界 | background(CustomBuilder) vs backgroundColor/backgroundImage | CustomBuilder 类型背景作为子节点挂载，与 backgroundColor/backgroundImage 互不排斥，三者全部生效；background 层在最上层 | CustomBuilder 覆盖使用 `CustomBackgroundColor` 而非 `BackgroundColor` 存储 | AC-5.3, AC-5.5 |
+| R-5 | 边界 | background(CustomBuilder) vs backgroundColor/backgroundImage | CustomBuilder 类型背景作为子节点挂载，与 backgroundColor/backgroundImage 互不排斥，三者全部生效；background 层在最上层（动态前端: `js_view_abstract.cpp:13519 JsBackground`; 静态前端: `ArkUIGeneratedNativeModule.ets:552 _CommonMethod_setBackground` → `common_method_modifier.cpp:5931 SetBackgroundImpl`; C-API: 无公开 NDK 枚举，仅内部 `node_common_modifier.cpp:SetBackground`） | CustomBuilder 覆盖使用 `CustomBackgroundColor` 而非 `BackgroundColor` 存储 | AC-5.3, AC-5.5 |
 | R-6 | 行为 | 调用 backgroundImageResizable | ImageResizableSlice 写入 RenderContext `BackgroundImageResizableSlice`；四边切片值支持 LPX 单位和 ConfigChange 资源回调 | — | AC-6.1, AC-6.2 |
 | R-7 | 边界 | backgroundBrightness 参数范围 | rate > 0 时 lightUpDegree 才生效；lightUpDegree 推荐范围 [-1.0, 1.0] 但不做强制 Clamp；BrightnessOption 还支持 cubicCoeff/quadCoeff/saturation/posRGB/negRGB/fraction 等扩展参数（API 12+ internal） | rate=0 时无亮度效果 | AC-4.1, AC-4.3, AC-4.4 |
-| R-8 | 行为 | backgroundColor 与 ColorMetrics（API 18+） | @since 20 dynamic 签名支持 `Optional<ResourceColor | ColorMetrics>`；ColorMetrics 通过 `colorWithSpace` 构造带色域的颜色值；@since 18 签名支持 `Optional<ResourceColor>` 用于重置（undefined → 透明） | — | AC-1.4, AC-1.5 |
+| R-8 | 行为 | backgroundColor 与 ColorMetrics（API 18+） | @since 20 dynamic 签名支持 `Optional<ResourceColor | ColorMetrics>`（静态前端: `arkoala_api_generated.h:24896 GENERATED_ArkUICommonMethodModifier.setBackgroundColor` 含 ColorMetrics 函数指针；动态前端 common.d.ts 仅声明 ResourceColor 签名）；ColorMetrics 通过 `colorWithSpace` 构造带色域的颜色值；@since 18 签名支持 `Optional<ResourceColor>` 用于重置（undefined → 透明） | — | AC-1.4, AC-1.5 |
 | R-9 | 行为 | 多背景属性叠加优先级 | backgroundColor（底层色） → backgroundImage（中层图） → background(CustomBuilder)（最上层自定义内容）；模糊/亮度效果作用于背景层 | SDK 注释明确："They will all take effect, with background at the top layer" | AC-5.3 |
 | R-10 | 行为 | 背景属性变更标记 | backgroundColor/backgroundImage 等属性变更触发 `PROPERTY_UPDATE_RENDER`，下一帧重绘；backgroundBrightness 变更触发 `ACE_UPDATE_RENDER_CONTEXT(BgDynamicBrightnessOption)` | — | AC-1.1, AC-3.6 |
 | R-11 | 异常 | backgroundColor 不可解析 | 写入 `Color::TRANSPARENT` | — | AC-1.2 |
@@ -200,7 +202,7 @@ N/A，已有能力补录，API 行为无变化。
 |----------|------|------|-----------|--------|----------|
 | `backgroundColor(value: ResourceColor): T` | Public | 背景颜色 | common.d.ts:20298 | 7 | - |
 | `backgroundColor(color: Optional<ResourceColor>): T` | Public | 背景颜色（可重置） | common.d.ts:20312 | 18 | - |
-| `backgroundColor(color: Optional<ResourceColor \| ColorMetrics>): T` | Public | 背景颜色（动态色域） | common.d.ts:20326 | 20 | - |
+| `backgroundColor(color: Optional<ResourceColor | ColorMetrics>): T` | Public | 背景颜色（动态色域） | arkoola 静态 C API (`arkoala_api_generated.h:24896`)；common.d.ts 中仅声明 ResourceColor 签名 | 20 | - |
 | `backgroundImage(src: ResourceStr \| PixelMap, repeat?: ImageRepeat): T` | Public | 背景图片 | common.d.ts:20428 | 7 | - |
 | `backgroundImage(src: ResourceStr \| PixelMap, options?: BackgroundImageOptions): T` | Public | 背景图片（含同步加载/重复选项） | common.d.ts:20443 | 18 | - |
 | `backgroundImageSize(value: SizeOptions \| ImageSize): T` | Public | 背景图片大小 | common.d.ts:20483 | 7 | - |
@@ -219,7 +221,7 @@ N/A，已有能力补录，API 行为无变化。
 | `backgroundImageResizable(value: ResizableOptions): T` | Public | 九宫格背景图片 | common.d.ts:20660 | 12 | - |
 | `background(content: CustomBuilder \| ResourceColor, options?: BackgroundOptions): T` | Public | 自定义背景 | common.d.ts:20258 | 10/20 | - |
 
-**C-API (NDK) 接口：**
+> **Native C-API 属性枚举**：
 
 | 属性枚举 | 值格式 | 功能 | @since |
 |----------|--------|------|--------|
@@ -231,7 +233,8 @@ N/A，已有能力补录，API 行为无变化。
 | `NODE_BACKGROUND_BLUR_STYLE` | `.value[0].i32` (ArkUI_BlurStyle) | 背景模糊样式 | 12 |
 | `NODE_BACKDROP_BLUR` | `.value[0].f32` (radius vp) | 背景模糊半径 | 12 |
 | `NODE_BACKGROUND_IMAGE_RESIZABLE_WITH_SLICE` | slice 四边值 | 九宫格切片 | 12 |
-| `setBackground` | `ArkUIBackgroundContent*` + `ArkUIBackgroundOptions*` | 设置背景（资源色+对齐） | 12 |
+
+> 注：background(CustomBuilder) 和 background(ResourceColor) 当前无对应**公开 C-API (NDK)** 属性枚举或函数入口。`ArkUIBackgroundContent` / `ArkUIBackgroundOptions` 存在于内部路径 `frameworks/core/interfaces/arkoala/arkoala_api.h` 和 `frameworks/core/interfaces/native/node/node_common_modifier.cpp:SetBackground`，但不属于公开 NDK 接口（`interfaces/native/native_node.h` 中无对应 NODE_* 枚举）。C-API 仅覆盖 backgroundColor/backgroundImage/blurStyle/backdropBlur/imageSize/imagePosition/imageResizableSlice 等属性式背景接口。
 
 **关联类型定义：**
 
@@ -384,10 +387,10 @@ N/A，已有能力补录，API 行为无变化。
 
 | # | 触发条件 | 预期行为 | 关联 AC |
 |---|----------|----------|---------|
-| 1 | 仅设置 backgroundBlurStyle | BlurStyleOption 写入 BackBlurStyle | AC-3.1 |
+| 1 | 仅设置 backgroundBlurStyle | BlurStyleOption 写入 BackBlurStyle，清除 BackgroundEffect + BackBlurRadius | AC-3.1 |
 | 2 | 设置 backdropBlur | 写入 BackBlurRadius，清除 BackgroundEffect + BackBlurStyle | AC-3.4 |
 | 3 | 设置 backgroundEffect | 写入 BackgroundEffect，清除 BackBlurRadius + BackBlurStyle | AC-3.6 |
-| 4 | 三者先后设置 | 最后设置的生效，前两者被清除为 nullopt | AC-3.9 |
+| 4 | 三者先后设置 | 最后设置的生效，前两者被清除为 nullopt（每次设置均清除前两者） | AC-3.9 |
 
 ---
 
@@ -410,6 +413,8 @@ N/A，已有能力补录，API 行为无变化。
 | CustomBuilder 子节点挂载 | background(CustomBuilder) 通过 ViewAbstractModel::SetBackground 挂载为子节点，而非 RenderContext 属性存储 | AC-5.1 |
 | CustomBackgroundColor vs BackgroundColor | background(ResourceColor) 使用 CustomBackgroundColor，backgroundColor 使用 BackgroundColor；两者共存时分别渲染 | AC-5.2 |
 | PROPERTY_UPDATE_RENDER | 背景属性变更仅标记脏节点重绘，不触发重新布局 | AC-1.1 |
+| 双前端汇合点 | 动态前端 (JSI/NAPI `js_view_abstract.cpp`) 和静态前端 (ANI `common_method_modifier.cpp`) 在 `ViewAbstract::SetXXX` 汇合；互斥清除逻辑在 ViewAbstract 层执行，两前端路径行为一致 | 全部 |
+| 静态前端 background(CustomBuilder) | `_CommonMethod_setBackground` → `SetBackgroundImpl` (common_method_modifier.cpp:5931) 支持 Union_String_CustomNodeBuilder_ComponentContent 参数，内部判断类型走 CustomBuilder 或 ResourceColor 分支 | AC-5.1 |
 
 ---
 
@@ -557,6 +562,18 @@ Feature: 背景设置
     When 设置 Column.backgroundEffect({radius: 20}, {disableSystemAdaptation: true})
     Then 系统不对 backgroundEffect 做自适应调整
 ```
+
+---
+
+## 风险/Risks
+
+| 风险ID | 类型 | 描述 | 影响AC | 缓解策略 |
+|--------|------|------|--------|----------|
+| RK-1 | 行为 | backdropBlur/backgroundBlurStyle/backgroundEffect 三者互斥，最后设置清除前两者，开发者可能误认为三者可叠加 | AC-3.9 | SDK JSDoc 已明确标注互斥关系 |
+| RK-2 | 性能 | backgroundEffect 每帧实时渲染模糊，高性能开销 | AC-3.6 | 静态场景建议使用 effectKit.blur 替代 |
+| RK-3 | 认知 | background(ResourceColor) 写入 CustomBackgroundColor 而非 BackgroundColor，与 backgroundColor 属性存储不同，开发者可能混淆 | AC-5.2 | SDK 注释明确区分两种存储 |
+| RK-4 | 边界 | backgroundBrightness lightUpDegree 不做 Clamp，超出 [-1,1] 可能产生非预期视觉效果 | AC-4.4 | SDK 推荐范围 [-1,1] 但不强制 |
+| RK-5 | 版本 | API 18/19/20 各版本新增 Optional 重载、ColorMetrics 和 SystemAdaptiveOptions，旧版本应用升级后行为可能不同 | AC-1.4, AC-1.5, AC-3.8 | @since 版本守护确保旧 API 不受影响 |
 
 ---
 

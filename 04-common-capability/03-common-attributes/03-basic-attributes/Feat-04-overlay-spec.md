@@ -1,13 +1,13 @@
 # 特性规格
 
-> Func-04-03-03-Feat-03 浮层属性：固化 overlay(string/CustomBuilder/NodeHandle) 及 OverlayOptions 的行为规格。
+> Func-04-03-03-Feat-04 浮层属性：固化 overlay(string/CustomBuilder/NodeHandle) 及 OverlayOptions 的行为规格。
 
 ## 概述
 
 | 属性 | 值 |
 |------|-----|
 | 特性名称 | 浮层 (Overlay) |
-| 特性编号 | Func-04-03-03-Feat-03 |
+| 特性编号 | Func-04-03-03-Feat-04 |
 | 所属 Epic | 无（已有能力补录） |
 | 优先级 | P1 |
 | 目标版本 | API 7 起支持，API 12/21 有行为变更 |
@@ -27,7 +27,17 @@
 
 | 文档 | 路径 | 状态 |
 |------|------|------|
-| Design | `specs/04-common-capability/03-common-attributes/03-basic-attributes/design.md` | Draft |
+| Design | `specs/04-common-capability/03-common-attributes/03-basic-attributes/design.md` | Baselined |
+| SDK dynamic | `interface/sdk-js/api/@internal/component/ets/common.d.ts` | 已核验 |
+| ArkTS dynamic bridge | `frameworks/bridge/declarative_frontend/jsview/js_view_abstract.cpp` | 已核验 |
+| Framework API | `frameworks/core/components_ng/base/view_abstract.cpp` | 已核验 |
+| overlayNode 挂载 | `frameworks/core/components_ng/base/frame_node.cpp` | 已核验 |
+| overlay 布局 | `frameworks/core/components_ng/property/overlay_property.h` | 已核验 |
+| overlay 渲染 | `frameworks/core/components_ng/render/adapter/rosen_render_context.cpp` | 已核验 |
+| Native C API | `interfaces/native/native_node.h`, `interfaces/native/node/style_modifier.cpp` | 已核验 |
+| ArkTS static bridge (ANI) | `frameworks/core/interfaces/native/implementation/common_method_modifier.cpp` (SetOverlayImpl:6324) | 已核验 |
+| ArkTS static ETS entry | `frameworks/bridge/arkts_frontend/koala_projects/arkoala-arkts/arkui-ohos/generated/framework/arkts/ArkUIGeneratedNativeModule.ets` (_CommonMethod_setOverlay:598) | 已核验 |
+| ANI handwritten overlay | `frameworks/bridge/arkts_frontend/koala_projects/arkoala-arkts/arkui-ohos/src/ani/native/common/common_module.h:78` (SetOverlayComponentContent — NodeHandle variant) | 已核验 |
 
 ---
 
@@ -103,9 +113,9 @@
 
 | 规则ID | 类型 | 触发条件 | 预期行为 | 边界/约束 | 关联AC |
 |--------|------|----------|----------|-----------|--------|
-| R-1 | 行为 | 调用 overlay(CustomBuilder/NodeHandle) 设置浮层 | overlayNode 作为宿主 FrameNode 的 overlayNode_ 子节点挂载（SetParent→宿主节点），overlayNode 的 MeasureType 为 MATCH_PARENT，layoutProperty.SetIsOverlayNode(true) | overlayNode_ 是 FrameNode 上的单一 RefPtr 字段，同一宿主仅持有一个 overlayNode | AC-2.2, AC-2.4, AC-2.5 |
-| R-2 | 行为 | overlay 内容绘制顺序 | 文本浮层：宿主组件自身内容绘制完成后，通过 OverlayTextModifier 在 RenderNode 上追加绘制文本；CustomBuilder 浮层：overlayNode 的 ZIndex 为 INT32_MAX，在渲染树中排列于宿主子节点列表尾部，保证浮层绘制在宿主内容之上 | ZIndex=INT32_MAX 为引擎内部硬编码值，开发者不可通过 overlay API 修改 | AC-1.4, AC-2.3 |
-| R-3 | 行为 | overlay alignment 定位 | alignment 决定 overlayNode 相对宿主组件边框的对齐锚点，通过 Alignment::GetAlignPosition / GetAlignPositionWithDirection 计算偏移；未指定时默认为 Alignment.TopLeft（ArkTS 层映射为 TopStart） | alignment 值域：TopLeft/TopCenter/TopRight/CenterLeft/Center/CenterRight/BottomLeft/BottomCenter/BottomRight（共 9 种） | AC-1.2, AC-2.1, AC-2.6, AC-3.5 |
+| R-1 | 行为 | 调用 overlay(CustomBuilder/NodeHandle) 设置浮层 | overlayNode 作为宿主 FrameNode 的 overlayNode_ 子节点挂载（SetParent→宿主节点），overlayNode 的 MeasureType 为 MATCH_PARENT，layoutProperty.SetIsOverlayNode(true)（动态前端: `js_view_abstract.cpp:3187 JsOverlay`; 静态前端: `ArkUIGeneratedNativeModule.ets:598 _CommonMethod_setOverlay` → `common_method_modifier.cpp:6324 SetOverlayImpl`; 静态前端 NodeHandle 扩展: `common_module.h:78 SetOverlayComponentContent`; C-API: `native_node.h:946-1003 NODE_OVERLAY`） | overlayNode_ 是 FrameNode 上的单一 RefPtr 字段，同一宿主仅持有一个 overlayNode | AC-2.2, AC-2.4, AC-2.5 |
+| R-2 | 行为 | overlay 内容绘制顺序 | 文本浮层：宿主组件自身内容绘制完成后，通过 OverlayTextModifier 在 RenderNode 上追加绘制文本；CustomBuilder 浮层：overlayNode 的 ZIndex 为 INT32_MAX，在渲染树中排列于宿主子节点列表尾部，保证浮层绘制在宿主内容之上（双前端在 ViewAbstract::SetOverlayBuilder 汇合后渲染行为一致） | ZIndex=INT32_MAX 为引擎内部硬编码值，开发者不可通过 overlay API 修改 | AC-1.4, AC-2.3 |
+| R-3 | 行为 | overlay alignment 定位 | alignment 决定 overlayNode 相对宿主组件边框的对齐锚点，通过 Alignment::GetAlignPosition / GetAlignPositionWithDirection 计算偏移；未指定时默认为 Alignment.TopLeft（ArkTS 层映射为 TopStart）（动态前端: `js_view_abstract.cpp` 解析 alignment 参数; 静态前端: `common_method_modifier.cpp:6324 SetOverlayImpl` 解析 Opt_OverlayOptions 含 alignment 字段） | alignment 值域：TopLeft/TopCenter/TopRight/CenterLeft/Center/CenterRight/BottomLeft/BottomCenter/BottomRight（共 9 种） | AC-1.2, AC-2.1, AC-2.6, AC-3.5 |
 | R-4 | 边界 | overlay offset 偏移量 | offset.x 和 offset.y 为 Dimension 类型，在对齐锚点位置基础上叠加像素偏移；RTL 方向下 offsetX 取反；未指定时默认为 0 | offset 支持 vp 单位（Dimension），x/y 为 0 时无额外偏移，负值向反方向偏移 | AC-3.1, AC-3.2, AC-3.3, AC-3.4, AC-3.5 |
 | R-5 | 行为 | overlay 多次调用行为 | 同一宿主组件上多次调用 overlay() 时，overlayNode_ 单一指针被覆盖为新值，旧 overlayNode 被释放（最后一次调用生效） | overlayNode_ 是 RefPtr<FrameNode> 单值字段，不支持叠加多个 overlay | AC-1.3 |
 | R-6 | 边界 | overlay(undefined) 重置行为 | 调用 overlay(undefined) 时，引擎传入 OverlayType::RESET，清除 OverlayText RenderContext 属性并置 overlayNode_ 为 nullptr | 重置后宿主组件恢复为无浮层状态，下次帧调度不再 Measure/Layout overlayNode | AC-1.3 |
@@ -180,7 +190,7 @@ N/A
 | value (string) | string | 是（string 形式必填） | — | overlay 文本内容；undefined 触发 RESET 行为 |
 | value (CustomBuilder) | CustomBuilder | 是（builder 形式必填） | — | CustomBuilder 函数返回 UINode；若非 FrameNode 则被自动包裹为 Stack |
 | value (NodeHandle) | ArkUI_NodeHandle | 否 | nullptr | C API @since 21；与 .string 冲突时 .string 优先级更高 |
-| alignment | Alignment | 否 | TopLeft (ArkTS: TopStart) | 9 种对齐值：TopLeft/TopCenter/TopRight/CenterLeft/Center/CenterRight/BottomLeft/BottomCenter/BottomRight |
+| alignment | Alignment | 否 | TopLeft (ArkTS: TopStart) | 9 种对齐值 |
 | offset.x | number (vp) | 否 | 0 | 支持正数/负数/0；RTL 方向下取反 |
 | offset.y | number (vp) | 否 | 0 | 支持正数/负数/0 |
 | direction | ArkUI_Direction | 否 | LTR | C API @since 21；对应 ArkTS overlay 的 layoutDirection 参数 |
@@ -221,6 +231,7 @@ N/A
 | ZIndex=INT32_MAX 硬编码 | CustomBuilder overlayNode 的 RenderContext ZIndex 固定为 INT32_MAX，不可通过 overlay API 自定义 | AC-2.3 |
 | overlayNode 不可聚焦 | overlayNode 的 FocusHub.SetFocusable(false) 为硬编码行为 | AC-2.4 |
 | text overlay 与 builder overlay 互斥 | 同一宿主上 overlay(string) 设置 OverlayText RenderContext 属性，overlay(CustomBuilder) 设置 overlayNode_；两者分别独立但 overlayNode_ 单值字段导致后设覆盖前设 | AC-1.3 |
+| 双前端汇合点 | 动态前端 (JSI/NAPI `js_view_abstract.cpp`) 和静态前端 (ANI `common_method_modifier.cpp:6324 SetOverlayImpl`) 在 `ViewAbstract::SetOverlayBuilder` 汇合；静态前端 NodeHandle 扩展通过 `common_module.h:78 SetOverlayComponentContent` 处理 | 全部 |
 
 ---
 
@@ -229,13 +240,10 @@ N/A
 | 类型 | 指标/阈值 | 验证方式 | 证据 |
 |------|----------|---------|------|
 | 性能 | overlay 设置不引起额外帧延迟 | UT + 渲染时序分析 | — |
-| 功耗 | 无显著功耗影响 | — | — |
 | 内存 | overlayNode_ 单值指针，无额外内存池 | 代码检查 | frame_node.h:1952 |
-| 安全 | 无安全风险 | — | — |
 | 可靠性 | overlay(undefined) 正确清除浮层 | UT | js_view_abstract.cpp:3189 |
 | 可测试性 | 9 种 alignment + 3 种 offset 状态均可独立验证 | UT | — |
 | 自动化维测 | Inspector 输出 overlay 属性 | Inspector 功能 | overlay_property.h:45-62 |
-| 定界定位 | overlayNode_ 字段可通过 GetOverlayNode() 获取 | 代码检查 | frame_node.h:986-989 |
 
 ---
 
@@ -282,11 +290,10 @@ context-queries:
 
 **关键文档：**
 
-- ArkTS overlay API: `frameworks/bridge/declarative_frontend/jsview/js_view_abstract.cpp:3187` (JsOverlay)
-- overlay 属性存储: `frameworks/core/components_ng/property/overlay_property.h:30` (OverlayOptions struct)
-- overlayNode 挂载: `frameworks/core/components_ng/base/view_abstract.cpp:7093` (AddOverlayToFrameNode)
-- overlay 布局: `frameworks/core/components_ng/base/frame_node.cpp:6835` (LayoutOverlay)
-- overlay 渲染: `frameworks/core/components_ng/render/adapter/rosen_render_context.cpp:997` (PaintOverlayText)
+- ArkTS overlay API: `frameworks/bridge/declarative_frontend/jsview/js_view_abstract.cpp:3187`
+- overlay 属性存储: `frameworks/core/components_ng/property/overlay_property.h:30`
+- overlayNode 挂载: `frameworks/core/components_ng/base/view_abstract.cpp:7093`
+- overlay 布局: `frameworks/core/components_ng/base/frame_node.cpp:6835`
+- overlay 渲染: `frameworks/core/components_ng/render/adapter/rosen_render_context.cpp:997`
 - C API NODE_OVERLAY: `interfaces/native/native_node.h:946-1003`
-- C API style modifier: `interfaces/native/node/style_modifier.cpp:3376` (SetOverlay)
-- Alignment 定义: `frameworks/bridge/declarative_frontend/jsview/js_view_abstract.cpp:3228` (ParseAlignment)
+- C API style modifier: `interfaces/native/node/style_modifier.cpp:3376`

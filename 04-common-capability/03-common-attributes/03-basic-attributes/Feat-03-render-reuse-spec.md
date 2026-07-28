@@ -1,13 +1,13 @@
 # 特性规格
 
-> Func-04-03-03-Feat-04 渲染与复用：固化 renderGroup/renderFit/freez/useEffect/reuseId/reuse 六个渲染与组件复用属性的行为规格。
+> Func-04-03-03-Feat-03 渲染与复用：固化 renderGroup/renderFit/freeze/useEffect/reuseId/reuse 六个渲染与组件复用属性的行为规格。
 
 ## 概述
 
 | 属性 | 值 |
 |------|-----|
 | 特性名称 | 渲染与复用 (Render & Reuse) |
-| 特性编号 | Func-04-03-03-Feat-04 |
+| 特性编号 | Func-04-03-03-Feat-03 |
 | 所属 Epic | 无（已有能力补录） |
 | 优先级 | P1 |
 | 目标版本 | API 8 起支持，API 10/12/14/21 有行为变更 |
@@ -32,7 +32,9 @@
 
 | 文档 | 路径 | 状态 |
 |------|------|------|
-| Design | `specs/04-common-capability/03-common-attributes/03-basic-attributes/design.md` | Draft |
+| Design | `specs/04-common-capability/03-common-attributes/03-basic-attributes/design.md` | Baselined |
+| ArkTS static bridge (ANI) | `frameworks/core/interfaces/native/implementation/common_method_modifier.cpp` (SetRenderGroupImpl:4079, SetRenderFitImpl:5445, SetFreezeImpl:4103, SetUseEffect0Impl:4063, SetReuseIdImpl:5432) | 已核验 |
+| ArkTS static ETS entry | `frameworks/bridge/arkts_frontend/koala_projects/arkoala-arkts/arkui-ohos/generated/framework/arkts/ArkUIGeneratedNativeModule.ets` (_CommonMethod_setRenderGroup:360, _CommonMethod_setRenderFit:508, _CommonMethod_setFreeze:364, _CommonMethod_setUseEffect0:356, _CommonMethod_setReuseId:504) | 已核验 |
 
 ---
 
@@ -143,21 +145,21 @@
 
 | 规则ID | 类型 | 触发条件 | 预期行为 | 边界/约束 | 关联AC |
 |--------|------|----------|----------|-----------|--------|
-| R-1 | 行为 | 调用 SetRenderGroup | renderGroup 存储在 RenderContext 的 propRenderGroup_，通过 ACE_UPDATE_RENDER_CONTEXT 更新；Rosen 路径调用 rsNode_->MarkNodeGroup(isRenderGroup) | RenderContext | AC-1.1 |
-| R-2 | 行为 | 调用 SetRenderFit | renderFit 存储在 RenderContext 的 propRenderFit_，通过 ACE_UPDATE_RENDER_CONTEXT 更新；Rosen 路径调用 rsNode_->SetRenderFit(renderFit) | RenderContext | AC-2.1~2.11 |
-| R-3 | 行为 | 调用 SetFreeze | freeze 存储在 RenderContext 的 propFreeze_，通过 ACE_UPDATE_RENDER_CONTEXT 更新；Rosen 路径调用 rsNode_->SetFreeze(isFreezed)，RS 渲染侧对冻结节点跳过绘制 | RenderContext | AC-3.1~3.9 |
-| R-4 | 行为 | 调用 SetReuseId | reuseId 存储在 CustomNodeBase::reuseId_，LazyForEachBuilder 使用 recyclableNodeSet_（map<reuseId, map<key, WeakPtr<UINode>>）管理回收池 | CustomNodeBase + LazyForEachBuilder | AC-4.1~4.9 |
+| R-1 | 行为 | 调用 SetRenderGroup | renderGroup 存储在 RenderContext 的 propRenderGroup_，通过 ACE_UPDATE_RENDER_CONTEXT 更新；Rosen 路径调用 rsNode_->MarkNodeGroup(isRenderGroup)（动态前端: `js_view_abstract.cpp JsRenderGroup`; 静态前端: `ArkUIGeneratedNativeModule.ets:360 _CommonMethod_setRenderGroup` → `common_method_modifier.cpp:4079 SetRenderGroupImpl`; C-API: `node_common_modifier.cpp NODE_RENDER_GROUP`） | RenderContext | AC-1.1 |
+| R-2 | 行为 | 调用 SetRenderFit | renderFit 存储在 RenderContext 的 propRenderFit_，通过 ACE_UPDATE_RENDER_CONTEXT 更新；Rosen 路径调用 rsNode_->SetRenderFit(renderFit)（动态前端: `js_view_abstract.cpp JsRenderFit`; 静态前端: `ArkUIGeneratedNativeModule.ets:508 _CommonMethod_setRenderFit` → `common_method_modifier.cpp:5445 SetRenderFitImpl`; C-API: `node_common_modifier.cpp NODE_RENDER_FIT`） | RenderContext | AC-2.1~2.11 |
+| R-3 | 行为 | 调用 SetFreeze | freeze 存储在 RenderContext 的 propFreeze_，通过 ACE_UPDATE_RENDER_CONTEXT 更新；Rosen 路径调用 rsNode_->SetFreeze(isFreezed)，RS 渲染侧对冻结节点跳过绘制（动态前端: `js_view_abstract.cpp JsFreeze`; 静态前端: `ArkUIGeneratedNativeModule.ets:364 _CommonMethod_setFreeze` → `common_method_modifier.cpp:4103 SetFreezeImpl`; C-API: 无独立 NDK 枚举，仅 CommonMethod.freeze() 路径） | RenderContext | AC-3.1~3.9 |
+| R-4 | 行为 | 调用 SetReuseId | reuseId 存储在 CustomNodeBase::reuseId_，LazyForEachBuilder 使用 recyclableNodeSet_（map<reuseId, map<key, WeakPtr<UINode>>）管理回收池（动态前端: `js_view_abstract.cpp JsReuseId`; 静态前端: `ArkUIGeneratedNativeModule.ets:504 _CommonMethod_setReuseId` → `common_method_modifier.cpp:5432 SetReuseIdImpl`; C-API: 无独立 NDK 枚举，仅 ArkTS 层面可用） | CustomNodeBase + LazyForEachBuilder | AC-4.1~4.9 |
 | R-5 | 行为 | RecycleNode 复用流程 | 回收：节点离开可视区 → onRecycleFunc → 进入 recyclableNodeSet_[reuseId][key]；复用：新数据到来 → 按 reuseId 匹配 → 从回收池取出 → onReuseFunc | LazyForEachBuilder | AC-4.3~4.6 |
 | R-6 | 恢复 | freeze 从 true 变为 false | rsNode_->SetFreeze(false) 使 RS 侧恢复绘制 | RenderContext | AC-3.5~3.7 |
 | R-7 | 恢复 | renderGroup 从 true 变为 false | 取消渲染组标记（rsNode_->MarkNodeGroup(false, isForced, includeProperty)），子节点恢复独立脏传播 | RosenRenderContext | AC-1.3 |
 | R-8 | 边界 | RenderFit.RESIZE_COVER | 渲染内容等比缩放覆盖边界，超出部分裁剪；内容宽高比与边界不一致时必然裁剪 | render_context | AC-2.3 |
-| R-9 | 行为 | 调用 SetUseEffect | useEffect 存储在 RenderContext 的 propUseEffect_；effectType 存储在 propUseEffectType_；WINDOW_EFFECT 类型额外注册 AddWindowActivateChangedCallback | RenderContext + Pipeline | AC-5.1~5.4 |
+| R-9 | 行为 | 调用 SetUseEffect | useEffect 存储在 RenderContext 的 propUseEffect_；effectType 存储在 propUseEffectType_；WINDOW_EFFECT 类型额外注册 AddWindowActivateChangedCallback（动态前端: `js_view_abstract.cpp JsUseEffect`; 静态前端: `ArkUIGeneratedNativeModule.ets:356/580 _CommonMethod_setUseEffect0/_CommonMethod_setUseEffect1` → `common_method_modifier.cpp:4063/6167`; C-API: 无独立 NDK 枚举） | RenderContext + Pipeline | AC-5.1~5.4 |
 | R-10 | 边界 | freeze 与 FrameNode::SetNodeFreeze | CommonMethod.freeze() 仅设置 rsNode_->SetFreeze 属性，与 FrameNode::SetNodeFreeze()（受 SystemProperties::IsPageTransitionFreeze 控制、仅在页面转场场景生效）无关 | frame_node.cpp:2998 | AC-3.4 |
 | R-11 | 边界 | freeze 不阻塞管线 | freeze 仅设置 rsNode 属性，不阻塞 VSync 刷新，不影响 ACE 侧 Measure/Layout 管线 | RosenRenderContext | AC-3.9 |
 | R-12 | 行为 | renderGroup 脏聚合 | renderGroup=true 时子节点的 PROPERTY_UPDATE_RENDER 不触发 RS 单独重绘，整个 group 标记为脏后合并重绘 | Rosen RS 层 | AC-1.2 |
-| R-13 | 行为 | RenderFit 16 枚举值 | CENTER=0, TOP=1, BOTTOM=2, LEFT=3, RIGHT=4, TOP_LEFT=5, TOP_RIGHT=6, BOTTOM_LEFT=7, BOTTOM_RIGHT=8, RESIZE_FILL=9, RESIZE_CONTAIN=10, RESIZE_CONTAIN_TOP_LEFT=11, RESIZE_CONTAIN_BOTTOM_RIGHT=12, RESIZE_COVER=13, RESIZE_COVER_TOP_LEFT=14, RESIZE_COVER_BOTTOM_RIGHT=15 | constants.h:871 | AC-2.1~2.11 |
+| R-13 | 行为 | RenderFit 16 枚举值 | CENTER=0, TOP=1, BOTTOM=2, LEFT=3, RIGHT=4, TOP_LEFT=5, TOP_RIGHT=6, BOTTOM_LEFT=7, BOTTOM_RIGHT=8, RESIZE_FILL=9, RESIZE_CONTAIN=10, RESIZE_CONTAIN_TOP_LEFT=11, RESIZE_CONTAIN_BOTTOM_RIGHT=12, RESIZE_COVER=13, RESIZE_COVER_TOP_LEFT=14, RESIZE_COVER_BOTTOM_RIGHT=15 | constants.h:872 | AC-2.1~2.11 |
 | R-14 | 行为 | excludeFromRenderGroup | 排除自身及子树从渲染组，通过 ACE_UPDATE_NODE_RENDER_CONTEXT(ExcludeFromRenderGroup, exclude, frameNode) 更新 | RenderContext | AC-1.7 |
-| R-15 | 异常 | renderGroup/renderFit/freeze/useEffect 传入 undefined | 调用 ResetRenderGroup/ResetRenderFit/ResetFreeze/ResetUseEffect 重置为默认值 | RenderContext | AC-1.4, AC-2.11, AC-3.5 |
+| R-15 | 异常 | renderGroup/renderFit/freeze/useEffect 传入 undefined | 调用 ResetRenderGroup/ResetRenderFit/ResetFreeze/ResetUseEffect；RenderContext::ResetRenderGroup 宏生成方法调用 `propRenderGroup_.reset()` 清除可选值，但实际运行时路径（ArkTS undefined → node_common_modifier.cpp:4218-4222 → ViewAbstract::SetRenderGroup(frameNode, false) → UpdateRenderGroup(false)）将 propRenderGroup_ 设为 `false` 而非 std::nullopt | RenderContext | AC-1.4, AC-2.11, AC-3.5 |
 | R-16 | 异常 | reuseId 传入 undefined | reuseId_ 重置为空字符串 | CustomNodeBase | AC-4.8 |
 
 ---
@@ -191,20 +193,20 @@ N/A，已有能力补录，API 行为无变化。
 | `reuseId(id: string): T` | Public | 组件回收标识 | 8 | - |
 | `excludeFromRenderGroup(value: boolean): T` | Public | 排除渲染组 | 10 | - |
 
-**C-API (NDK) 接口：**
+> **Native C-API 属性枚举**：
 
 | 属性枚举 | 值格式 | 功能 | @since |
 |----------|--------|------|--------|
 | `NODE_RENDER_GROUP` | `.value[0].i32` (1 或 0) | 设置渲染组 | 10 |
 | `NODE_RENDER_FIT` | `.value[0].i32` (ArkUI_RenderFit) | 设置内容填充模式 | 10 |
 
-> 注：freeze、useEffect、reuseId/reuse 无独立 C-API (NDK) 属性枚举。freeze 通过 FrameNode::SetNodeFreeze 内部路径设置；reuseId 仅在 ArkTS/JS 层面可用（CustomNodeBase::SetReuseId）。
+> 注：freeze、useEffect、reuseId/reuse 无独立 C-API (NDK) 属性枚举。freeze 仅通过 CommonMethod.freeze() → rsNode_->SetFreeze 设置；reuseId 仅在 ArkTS/JS 层面可用（CustomNodeBase::SetReuseId）。
 
 **关联类型定义：**
 
 | 类型名 | 定义 | 位置 |
 |--------|------|------|
-| `RenderFit` | `enum { CENTER=0, TOP=1, BOTTOM=2, LEFT=3, RIGHT=4, TOP_LEFT=5, TOP_RIGHT=6, BOTTOM_LEFT=7, BOTTOM_RIGHT=8, RESIZE_FILL=9, RESIZE_CONTAIN=10, RESIZE_CONTAIN_TOP_LEFT=11, RESIZE_CONTAIN_BOTTOM_RIGHT=12, RESIZE_COVER=13, RESIZE_COVER_TOP_LEFT=14, RESIZE_COVER_BOTTOM_RIGHT=15 }` | `constants.h:871` |
+| `RenderFit` | `enum { CENTER=0, TOP=1, BOTTOM=2, LEFT=3, RIGHT=4, TOP_LEFT=5, TOP_RIGHT=6, BOTTOM_LEFT=7, BOTTOM_RIGHT=8, RESIZE_FILL=9, RESIZE_CONTAIN=10, RESIZE_CONTAIN_TOP_LEFT=11, RESIZE_CONTAIN_BOTTOM_RIGHT=12, RESIZE_COVER=13, RESIZE_COVER_TOP_LEFT=14, RESIZE_COVER_BOTTOM_RIGHT=15 }` | `constants.h:872` |
 | `ArkUI_RenderFit` | C enum, 16 values (ARKUI_RENDER_FIT_CENTER=0 ... ARKUI_RENDER_FIT_RESIZE_COVER_BOTTOM_RIGHT=15) | `native_type.h:1238` |
 | `EffectType` | `enum class { DEFAULT=0, WINDOW_EFFECT=1 }` | `blur_style_option.h:83` |
 
@@ -222,22 +224,25 @@ N/A，已有能力补录，API 行为无变化。
 
 - **存储**: RenderContext::propRenderGroup_（std::optional<bool>）
 - **生效路径**: ViewAbstract::SetRenderGroup → ACE_UPDATE_RENDER_CONTEXT → RosenRenderContext::OnRenderGroupUpdate → rsNode_->MarkNodeGroup(isRenderGroup)
+- **双前端路径**: 动态前端 `js_view_abstract.cpp JsRenderGroup` → ViewAbstract::SetRenderGroup；静态前端 `ArkUIGeneratedNativeModule.ets:360 _CommonMethod_setRenderGroup` → `common_method_modifier.cpp:4079 SetRenderGroupImpl` → ViewAbstract::SetRenderGroup
 - **帧节点标记**: frameNode->SetApplicationRenderGroupMarked(true) 标记由应用显式设置
 - **脏聚合**: renderGroup=true 时子树脏标记聚合到组级别，RS 层整体重绘
-- **恢复**: renderGroup=false 时 MarkNodeGroup(false, isForced, includeProperty) 取消组标记，恢复独立脏传播
+- **恢复**: renderGroup=false 时 MarkNodeGroup(false, isForced, includeProperty) 取消组标记，恢复独立脏传播；重置行为分两条路径：(1) RenderContext::ResetRenderGroup 宏方法调用 `propRenderGroup_.reset()` 清除可选值；(2) 实际运行时 undefined 重置路径走 `node_common_modifier.cpp:4218-4222` → `ViewAbstract::SetRenderGroup(frameNode, false)` → `UpdateRenderGroup(false)` 将 propRenderGroup_ 设为 `false`
 
 ### freeze
 
 - **存储**: RenderContext::propFreeze_（std::optional<bool>）
 - **生效路径**: ViewAbstract::SetFreeze → ACE_UPDATE_RENDER_CONTEXT(Freeze) → RosenRenderContext::OnFreezeUpdate → rsNode_->SetFreeze(isFreezed)
+- **双前端路径**: 动态前端 `js_view_abstract.cpp JsFreeze` → ViewAbstract::SetFreeze；静态前端 `ArkUIGeneratedNativeModule.ets:364 _CommonMethod_setFreeze` → `common_method_modifier.cpp:4103 SetFreezeImpl` → ViewAbstract::SetFreeze
 - **与 FrameNode::SetNodeFreeze 的关系**: 本规格描述的 `CommonMethod.freeze()` 仅做 `rsNode_->SetFreeze` 属性设置，与 `FrameNode::SetNodeFreeze()` 内部路径无关。`FrameNode::SetNodeFreeze()` 受 `SystemProperties::IsPageTransitionFreeze()` 条件控制，仅在页面转场场景下生效，不属于通用属性的公开 API 范围
 - **解冻恢复**: freeze=false → rsNode_->SetFreeze(false) 使 RS 侧恢复绘制
 
 ### reuseId
 
 - **存储**: CustomNodeBase::reuseId_（std::string）
-- **回收池**: LazyForEachBuilder::recyclableNodeSet_（std::map<reuseId, std::map<key, WeakPtr<UINode>>）
+- **回收池**: LazyForEachBuilder::recyclableNodeSet_（std::map<string, std::map<string, std::set<WeakPtr<UINode>>>）
 - **匹配**: 新数据到来时按 reuseId 匹配回收池中的可复用节点
+- **双前端路径**: 动态前端 `js_view_abstract.cpp JsReuseId` → ViewAbstract::SetReuseId；静态前端 `ArkUIGeneratedNativeModule.ets:504 _CommonMethod_setReuseId` → `common_method_modifier.cpp:5432 SetReuseIdImpl` → ViewAbstract::SetReuseId
 - **生命周期**: 回收→onRecycleFunc；复用→onReuseFunc
 - **释放**: TryReleaseExpiringNode(reuseId) 按 reuseId 查找过期节点释放
 
@@ -263,6 +268,7 @@ N/A，已有能力补录，API 行为无变化。
 | RenderFit 16 枚举值 | 包含 4 个基础对齐 + 4 角对齐 + 3 RESIZE 变体 + 5 RESIZE_* 角锚定变体 | AC-2.1~2.11 |
 | renderGroup 应用级 vs 系统自适应 | 应用通过 renderGroup(true) 显式设置（applicationRenderGroupMarked_）；系统通过 SuggestedRenderGroup 算法自适应决定 | AC-1.5, AC-1.6 |
 | freeze 用户级 vs 系统级 | 不适用：CommonMethod.freeze() 仅设置 rsNode 属性，UINode userFreeze_/isFreeze_ 是 FrameNode::SetNodeFreeze 内部机制 | AC-3.4 |
+| 双前端汇合点 | 动态前端 (JSI/NAPI `js_view_abstract.cpp`) 和静态前端 (ANI `common_method_modifier.cpp`) 在 `ViewAbstract::SetXXX` 汇合；renderGroup/renderFit/freeze/useEffect/reuseId 两路径行为一致 | 全部 |
 
 ---
 
@@ -420,6 +426,18 @@ Feature: 渲染与复用
     Then pipeline->RemoveWindowActivateChangedCallback 移除回调
     And 组件不再响应窗口焦点变化
 ```
+
+---
+
+## 风险 / Risks
+
+| 风险ID | 类型 | 描述 | 影响AC | 缓解策略 |
+|--------|------|------|--------|----------|
+| RK-1 | 认知 | freeze 仅设置 rsNode_->SetFreeze 属性，不阻塞 VSync/Measure/Layout；开发者可能误认为 freeze 会跳过整个渲染管线 | AC-3.9, AC-3.4 | SDK JSDoc 应明确标注仅影响 RS 渲染侧绘制 |
+| RK-2 | 认知 | CommonMethod.freeze() 与 FrameNode::SetNodeFreeze() 无关，后者受 SystemProperties::IsPageTransitionFreeze 控制，仅在页面转场场景生效 | AC-3.4 | 设计文档已标注"与 FrameNode::SetNodeFreeze 无关" |
+| RK-3 | 性能 | renderGroup=true 聚合子树脏标记，若子树频繁局部变更可能反而增加整组重绘开销 | AC-1.2 | 仅在子节点频繁独立变更时使用 renderGroup；静态子树不建议 |
+| RK-4 | 版本 | freeze API @since 21 新增，旧版本应用无法使用 | AC-3.1 | @since 版本守护，旧版本不暴露 freeze API |
+| RK-5 | 行为 | reuseId 回收池中节点按 reuseId 匹配复用，不匹配时创建新节点；开发者需确保 reuseId 与组件类型一一对应 | AC-4.3, AC-4.7 | 不同类型组件应使用不同 reuseId |
 
 ---
 
