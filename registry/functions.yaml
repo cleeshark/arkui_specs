@@ -961,7 +961,7 @@ functions:
     id: '01'
     title: 占位组件
   path: 04-common-capability/06-custom-node/01-placeholder-component/
-  design: null
+  design: 04-common-capability/06-custom-node/01-placeholder-component/design.md
   status: active
 - id: 04-06-02
   l1:
@@ -1026,7 +1026,7 @@ functions:
     id: '06'
     title: NodeAdapter
   path: 04-common-capability/06-custom-node/06-node-adapter/
-  design: null
+  design: 04-common-capability/06-custom-node/06-node-adapter/design.md
   status: active
 - id: 04-06-07
   l1:
@@ -1429,7 +1429,7 @@ functions:
     id: '01'
     title: 组件复用框架
   path: 04-common-capability/19-component-reuse/01-component-reuse-framework/
-  design: null
+  design: 04-common-capability/19-component-reuse/01-component-reuse-framework/design.md
   status: active
 - id: 04-20-01
   l1:
@@ -2586,7 +2586,7 @@ functions:
     id: '02'
     title: AbilityComponent
   path: 05-ui-components/12-embedded-display-components/02-ability-component/
-  design: null
+  design: 05-ui-components/12-embedded-display-components/02-ability-component/design.md
   status: active
 - id: 05-12-03
   l1:
@@ -2742,7 +2742,7 @@ functions:
     id: '01'
     title: NodeContainer
   path: 05-ui-components/16-custom-placeholder-components/01-node-container/
-  design: null
+  design: 05-ui-components/16-custom-placeholder-components/01-node-container/design.md
   status: active
 - id: 05-16-02
   l1:
@@ -2755,7 +2755,7 @@ functions:
     id: '02'
     title: ContentSlot
   path: 05-ui-components/16-custom-placeholder-components/02-content-slot/
-  design: null
+  design: 05-ui-components/16-custom-placeholder-components/02-content-slot/design.md
   status: active
 - id: 06-01-01
   l1:
@@ -3548,7 +3548,7 @@ functions:
     id: '01'
     title: 渲染控制语法
   path: 07-frontend/05-render-control/01-render-control-syntax/
-  design: null
+  design: 07-frontend/05-render-control/01-render-control-syntax/design.md
   status: active
 - id: 07-05-02
   l1:
@@ -3561,7 +3561,7 @@ functions:
     id: '02'
     title: LazyForEach
   path: 07-frontend/05-render-control/02-lazy-foreach/
-  design: null
+  design: 07-frontend/05-render-control/02-lazy-foreach/design.md
   status: active
 - id: 07-05-03
   l1:
@@ -3574,7 +3574,7 @@ functions:
     id: '03'
     title: Repeat
   path: 07-frontend/05-render-control/03-repeat/
-  design: null
+  design: 07-frontend/05-render-control/03-repeat/design.md
   status: active
 - id: 07-06-01
   l1:

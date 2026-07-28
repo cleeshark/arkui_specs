@@ -93,12 +93,12 @@
 | 04 通用能力层 | 05 自定义扩展能力 | 04 自定义内容 -（信息展示类） | `04-05-04` | `04-common-capability/05-custom-extension/04-content-modifier-display/` | *待补充* | 0 |
 | 04 通用能力层 | 05 自定义扩展能力 | 05 自定义属性 | `04-05-05` | `04-common-capability/05-custom-extension/05-custom-property/` | *待补充* | 0 |
 | 04 通用能力层 | 05 自定义扩展能力 | 06 组件Modifier | `04-05-06` | `04-common-capability/05-custom-extension/06-component-modifier/` | *待补充* | 0 |
-| 04 通用能力层 | 06 自定义节点能力 | 01 占位组件 | `04-06-01` | `04-common-capability/06-custom-node/01-placeholder-component/` | *待补充* | 0 |
+| 04 通用能力层 | 06 自定义节点能力 | 01 占位组件 | `04-06-01` | `04-common-capability/06-custom-node/01-placeholder-component/` | [design.md](04-common-capability/06-custom-node/01-placeholder-component/design.md) | 1 |
 | 04 通用能力层 | 06 自定义节点能力 | 02 FrameNode | `04-06-02` | `04-common-capability/06-custom-node/02-frame-node/` | *待补充* | 0 |
 | 04 通用能力层 | 06 自定义节点能力 | 03 RenderNode | `04-06-03` | `04-common-capability/06-custom-node/03-render-node/` | *待补充* | 0 |
 | 04 通用能力层 | 06 自定义节点能力 | 04 BuilderNode | `04-06-04` | `04-common-capability/06-custom-node/04-builder-node/` | *待补充* | 0 |
 | 04 通用能力层 | 06 自定义节点能力 | 05 ComponentContent | `04-06-05` | `04-common-capability/06-custom-node/05-component-content/` | *待补充* | 0 |
-| 04 通用能力层 | 06 自定义节点能力 | 06 NodeAdapter | `04-06-06` | `04-common-capability/06-custom-node/06-node-adapter/` | *待补充* | 0 |
+| 04 通用能力层 | 06 自定义节点能力 | 06 NodeAdapter | `04-06-06` | `04-common-capability/06-custom-node/06-node-adapter/` | [design.md](04-common-capability/06-custom-node/06-node-adapter/design.md) | 1 |
 | 04 通用能力层 | 06 自定义节点能力 | 07 TypedFrameNode | `04-06-07` | `04-common-capability/06-custom-node/07-typed-frame-node/` | *待补充* | 0 |
 | 04 通用能力层 | 07 迁移恢复 | 01 分布式路由迁移能力 | `04-07-01` | `04-common-capability/07-migration-recovery/01-distributed-router-migration/` | *待补充* | 0 |
 | 04 通用能力层 | 07 迁移恢复 | 02 路由栈恢复 | `04-07-02` | `04-common-capability/07-migration-recovery/02-router-stack-recovery/` | [design.md](04-common-capability/07-migration-recovery/02-router-stack-recovery/design.md) | 1 |
@@ -129,7 +129,7 @@
 | 04 通用能力层 | 17 嵌入显示能力 | 03 From卡片机制 | `04-17-03` | `04-common-capability/17-embedded-display/03-form-card/` | *待补充* | 0 |
 | 04 通用能力层 | 17 嵌入显示能力 | 04 PluginComponent机制 | `04-17-04` | `04-common-capability/17-embedded-display/04-plugin-component/` | *待补充* | 0 |
 | 04 通用能力层 | 18 端侧渲染 | 01 同层渲染机制 | `04-18-01` | `04-common-capability/18-on-device-rendering/01-same-layer-rendering/` | *待补充* | 0 |
-| 04 通用能力层 | 19 组件复用 | 01 组件复用框架 | `04-19-01` | `04-common-capability/19-component-reuse/01-component-reuse-framework/` | *待补充* | 0 |
+| 04 通用能力层 | 19 组件复用 | 01 组件复用框架 | `04-19-01` | `04-common-capability/19-component-reuse/01-component-reuse-framework/` | [design.md](04-common-capability/19-component-reuse/01-component-reuse-framework/design.md) | 4 |
 | 04 通用能力层 | 20 媒体查询能力 | 01 MediaQuery | `04-20-01` | `04-common-capability/20-media-query/01-media-query/` | *待补充* | 0 |
 | 04 通用能力层 | 21 适老化 | 01 大字体 | `04-21-01` | `04-common-capability/21-aging-adaptation/01-large-font/` | *待补充* | 0 |
 | 04 通用能力层 | 22 国际化能力 | 01 多语言能力 | `04-22-01` | `04-common-capability/22-internationalization/01-multilingual/` | *待补充* | 0 |
@@ -218,7 +218,7 @@
 | 05 组件层 | 11 卡片框架组件 | 01 FormComponent | `05-11-01` | `05-ui-components/11-card-framework-components/01-form-component/` | *待补充* | 0 |
 | 05 组件层 | 11 卡片框架组件 | 02 FormLink | `05-11-02` | `05-ui-components/11-card-framework-components/02-form-link/` | *待补充* | 0 |
 | 05 组件层 | 12 显示嵌入组件 | 01 PluginComponent | `05-12-01` | `05-ui-components/12-embedded-display-components/01-plugin-component/` | *待补充* | 0 |
-| 05 组件层 | 12 显示嵌入组件 | 02 AbilityComponent | `05-12-02` | `05-ui-components/12-embedded-display-components/02-ability-component/` | *待补充* | 0 |
+| 05 组件层 | 12 显示嵌入组件 | 02 AbilityComponent | `05-12-02` | `05-ui-components/12-embedded-display-components/02-ability-component/` | [design.md](05-ui-components/12-embedded-display-components/02-ability-component/design.md) | 1 |
 | 05 组件层 | 12 显示嵌入组件 | 03 UIExtensionComponent | `05-12-03` | `05-ui-components/12-embedded-display-components/03-ui-extension-component/` | *待补充* | 0 |
 | 05 组件层 | 12 显示嵌入组件 | 04 EmbeddedComponent | `05-12-04` | `05-ui-components/12-embedded-display-components/04-embedded-component/` | *待补充* | 0 |
 | 05 组件层 | 12 显示嵌入组件 | 05 IsolatedComponent | `05-12-05` | `05-ui-components/12-embedded-display-components/05-isolated-component/` | *待补充* | 0 |
@@ -230,8 +230,8 @@
 | 05 组件层 | 14 绘制类组件 | 02 Canvas | `05-14-02` | `05-ui-components/14-drawing-components/02-canvas/` | [design.md](05-ui-components/14-drawing-components/02-canvas/design.md) | 7 |
 | 05 组件层 | 14 绘制类组件 | 03 OffscreenCanvas | `05-14-03` | `05-ui-components/14-drawing-components/03-offscreen-canvas/` | [design.md](05-ui-components/14-drawing-components/03-offscreen-canvas/design.md) | 3 |
 | 05 组件层 | 15 主题组件 | 01 WithTheme | `05-15-01` | `05-ui-components/15-theme-components/01-with-theme/` | *待补充* | 0 |
-| 05 组件层 | 16 自定义占位组件 | 01 NodeContainer | `05-16-01` | `05-ui-components/16-custom-placeholder-components/01-node-container/` | *待补充* | 0 |
-| 05 组件层 | 16 自定义占位组件 | 02 ContentSlot | `05-16-02` | `05-ui-components/16-custom-placeholder-components/02-content-slot/` | *待补充* | 0 |
+| 05 组件层 | 16 自定义占位组件 | 01 NodeContainer | `05-16-01` | `05-ui-components/16-custom-placeholder-components/01-node-container/` | [design.md](05-ui-components/16-custom-placeholder-components/01-node-container/design.md) | 3 |
+| 05 组件层 | 16 自定义占位组件 | 02 ContentSlot | `05-16-02` | `05-ui-components/16-custom-placeholder-components/02-content-slot/` | [design.md](05-ui-components/16-custom-placeholder-components/02-content-slot/design.md) | 1 |
 | 06 通用接口层 | 01 前端桥接 | 01 跨语言封装 | `06-01-01` | `06-common-interface/01-frontend-bridge/01-cross-language-wrapper/` | *待补充* | 0 |
 | 06 通用接口层 | 01 前端桥接 | 02 JS引擎管理 | `06-01-02` | `06-common-interface/01-frontend-bridge/02-js-engine-management/` | *待补充* | 0 |
 | 06 通用接口层 | 01 前端桥接 | 03 IDL工具 | `06-01-03` | `06-common-interface/01-frontend-bridge/03-idl-tool/` | *待补充* | 0 |
@@ -292,9 +292,9 @@
 | 07 前端层 | 04 生成式UI | 01 A2UI标准协议 | `07-04-01` | `07-frontend/04-generative-ui/01-a2ui-standard-protocol/` | *待补充* | 0 |
 | 07 前端层 | 04 生成式UI | 02 A2UI扩展协议 | `07-04-02` | `07-frontend/04-generative-ui/02-a2ui-extension-protocol/` | *待补充* | 0 |
 | 07 前端层 | 04 生成式UI | 03 A2UI高级垂域组件 | `07-04-03` | `07-frontend/04-generative-ui/03-a2ui-advanced-domain-components/` | *待补充* | 0 |
-| 07 前端层 | 05 渲染控制 | 01 渲染控制语法 | `07-05-01` | `07-frontend/05-render-control/01-render-control-syntax/` | *待补充* | 0 |
-| 07 前端层 | 05 渲染控制 | 02 LazyForEach | `07-05-02` | `07-frontend/05-render-control/02-lazy-foreach/` | *待补充* | 0 |
-| 07 前端层 | 05 渲染控制 | 03 Repeat | `07-05-03` | `07-frontend/05-render-control/03-repeat/` | *待补充* | 0 |
+| 07 前端层 | 05 渲染控制 | 01 渲染控制语法 | `07-05-01` | `07-frontend/05-render-control/01-render-control-syntax/` | [design.md](07-frontend/05-render-control/01-render-control-syntax/design.md) | 3 |
+| 07 前端层 | 05 渲染控制 | 02 LazyForEach | `07-05-02` | `07-frontend/05-render-control/02-lazy-foreach/` | [design.md](07-frontend/05-render-control/02-lazy-foreach/design.md) | 5 |
+| 07 前端层 | 05 渲染控制 | 03 Repeat | `07-05-03` | `07-frontend/05-render-control/03-repeat/` | [design.md](07-frontend/05-render-control/03-repeat/design.md) | 4 |
 | 07 前端层 | 06 响应式环境变量 | 01 系统环境变量 | `07-06-01` | `07-frontend/06-reactive-env/01-system-env/` | *待补充* | 0 |
 | 07 前端层 | 06 响应式环境变量 | 02 自定义环境变量 | `07-06-02` | `07-frontend/06-reactive-env/02-custom-env/` | *待补充* | 0 |
 | 08 NDK | 01 Node C-API | 01 基础机制NativeModule | `08-01-01` | `08-ndk/01-node-c-api/01-native-module-base/` | *待补充* | 0 |
@@ -755,6 +755,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 占位组件交叉引用 | [Feat-01-placeholder-component-cross-reference-spec.md](04-common-capability/06-custom-node/01-placeholder-component/Feat-01-placeholder-component-cross-reference-spec.md) | Baselined |
 
 ### 04-06-02 FrameNode
 
@@ -780,6 +781,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | NodeAdapter ArkTS 前端规格 | [Feat-01-nodeadapter-arkts-frontend-spec.md](04-common-capability/06-custom-node/06-node-adapter/Feat-01-nodeadapter-arkts-frontend-spec.md) | Baselined |
 
 ### 04-06-07 TypedFrameNode
 
@@ -947,6 +949,10 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | UINode 复用生命周期与可复用节点判定 | [Feat-01-uinode-reuse-lifecycle-and-reusable-node-judgment-spec.md](04-common-capability/19-component-reuse/01-component-reuse-framework/Feat-01-uinode-reuse-lifecycle-and-reusable-node-judgment-spec.md) | Baselined |
+| Feat-02 | reuseId 节点池与 engine↔TS 桥接 | [Feat-02-reuseid-node-pool-and-engine-ts-bridge-spec.md](04-common-capability/19-component-reuse/01-component-reuse-framework/Feat-02-reuseid-node-pool-and-engine-ts-bridge-spec.md) | Baselined |
+| Feat-03 | RecycleDummyNode 与 DisableRecycle 机制 | [Feat-03-recycle-dummy-node-and-disable-recycle-spec.md](04-common-capability/19-component-reuse/01-component-reuse-framework/Feat-03-recycle-dummy-node-and-disable-recycle-spec.md) | Baselined |
+| Feat-04 | 公开复用池 API 与内存优化（@since26） | [Feat-04-public-reuse-pool-api-and-memory-optimization-spec.md](04-common-capability/19-component-reuse/01-component-reuse-framework/Feat-04-public-reuse-pool-api-and-memory-optimization-spec.md) | Baselined |
 
 ### 04-20-01 MediaQuery
 
@@ -1504,6 +1510,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | AbilityComponent 跨进程能力嵌入（已废弃） | [Feat-01-ability-component-cross-process-embed-deprecated-spec.md](05-ui-components/12-embedded-display-components/02-ability-component/Feat-01-ability-component-cross-process-embed-deprecated-spec.md) | Baselined |
 
 ### 05-12-03 UIExtensionComponent
 
@@ -1591,11 +1598,15 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | NodeContainer 渲染宿主与 FrameNode 桥接 | [Feat-01-node-container-render-host-and-framenode-bridge-spec.md](05-ui-components/16-custom-placeholder-components/01-node-container/Feat-01-node-container-render-host-and-framenode-bridge-spec.md) | Baselined |
+| Feat-02 | NodeController 生命周期回调 | [Feat-02-nodecontroller-lifecycle-callbacks-spec.md](05-ui-components/16-custom-placeholder-components/01-node-container/Feat-02-nodecontroller-lifecycle-callbacks-spec.md) | Baselined |
+| Feat-03 | 复用与纹理导出 | [Feat-03-reuse-and-texture-export-spec.md](05-ui-components/16-custom-placeholder-components/01-node-container/Feat-03-reuse-and-texture-export-spec.md) | Baselined |
 
 ### 05-16-02 ContentSlot
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | ContentSlot 语法节点与 NodeContent 内容管理 | [Feat-01-contentslot-syntax-node-and-nodecontent-management-spec.md](05-ui-components/16-custom-placeholder-components/02-content-slot/Feat-01-contentslot-syntax-node-and-nodecontent-management-spec.md) | Baselined |
 
 ### 06-01-01 跨语言封装
 
@@ -1956,16 +1967,28 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | if/else 条件渲染语法 | [Feat-01-if-else-conditional-rendering-spec.md](07-frontend/05-render-control/01-render-control-syntax/Feat-01-if-else-conditional-rendering-spec.md) | Baselined |
+| Feat-02 | ForEach 循环渲染语法 | [Feat-02-foreach-loop-rendering-spec.md](07-frontend/05-render-control/01-render-control-syntax/Feat-02-foreach-loop-rendering-spec.md) | Baselined |
+| Feat-03 | 渲染控制语法共享框架 | [Feat-03-shared-syntax-node-framework-spec.md](07-frontend/05-render-control/01-render-control-syntax/Feat-03-shared-syntax-node-framework-spec.md) | Baselined |
 
 ### 07-05-02 LazyForEach
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | LazyForEach 核心语法与按需渲染 | [Feat-01-lazy-foreach-core-syntax-and-on-demand-rendering-spec.md](07-frontend/05-render-control/02-lazy-foreach/Feat-01-lazy-foreach-core-syntax-and-on-demand-rendering-spec.md) | Baselined |
+| Feat-02 | 数据源契约与单条变更通知 | [Feat-02-data-source-contract-and-single-change-notification-spec.md](07-frontend/05-render-control/02-lazy-foreach/Feat-02-data-source-contract-and-single-change-notification-spec.md) | Baselined |
+| Feat-03 | 批量数据集变更 onDatasetChange | [Feat-03-ondatasetchange-bulk-operations-spec.md](07-frontend/05-render-control/02-lazy-foreach/Feat-03-ondatasetchange-bulk-operations-spec.md) | Baselined |
+| Feat-04 | 选项策略与内存/冻结优化 | [Feat-04-options-strategy-memory-and-freeze-optimization-spec.md](07-frontend/05-render-control/02-lazy-foreach/Feat-04-options-strategy-memory-and-freeze-optimization-spec.md) | Baselined |
+| Feat-05 | 拖拽排序 onMove | [Feat-05-onmove-drag-reorder-spec.md](07-frontend/05-render-control/02-lazy-foreach/Feat-05-onmove-drag-reorder-spec.md) | Baselined |
 
 ### 07-05-03 Repeat
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Repeat 核心语法与非虚拟渲染 | [Feat-01-repeat-core-syntax-and-non-virtual-rendering-spec.md](07-frontend/05-render-control/03-repeat/Feat-01-repeat-core-syntax-and-non-virtual-rendering-spec.md) | Baselined |
+| Feat-02 | Repeat 虚拟滚动（v2；v1 已废弃） | [Feat-02-repeat-virtual-scroll-v1-v2-spec.md](07-frontend/05-render-control/03-repeat/Feat-02-repeat-virtual-scroll-v1-v2-spec.md) | Baselined |
+| Feat-03 | Repeat 模板化渲染与复用 | [Feat-03-repeat-template-rendering-and-reuse-spec.md](07-frontend/05-render-control/03-repeat/Feat-03-repeat-template-rendering-and-reuse-spec.md) | Baselined |
+| Feat-04 | Repeat 内存优化策略 | [Feat-04-repeat-memory-optimization-strategy-spec.md](07-frontend/05-render-control/03-repeat/Feat-04-repeat-memory-optimization-strategy-spec.md) | Baselined |
 
 ### 07-06-01 系统环境变量
 
