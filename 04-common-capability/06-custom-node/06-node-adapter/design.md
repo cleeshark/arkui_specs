@@ -179,8 +179,8 @@ graph TB
     P["List/Grid/WaterFlow/<br/>ListItemGroup Pattern"]
   end
   D --> C
-  C -->|getUINativeModule().nodeAdapter.*| R --> B
-  B -->|getNodeAdapterAPI()| V --> U
+  C -- "getUINativeModule().nodeAdapter.*" --> R --> B
+  B -- "getNodeAdapterAPI()" --> V --> U
   U --> NB --> LFN --> DCL
   C -.attachNodeAdapter.-> B -.attachHostNode.-> P
 ```
