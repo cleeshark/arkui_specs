@@ -1664,6 +1664,56 @@ features:
   title: WithTheme 主题作用域组件全量规格
   spec: 05-ui-components/15-theme-components/01-with-theme/Feat-01-with-theme-full-spec.md
   status: Baselined
+- func_id: 05-03-01
+  id: Feat-01
+  title: 滚动条与内容视效
+  spec: 05-ui-components/03-scroll-container-components/01-scroll-common-capability/Feat-01-scrollbar-content-visual-spec.md
+  status: Baselined
+- func_id: 05-03-01
+  id: Feat-02
+  title: 滚动交互与物理效果
+  spec: 05-ui-components/03-scroll-container-components/01-scroll-common-capability/Feat-02-scroll-interaction-physics-spec.md
+  status: Baselined
+- func_id: 05-03-01
+  id: Feat-03
+  title: 嵌套滚动与内容边界
+  spec: 05-ui-components/03-scroll-container-components/01-scroll-common-capability/Feat-03-nested-scroll-content-boundary-spec.md
+  status: Baselined
+- func_id: 05-03-01
+  id: Feat-04
+  title: 滚动事件生命周期
+  spec: 05-ui-components/03-scroll-container-components/01-scroll-common-capability/Feat-04-scroll-event-lifecycle-spec.md
+  status: Baselined
+- func_id: 05-03-10
+  id: Feat-01
+  title: 组件创建、Footer 与 FlowItem
+  spec: 05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-01-creation-footer-flowitem-spec.md
+  status: Baselined
+- func_id: 05-03-10
+  id: Feat-02
+  title: 公共布局配置与 Item 约束
+  spec: 05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-02-layout-config-item-constraint-spec.md
+  status: Baselined
+- func_id: 05-03-10
+  id: Feat-03
+  title: ALWAYS_TOP_DOWN 布局算法
+  spec: 05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-03-always-top-down-layout-spec.md
+  status: Baselined
+- func_id: 05-03-10
+  id: Feat-04
+  title: SLIDING_WINDOW 布局算法
+  spec: 05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-04-sliding-window-layout-spec.md
+  status: Baselined
+- func_id: 05-03-10
+  id: Feat-05
+  title: 滚动控制与事件
+  spec: 05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-05-scroll-control-events-spec.md
+  status: Baselined
+- func_id: 05-03-10
+  id: Feat-06
+  title: 缓存与懒加载
+  spec: 05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-06-cache-lazy-loading-spec.md
+  status: Baselined
 - func_id: 05-03-04
   id: Feat-01
   title: Grid 固定行列与单轴滚动布局

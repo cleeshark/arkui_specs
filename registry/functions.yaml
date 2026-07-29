@@ -1780,7 +1780,7 @@ functions:
     id: '01'
     title: 滚动公共能力
   path: 05-ui-components/03-scroll-container-components/01-scroll-common-capability/
-  design: null
+  design: 05-ui-components/03-scroll-container-components/01-scroll-common-capability/design.md
   status: active
 - id: 05-03-02
   l1:
@@ -1897,7 +1897,7 @@ functions:
     id: '10'
     title: WaterFlow/FlowItem
   path: 05-ui-components/03-scroll-container-components/10-water-flow-flow-item/
-  design: null
+  design: 05-ui-components/03-scroll-container-components/10-water-flow-flow-item/design.md
   status: active
 - id: 05-04-01
   l1:
