@@ -156,7 +156,7 @@
 | 05 组件层 | 02 导航类组件 | 04 Stepper/SetpperItem | `05-02-04` | `05-ui-components/02-navigation-components/04-stepper-stepper-item/` | *待补充* | 0 |
 | 05 组件层 | 02 导航类组件 | 05 Navigator | `05-02-05` | `05-ui-components/02-navigation-components/05-navigator/` | *待补充* | 0 |
 | 05 组件层 | 02 导航类组件 | 06 SideBarContainer | `05-02-06` | `05-ui-components/02-navigation-components/06-sidebar-container/` | [design.md](05-ui-components/02-navigation-components/06-sidebar-container/design.md) | 1 |
-| 05 组件层 | 03 滚动容器类组件 | 01 滚动公共能力 | `05-03-01` | `05-ui-components/03-scroll-container-components/01-scroll-common-capability/` | *待补充* | 0 |
+| 05 组件层 | 03 滚动容器类组件 | 01 滚动公共能力 | `05-03-01` | `05-ui-components/03-scroll-container-components/01-scroll-common-capability/` | [design.md](05-ui-components/03-scroll-container-components/01-scroll-common-capability/design.md) | 4 |
 | 05 组件层 | 03 滚动容器类组件 | 02 AlaphabetIndexer | `05-03-02` | `05-ui-components/03-scroll-container-components/02-alphabet-indexer/` | [design.md](05-ui-components/03-scroll-container-components/02-alphabet-indexer/design.md) | 2 |
 | 05 组件层 | 03 滚动容器类组件 | 03 ScrollBar | `05-03-03` | `05-ui-components/03-scroll-container-components/03-scroll-bar/` | *待补充* | 0 |
 | 05 组件层 | 03 滚动容器类组件 | 04 Grid/GridItem | `05-03-04` | `05-ui-components/03-scroll-container-components/04-grid-grid-item/` | *待补充* | 0 |
@@ -165,7 +165,7 @@
 | 05 组件层 | 03 滚动容器类组件 | 07 Scroll | `05-03-07` | `05-ui-components/03-scroll-container-components/07-scroll/` | *待补充* | 0 |
 | 05 组件层 | 03 滚动容器类组件 | 08 Swiper | `05-03-08` | `05-ui-components/03-scroll-container-components/08-swiper/` | [design.md](05-ui-components/03-scroll-container-components/08-swiper/design.md) | 6 |
 | 05 组件层 | 03 滚动容器类组件 | 09 Tabs/TabContent | `05-03-09` | `05-ui-components/03-scroll-container-components/09-tabs-tab-content/` | [design.md](05-ui-components/03-scroll-container-components/09-tabs-tab-content/design.md) | 6 |
-| 05 组件层 | 03 滚动容器类组件 | 10 WaterFlow/FlowItem | `05-03-10` | `05-ui-components/03-scroll-container-components/10-water-flow-flow-item/` | *待补充* | 0 |
+| 05 组件层 | 03 滚动容器类组件 | 10 WaterFlow/FlowItem | `05-03-10` | `05-ui-components/03-scroll-container-components/10-water-flow-flow-item/` | [design.md](05-ui-components/03-scroll-container-components/10-water-flow-flow-item/design.md) | 6 |
 | 05 组件层 | 04 输入表单类 | 01 Button | `05-04-01` | `05-ui-components/04-input-form-components/01-button/` | [design.md](05-ui-components/04-input-form-components/01-button/design.md) | 1 |
 | 05 组件层 | 04 输入表单类 | 02 Checkbox/CheckboxGroup | `05-04-02` | `05-ui-components/04-input-form-components/02-checkbox-checkbox-group/` | [design.md](05-ui-components/04-input-form-components/02-checkbox-checkbox-group/design.md) | 1 |
 | 05 组件层 | 04 输入表单类 | 03 Rating | `05-04-03` | `05-ui-components/04-input-form-components/03-rating/` | [design.md](05-ui-components/04-input-form-components/03-rating/design.md) | 1 |
@@ -1150,6 +1150,10 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 滚动条与内容视效 | [Feat-01-scrollbar-content-visual-spec.md](05-ui-components/03-scroll-container-components/01-scroll-common-capability/Feat-01-scrollbar-content-visual-spec.md) | Baselined |
+| Feat-02 | 滚动交互与物理效果 | [Feat-02-scroll-interaction-physics-spec.md](05-ui-components/03-scroll-container-components/01-scroll-common-capability/Feat-02-scroll-interaction-physics-spec.md) | Baselined |
+| Feat-03 | 嵌套滚动与内容边界 | [Feat-03-nested-scroll-content-boundary-spec.md](05-ui-components/03-scroll-container-components/01-scroll-common-capability/Feat-03-nested-scroll-content-boundary-spec.md) | Baselined |
+| Feat-04 | 滚动事件生命周期 | [Feat-04-scroll-event-lifecycle-spec.md](05-ui-components/03-scroll-container-components/01-scroll-common-capability/Feat-04-scroll-event-lifecycle-spec.md) | Baselined |
 
 ### 05-03-02 AlaphabetIndexer
 
@@ -1209,6 +1213,12 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 组件创建、Footer 与 FlowItem | [Feat-01-creation-footer-flowitem-spec.md](05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-01-creation-footer-flowitem-spec.md) | Baselined |
+| Feat-02 | 公共布局配置与 Item 约束 | [Feat-02-layout-config-item-constraint-spec.md](05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-02-layout-config-item-constraint-spec.md) | Baselined |
+| Feat-03 | ALWAYS_TOP_DOWN 布局算法 | [Feat-03-always-top-down-layout-spec.md](05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-03-always-top-down-layout-spec.md) | Baselined |
+| Feat-04 | SLIDING_WINDOW 布局算法 | [Feat-04-sliding-window-layout-spec.md](05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-04-sliding-window-layout-spec.md) | Baselined |
+| Feat-05 | 滚动控制与事件 | [Feat-05-scroll-control-events-spec.md](05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-05-scroll-control-events-spec.md) | Baselined |
+| Feat-06 | 缓存与懒加载 | [Feat-06-cache-lazy-loading-spec.md](05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-06-cache-lazy-loading-spec.md) | Baselined |
 
 ### 05-04-01 Button
 
