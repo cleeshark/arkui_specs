@@ -2365,7 +2365,7 @@ functions:
     id: '07'
     title: SymbolGlyph
   path: 05-ui-components/09-text-components/07-symbol-glyph/
-  design: null
+  design: 05-ui-components/09-text-components/07-symbol-glyph/design.md
   status: active
 - id: 05-09-08
   l1:
@@ -2378,7 +2378,7 @@ functions:
     id: 08
     title: TextInput
   path: 05-ui-components/09-text-components/08-text-input/
-  design: null
+  design: 05-ui-components/09-text-components/08-text-input/design.md
   status: active
 - id: 05-09-09
   l1:
@@ -2391,7 +2391,7 @@ functions:
     id: 09
     title: HyperLink
   path: 05-ui-components/09-text-components/09-hyperlink/
-  design: null
+  design: 05-ui-components/09-text-components/09-hyperlink/design.md
   status: active
 - id: 05-09-10
   l1:
@@ -2404,7 +2404,7 @@ functions:
     id: '10'
     title: 属性字符串
   path: 05-ui-components/09-text-components/10-attributed-string/
-  design: null
+  design: 05-ui-components/09-text-components/10-attributed-string/design.md
   status: active
 - id: 05-10-01
   l1:
