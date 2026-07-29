@@ -304,7 +304,7 @@ graph TB
     INDEX4[index/visible]
     REACH4[onReachStart/End]
     STOP4[IDLE补发/onScrollStop]
-    NATIVE4[Native Node Event<br/>同步 data[]]
+    NATIVE4["Native Node Event<br/>同步 data[]"]
 
     INPUT4 --> FRAME4 --> NEST4 --> WILL4 --> LAYOUT4 --> DID4 --> INDEX4 --> REACH4 --> STOP4
     NATIVE4 <--> FRAME4
