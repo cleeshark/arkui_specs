@@ -1117,7 +1117,7 @@ functions:
     id: '03'
     title: 浮层能力
   path: 04-common-capability/08-root-view/03-overlay-capability/
-  design: null
+  design: 04-common-capability/08-root-view/03-overlay-capability/design.md
   status: active
 - id: 04-09-01
   l1:

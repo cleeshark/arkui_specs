@@ -1654,3 +1654,8 @@ features:
   title: 自定义组件测量与子项放置
   spec: 07-frontend/03-custom-components/05-custom-measure-layout/Feat-01-custom-measure-layout-spec.md
   status: Baselined
+- func_id: 04-08-03
+  id: Feat-01
+  title: 浮层能力（OverlayManager 挂载与管理）
+  spec: 04-common-capability/08-root-view/03-overlay-capability/Feat-01-overlay-capability-spec.md
+  status: Baselined
