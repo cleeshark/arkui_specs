@@ -209,11 +209,11 @@
 | 05 组件层 | 10 信息展示类组件 | 02 Gauge | `05-10-02` | `05-ui-components/10-information-display-components/02-gauge/` | *待补充* | 0 |
 | 05 组件层 | 10 信息展示类组件 | 03 LoadingProgress | `05-10-03` | `05-ui-components/10-information-display-components/03-loading-progress/` | *待补充* | 0 |
 | 05 组件层 | 10 信息展示类组件 | 04 PatternLock | `05-10-04` | `05-ui-components/10-information-display-components/04-pattern-lock/` | *待补充* | 0 |
-| 05 组件层 | 10 信息展示类组件 | 05 Progress | `05-10-05` | `05-ui-components/10-information-display-components/05-progress/` | *待补充* | 0 |
-| 05 组件层 | 10 信息展示类组件 | 06 QRCode | `05-10-06` | `05-ui-components/10-information-display-components/06-qr-code/` | *待补充* | 0 |
-| 05 组件层 | 10 信息展示类组件 | 07 TextClock | `05-10-07` | `05-ui-components/10-information-display-components/07-text-clock/` | *待补充* | 0 |
-| 05 组件层 | 10 信息展示类组件 | 08 TextTimer | `05-10-08` | `05-ui-components/10-information-display-components/08-text-timer/` | *待补充* | 0 |
-| 05 组件层 | 10 信息展示类组件 | 09 Badge | `05-10-09` | `05-ui-components/10-information-display-components/09-badge/` | *待补充* | 0 |
+| 05 组件层 | 10 信息展示类组件 | 05 Progress | `05-10-05` | `05-ui-components/10-information-display-components/05-progress/` | [design.md](05-ui-components/10-information-display-components/05-progress/design.md) | 1 |
+| 05 组件层 | 10 信息展示类组件 | 06 QRCode | `05-10-06` | `05-ui-components/10-information-display-components/06-qr-code/` | [design.md](05-ui-components/10-information-display-components/06-qr-code/design.md) | 1 |
+| 05 组件层 | 10 信息展示类组件 | 07 TextClock | `05-10-07` | `05-ui-components/10-information-display-components/07-text-clock/` | [design.md](05-ui-components/10-information-display-components/07-text-clock/design.md) | 4 |
+| 05 组件层 | 10 信息展示类组件 | 08 TextTimer | `05-10-08` | `05-ui-components/10-information-display-components/08-text-timer/` | [design.md](05-ui-components/10-information-display-components/08-text-timer/design.md) | 4 |
+| 05 组件层 | 10 信息展示类组件 | 09 Badge | `05-10-09` | `05-ui-components/10-information-display-components/09-badge/` | [design.md](05-ui-components/10-information-display-components/09-badge/design.md) | 4 |
 | 05 组件层 | 10 信息展示类组件 | 10 Counter | `05-10-10` | `05-ui-components/10-information-display-components/10-counter/` | *待补充* | 0 |
 | 05 组件层 | 11 卡片框架组件 | 01 FormComponent | `05-11-01` | `05-ui-components/11-card-framework-components/01-form-component/` | *待补充* | 0 |
 | 05 组件层 | 11 卡片框架组件 | 02 FormLink | `05-11-02` | `05-ui-components/11-card-framework-components/02-form-link/` | *待补充* | 0 |
@@ -1477,26 +1477,40 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Progress 组件全量规格 | [Feat-01-progress-full-spec.md](05-ui-components/10-information-display-components/05-progress/Feat-01-progress-full-spec.md) | Baselined |
 
 ### 05-10-06 QRCode
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | QRCode 组件核心规格 | [Feat-01-qrcode-display-spec.md](05-ui-components/10-information-display-components/06-qr-code/Feat-01-qrcode-display-spec.md) | Baselined |
 
 ### 05-10-07 TextClock
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | TextClock 时间显示与格式化 | [Feat-01-time-format-spec.md](05-ui-components/10-information-display-components/07-text-clock/Feat-01-time-format-spec.md) | Baselined |
+| Feat-02 | TextClock 控制器与更新调度 | [Feat-02-controller-scheduling-spec.md](05-ui-components/10-information-display-components/07-text-clock/Feat-02-controller-scheduling-spec.md) | Baselined |
+| Feat-03 | TextClock 文本样式与 ContentModifier | [Feat-03-style-content-modifier-spec.md](05-ui-components/10-information-display-components/07-text-clock/Feat-03-style-content-modifier-spec.md) | Baselined |
+| Feat-04 | TextClock 事件、配置变更与组件化 | [Feat-04-events-config-componentization-spec.md](05-ui-components/10-information-display-components/07-text-clock/Feat-04-events-config-componentization-spec.md) | Baselined |
 
 ### 05-10-08 TextTimer
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | TextTimer 计时模式与格式化 | [Feat-01-timing-modes-format-spec.md](05-ui-components/10-information-display-components/08-text-timer/Feat-01-timing-modes-format-spec.md) | Baselined |
+| Feat-02 | TextTimer 控制器与事件 | [Feat-02-controller-events-spec.md](05-ui-components/10-information-display-components/08-text-timer/Feat-02-controller-events-spec.md) | Baselined |
+| Feat-03 | TextTimer 文本样式与 ContentModifier | [Feat-03-style-content-modifier-spec.md](05-ui-components/10-information-display-components/08-text-timer/Feat-03-style-content-modifier-spec.md) | Baselined |
+| Feat-04 | TextTimer 可见区优化与组件化 | [Feat-04-visibility-componentization-spec.md](05-ui-components/10-information-display-components/08-text-timer/Feat-04-visibility-componentization-spec.md) | Baselined |
 
 ### 05-10-09 Badge
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Badge 内容模式 | [Feat-01-content-modes-spec.md](05-ui-components/10-information-display-components/09-badge/Feat-01-content-modes-spec.md) | Baselined |
+| Feat-02 | Badge 位置与布局 | [Feat-02-position-layout-spec.md](05-ui-components/10-information-display-components/09-badge/Feat-02-position-layout-spec.md) | Baselined |
+| Feat-03 | Badge 样式、主题与老年模式 | [Feat-03-style-theme-aging-spec.md](05-ui-components/10-information-display-components/09-badge/Feat-03-style-theme-aging-spec.md) | Baselined |
+| Feat-04 | Badge 无障碍与组件化 | [Feat-04-accessibility-componentization-spec.md](05-ui-components/10-information-display-components/09-badge/Feat-04-accessibility-componentization-spec.md) | Baselined |
 
 ### 05-10-10 Counter
 

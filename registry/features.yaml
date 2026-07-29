@@ -1589,6 +1589,76 @@ features:
   title: bindContentCover 全模态弹窗全量规格
   spec: 05-ui-components/07-modal-components/02-full-modal/Feat-01-full-modal-full-spec.md
   status: Baselined
+- func_id: 05-10-05
+  id: Feat-01
+  title: Progress 组件全量规格
+  spec: 05-ui-components/10-information-display-components/05-progress/Feat-01-progress-full-spec.md
+  status: Baselined
+- func_id: 05-10-06
+  id: Feat-01
+  title: QRCode 组件核心规格
+  spec: 05-ui-components/10-information-display-components/06-qr-code/Feat-01-qrcode-display-spec.md
+  status: Baselined
+- func_id: 05-10-07
+  id: Feat-01
+  title: TextClock 时间显示与格式化
+  spec: 05-ui-components/10-information-display-components/07-text-clock/Feat-01-time-format-spec.md
+  status: Baselined
+- func_id: 05-10-07
+  id: Feat-02
+  title: TextClock 控制器与更新调度
+  spec: 05-ui-components/10-information-display-components/07-text-clock/Feat-02-controller-scheduling-spec.md
+  status: Baselined
+- func_id: 05-10-07
+  id: Feat-03
+  title: TextClock 文本样式与 ContentModifier
+  spec: 05-ui-components/10-information-display-components/07-text-clock/Feat-03-style-content-modifier-spec.md
+  status: Baselined
+- func_id: 05-10-07
+  id: Feat-04
+  title: TextClock 事件、配置变更与组件化
+  spec: 05-ui-components/10-information-display-components/07-text-clock/Feat-04-events-config-componentization-spec.md
+  status: Baselined
+- func_id: 05-10-08
+  id: Feat-01
+  title: TextTimer 计时模式与格式化
+  spec: 05-ui-components/10-information-display-components/08-text-timer/Feat-01-timing-modes-format-spec.md
+  status: Baselined
+- func_id: 05-10-08
+  id: Feat-02
+  title: TextTimer 控制器与事件
+  spec: 05-ui-components/10-information-display-components/08-text-timer/Feat-02-controller-events-spec.md
+  status: Baselined
+- func_id: 05-10-08
+  id: Feat-03
+  title: TextTimer 文本样式与 ContentModifier
+  spec: 05-ui-components/10-information-display-components/08-text-timer/Feat-03-style-content-modifier-spec.md
+  status: Baselined
+- func_id: 05-10-08
+  id: Feat-04
+  title: TextTimer 可见区优化与组件化
+  spec: 05-ui-components/10-information-display-components/08-text-timer/Feat-04-visibility-componentization-spec.md
+  status: Baselined
+- func_id: 05-10-09
+  id: Feat-01
+  title: Badge 内容模式
+  spec: 05-ui-components/10-information-display-components/09-badge/Feat-01-content-modes-spec.md
+  status: Baselined
+- func_id: 05-10-09
+  id: Feat-02
+  title: Badge 位置与布局
+  spec: 05-ui-components/10-information-display-components/09-badge/Feat-02-position-layout-spec.md
+  status: Baselined
+- func_id: 05-10-09
+  id: Feat-03
+  title: Badge 样式、主题与老年模式
+  spec: 05-ui-components/10-information-display-components/09-badge/Feat-03-style-theme-aging-spec.md
+  status: Baselined
+- func_id: 05-10-09
+  id: Feat-04
+  title: Badge 无障碍与组件化
+  spec: 05-ui-components/10-information-display-components/09-badge/Feat-04-accessibility-componentization-spec.md
+  status: Baselined
 - func_id: 05-15-01
   id: Feat-01
   title: WithTheme 主题作用域组件全量规格
