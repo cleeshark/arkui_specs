@@ -196,7 +196,7 @@
 | 05 组件层 | 08 图片类组件 | 02 ImageAnimator | `05-08-02` | `05-ui-components/08-image-components/02-image-animator/` | [design.md](05-ui-components/08-image-components/02-image-animator/design.md) | 3 |
 | 05 组件层 | 08 图片类组件 | 03 MediaCachedImage | `05-08-03` | `05-ui-components/08-image-components/03-media-cached-image/` | *待补充* | 0 |
 | 05 组件层 | 09 文本类组件 | 01 Marquee | `05-09-01` | `05-ui-components/09-text-components/01-marquee/` | *待补充* | 0 |
-| 05 组件层 | 09 文本类组件 | 02 RichEditor | `05-09-02` | `05-ui-components/09-text-components/02-rich-editor/` | *待补充* | 0 |
+| 05 组件层 | 09 文本类组件 | 02 RichEditor | `05-09-02` | `05-ui-components/09-text-components/02-rich-editor/` | [design.md](05-ui-components/09-text-components/02-rich-editor/design.md) | 9 |
 | 05 组件层 | 09 文本类组件 | 03 Search | `05-09-03` | `05-ui-components/09-text-components/03-search/` | *待补充* | 0 |
 | 05 组件层 | 09 文本类组件 | 04 Text | `05-09-04` | `05-ui-components/09-text-components/04-text/` | [design.md](05-ui-components/09-text-components/04-text/design.md) | 7 |
 | 05 组件层 | 09 文本类组件 | 05 TextArea | `05-09-05` | `05-ui-components/09-text-components/05-text-area/` | *待补充* | 0 |
@@ -1416,6 +1416,15 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 组件初始化与双模式架构 | [Feat-01-component-init-dual-mode-spec.md](05-ui-components/09-text-components/02-rich-editor/Feat-01-component-init-dual-mode-spec.md) | Baselined |
+| Feat-02 | Span内容管理-增删改查与跨模式转换 | [Feat-02-span-content-management-spec.md](05-ui-components/09-text-components/02-rich-editor/Feat-02-span-content-management-spec.md) | Baselined |
+| Feat-03 | 属性字符串模式管理 | [Feat-03-styled-string-mode-management-spec.md](05-ui-components/09-text-components/02-rich-editor/Feat-03-styled-string-mode-management-spec.md) | Baselined |
+| Feat-04 | 文本排版与显示优化 | [Feat-04-text-layout-display-optimization-spec.md](05-ui-components/09-text-components/02-rich-editor/Feat-04-text-layout-display-optimization-spec.md) | Baselined |
+| Feat-05 | 视觉样式与交互反馈 | [Feat-05-visual-style-interaction-feedback-spec.md](05-ui-components/09-text-components/02-rich-editor/Feat-05-visual-style-interaction-feedback-spec.md) | Baselined |
+| Feat-06 | 键盘与输入法交互 | [Feat-06-keyboard-ime-interaction-spec.md](05-ui-components/09-text-components/02-rich-editor/Feat-06-keyboard-ime-interaction-spec.md) | Baselined |
+| Feat-07 | 编辑生命周期与内容变化事件 | [Feat-07-editing-lifecycle-content-events-spec.md](05-ui-components/09-text-components/02-rich-editor/Feat-07-editing-lifecycle-content-events-spec.md) | Baselined |
+| Feat-08 | 光标选择与编辑状态控制 | [Feat-08-cursor-selection-editing-state-spec.md](05-ui-components/09-text-components/02-rich-editor/Feat-08-cursor-selection-editing-state-spec.md) | Baselined |
+| Feat-09 | 剪贴板、数据检测与菜单定制 | [Feat-09-clipboard-data-detection-menu-spec.md](05-ui-components/09-text-components/02-rich-editor/Feat-09-clipboard-data-detection-menu-spec.md) | Baselined |
 
 ### 05-09-03 Search
 

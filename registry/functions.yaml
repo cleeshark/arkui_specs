@@ -2300,7 +2300,7 @@ functions:
     id: '02'
     title: RichEditor
   path: 05-ui-components/09-text-components/02-rich-editor/
-  design: null
+  design: 05-ui-components/09-text-components/02-rich-editor/design.md
   status: active
 - id: 05-09-03
   l1:
