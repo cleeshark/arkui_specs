@@ -157,7 +157,7 @@ graph TB
     end
     UIContext --> OverlayMgr
     OverlayMgr --> JsCtx
-    JsCtx -->|content.getFrameNode()| OhosOverlay
+    JsCtx -->|"content.getFrameNode()"| OhosOverlay
     OhosOverlay --> OM
     OM --> OverlayNode
 ```
