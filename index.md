@@ -75,7 +75,7 @@
 | 04 通用能力层 | 03 通用属性 | 08 基础单位 | `04-03-08` | `04-common-capability/03-common-attributes/08-basic-units/` | [design.md](04-common-capability/03-common-attributes/08-basic-units/design.md) | 1 |
 | 04 通用能力层 | 03 通用属性 | 09 无障碍属性 | `04-03-09` | `04-common-capability/03-common-attributes/09-accessibility-attributes/` | *待补充* | 0 |
 | 04 通用能力层 | 03 通用属性 | 10 图片相关属性 | `04-03-10` | `04-common-capability/03-common-attributes/10-image-related-attributes/` | [design.md](04-common-capability/03-common-attributes/10-image-related-attributes/design.md) | 1 |
-| 04 通用能力层 | 03 通用属性 | 11 文本通用属性 | `04-03-11` | `04-common-capability/03-common-attributes/11-text-common-attributes/` | *待补充* | 0 |
+| 04 通用能力层 | 03 通用属性 | 11 文本通用属性 | `04-03-11` | `04-common-capability/03-common-attributes/11-text-common-attributes/` | [design.md](04-common-capability/03-common-attributes/11-text-common-attributes/design.md) | 5 |
 | 04 通用能力层 | 04 通用事件 | 01 触摸事件 | `04-04-01` | `04-common-capability/04-common-events/01-touch-events/` | *待补充* | 0 |
 | 04 通用能力层 | 04 通用事件 | 02 按键事件 | `04-04-02` | `04-common-capability/04-common-events/02-key-events/` | *待补充* | 0 |
 | 04 通用能力层 | 04 通用事件 | 03 事件分发和拦截 | `04-04-03` | `04-common-capability/04-common-events/03-event-dispatch-intercept/` | *待补充* | 0 |
@@ -114,13 +114,13 @@
 | 04 通用能力层 | 12 UI上下文 | 01 UIContext接口 | `04-12-01` | `04-common-capability/12-ui-context/01-ui-context-interface/` | [design.md](04-common-capability/12-ui-context/01-ui-context-interface/design.md) | 4 |
 | 04 通用能力层 | 12 UI上下文 | 02 Ability上下文 | `04-12-02` | `04-common-capability/12-ui-context/02-ability-context/` | [design.md](04-common-capability/12-ui-context/02-ability-context/design.md) | 1 |
 | 04 通用能力层 | 12 UI上下文 | 03 Frame回调接口 | `04-12-03` | `04-common-capability/12-ui-context/03-frame-callback/` | [design.md](04-common-capability/12-ui-context/03-frame-callback/design.md) | 1 |
-| 04 通用能力层 | 13 字体文本 | 01 字体注册 | `04-13-01` | `04-common-capability/13-font-text/01-font-registration/` | *待补充* | 0 |
-| 04 通用能力层 | 13 字体文本 | 02 文本测量 | `04-13-02` | `04-common-capability/13-font-text/02-text-measurement/` | *待补充* | 0 |
-| 04 通用能力层 | 14 输入交互 | 01 文本选择 | `04-14-01` | `04-common-capability/14-input-interaction/01-text-selection/` | *待补充* | 0 |
+| 04 通用能力层 | 13 字体文本 | 01 字体注册 | `04-13-01` | `04-common-capability/13-font-text/01-font-registration/` | [design.md](04-common-capability/13-font-text/01-font-registration/design.md) | 1 |
+| 04 通用能力层 | 13 字体文本 | 02 文本测量 | `04-13-02` | `04-common-capability/13-font-text/02-text-measurement/` | [design.md](04-common-capability/13-font-text/02-text-measurement/design.md) | 3 |
+| 04 通用能力层 | 14 输入交互 | 01 文本选择 | `04-14-01` | `04-common-capability/14-input-interaction/01-text-selection/` | [design.md](04-common-capability/14-input-interaction/01-text-selection/design.md) | 3 |
 | 04 通用能力层 | 14 输入交互 | 02 文本快捷键 | `04-14-02` | `04-common-capability/14-input-interaction/02-text-shortcuts/` | *待补充* | 0 |
-| 04 通用能力层 | 14 输入交互 | 03 文本交互 | `04-14-03` | `04-common-capability/14-input-interaction/03-text-interaction/` | *待补充* | 0 |
+| 04 通用能力层 | 14 输入交互 | 03 文本交互 | `04-14-03` | `04-common-capability/14-input-interaction/03-text-interaction/` | [design.md](04-common-capability/14-input-interaction/03-text-interaction/design.md) | 6 |
 | 04 通用能力层 | 14 输入交互 | 04 键盘控制 | `04-14-04` | `04-common-capability/14-input-interaction/04-keyboard-control/` | *待补充* | 0 |
-| 04 通用能力层 | 14 输入交互 | 05 自动补全能力（AutoFill） | `04-14-05` | `04-common-capability/14-input-interaction/05-autofill/` | *待补充* | 0 |
+| 04 通用能力层 | 14 输入交互 | 05 自动补全能力（AutoFill） | `04-14-05` | `04-common-capability/14-input-interaction/05-autofill/` | [design.md](04-common-capability/14-input-interaction/05-autofill/design.md) | 5 |
 | 04 通用能力层 | 15 路由机制 | 01 路由管理 | `04-15-01` | `04-common-capability/15-router-mechanism/01-router-management/` | [design.md](04-common-capability/15-router-mechanism/01-router-management/design.md) | 2 |
 | 04 通用能力层 | 15 路由机制 | 02 命名路由 | `04-15-02` | `04-common-capability/15-router-mechanism/02-named-router/` | [design.md](04-common-capability/15-router-mechanism/02-named-router/design.md) | 1 |
 | 04 通用能力层 | 16 UIAppearance | 01 UIAppearance | `04-16-01` | `04-common-capability/16-ui-appearance/01-ui-appearance/` | [design.md](04-common-capability/16-ui-appearance/01-ui-appearance/design.md) | 1 |
@@ -663,6 +663,11 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 核心字体属性 (fontSize/fontColor/fontWeight/fontStyle/fontFamily) | [Feat-01-core-font-attributes-spec.md](04-common-capability/03-common-attributes/11-text-common-attributes/Feat-01-core-font-attributes-spec.md) | Baselined |
+| Feat-02 | 文本装饰与大小写 (decoration/textCase) | [Feat-02-text-decoration-case-spec.md](04-common-capability/03-common-attributes/11-text-common-attributes/Feat-02-text-decoration-case-spec.md) | Baselined |
+| Feat-03 | 文本间距与度量 (letterSpacing/lineHeight/baselineOffset) | [Feat-03-text-spacing-metrics-spec.md](04-common-capability/03-common-attributes/11-text-common-attributes/Feat-03-text-spacing-metrics-spec.md) | Baselined |
+| Feat-04 | 文本阴影与 OpenType 特性 (textShadow/fontFeature/fontVariations) | [Feat-04-text-shadow-opentype-spec.md](04-common-capability/03-common-attributes/11-text-common-attributes/Feat-04-text-shadow-opentype-spec.md) | Baselined |
+| Feat-05 | 自适应字体缩放 (minFontSize/maxFontSize/minFontScale/maxFontScale) | [Feat-05-adaptive-font-scaling-spec.md](04-common-capability/03-common-attributes/11-text-common-attributes/Feat-05-adaptive-font-scaling-spec.md) | Baselined |
 
 ### 04-04-01 触摸事件
 
@@ -876,16 +881,23 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 字体注册与查询全能力 | [Feat-01-font-registration-full-capability-spec.md](04-common-capability/13-font-text/01-font-registration/Feat-01-font-registration-full-capability-spec.md) | Baselined |
 
 ### 04-13-02 文本测量
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 独立文本测量能力 | [Feat-01-standalone-text-measurement-spec.md](04-common-capability/13-font-text/02-text-measurement/Feat-01-standalone-text-measurement-spec.md) | Baselined |
+| Feat-02 | 段落级排版测量能力 | *待补充* | Draft |
+| Feat-03 | 组件级行级度量查询能力 | *待补充* | Draft |
 
 ### 04-14-01 文本选择
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 选区状态模型与编程式选区 | [Feat-01-selection-state-programmatic-spec.md](04-common-capability/14-input-interaction/01-text-selection/Feat-01-selection-state-programmatic-spec.md) | Baselined |
+| Feat-02 | 选择手柄、放大镜与选择高亮 | *待补充* | Draft |
+| Feat-03 | 触摸/鼠标手势选区 | *待补充* | Draft |
 
 ### 04-14-02 文本快捷键
 
@@ -896,6 +908,12 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 光标(Caret)交互 | [Feat-01-caret-interaction-spec.md](04-common-capability/14-input-interaction/03-text-interaction/Feat-01-caret-interaction-spec.md) | Baselined |
+| Feat-02 | 文本上下文菜单(Context Menu) | *待补充* | Draft |
+| Feat-03 | 拖拽与剪贴板回调 | *待补充* | Draft |
+| Feat-04 | 文本编辑拦截钩子 | *待补充* | Draft |
+| Feat-05 | 交互触发与状态回调 | *待补充* | Draft |
+| Feat-06 | 长按选择与实体识别 | *待补充* | Draft |
 
 ### 04-14-04 键盘控制
 
@@ -906,6 +924,11 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | TextInput/TextArea AutoFill 基础属性与类型枚举 | [Feat-01-textinput-textarea-base-attributes-spec.md](04-common-capability/14-input-interaction/05-autofill/Feat-01-textinput-textarea-base-attributes-spec.md) | Baselined |
+| Feat-02 | TextInput AutoFill 动画与内容修饰 | *待补充* | Draft |
+| Feat-03 | AutoFill 标准触发模型与请求管线 | *待补充* | Draft |
+| Feat-04 | AutoFill 增强触发路径（MSDP 与 Secure Paste） | *待补充* | Draft |
+| Feat-05 | Web AutoFill 管线 | *待补充* | Draft |
 
 ### 04-15-01 路由管理
 

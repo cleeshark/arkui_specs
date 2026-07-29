@@ -1134,6 +1134,26 @@ features:
   title: Frame回调与帧调度
   spec: 04-common-capability/12-ui-context/03-frame-callback/Feat-01-frame-callback-scheduling-spec.md
   status: Baselined
+- func_id: 04-13-01
+  id: Feat-01
+  title: 字体注册与查询全能力
+  spec: 04-common-capability/13-font-text/01-font-registration/Feat-01-font-registration-full-capability-spec.md
+  status: Baselined
+- func_id: 04-13-02
+  id: Feat-01
+  title: 独立文本测量能力
+  spec: 04-common-capability/13-font-text/02-text-measurement/Feat-01-standalone-text-measurement-spec.md
+  status: Baselined
+- func_id: 04-13-02
+  id: Feat-02
+  title: 段落级排版测量能力
+  spec: null
+  status: Draft
+- func_id: 04-13-02
+  id: Feat-03
+  title: 组件级行级度量查询能力
+  spec: null
+  status: Draft
 - func_id: 04-11-02
   id: Feat-01
   title: 无感监听核心架构
@@ -1593,4 +1613,99 @@ features:
   id: Feat-01
   title: WithTheme 主题作用域组件全量规格
   spec: 05-ui-components/15-theme-components/01-with-theme/Feat-01-with-theme-full-spec.md
+  status: Baselined
+- func_id: 04-14-03
+  id: Feat-01
+  title: 光标(Caret)交互
+  spec: 04-common-capability/14-input-interaction/03-text-interaction/Feat-01-caret-interaction-spec.md
+  status: Baselined
+- func_id: 04-14-03
+  id: Feat-02
+  title: 文本上下文菜单(Context Menu)
+  spec: null
+  status: Draft
+- func_id: 04-14-03
+  id: Feat-03
+  title: 拖拽与剪贴板回调
+  spec: null
+  status: Draft
+- func_id: 04-14-03
+  id: Feat-04
+  title: 文本编辑拦截钩子
+  spec: null
+  status: Draft
+- func_id: 04-14-03
+  id: Feat-05
+  title: 交互触发与状态回调
+  spec: null
+  status: Draft
+- func_id: 04-14-03
+  id: Feat-06
+  title: 长按选择与实体识别
+  spec: null
+  status: Draft
+- func_id: 04-14-01
+  id: Feat-01
+  title: 选区状态模型与编程式选区
+  spec: 04-common-capability/14-input-interaction/01-text-selection/Feat-01-selection-state-programmatic-spec.md
+  status: Baselined
+- func_id: 04-14-01
+  id: Feat-02
+  title: 选择手柄、放大镜与选择高亮
+  spec: null
+  status: Draft
+- func_id: 04-14-01
+  id: Feat-03
+  title: 触摸/鼠标手势选区
+  spec: null
+  status: Draft
+- func_id: 04-14-05
+  id: Feat-01
+  title: TextInput/TextArea AutoFill 基础属性与类型枚举
+  spec: 04-common-capability/14-input-interaction/05-autofill/Feat-01-textinput-textarea-base-attributes-spec.md
+  status: Baselined
+- func_id: 04-14-05
+  id: Feat-02
+  title: TextInput AutoFill 动画与内容修饰
+  spec: null
+  status: Draft
+- func_id: 04-14-05
+  id: Feat-03
+  title: AutoFill 标准触发模型与请求管线
+  spec: null
+  status: Draft
+- func_id: 04-14-05
+  id: Feat-04
+  title: AutoFill 增强触发路径（MSDP 与 Secure Paste）
+  spec: null
+  status: Draft
+- func_id: 04-14-05
+  id: Feat-05
+  title: Web AutoFill 管线
+  spec: null
+  status: Draft
+- func_id: 04-03-11
+  id: Feat-01
+  title: 核心字体属性 (fontSize/fontColor/fontWeight/fontStyle/fontFamily)
+  spec: 04-common-capability/03-common-attributes/11-text-common-attributes/Feat-01-core-font-attributes-spec.md
+  status: Baselined
+- func_id: 04-03-11
+  id: Feat-02
+  title: 文本装饰与大小写 (decoration/textCase)
+  spec: 04-common-capability/03-common-attributes/11-text-common-attributes/Feat-02-text-decoration-case-spec.md
+  status: Baselined
+- func_id: 04-03-11
+  id: Feat-03
+  title: 文本间距与度量 (letterSpacing/lineHeight/baselineOffset)
+  spec: 04-common-capability/03-common-attributes/11-text-common-attributes/Feat-03-text-spacing-metrics-spec.md
+  status: Baselined
+- func_id: 04-03-11
+  id: Feat-04
+  title: 文本阴影与 OpenType 特性 (textShadow/fontFeature/fontVariations)
+  spec: 04-common-capability/03-common-attributes/11-text-common-attributes/Feat-04-text-shadow-opentype-spec.md
+  status: Baselined
+- func_id: 04-03-11
+  id: Feat-05
+  title: 自适应字体缩放 (minFontSize/maxFontSize/minFontScale/maxFontScale)
+  spec: 04-common-capability/03-common-attributes/11-text-common-attributes/Feat-05-adaptive-font-scaling-spec.md
   status: Baselined
