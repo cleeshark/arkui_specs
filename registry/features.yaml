@@ -1594,3 +1594,68 @@ features:
   title: WithTheme 主题作用域组件全量规格
   spec: 05-ui-components/15-theme-components/01-with-theme/Feat-01-with-theme-full-spec.md
   status: Baselined
+- func_id: 03-04-02
+  id: Feat-01
+  title: Drag initiation and pre-drag state machine
+  spec: 03-engine-framework/04-event-framework/02-drag-framework/Feat-01-drag-initiation-predrag-state-machine-spec.md
+  status: Baselined
+- func_id: 03-04-02
+  id: Feat-02
+  title: Drag source-target routing and lifecycle dispatch
+  spec: 03-engine-framework/04-event-framework/02-drag-framework/Feat-02-drag-source-target-routing-lifecycle-dispatch-spec.md
+  status: Baselined
+- func_id: 03-04-02
+  id: Feat-03
+  title: Drag data transport and drop negotiation
+  spec: 03-engine-framework/04-event-framework/02-drag-framework/Feat-03-drag-data-transport-drop-negotiation-spec.md
+  status: Baselined
+- func_id: 03-04-02
+  id: Feat-04
+  title: Drag preview overlay animation and visual effects
+  spec: 03-engine-framework/04-event-framework/02-drag-framework/Feat-04-drag-preview-overlay-animation-visual-effects-spec.md
+  status: Baselined
+- func_id: 03-04-02
+  id: Feat-05
+  title: Drag spring loading and specialized modes
+  spec: 03-engine-framework/04-event-framework/02-drag-framework/Feat-05-drag-spring-loading-specialized-modes-spec.md
+  status: Baselined
+- func_id: 03-04-02
+  id: Feat-06
+  title: Drag multi-display device and container integration
+  spec: 03-engine-framework/04-event-framework/02-drag-framework/Feat-06-drag-multi-display-device-container-integration-spec.md
+  status: Baselined
+- func_id: 04-04-07
+  id: Feat-01
+  title: Component drag source and target configuration
+  spec: 04-common-capability/04-common-events/07-drag-capability/Feat-01-component-drag-source-target-configuration-spec.md
+  status: Baselined
+- func_id: 04-04-07
+  id: Feat-02
+  title: Component drag lifecycle and event contract
+  spec: 04-common-capability/04-common-events/07-drag-capability/Feat-02-component-drag-lifecycle-event-contract-spec.md
+  status: Baselined
+- func_id: 04-04-07
+  id: Feat-03
+  title: Drag data result and asynchronous transfer
+  spec: 04-common-capability/04-common-events/07-drag-capability/Feat-03-drag-data-result-asynchronous-transfer-spec.md
+  status: Baselined
+- func_id: 04-04-07
+  id: Feat-04
+  title: Drag preview and interaction presentation
+  spec: 04-common-capability/04-common-events/07-drag-capability/Feat-04-drag-preview-interaction-presentation-spec.md
+  status: Baselined
+- func_id: 04-04-07
+  id: Feat-05
+  title: Programmatic drag action and controller APIs
+  spec: 04-common-capability/04-common-events/07-drag-capability/Feat-05-programmatic-drag-action-controller-apis-spec.md
+  status: Baselined
+- func_id: 04-04-07
+  id: Feat-06
+  title: Drop completion feedback and deferred finalization
+  spec: 04-common-capability/04-common-events/07-drag-capability/Feat-06-drop-completion-feedback-deferred-finalization-spec.md
+  status: Baselined
+- func_id: 04-04-07
+  id: Feat-07
+  title: Spring loading and hover detection
+  spec: 04-common-capability/04-common-events/07-drag-capability/Feat-07-spring-loading-hover-detection-spec.md
+  status: Baselined

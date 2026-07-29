@@ -389,7 +389,7 @@ functions:
     id: '02'
     title: 拖拽框架
   path: 03-engine-framework/04-event-framework/02-drag-framework/
-  design: null
+  design: 03-engine-framework/04-event-framework/02-drag-framework/design.md
   status: active
 - id: 03-05-01
   l1:
@@ -818,7 +818,7 @@ functions:
     id: '07'
     title: 拖拽能力
   path: 04-common-capability/04-common-events/07-drag-capability/
-  design: null
+  design: 04-common-capability/04-common-events/07-drag-capability/design.md
   status: active
 - id: 04-04-08
   l1:

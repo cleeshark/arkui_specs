@@ -49,7 +49,7 @@
 | 03 引擎框架层 | 03 资源主题 | 03 Theme框架 | `03-03-03` | `03-engine-framework/03-resource-theme/03-theme-framework/` | [design.md](03-engine-framework/03-resource-theme/03-theme-framework/design.md) | 2 |
 | 03 引擎框架层 | 03 资源主题 | 04 资源动态切换 | `03-03-04` | `03-engine-framework/03-resource-theme/04-resource-dynamic-switching/` | [design.md](03-engine-framework/03-resource-theme/04-resource-dynamic-switching/design.md) | 1 |
 | 03 引擎框架层 | 04 事件框架 | 01 事件基础框架 | `03-04-01` | `03-engine-framework/04-event-framework/01-event-base-framework/` | *待补充* | 0 |
-| 03 引擎框架层 | 04 事件框架 | 02 拖拽框架 | `03-04-02` | `03-engine-framework/04-event-framework/02-drag-framework/` | *待补充* | 0 |
+| 03 引擎框架层 | 04 事件框架 | 02 拖拽框架 | `03-04-02` | `03-engine-framework/04-event-framework/02-drag-framework/` | [design.md](03-engine-framework/04-event-framework/02-drag-framework/design.md) | 6 |
 | 03 引擎框架层 | 05 窗口机制 | 01 窗口机制 | `03-05-01` | `03-engine-framework/05-window-mechanism/01-window-mechanism/` | [design.md](03-engine-framework/05-window-mechanism/01-window-mechanism/design.md) | 4 |
 | 03 引擎框架层 | 05 窗口机制 | 02 子窗机制 | `03-05-02` | `03-engine-framework/05-window-mechanism/02-subwindow-mechanism/` | [design.md](03-engine-framework/05-window-mechanism/02-subwindow-mechanism/design.md) | 3 |
 | 03 引擎框架层 | 06 多实例管理 | 01 多实例管理 | `03-06-01` | `03-engine-framework/06-multi-instance-management/01-multi-instance-management/` | [design.md](03-engine-framework/06-multi-instance-management/01-multi-instance-management/design.md) | 1 |
@@ -82,7 +82,7 @@
 | 04 通用能力层 | 04 通用事件 | 04 组件组合键 | `04-04-04` | `04-common-capability/04-common-events/04-component-shortcuts/` | *待补充* | 0 |
 | 04 通用能力层 | 04 通用事件 | 05 鼠标事件 | `04-04-05` | `04-common-capability/04-common-events/05-mouse-events/` | *待补充* | 0 |
 | 04 通用能力层 | 04 通用事件 | 06 手势能力 | `04-04-06` | `04-common-capability/04-common-events/06-gesture-capability/` | [design.md](04-common-capability/04-common-events/06-gesture-capability/design.md) | 5 |
-| 04 通用能力层 | 04 通用事件 | 07 拖拽能力 | `04-04-07` | `04-common-capability/04-common-events/07-drag-capability/` | *待补充* | 0 |
+| 04 通用能力层 | 04 通用事件 | 07 拖拽能力 | `04-04-07` | `04-common-capability/04-common-events/07-drag-capability/` | [design.md](04-common-capability/04-common-events/07-drag-capability/design.md) | 7 |
 | 04 通用能力层 | 04 通用事件 | 08 手写笔能力 | `04-04-08` | `04-common-capability/04-common-events/08-stylus-capability/` | *待补充* | 0 |
 | 04 通用能力层 | 04 通用事件 | 09 组件相关事件 | `04-04-09` | `04-common-capability/04-common-events/09-component-related-events/` | *待补充* | 0 |
 | 04 通用能力层 | 04 通用事件 | 10 可见区域机制 | `04-04-10` | `04-common-capability/04-common-events/10-visible-area-mechanism/` | *待补充* | 0 |
@@ -484,6 +484,12 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Drag initiation and pre-drag state machine | [Feat-01-drag-initiation-predrag-state-machine-spec.md](03-engine-framework/04-event-framework/02-drag-framework/Feat-01-drag-initiation-predrag-state-machine-spec.md) | Baselined |
+| Feat-02 | Drag source-target routing and lifecycle dispatch | [Feat-02-drag-source-target-routing-lifecycle-dispatch-spec.md](03-engine-framework/04-event-framework/02-drag-framework/Feat-02-drag-source-target-routing-lifecycle-dispatch-spec.md) | Baselined |
+| Feat-03 | Drag data transport and drop negotiation | [Feat-03-drag-data-transport-drop-negotiation-spec.md](03-engine-framework/04-event-framework/02-drag-framework/Feat-03-drag-data-transport-drop-negotiation-spec.md) | Baselined |
+| Feat-04 | Drag preview overlay animation and visual effects | [Feat-04-drag-preview-overlay-animation-visual-effects-spec.md](03-engine-framework/04-event-framework/02-drag-framework/Feat-04-drag-preview-overlay-animation-visual-effects-spec.md) | Baselined |
+| Feat-05 | Drag spring loading and specialized modes | [Feat-05-drag-spring-loading-specialized-modes-spec.md](03-engine-framework/04-event-framework/02-drag-framework/Feat-05-drag-spring-loading-specialized-modes-spec.md) | Baselined |
+| Feat-06 | Drag multi-display device and container integration | [Feat-06-drag-multi-display-device-container-integration-spec.md](03-engine-framework/04-event-framework/02-drag-framework/Feat-06-drag-multi-display-device-container-integration-spec.md) | Baselined |
 
 ### 03-05-01 窗口机制
 
@@ -703,6 +709,13 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Component drag source and target configuration | [Feat-01-component-drag-source-target-configuration-spec.md](04-common-capability/04-common-events/07-drag-capability/Feat-01-component-drag-source-target-configuration-spec.md) | Baselined |
+| Feat-02 | Component drag lifecycle and event contract | [Feat-02-component-drag-lifecycle-event-contract-spec.md](04-common-capability/04-common-events/07-drag-capability/Feat-02-component-drag-lifecycle-event-contract-spec.md) | Baselined |
+| Feat-03 | Drag data result and asynchronous transfer | [Feat-03-drag-data-result-asynchronous-transfer-spec.md](04-common-capability/04-common-events/07-drag-capability/Feat-03-drag-data-result-asynchronous-transfer-spec.md) | Baselined |
+| Feat-04 | Drag preview and interaction presentation | [Feat-04-drag-preview-interaction-presentation-spec.md](04-common-capability/04-common-events/07-drag-capability/Feat-04-drag-preview-interaction-presentation-spec.md) | Baselined |
+| Feat-05 | Programmatic drag action and controller APIs | [Feat-05-programmatic-drag-action-controller-apis-spec.md](04-common-capability/04-common-events/07-drag-capability/Feat-05-programmatic-drag-action-controller-apis-spec.md) | Baselined |
+| Feat-06 | Drop completion feedback and deferred finalization | [Feat-06-drop-completion-feedback-deferred-finalization-spec.md](04-common-capability/04-common-events/07-drag-capability/Feat-06-drop-completion-feedback-deferred-finalization-spec.md) | Baselined |
+| Feat-07 | Spring loading and hover detection | [Feat-07-spring-loading-hover-detection-spec.md](04-common-capability/04-common-events/07-drag-capability/Feat-07-spring-loading-hover-detection-spec.md) | Baselined |
 
 ### 04-04-08 手写笔能力
 
