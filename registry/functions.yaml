@@ -142,7 +142,7 @@ functions:
     id: '04'
     title: 预览器平台适配
   path: 02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/
-  design: null
+  design: 02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/design.md
   status: 待补充
 - id: 02-02-01
   l1:
@@ -1442,7 +1442,7 @@ functions:
     id: '01'
     title: MediaQuery
   path: 04-common-capability/20-media-query/01-media-query/
-  design: null
+  design: 04-common-capability/20-media-query/01-media-query/design.md
   status: active
 - id: 04-21-01
   l1:
@@ -1507,7 +1507,7 @@ functions:
     id: '01'
     title: 像素取整能力
   path: 04-common-capability/24-layout-common-capability/01-pixel-rounding/
-  design: null
+  design: 04-common-capability/24-layout-common-capability/01-pixel-rounding/design.md
   status: active
 - id: 04-25-01
   l1:
@@ -1819,7 +1819,7 @@ functions:
     id: '04'
     title: Grid/GridItem
   path: 05-ui-components/03-scroll-container-components/04-grid-grid-item/
-  design: null
+  design: 05-ui-components/03-scroll-container-components/04-grid-grid-item/design.md
   status: active
 - id: 05-03-05
   l1:
@@ -3470,7 +3470,7 @@ functions:
     id: '05'
     title: 自定义测量/布局
   path: 07-frontend/03-custom-components/05-custom-measure-layout/
-  design: null
+  design: 07-frontend/03-custom-components/05-custom-measure-layout/design.md
   status: active
 - id: 07-03-06
   l1:

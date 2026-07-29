@@ -9,6 +9,21 @@ features:
   title: 平台抽象基类与构建适配
   spec: 02-cross-platform/01-platform-adapter/01-oh-platform-adapter/Feat-01-platform-abstraction-build-spec.md
   status: Baselined
+- func_id: 02-01-04
+  id: Feat-01
+  title: 预览器平台发现与构建配置
+  spec: 02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/Feat-01-previewer-platform-build-spec.md
+  status: Baselined
+- func_id: 02-01-04
+  id: Feat-02
+  title: 预览器运行入口与平台服务替身
+  spec: 02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/Feat-02-previewer-runtime-mock-spec.md
+  status: Baselined
+- func_id: 02-01-04
+  id: Feat-03
+  title: 预览器 SDK 与资源打包
+  spec: 02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/Feat-03-previewer-sdk-packaging-spec.md
+  status: Baselined
 - func_id: 02-02-01
   id: Feat-01
   title: 渲染后端核心架构
@@ -248,6 +263,16 @@ features:
   id: Feat-02
   title: Image Analyzer Overlay 生命周期与跨组件管理
   spec: 04-common-capability/23-ai-capability/01-image-analysis/Feat-02-image-analyzer-overlay-lifecycle-spec.md
+  status: Baselined
+- func_id: 04-20-01
+  id: Feat-01
+  title: MediaQuery 媒体条件匹配与监听生命周期
+  spec: 04-common-capability/20-media-query/01-media-query/Feat-01-media-query-listener-spec.md
+  status: Baselined
+- func_id: 04-24-01
+  id: Feat-01
+  title: 像素取整策略与布局渲染传播
+  spec: 04-common-capability/24-layout-common-capability/01-pixel-rounding/Feat-01-pixel-rounding-policy-propagation-spec.md
   status: Baselined
 - func_id: 04-04-06
   id: Feat-01
@@ -1708,4 +1733,39 @@ features:
   id: Feat-05
   title: 自适应字体缩放 (minFontSize/maxFontSize/minFontScale/maxFontScale)
   spec: 04-common-capability/03-common-attributes/11-text-common-attributes/Feat-05-adaptive-font-scaling-spec.md
+  status: Baselined
+- func_id: 05-03-04
+  id: Feat-01
+  title: Grid 固定行列与单轴滚动布局
+  spec: 05-ui-components/03-scroll-container-components/04-grid-grid-item/Feat-01-grid-fixed-scroll-layout-spec.md
+  status: Baselined
+- func_id: 05-03-04
+  id: Feat-02
+  title: Grid 不规则、自适应与自定义布局
+  spec: 05-ui-components/03-scroll-container-components/04-grid-grid-item/Feat-02-grid-irregular-adaptive-custom-layout-spec.md
+  status: Baselined
+- func_id: 05-03-04
+  id: Feat-03
+  title: Grid 滚动控制、滚动条与事件
+  spec: 05-ui-components/03-scroll-container-components/04-grid-grid-item/Feat-03-grid-scroll-scrollbar-events-spec.md
+  status: Baselined
+- func_id: 05-03-04
+  id: Feat-04
+  title: Grid 编辑模式与拖拽
+  spec: 05-ui-components/03-scroll-container-components/04-grid-grid-item/Feat-04-grid-edit-mode-drag-spec.md
+  status: Baselined
+- func_id: 05-03-04
+  id: Feat-05
+  title: GridItem 布局与选择
+  spec: 05-ui-components/03-scroll-container-components/04-grid-grid-item/Feat-05-grid-item-layout-selection-spec.md
+  status: Baselined
+- func_id: 05-03-04
+  id: Feat-06
+  title: C API 与多范式接口
+  spec: 05-ui-components/03-scroll-container-components/04-grid-grid-item/Feat-06-grid-capi-multi-paradigm-spec.md
+  status: Baselined
+- func_id: 07-03-05
+  id: Feat-01
+  title: 自定义组件测量与子项放置
+  spec: 07-frontend/03-custom-components/05-custom-measure-layout/Feat-01-custom-measure-layout-spec.md
   status: Baselined
