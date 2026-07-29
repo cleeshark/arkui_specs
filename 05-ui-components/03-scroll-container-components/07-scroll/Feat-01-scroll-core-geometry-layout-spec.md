@@ -63,7 +63,7 @@
 作为**应用开发者**，我想要**Scroll 正确测量内容尺寸与可滚动距离**，以便**滚动量计算准确**。
 
 | AC编号 | 验收标准 | 类型 |
-|--------|----------|
+|--------|----------|------|
 | AC-3.1 | WHEN 内容尺寸大于视口 THEN scrollableDistance_=contentExtent-viewPort，可滚动 | 正常 |
 | AC-3.2 | WHEN 内容尺寸≤视口 THEN scrollableDistance_=0，不可滚动（IsPositiveScrollableDistance false） | 边界 |
 | AC-3.3 | WHEN FREE 模式 THEN CreateLayoutAlgorithm 用 freeScroll_ 的 2D offset 构造（`scroll_pattern.h:69-72`） | 正常 |

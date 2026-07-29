@@ -727,7 +727,7 @@ functions:
     id: '11'
     title: 文本通用属性
   path: 04-common-capability/03-common-attributes/11-text-common-attributes/
-  design: null
+  design: 04-common-capability/03-common-attributes/11-text-common-attributes/design.md
   status: active
 - id: 04-04-01
   l1:
@@ -1234,7 +1234,7 @@ functions:
     id: '01'
     title: 字体注册
   path: 04-common-capability/13-font-text/01-font-registration/
-  design: null
+  design: 04-common-capability/13-font-text/01-font-registration/design.md
   status: active
 - id: 04-13-02
   l1:
@@ -1247,7 +1247,7 @@ functions:
     id: '02'
     title: 文本测量
   path: 04-common-capability/13-font-text/02-text-measurement/
-  design: null
+  design: 04-common-capability/13-font-text/02-text-measurement/design.md
   status: active
 - id: 04-14-01
   l1:
@@ -1260,7 +1260,7 @@ functions:
     id: '01'
     title: 文本选择
   path: 04-common-capability/14-input-interaction/01-text-selection/
-  design: null
+  design: 04-common-capability/14-input-interaction/01-text-selection/design.md
   status: active
 - id: 04-14-02
   l1:
@@ -1286,7 +1286,7 @@ functions:
     id: '03'
     title: 文本交互
   path: 04-common-capability/14-input-interaction/03-text-interaction/
-  design: null
+  design: 04-common-capability/14-input-interaction/03-text-interaction/design.md
   status: active
 - id: 04-14-04
   l1:
@@ -1312,7 +1312,7 @@ functions:
     id: '05'
     title: 自动补全能力（AutoFill）
   path: 04-common-capability/14-input-interaction/05-autofill/
-  design: null
+  design: 04-common-capability/14-input-interaction/05-autofill/design.md
   status: active
 - id: 04-15-01
   l1:
