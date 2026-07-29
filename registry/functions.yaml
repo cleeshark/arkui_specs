@@ -142,7 +142,7 @@ functions:
     id: '04'
     title: 预览器平台适配
   path: 02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/
-  design: null
+  design: 02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/design.md
   status: 待补充
 - id: 02-02-01
   l1:
@@ -1442,7 +1442,7 @@ functions:
     id: '01'
     title: MediaQuery
   path: 04-common-capability/20-media-query/01-media-query/
-  design: null
+  design: 04-common-capability/20-media-query/01-media-query/design.md
   status: active
 - id: 04-21-01
   l1:
@@ -1507,7 +1507,7 @@ functions:
     id: '01'
     title: 像素取整能力
   path: 04-common-capability/24-layout-common-capability/01-pixel-rounding/
-  design: null
+  design: 04-common-capability/24-layout-common-capability/01-pixel-rounding/design.md
   status: active
 - id: 04-25-01
   l1:
@@ -1780,7 +1780,7 @@ functions:
     id: '01'
     title: 滚动公共能力
   path: 05-ui-components/03-scroll-container-components/01-scroll-common-capability/
-  design: null
+  design: 05-ui-components/03-scroll-container-components/01-scroll-common-capability/design.md
   status: active
 - id: 05-03-02
   l1:
@@ -1819,7 +1819,7 @@ functions:
     id: '04'
     title: Grid/GridItem
   path: 05-ui-components/03-scroll-container-components/04-grid-grid-item/
-  design: null
+  design: 05-ui-components/03-scroll-container-components/04-grid-grid-item/design.md
   status: active
 - id: 05-03-05
   l1:
@@ -1897,7 +1897,7 @@ functions:
     id: '10'
     title: WaterFlow/FlowItem
   path: 05-ui-components/03-scroll-container-components/10-water-flow-flow-item/
-  design: null
+  design: 05-ui-components/03-scroll-container-components/10-water-flow-flow-item/design.md
   status: active
 - id: 05-04-01
   l1:
@@ -2300,7 +2300,7 @@ functions:
     id: '02'
     title: RichEditor
   path: 05-ui-components/09-text-components/02-rich-editor/
-  design: null
+  design: 05-ui-components/09-text-components/02-rich-editor/design.md
   status: active
 - id: 05-09-03
   l1:
@@ -2365,7 +2365,7 @@ functions:
     id: '07'
     title: SymbolGlyph
   path: 05-ui-components/09-text-components/07-symbol-glyph/
-  design: null
+  design: 05-ui-components/09-text-components/07-symbol-glyph/design.md
   status: active
 - id: 05-09-08
   l1:
@@ -2378,7 +2378,7 @@ functions:
     id: 08
     title: TextInput
   path: 05-ui-components/09-text-components/08-text-input/
-  design: null
+  design: 05-ui-components/09-text-components/08-text-input/design.md
   status: active
 - id: 05-09-09
   l1:
@@ -2391,7 +2391,7 @@ functions:
     id: 09
     title: HyperLink
   path: 05-ui-components/09-text-components/09-hyperlink/
-  design: null
+  design: 05-ui-components/09-text-components/09-hyperlink/design.md
   status: active
 - id: 05-09-10
   l1:
@@ -2404,7 +2404,7 @@ functions:
     id: '10'
     title: 属性字符串
   path: 05-ui-components/09-text-components/10-attributed-string/
-  design: null
+  design: 05-ui-components/09-text-components/10-attributed-string/design.md
   status: active
 - id: 05-10-01
   l1:
@@ -3470,7 +3470,7 @@ functions:
     id: '05'
     title: 自定义测量/布局
   path: 07-frontend/03-custom-components/05-custom-measure-layout/
-  design: null
+  design: 07-frontend/03-custom-components/05-custom-measure-layout/design.md
   status: active
 - id: 07-03-06
   l1:
