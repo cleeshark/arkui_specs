@@ -1819,7 +1819,7 @@ functions:
     id: '04'
     title: Grid/GridItem
   path: 05-ui-components/03-scroll-container-components/04-grid-grid-item/
-  design: null
+  design: 05-ui-components/03-scroll-container-components/04-grid-grid-item/design.md
   status: active
 - id: 05-03-05
   l1:
