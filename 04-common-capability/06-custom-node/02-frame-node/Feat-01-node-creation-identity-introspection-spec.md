@@ -86,7 +86,7 @@
 | AC-4.1 | WHEN 调用 `getId()` THEN 返回用户通过 `.id()` 设置的 inspector id 字符串（propInspectorId_）；未设置时返回 `""` | 正常 |
 | AC-4.2 | WHEN 调用 `getUniqueId()` THEN 返回系统分配的 elementId（MakeUniqueId 单调递增整数）；无效节点返回 `-1` | 正常 |
 | AC-4.3 | WHEN 调用 `getNodeType()` THEN 返回节点 tag 字符串：自定义节点为 `"CustomFrameNode"`，内置组件为组件名（如 `"Text"`/`"Button"`），渲染型自定义组件为 `"__Common__"`；无效节点返回 `""` | 正常 |
-| AC-4.4 | WHEN 节点未设置 `.id()` THEN `getId()` 与 `getUniqueId()` 返回值类型不同（字符串 `""` vs 整数），二者不可互换 | 边界 |
+| AC-4.4 | `getId()` 返回 string、`getUniqueId()` 返回 number——返回类型始终不同（与 `.id()` 设置无关）。WHEN 节点未设置 `.id()` THEN `getId()` 返回 `""`（空串），`getUniqueId()` 返回自动生成的 elementId（>0）——返回值不同，二者不可互换 | 边界 |
 
 ### US-5: 判定节点可修改性
 

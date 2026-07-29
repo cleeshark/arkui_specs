@@ -58,7 +58,7 @@
 | AC-3.1 | WHEN `RenderOptions.selfIdealSize` THEN 设置理想尺寸（默认 {0,0}） | 正常 |
 | AC-3.2 | WHEN `RenderOptions.type` THEN 设置渲染类型（默认 RENDER_TYPE_DISPLAY=0） | 正常 |
 | AC-3.3 | WHEN `RenderOptions.surfaceId` THEN 设置纹理接收 surface（仅 TEXTURE 生效，默认 ""） | 边界 |
-| AC-3.4 | WHEN 静态 `RenderOptions.enableMinimized=true` THEN getFrameNode 返回最小化 FrameNode（默认 false） | 边界 |
+| AC-3.4 | WHEN 静态 `RenderOptions.enableMinimized=true`（默认 false，@since 26.0.0 staticonly）THEN BuilderNode 设 `__isWeak=true`（BuilderNode.ets:361），getFrameNode 返回 `BuilderRootWeakFrameNode`（FrameNode.ets:1210）——一个轻量代理 FrameNode，`isMinimized()` 返回 true、`getRenderNode()` 返回 null、`getChild()` 返回 null（能力最小集，SDK 文档 "smallest set of capabilities"） | 边界 |
 
 ## 验收追溯
 
@@ -81,7 +81,7 @@
 | R-7 | 行为 | RenderOptions.selfIdealSize | 设置理想尺寸 | 默认 {0,0} | AC-3.1 |
 | R-8 | 行为 | RenderOptions.type | 设置渲染类型 | 默认 DISPLAY(0) | AC-3.2 |
 | R-9 | 边界 | RenderOptions.surfaceId | 仅 TEXTURE 生效 | 默认 "" | AC-3.3 |
-| R-10 | 边界 | enableMinimized（staticonly） | getFrameNode 返最小化 FrameNode | 默认 false；API26 staticonly | AC-3.4 |
+| R-10 | 边界 | enableMinimized（staticonly） | BuilderNode 设 __isWeak=true，getFrameNode 返回 BuilderRootWeakFrameNode（轻量代理：isMinimized=true、getRenderNode=null、getChild=null） | 默认 false；@since 26.0.0 staticonly | AC-3.4 |
 
 ## 验证映射
 
@@ -146,7 +146,7 @@
 | 1 | selfIdealSize | 设理想尺寸（默认 {0,0}） | AC-3.1 |
 | 2 | type | 设渲染类型（默认 DISPLAY） | AC-3.2 |
 | 3 | surfaceId | 仅 TEXTURE 生效（默认 ""） | AC-3.3 |
-| 4 | enableMinimized(staticonly) | 返最小化 FrameNode | AC-3.4 |
+| 4 | enableMinimized(staticonly) | getFrameNode 返回 BuilderRootWeakFrameNode（轻量代理：isMinimized=true、getRenderNode=null、getChild=null） | AC-3.4 |
 
 ## 兼容性声明
 
@@ -169,7 +169,7 @@
 | 关键约束 | 约束说明 | 影响 AC |
 |----------|----------|---------|
 | GC 终结回收 | 构造时注册 BuilderNodeFinalizationRegisterProxy | AC-1.1 |
-| surfaceId 仅 TEXTURE | 非 TEXTURE 时 surfaceId 不生效 | AC-3.3 |
+| surfaceId 仅 TEXTURE | 非 TEXTURE 时 surfaceId 不应用 | AC-3.3 |
 
 ## 非功能性需求
 

@@ -75,8 +75,8 @@
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
 | AC-4.1 | WHEN 调用 ModifierUtils.isInstanceOf<T>(instance, componentName) THEN 返回 boolean 表示是否为该组件的命令式 Modifier（ModifierUtils.d.ts:29） | 正常 |
-| AC-4.2 | WHEN API < 26.0.0 THEN isInstanceOf 不可用（@since 26.0.0 dynamiconly），仅动态范式 26.0.0 后可用 | 边界 |
-| AC-4.3 | WHEN 静态范式 THEN ModifierUtils/isInstanceOf 不可用（dynamiconly） | 边界 |
+| AC-4.2 | WHEN API < 26.0.0 THEN isInstanceOf 在 SDK 类型未声明（@since 26.0.0 dynamiconly），开发者无法调用。**无运行时 API 版本门控**——isInstanceOf 是纯 JS 方法（modifier_utilities.ts:196），仅做 constructor.name 字符串比较，不检查 API 版本 | 边界 |
+| AC-4.3 | WHEN 静态范式 THEN ModifierUtils/isInstanceOf 静态 SDK 类型未声明（dynamiconly），开发者无法调用 | 边界 |
 
 ## 验收追溯
 
@@ -104,8 +104,8 @@
 | R-9 | 行为 | putDirtyModifier | 置 stageValue 后调 applyPeer | arkModifier.js:92 | AC-3.2 |
 | R-10 | 恢复 | 属性变更 | applySetOnChange 标记后下次 applyNormalAttribute 重应用 | 自动重应用 | AC-3.3 |
 | R-11 | 行为 | isInstanceOf(instance, componentName) | 返回 boolean 判定是否该组件命令式 Modifier | @since 26.0.0 dynamiconly | AC-4.1 |
-| R-12 | 边界 | API < 26.0.0 | isInstanceOf 不可用 | 版本门控 | AC-4.2 |
-| R-13 | 边界 | 静态范式 | ModifierUtils/isInstanceOf 不可用（dynamiconly） | 仅动态 | AC-4.3 |
+| R-12 | 边界 | API < 26.0.0 | SDK 类型未声明 isInstanceOf，开发者无法调用 | 类型级约束，非运行时门控（isInstanceOf 纯 JS 方法无 API 检查） | AC-4.2 |
+| R-13 | 边界 | 静态范式 | ModifierUtils/isInstanceOf 静态 SDK 类型未声明（dynamiconly） | 类型级约束 | AC-4.3 |
 
 ## 验证映射
 
@@ -166,7 +166,7 @@
 | 1 | applyNormalAttribute | applyAndMergeModifier merge + applyPeer | AC-2.1~2.2 |
 | 2 | 属性 undefined | applyPeer isUndefined=true | AC-2.4 |
 | 3 | isInstanceOf 匹配 | 返回 true | AC-4.1 |
-| 4 | API < 26.0.0 | isInstanceOf 不可用 | AC-4.2 |
+| 4 | API < 26.0.0 | SDK 类型未声明 isInstanceOf，开发者无法调用（无运行时 API 门控） | AC-4.2 |
 
 ---
 
@@ -176,7 +176,7 @@
 - **配置文件格式变更:** 否
 - **数据存储格式变更:** 否
 - **最低支持版本:** ModifierWithKey/applyAndMergeModifier 随命令式类动态 @since 12；ModifierUtils.isInstanceOf 动态 @since 26.0.0 dynamiconly
-- **API 版本号策略:** ModifierUtils/isInstanceOf @since 26.0.0 dynamiconly（仅动态，静态不可用）
+- **API 版本号策略:** ModifierUtils/isInstanceOf @since 26.0.0 dynamiconly（静态 SDK 类型未声明，仅动态可用）
 
 ## 架构约束
 
@@ -213,7 +213,7 @@
 | 多窗口/分屏 | 否 | — | — |
 | 多用户 | 否 | — | — |
 | 版本升级 | 是 | ModifierUtils/isInstanceOf @since 26.0.0 dynamiconly | AC-4.2~4.3 |
-| 生态兼容 | 是 | dynamiconly 限制：静态范式不可用 | AC-4.3 |
+| 生态兼容 | 是 | dynamiconly 限制：静态 SDK 类型未声明 | AC-4.3 |
 
 ## Spec 自审清单
 

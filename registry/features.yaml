@@ -1996,8 +1996,8 @@ features:
   status: Baselined
 - func_id: 04-06-05
   id: Feat-05
-  title: NodeContent 与 Transfer
-  spec: 04-common-capability/06-custom-node/05-component-content/Feat-05-node-content-transfer-spec.md
+  title: Transfer 转换变体
+  spec: 04-common-capability/06-custom-node/05-component-content/Feat-05-transfer-dynamic-static-conversion-spec.md
   status: Baselined
 - func_id: 04-06-07
   id: Feat-01

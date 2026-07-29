@@ -80,7 +80,7 @@
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
 | AC-4.1 | WHEN API ≥ 26.0.0 THEN 自定义组件（@Component）支持设置与读取自定义属性（动态 common.d.ts:19567-19571 文档） | 正常 |
-| AC-4.2 | WHEN API < 26.0.0 THEN 自定义组件不支持自定义属性 | 边界 |
+| AC-4.2 | WHEN API < 26.0.0 THEN SDK 文档声明自定义组件不支持 customProperty（common.d.ts:19567-19571），但 JsCustomProperty（js_view_abstract.cpp:13137）**无运行时 API 版本检查或组件类型检查**——实际可设置（无运行时强制，文档声明与实现不一致） | 边界 |
 | AC-4.3 | WHEN 静态范式 THEN common.static.d.ets:11482 仍注明 "does not work for custom components"（文档未同步至 26.0.0 变更） | 边界 |
 
 ## 验收追溯
@@ -114,7 +114,7 @@
 | R-14 | 异常 | node/name null | 返回 ARKUI_ERROR_CODE_PARAM_INVALID | — | AC-3.4 |
 | R-15 | 恢复 | handle 使用后 | 调用方用 OH_ArkUI_CustomProperty_Destroy 释放 | @since 14 | AC-3.5 |
 | R-16 | 行为 | API ≥ 26.0.0 + 自定义组件 | 支持设置与读取 | 动态文档 | AC-4.1 |
-| R-17 | 边界 | API < 26.0.0 + 自定义组件 | 不支持 | 版本门控 | AC-4.2 |
+| R-17 | 边界 | API < 26.0.0 + 自定义组件 | SDK 文档声明不支持，但 JsCustomProperty 无运行时 API 门控或组件类型检查——实际可设置 | 文档声明，非运行时强制 | AC-4.2 |
 | R-18 | 边界 | 静态范式 | common.static.d.ets 仍注明不支持自定义组件 | 文档未同步 | AC-4.3 |
 
 ## 验证映射

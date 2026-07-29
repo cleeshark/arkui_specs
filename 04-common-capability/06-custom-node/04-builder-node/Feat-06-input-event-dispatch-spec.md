@@ -39,7 +39,7 @@
 |---------|----------|------|
 | AC-1.1 | WHEN `postTouchEvent(event)` THEN 将事件分发至 FrameNode；坐标 px，转换到父坐标系 | 正常 |
 | AC-1.2 | WHEN 同一 timestamp 多次调用 THEN 仅第一次有效 | 边界 |
-| AC-1.3 | WHEN UIExtensionComponent THEN 不支持 | 边界 |
+| AC-1.3 | WHEN UIExtensionComponent THEN PostTouchEventToFrameNode（node_common_modifier.cpp:9421-9455）无 UIExtensionComponent 类型检查，事件照常 post；若 UIExtensionComponent 无组件响应 → 返回 ARKUI_ERROR_CODE_POST_CLONED_NO_COMPONENT_HIT_TO_RESPOND_TO_THE_EVENT。SDK 文档（BuilderNode.d.ts）注明事件分发不适用，但代码无类型拦截 | 边界 |
 | AC-1.4 | WHEN 事件被消费 THEN 返回 true | 正常 |
 
 ### US-2: 输入事件分发
@@ -73,7 +73,7 @@
 |--------|------|----------|----------|-----------|--------|
 | R-1 | 行为 | postTouchEvent(event) | 分发至 FrameNode；px 坐标转父系 | — | AC-1.1 |
 | R-2 | 边界 | 同 timestamp 多次 | 仅第一次有效 | — | AC-1.2 |
-| R-3 | 边界 | UIExtensionComponent | 不支持 | — | AC-1.3 |
+| R-3 | 边界 | UIExtensionComponent | 无类型检查；PostEvent 失败→返回 ARKUI_ERROR_CODE_POST_CLONED_NO_COMPONENT_HIT_TO_RESPOND_TO_THE_EVENT | SDK 文档注明不适用，代码无拦截 | AC-1.3 |
 | R-4 | 行为 | 事件被消费 | 返回 true | — | AC-1.4 |
 | R-5 | 行为 | postInputEvent(event) | 分发事件；窗口坐标系 | @since 20 | AC-2.1 |
 | R-6 | 边界 | 鼠标左键 | 自动转触摸 | — | AC-2.2 |
@@ -124,7 +124,7 @@
 |---|----------|----------|---------|
 | 1 | postTouchEvent | px 转父系，返是否消费 | AC-1.1,1.4 |
 | 2 | 同 timestamp 多次 | 仅第一次 | AC-1.2 |
-| 3 | UIExtensionComponent | 不支持 | AC-1.3 |
+| 3 | UIExtensionComponent | 无类型检查；无组件响应→返回错误码 | AC-1.3 |
 | 4 | postInputEvent 鼠标左键 | 自动转触摸 | AC-2.2 |
 | 5 | WithStrategy | 多次转发 | AC-3.1 |
 
@@ -140,7 +140,7 @@
 
 | 风险 | 说明 | 来源 |
 |------|------|------|
-| UIExtensionComponent 不支持 | 事件分发不适用 | BuilderNode.d.ts |
+| UIExtensionComponent 无类型拦截 | 事件分发可能无组件响应→返回错误码 | BuilderNode.d.ts |
 | postInputEvent 动态@20/静态@26 版本差 | 跨范式版本差异 | .d.ts/.static.d.ets |
 | 同 timestamp 仅一次 | postTouchEvent 限制 | BuilderNode.d.ts |
 

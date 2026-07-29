@@ -38,7 +38,7 @@
 | AC 编号 | 验收标准 | 类型 |
 |---------|----------|------|
 | AC-1.1 | WHEN RenderOptions.type=RENDER_TYPE_TEXTURE 且为 XComponentNode 或根为自定义组件的 BuilderNode THEN 纹理渲染生效 | 正常 |
-| AC-1.2 | WHEN 根组件不在支持列表 THEN 纹理渲染不生效 | 边界 |
+| AC-1.2 | WHEN 根组件不在支持列表 THEN changeRenderType 返回 false（静默无抛错，纹理渲染不应用） | 边界 |
 | AC-1.3 | WHEN type=RENDER_TYPE_DISPLAY（默认）THEN 普通显示渲染 | 正常 |
 
 ### US-2: surface 与最小化
@@ -47,7 +47,7 @@
 | AC 编号 | 验收标准 | 类型 |
 |---------|----------|------|
 | AC-2.1 | WHEN RenderOptions.surfaceId 设值且 type=TEXTURE THEN 作为纹理接收 surface（如 OH_NativeImage） | 正常 |
-| AC-2.2 | WHEN 非 TEXTURE THEN surfaceId 不生效 | 边界 |
+| AC-2.2 | WHEN 非 TEXTURE THEN surfaceId 不应用（changeRenderType 不涉及 surfaceId 设置） | 边界 |
 | AC-2.3 | WHEN 静态 RenderOptions.enableMinimized=true THEN getFrameNode 返回最小化 FrameNode（暴露最小能力集） | 边界 |
 
 ## 验收追溯
@@ -62,10 +62,10 @@
 | 规则ID | 类型 | 触发条件 | 预期行为 | 边界/约束 | 关联AC |
 |--------|------|----------|----------|-----------|--------|
 | R-1 | 行为 | type=TEXTURE 且 XComponentNode 或根为自定义组件的 BuilderNode | 纹理渲染生效 | 支持根组件列表 | AC-1.1 |
-| R-2 | 边界 | 根组件不在支持列表 | 纹理不生效 | Button/Text/Image/Web 等；API12 扩展 | AC-1.2 |
+| R-2 | 边界 | 根组件不在支持列表 | changeRenderType 返回 false（静默无抛错，纹理不应用） | Button/Text/Image/Web 等；API12 扩展 | AC-1.2 |
 | R-3 | 行为 | type=DISPLAY（默认） | 普通显示渲染 | 默认值 | AC-1.3 |
 | R-4 | 行为 | surfaceId + TEXTURE | 作为纹理接收 surface | 如 OH_NativeImage | AC-2.1 |
-| R-5 | 边界 | 非 TEXTURE | surfaceId 不生效 | — | AC-2.2 |
+| R-5 | 边界 | 非 TEXTURE | surfaceId 不应用（changeRenderType 不涉及 surfaceId） | — | AC-2.2 |
 | R-6 | 边界 | enableMinimized(staticonly)=true | getFrameNode 返最小化 FrameNode | 默认 false；API26 staticonly | AC-2.3 |
 
 ## 验证映射
@@ -107,7 +107,7 @@
 | # | 触发条件 | 预期行为 | 关联 AC |
 |---|----------|----------|---------|
 | 1 | TEXTURE + 支持根 | 纹理生效 | AC-1.1 |
-| 2 | 根不支持 | 不生效 | AC-1.2 |
+| 2 | 根不支持 | changeRenderType 返回 false（静默无抛错） | AC-1.2 |
 | 3 | DISPLAY | 普通渲染 | AC-1.3 |
 | 4 | surfaceId+TEXTURE | 纹理接收 surface | AC-2.1 |
 | 5 | enableMinimized | 最小化 FrameNode | AC-2.3 |
@@ -132,7 +132,7 @@
 | 关键约束 | 约束说明 | 影响 AC |
 |----------|----------|---------|
 | TEXTURE 生效条件 | XComponentNode 或根为自定义组件的 BuilderNode | AC-1.1 |
-| surfaceId 依赖 TEXTURE | 非 TEXTURE 不生效 | AC-2.2 |
+| surfaceId 依赖 TEXTURE | 非 TEXTURE surfaceId 不应用 | AC-2.2 |
 
 ## 非功能性需求
 

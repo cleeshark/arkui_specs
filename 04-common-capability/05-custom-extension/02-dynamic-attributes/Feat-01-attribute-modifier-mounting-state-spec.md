@@ -40,7 +40,7 @@
 | AC-1.1 | WHEN 调用 `.attributeModifier(modifier)` 且 modifier 实现了 AttributeModifier<T> THEN modifier 绑定到组件 peer，后续渲染时由 applyUIAttributes 分发 | 正常 |
 | AC-1.2 | WHEN 动态范式调用 THEN 不经 declarative_frontend C++（js_view_abstract.cpp 无 attributeModifier 绑定），经 ark_component TS peer + 原生模块装配 | 正常 |
 | AC-1.3 | WHEN 静态范式调用 THEN 经每组件 static.d.ets 声明的联合类型重载（如 `AttributeModifier<ButtonAttribute> \| AttributeModifier<CommonMethod> \| undefined`）装配 | 正常 |
-| AC-1.4 | WHEN 动态范式传入 undefined THEN 动态签名 `attributeModifier(modifier: AttributeModifier<T>): T` 无 undefined 重载（common.d.ts:25179），undefined 行为不保证 | 边界 |
+| AC-1.4 | WHEN 动态范式传入 undefined THEN attributeModifierFunc 检测 `modifier === undefined \|\| modifier === null`（ArkComponent.ts:6391），输出 debug 日志 "custom modifier is undefined" 并 return——静默 no-op，不抛错、不移除已绑 modifier、不设 null、无任何效果（与静态签名 `\| undefined` 暗示的移除语义不同，见风险 R-undefined-noop） | 边界 |
 
 ### US-2: UI 状态监听注册
 
@@ -84,7 +84,7 @@
 | R-1 | 行为 | 调用 `.attributeModifier(modifier)` 且 modifier 实现 AttributeModifier<T> | modifier 绑定到组件 peer，渲染时由 applyUIAttributes 分发 | modifier 为实现接口的对象 | AC-1.1 |
 | R-2 | 行为 | 动态范式装配 | 经 ark_component TS peer + 原生模块，不经 declarative_frontend C++ | js_view_abstract.cpp 无 attributeModifier 绑定 | AC-1.2 |
 | R-3 | 行为 | 静态范式装配 | 经每组件 static.d.ets 联合类型重载装配 | 联合含 AttributeModifier<T> \| AttributeModifier<CommonMethod> \| undefined | AC-1.3 |
-| R-4 | 边界 | 动态传入 undefined | 动态签名无 undefined 重载，行为不保证 | 动态 `attributeModifier(modifier: AttributeModifier<T>): T` | AC-1.4 |
+| R-4 | 边界 | 动态传入 undefined/null | attributeModifierFunc 检测 modifier===undefined\|\|null → debug 日志 "custom modifier is undefined" + return（静默 no-op，不抛错/不移除已绑 modifier/不设 null） | ArkComponent.ts:6391-6394；各组件 attributeModifier 均 call attributeModifierFunc | AC-1.4 |
 | R-5 | 行为 | applyUIAttributesInit | 依次检查 5 个状态态 apply* 是否 !== undefined，已定义者 OR UI_STATE_* 位 | Hovered/Pressed/Focused/Disabled/Selected | AC-2.1 |
 | R-6 | 行为 | 状态位计算完成 | 调 setSupportedUIState(nativeNode, state) 注册监听 | 经 getUINativeModule 原生桥 | AC-2.2 |
 | R-7 | 边界 | modifier 仅定义 applyNormalAttribute | state=0，不监听状态态，仅 applyNormalAttribute 调用 | 无状态态 apply* | AC-2.3 |
@@ -150,13 +150,14 @@
 | 1 | modifier 实现 AttributeModifier<T> | 绑定到 peer，渲染时分发 | AC-1.1 |
 | 2 | 动态范式 | 经 ark_component TS + 原生模块 | AC-1.2 |
 | 3 | 静态范式 | 经组件 static.d.ets 联合重载 | AC-1.3 |
-| 4 | 动态 undefined | 行为不保证（无重载） | AC-1.4 |
+| 4 | 动态 undefined | 静默 no-op（debug 日志 + return，不移除/不设 null） | AC-1.4 |
 
 ---
 
 ## 兼容性声明
 
 - **已有 API 行为变更:** 否。attributeModifier 自动态 API 11/12、静态 API 23 起稳定。
+- **动态 undefined 行为与静态签名不一致:** 动态 attributeModifierFunc 对 undefined/null 静默 no-op（debug 日志 + return，不移除已绑 modifier）；静态签名 `attributeModifier(modifier: AttributeModifier<T> | undefined): this`（common.static.d.ets）含 undefined 暗示移除语义。动态实际为 no-op 而非 removal——开发者不可依赖传 undefined 移除已绑 modifier（见 AC-1.4、R-4）。
 - **配置文件格式变更:** 否
 - **数据存储格式变更:** 否
 - **最低支持版本:** 动态 API 11（@atomicservice 12），静态 API 23
@@ -196,7 +197,7 @@
 | 深色模式 | 否 | — | — |
 | 多窗口/分屏 | 否 | — | — |
 | 多用户 | 否 | — | — |
-| 版本升级 | 是 | 动态 11/12、静态 23 引入；applyHoveredAttribute 26.0.0 | AC-1.4 |
+| 版本升级 | 是 | 动态 11/12、静态 23 引入；applyHoveredAttribute 26.0.0 | AC-3.1, AC-3.2 |
 | 生态兼容 | 是 | @crossplatform | — |
 
 ## Spec 自审清单

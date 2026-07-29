@@ -813,7 +813,7 @@
 | Feat-02 | 更新配置冻结 | [Feat-02-update-config-freeze-spec.md](04-common-capability/06-custom-node/05-component-content/Feat-02-update-config-freeze-spec.md) | Baselined |
 | Feat-03 | 复用回收 | [Feat-03-reuse-recycle-spec.md](04-common-capability/06-custom-node/05-component-content/Feat-03-reuse-recycle-spec.md) | Baselined |
 | Feat-04 | ReactiveComponentContent | [Feat-04-reactive-component-content-spec.md](04-common-capability/06-custom-node/05-component-content/Feat-04-reactive-component-content-spec.md) | Baselined |
-| Feat-05 | NodeContent 与 Transfer | [Feat-05-node-content-transfer-spec.md](04-common-capability/06-custom-node/05-component-content/Feat-05-node-content-transfer-spec.md) | Baselined |
+| Feat-05 | Transfer 转换变体 | [Feat-05-transfer-dynamic-static-conversion-spec.md](04-common-capability/06-custom-node/05-component-content/Feat-05-transfer-dynamic-static-conversion-spec.md) | Baselined |
 
 ### 04-06-06 NodeAdapter
 

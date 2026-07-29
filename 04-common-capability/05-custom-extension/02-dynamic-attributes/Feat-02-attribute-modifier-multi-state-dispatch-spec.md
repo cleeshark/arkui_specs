@@ -66,7 +66,7 @@
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
 | AC-3.1 | WHEN API ≥ 26.0.0 且 modifier 定义 applyHoveredAttribute THEN 悬停态时被调用（动态 common.d.ts:18567 @since 26.0.0 dynamic） | 正常 |
-| AC-3.2 | WHEN API < 26.0.0 THEN applyHoveredAttribute 不可用，modifier 不定义则 applyUIAttributesInit 不置 UI_STATE_HOVERED 位，悬停态不监听不应用 | 边界 |
+| AC-3.2 | WHEN API < 26.0.0 THEN applyHoveredAttribute 在 SDK 类型中未声明（@since 26.0.0 dynamic），开发者无法声明该方法 → modifier 对象不含 → applyUIAttributesInit 不置 UI_STATE_HOVERED 位。**无运行时 API 版本门控**——applyUIAttributesInit 仅检查 `modifier.applyHoveredAttribute !== undefined`（ArkComponent.ts:40-42），不检查 API 版本；若 modifier 对象含该方法则无论 API 版本都会使用 | 边界 |
 | AC-3.3 | WHEN 静态 API ≥ 26.0.0 THEN applyHoveredAttribute @since 26.0.0 static（common.static.d.ets:10846），AttributeModifierState.HOVERED=1<<4（enums.static.d.ets:4835 @since 26.0.0 staticonly） | 正常 |
 
 ### US-4: 静态范式状态变化重应用
@@ -107,7 +107,7 @@
 | R-9 | 边界 | 状态位未命中 | 该态 apply* 不调用，即使已定义 | currentUIState & 位 == 0 | AC-2.6 |
 | R-10 | 边界 | 状态位命中但 apply* 未定义 | 该态不调用 | 双条件缺一不可 | AC-2.7 |
 | R-11 | 行为 | API ≥ 26.0.0 + applyHoveredAttribute 定义 + 悬停态 | 调用 applyHoveredAttribute | @since 26.0.0 dynamic | AC-3.1 |
-| R-12 | 边界 | API < 26.0.0 | applyHoveredAttribute 不可用，不置 UI_STATE_HOVERED 位，悬停不监听 | 版本门控 | AC-3.2 |
+| R-12 | 边界 | API < 26.0.0 | applyHoveredAttribute 在 SDK 类型未声明（@since 26.0.0），开发者无法声明 → modifier 不含 → 不置 UI_STATE_HOVERED | 类型级约束，非运行时门控（applyUIAttributesInit 仅检查方法存在性，不检查 API 版本） | AC-3.2 |
 | R-13 | 行为 | 静态 applyHoveredAttribute | @since 26.0.0 static；HOVERED=1<<4 @since 26.0.0 staticonly | 与动态对齐 | AC-3.3 |
 | R-14 | 行为 | 静态 applyUIAttributes(modifier, attributeSet, state) | applyNormalAttribute 后按 state & UI_STATE_* 调状态态 | 与动态同构 | AC-4.1 |
 | R-15 | 行为 | 静态状态变化 | applyUIAttributesUpdate 按新 state 重应用对应 apply* | 声明式重应用 | AC-4.2 |
@@ -119,7 +119,7 @@
 |------|------------|----------|----------|
 | VM-1 | R-1~R-3, AC-1.1~1.3 | 单测 | applyNormalAttribute 始终先调 |
 | VM-2 | R-4~R-10, AC-2.1~2.7 | 单测 | 5 状态态双条件调用 |
-| VM-3 | R-11~R-13, AC-3.1~3.3 | XTS/契约 | applyHoveredAttribute 版本门控 |
+| VM-3 | R-11~R-13, AC-3.1~3.3 | XTS/契约 | applyHoveredAttribute 类型级约束（无运行时门控） |
 | VM-4 | R-14~R-16, AC-4.1~4.3 | 单测 | 静态状态变化重应用 |
 | VM-5 | 全量 | XTS/集成 | 状态驱动属性端到端 |
 
@@ -175,7 +175,7 @@
 | 1 | applyNormalAttribute 定义 | 始终调用，先于状态态 | AC-1.1 |
 | 2 | 状态位命中 && 方法定义 | 调用对应 apply* | AC-2.1~2.5 |
 | 3 | 状态位未命中 | 不调用 | AC-2.6 |
-| 4 | API < 26.0.0 | applyHoveredAttribute 不可用 | AC-3.2 |
+| 4 | API < 26.0.0 | SDK 类型未声明 applyHoveredAttribute，开发者无法声明 → modifier 不含 → 不置位（无运行时 API 门控） | AC-3.2 |
 | 5 | 静态状态变化 | applyUIAttributesUpdate 重应用 | AC-4.2 |
 
 ---
@@ -194,7 +194,7 @@
 |----------|----------|---------|
 | Normal 无条件 | applyNormalAttribute 始终调，先于状态态 | AC-1.1, AC-1.3 |
 | 双条件调用 | 状态位命中 && 方法定义 | AC-2.1~2.7 |
-| Hovered 版本门控 | API 26.0.0 后增 | AC-3.2 |
+| Hovered 类型级约束 | API 26.0.0 后增（类型级，非运行时门控） | AC-3.2 |
 | 静态重应用 | applyUIAttributesUpdate 状态变化重应用 | AC-4.2 |
 
 ## 非功能性需求

@@ -55,7 +55,7 @@
 | AC-2.1 | WHEN 组件 Pattern 未重写 IsSupportDrawModifier THEN 默认返回 true，组件支持 DrawModifier | 正常 |
 | AC-2.2 | WHEN 组件为 Canvas/EffectComponent/DistortionComponent/Video/VideoStateMachine/UnionEffectContainer THEN Pattern 重写 IsSupportDrawModifier 返回 false，不支持 DrawModifier | 正常 |
 | AC-2.3 | WHEN 不支持 DrawModifier 的组件调用 `.drawModifier(modifier)` THEN JsDrawModifier 静默 return，不创建 DrawModifier、不挂载、无日志、无错误码 | 异常 |
-| AC-2.4 | WHEN 旧（非 NG）模型调用 SetDrawModifier THEN view_abstract_model_impl.h 为空实现 `{}`，不生效 | 异常 |
+| AC-2.4 | WHEN 旧（非 NG）模型调用 SetDrawModifier THEN view_abstract_model_impl.h 为空实现 `{}`，DrawModifier 不挂载（无操作） | 异常 |
 
 ### US-3: API 版本分支与移除语义
 
