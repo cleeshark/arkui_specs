@@ -239,9 +239,19 @@ features:
   title: 焦点属性
   spec: 04-common-capability/03-common-attributes/03-basic-attributes/Feat-05-focus-attribute-spec.md
   status: Baselined
+- func_id: 04-03-04
+  id: Feat-01
+  title: 悬停交互反馈
+  spec: null
+  status: Draft
+- func_id: 04-03-04
+  id: Feat-02
+  title: 点击交互反馈
+  spec: null
+  status: Draft
 - func_id: 04-03-07
   id: Feat-01
-  title: 状态效果
+  title: 多态样式
   spec: 04-common-capability/03-common-attributes/07-style-attributes/Feat-01-state-effect-spec.md
   status: Baselined
 - func_id: 04-03-07
@@ -298,6 +308,61 @@ features:
   id: Feat-05
   title: 手势识别异常恢复增强
   spec: 04-common-capability/04-common-events/06-gesture-capability/Feat-05-gesture-recognizer-recovery-spec.md
+  status: Draft
+- func_id: 04-04-09
+  id: Feat-01
+  title: 组件挂载与显隐生命周期事件
+  spec: null
+  status: Draft
+- func_id: 04-04-09
+  id: Feat-02
+  title: 组件区域与尺寸变化事件
+  spec: null
+  status: Draft
+- func_id: 04-04-10
+  id: Feat-01
+  title: 精确可见区域变化监听
+  spec: null
+  status: Draft
+- func_id: 04-04-10
+  id: Feat-02
+  title: 近似可见区域变化监听
+  spec: null
+  status: Draft
+- func_id: 04-04-11
+  id: Feat-01
+  title: 按键意图归一化（KeyIntention / IntentionCode）
+  spec: null
+  status: Draft
+- func_id: 04-09-01
+  id: Feat-01
+  title: 焦点树与节点状态模型
+  spec: null
+  status: Draft
+- func_id: 04-09-01
+  id: Feat-02
+  title: 焦点请求、清除与切换事务
+  spec: null
+  status: Draft
+- func_id: 04-09-01
+  id: Feat-03
+  title: 焦点导航与遍历算法
+  spec: null
+  status: Draft
+- func_id: 04-09-01
+  id: Feat-04
+  title: 焦点域、分组与优先级
+  spec: null
+  status: Draft
+- func_id: 04-09-01
+  id: Feat-05
+  title: 默认焦点、FocusView 与焦点恢复
+  spec: null
+  status: Draft
+- func_id: 04-09-01
+  id: Feat-06
+  title: 焦点激活与视觉指示
+  spec: null
   status: Draft
 - func_id: 05-01-01
   id: Feat-01
@@ -1222,6 +1287,16 @@ features:
 - func_id: 04-13-02
   id: Feat-03
   title: 组件级行级度量查询能力
+  spec: null
+  status: Draft
+- func_id: 04-11-01
+  id: Feat-01
+  title: 组件几何信息查询
+  spec: null
+  status: Draft
+- func_id: 04-11-01
+  id: Feat-02
+  title: 形状区域图像项筛选
   spec: null
   status: Draft
 - func_id: 04-11-02

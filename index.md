@@ -68,7 +68,7 @@
 | 04 通用能力层 | 03 通用属性 | 01 布局属性 | `04-03-01` | `04-common-capability/03-common-attributes/01-layout-attributes/` | [design.md](04-common-capability/03-common-attributes/01-layout-attributes/design.md) | 3 |
 | 04 通用能力层 | 03 通用属性 | 02 视效属性 | `04-03-02` | `04-common-capability/03-common-attributes/02-visual-effect-attributes/` | [design.md](04-common-capability/03-common-attributes/02-visual-effect-attributes/design.md) | 1 |
 | 04 通用能力层 | 03 通用属性 | 03 基础属性 | `04-03-03` | `04-common-capability/03-common-attributes/03-basic-attributes/` | [design.md](04-common-capability/03-common-attributes/03-basic-attributes/design.md) | 5 |
-| 04 通用能力层 | 03 通用属性 | 04 交互属性 | `04-03-04` | `04-common-capability/03-common-attributes/04-interaction-attributes/` | *待补充* | 0 |
+| 04 通用能力层 | 03 通用属性 | 04 交互属性 | `04-03-04` | `04-common-capability/03-common-attributes/04-interaction-attributes/` | *待补充* | 2 |
 | 04 通用能力层 | 03 通用属性 | 05 弹窗类属性 | `04-03-05` | `04-common-capability/03-common-attributes/05-popup-attributes/` | [design.md](04-common-capability/03-common-attributes/05-popup-attributes/design.md) | 1 |
 | 04 通用能力层 | 03 通用属性 | 06 模态属性 | `04-03-06` | `04-common-capability/03-common-attributes/06-modal-attributes/` | [design.md](04-common-capability/03-common-attributes/06-modal-attributes/design.md) | 1 |
 | 04 通用能力层 | 03 通用属性 | 07 样式属性 | `04-03-07` | `04-common-capability/03-common-attributes/07-style-attributes/` | [design.md](04-common-capability/03-common-attributes/07-style-attributes/design.md) | 2 |
@@ -84,9 +84,9 @@
 | 04 通用能力层 | 04 通用事件 | 06 手势能力 | `04-04-06` | `04-common-capability/04-common-events/06-gesture-capability/` | [design.md](04-common-capability/04-common-events/06-gesture-capability/design.md) | 5 |
 | 04 通用能力层 | 04 通用事件 | 07 拖拽能力 | `04-04-07` | `04-common-capability/04-common-events/07-drag-capability/` | *待补充* | 0 |
 | 04 通用能力层 | 04 通用事件 | 08 手写笔能力 | `04-04-08` | `04-common-capability/04-common-events/08-stylus-capability/` | *待补充* | 0 |
-| 04 通用能力层 | 04 通用事件 | 09 组件相关事件 | `04-04-09` | `04-common-capability/04-common-events/09-component-related-events/` | *待补充* | 0 |
-| 04 通用能力层 | 04 通用事件 | 10 可见区域机制 | `04-04-10` | `04-common-capability/04-common-events/10-visible-area-mechanism/` | *待补充* | 0 |
-| 04 通用能力层 | 04 通用事件 | 11 交互归一化 | `04-04-11` | `04-common-capability/04-common-events/11-interaction-normalization/` | *待补充* | 0 |
+| 04 通用能力层 | 04 通用事件 | 09 组件相关事件 | `04-04-09` | `04-common-capability/04-common-events/09-component-related-events/` | *待补充* | 2 |
+| 04 通用能力层 | 04 通用事件 | 10 可见区域机制 | `04-04-10` | `04-common-capability/04-common-events/10-visible-area-mechanism/` | *待补充* | 2 |
+| 04 通用能力层 | 04 通用事件 | 11 交互归一化 | `04-04-11` | `04-common-capability/04-common-events/11-interaction-normalization/` | *待补充* | 1 |
 | 04 通用能力层 | 05 自定义扩展能力 | 01 动态绘制属性 | `04-05-01` | `04-common-capability/05-custom-extension/01-draw-modifier/` | *待补充* | 0 |
 | 04 通用能力层 | 05 自定义扩展能力 | 02 动态属性 | `04-05-02` | `04-common-capability/05-custom-extension/02-dynamic-attributes/` | *待补充* | 0 |
 | 04 通用能力层 | 05 自定义扩展能力 | 03 自定义内容 -（表单类组件） | `04-05-03` | `04-common-capability/05-custom-extension/03-content-modifier-form/` | [design.md](04-common-capability/05-custom-extension/03-content-modifier-form/design.md) | 1 |
@@ -106,9 +106,9 @@
 | 04 通用能力层 | 08 根视图 | 01 窗口工具栏 | `04-08-01` | `04-common-capability/08-root-view/01-window-toolbar/` | *待补充* | 0 |
 | 04 通用能力层 | 08 根视图 | 02 元服务AppBar | `04-08-02` | `04-common-capability/08-root-view/02-atomic-service-appbar/` | *待补充* | 0 |
 | 04 通用能力层 | 08 根视图 | 03 浮层能力 | `04-08-03` | `04-common-capability/08-root-view/03-overlay-capability/` | *待补充* | 0 |
-| 04 通用能力层 | 09 焦点框架 | 01 焦点机制 | `04-09-01` | `04-common-capability/09-focus-framework/01-focus-mechanism/` | *待补充* | 0 |
+| 04 通用能力层 | 09 焦点框架 | 01 焦点机制 | `04-09-01` | `04-common-capability/09-focus-framework/01-focus-mechanism/` | *待补充* | 6 |
 | 04 通用能力层 | 10 组件截图 | 01 离屏截图 | `04-10-01` | `04-common-capability/10-component-screenshot/01-offscreen-screenshot/` | *待补充* | 0 |
-| 04 通用能力层 | 11 组件信息获取 | 01 ComponentUtils | `04-11-01` | `04-common-capability/11-component-info/01-component-utils/` | *待补充* | 0 |
+| 04 通用能力层 | 11 组件信息获取 | 01 ComponentUtils | `04-11-01` | `04-common-capability/11-component-info/01-component-utils/` | *待补充* | 2 |
 | 04 通用能力层 | 11 组件信息获取 | 02 无感监听（observer） | `04-11-02` | `04-common-capability/11-component-info/02-observer/` | [design.md](04-common-capability/11-component-info/02-observer/design.md) | 2 |
 | 04 通用能力层 | 11 组件信息获取 | 03 布局回调（inspector） | `04-11-03` | `04-common-capability/11-component-info/03-inspector-layout-callback/` | *待补充* | 0 |
 | 04 通用能力层 | 12 UI上下文 | 01 UIContext接口 | `04-12-01` | `04-common-capability/12-ui-context/01-ui-context-interface/` | [design.md](04-common-capability/12-ui-context/01-ui-context-interface/design.md) | 4 |
@@ -625,6 +625,8 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 悬停交互反馈 | *待补充* | Draft |
+| Feat-02 | 点击交互反馈 | *待补充* | Draft |
 
 ### 04-03-05 弹窗类属性
 
@@ -642,7 +644,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | 状态效果 | [Feat-01-state-effect-spec.md](04-common-capability/03-common-attributes/07-style-attributes/Feat-01-state-effect-spec.md) | Baselined |
+| Feat-01 | 多态样式 | [Feat-01-state-effect-spec.md](04-common-capability/03-common-attributes/07-style-attributes/Feat-01-state-effect-spec.md) | Baselined |
 | Feat-02 | 动态属性设置（attributeModifier） | [Feat-02-attribute-modifier-spec.md](04-common-capability/03-common-attributes/07-style-attributes/Feat-02-attribute-modifier-spec.md) | Baselined |
 
 ### 04-03-08 基础单位
@@ -721,16 +723,21 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 组件挂载与显隐生命周期事件 | *待补充* | Draft |
+| Feat-02 | 组件区域与尺寸变化事件 | *待补充* | Draft |
 
 ### 04-04-10 可见区域机制
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 精确可见区域变化监听 | *待补充* | Draft |
+| Feat-02 | 近似可见区域变化监听 | *待补充* | Draft |
 
 ### 04-04-11 交互归一化
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 按键意图归一化（KeyIntention / IntentionCode） | *待补充* | Draft |
 
 ### 04-05-01 动态绘制属性
 
@@ -836,6 +843,12 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 焦点树与节点状态模型 | *待补充* | Draft |
+| Feat-02 | 焦点请求、清除与切换事务 | *待补充* | Draft |
+| Feat-03 | 焦点导航与遍历算法 | *待补充* | Draft |
+| Feat-04 | 焦点域、分组与优先级 | *待补充* | Draft |
+| Feat-05 | 默认焦点、FocusView 与焦点恢复 | *待补充* | Draft |
+| Feat-06 | 焦点激活与视觉指示 | *待补充* | Draft |
 
 ### 04-10-01 离屏截图
 
@@ -846,6 +859,8 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 组件几何信息查询 | *待补充* | Draft |
+| Feat-02 | 形状区域图像项筛选 | *待补充* | Draft |
 
 ### 04-11-02 无感监听（observer）
 
