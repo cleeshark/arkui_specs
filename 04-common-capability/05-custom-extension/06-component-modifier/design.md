@@ -9,7 +9,7 @@
 | Design ID | DESIGN-Func-04-05-06 |
 | 关联需求 | 已有能力补录（无独立 requirement.md） |
 | 关联 Epic | 无 |
-| 目标 Feature | Feat-01 命令式 Modifier 基类与类体系, Feat-02 ModifierWithKey 装配与 ModifierUtils |
+| 目标 Feature | Feat-01 命令式 Modifier 基类与类体系, Feat-02 ModifierUtils 对外接口（applyAndMergeModifier/applySetOnChange/putDirtyModifier/isInstanceOf）；ModifierWithKey 装配机制与原生 setter 落地链属框架内部实现，方案见本文「详细设计」段，不进 spec 固化 |
 | 复杂度 | 复杂 |
 | 目标版本 | CommonModifier/XxxModifier 动态 @since 12（crossplatform @since 20）、静态 @since 23；ModifierUtils.isInstanceOf @since 26.0.0 dynamiconly |
 | Owner | ArkUI SIG |
@@ -103,7 +103,7 @@
 | Task ID | 目标 | 受影响文件 | 依赖 |
 |---------|------|-----------|------|
 | Feat-01 | 命令式 Modifier 基类与类体系规格补录 | spec + 本设计基线 | 无（基线） |
-| Feat-02 | ModifierWithKey 装配与 ModifierUtils规格补录 | spec + 本设计增量合并 | Feat-01 |
+| Feat-02 | ModifierUtils 对外接口规格补录（applyAndMergeModifier/applySetOnChange/putDirtyModifier/isInstanceOf）；ModifierWithKey 装配与落地链作为内部方案见本设计详细设计 | spec + 本设计增量合并 | Feat-01 |
 
 ## API 签名、Kit 与权限
 
@@ -238,6 +238,8 @@ class CommonModifier extends ArkComponent implements AttributeModifier<CommonAtt
 **与 AttributeModifier 通路边界**（属 04-05-02）：命令式类是 AttributeModifier<T> 的实现者，`.attributeModifier(modifier)` 装配与 apply* 状态分发属 04-05-02；本域仅覆盖命令式类自身（类体系 + applyNormalAttribute 转发 ModifierUtils）。
 
 ### ModifierWithKey 装配与 ModifierUtils（Feat-02）
+
+> **边界说明**：以下为框架内部实现方案（ModifierWithKey 装配机制、stageValue/applyPeer、原生 setter 落地链）。spec（Feat-02）仅固化 ModifierUtils 对外接口（applyAndMergeModifier/applySetOnChange/putDirtyModifier/isInstanceOf）的可观测行为；内部实现细节在此设计文档承载，不进 spec 固化。
 
 **属性装配模式**（modifier_utilities.ts）：命令式 Modifier 类的属性设置（如 `modifier.backgroundColor(v)`）经 ArkComponent 属性方法写入 `_modifiersWithKeys`（ModifierMap：属性名→ModifierWithKey），ModifierWithKey 持 stageValue（暂存值）与 applyPeer（调原生 setter 的回调）。
 

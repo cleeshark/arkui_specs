@@ -32,12 +32,20 @@
 ## 用户故事
 
 ### US-1: 更新参数
+
+**作为** 应用开发者，
+**我想要** 用新参数更新 ComponentContent，
+**以便** 重新渲染内容。
 | AC 编号 | 验收标准 | 类型 |
 |---------|----------|------|
 | AC-1.1 | WHEN `update(args)` THEN 用新 args 重新渲染（委托 BuilderNode.update）；args 类型须匹配 constructor | 正常 |
 | AC-1.2 | WHEN Trans 变体调 update THEN 抛 BusinessError(100031) | 异常 |
 
 ### US-2: 配置变更与冻结
+
+**作为** 应用开发者，
+**我想要** updateConfiguration 响应环境变更、inheritFreezeOptions 控制冻结策略，
+**以便** 节点跟随系统配置与冻结策略。
 | AC 编号 | 验收标准 | 类型 |
 |---------|----------|------|
 | AC-2.1 | WHEN `updateConfiguration()` THEN 通知系统环境变更并重新加载（委托 BuilderNode） | 正常 |

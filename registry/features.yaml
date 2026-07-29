@@ -336,8 +336,8 @@ features:
   status: Baselined
 - func_id: 04-05-06
   id: Feat-02
-  title: ModifierWithKey 装配与 ModifierUtils
-  spec: 04-common-capability/05-custom-extension/06-component-modifier/Feat-02-modifier-with-key-utils-spec.md
+  title: ModifierUtils 对外接口
+  spec: 04-common-capability/05-custom-extension/06-component-modifier/Feat-02-modifier-utils-api-spec.md
   status: Baselined
 - func_id: 05-01-01
   id: Feat-01

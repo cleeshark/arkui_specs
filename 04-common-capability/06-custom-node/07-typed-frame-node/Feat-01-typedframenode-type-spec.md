@@ -31,7 +31,8 @@
 ## 用户故事
 
 ### US-1: TypedFrameNode 类型定义
-**作为** 应用开发者，**我想要** 用 TypedFrameNode 获取类型化的 attribute 句柄。
+**作为** 应用开发者，**我想要** 用 TypedFrameNode 获取类型化的 attribute 句柄，
+**以便** 获取相关信息。
 
 | AC 编号 | 验收标准 | 类型 |
 |---------|----------|------|
@@ -41,6 +42,10 @@
 | AC-1.4 | WHEN TypedFrameNode 通过 typeNode.createNode 创建 THEN 返回类型化实例 | 正常 |
 
 ### US-2: initialize 与 attribute 用法
+
+**作为** 应用开发者，
+**我想要** initialize 初始化、attribute 获取属性句柄，
+**以便** 配置类型化节点。
 | AC 编号 | 验收标准 | 类型 |
 |---------|----------|------|
 | AC-2.1 | WHEN 调用 initialize(...args) THEN 委托 attribute.initialize(args) 初始化 | 正常 |

@@ -32,7 +32,8 @@
 ## 用户故事
 
 ### US-1: createNode 引入波次
-**作为** 应用开发者，**我想要** 了解各组件 createNode 的引入版本。
+**作为** 应用开发者，**我想要** 了解各组件 createNode 的引入版本，
+**以便** 获取相关信息。
 
 | AC 编号 | 验收标准 | 类型 |
 |---------|----------|------|
@@ -41,6 +42,10 @@
 | AC-1.3 | WHEN @since 18（7 组件）THEN Checkbox/CheckboxGroup/Radio/Rating/Select/Slider/Toggle 可创建 | 正常 |
 
 ### US-2: accessor 版本分波
+
+**作为** 应用开发者，
+**我想要** 了解 accessor 版本分波，
+**以便** 按版本使用对应 accessor。
 | AC 编号 | 验收标准 | 类型 |
 |---------|----------|------|
 | AC-2.1 | WHEN 动态 getAttribute @since 20（除 Scroll @since 15）THEN 可获取属性 | 正常 |
@@ -49,6 +54,10 @@
 | AC-2.4 | WHEN 静态 accessor @since 23 基线/24(文本输入)/26(滚动容器+GridRow)THEN 按版本可用 | 正常 |
 
 ### US-3: XComponent 多重载
+
+**作为** 应用开发者，
+**我想要** XComponent 多重载/多函数，
+**以便** 按需创建 XComponent 节点。
 | AC 编号 | 验收标准 | 类型 |
 |---------|----------|------|
 | AC-3.1 | WHEN XComponent createNode THEN 支持 3 重载：bare @since 12、options: XComponentOptions @since 12、parameters: NativeXComponentParameters @since 19 | 正常 |

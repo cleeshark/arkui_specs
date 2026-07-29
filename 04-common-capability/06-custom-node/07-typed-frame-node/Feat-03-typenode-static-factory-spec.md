@@ -33,6 +33,10 @@
 ## 用户故事
 
 ### US-1: 静态命名工厂创建
+
+**作为** 应用开发者，
+**我想要** createXxxNode 创建类型化节点，
+**以便** 编译期类型安全创建。
 | AC 编号 | 验收标准 | 类型 |
 |---------|----------|------|
 | AC-1.1 | WHEN `typeNode.createXxxNode(context, options?)` THEN 返回类型化 XxxFrameNode 实例 | 正常 |
@@ -40,6 +44,10 @@
 | AC-1.3 | WHEN XComponent THEN 拆 3 函数：createXComponentNodeDefault/WithOptions/WithNativeParameters | 边界 |
 
 ### US-2: 静态 accessor
+
+**作为** 应用开发者，
+**我想要** getXxxAttribute/getXxxEvent/bindXxxController 获取句柄，
+**以便** 静态范式操作组件。
 | AC 编号 | 验收标准 | 类型 |
 |---------|----------|------|
 | AC-2.1 | WHEN `getXxxAttribute(node)` THEN 返回属性句柄（@since 23 基线/24 文本输入/26 滚动容器） | 正常 |
@@ -47,6 +55,10 @@
 | AC-2.3 | WHEN `bindXxxController(node, controller)` THEN 绑定控制器 | 正常 |
 
 ### US-3: 抽象类与类型别名
+
+**作为** 应用开发者，
+**我想要** XxxFrameNode 抽象类与 type 别名，
+**以便** 类型化编程。
 | AC 编号 | 验收标准 | 类型 |
 |---------|----------|------|
 | AC-3.1 | WHEN 定义 abstract class XxxFrameNode extends TypedFrameNode\<XxxAttribute\> THEN 提供 abstract initialize | 正常 |

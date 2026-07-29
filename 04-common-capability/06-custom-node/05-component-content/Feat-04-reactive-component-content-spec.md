@@ -31,12 +31,20 @@
 ## 用户故事
 
 ### US-1: 响应式创建
+
+**作为** 应用开发者，
+**我想要** 用多参数 @Builder 创建 ReactiveComponentContent，
+**以便** 响应式数据驱动内容。
 | AC 编号 | 验收标准 | 类型 |
 |---------|----------|------|
 | AC-1.1 | WHEN `new ReactiveComponentContent(uiContext, builder, config, ...args)` THEN 返回实例（内部建 ReactiveBuilderNode） | 正常 |
 | AC-1.2 | WHEN 静态 `new ReactiveComponentContent(uiContext, builder, options?)` THEN 返回实例（builder 为 CustomBuilder，options 可选） | 边界 |
 
 ### US-2: 状态刷新
+
+**作为** 应用开发者，
+**我想要** flushState 刷新 V1 状态（V2 自动更新），
+**以便** 响应式参数及时生效。
 | AC 编号 | 验收标准 | 类型 |
 |---------|----------|------|
 | AC-2.1 | WHEN `flushState()` 且 V1(@Observed) 绑定参数 THEN 手动刷新状态 | 正常 |
@@ -44,6 +52,10 @@
 | AC-2.3 | WHEN Trans 变体调 flushState THEN 抛 100031 | 异常 |
 
 ### US-3: 生命周期（复用 ComponentContent 语义）
+
+**作为** 应用开发者，
+**我想要** ReactiveComponentContent 复用 ComponentContent 生命周期语义，
+**以便** 一致的生命周期管理。
 | AC 编号 | 验收标准 | 类型 |
 |---------|----------|------|
 | AC-3.1 | WHEN reuse/recycle/dispose/updateConfiguration/inheritFreezeOptions/isDisposed/isTransferred THEN 行为同 ComponentContent 对应 API | 正常 |

@@ -34,12 +34,20 @@
 ## 用户故事
 
 ### US-1: 创建类型化节点
+
+**作为** 应用开发者，
+**我想要** typeNode.createNode 创建类型化 TypedFrameNode，
+**以便** 获得类型化的组件节点。
 | AC 编号 | 验收标准 | 类型 |
 |---------|----------|------|
 | AC-1.1 | WHEN `typeNode.createNode(context, 'X')` THEN 经 __creatorMap__ 返回类型化 TypedFrameNode 实例 | 正常 |
 | AC-1.2 | WHEN XComponent THEN 支持 3 重载（bare/options: XComponentOptions/parameters: NativeXComponentParameters） | 边界 |
 
 ### US-2: 获取属性/事件/控制器
+
+**作为** 应用开发者，
+**我想要** getAttribute/getEvent/bindController 获取类型化句柄，
+**以便** 操作组件属性/事件/控制器。
 | AC 编号 | 验收标准 | 类型 |
 |---------|----------|------|
 | AC-2.1 | WHEN `getAttribute(node, 'X')` 且 nodeType 匹配 + 跨语言检查通过 THEN 经 __attributeMap__ 返回属性句柄 | 正常 |

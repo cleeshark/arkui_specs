@@ -765,7 +765,7 @@
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
 | Feat-01 | 命令式 Modifier 基类与类体系 | [Feat-01-common-modifier-class-system-spec.md](04-common-capability/05-custom-extension/06-component-modifier/Feat-01-common-modifier-class-system-spec.md) | Baselined |
-| Feat-02 | ModifierWithKey 装配与 ModifierUtils | [Feat-02-modifier-with-key-utils-spec.md](04-common-capability/05-custom-extension/06-component-modifier/Feat-02-modifier-with-key-utils-spec.md) | Baselined |
+| Feat-02 | ModifierUtils 对外接口 | [Feat-02-modifier-utils-api-spec.md](04-common-capability/05-custom-extension/06-component-modifier/Feat-02-modifier-utils-api-spec.md) | Baselined |
 
 ### 04-06-01 占位组件
 
