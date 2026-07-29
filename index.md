@@ -128,7 +128,7 @@
 | 04 通用能力层 | 17 嵌入显示能力 | 02 IsolateComponent机制 | `04-17-02` | `04-common-capability/17-embedded-display/02-isolate-component/` | *待补充* | 0 |
 | 04 通用能力层 | 17 嵌入显示能力 | 03 From卡片机制 | `04-17-03` | `04-common-capability/17-embedded-display/03-form-card/` | *待补充* | 0 |
 | 04 通用能力层 | 17 嵌入显示能力 | 04 PluginComponent机制 | `04-17-04` | `04-common-capability/17-embedded-display/04-plugin-component/` | *待补充* | 0 |
-| 04 通用能力层 | 18 端侧渲染 | 01 同层渲染机制 | `04-18-01` | `04-common-capability/18-on-device-rendering/01-same-layer-rendering/` | *待补充* | 0 |
+| 04 通用能力层 | 18 端侧渲染 | 01 同层渲染机制 | `04-18-01` | `04-common-capability/18-on-device-rendering/01-same-layer-rendering/` | [design.md](04-common-capability/18-on-device-rendering/01-same-layer-rendering/design.md) | 1 |
 | 04 通用能力层 | 19 组件复用 | 01 组件复用框架 | `04-19-01` | `04-common-capability/19-component-reuse/01-component-reuse-framework/` | [design.md](04-common-capability/19-component-reuse/01-component-reuse-framework/design.md) | 4 |
 | 04 通用能力层 | 20 媒体查询能力 | 01 MediaQuery | `04-20-01` | `04-common-capability/20-media-query/01-media-query/` | [design.md](04-common-capability/20-media-query/01-media-query/design.md) | 1 |
 | 04 通用能力层 | 21 适老化 | 01 大字体 | `04-21-01` | `04-common-capability/21-aging-adaptation/01-large-font/` | *待补充* | 0 |
@@ -977,6 +977,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 同层渲染纹理生产者（ArkUI 子树纹理导出） | [Feat-01-texture-export-producer-spec.md](04-common-capability/18-on-device-rendering/01-same-layer-rendering/Feat-01-texture-export-producer-spec.md) | Baselined |
 
 ### 04-19-01 组件复用框架
 

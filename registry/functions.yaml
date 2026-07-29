@@ -1416,7 +1416,7 @@ functions:
     id: '01'
     title: 同层渲染机制
   path: 04-common-capability/18-on-device-rendering/01-same-layer-rendering/
-  design: null
+  design: 04-common-capability/18-on-device-rendering/01-same-layer-rendering/design.md
   status: active
 - id: 04-19-01
   l1:

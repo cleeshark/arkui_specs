@@ -1649,6 +1649,11 @@ features:
   title: UIAppearance（深浅色模式与外观管理）
   spec: 04-common-capability/16-ui-appearance/01-ui-appearance/Feat-01-ui-appearance-spec.md
   status: Baselined
+- func_id: 04-18-01
+  id: Feat-01
+  title: 同层渲染纹理生产者（ArkUI 子树纹理导出）
+  spec: 04-common-capability/18-on-device-rendering/01-same-layer-rendering/Feat-01-texture-export-producer-spec.md
+  status: Baselined
 - func_id: 05-04-03
   id: Feat-01
   title: Rating 组件全量规格
