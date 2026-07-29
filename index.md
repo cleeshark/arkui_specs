@@ -201,10 +201,10 @@
 | 05 组件层 | 09 文本类组件 | 04 Text | `05-09-04` | `05-ui-components/09-text-components/04-text/` | [design.md](05-ui-components/09-text-components/04-text/design.md) | 7 |
 | 05 组件层 | 09 文本类组件 | 05 TextArea | `05-09-05` | `05-ui-components/09-text-components/05-text-area/` | *待补充* | 0 |
 | 05 组件层 | 09 文本类组件 | 06 Span类 | `05-09-06` | `05-ui-components/09-text-components/06-span-components/` | *待补充* | 0 |
-| 05 组件层 | 09 文本类组件 | 07 SymbolGlyph | `05-09-07` | `05-ui-components/09-text-components/07-symbol-glyph/` | *待补充* | 0 |
-| 05 组件层 | 09 文本类组件 | 08 TextInput | `05-09-08` | `05-ui-components/09-text-components/08-text-input/` | *待补充* | 0 |
-| 05 组件层 | 09 文本类组件 | 09 HyperLink | `05-09-09` | `05-ui-components/09-text-components/09-hyperlink/` | *待补充* | 0 |
-| 05 组件层 | 09 文本类组件 | 10 属性字符串 | `05-09-10` | `05-ui-components/09-text-components/10-attributed-string/` | *待补充* | 0 |
+| 05 组件层 | 09 文本类组件 | 07 SymbolGlyph | `05-09-07` | `05-ui-components/09-text-components/07-symbol-glyph/` | [design.md](05-ui-components/09-text-components/07-symbol-glyph/design.md) | 8 |
+| 05 组件层 | 09 文本类组件 | 08 TextInput | `05-09-08` | `05-ui-components/09-text-components/08-text-input/` | [design.md](05-ui-components/09-text-components/08-text-input/design.md) | 10 |
+| 05 组件层 | 09 文本类组件 | 09 HyperLink | `05-09-09` | `05-ui-components/09-text-components/09-hyperlink/` | [design.md](05-ui-components/09-text-components/09-hyperlink/design.md) | 3 |
+| 05 组件层 | 09 文本类组件 | 10 属性字符串 | `05-09-10` | `05-ui-components/09-text-components/10-attributed-string/` | [design.md](05-ui-components/09-text-components/10-attributed-string/design.md) | 9 |
 | 05 组件层 | 10 信息展示类组件 | 01 DataPanel | `05-10-01` | `05-ui-components/10-information-display-components/01-data-panel/` | *待补充* | 0 |
 | 05 组件层 | 10 信息展示类组件 | 02 Gauge | `05-10-02` | `05-ui-components/10-information-display-components/02-gauge/` | *待补充* | 0 |
 | 05 组件层 | 10 信息展示类组件 | 03 LoadingProgress | `05-10-03` | `05-ui-components/10-information-display-components/03-loading-progress/` | *待补充* | 0 |
@@ -1457,21 +1457,51 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 字形选择与创建 (symbolId/SymbolType/fontFamilies/createFrameNode) | [Feat-01-glyph-selection-creation-spec.md](05-ui-components/09-text-components/07-symbol-glyph/Feat-01-glyph-selection-creation-spec.md) | Baselined |
+| Feat-02 | 字体属性 (fontSize/fontWeight/可变字体/minFontScale/maxFontScale) | [Feat-02-font-properties-spec.md](05-ui-components/09-text-components/07-symbol-glyph/Feat-02-font-properties-spec.md) | Baselined |
+| Feat-03 | 颜色与渐变填充 (fontColor/symbolColor/shaderStyle) | [Feat-03-color-gradient-fill-spec.md](05-ui-components/09-text-components/07-symbol-glyph/Feat-03-color-gradient-fill-spec.md) | Baselined |
+| Feat-04 | 渲染策略 (renderingStrategy) | [Feat-04-rendering-strategy-spec.md](05-ui-components/09-text-components/07-symbol-glyph/Feat-04-rendering-strategy-spec.md) | Baselined |
+| Feat-05 | 动效策略与选项 (effectStrategy/SymbolEffectOptions/active-trigger) | [Feat-05-effect-strategy-options-spec.md](05-ui-components/09-text-components/07-symbol-glyph/Feat-05-effect-strategy-options-spec.md) | Baselined |
+| Feat-06 | SymbolEffect 子类与参数 (7 个 typed effect 对象) | [Feat-06-symbol-effect-subclasses-spec.md](05-ui-components/09-text-components/07-symbol-glyph/Feat-06-symbol-effect-subclasses-spec.md) | Baselined |
+| Feat-07 | 符号阴影 (symbolShadow) | [Feat-07-symbol-shadow-spec.md](05-ui-components/09-text-components/07-symbol-glyph/Feat-07-symbol-shadow-spec.md) | Baselined |
+| Feat-08 | 多范式接口与通用能力 (attributeModifier/clip/继承通用面/无障碍) | [Feat-08-multi-paradigm-interface-spec.md](05-ui-components/09-text-components/07-symbol-glyph/Feat-08-multi-paradigm-interface-spec.md) | Baselined |
 
 ### 05-09-08 TextInput
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 基础显示与字体样式 (type/style/font/textAlign/letterSpacing/lineHeight/overflow/decoration/wordBreak 等) | [Feat-01-base-display-font-style-spec.md](05-ui-components/09-text-components/08-text-input/Feat-01-base-display-font-style-spec.md) | Baselined |
+| Feat-02 | Placeholder 与错误提示 (placeholderColor/placeholderFont/showError/showUnit/showUnderline/underlineColor) | [Feat-02-placeholder-error-spec.md](05-ui-components/09-text-components/08-text-input/Feat-02-placeholder-error-spec.md) | Baselined |
+| Feat-03 | 输入类型与控制 (type/contentType/enableKeyboardOnFocus/editing/selectAll/copyOption/selectionMenuHidden/editMenuOptions/enablePreviewText) | [Feat-03-input-type-control-spec.md](05-ui-components/09-text-components/08-text-input/Feat-03-input-type-control-spec.md) | Baselined |
+| Feat-04 | 文本筛选与 maxLength/计数器 (maxLength/inputFilter/showCounter) | [Feat-04-filter-maxlength-counter-spec.md](05-ui-components/09-text-components/08-text-input/Feat-04-filter-maxlength-counter-spec.md) | Baselined |
+| Feat-05 | 光标与选择 (caretColor/caretStyle/caretPosition/selectedBackgroundColor/textSelection/onTextSelectionChange/onContentScroll) | [Feat-05-caret-selection-spec.md](05-ui-components/09-text-components/08-text-input/Feat-05-caret-selection-spec.md) | Baselined |
+| Feat-06 | 编辑与内容事件回调 (onChange/onWillChange/onSubmit/onEditChange/onWillInsert/onDidInsert/onWillDelete/onDidDelete/onCopy/onCut/onPaste/onSecurityStateChange) | [Feat-06-editing-content-events-spec.md](05-ui-components/09-text-components/08-text-input/Feat-06-editing-content-events-spec.md) | Baselined |
+| Feat-07 | 键盘/IME/自定义键盘 (enterKeyType/keyboardAppearance/customKeyboard/autoCapitalizationMode/enableFillAnimation/blurOnSubmit) | [Feat-07-keyboard-ime-spec.md](05-ui-components/09-text-components/08-text-input/Feat-07-keyboard-ime-spec.md) | Baselined |
+| Feat-08 | 密码与自动填充 (passwordIcon/showPasswordIcon/showPassword/passwordRules/enableAutoFill/enableAutoFillAnimation) | [Feat-08-password-autofill-spec.md](05-ui-components/09-text-components/08-text-input/Feat-08-password-autofill-spec.md) | Baselined |
+| Feat-09 | 取消按钮/响应区域 (cancelButton/cancelButtonSymbol/cleanNodeStyle/isShowCancelButton/isShowVoiceButton) | [Feat-09-cancel-button-response-area-spec.md](05-ui-components/09-text-components/08-text-input/Feat-09-cancel-button-response-area-spec.md) | Baselined |
+| Feat-10 | C-API/NDK Modifier 桥与无障碍 (ARKUI_NODE_TEXT_INPUT + 51 NODE_TEXT_INPUT_* + 18 事件 + 枚举 + userAccessibilityText) | [Feat-10-capi-ndk-bridge-a11y-spec.md](05-ui-components/09-text-components/08-text-input/Feat-10-capi-ndk-bridge-a11y-spec.md) | Baselined |
 
 ### 05-09-09 HyperLink
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 链接配置与颜色样式 (构造/address/content 兜底/color + API18 主题色派生 + 继承 Text 样式 + 资源注册) | [Feat-01-link-config-color-style-spec.md](05-ui-components/09-text-components/09-hyperlink/Feat-01-link-config-color-style-spec.md) | Baselined |
+| Feat-02 | 拖拽/响应区域/状态视觉/导航 (draggable/responseRegion/hover-press-visited-disabled 视觉/LinkToAddress+preventDefault) | [Feat-02-drag-response-state-navigation-spec.md](05-ui-components/09-text-components/09-hyperlink/Feat-02-drag-response-state-navigation-spec.md) | Baselined |
+| Feat-03 | 键盘无障碍与多前端 C-API 桥 (KEY_SPACE/ENTER 激活/focus/OnInjectionEvent/C-API modifier 动态静态CJ/Inspector序列化) | [Feat-03-keyboard-a11y-capi-bridge-spec.md](05-ui-components/09-text-components/09-hyperlink/Feat-03-keyboard-a11y-capi-bridge-spec.md) | Baselined |
 
 ### 05-09-10 属性字符串
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 容器与核心操作 (StyledString/MutableStyledString + StyleOptions/SpanStyle/StyledStringKey + TLV序列化 + HTML往返) | [Feat-01-container-core-operations-spec.md](05-ui-components/09-text-components/10-attributed-string/Feat-01-container-core-operations-spec.md) | Baselined |
+| Feat-02 | TextStyle 字体属性 (fontColor/fontFamily/fontSize/fontWeight/fontStyle + 桥接扩展) | [Feat-02-textstyle-font-spec.md](05-ui-components/09-text-components/10-attributed-string/Feat-02-textstyle-font-spec.md) | Baselined |
+| Feat-03 | 装饰排版 Style (DecorationStyle/BaselineOffsetStyle/LetterSpacingStyle/LineHeightStyle/TextShadowStyle) | [Feat-03-decoration-typography-style-spec.md](05-ui-components/09-text-components/10-attributed-string/Feat-03-decoration-typography-style-spec.md) | Baselined |
+| Feat-04 | 背景/超链接 Style (BackgroundColorStyle/UrlStyle) | [Feat-04-background-url-style-spec.md](05-ui-components/09-text-components/10-attributed-string/Feat-04-background-url-style-spec.md) | Baselined |
+| Feat-05 | ParagraphStyle 段落属性 (textAlign/textIndent/maxLines/overflow/wordBreak/leadingMargin/paragraphSpacing + 桥接扩展) | [Feat-05-paragraph-style-spec.md](05-ui-components/09-text-components/10-attributed-string/Feat-05-paragraph-style-spec.md) | Baselined |
+| Feat-06 | GestureStyle 手势 (onClick/onLongPress + span 级命中) | [Feat-06-gesture-style-spec.md](05-ui-components/09-text-components/10-attributed-string/Feat-06-gesture-style-spec.md) | Baselined |
+| Feat-07 | 图片/自定义/UserData Span (ImageAttachment/CustomSpan/UserDataSpan↔ExtSpan) | [Feat-07-image-custom-userdata-span-spec.md](05-ui-components/09-text-components/10-attributed-string/Feat-07-image-custom-userdata-span-spec.md) | Baselined |
+| Feat-08 | 宿主集成 (StyledStringController/ChangedListener + Text/RichEditor/TextField + LayoutManager + Undo/Redo) | [Feat-08-host-integration-spec.md](05-ui-components/09-text-components/10-attributed-string/Feat-08-host-integration-spec.md) | Baselined |
+| Feat-09 | C-API/NDK/ANI (OH_ArkUI_StyledString_* + 对象模型 accessor + ANI modifier) | [Feat-09-capi-ndk-ani-spec.md](05-ui-components/09-text-components/10-attributed-string/Feat-09-capi-ndk-ani-spec.md) | Baselined |
 
 ### 05-10-01 DataPanel
 
