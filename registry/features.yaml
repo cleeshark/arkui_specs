@@ -1594,3 +1594,33 @@ features:
   title: WithTheme 主题作用域组件全量规格
   spec: 05-ui-components/15-theme-components/01-with-theme/Feat-01-with-theme-full-spec.md
   status: Baselined
+- func_id: 05-03-04
+  id: Feat-01
+  title: Grid 固定行列与单轴滚动布局
+  spec: 05-ui-components/03-scroll-container-components/04-grid-grid-item/Feat-01-grid-fixed-scroll-layout-spec.md
+  status: Baselined
+- func_id: 05-03-04
+  id: Feat-02
+  title: Grid 不规则、自适应与自定义布局
+  spec: 05-ui-components/03-scroll-container-components/04-grid-grid-item/Feat-02-grid-irregular-adaptive-custom-layout-spec.md
+  status: Baselined
+- func_id: 05-03-04
+  id: Feat-03
+  title: Grid 滚动控制、滚动条与事件
+  spec: 05-ui-components/03-scroll-container-components/04-grid-grid-item/Feat-03-grid-scroll-scrollbar-events-spec.md
+  status: Baselined
+- func_id: 05-03-04
+  id: Feat-04
+  title: Grid 编辑模式与拖拽
+  spec: 05-ui-components/03-scroll-container-components/04-grid-grid-item/Feat-04-grid-edit-mode-drag-spec.md
+  status: Baselined
+- func_id: 05-03-04
+  id: Feat-05
+  title: GridItem 布局与选择
+  spec: 05-ui-components/03-scroll-container-components/04-grid-grid-item/Feat-05-grid-item-layout-selection-spec.md
+  status: Baselined
+- func_id: 05-03-04
+  id: Feat-06
+  title: C API 与多范式接口
+  spec: 05-ui-components/03-scroll-container-components/04-grid-grid-item/Feat-06-grid-capi-multi-paradigm-spec.md
+  status: Baselined

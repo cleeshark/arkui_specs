@@ -159,7 +159,7 @@
 | 05 组件层 | 03 滚动容器类组件 | 01 滚动公共能力 | `05-03-01` | `05-ui-components/03-scroll-container-components/01-scroll-common-capability/` | *待补充* | 0 |
 | 05 组件层 | 03 滚动容器类组件 | 02 AlaphabetIndexer | `05-03-02` | `05-ui-components/03-scroll-container-components/02-alphabet-indexer/` | [design.md](05-ui-components/03-scroll-container-components/02-alphabet-indexer/design.md) | 2 |
 | 05 组件层 | 03 滚动容器类组件 | 03 ScrollBar | `05-03-03` | `05-ui-components/03-scroll-container-components/03-scroll-bar/` | *待补充* | 0 |
-| 05 组件层 | 03 滚动容器类组件 | 04 Grid/GridItem | `05-03-04` | `05-ui-components/03-scroll-container-components/04-grid-grid-item/` | *待补充* | 0 |
+| 05 组件层 | 03 滚动容器类组件 | 04 Grid/GridItem | `05-03-04` | `05-ui-components/03-scroll-container-components/04-grid-grid-item/` | [design.md](05-ui-components/03-scroll-container-components/04-grid-grid-item/design.md) | 6 |
 | 05 组件层 | 03 滚动容器类组件 | 05 List/ListItem/ListItemGroup | `05-03-05` | `05-ui-components/03-scroll-container-components/05-list-list-item-list-item-group/` | *待补充* | 0 |
 | 05 组件层 | 03 滚动容器类组件 | 06 Refresh | `05-03-06` | `05-ui-components/03-scroll-container-components/06-refresh/` | *待补充* | 0 |
 | 05 组件层 | 03 滚动容器类组件 | 07 Scroll | `05-03-07` | `05-ui-components/03-scroll-container-components/07-scroll/` | *待补充* | 0 |
@@ -1167,6 +1167,12 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Grid 固定行列与单轴滚动布局 | [Feat-01-grid-fixed-scroll-layout-spec.md](05-ui-components/03-scroll-container-components/04-grid-grid-item/Feat-01-grid-fixed-scroll-layout-spec.md) | Baselined |
+| Feat-02 | Grid 不规则、自适应与自定义布局 | [Feat-02-grid-irregular-adaptive-custom-layout-spec.md](05-ui-components/03-scroll-container-components/04-grid-grid-item/Feat-02-grid-irregular-adaptive-custom-layout-spec.md) | Baselined |
+| Feat-03 | Grid 滚动控制、滚动条与事件 | [Feat-03-grid-scroll-scrollbar-events-spec.md](05-ui-components/03-scroll-container-components/04-grid-grid-item/Feat-03-grid-scroll-scrollbar-events-spec.md) | Baselined |
+| Feat-04 | Grid 编辑模式与拖拽 | [Feat-04-grid-edit-mode-drag-spec.md](05-ui-components/03-scroll-container-components/04-grid-grid-item/Feat-04-grid-edit-mode-drag-spec.md) | Baselined |
+| Feat-05 | GridItem 布局与选择 | [Feat-05-grid-item-layout-selection-spec.md](05-ui-components/03-scroll-container-components/04-grid-grid-item/Feat-05-grid-item-layout-selection-spec.md) | Baselined |
+| Feat-06 | C API 与多范式接口 | [Feat-06-grid-capi-multi-paradigm-spec.md](05-ui-components/03-scroll-container-components/04-grid-grid-item/Feat-06-grid-capi-multi-paradigm-spec.md) | Baselined |
 
 ### 05-03-05 List/ListItem/ListItemGroup
 
