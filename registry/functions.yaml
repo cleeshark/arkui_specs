@@ -1780,7 +1780,7 @@ functions:
     id: '01'
     title: 滚动公共能力
   path: 05-ui-components/03-scroll-container-components/01-scroll-common-capability/
-  design: null
+  design: 05-ui-components/03-scroll-container-components/01-scroll-common-capability/design.md
   status: active
 - id: 05-03-02
   l1:
@@ -1897,7 +1897,7 @@ functions:
     id: '10'
     title: WaterFlow/FlowItem
   path: 05-ui-components/03-scroll-container-components/10-water-flow-flow-item/
-  design: null
+  design: 05-ui-components/03-scroll-container-components/10-water-flow-flow-item/design.md
   status: active
 - id: 05-04-01
   l1:
@@ -2300,7 +2300,7 @@ functions:
     id: '02'
     title: RichEditor
   path: 05-ui-components/09-text-components/02-rich-editor/
-  design: null
+  design: 05-ui-components/09-text-components/02-rich-editor/design.md
   status: active
 - id: 05-09-03
   l1:
@@ -2365,7 +2365,7 @@ functions:
     id: '07'
     title: SymbolGlyph
   path: 05-ui-components/09-text-components/07-symbol-glyph/
-  design: null
+  design: 05-ui-components/09-text-components/07-symbol-glyph/design.md
   status: active
 - id: 05-09-08
   l1:
@@ -2378,7 +2378,7 @@ functions:
     id: 08
     title: TextInput
   path: 05-ui-components/09-text-components/08-text-input/
-  design: null
+  design: 05-ui-components/09-text-components/08-text-input/design.md
   status: active
 - id: 05-09-09
   l1:
@@ -2391,7 +2391,7 @@ functions:
     id: 09
     title: HyperLink
   path: 05-ui-components/09-text-components/09-hyperlink/
-  design: null
+  design: 05-ui-components/09-text-components/09-hyperlink/design.md
   status: active
 - id: 05-09-10
   l1:
@@ -2404,7 +2404,7 @@ functions:
     id: '10'
     title: 属性字符串
   path: 05-ui-components/09-text-components/10-attributed-string/
-  design: null
+  design: 05-ui-components/09-text-components/10-attributed-string/design.md
   status: active
 - id: 05-10-01
   l1:
