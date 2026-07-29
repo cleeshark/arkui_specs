@@ -534,6 +534,19 @@ functions:
   path: 03-engine-framework/08-dfx-foundation/06-layout-boundary-display/
   design: 03-engine-framework/08-dfx-foundation/06-layout-boundary-display/design.md
   status: active
+- id: 03-09-01
+  l1:
+    id: '03'
+    title: 引擎框架层
+  l2:
+    id: '09'
+    title: UISession
+  l3:
+    id: '01'
+    title: UISession 服务
+  path: 03-engine-framework/09-uisession/01-uisession-service/
+  design: 03-engine-framework/09-uisession/01-uisession-service/design.md
+  status: active
 - id: 04-01-01
   l1:
     id: '04'

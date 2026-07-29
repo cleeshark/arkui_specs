@@ -124,6 +124,56 @@ features:
   title: 布局边界显示调试能力
   spec: 03-engine-framework/08-dfx-foundation/06-layout-boundary-display/Feat-01-layout-boundary-display-spec.md
   status: Baselined
+- func_id: 03-09-01
+  id: Feat-01
+  title: IPC安全框架与连接生命周期
+  spec: 03-engine-framework/09-uisession/01-uisession-service/Feat-01-ipc-security-framework-spec.md
+  status: Baselined
+- func_id: 03-09-01
+  id: Feat-02
+  title: InspectorTree查询与Web子树聚合
+  spec: 03-engine-framework/09-uisession/01-uisession-service/Feat-02-inspector-tree-query-and-web-aggregation-spec.md
+  status: Baselined
+- func_id: 03-09-01
+  id: Feat-03
+  title: 事件上报与注册计数门控
+  spec: 03-engine-framework/09-uisession/01-uisession-service/Feat-03-event-reporting-and-atomic-gating-spec.md
+  status: Baselined
+- func_id: 03-09-01
+  id: Feat-04
+  title: 命令下发与同步请求保护
+  spec: 03-engine-framework/09-uisession/01-uisession-service/Feat-04-command-dispatch-and-sync-request-spec.md
+  status: Baselined
+- func_id: 03-09-01
+  id: Feat-05
+  title: 翻译能力与DFX并发保护
+  spec: 03-engine-framework/09-uisession/01-uisession-service/Feat-05-translate-capability-and-dfx-spec.md
+  status: Baselined
+- func_id: 03-09-01
+  id: Feat-06
+  title: 内容变化检测与阈值管理
+  spec: 03-engine-framework/09-uisession/01-uisession-service/Feat-06-content-change-detection-and-threshold-spec.md
+  status: Baselined
+- func_id: 03-09-01
+  id: Feat-07
+  title: 查询能力与辅助Dump
+  spec: 03-engine-framework/09-uisession/01-uisession-service/Feat-07-query-and-auxiliary-dump-spec.md
+  status: Baselined
+- func_id: 03-09-01
+  id: Feat-08
+  title: SA验证服务与hidumper命令路由
+  spec: 03-engine-framework/09-uisession/01-uisession-service/Feat-08-sa-verification-service-spec.md
+  status: Baselined
+- func_id: 03-09-01
+  id: Feat-09
+  title: PageScene 规则感知能力
+  spec: 03-engine-framework/09-uisession/01-uisession-service/Feat-09-pagescene-rule-awareness-spec.md
+  status: Draft
+- func_id: 03-09-01
+  id: Feat-10
+  title: WM UIContentRemoteObj 验证链路
+  spec: 03-engine-framework/09-uisession/01-uisession-service/Feat-10-wm-uicontent-remoteobj-verification-spec.md
+  status: Draft
 - func_id: 04-01-01
   id: Feat-01
   title: 图片加载机制
