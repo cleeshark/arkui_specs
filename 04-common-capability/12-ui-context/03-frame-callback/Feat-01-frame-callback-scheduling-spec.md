@@ -67,7 +67,7 @@
 | AC编号 | 验收标准 | 类型 |
 |--------|----------|------|
 | AC-2.1 | WHEN 调用 postFrameCallback(frameCallback) 且 frameCallback.onIdle 已定义 THEN 回调在帧渲染完成后的空闲阶段被调用，参数 timeLeftInNano 为剩余空闲时间纳秒值 | 正常 |
-| AC-2.2 | WHEN onIdle 回调触发时剩余空闲时间 < MIN_IDLE_TIME（1ms）THEN 回调执行推迟到下一帧，并触发 RequestFrame | 边界 |
+| AC-2.2 | WHEN onIdle 回调触发时剩余空闲时间 < MIN_IDLE_TIME（1μs）THEN 回调执行推迟到下一帧，并触发 RequestFrame | 边界 |
 | AC-2.3 | WHEN onIdle 回调执行完毕后 THEN 该回调从 idleCallbackFuncs_ 列表中移除，下一帧不会自动再次执行（一次性语义） | 正常 |
 
 ### US-3: 应用开发者需要在延迟后注册帧回调
@@ -90,7 +90,7 @@
 
 | AC编号 | 验收标准 | 类型 |
 |--------|----------|------|
-| AC-4.1 | WHEN 调用 OH_ArkUI_PostFrameCallback(uiContext, userData, callback) 且参数有效 THEN 回调在下一帧的 FlushBuild 之后、FlushTouchEvents 之前被调用，参数为 nanoTimestamp、frameCount、userData | 正常 |
+| AC-4.1 | WHEN 调用 OH_ArkUI_PostFrameCallback(uiContext, userData, callback) 且参数有效 THEN 回调在下一帧的 FlushTouchEvents 之后、FlushBuild 之前被调用，参数为 nanoTimestamp、frameCount、userData | 正常 |
 | AC-4.2 | WHEN 调用 OH_ArkUI_PostFrameCallback 且 uiContext 为 nullptr THEN 返回 ARKUI_ERROR_CODE_UI_CONTEXT_INVALID | 异常 |
 | AC-4.3 | WHEN 调用 OH_ArkUI_PostFrameCallback 且 callback 为 nullptr THEN 返回 ARKUI_ERROR_CODE_CALLBACK_INVALID | 异常 |
 | AC-4.4 | WHEN C-API 帧回调执行完毕后 THEN 该回调从 frameCallbackFuncsFromCAPI_ 列表中移除（一次性语义） | 正常 |
@@ -143,10 +143,10 @@
 | R-5 | 行为 | ArkTS postFrameCallback 注册的帧回调在 VSync 帧调度中被执行 | FlushFrameCallback 在 FlushAnimation 之后、FlushBuild 之前被调用（pipeline_context.cpp:1214-1215） | ArkTS 帧回调在渲染管线中动画之后执行 | AC-1.1 |
 | R-6 | 行为 | ArkTS onIdle 回调在帧空闲阶段被执行 | TriggerIdleCallback 在 OnIdle 中被调用，参数为 deadline 与 currentTime 的差值 | deadline - currentTime < MIN_IDLE_TIME 时推迟执行 | AC-2.1 |
 | R-7 | 异常 | C-API OH_ArkUI_PostFrameCallback 在非 UI 线程调用 | pipeline->CheckThreadSafe() 返回 false 时，返回 ERROR_CODE_NATIVE_IMPL_NOT_MAIN_THREAD | LOGF_ABORT 在 node_api.cpp:701 触发 | AC-1.5 |
-| R-8 | 边界 | onIdle 回调触发时剩余空闲时间 < 1ms（MIN_IDLE_TIME） | 回调执行推迟到下一帧，调用 RequestFrame 请求新帧 | pipeline_context.cpp:6392-6394, MIN_IDLE_TIME 常量 | AC-2.2 |
+| R-8 | 边界 | onIdle 回调触发时剩余空闲时间 < 1μs（MIN_IDLE_TIME） | 回调执行推迟到下一帧，调用 RequestFrame 请求新帧 | pipeline_context.cpp:6392-6394, MIN_IDLE_TIME = 1000（纳秒）= 1μs | AC-2.2 |
 | R-9 | 行为 | 调用 postDelayedFrameCallback 且 delayMillis > 0 | frameCallbackFunc 和 idleCallbackFunc 通过 PostDelayedTask 延迟 delayMillis 毫秒后加入列表 | 延迟到期后加入 frameCallbackFuncs_/idleCallbackFuncs_ 并调用 RequestFrame | AC-3.1, AC-3.3 |
 | R-10 | 边界 | 调用 postDelayedFrameCallback 且 delayMillis <= 0 | 行为等同于 postFrameCallback：回调直接加入列表，立即 RequestFrame | pipeline_context.cpp:6343-6351 | AC-3.2 |
-| R-11 | 行为 | C-API 帧回调在 VSync 帧调度中被执行 | FlushFrameCallbackFromCAPI 在 FlushBuild 之前、FlushTouchEvents 之前被调用（pipeline_context.cpp:1242） | C-API 帧回调在渲染管线中动画之后、构建之前执行 | AC-4.1, AC-4.4 |
+| R-11 | 行为 | C-API 帧回调在 VSync 帧调度中被执行 | FlushFrameCallbackFromCAPI 在 FlushTouchEvents 之后、FlushBuild 之前被调用（pipeline_context.cpp:1278） | C-API 帧回调在渲染管线中触摸事件之后、构建之前执行 | AC-4.1, AC-4.4 |
 | R-12 | 异常 | C-API 调用时 uiContext 为 nullptr | 返回 ARKUI_ERROR_CODE_UI_CONTEXT_INVALID | CHECK_NULL_RETURN_WITH_MESSAGE 宏 | AC-4.2, AC-5.2 |
 | R-13 | 异常 | C-API 调用时 callback 为 nullptr | 返回 ARKUI_ERROR_CODE_CALLBACK_INVALID | CHECK_NULL_RETURN_WITH_MESSAGE 宏 | AC-4.3, AC-5.3 |
 | R-14 | 异常 | OH_ArkUI_PostFrameCallback 在非 UI 线程调用 | 返回 ERROR_CODE_NATIVE_IMPL_NOT_MAIN_THREAD，严重时 LOGF_ABORT | node_api.cpp:700-702 | AC-4.5 |
@@ -160,8 +160,8 @@
 | VM-2 | R-2 (null/undefined frameCallback) | 单元测试 | JSI 层短路返回 undefined |
 | VM-3 | R-3 (多回调顺序) | 单元测试 | 同帧多回调按注册顺序执行 |
 | VM-4 | R-4 (onIdle 一次性语义) | 单元测试 | std::move drain 行为 |
-| VM-5 | R-5/R-11 (帧回调执行时序) | 时序追踪 | FlushAnimation < FlushFrameCallback < FlushFrameCallbackFromCAPI < FlushBuild |
-| VM-6 | R-8 (MIN_IDLE_TIME 推迟) | 单元测试 | deadline - currentTime < 1ms 时推迟并 RequestFrame |
+| VM-5 | R-5/R-11 (帧回调执行时序) | 时序追踪 | FlushAnimation < FlushFrameCallback < FlushTouchEvents < FlushFrameCallbackFromCAPI < FlushBuild |
+| VM-6 | R-8 (MIN_IDLE_TIME 推迟) | 单元测试 | deadline - currentTime < 1μs 时推迟并 RequestFrame |
 | VM-7 | R-9/R-10 (延迟帧回调) | 单元测试 | delayMillis <= 0 直接加入，> 0 PostDelayedTask |
 | VM-8 | R-12/R-13 (C-API null 参数) | C-API 单元测试 | nullptr uiContext/callback 返回对应错误码 |
 | VM-9 | R-14 (C-API 线程安全) | C-API 单元测试 | 非 UI 线程调用返回 NOT_MAIN_THREAD |
@@ -291,7 +291,7 @@
 
 | # | 触发条件 | 预期行为 | 关联 AC |
 |---|----------|----------|---------|
-| 1 | 有效 uiContext、callback | 回调在下一帧 FlushBuild 前执行 | AC-4.1 |
+| 1 | 有效 uiContext、callback | 回调在下一帧 FlushTouchEvents 之后、FlushBuild 之前执行 | AC-4.1 |
 | 2 | uiContext 为 nullptr | 返回 ARKUI_ERROR_CODE_UI_CONTEXT_INVALID | AC-4.2 |
 | 3 | callback 为 nullptr | 返回 ARKUI_ERROR_CODE_CALLBACK_INVALID | AC-4.3 |
 | 4 | 非 UI 线程调用 | 返回 ERROR_CODE_NATIVE_IMPL_NOT_MAIN_THREAD | AC-4.5 |
@@ -348,9 +348,9 @@
 |----------|----------|---------|
 | 一次性回调语义 | postFrameCallback 注册的回调在每帧被 drain（std::swap 移出列表后遍历执行），不会自动重注册。开发者需要每帧重新调用 postFrameCallback 以实现持续帧回调 | AC-1.4, AC-2.3, AC-4.4 |
 | ArkTS vs C-API 回调列表隔离 | ArkTS 帧回调存储在 frameCallbackFuncs_（std::list<FrameCallbackFunc>），C-API 帧回调存储在 frameCallbackFuncsFromCAPI_（std::list<FrameCallbackFuncFromCAPI>），两个列表独立 drain | AC-4.1 vs AC-1.1 |
-| ArkTS vs C-API 执行时序差异 | ArkTS 帧回调在 FlushAnimation 后执行（pipeline_context.cpp:1215），C-API 帧回调在 FlushBuild 前、FlushTouchEvents 前执行（pipeline_context.cpp:1242）。两者不在同一 drain 阶段 | AC-1.1 vs AC-4.1 |
+| ArkTS vs C-API 执行时序差异 | ArkTS 帧回调在 FlushAnimation 后执行（pipeline_context.cpp:1251），C-API 帧回调在 FlushTouchEvents 后、FlushBuild 前执行（pipeline_context.cpp:1278）。两者不在同一 drain 阶段 | AC-1.1 vs AC-4.1 |
 | 延迟回调使用 PostDelayedTask | postDelayedFrameCallback 的延迟机制基于 TaskExecutor::PostDelayedTask，延迟到期后回调被加入 frameCallbackFuncs_ 并 RequestFrame，而非直接在延迟时间点执行 | AC-3.1 |
-| 空闲回调 MIN_IDLE_TIME 门槛 | onIdle 回调仅在剩余空闲时间 >= MIN_IDLE_TIME（1ms）时执行，否则推迟到下一帧 | AC-2.2 |
+| 空闲回调 MIN_IDLE_TIME 门槛 | onIdle 回调仅在剩余空闲时间 >= MIN_IDLE_TIME（1μs，即 MIN_IDLE_TIME = 1000ns）时执行，否则推迟到下一帧 | AC-2.2 |
 | C-API 必须在 UI 线程调用 | OH_ArkUI_PostFrameCallback 通过 pipeline->CheckThreadSafe() 检查线程安全性，非 UI 线程调用返回错误或触发 LOGF_ABORT | AC-4.5, AC-1.5 |
 | frameCount == UINT64_MAX 语义 | FlushFrameCallback/FlushFrameCallbackFromCAPI 在 frameCount == UINT64_MAX 时仅 RequestFrame，不执行回调（用于 recover vsync 场景） | R-1, R-11 |
 | PipelineContext 生命周期 | 延迟回调通过 WeakClaim(this) 持有 PipelineContext 弱引用，PipelineContext 已销毁时不执行回调 | R-9 |
@@ -427,7 +427,7 @@ Feature: Frame回调与帧调度
     Given 一个有效的 UIContext 实例
     And 一个 FrameCallback 实例，onIdle 已定义
     When 调用 postFrameCallback(frameCallback)
-    And 帧渲染完成后剩余空闲时间 >= 1ms
+    And 帧渲染完成后剩余空闲时间 >= 1μs
     Then TriggerIdleCallback 执行 onIdle 回调
     And 回调参数 timeLeftInNano 为剩余空闲纳秒值
     And 回调执行后从列表中移除
@@ -436,7 +436,7 @@ Feature: Frame回调与帧调度
     Given 一个有效的 UIContext 实例
     And 一个 FrameCallback 实例，onIdle 已定义
     When 调用 postFrameCallback(frameCallback)
-    And 帧渲染完成后剩余空闲时间 < 1ms
+    And 帧渲染完成后剩余空闲时间 < 1μs
     Then 回调执行被推迟到下一帧
     And 调用 RequestFrame 请求新帧
 
@@ -624,7 +624,7 @@ void PipelineContext::TriggerIdleCallback(int64_t deadline)
 {
     if (idleCallbackFuncs_.empty()) { return; }
     int64_t currentTime = GetSysTimestamp();
-    if (deadline - currentTime < MIN_IDLE_TIME) {  // MIN_IDLE_TIME = 1ms
+    if (deadline - currentTime < MIN_IDLE_TIME) {  // MIN_IDLE_TIME = 1000ns = 1μs
         RequestFrame();
         return;
     }
@@ -636,4 +636,4 @@ void PipelineContext::TriggerIdleCallback(int64_t deadline)
 }
 ```
 
-空闲回调也使用一次性语义（`std::move` drain），并有 MIN_IDLE_TIME（1ms）门槛保护。每执行一个回调后重新获取当前时间，以判断是否还有足够的空闲时间继续执行后续回调。
+空闲回调也使用一次性语义（`std::move` drain），并有 MIN_IDLE_TIME（1μs = 1000ns）门槛保护。每执行一个回调后重新获取当前时间，以判断是否还有足够的空闲时间继续执行后续回调。
