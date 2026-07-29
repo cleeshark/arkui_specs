@@ -105,7 +105,7 @@
 | 04 通用能力层 | 07 迁移恢复 | 03 组件迁移机制 | `04-07-03` | `04-common-capability/07-migration-recovery/03-component-migration/` | *待补充* | 0 |
 | 04 通用能力层 | 08 根视图 | 01 窗口工具栏 | `04-08-01` | `04-common-capability/08-root-view/01-window-toolbar/` | *待补充* | 0 |
 | 04 通用能力层 | 08 根视图 | 02 元服务AppBar | `04-08-02` | `04-common-capability/08-root-view/02-atomic-service-appbar/` | *待补充* | 0 |
-| 04 通用能力层 | 08 根视图 | 03 浮层能力 | `04-08-03` | `04-common-capability/08-root-view/03-overlay-capability/` | *待补充* | 0 |
+| 04 通用能力层 | 08 根视图 | 03 浮层能力 | `04-08-03` | `04-common-capability/08-root-view/03-overlay-capability/` | [design.md](04-common-capability/08-root-view/03-overlay-capability/design.md) | 1 |
 | 04 通用能力层 | 09 焦点框架 | 01 焦点机制 | `04-09-01` | `04-common-capability/09-focus-framework/01-focus-mechanism/` | *待补充* | 6 |
 | 04 通用能力层 | 10 组件截图 | 01 离屏截图 | `04-10-01` | `04-common-capability/10-component-screenshot/01-offscreen-screenshot/` | *待补充* | 0 |
 | 04 通用能力层 | 11 组件信息获取 | 01 ComponentUtils | `04-11-01` | `04-common-capability/11-component-info/01-component-utils/` | *待补充* | 2 |
@@ -128,7 +128,7 @@
 | 04 通用能力层 | 17 嵌入显示能力 | 02 IsolateComponent机制 | `04-17-02` | `04-common-capability/17-embedded-display/02-isolate-component/` | *待补充* | 0 |
 | 04 通用能力层 | 17 嵌入显示能力 | 03 From卡片机制 | `04-17-03` | `04-common-capability/17-embedded-display/03-form-card/` | *待补充* | 0 |
 | 04 通用能力层 | 17 嵌入显示能力 | 04 PluginComponent机制 | `04-17-04` | `04-common-capability/17-embedded-display/04-plugin-component/` | *待补充* | 0 |
-| 04 通用能力层 | 18 端侧渲染 | 01 同层渲染机制 | `04-18-01` | `04-common-capability/18-on-device-rendering/01-same-layer-rendering/` | *待补充* | 0 |
+| 04 通用能力层 | 18 端侧渲染 | 01 同层渲染机制 | `04-18-01` | `04-common-capability/18-on-device-rendering/01-same-layer-rendering/` | [design.md](04-common-capability/18-on-device-rendering/01-same-layer-rendering/design.md) | 1 |
 | 04 通用能力层 | 19 组件复用 | 01 组件复用框架 | `04-19-01` | `04-common-capability/19-component-reuse/01-component-reuse-framework/` | [design.md](04-common-capability/19-component-reuse/01-component-reuse-framework/design.md) | 4 |
 | 04 通用能力层 | 20 媒体查询能力 | 01 MediaQuery | `04-20-01` | `04-common-capability/20-media-query/01-media-query/` | [design.md](04-common-capability/20-media-query/01-media-query/design.md) | 1 |
 | 04 通用能力层 | 21 适老化 | 01 大字体 | `04-21-01` | `04-common-capability/21-aging-adaptation/01-large-font/` | *待补充* | 0 |
@@ -158,11 +158,11 @@
 | 05 组件层 | 02 导航类组件 | 06 SideBarContainer | `05-02-06` | `05-ui-components/02-navigation-components/06-sidebar-container/` | [design.md](05-ui-components/02-navigation-components/06-sidebar-container/design.md) | 1 |
 | 05 组件层 | 03 滚动容器类组件 | 01 滚动公共能力 | `05-03-01` | `05-ui-components/03-scroll-container-components/01-scroll-common-capability/` | [design.md](05-ui-components/03-scroll-container-components/01-scroll-common-capability/design.md) | 4 |
 | 05 组件层 | 03 滚动容器类组件 | 02 AlaphabetIndexer | `05-03-02` | `05-ui-components/03-scroll-container-components/02-alphabet-indexer/` | [design.md](05-ui-components/03-scroll-container-components/02-alphabet-indexer/design.md) | 2 |
-| 05 组件层 | 03 滚动容器类组件 | 03 ScrollBar | `05-03-03` | `05-ui-components/03-scroll-container-components/03-scroll-bar/` | *待补充* | 0 |
+| 05 组件层 | 03 滚动容器类组件 | 03 ScrollBar | `05-03-03` | `05-ui-components/03-scroll-container-components/03-scroll-bar/` | [design.md](05-ui-components/03-scroll-container-components/03-scroll-bar/design.md) | 2 |
 | 05 组件层 | 03 滚动容器类组件 | 04 Grid/GridItem | `05-03-04` | `05-ui-components/03-scroll-container-components/04-grid-grid-item/` | [design.md](05-ui-components/03-scroll-container-components/04-grid-grid-item/design.md) | 6 |
-| 05 组件层 | 03 滚动容器类组件 | 05 List/ListItem/ListItemGroup | `05-03-05` | `05-ui-components/03-scroll-container-components/05-list-list-item-list-item-group/` | *待补充* | 0 |
-| 05 组件层 | 03 滚动容器类组件 | 06 Refresh | `05-03-06` | `05-ui-components/03-scroll-container-components/06-refresh/` | *待补充* | 0 |
-| 05 组件层 | 03 滚动容器类组件 | 07 Scroll | `05-03-07` | `05-ui-components/03-scroll-container-components/07-scroll/` | *待补充* | 0 |
+| 05 组件层 | 03 滚动容器类组件 | 05 List/ListItem/ListItemGroup | `05-03-05` | `05-ui-components/03-scroll-container-components/05-list-list-item-list-item-group/` | [design.md](05-ui-components/03-scroll-container-components/05-list-list-item-list-item-group/design.md) | 7 |
+| 05 组件层 | 03 滚动容器类组件 | 06 Refresh | `05-03-06` | `05-ui-components/03-scroll-container-components/06-refresh/` | [design.md](05-ui-components/03-scroll-container-components/06-refresh/design.md) | 2 |
+| 05 组件层 | 03 滚动容器类组件 | 07 Scroll | `05-03-07` | `05-ui-components/03-scroll-container-components/07-scroll/` | [design.md](05-ui-components/03-scroll-container-components/07-scroll/design.md) | 7 |
 | 05 组件层 | 03 滚动容器类组件 | 08 Swiper | `05-03-08` | `05-ui-components/03-scroll-container-components/08-swiper/` | [design.md](05-ui-components/03-scroll-container-components/08-swiper/design.md) | 6 |
 | 05 组件层 | 03 滚动容器类组件 | 09 Tabs/TabContent | `05-03-09` | `05-ui-components/03-scroll-container-components/09-tabs-tab-content/` | [design.md](05-ui-components/03-scroll-container-components/09-tabs-tab-content/design.md) | 6 |
 | 05 组件层 | 03 滚动容器类组件 | 10 WaterFlow/FlowItem | `05-03-10` | `05-ui-components/03-scroll-container-components/10-water-flow-flow-item/` | [design.md](05-ui-components/03-scroll-container-components/10-water-flow-flow-item/design.md) | 6 |
@@ -838,6 +838,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 浮层能力（OverlayManager 挂载与管理） | [Feat-01-overlay-capability-spec.md](04-common-capability/08-root-view/03-overlay-capability/Feat-01-overlay-capability-spec.md) | Baselined |
 
 ### 04-09-01 焦点机制
 
@@ -991,6 +992,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 同层渲染纹理生产者（ArkUI 子树纹理导出） | [Feat-01-texture-export-producer-spec.md](04-common-capability/18-on-device-rendering/01-same-layer-rendering/Feat-01-texture-export-producer-spec.md) | Baselined |
 
 ### 04-19-01 组件复用框架
 
@@ -1209,6 +1211,8 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | ScrollBar 核心构造与绑定 | [Feat-01-scroll-bar-core-construction-binding-spec.md](05-ui-components/03-scroll-container-components/03-scroll-bar/Feat-01-scroll-bar-core-construction-binding-spec.md) | Baselined |
+| Feat-02 | ScrollBar 行为与视觉扩展 | [Feat-02-scroll-bar-behavior-visual-extensions-spec.md](05-ui-components/03-scroll-container-components/03-scroll-bar/Feat-02-scroll-bar-behavior-visual-extensions-spec.md) | Baselined |
 
 ### 05-03-04 Grid/GridItem
 
@@ -1225,16 +1229,32 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | List 创建与核心布局（含懒加载/缓存） | [Feat-01-list-creation-core-layout-spec.md](05-ui-components/03-scroll-container-components/05-list-list-item-list-item-group/Feat-01-list-creation-core-layout-spec.md) | Baselined |
+| Feat-02 | List 滚动运动学与边缘效果 | [Feat-02-list-scroll-kinematics-edge-effects-spec.md](05-ui-components/03-scroll-container-components/05-list-list-item-list-item-group/Feat-02-list-scroll-kinematics-edge-effects-spec.md) | Baselined |
+| Feat-03 | List 滚动可观测性与控制器 | [Feat-03-list-scroll-observability-controller-spec.md](05-ui-components/03-scroll-container-components/05-list-list-item-list-item-group/Feat-03-list-scroll-observability-controller-spec.md) | Baselined |
+| Feat-04 | List 分组/粘性头尾/Header/Footer | [Feat-04-list-grouping-sticky-header-footer-spec.md](05-ui-components/03-scroll-container-components/05-list-list-item-list-item-group/Feat-04-list-grouping-sticky-header-footer-spec.md) | Baselined |
+| Feat-05 | List 选择与编辑模式 | [Feat-05-list-selection-edit-mode-spec.md](05-ui-components/03-scroll-container-components/05-list-list-item-list-item-group/Feat-05-list-selection-edit-mode-spec.md) | Baselined |
+| Feat-06 | List 拖拽 | [Feat-06-list-item-drag-drop-spec.md](05-ui-components/03-scroll-container-components/05-list-list-item-list-item-group/Feat-06-list-item-drag-drop-spec.md) | Baselined |
+| Feat-07 | ListItem 滑动操作 | [Feat-07-list-item-swipe-action-spec.md](05-ui-components/03-scroll-container-components/05-list-list-item-list-item-group/Feat-07-list-item-swipe-action-spec.md) | Baselined |
 
 ### 05-03-06 Refresh
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Refresh 创建、刷新状态生命周期与指示器内容 | [Feat-01-refresh-creation-state-lifecycle-indicator-spec.md](05-ui-components/03-scroll-container-components/06-refresh/Feat-01-refresh-creation-state-lifecycle-indicator-spec.md) | Baselined |
+| Feat-02 | Refresh 下拉物理、触发/取消手势与偏移观测 | [Feat-02-refresh-pull-physics-gesture-offset-spec.md](05-ui-components/03-scroll-container-components/06-refresh/Feat-02-refresh-pull-physics-gesture-offset-spec.md) | Baselined |
 
 ### 05-03-07 Scroll
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Scroll 核心几何/方向与布局 | [Feat-01-scroll-core-geometry-layout-spec.md](05-ui-components/03-scroll-container-components/07-scroll/Feat-01-scroll-core-geometry-layout-spec.md) | Baselined |
+| Feat-02 | Scroll 滚动条与视觉边缘效果 | [Feat-02-scroll-scrollbar-visual-edge-effects-spec.md](05-ui-components/03-scroll-container-components/07-scroll/Feat-02-scroll-scrollbar-visual-edge-effects-spec.md) | Baselined |
+| Feat-03 | Scroll 滚动运动控制器 API | [Feat-03-scroll-motion-controller-api-spec.md](05-ui-components/03-scroll-container-components/07-scroll/Feat-03-scroll-motion-controller-api-spec.md) | Baselined |
+| Feat-04 | Scroll 交互/手势与嵌套滚动 | [Feat-04-scroll-interaction-gesture-nested-scroll-spec.md](05-ui-components/03-scroll-container-components/07-scroll/Feat-04-scroll-interaction-gesture-nested-scroll-spec.md) | Baselined |
+| Feat-05 | Scroll 滚动事件与可观测性 | [Feat-05-scroll-events-observability-spec.md](05-ui-components/03-scroll-container-components/07-scroll/Feat-05-scroll-events-observability-spec.md) | Baselined |
+| Feat-06 | Scroll 分页与吸附对齐 | [Feat-06-scroll-paging-snap-alignment-spec.md](05-ui-components/03-scroll-container-components/07-scroll/Feat-06-scroll-paging-snap-alignment-spec.md) | Baselined |
+| Feat-07 | Scroll 缩放与二维自由滚动 | [Feat-07-scroll-zoom-2d-free-scroll-spec.md](05-ui-components/03-scroll-container-components/07-scroll/Feat-07-scroll-zoom-2d-free-scroll-spec.md) | Baselined |
 
 ### 05-03-08 Swiper
 
