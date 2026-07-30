@@ -10,7 +10,7 @@
 | 优先级 | P1 |
 | 目标版本 | API 10+ |
 | SIG 归属 | ArkUI SIG |
-| 状态 | Draft |
+| 状态 | Baselined |
 | 复杂度 | 复杂 |
 
 ## 本次变更范围（Delta）

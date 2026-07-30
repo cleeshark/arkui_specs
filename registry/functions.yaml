@@ -26,7 +26,7 @@ top_levels:
 - id: '07'
   slug: 07-frontend
   title: 前端层
-  description: ArkTS 高级组件、状态管理、自定义组件、生成式 UI
+  description: ArkTS 高级组件、状态管理、自定义组件、渲染控制、响应式环境变量、生成式 UI
 - id: 08
   slug: 08-ndk
   title: NDK
@@ -142,7 +142,7 @@ functions:
     id: '04'
     title: 预览器平台适配
   path: 02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/
-  design: null
+  design: 02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/design.md
   status: 待补充
 - id: 02-02-01
   l1:
@@ -324,7 +324,7 @@ functions:
     id: '01'
     title: 资源访问
   path: 03-engine-framework/03-resource-theme/01-resource-access/
-  design: null
+  design: 03-engine-framework/03-resource-theme/01-resource-access/design.md
   status: active
 - id: 03-03-02
   l1:
@@ -337,7 +337,7 @@ functions:
     id: '02'
     title: 主题分层访问
   path: 03-engine-framework/03-resource-theme/02-theme-layered-access/
-  design: null
+  design: 03-engine-framework/03-resource-theme/02-theme-layered-access/design.md
   status: active
 - id: 03-03-03
   l1:
@@ -350,7 +350,7 @@ functions:
     id: '03'
     title: Theme框架
   path: 03-engine-framework/03-resource-theme/03-theme-framework/
-  design: null
+  design: 03-engine-framework/03-resource-theme/03-theme-framework/design.md
   status: active
 - id: 03-03-04
   l1:
@@ -363,7 +363,7 @@ functions:
     id: '04'
     title: 资源动态切换
   path: 03-engine-framework/03-resource-theme/04-resource-dynamic-switching/
-  design: null
+  design: 03-engine-framework/03-resource-theme/04-resource-dynamic-switching/design.md
   status: active
 - id: 03-04-01
   l1:
@@ -415,7 +415,7 @@ functions:
     id: '02'
     title: 子窗机制
   path: 03-engine-framework/05-window-mechanism/02-subwindow-mechanism/
-  design: null
+  design: 03-engine-framework/05-window-mechanism/02-subwindow-mechanism/design.md
   status: active
 - id: 03-06-01
   l1:
@@ -441,7 +441,7 @@ functions:
     id: '01'
     title: 无障碍能力
   path: 03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/
-  design: null
+  design: 03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/design.md
   status: active
 - id: 03-07-02
   l1:
@@ -584,7 +584,7 @@ functions:
     id: '01'
     title: 安全区机制
   path: 04-common-capability/02-safe-area/01-safe-area-mechanism/
-  design: null
+  design: 04-common-capability/02-safe-area/01-safe-area-mechanism/design.md
   status: active
 - id: 04-03-01
   l1:
@@ -623,7 +623,7 @@ functions:
     id: '03'
     title: 基础属性
   path: 04-common-capability/03-common-attributes/03-basic-attributes/
-  design: null
+  design: 04-common-capability/03-common-attributes/03-basic-attributes/design.md
   status: active
 - id: 04-03-04
   l1:
@@ -649,7 +649,7 @@ functions:
     id: '05'
     title: 弹窗类属性
   path: 04-common-capability/03-common-attributes/05-popup-attributes/
-  design: null
+  design: 04-common-capability/03-common-attributes/05-popup-attributes/design.md
   status: active
 - id: 04-03-06
   l1:
@@ -662,7 +662,7 @@ functions:
     id: '06'
     title: 模态属性
   path: 04-common-capability/03-common-attributes/06-modal-attributes/
-  design: null
+  design: 04-common-capability/03-common-attributes/06-modal-attributes/design.md
   status: active
 - id: 04-03-07
   l1:
@@ -675,7 +675,7 @@ functions:
     id: '07'
     title: 样式属性
   path: 04-common-capability/03-common-attributes/07-style-attributes/
-  design: null
+  design: 04-common-capability/03-common-attributes/07-style-attributes/design.md
   status: active
 - id: 04-03-08
   l1:
@@ -688,7 +688,7 @@ functions:
     id: 08
     title: 基础单位
   path: 04-common-capability/03-common-attributes/08-basic-units/
-  design: null
+  design: 04-common-capability/03-common-attributes/08-basic-units/design.md
   status: active
 - id: 04-03-09
   l1:
@@ -727,7 +727,7 @@ functions:
     id: '11'
     title: 文本通用属性
   path: 04-common-capability/03-common-attributes/11-text-common-attributes/
-  design: null
+  design: 04-common-capability/03-common-attributes/11-text-common-attributes/design.md
   status: active
 - id: 04-04-01
   l1:
@@ -883,7 +883,7 @@ functions:
     id: '01'
     title: 动态绘制属性
   path: 04-common-capability/05-custom-extension/01-draw-modifier/
-  design: null
+  design: 04-common-capability/05-custom-extension/01-draw-modifier/design.md
   status: active
 - id: 04-05-02
   l1:
@@ -896,7 +896,7 @@ functions:
     id: '02'
     title: 动态属性
   path: 04-common-capability/05-custom-extension/02-dynamic-attributes/
-  design: null
+  design: 04-common-capability/05-custom-extension/02-dynamic-attributes/design.md
   status: active
 - id: 04-05-03
   l1:
@@ -909,7 +909,7 @@ functions:
     id: '03'
     title: 自定义内容 -（表单类组件）
   path: 04-common-capability/05-custom-extension/03-content-modifier-form/
-  design: null
+  design: 04-common-capability/05-custom-extension/03-content-modifier-form/design.md
   status: active
 - id: 04-05-04
   l1:
@@ -922,7 +922,7 @@ functions:
     id: '04'
     title: 自定义内容 -（信息展示类）
   path: 04-common-capability/05-custom-extension/04-content-modifier-display/
-  design: null
+  design: 04-common-capability/05-custom-extension/04-content-modifier-display/design.md
   status: active
 - id: 04-05-05
   l1:
@@ -935,7 +935,7 @@ functions:
     id: '05'
     title: 自定义属性
   path: 04-common-capability/05-custom-extension/05-custom-property/
-  design: null
+  design: 04-common-capability/05-custom-extension/05-custom-property/design.md
   status: active
 - id: 04-05-06
   l1:
@@ -948,7 +948,7 @@ functions:
     id: '06'
     title: 组件Modifier
   path: 04-common-capability/05-custom-extension/06-component-modifier/
-  design: null
+  design: 04-common-capability/05-custom-extension/06-component-modifier/design.md
   status: active
 - id: 04-06-01
   l1:
@@ -961,7 +961,7 @@ functions:
     id: '01'
     title: 占位组件
   path: 04-common-capability/06-custom-node/01-placeholder-component/
-  design: null
+  design: 04-common-capability/06-custom-node/01-placeholder-component/design.md
   status: active
 - id: 04-06-02
   l1:
@@ -974,7 +974,7 @@ functions:
     id: '02'
     title: FrameNode
   path: 04-common-capability/06-custom-node/02-frame-node/
-  design: null
+  design: 04-common-capability/06-custom-node/02-frame-node/design.md
   status: active
 - id: 04-06-03
   l1:
@@ -987,7 +987,7 @@ functions:
     id: '03'
     title: RenderNode
   path: 04-common-capability/06-custom-node/03-render-node/
-  design: null
+  design: 04-common-capability/06-custom-node/03-render-node/design.md
   status: active
 - id: 04-06-04
   l1:
@@ -1000,7 +1000,7 @@ functions:
     id: '04'
     title: BuilderNode
   path: 04-common-capability/06-custom-node/04-builder-node/
-  design: null
+  design: 04-common-capability/06-custom-node/04-builder-node/design.md
   status: active
 - id: 04-06-05
   l1:
@@ -1013,7 +1013,7 @@ functions:
     id: '05'
     title: ComponentContent
   path: 04-common-capability/06-custom-node/05-component-content/
-  design: null
+  design: 04-common-capability/06-custom-node/05-component-content/design.md
   status: active
 - id: 04-06-06
   l1:
@@ -1026,7 +1026,7 @@ functions:
     id: '06'
     title: NodeAdapter
   path: 04-common-capability/06-custom-node/06-node-adapter/
-  design: null
+  design: 04-common-capability/06-custom-node/06-node-adapter/design.md
   status: active
 - id: 04-06-07
   l1:
@@ -1039,7 +1039,7 @@ functions:
     id: '07'
     title: TypedFrameNode
   path: 04-common-capability/06-custom-node/07-typed-frame-node/
-  design: null
+  design: 04-common-capability/06-custom-node/07-typed-frame-node/design.md
   status: active
 - id: 04-07-01
   l1:
@@ -1117,7 +1117,7 @@ functions:
     id: '03'
     title: 浮层能力
   path: 04-common-capability/08-root-view/03-overlay-capability/
-  design: null
+  design: 04-common-capability/08-root-view/03-overlay-capability/design.md
   status: active
 - id: 04-09-01
   l1:
@@ -1169,7 +1169,7 @@ functions:
     id: '02'
     title: 无感监听（observer）
   path: 04-common-capability/11-component-info/02-observer/
-  design: null
+  design: 04-common-capability/11-component-info/02-observer/design.md
   status: active
 - id: 04-11-03
   l1:
@@ -1234,7 +1234,7 @@ functions:
     id: '01'
     title: 字体注册
   path: 04-common-capability/13-font-text/01-font-registration/
-  design: null
+  design: 04-common-capability/13-font-text/01-font-registration/design.md
   status: active
 - id: 04-13-02
   l1:
@@ -1247,7 +1247,7 @@ functions:
     id: '02'
     title: 文本测量
   path: 04-common-capability/13-font-text/02-text-measurement/
-  design: null
+  design: 04-common-capability/13-font-text/02-text-measurement/design.md
   status: active
 - id: 04-14-01
   l1:
@@ -1260,7 +1260,7 @@ functions:
     id: '01'
     title: 文本选择
   path: 04-common-capability/14-input-interaction/01-text-selection/
-  design: null
+  design: 04-common-capability/14-input-interaction/01-text-selection/design.md
   status: active
 - id: 04-14-02
   l1:
@@ -1286,7 +1286,7 @@ functions:
     id: '03'
     title: 文本交互
   path: 04-common-capability/14-input-interaction/03-text-interaction/
-  design: null
+  design: 04-common-capability/14-input-interaction/03-text-interaction/design.md
   status: active
 - id: 04-14-04
   l1:
@@ -1312,7 +1312,7 @@ functions:
     id: '05'
     title: 自动补全能力（AutoFill）
   path: 04-common-capability/14-input-interaction/05-autofill/
-  design: null
+  design: 04-common-capability/14-input-interaction/05-autofill/design.md
   status: active
 - id: 04-15-01
   l1:
@@ -1351,7 +1351,7 @@ functions:
     id: '01'
     title: UIAppearance
   path: 04-common-capability/16-ui-appearance/01-ui-appearance/
-  design: null
+  design: 04-common-capability/16-ui-appearance/01-ui-appearance/design.md
   status: active
 - id: 04-17-01
   l1:
@@ -1416,7 +1416,7 @@ functions:
     id: '01'
     title: 同层渲染机制
   path: 04-common-capability/18-on-device-rendering/01-same-layer-rendering/
-  design: null
+  design: 04-common-capability/18-on-device-rendering/01-same-layer-rendering/design.md
   status: active
 - id: 04-19-01
   l1:
@@ -1429,7 +1429,7 @@ functions:
     id: '01'
     title: 组件复用框架
   path: 04-common-capability/19-component-reuse/01-component-reuse-framework/
-  design: null
+  design: 04-common-capability/19-component-reuse/01-component-reuse-framework/design.md
   status: active
 - id: 04-20-01
   l1:
@@ -1442,7 +1442,7 @@ functions:
     id: '01'
     title: MediaQuery
   path: 04-common-capability/20-media-query/01-media-query/
-  design: null
+  design: 04-common-capability/20-media-query/01-media-query/design.md
   status: active
 - id: 04-21-01
   l1:
@@ -1507,7 +1507,7 @@ functions:
     id: '01'
     title: 像素取整能力
   path: 04-common-capability/24-layout-common-capability/01-pixel-rounding/
-  design: null
+  design: 04-common-capability/24-layout-common-capability/01-pixel-rounding/design.md
   status: active
 - id: 04-25-01
   l1:
@@ -1572,7 +1572,7 @@ functions:
     id: '04'
     title: ColumnSplit
   path: 05-ui-components/01-layout-components/04-column-split/
-  design: null
+  design: 05-ui-components/01-layout-components/04-column-split/design.md
   status: active
 - id: 05-01-05
   l1:
@@ -1650,7 +1650,7 @@ functions:
     id: '10'
     title: RowSplit
   path: 05-ui-components/01-layout-components/10-row-split/
-  design: null
+  design: 05-ui-components/01-layout-components/10-row-split/design.md
   status: active
 - id: 05-01-11
   l1:
@@ -1780,7 +1780,7 @@ functions:
     id: '01'
     title: 滚动公共能力
   path: 05-ui-components/03-scroll-container-components/01-scroll-common-capability/
-  design: null
+  design: 05-ui-components/03-scroll-container-components/01-scroll-common-capability/design.md
   status: active
 - id: 05-03-02
   l1:
@@ -1806,7 +1806,7 @@ functions:
     id: '03'
     title: ScrollBar
   path: 05-ui-components/03-scroll-container-components/03-scroll-bar/
-  design: null
+  design: 05-ui-components/03-scroll-container-components/03-scroll-bar/design.md
   status: active
 - id: 05-03-04
   l1:
@@ -1819,7 +1819,7 @@ functions:
     id: '04'
     title: Grid/GridItem
   path: 05-ui-components/03-scroll-container-components/04-grid-grid-item/
-  design: null
+  design: 05-ui-components/03-scroll-container-components/04-grid-grid-item/design.md
   status: active
 - id: 05-03-05
   l1:
@@ -1832,7 +1832,7 @@ functions:
     id: '05'
     title: List/ListItem/ListItemGroup
   path: 05-ui-components/03-scroll-container-components/05-list-list-item-list-item-group/
-  design: null
+  design: 05-ui-components/03-scroll-container-components/05-list-list-item-list-item-group/design.md
   status: active
 - id: 05-03-06
   l1:
@@ -1845,7 +1845,7 @@ functions:
     id: '06'
     title: Refresh
   path: 05-ui-components/03-scroll-container-components/06-refresh/
-  design: null
+  design: 05-ui-components/03-scroll-container-components/06-refresh/design.md
   status: active
 - id: 05-03-07
   l1:
@@ -1858,7 +1858,7 @@ functions:
     id: '07'
     title: Scroll
   path: 05-ui-components/03-scroll-container-components/07-scroll/
-  design: null
+  design: 05-ui-components/03-scroll-container-components/07-scroll/design.md
   status: active
 - id: 05-03-08
   l1:
@@ -1897,7 +1897,7 @@ functions:
     id: '10'
     title: WaterFlow/FlowItem
   path: 05-ui-components/03-scroll-container-components/10-water-flow-flow-item/
-  design: null
+  design: 05-ui-components/03-scroll-container-components/10-water-flow-flow-item/design.md
   status: active
 - id: 05-04-01
   l1:
@@ -1936,7 +1936,7 @@ functions:
     id: '03'
     title: Rating
   path: 05-ui-components/04-input-form-components/03-rating/
-  design: null
+  design: 05-ui-components/04-input-form-components/03-rating/design.md
   status: active
 - id: 05-04-04
   l1:
@@ -2079,7 +2079,7 @@ functions:
     id: '02'
     title: 警告弹窗
   path: 05-ui-components/06-popup-components/02-alert-dialog/
-  design: null
+  design: 05-ui-components/06-popup-components/02-alert-dialog/design.md
   status: active
 - id: 05-06-03
   l1:
@@ -2092,7 +2092,7 @@ functions:
     id: '03'
     title: 列表选择弹窗
   path: 05-ui-components/06-popup-components/03-list-selection-dialog/
-  design: null
+  design: 05-ui-components/06-popup-components/03-list-selection-dialog/design.md
   status: active
 - id: 05-06-04
   l1:
@@ -2170,7 +2170,7 @@ functions:
     id: 09
     title: ContextMenu接口
   path: 05-ui-components/06-popup-components/09-context-menu/
-  design: null
+  design: 05-ui-components/06-popup-components/09-context-menu/design.md
   status: active
 - id: 05-06-10
   l1:
@@ -2209,7 +2209,7 @@ functions:
     id: '01'
     title: 半模态弹窗
   path: 05-ui-components/07-modal-components/01-sheet-modal/
-  design: null
+  design: 05-ui-components/07-modal-components/01-sheet-modal/design.md
   status: active
 - id: 05-07-02
   l1:
@@ -2222,7 +2222,7 @@ functions:
     id: '02'
     title: 全模态弹窗
   path: 05-ui-components/07-modal-components/02-full-modal/
-  design: null
+  design: 05-ui-components/07-modal-components/02-full-modal/design.md
   status: active
 - id: 05-07-03
   l1:
@@ -2300,7 +2300,7 @@ functions:
     id: '02'
     title: RichEditor
   path: 05-ui-components/09-text-components/02-rich-editor/
-  design: null
+  design: 05-ui-components/09-text-components/02-rich-editor/design.md
   status: active
 - id: 05-09-03
   l1:
@@ -2365,7 +2365,7 @@ functions:
     id: '07'
     title: SymbolGlyph
   path: 05-ui-components/09-text-components/07-symbol-glyph/
-  design: null
+  design: 05-ui-components/09-text-components/07-symbol-glyph/design.md
   status: active
 - id: 05-09-08
   l1:
@@ -2378,7 +2378,7 @@ functions:
     id: 08
     title: TextInput
   path: 05-ui-components/09-text-components/08-text-input/
-  design: null
+  design: 05-ui-components/09-text-components/08-text-input/design.md
   status: active
 - id: 05-09-09
   l1:
@@ -2391,7 +2391,7 @@ functions:
     id: 09
     title: HyperLink
   path: 05-ui-components/09-text-components/09-hyperlink/
-  design: null
+  design: 05-ui-components/09-text-components/09-hyperlink/design.md
   status: active
 - id: 05-09-10
   l1:
@@ -2404,7 +2404,7 @@ functions:
     id: '10'
     title: 属性字符串
   path: 05-ui-components/09-text-components/10-attributed-string/
-  design: null
+  design: 05-ui-components/09-text-components/10-attributed-string/design.md
   status: active
 - id: 05-10-01
   l1:
@@ -2469,7 +2469,7 @@ functions:
     id: '05'
     title: Progress
   path: 05-ui-components/10-information-display-components/05-progress/
-  design: null
+  design: 05-ui-components/10-information-display-components/05-progress/design.md
   status: active
 - id: 05-10-06
   l1:
@@ -2482,7 +2482,7 @@ functions:
     id: '06'
     title: QRCode
   path: 05-ui-components/10-information-display-components/06-qr-code/
-  design: null
+  design: 05-ui-components/10-information-display-components/06-qr-code/design.md
   status: active
 - id: 05-10-07
   l1:
@@ -2495,7 +2495,7 @@ functions:
     id: '07'
     title: TextClock
   path: 05-ui-components/10-information-display-components/07-text-clock/
-  design: null
+  design: 05-ui-components/10-information-display-components/07-text-clock/design.md
   status: active
 - id: 05-10-08
   l1:
@@ -2508,7 +2508,7 @@ functions:
     id: 08
     title: TextTimer
   path: 05-ui-components/10-information-display-components/08-text-timer/
-  design: null
+  design: 05-ui-components/10-information-display-components/08-text-timer/design.md
   status: active
 - id: 05-10-09
   l1:
@@ -2521,7 +2521,7 @@ functions:
     id: 09
     title: Badge
   path: 05-ui-components/10-information-display-components/09-badge/
-  design: null
+  design: 05-ui-components/10-information-display-components/09-badge/design.md
   status: active
 - id: 05-10-10
   l1:
@@ -2586,7 +2586,7 @@ functions:
     id: '02'
     title: AbilityComponent
   path: 05-ui-components/12-embedded-display-components/02-ability-component/
-  design: null
+  design: 05-ui-components/12-embedded-display-components/02-ability-component/design.md
   status: active
 - id: 05-12-03
   l1:
@@ -2688,9 +2688,9 @@ functions:
     title: 绘制类组件
   l3:
     id: '01'
-    title: Shape相关
+    title: Shape
   path: 05-ui-components/14-drawing-components/01-shape/
-  design: null
+  design: 05-ui-components/14-drawing-components/01-shape/design.md
   status: active
 - id: 05-14-02
   l1:
@@ -2703,7 +2703,7 @@ functions:
     id: '02'
     title: Canvas
   path: 05-ui-components/14-drawing-components/02-canvas/
-  design: null
+  design: 05-ui-components/14-drawing-components/02-canvas/design.md
   status: active
 - id: 05-14-03
   l1:
@@ -2716,7 +2716,7 @@ functions:
     id: '03'
     title: OffscreenCanvas
   path: 05-ui-components/14-drawing-components/03-offscreen-canvas/
-  design: null
+  design: 05-ui-components/14-drawing-components/03-offscreen-canvas/design.md
   status: active
 - id: 05-15-01
   l1:
@@ -2729,7 +2729,7 @@ functions:
     id: '01'
     title: WithTheme
   path: 05-ui-components/15-theme-components/01-with-theme/
-  design: null
+  design: 05-ui-components/15-theme-components/01-with-theme/design.md
   status: active
 - id: 05-16-01
   l1:
@@ -2742,7 +2742,7 @@ functions:
     id: '01'
     title: NodeContainer
   path: 05-ui-components/16-custom-placeholder-components/01-node-container/
-  design: null
+  design: 05-ui-components/16-custom-placeholder-components/01-node-container/design.md
   status: active
 - id: 05-16-02
   l1:
@@ -2755,7 +2755,7 @@ functions:
     id: '02'
     title: ContentSlot
   path: 05-ui-components/16-custom-placeholder-components/02-content-slot/
-  design: null
+  design: 05-ui-components/16-custom-placeholder-components/02-content-slot/design.md
   status: active
 - id: 06-01-01
   l1:
@@ -3234,9 +3234,9 @@ functions:
     title: 状态管理框架
   l3:
     id: '01'
-    title: 组件状态管理
-  path: 07-frontend/02-state-management/01-component-state-management/
-  design: null
+    title: 状态管理V1组件内状态管理
+  path: 07-frontend/02-state-management/01-v1-component-state/
+  design: 07-frontend/02-state-management/01-v1-component-state/design.md
   status: active
 - id: 07-02-02
   l1:
@@ -3247,9 +3247,9 @@ functions:
     title: 状态管理框架
   l3:
     id: '02'
-    title: 应用状态管理
-  path: 07-frontend/02-state-management/02-application-state-management/
-  design: null
+    title: 状态管理V1数据对象内状态管理
+  path: 07-frontend/02-state-management/02-v1-data-object-state/
+  design: 07-frontend/02-state-management/02-v1-data-object-state/design.md
   status: active
 - id: 07-02-03
   l1:
@@ -3260,9 +3260,9 @@ functions:
     title: 状态管理框架
   l3:
     id: '03'
-    title: 数据同步
-  path: 07-frontend/02-state-management/03-data-synchronization/
-  design: null
+    title: 状态管理V1应用内状态管理
+  path: 07-frontend/02-state-management/03-v1-app-state/
+  design: 07-frontend/02-state-management/03-v1-app-state/design.md
   status: active
 - id: 07-02-04
   l1:
@@ -3273,9 +3273,9 @@ functions:
     title: 状态管理框架
   l3:
     id: '04'
-    title: 状态管理V2
-  path: 07-frontend/02-state-management/04-state-management-v2/
-  design: null
+    title: 状态管理V2组件内状态管理
+  path: 07-frontend/02-state-management/04-v2-component-state/
+  design: 07-frontend/02-state-management/04-v2-component-state/design.md
   status: active
 - id: 07-02-05
   l1:
@@ -3286,9 +3286,126 @@ functions:
     title: 状态管理框架
   l3:
     id: '05'
-    title: ArkTS静态化
-  path: 07-frontend/02-state-management/05-arkts-staticization/
-  design: null
+    title: 状态管理V2数据对象内状态管理
+  path: 07-frontend/02-state-management/05-v2-data-object-state/
+  design: 07-frontend/02-state-management/05-v2-data-object-state/design.md
+  status: active
+- id: 07-02-06
+  l1:
+    id: '07'
+    title: 前端层
+  l2:
+    id: '02'
+    title: 状态管理框架
+  l3:
+    id: '06'
+    title: 状态管理V2应用内状态管理
+  path: 07-frontend/02-state-management/06-v2-app-state/
+  design: 07-frontend/02-state-management/06-v2-app-state/design.md
+  status: active
+- id: 07-02-07
+  l1:
+    id: '07'
+    title: 前端层
+  l2:
+    id: '02'
+    title: 状态管理框架
+  l3:
+    id: '07'
+    title: 状态管理辅助接口
+  path: 07-frontend/02-state-management/07-state-management-utilities/
+  design: 07-frontend/02-state-management/07-state-management-utilities/design.md
+  status: active
+- id: 07-02-08
+  l1:
+    id: '07'
+    title: 前端层
+  l2:
+    id: '02'
+    title: 状态管理框架
+  l3:
+    id: '08'
+    title: 静态V1组件内状态管理
+  path: 07-frontend/02-state-management/08-static-v1-component-state/
+  design: 07-frontend/02-state-management/08-static-v1-component-state/design.md
+  status: active
+- id: 07-02-09
+  l1:
+    id: '07'
+    title: 前端层
+  l2:
+    id: '02'
+    title: 状态管理框架
+  l3:
+    id: '09'
+    title: 静态V1数据对象内状态管理
+  path: 07-frontend/02-state-management/09-static-v1-data-object-state/
+  design: 07-frontend/02-state-management/09-static-v1-data-object-state/design.md
+  status: active
+- id: 07-02-10
+  l1:
+    id: '07'
+    title: 前端层
+  l2:
+    id: '02'
+    title: 状态管理框架
+  l3:
+    id: '10'
+    title: 静态V1应用内状态管理
+  path: 07-frontend/02-state-management/10-static-v1-app-state/
+  design: 07-frontend/02-state-management/10-static-v1-app-state/design.md
+  status: active
+- id: 07-02-11
+  l1:
+    id: '07'
+    title: 前端层
+  l2:
+    id: '02'
+    title: 状态管理框架
+  l3:
+    id: '11'
+    title: 静态V2组件内状态管理
+  path: 07-frontend/02-state-management/11-static-v2-component-state/
+  design: 07-frontend/02-state-management/11-static-v2-component-state/design.md
+  status: active
+- id: 07-02-12
+  l1:
+    id: '07'
+    title: 前端层
+  l2:
+    id: '02'
+    title: 状态管理框架
+  l3:
+    id: '12'
+    title: 静态V2数据对象内状态管理
+  path: 07-frontend/02-state-management/12-static-v2-data-object-state/
+  design: 07-frontend/02-state-management/12-static-v2-data-object-state/design.md
+  status: active
+- id: 07-02-13
+  l1:
+    id: '07'
+    title: 前端层
+  l2:
+    id: '02'
+    title: 状态管理框架
+  l3:
+    id: '13'
+    title: 静态V2应用内状态管理
+  path: 07-frontend/02-state-management/13-static-v2-app-state/
+  design: 07-frontend/02-state-management/13-static-v2-app-state/design.md
+  status: active
+- id: 07-02-14
+  l1:
+    id: '07'
+    title: 前端层
+  l2:
+    id: '02'
+    title: 状态管理框架
+  l3:
+    id: '14'
+    title: 状态管理互操作
+  path: 07-frontend/02-state-management/14-state-management-interop/
+  design: 07-frontend/02-state-management/14-state-management-interop/design.md
   status: active
 - id: 07-03-01
   l1:
@@ -3301,7 +3418,7 @@ functions:
     id: '01'
     title: 组件化
   path: 07-frontend/03-custom-components/01-componentization/
-  design: null
+  design: 07-frontend/03-custom-components/01-componentization/design.md
   status: active
 - id: 07-03-02
   l1:
@@ -3312,9 +3429,9 @@ functions:
     title: 自定义组件
   l3:
     id: '02'
-    title: 页面生命周期
-  path: 07-frontend/03-custom-components/02-page-lifecycle/
-  design: null
+    title: 自定义组件生命周期
+  path: 07-frontend/03-custom-components/02-component-lifecycle/
+  design: 07-frontend/03-custom-components/02-component-lifecycle/design.md
   status: active
 - id: 07-03-03
   l1:
@@ -3325,9 +3442,9 @@ functions:
     title: 自定义组件
   l3:
     id: '03'
-    title: 组件扩展
-  path: 07-frontend/03-custom-components/03-component-extension/
-  design: null
+    title: 自定义组件复用
+  path: 07-frontend/03-custom-components/03-component-reuse/
+  design: 07-frontend/03-custom-components/03-component-reuse/design.md
   status: active
 - id: 07-03-04
   l1:
@@ -3338,9 +3455,9 @@ functions:
     title: 自定义组件
   l3:
     id: '04'
-    title: 渲染控制语法
-  path: 07-frontend/03-custom-components/04-render-control-syntax/
-  design: null
+    title: 自定义组件冻结
+  path: 07-frontend/03-custom-components/04-component-freeze/
+  design: 07-frontend/03-custom-components/04-component-freeze/design.md
   status: active
 - id: 07-03-05
   l1:
@@ -3351,9 +3468,9 @@ functions:
     title: 自定义组件
   l3:
     id: '05'
-    title: LazyForEach
-  path: 07-frontend/03-custom-components/05-lazy-foreach/
-  design: null
+    title: 自定义测量/布局
+  path: 07-frontend/03-custom-components/05-custom-measure-layout/
+  design: 07-frontend/03-custom-components/05-custom-measure-layout/design.md
   status: active
 - id: 07-03-06
   l1:
@@ -3364,8 +3481,8 @@ functions:
     title: 自定义组件
   l3:
     id: '06'
-    title: 自定义测量/布局
-  path: 07-frontend/03-custom-components/06-custom-measure-layout/
+    title: 组件扩展
+  path: 07-frontend/03-custom-components/06-component-extension/
   design: null
   status: active
 - id: 07-03-07
@@ -3377,9 +3494,9 @@ functions:
     title: 自定义组件
   l3:
     id: '07'
-    title: 组件复用前端
-  path: 07-frontend/03-custom-components/07-frontend-component-reuse/
-  design: null
+    title: 静态自定义组件状态相关
+  path: 07-frontend/03-custom-components/07-static-custom-component-state/
+  design: 07-frontend/03-custom-components/07-static-custom-component-state/design.md
   status: active
 - id: 07-04-01
   l1:
@@ -3418,6 +3535,71 @@ functions:
     id: '03'
     title: A2UI高级垂域组件
   path: 07-frontend/04-generative-ui/03-a2ui-advanced-domain-components/
+  design: null
+  status: active
+- id: 07-05-01
+  l1:
+    id: '07'
+    title: 前端层
+  l2:
+    id: '05'
+    title: 渲染控制
+  l3:
+    id: '01'
+    title: 渲染控制语法
+  path: 07-frontend/05-render-control/01-render-control-syntax/
+  design: 07-frontend/05-render-control/01-render-control-syntax/design.md
+  status: active
+- id: 07-05-02
+  l1:
+    id: '07'
+    title: 前端层
+  l2:
+    id: '05'
+    title: 渲染控制
+  l3:
+    id: '02'
+    title: LazyForEach
+  path: 07-frontend/05-render-control/02-lazy-foreach/
+  design: 07-frontend/05-render-control/02-lazy-foreach/design.md
+  status: active
+- id: 07-05-03
+  l1:
+    id: '07'
+    title: 前端层
+  l2:
+    id: '05'
+    title: 渲染控制
+  l3:
+    id: '03'
+    title: Repeat
+  path: 07-frontend/05-render-control/03-repeat/
+  design: 07-frontend/05-render-control/03-repeat/design.md
+  status: active
+- id: 07-06-01
+  l1:
+    id: '07'
+    title: 前端层
+  l2:
+    id: '06'
+    title: 响应式环境变量
+  l3:
+    id: '01'
+    title: 系统环境变量
+  path: 07-frontend/06-reactive-env/01-system-env/
+  design: null
+  status: active
+- id: 07-06-02
+  l1:
+    id: '07'
+    title: 前端层
+  l2:
+    id: '06'
+    title: 响应式环境变量
+  l3:
+    id: '02'
+    title: 自定义环境变量
+  path: 07-frontend/06-reactive-env/02-custom-env/
   design: null
   status: active
 - id: 08-01-01
