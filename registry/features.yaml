@@ -9,6 +9,21 @@ features:
   title: 平台抽象基类与构建适配
   spec: 02-cross-platform/01-platform-adapter/01-oh-platform-adapter/Feat-01-platform-abstraction-build-spec.md
   status: Baselined
+- func_id: 02-01-04
+  id: Feat-01
+  title: 预览器平台发现与构建配置
+  spec: 02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/Feat-01-previewer-platform-build-spec.md
+  status: Baselined
+- func_id: 02-01-04
+  id: Feat-02
+  title: 预览器运行入口与平台服务替身
+  spec: 02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/Feat-02-previewer-runtime-mock-spec.md
+  status: Baselined
+- func_id: 02-01-04
+  id: Feat-03
+  title: 预览器 SDK 与资源打包
+  spec: 02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/Feat-03-previewer-sdk-packaging-spec.md
+  status: Baselined
 - func_id: 02-02-01
   id: Feat-01
   title: 渲染后端核心架构
@@ -249,6 +264,16 @@ features:
   title: Image Analyzer Overlay 生命周期与跨组件管理
   spec: 04-common-capability/23-ai-capability/01-image-analysis/Feat-02-image-analyzer-overlay-lifecycle-spec.md
   status: Baselined
+- func_id: 04-20-01
+  id: Feat-01
+  title: MediaQuery 媒体条件匹配与监听生命周期
+  spec: 04-common-capability/20-media-query/01-media-query/Feat-01-media-query-listener-spec.md
+  status: Baselined
+- func_id: 04-24-01
+  id: Feat-01
+  title: 像素取整策略与布局渲染传播
+  spec: 04-common-capability/24-layout-common-capability/01-pixel-rounding/Feat-01-pixel-rounding-policy-propagation-spec.md
+  status: Baselined
 - func_id: 04-04-06
   id: Feat-01
   title: 基础手势 (Tap/LongPress/Pan/Pinch/Rotation/Swipe)
@@ -274,6 +299,46 @@ features:
   title: 手势识别异常恢复增强
   spec: 04-common-capability/04-common-events/06-gesture-capability/Feat-05-gesture-recognizer-recovery-spec.md
   status: Draft
+- func_id: 04-05-01
+  id: Feat-01
+  title: DrawModifier 装配与组件门控
+  spec: 04-common-capability/05-custom-extension/01-draw-modifier/Feat-01-draw-modifier-mounting-gating-spec.md
+  status: Baselined
+- func_id: 04-05-01
+  id: Feat-02
+  title: 分层绘制回调分发
+  spec: 04-common-capability/05-custom-extension/01-draw-modifier/Feat-02-draw-modifier-layered-dispatch-spec.md
+  status: Baselined
+- func_id: 04-05-01
+  id: Feat-03
+  title: 主动刷新机制
+  spec: 04-common-capability/05-custom-extension/01-draw-modifier/Feat-03-draw-modifier-invalidate-refresh-spec.md
+  status: Baselined
+- func_id: 04-05-02
+  id: Feat-01
+  title: AttributeModifier 装配与状态监听
+  spec: 04-common-capability/05-custom-extension/02-dynamic-attributes/Feat-01-attribute-modifier-mounting-state-spec.md
+  status: Baselined
+- func_id: 04-05-02
+  id: Feat-02
+  title: 多状态属性应用与按位分发
+  spec: 04-common-capability/05-custom-extension/02-dynamic-attributes/Feat-02-attribute-modifier-multi-state-dispatch-spec.md
+  status: Baselined
+- func_id: 04-05-05
+  id: Feat-01
+  title: 自定义属性设置读取与双存储
+  spec: 04-common-capability/05-custom-extension/05-custom-property/Feat-01-custom-property-set-read-storage-spec.md
+  status: Baselined
+- func_id: 04-05-06
+  id: Feat-01
+  title: 命令式 Modifier 基类与类体系
+  spec: 04-common-capability/05-custom-extension/06-component-modifier/Feat-01-common-modifier-class-system-spec.md
+  status: Baselined
+- func_id: 04-05-06
+  id: Feat-02
+  title: ModifierUtils 对外接口
+  spec: 04-common-capability/05-custom-extension/06-component-modifier/Feat-02-modifier-utils-api-spec.md
+  status: Baselined
 - func_id: 05-01-01
   id: Feat-01
   title: Blank 组件
@@ -318,6 +383,51 @@ features:
   id: Feat-03
   title: ImageAnimator 事件回调与多范式接口
   spec: 05-ui-components/08-image-components/02-image-animator/Feat-03-image-animator-events-interfaces-spec.md
+  status: Baselined
+- func_id: 05-09-02
+  id: Feat-01
+  title: 组件初始化与双模式架构
+  spec: 05-ui-components/09-text-components/02-rich-editor/Feat-01-component-init-dual-mode-spec.md
+  status: Baselined
+- func_id: 05-09-02
+  id: Feat-02
+  title: Span内容管理-增删改查与跨模式转换
+  spec: 05-ui-components/09-text-components/02-rich-editor/Feat-02-span-content-management-spec.md
+  status: Baselined
+- func_id: 05-09-02
+  id: Feat-03
+  title: 属性字符串模式管理
+  spec: 05-ui-components/09-text-components/02-rich-editor/Feat-03-styled-string-mode-management-spec.md
+  status: Baselined
+- func_id: 05-09-02
+  id: Feat-04
+  title: 文本排版与显示优化
+  spec: 05-ui-components/09-text-components/02-rich-editor/Feat-04-text-layout-display-optimization-spec.md
+  status: Baselined
+- func_id: 05-09-02
+  id: Feat-05
+  title: 视觉样式与交互反馈
+  spec: 05-ui-components/09-text-components/02-rich-editor/Feat-05-visual-style-interaction-feedback-spec.md
+  status: Baselined
+- func_id: 05-09-02
+  id: Feat-06
+  title: 键盘与输入法交互
+  spec: 05-ui-components/09-text-components/02-rich-editor/Feat-06-keyboard-ime-interaction-spec.md
+  status: Baselined
+- func_id: 05-09-02
+  id: Feat-07
+  title: 编辑生命周期与内容变化事件
+  spec: 05-ui-components/09-text-components/02-rich-editor/Feat-07-editing-lifecycle-content-events-spec.md
+  status: Baselined
+- func_id: 05-09-02
+  id: Feat-08
+  title: 光标选择与编辑状态控制
+  spec: 05-ui-components/09-text-components/02-rich-editor/Feat-08-cursor-selection-editing-state-spec.md
+  status: Baselined
+- func_id: 05-09-02
+  id: Feat-09
+  title: 剪贴板、数据检测与菜单定制
+  spec: 05-ui-components/09-text-components/02-rich-editor/Feat-09-clipboard-data-detection-menu-spec.md
   status: Baselined
 - func_id: 05-09-04
   id: Feat-01
@@ -1134,6 +1244,26 @@ features:
   title: Frame回调与帧调度
   spec: 04-common-capability/12-ui-context/03-frame-callback/Feat-01-frame-callback-scheduling-spec.md
   status: Baselined
+- func_id: 04-13-01
+  id: Feat-01
+  title: 字体注册与查询全能力
+  spec: 04-common-capability/13-font-text/01-font-registration/Feat-01-font-registration-full-capability-spec.md
+  status: Baselined
+- func_id: 04-13-02
+  id: Feat-01
+  title: 独立文本测量能力
+  spec: 04-common-capability/13-font-text/02-text-measurement/Feat-01-standalone-text-measurement-spec.md
+  status: Baselined
+- func_id: 04-13-02
+  id: Feat-02
+  title: 段落级排版测量能力
+  spec: null
+  status: Draft
+- func_id: 04-13-02
+  id: Feat-03
+  title: 组件级行级度量查询能力
+  spec: null
+  status: Draft
 - func_id: 04-11-02
   id: Feat-01
   title: 无感监听核心架构
@@ -1559,6 +1689,11 @@ features:
   title: UIAppearance（深浅色模式与外观管理）
   spec: 04-common-capability/16-ui-appearance/01-ui-appearance/Feat-01-ui-appearance-spec.md
   status: Baselined
+- func_id: 04-18-01
+  id: Feat-01
+  title: 同层渲染纹理生产者（ArkUI 子树纹理导出）
+  spec: 04-common-capability/18-on-device-rendering/01-same-layer-rendering/Feat-01-texture-export-producer-spec.md
+  status: Baselined
 - func_id: 05-04-03
   id: Feat-01
   title: Rating 组件全量规格
@@ -1698,4 +1833,559 @@ features:
   id: Feat-05
   title: C API 节点截图与尺寸限制
   spec: 04-common-capability/10-component-screenshot/01-offscreen-screenshot/Feat-05-capi-node-snapshot-size-limitation-spec.md
+  status: Baselined
+- func_id: 05-03-03
+  id: Feat-01
+  title: ScrollBar 核心构造与绑定
+  spec: 05-ui-components/03-scroll-container-components/03-scroll-bar/Feat-01-scroll-bar-core-construction-binding-spec.md
+  status: Baselined
+- func_id: 05-03-03
+  id: Feat-02
+  title: ScrollBar 行为与视觉扩展
+  spec: 05-ui-components/03-scroll-container-components/03-scroll-bar/Feat-02-scroll-bar-behavior-visual-extensions-spec.md
+  status: Baselined
+- func_id: 05-03-05
+  id: Feat-01
+  title: List 创建与核心布局（含懒加载/缓存）
+  spec: 05-ui-components/03-scroll-container-components/05-list-list-item-list-item-group/Feat-01-list-creation-core-layout-spec.md
+  status: Baselined
+- func_id: 05-03-05
+  id: Feat-02
+  title: List 滚动运动学与边缘效果
+  spec: 05-ui-components/03-scroll-container-components/05-list-list-item-list-item-group/Feat-02-list-scroll-kinematics-edge-effects-spec.md
+  status: Baselined
+- func_id: 05-03-05
+  id: Feat-03
+  title: List 滚动可观测性与控制器
+  spec: 05-ui-components/03-scroll-container-components/05-list-list-item-list-item-group/Feat-03-list-scroll-observability-controller-spec.md
+  status: Baselined
+- func_id: 05-03-05
+  id: Feat-04
+  title: List 分组/粘性头尾/Header/Footer
+  spec: 05-ui-components/03-scroll-container-components/05-list-list-item-list-item-group/Feat-04-list-grouping-sticky-header-footer-spec.md
+  status: Baselined
+- func_id: 05-03-05
+  id: Feat-05
+  title: List 选择与编辑模式
+  spec: 05-ui-components/03-scroll-container-components/05-list-list-item-list-item-group/Feat-05-list-selection-edit-mode-spec.md
+  status: Baselined
+- func_id: 05-03-05
+  id: Feat-06
+  title: List 拖拽
+  spec: 05-ui-components/03-scroll-container-components/05-list-list-item-list-item-group/Feat-06-list-item-drag-drop-spec.md
+  status: Baselined
+- func_id: 05-03-05
+  id: Feat-07
+  title: ListItem 滑动操作
+  spec: 05-ui-components/03-scroll-container-components/05-list-list-item-list-item-group/Feat-07-list-item-swipe-action-spec.md
+  status: Baselined
+- func_id: 05-03-06
+  id: Feat-01
+  title: Refresh 创建、刷新状态生命周期与指示器内容
+  spec: 05-ui-components/03-scroll-container-components/06-refresh/Feat-01-refresh-creation-state-lifecycle-indicator-spec.md
+  status: Baselined
+- func_id: 05-03-06
+  id: Feat-02
+  title: Refresh 下拉物理、触发/取消手势与偏移观测
+  spec: 05-ui-components/03-scroll-container-components/06-refresh/Feat-02-refresh-pull-physics-gesture-offset-spec.md
+  status: Baselined
+- func_id: 05-03-07
+  id: Feat-01
+  title: Scroll 核心几何/方向与布局
+  spec: 05-ui-components/03-scroll-container-components/07-scroll/Feat-01-scroll-core-geometry-layout-spec.md
+  status: Baselined
+- func_id: 05-03-07
+  id: Feat-02
+  title: Scroll 滚动条与视觉边缘效果
+  spec: 05-ui-components/03-scroll-container-components/07-scroll/Feat-02-scroll-scrollbar-visual-edge-effects-spec.md
+  status: Baselined
+- func_id: 05-03-07
+  id: Feat-03
+  title: Scroll 滚动运动控制器 API
+  spec: 05-ui-components/03-scroll-container-components/07-scroll/Feat-03-scroll-motion-controller-api-spec.md
+  status: Baselined
+- func_id: 05-03-07
+  id: Feat-04
+  title: Scroll 交互/手势与嵌套滚动
+  spec: 05-ui-components/03-scroll-container-components/07-scroll/Feat-04-scroll-interaction-gesture-nested-scroll-spec.md
+  status: Baselined
+- func_id: 05-03-07
+  id: Feat-05
+  title: Scroll 滚动事件与可观测性
+  spec: 05-ui-components/03-scroll-container-components/07-scroll/Feat-05-scroll-events-observability-spec.md
+  status: Baselined
+- func_id: 05-03-07
+  id: Feat-06
+  title: Scroll 分页与吸附对齐
+  spec: 05-ui-components/03-scroll-container-components/07-scroll/Feat-06-scroll-paging-snap-alignment-spec.md
+  status: Baselined
+- func_id: 05-03-07
+  id: Feat-07
+  title: Scroll 缩放与二维自由滚动
+  spec: 05-ui-components/03-scroll-container-components/07-scroll/Feat-07-scroll-zoom-2d-free-scroll-spec.md
+  status: Baselined
+- func_id: 04-14-03
+  id: Feat-01
+  title: 光标(Caret)交互
+  spec: 04-common-capability/14-input-interaction/03-text-interaction/Feat-01-caret-interaction-spec.md
+  status: Baselined
+- func_id: 04-14-03
+  id: Feat-02
+  title: 文本上下文菜单(Context Menu)
+  spec: null
+  status: Draft
+- func_id: 04-14-03
+  id: Feat-03
+  title: 拖拽与剪贴板回调
+  spec: null
+  status: Draft
+- func_id: 04-14-03
+  id: Feat-04
+  title: 文本编辑拦截钩子
+  spec: null
+  status: Draft
+- func_id: 04-14-03
+  id: Feat-05
+  title: 交互触发与状态回调
+  spec: null
+  status: Draft
+- func_id: 04-14-03
+  id: Feat-06
+  title: 长按选择与实体识别
+  spec: null
+  status: Draft
+- func_id: 04-14-01
+  id: Feat-01
+  title: 选区状态模型与编程式选区
+  spec: 04-common-capability/14-input-interaction/01-text-selection/Feat-01-selection-state-programmatic-spec.md
+  status: Baselined
+- func_id: 04-14-01
+  id: Feat-02
+  title: 选择手柄、放大镜与选择高亮
+  spec: null
+  status: Draft
+- func_id: 04-14-01
+  id: Feat-03
+  title: 触摸/鼠标手势选区
+  spec: null
+  status: Draft
+- func_id: 04-14-05
+  id: Feat-01
+  title: TextInput/TextArea AutoFill 基础属性与类型枚举
+  spec: 04-common-capability/14-input-interaction/05-autofill/Feat-01-textinput-textarea-base-attributes-spec.md
+  status: Baselined
+- func_id: 04-14-05
+  id: Feat-02
+  title: TextInput AutoFill 动画与内容修饰
+  spec: null
+  status: Draft
+- func_id: 04-14-05
+  id: Feat-03
+  title: AutoFill 标准触发模型与请求管线
+  spec: null
+  status: Draft
+- func_id: 04-14-05
+  id: Feat-04
+  title: AutoFill 增强触发路径（MSDP 与 Secure Paste）
+  spec: null
+  status: Draft
+- func_id: 04-14-05
+  id: Feat-05
+  title: Web AutoFill 管线
+  spec: null
+  status: Draft
+- func_id: 04-03-11
+  id: Feat-01
+  title: 核心字体属性 (fontSize/fontColor/fontWeight/fontStyle/fontFamily)
+  spec: 04-common-capability/03-common-attributes/11-text-common-attributes/Feat-01-core-font-attributes-spec.md
+  status: Baselined
+- func_id: 04-03-11
+  id: Feat-02
+  title: 文本装饰与大小写 (decoration/textCase)
+  spec: 04-common-capability/03-common-attributes/11-text-common-attributes/Feat-02-text-decoration-case-spec.md
+  status: Baselined
+- func_id: 04-03-11
+  id: Feat-03
+  title: 文本间距与度量 (letterSpacing/lineHeight/baselineOffset)
+  spec: 04-common-capability/03-common-attributes/11-text-common-attributes/Feat-03-text-spacing-metrics-spec.md
+  status: Baselined
+- func_id: 04-03-11
+  id: Feat-04
+  title: 文本阴影与 OpenType 特性 (textShadow/fontFeature/fontVariations)
+  spec: 04-common-capability/03-common-attributes/11-text-common-attributes/Feat-04-text-shadow-opentype-spec.md
+  status: Baselined
+- func_id: 04-03-11
+  id: Feat-05
+  title: 自适应字体缩放 (minFontSize/maxFontSize/minFontScale/maxFontScale)
+  spec: 04-common-capability/03-common-attributes/11-text-common-attributes/Feat-05-adaptive-font-scaling-spec.md
+  status: Baselined
+- func_id: 05-03-01
+  id: Feat-01
+  title: 滚动条与内容视效
+  spec: 05-ui-components/03-scroll-container-components/01-scroll-common-capability/Feat-01-scrollbar-content-visual-spec.md
+  status: Baselined
+- func_id: 05-03-01
+  id: Feat-02
+  title: 滚动交互与物理效果
+  spec: 05-ui-components/03-scroll-container-components/01-scroll-common-capability/Feat-02-scroll-interaction-physics-spec.md
+  status: Baselined
+- func_id: 05-03-01
+  id: Feat-03
+  title: 嵌套滚动与内容边界
+  spec: 05-ui-components/03-scroll-container-components/01-scroll-common-capability/Feat-03-nested-scroll-content-boundary-spec.md
+  status: Baselined
+- func_id: 05-03-01
+  id: Feat-04
+  title: 滚动事件生命周期
+  spec: 05-ui-components/03-scroll-container-components/01-scroll-common-capability/Feat-04-scroll-event-lifecycle-spec.md
+  status: Baselined
+- func_id: 05-03-10
+  id: Feat-01
+  title: 组件创建、Footer 与 FlowItem
+  spec: 05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-01-creation-footer-flowitem-spec.md
+  status: Baselined
+- func_id: 05-03-10
+  id: Feat-02
+  title: 公共布局配置与 Item 约束
+  spec: 05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-02-layout-config-item-constraint-spec.md
+  status: Baselined
+- func_id: 05-03-10
+  id: Feat-03
+  title: ALWAYS_TOP_DOWN 布局算法
+  spec: 05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-03-always-top-down-layout-spec.md
+  status: Baselined
+- func_id: 05-03-10
+  id: Feat-04
+  title: SLIDING_WINDOW 布局算法
+  spec: 05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-04-sliding-window-layout-spec.md
+  status: Baselined
+- func_id: 05-03-10
+  id: Feat-05
+  title: 滚动控制与事件
+  spec: 05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-05-scroll-control-events-spec.md
+  status: Baselined
+- func_id: 05-03-10
+  id: Feat-06
+  title: 缓存与懒加载
+  spec: 05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-06-cache-lazy-loading-spec.md
+  status: Baselined
+- func_id: 05-03-04
+  id: Feat-01
+  title: Grid 固定行列与单轴滚动布局
+  spec: 05-ui-components/03-scroll-container-components/04-grid-grid-item/Feat-01-grid-fixed-scroll-layout-spec.md
+  status: Baselined
+- func_id: 05-03-04
+  id: Feat-02
+  title: Grid 不规则、自适应与自定义布局
+  spec: 05-ui-components/03-scroll-container-components/04-grid-grid-item/Feat-02-grid-irregular-adaptive-custom-layout-spec.md
+  status: Baselined
+- func_id: 05-03-04
+  id: Feat-03
+  title: Grid 滚动控制、滚动条与事件
+  spec: 05-ui-components/03-scroll-container-components/04-grid-grid-item/Feat-03-grid-scroll-scrollbar-events-spec.md
+  status: Baselined
+- func_id: 05-03-04
+  id: Feat-04
+  title: Grid 编辑模式与拖拽
+  spec: 05-ui-components/03-scroll-container-components/04-grid-grid-item/Feat-04-grid-edit-mode-drag-spec.md
+  status: Baselined
+- func_id: 05-03-04
+  id: Feat-05
+  title: GridItem 布局与选择
+  spec: 05-ui-components/03-scroll-container-components/04-grid-grid-item/Feat-05-grid-item-layout-selection-spec.md
+  status: Baselined
+- func_id: 05-03-04
+  id: Feat-06
+  title: C API 与多范式接口
+  spec: 05-ui-components/03-scroll-container-components/04-grid-grid-item/Feat-06-grid-capi-multi-paradigm-spec.md
+  status: Baselined
+- func_id: 07-03-05
+  id: Feat-01
+  title: 自定义组件测量与子项放置
+  spec: 07-frontend/03-custom-components/05-custom-measure-layout/Feat-01-custom-measure-layout-spec.md
+  status: Baselined
+- func_id: 04-08-03
+  id: Feat-01
+  title: 浮层能力（OverlayManager 挂载与管理）
+  spec: 04-common-capability/08-root-view/03-overlay-capability/Feat-01-overlay-capability-spec.md
+  status: Baselined
+- func_id: 05-09-07
+  id: Feat-01
+  title: 字形选择与创建 (symbolId/SymbolType/fontFamilies/createFrameNode)
+  spec: 05-ui-components/09-text-components/07-symbol-glyph/Feat-01-glyph-selection-creation-spec.md
+  status: Baselined
+- func_id: 05-09-07
+  id: Feat-02
+  title: 字体属性 (fontSize/fontWeight/可变字体/minFontScale/maxFontScale)
+  spec: 05-ui-components/09-text-components/07-symbol-glyph/Feat-02-font-properties-spec.md
+  status: Baselined
+- func_id: 05-09-07
+  id: Feat-03
+  title: 颜色与渐变填充 (fontColor/symbolColor/shaderStyle)
+  spec: 05-ui-components/09-text-components/07-symbol-glyph/Feat-03-color-gradient-fill-spec.md
+  status: Baselined
+- func_id: 05-09-07
+  id: Feat-04
+  title: 渲染策略 (renderingStrategy)
+  spec: 05-ui-components/09-text-components/07-symbol-glyph/Feat-04-rendering-strategy-spec.md
+  status: Baselined
+- func_id: 05-09-07
+  id: Feat-05
+  title: 动效策略与选项 (effectStrategy/SymbolEffectOptions/active-trigger)
+  spec: 05-ui-components/09-text-components/07-symbol-glyph/Feat-05-effect-strategy-options-spec.md
+  status: Baselined
+- func_id: 05-09-07
+  id: Feat-06
+  title: SymbolEffect 子类与参数 (7 个 typed effect 对象)
+  spec: 05-ui-components/09-text-components/07-symbol-glyph/Feat-06-symbol-effect-subclasses-spec.md
+  status: Baselined
+- func_id: 05-09-07
+  id: Feat-07
+  title: 符号阴影 (symbolShadow)
+  spec: 05-ui-components/09-text-components/07-symbol-glyph/Feat-07-symbol-shadow-spec.md
+  status: Baselined
+- func_id: 05-09-07
+  id: Feat-08
+  title: 多范式接口与通用能力 (attributeModifier/clip/继承通用面/无障碍)
+  spec: 05-ui-components/09-text-components/07-symbol-glyph/Feat-08-multi-paradigm-interface-spec.md
+  status: Baselined
+- func_id: 05-09-08
+  id: Feat-01
+  title: 基础显示与字体样式 (type/style/font/textAlign/letterSpacing/lineHeight/overflow/decoration/wordBreak 等)
+  spec: 05-ui-components/09-text-components/08-text-input/Feat-01-base-display-font-style-spec.md
+  status: Baselined
+- func_id: 05-09-08
+  id: Feat-02
+  title: Placeholder 与错误提示 (placeholderColor/placeholderFont/showError/showUnit/showUnderline/underlineColor)
+  spec: 05-ui-components/09-text-components/08-text-input/Feat-02-placeholder-error-spec.md
+  status: Baselined
+- func_id: 05-09-08
+  id: Feat-03
+  title: 输入类型与控制 (type/contentType/enableKeyboardOnFocus/editing/selectAll/copyOption/selectionMenuHidden/editMenuOptions/enablePreviewText)
+  spec: 05-ui-components/09-text-components/08-text-input/Feat-03-input-type-control-spec.md
+  status: Baselined
+- func_id: 05-09-08
+  id: Feat-04
+  title: 文本筛选与 maxLength/计数器 (maxLength/inputFilter/showCounter)
+  spec: 05-ui-components/09-text-components/08-text-input/Feat-04-filter-maxlength-counter-spec.md
+  status: Baselined
+- func_id: 05-09-08
+  id: Feat-05
+  title: 光标与选择 (caretColor/caretStyle/caretPosition/selectedBackgroundColor/textSelection/onTextSelectionChange/onContentScroll)
+  spec: 05-ui-components/09-text-components/08-text-input/Feat-05-caret-selection-spec.md
+  status: Baselined
+- func_id: 05-09-08
+  id: Feat-06
+  title: 编辑与内容事件回调 (onChange/onWillChange/onSubmit/onEditChange/onWillInsert/onDidInsert/onWillDelete/onDidDelete/onCopy/onCut/onPaste/onSecurityStateChange)
+  spec: 05-ui-components/09-text-components/08-text-input/Feat-06-editing-content-events-spec.md
+  status: Baselined
+- func_id: 05-09-08
+  id: Feat-07
+  title: 键盘/IME/自定义键盘 (enterKeyType/keyboardAppearance/customKeyboard/autoCapitalizationMode/enableFillAnimation/blurOnSubmit)
+  spec: 05-ui-components/09-text-components/08-text-input/Feat-07-keyboard-ime-spec.md
+  status: Baselined
+- func_id: 05-09-08
+  id: Feat-08
+  title: 密码与自动填充 (passwordIcon/showPasswordIcon/showPassword/passwordRules/enableAutoFill/enableAutoFillAnimation)
+  spec: 05-ui-components/09-text-components/08-text-input/Feat-08-password-autofill-spec.md
+  status: Baselined
+- func_id: 05-09-08
+  id: Feat-09
+  title: 取消按钮/响应区域 (cancelButton/cancelButtonSymbol/cleanNodeStyle/isShowCancelButton/isShowVoiceButton)
+  spec: 05-ui-components/09-text-components/08-text-input/Feat-09-cancel-button-response-area-spec.md
+  status: Baselined
+- func_id: 05-09-08
+  id: Feat-10
+  title: C-API/NDK Modifier 桥与无障碍 (ARKUI_NODE_TEXT_INPUT + 51 NODE_TEXT_INPUT_* + 18 事件 + 枚举 + userAccessibilityText)
+  spec: 05-ui-components/09-text-components/08-text-input/Feat-10-capi-ndk-bridge-a11y-spec.md
+  status: Baselined
+- func_id: 05-09-09
+  id: Feat-01
+  title: 链接配置与颜色样式 (构造/address/content 兜底/color + API18 主题色派生 + 继承 Text 样式 + 资源注册)
+  spec: 05-ui-components/09-text-components/09-hyperlink/Feat-01-link-config-color-style-spec.md
+  status: Baselined
+- func_id: 05-09-09
+  id: Feat-02
+  title: 拖拽/响应区域/状态视觉/导航 (draggable/responseRegion/hover-press-visited-disabled 视觉/LinkToAddress+preventDefault)
+  spec: 05-ui-components/09-text-components/09-hyperlink/Feat-02-drag-response-state-navigation-spec.md
+  status: Baselined
+- func_id: 05-09-09
+  id: Feat-03
+  title: 键盘无障碍与多前端 C-API 桥 (KEY_SPACE/ENTER 激活/focus/OnInjectionEvent/C-API modifier 动态静态CJ/Inspector序列化)
+  spec: 05-ui-components/09-text-components/09-hyperlink/Feat-03-keyboard-a11y-capi-bridge-spec.md
+  status: Baselined
+- func_id: 05-09-10
+  id: Feat-01
+  title: 容器与核心操作 (StyledString/MutableStyledString + StyleOptions/SpanStyle/StyledStringKey + TLV序列化 + HTML往返)
+  spec: 05-ui-components/09-text-components/10-attributed-string/Feat-01-container-core-operations-spec.md
+  status: Baselined
+- func_id: 05-09-10
+  id: Feat-02
+  title: TextStyle 字体属性 (fontColor/fontFamily/fontSize/fontWeight/fontStyle + 桥接扩展)
+  spec: 05-ui-components/09-text-components/10-attributed-string/Feat-02-textstyle-font-spec.md
+  status: Baselined
+- func_id: 05-09-10
+  id: Feat-03
+  title: 装饰排版 Style (DecorationStyle/BaselineOffsetStyle/LetterSpacingStyle/LineHeightStyle/TextShadowStyle)
+  spec: 05-ui-components/09-text-components/10-attributed-string/Feat-03-decoration-typography-style-spec.md
+  status: Baselined
+- func_id: 05-09-10
+  id: Feat-04
+  title: 背景/超链接 Style (BackgroundColorStyle/UrlStyle)
+  spec: 05-ui-components/09-text-components/10-attributed-string/Feat-04-background-url-style-spec.md
+  status: Baselined
+- func_id: 05-09-10
+  id: Feat-05
+  title: ParagraphStyle 段落属性 (textAlign/textIndent/maxLines/overflow/wordBreak/leadingMargin/paragraphSpacing + 桥接扩展)
+  spec: 05-ui-components/09-text-components/10-attributed-string/Feat-05-paragraph-style-spec.md
+  status: Baselined
+- func_id: 05-09-10
+  id: Feat-06
+  title: GestureStyle 手势 (onClick/onLongPress + span 级命中)
+  spec: 05-ui-components/09-text-components/10-attributed-string/Feat-06-gesture-style-spec.md
+  status: Baselined
+- func_id: 05-09-10
+  id: Feat-07
+  title: 图片/自定义/UserData Span (ImageAttachment/CustomSpan/UserDataSpan↔ExtSpan)
+  spec: 05-ui-components/09-text-components/10-attributed-string/Feat-07-image-custom-userdata-span-spec.md
+  status: Baselined
+- func_id: 05-09-10
+  id: Feat-08
+  title: 宿主集成 (StyledStringController/ChangedListener + Text/RichEditor/TextField + LayoutManager + Undo/Redo)
+  spec: 05-ui-components/09-text-components/10-attributed-string/Feat-08-host-integration-spec.md
+  status: Baselined
+- func_id: 05-09-10
+  id: Feat-09
+  title: C-API/NDK/ANI (OH_ArkUI_StyledString_* + 对象模型 accessor + ANI modifier)
+  spec: 05-ui-components/09-text-components/10-attributed-string/Feat-09-capi-ndk-ani-spec.md
+  status: Baselined
+- func_id: 04-06-02
+  id: Feat-01
+  title: 节点创建、身份与内省
+  spec: 04-common-capability/06-custom-node/02-frame-node/Feat-01-node-creation-identity-introspection-spec.md
+  status: Baselined
+- func_id: 04-06-02
+  id: Feat-02
+  title: 树结构与挂载管理
+  spec: 04-common-capability/06-custom-node/02-frame-node/Feat-02-tree-structure-mounting-spec.md
+  status: Baselined
+- func_id: 04-06-02
+  id: Feat-03
+  title: 布局与度量
+  spec: 04-common-capability/06-custom-node/02-frame-node/Feat-03-layout-measurement-spec.md
+  status: Baselined
+- func_id: 04-06-02
+  id: Feat-04
+  title: 坐标转换与位置查询
+  spec: 04-common-capability/06-custom-node/02-frame-node/Feat-04-position-coordinate-conversion-spec.md
+  status: Baselined
+- func_id: 04-06-02
+  id: Feat-05
+  title: 渲染上下文与视觉状态
+  spec: 04-common-capability/06-custom-node/02-frame-node/Feat-05-render-context-visual-state-spec.md
+  status: Baselined
+- func_id: 04-06-02
+  id: Feat-06
+  title: 事件交互与 UIState
+  spec: 04-common-capability/06-custom-node/02-frame-node/Feat-06-event-interaction-ui-state-spec.md
+  status: Baselined
+- func_id: 04-06-02
+  id: Feat-07
+  title: 节点动画
+  spec: 04-common-capability/06-custom-node/02-frame-node/Feat-07-node-animation-spec.md
+  status: Baselined
+- func_id: 04-06-02
+  id: Feat-08
+  title: 生命周期、回收与跨语言
+  spec: 04-common-capability/06-custom-node/02-frame-node/Feat-08-lifecycle-recycle-cross-language-spec.md
+  status: Baselined
+- func_id: 04-06-03
+  id: Feat-01
+  title: RenderNode 全量规格
+  spec: 04-common-capability/06-custom-node/03-render-node/Feat-01-render-node-full-spec.md
+  status: Baselined
+- func_id: 04-06-04
+  id: Feat-01
+  title: 创建、释放与渲染类型
+  spec: 04-common-capability/06-custom-node/04-builder-node/Feat-01-creation-dispose-render-type-spec.md
+  status: Baselined
+- func_id: 04-06-04
+  id: Feat-02
+  title: 构建与更新
+  spec: 04-common-capability/06-custom-node/04-builder-node/Feat-02-build-update-spec.md
+  status: Baselined
+- func_id: 04-06-04
+  id: Feat-03
+  title: FrameNode 访问
+  spec: 04-common-capability/06-custom-node/04-builder-node/Feat-03-framenode-access-spec.md
+  status: Baselined
+- func_id: 04-06-04
+  id: Feat-04
+  title: 渲染类型与纹理
+  spec: 04-common-capability/06-custom-node/04-builder-node/Feat-04-render-type-texture-spec.md
+  status: Baselined
+- func_id: 04-06-04
+  id: Feat-05
+  title: 复用与回收
+  spec: 04-common-capability/06-custom-node/04-builder-node/Feat-05-reuse-recycle-spec.md
+  status: Baselined
+- func_id: 04-06-04
+  id: Feat-06
+  title: 输入事件分发
+  spec: 04-common-capability/06-custom-node/04-builder-node/Feat-06-input-event-dispatch-spec.md
+  status: Baselined
+- func_id: 04-06-04
+  id: Feat-07
+  title: 冻结策略
+  spec: 04-common-capability/06-custom-node/04-builder-node/Feat-07-freeze-policy-spec.md
+  status: Baselined
+- func_id: 04-06-04
+  id: Feat-08
+  title: 响应式变体
+  spec: 04-common-capability/06-custom-node/04-builder-node/Feat-08-reactive-variant-spec.md
+  status: Baselined
+- func_id: 04-06-05
+  id: Feat-01
+  title: 创建与释放
+  spec: 04-common-capability/06-custom-node/05-component-content/Feat-01-creation-dispose-spec.md
+  status: Baselined
+- func_id: 04-06-05
+  id: Feat-02
+  title: 更新配置冻结
+  spec: 04-common-capability/06-custom-node/05-component-content/Feat-02-update-config-freeze-spec.md
+  status: Baselined
+- func_id: 04-06-05
+  id: Feat-03
+  title: 复用回收
+  spec: 04-common-capability/06-custom-node/05-component-content/Feat-03-reuse-recycle-spec.md
+  status: Baselined
+- func_id: 04-06-05
+  id: Feat-04
+  title: ReactiveComponentContent
+  spec: 04-common-capability/06-custom-node/05-component-content/Feat-04-reactive-component-content-spec.md
+  status: Baselined
+- func_id: 04-06-05
+  id: Feat-05
+  title: Transfer 转换变体
+  spec: 04-common-capability/06-custom-node/05-component-content/Feat-05-transfer-dynamic-static-conversion-spec.md
+  status: Baselined
+- func_id: 04-06-07
+  id: Feat-01
+  title: TypedFrameNode 类型
+  spec: 04-common-capability/06-custom-node/07-typed-frame-node/Feat-01-typedframenode-type-spec.md
+  status: Baselined
+- func_id: 04-06-07
+  id: Feat-02
+  title: typeNode 动态工厂
+  spec: 04-common-capability/06-custom-node/07-typed-frame-node/Feat-02-typenode-dynamic-factory-spec.md
+  status: Baselined
+- func_id: 04-06-07
+  id: Feat-03
+  title: typeNode 静态工厂
+  spec: 04-common-capability/06-custom-node/07-typed-frame-node/Feat-03-typenode-static-factory-spec.md
+  status: Baselined
+- func_id: 04-06-07
+  id: Feat-04
+  title: 组件支持矩阵
+  spec: 04-common-capability/06-custom-node/07-typed-frame-node/Feat-04-component-matrix-spec.md
   status: Baselined

@@ -142,7 +142,7 @@ functions:
     id: '04'
     title: 预览器平台适配
   path: 02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/
-  design: null
+  design: 02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/design.md
   status: 待补充
 - id: 02-02-01
   l1:
@@ -727,7 +727,7 @@ functions:
     id: '11'
     title: 文本通用属性
   path: 04-common-capability/03-common-attributes/11-text-common-attributes/
-  design: null
+  design: 04-common-capability/03-common-attributes/11-text-common-attributes/design.md
   status: active
 - id: 04-04-01
   l1:
@@ -883,7 +883,7 @@ functions:
     id: '01'
     title: 动态绘制属性
   path: 04-common-capability/05-custom-extension/01-draw-modifier/
-  design: null
+  design: 04-common-capability/05-custom-extension/01-draw-modifier/design.md
   status: active
 - id: 04-05-02
   l1:
@@ -896,7 +896,7 @@ functions:
     id: '02'
     title: 动态属性
   path: 04-common-capability/05-custom-extension/02-dynamic-attributes/
-  design: null
+  design: 04-common-capability/05-custom-extension/02-dynamic-attributes/design.md
   status: active
 - id: 04-05-03
   l1:
@@ -935,7 +935,7 @@ functions:
     id: '05'
     title: 自定义属性
   path: 04-common-capability/05-custom-extension/05-custom-property/
-  design: null
+  design: 04-common-capability/05-custom-extension/05-custom-property/design.md
   status: active
 - id: 04-05-06
   l1:
@@ -948,7 +948,7 @@ functions:
     id: '06'
     title: 组件Modifier
   path: 04-common-capability/05-custom-extension/06-component-modifier/
-  design: null
+  design: 04-common-capability/05-custom-extension/06-component-modifier/design.md
   status: active
 - id: 04-06-01
   l1:
@@ -974,7 +974,7 @@ functions:
     id: '02'
     title: FrameNode
   path: 04-common-capability/06-custom-node/02-frame-node/
-  design: null
+  design: 04-common-capability/06-custom-node/02-frame-node/design.md
   status: active
 - id: 04-06-03
   l1:
@@ -987,7 +987,7 @@ functions:
     id: '03'
     title: RenderNode
   path: 04-common-capability/06-custom-node/03-render-node/
-  design: null
+  design: 04-common-capability/06-custom-node/03-render-node/design.md
   status: active
 - id: 04-06-04
   l1:
@@ -1000,7 +1000,7 @@ functions:
     id: '04'
     title: BuilderNode
   path: 04-common-capability/06-custom-node/04-builder-node/
-  design: null
+  design: 04-common-capability/06-custom-node/04-builder-node/design.md
   status: active
 - id: 04-06-05
   l1:
@@ -1013,7 +1013,7 @@ functions:
     id: '05'
     title: ComponentContent
   path: 04-common-capability/06-custom-node/05-component-content/
-  design: null
+  design: 04-common-capability/06-custom-node/05-component-content/design.md
   status: active
 - id: 04-06-06
   l1:
@@ -1039,7 +1039,7 @@ functions:
     id: '07'
     title: TypedFrameNode
   path: 04-common-capability/06-custom-node/07-typed-frame-node/
-  design: null
+  design: 04-common-capability/06-custom-node/07-typed-frame-node/design.md
   status: active
 - id: 04-07-01
   l1:
@@ -1117,7 +1117,7 @@ functions:
     id: '03'
     title: 浮层能力
   path: 04-common-capability/08-root-view/03-overlay-capability/
-  design: null
+  design: 04-common-capability/08-root-view/03-overlay-capability/design.md
   status: active
 - id: 04-09-01
   l1:
@@ -1234,7 +1234,7 @@ functions:
     id: '01'
     title: 字体注册
   path: 04-common-capability/13-font-text/01-font-registration/
-  design: null
+  design: 04-common-capability/13-font-text/01-font-registration/design.md
   status: active
 - id: 04-13-02
   l1:
@@ -1247,7 +1247,7 @@ functions:
     id: '02'
     title: 文本测量
   path: 04-common-capability/13-font-text/02-text-measurement/
-  design: null
+  design: 04-common-capability/13-font-text/02-text-measurement/design.md
   status: active
 - id: 04-14-01
   l1:
@@ -1260,7 +1260,7 @@ functions:
     id: '01'
     title: 文本选择
   path: 04-common-capability/14-input-interaction/01-text-selection/
-  design: null
+  design: 04-common-capability/14-input-interaction/01-text-selection/design.md
   status: active
 - id: 04-14-02
   l1:
@@ -1286,7 +1286,7 @@ functions:
     id: '03'
     title: 文本交互
   path: 04-common-capability/14-input-interaction/03-text-interaction/
-  design: null
+  design: 04-common-capability/14-input-interaction/03-text-interaction/design.md
   status: active
 - id: 04-14-04
   l1:
@@ -1312,7 +1312,7 @@ functions:
     id: '05'
     title: 自动补全能力（AutoFill）
   path: 04-common-capability/14-input-interaction/05-autofill/
-  design: null
+  design: 04-common-capability/14-input-interaction/05-autofill/design.md
   status: active
 - id: 04-15-01
   l1:
@@ -1416,7 +1416,7 @@ functions:
     id: '01'
     title: 同层渲染机制
   path: 04-common-capability/18-on-device-rendering/01-same-layer-rendering/
-  design: null
+  design: 04-common-capability/18-on-device-rendering/01-same-layer-rendering/design.md
   status: active
 - id: 04-19-01
   l1:
@@ -1442,7 +1442,7 @@ functions:
     id: '01'
     title: MediaQuery
   path: 04-common-capability/20-media-query/01-media-query/
-  design: null
+  design: 04-common-capability/20-media-query/01-media-query/design.md
   status: active
 - id: 04-21-01
   l1:
@@ -1507,7 +1507,7 @@ functions:
     id: '01'
     title: 像素取整能力
   path: 04-common-capability/24-layout-common-capability/01-pixel-rounding/
-  design: null
+  design: 04-common-capability/24-layout-common-capability/01-pixel-rounding/design.md
   status: active
 - id: 04-25-01
   l1:
@@ -1780,7 +1780,7 @@ functions:
     id: '01'
     title: 滚动公共能力
   path: 05-ui-components/03-scroll-container-components/01-scroll-common-capability/
-  design: null
+  design: 05-ui-components/03-scroll-container-components/01-scroll-common-capability/design.md
   status: active
 - id: 05-03-02
   l1:
@@ -1806,7 +1806,7 @@ functions:
     id: '03'
     title: ScrollBar
   path: 05-ui-components/03-scroll-container-components/03-scroll-bar/
-  design: null
+  design: 05-ui-components/03-scroll-container-components/03-scroll-bar/design.md
   status: active
 - id: 05-03-04
   l1:
@@ -1819,7 +1819,7 @@ functions:
     id: '04'
     title: Grid/GridItem
   path: 05-ui-components/03-scroll-container-components/04-grid-grid-item/
-  design: null
+  design: 05-ui-components/03-scroll-container-components/04-grid-grid-item/design.md
   status: active
 - id: 05-03-05
   l1:
@@ -1832,7 +1832,7 @@ functions:
     id: '05'
     title: List/ListItem/ListItemGroup
   path: 05-ui-components/03-scroll-container-components/05-list-list-item-list-item-group/
-  design: null
+  design: 05-ui-components/03-scroll-container-components/05-list-list-item-list-item-group/design.md
   status: active
 - id: 05-03-06
   l1:
@@ -1845,7 +1845,7 @@ functions:
     id: '06'
     title: Refresh
   path: 05-ui-components/03-scroll-container-components/06-refresh/
-  design: null
+  design: 05-ui-components/03-scroll-container-components/06-refresh/design.md
   status: active
 - id: 05-03-07
   l1:
@@ -1858,7 +1858,7 @@ functions:
     id: '07'
     title: Scroll
   path: 05-ui-components/03-scroll-container-components/07-scroll/
-  design: null
+  design: 05-ui-components/03-scroll-container-components/07-scroll/design.md
   status: active
 - id: 05-03-08
   l1:
@@ -1897,7 +1897,7 @@ functions:
     id: '10'
     title: WaterFlow/FlowItem
   path: 05-ui-components/03-scroll-container-components/10-water-flow-flow-item/
-  design: null
+  design: 05-ui-components/03-scroll-container-components/10-water-flow-flow-item/design.md
   status: active
 - id: 05-04-01
   l1:
@@ -2300,7 +2300,7 @@ functions:
     id: '02'
     title: RichEditor
   path: 05-ui-components/09-text-components/02-rich-editor/
-  design: null
+  design: 05-ui-components/09-text-components/02-rich-editor/design.md
   status: active
 - id: 05-09-03
   l1:
@@ -2365,7 +2365,7 @@ functions:
     id: '07'
     title: SymbolGlyph
   path: 05-ui-components/09-text-components/07-symbol-glyph/
-  design: null
+  design: 05-ui-components/09-text-components/07-symbol-glyph/design.md
   status: active
 - id: 05-09-08
   l1:
@@ -2378,7 +2378,7 @@ functions:
     id: 08
     title: TextInput
   path: 05-ui-components/09-text-components/08-text-input/
-  design: null
+  design: 05-ui-components/09-text-components/08-text-input/design.md
   status: active
 - id: 05-09-09
   l1:
@@ -2391,7 +2391,7 @@ functions:
     id: 09
     title: HyperLink
   path: 05-ui-components/09-text-components/09-hyperlink/
-  design: null
+  design: 05-ui-components/09-text-components/09-hyperlink/design.md
   status: active
 - id: 05-09-10
   l1:
@@ -2404,7 +2404,7 @@ functions:
     id: '10'
     title: 属性字符串
   path: 05-ui-components/09-text-components/10-attributed-string/
-  design: null
+  design: 05-ui-components/09-text-components/10-attributed-string/design.md
   status: active
 - id: 05-10-01
   l1:
@@ -3470,7 +3470,7 @@ functions:
     id: '05'
     title: 自定义测量/布局
   path: 07-frontend/03-custom-components/05-custom-measure-layout/
-  design: null
+  design: 07-frontend/03-custom-components/05-custom-measure-layout/design.md
   status: active
 - id: 07-03-06
   l1:
