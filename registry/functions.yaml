@@ -2469,7 +2469,7 @@ functions:
     id: '05'
     title: Progress
   path: 05-ui-components/10-information-display-components/05-progress/
-  design: null
+  design: 05-ui-components/10-information-display-components/05-progress/design.md
   status: active
 - id: 05-10-06
   l1:
@@ -2482,7 +2482,7 @@ functions:
     id: '06'
     title: QRCode
   path: 05-ui-components/10-information-display-components/06-qr-code/
-  design: null
+  design: 05-ui-components/10-information-display-components/06-qr-code/design.md
   status: active
 - id: 05-10-07
   l1:
@@ -2495,7 +2495,7 @@ functions:
     id: '07'
     title: TextClock
   path: 05-ui-components/10-information-display-components/07-text-clock/
-  design: null
+  design: 05-ui-components/10-information-display-components/07-text-clock/design.md
   status: active
 - id: 05-10-08
   l1:
@@ -2508,7 +2508,7 @@ functions:
     id: 08
     title: TextTimer
   path: 05-ui-components/10-information-display-components/08-text-timer/
-  design: null
+  design: 05-ui-components/10-information-display-components/08-text-timer/design.md
   status: active
 - id: 05-10-09
   l1:
@@ -2521,7 +2521,7 @@ functions:
     id: 09
     title: Badge
   path: 05-ui-components/10-information-display-components/09-badge/
-  design: null
+  design: 05-ui-components/10-information-display-components/09-badge/design.md
   status: active
 - id: 05-10-10
   l1:
