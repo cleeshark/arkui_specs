@@ -2284,3 +2284,58 @@ features:
   title: 组件支持矩阵
   spec: 04-common-capability/06-custom-node/07-typed-frame-node/Feat-04-component-matrix-spec.md
   status: Baselined
+- func_id: 04-14-02
+  id: Feat-01
+  title: 快捷键分发基础设施 (TextInputClient::HandleKeyEvent/加速表/modKeyFlags/Ctrl+V msg/纯字符/IsShortCutBlocked/numLock/Mac KEY_META)
+  spec: 04-common-capability/14-input-interaction/02-text-shortcuts/Feat-01-dispatch-infrastructure-spec.md
+  status: Baselined
+- func_id: 04-14-02
+  id: Feat-02
+  title: 导航与光标移动快捷键 (CursorMove+12 CursorMoveXxx/PageUp-Down/方向键焦点外移/RTL/单行vs TextArea)
+  spec: 04-common-capability/14-input-interaction/02-text-shortcuts/Feat-02-navigation-caret-movement-spec.md
+  status: Baselined
+- func_id: 04-14-02
+  id: Feat-03
+  title: 选择快捷键 (HandleSelect/HandleSelectExtend/Ctrl+A 全选/Shift-flag 锚点/Ctrl+Shift+Home-End 异常)
+  spec: 04-common-capability/14-input-interaction/02-text-shortcuts/Feat-03-selection-shortcuts-spec.md
+  status: Baselined
+- func_id: 04-14-02
+  id: Feat-04
+  title: 剪贴板与删除快捷键 (Ctrl+C/X/V/Insert/PASTE/DEL/FORWARD_DEL/Ctrl+Del 删词/Ctrl+D/copyOption/password 门控)
+  spec: 04-common-capability/14-input-interaction/02-text-shortcuts/Feat-04-clipboard-deletion-shortcuts-spec.md
+  status: Baselined
+- func_id: 04-14-02
+  id: Feat-05
+  title: 撤销/重做快捷键 (Ctrl+Z/Y/Shift+Z/Alt+Del/operationRecords/RichEditorUndoManager 三策略/preview 合并)
+  spec: 04-common-capability/14-input-interaction/02-text-shortcuts/Feat-05-undo-redo-shortcuts-spec.md
+  status: Baselined
+- func_id: 04-14-02
+  id: Feat-06
+  title: 字体样式快捷键 RichEditor 专属 (Ctrl+B/I/U 粗体/斜体/下划线)
+  spec: 04-common-capability/14-input-interaction/02-text-shortcuts/Feat-06-font-style-shortcuts-spec.md
+  status: Baselined
+- func_id: 04-14-04
+  id: Feat-01
+  title: IME 框架交互与弹出收起控制 (InputMethodManager 焦点驱动 show/hide/attach/detach + RequestKeyboard/CloseKeyboard + onWillAttachIME)
+  spec: 04-common-capability/14-input-interaction/04-input-method-interaction/Feat-01-ime-framework-show-hide-control-spec.md
+  status: Baselined
+- func_id: 04-14-04
+  id: Feat-02
+  title: 输入框避让显示 (KeyBoardAvoidMode OFFSET/RESIZE/*_WITH_CARET/NONE + TriggerAvoidOnCaretChange + 自定义键盘 supportAvoidance)
+  spec: 04-common-capability/14-input-interaction/04-input-method-interaction/Feat-02-input-box-keyboard-avoidance-spec.md
+  status: Baselined
+- func_id: 04-14-04
+  id: Feat-03
+  title: 实体键盘切换 (本仓仅传 isShowKeyboard+消费面板状态；检测经全仓检索确认不在本仓，属外部 IME 框架)
+  spec: 04-common-capability/14-input-interaction/04-input-method-interaction/Feat-03-physical-keyboard-switching-spec.md
+  status: Baselined
+- func_id: 04-14-04
+  id: Feat-04
+  title: 键盘输入处理契约 (TextInputClient 抽象 + OnTextChangedListenerImpl IME→输入框桥)
+  spec: 04-common-capability/14-input-interaction/04-input-method-interaction/Feat-04-keyboard-input-processing-contract-spec.md
+  status: Baselined
+- func_id: 04-14-04
+  id: Feat-05
+  title: 输入法交互公共 API (customKeyboard/keyboardAppearance/enableKeyboardOnFocus/onWillAttachIME/onEditChange/stopEditing + IMEClient)
+  spec: 04-common-capability/14-input-interaction/04-input-method-interaction/Feat-05-text-component-keyboard-control-api-spec.md
+  status: Baselined
