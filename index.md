@@ -61,6 +61,7 @@
 | 03 引擎框架层 | 08 DFX | 04 Dump机制 | `03-08-04` | `03-engine-framework/08-dfx-foundation/04-dump-mechanism/` | [design.md](03-engine-framework/08-dfx-foundation/04-dump-mechanism/design.md) | 4 |
 | 03 引擎框架层 | 08 DFX | 05 Benchmark | `03-08-05` | `03-engine-framework/08-dfx-foundation/05-benchmark/` | *待补充* | 0 |
 | 03 引擎框架层 | 08 DFX | 06 布局边界显示 | `03-08-06` | `03-engine-framework/08-dfx-foundation/06-layout-boundary-display/` | [design.md](03-engine-framework/08-dfx-foundation/06-layout-boundary-display/design.md) | 1 |
+| 03 引擎框架层 | 09 UISession | 01 UISession 服务 | `03-09-01` | `03-engine-framework/09-uisession/01-uisession-service/` | [design.md](03-engine-framework/09-uisession/01-uisession-service/design.md) | 10 |
 | 04 通用能力层 | 01 图片加载能力 | 01 图片加载机制 | `04-01-01` | `04-common-capability/01-image-loading/01-image-loading-mechanism/` | [design.md](04-common-capability/01-image-loading/01-image-loading-mechanism/design.md) | 1 |
 | 04 通用能力层 | 01 图片加载能力 | 02 Svg解析 | `04-01-02` | `04-common-capability/01-image-loading/02-svg-parsing/` | [design.md](04-common-capability/01-image-loading/02-svg-parsing/design.md) | 4 |
 | 04 通用能力层 | 01 图片加载能力 | 03 DrawableDescriptor 能力 | `04-01-03` | `04-common-capability/01-image-loading/03-drawable-descriptor/` | [design.md](04-common-capability/01-image-loading/03-drawable-descriptor/design.md) | 1 |
@@ -572,6 +573,21 @@
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
 | Feat-01 | 布局边界显示调试能力 | [Feat-01-layout-boundary-display-spec.md](03-engine-framework/08-dfx-foundation/06-layout-boundary-display/Feat-01-layout-boundary-display-spec.md) | Baselined |
+
+### 03-09-01 UISession 服务
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | IPC安全框架与连接生命周期 | [Feat-01-ipc-security-framework-spec.md](03-engine-framework/09-uisession/01-uisession-service/Feat-01-ipc-security-framework-spec.md) | Baselined |
+| Feat-02 | InspectorTree查询与Web子树聚合 | [Feat-02-inspector-tree-query-and-web-aggregation-spec.md](03-engine-framework/09-uisession/01-uisession-service/Feat-02-inspector-tree-query-and-web-aggregation-spec.md) | Baselined |
+| Feat-03 | 事件上报与注册计数门控 | [Feat-03-event-reporting-and-atomic-gating-spec.md](03-engine-framework/09-uisession/01-uisession-service/Feat-03-event-reporting-and-atomic-gating-spec.md) | Baselined |
+| Feat-04 | 命令下发与同步请求保护 | [Feat-04-command-dispatch-and-sync-request-spec.md](03-engine-framework/09-uisession/01-uisession-service/Feat-04-command-dispatch-and-sync-request-spec.md) | Baselined |
+| Feat-05 | 翻译能力与DFX并发保护 | [Feat-05-translate-capability-and-dfx-spec.md](03-engine-framework/09-uisession/01-uisession-service/Feat-05-translate-capability-and-dfx-spec.md) | Baselined |
+| Feat-06 | 内容变化检测与阈值管理 | [Feat-06-content-change-detection-and-threshold-spec.md](03-engine-framework/09-uisession/01-uisession-service/Feat-06-content-change-detection-and-threshold-spec.md) | Baselined |
+| Feat-07 | 查询能力与辅助Dump | [Feat-07-query-and-auxiliary-dump-spec.md](03-engine-framework/09-uisession/01-uisession-service/Feat-07-query-and-auxiliary-dump-spec.md) | Baselined |
+| Feat-08 | SA验证服务与hidumper命令路由 | [Feat-08-sa-verification-service-spec.md](03-engine-framework/09-uisession/01-uisession-service/Feat-08-sa-verification-service-spec.md) | Baselined |
+| Feat-09 | PageScene 规则感知能力 | [Feat-09-pagescene-rule-awareness-spec.md](03-engine-framework/09-uisession/01-uisession-service/Feat-09-pagescene-rule-awareness-spec.md) | Draft |
+| Feat-10 | WM UIContentRemoteObj 验证链路 | [Feat-10-wm-uicontent-remoteobj-verification-spec.md](03-engine-framework/09-uisession/01-uisession-service/Feat-10-wm-uicontent-remoteobj-verification-spec.md) | Draft |
 
 ### 04-01-01 图片加载机制
 
