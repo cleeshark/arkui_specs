@@ -218,7 +218,7 @@
 | 05 组件层 | 11 卡片框架组件 | 01 FormComponent | `05-11-01` | `05-ui-components/11-card-framework-components/01-form-component/` | *待补充* | 0 |
 | 05 组件层 | 11 卡片框架组件 | 02 FormLink | `05-11-02` | `05-ui-components/11-card-framework-components/02-form-link/` | *待补充* | 0 |
 | 05 组件层 | 12 显示嵌入组件 | 01 PluginComponent | `05-12-01` | `05-ui-components/12-embedded-display-components/01-plugin-component/` | [design.md](05-ui-components/12-embedded-display-components/01-plugin-component/design.md) | 2 |
-| 05 组件层 | 12 显示嵌入组件 | 02 AbilityComponent | `05-12-02` | `05-ui-components/12-embedded-display-components/02-ability-component/` | *待补充* | 1 |
+| 05 组件层 | 12 显示嵌入组件 | 02 AbilityComponent | `05-12-02` | `05-ui-components/12-embedded-display-components/02-ability-component/` | [design.md](05-ui-components/12-embedded-display-components/02-ability-component/design.md) | 1 |
 | 05 组件层 | 12 显示嵌入组件 | 03 UIExtensionComponent | `05-12-03` | `05-ui-components/12-embedded-display-components/03-ui-extension-component/` | [design.md](05-ui-components/12-embedded-display-components/03-ui-extension-component/design.md) | 3 |
 | 05 组件层 | 12 显示嵌入组件 | 04 EmbeddedComponent | `05-12-04` | `05-ui-components/12-embedded-display-components/04-embedded-component/` | [design.md](05-ui-components/12-embedded-display-components/04-embedded-component/design.md) | 2 |
 | 05 组件层 | 12 显示嵌入组件 | 05 IsolatedComponent | `05-12-05` | `05-ui-components/12-embedded-display-components/05-isolated-component/` | [design.md](05-ui-components/12-embedded-display-components/05-isolated-component/design.md) | 1 |

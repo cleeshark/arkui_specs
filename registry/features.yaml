@@ -1749,11 +1749,6 @@ features:
   title: 占位组件交叉引用
   spec: 04-common-capability/06-custom-node/01-placeholder-component/Feat-01-placeholder-component-cross-reference-spec.md
   status: Baselined
-- func_id: 05-12-02
-  id: Feat-01
-  title: AbilityComponent 跨进程能力嵌入（已废弃）
-  spec: 05-ui-components/12-embedded-display-components/02-ability-component/Feat-01-ability-component-cross-process-embed-deprecated-spec.md
-  status: Baselined
 - func_id: 04-03-05
   id: Feat-01
   title: 弹窗类属性（bindPopup/bindMenu/bindContextMenu）
