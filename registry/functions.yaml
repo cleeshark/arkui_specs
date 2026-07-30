@@ -636,7 +636,7 @@ functions:
     id: '04'
     title: 交互属性
   path: 04-common-capability/03-common-attributes/04-interaction-attributes/
-  design: null
+  design: 04-common-capability/03-common-attributes/04-interaction-attributes/design.md
   status: active
 - id: 04-03-05
   l1:
@@ -1143,7 +1143,7 @@ functions:
     id: '01'
     title: 离屏截图
   path: 04-common-capability/10-component-screenshot/01-offscreen-screenshot/
-  design: null
+  design: 04-common-capability/10-component-screenshot/01-offscreen-screenshot/design.md
   status: active
 - id: 04-11-01
   l1:

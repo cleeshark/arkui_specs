@@ -1659,3 +1659,43 @@ features:
   title: Spring loading and hover detection
   spec: 04-common-capability/04-common-events/07-drag-capability/Feat-07-spring-loading-hover-detection-spec.md
   status: Baselined
+- func_id: 04-03-04
+  id: Feat-01
+  title: 指针、悬停与无障碍悬停事件
+  spec: 04-common-capability/03-common-attributes/04-interaction-attributes/Feat-01-pointer-hover-accessibility-hover-spec.md
+  status: Baselined
+- func_id: 04-03-04
+  id: Feat-02
+  title: 键盘与外设输入事件
+  spec: 04-common-capability/03-common-attributes/04-interaction-attributes/Feat-02-keyboard-peripheral-input-events-spec.md
+  status: Baselined
+- func_id: 04-03-04
+  id: Feat-03
+  title: 组件可用性与点击反馈
+  spec: 04-common-capability/03-common-attributes/04-interaction-attributes/Feat-03-enabled-click-feedback-spec.md
+  status: Baselined
+- func_id: 04-10-01
+  id: Feat-01
+  title: 独立 componentSnapshot 模块接口与迁移
+  spec: 04-common-capability/10-component-screenshot/01-offscreen-screenshot/Feat-01-component-snapshot-module-migration-spec.md
+  status: Baselined
+- func_id: 04-10-01
+  id: Feat-02
+  title: UIContext 已挂载节点与范围截图
+  spec: 04-common-capability/10-component-screenshot/01-offscreen-screenshot/Feat-02-uicontext-mounted-range-snapshot-spec.md
+  status: Baselined
+- func_id: 04-10-01
+  id: Feat-03
+  title: UIContext Builder 与 ComponentContent 离屏截图
+  spec: 04-common-capability/10-component-screenshot/01-offscreen-screenshot/Feat-03-uicontext-offscreen-builder-component-content-spec.md
+  status: Baselined
+- func_id: 04-10-01
+  id: Feat-04
+  title: 截图选项、错误码与跨前端差异
+  spec: 04-common-capability/10-component-screenshot/01-offscreen-screenshot/Feat-04-snapshot-options-errors-frontend-differences-spec.md
+  status: Baselined
+- func_id: 04-10-01
+  id: Feat-05
+  title: C API 节点截图与尺寸限制
+  spec: 04-common-capability/10-component-screenshot/01-offscreen-screenshot/Feat-05-capi-node-snapshot-size-limitation-spec.md
+  status: Baselined

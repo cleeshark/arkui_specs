@@ -68,7 +68,7 @@
 | 04 通用能力层 | 03 通用属性 | 01 布局属性 | `04-03-01` | `04-common-capability/03-common-attributes/01-layout-attributes/` | [design.md](04-common-capability/03-common-attributes/01-layout-attributes/design.md) | 3 |
 | 04 通用能力层 | 03 通用属性 | 02 视效属性 | `04-03-02` | `04-common-capability/03-common-attributes/02-visual-effect-attributes/` | [design.md](04-common-capability/03-common-attributes/02-visual-effect-attributes/design.md) | 1 |
 | 04 通用能力层 | 03 通用属性 | 03 基础属性 | `04-03-03` | `04-common-capability/03-common-attributes/03-basic-attributes/` | [design.md](04-common-capability/03-common-attributes/03-basic-attributes/design.md) | 5 |
-| 04 通用能力层 | 03 通用属性 | 04 交互属性 | `04-03-04` | `04-common-capability/03-common-attributes/04-interaction-attributes/` | *待补充* | 0 |
+| 04 通用能力层 | 03 通用属性 | 04 交互属性 | `04-03-04` | `04-common-capability/03-common-attributes/04-interaction-attributes/` | [design.md](04-common-capability/03-common-attributes/04-interaction-attributes/design.md) | 3 |
 | 04 通用能力层 | 03 通用属性 | 05 弹窗类属性 | `04-03-05` | `04-common-capability/03-common-attributes/05-popup-attributes/` | [design.md](04-common-capability/03-common-attributes/05-popup-attributes/design.md) | 1 |
 | 04 通用能力层 | 03 通用属性 | 06 模态属性 | `04-03-06` | `04-common-capability/03-common-attributes/06-modal-attributes/` | [design.md](04-common-capability/03-common-attributes/06-modal-attributes/design.md) | 1 |
 | 04 通用能力层 | 03 通用属性 | 07 样式属性 | `04-03-07` | `04-common-capability/03-common-attributes/07-style-attributes/` | [design.md](04-common-capability/03-common-attributes/07-style-attributes/design.md) | 2 |
@@ -107,7 +107,7 @@
 | 04 通用能力层 | 08 根视图 | 02 元服务AppBar | `04-08-02` | `04-common-capability/08-root-view/02-atomic-service-appbar/` | *待补充* | 0 |
 | 04 通用能力层 | 08 根视图 | 03 浮层能力 | `04-08-03` | `04-common-capability/08-root-view/03-overlay-capability/` | *待补充* | 0 |
 | 04 通用能力层 | 09 焦点框架 | 01 焦点机制 | `04-09-01` | `04-common-capability/09-focus-framework/01-focus-mechanism/` | *待补充* | 0 |
-| 04 通用能力层 | 10 组件截图 | 01 离屏截图 | `04-10-01` | `04-common-capability/10-component-screenshot/01-offscreen-screenshot/` | *待补充* | 0 |
+| 04 通用能力层 | 10 组件截图 | 01 离屏截图 | `04-10-01` | `04-common-capability/10-component-screenshot/01-offscreen-screenshot/` | [design.md](04-common-capability/10-component-screenshot/01-offscreen-screenshot/design.md) | 5 |
 | 04 通用能力层 | 11 组件信息获取 | 01 ComponentUtils | `04-11-01` | `04-common-capability/11-component-info/01-component-utils/` | *待补充* | 0 |
 | 04 通用能力层 | 11 组件信息获取 | 02 无感监听（observer） | `04-11-02` | `04-common-capability/11-component-info/02-observer/` | [design.md](04-common-capability/11-component-info/02-observer/design.md) | 2 |
 | 04 通用能力层 | 11 组件信息获取 | 03 布局回调（inspector） | `04-11-03` | `04-common-capability/11-component-info/03-inspector-layout-callback/` | *待补充* | 0 |
@@ -628,6 +628,9 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 指针、悬停与无障碍悬停事件 | [Feat-01-pointer-hover-accessibility-hover-spec.md](04-common-capability/03-common-attributes/04-interaction-attributes/Feat-01-pointer-hover-accessibility-hover-spec.md) | Baselined |
+| Feat-02 | 键盘与外设输入事件 | [Feat-02-keyboard-peripheral-input-events-spec.md](04-common-capability/03-common-attributes/04-interaction-attributes/Feat-02-keyboard-peripheral-input-events-spec.md) | Baselined |
+| Feat-03 | 组件可用性与点击反馈 | [Feat-03-enabled-click-feedback-spec.md](04-common-capability/03-common-attributes/04-interaction-attributes/Feat-03-enabled-click-feedback-spec.md) | Baselined |
 
 ### 04-03-05 弹窗类属性
 
@@ -846,6 +849,11 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 独立 componentSnapshot 模块接口与迁移 | [Feat-01-component-snapshot-module-migration-spec.md](04-common-capability/10-component-screenshot/01-offscreen-screenshot/Feat-01-component-snapshot-module-migration-spec.md) | Baselined |
+| Feat-02 | UIContext 已挂载节点与范围截图 | [Feat-02-uicontext-mounted-range-snapshot-spec.md](04-common-capability/10-component-screenshot/01-offscreen-screenshot/Feat-02-uicontext-mounted-range-snapshot-spec.md) | Baselined |
+| Feat-03 | UIContext Builder 与 ComponentContent 离屏截图 | [Feat-03-uicontext-offscreen-builder-component-content-spec.md](04-common-capability/10-component-screenshot/01-offscreen-screenshot/Feat-03-uicontext-offscreen-builder-component-content-spec.md) | Baselined |
+| Feat-04 | 截图选项、错误码与跨前端差异 | [Feat-04-snapshot-options-errors-frontend-differences-spec.md](04-common-capability/10-component-screenshot/01-offscreen-screenshot/Feat-04-snapshot-options-errors-frontend-differences-spec.md) | Baselined |
+| Feat-05 | C API 节点截图与尺寸限制 | [Feat-05-capi-node-snapshot-size-limitation-spec.md](04-common-capability/10-component-screenshot/01-offscreen-screenshot/Feat-05-capi-node-snapshot-size-limitation-spec.md) | Baselined |
 
 ### 04-11-01 ComponentUtils
 
