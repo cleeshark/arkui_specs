@@ -479,6 +479,21 @@ features:
   title: ImageAnimator 事件回调与多范式接口
   spec: 05-ui-components/08-image-components/02-image-animator/Feat-03-image-animator-events-interfaces-spec.md
   status: Baselined
+- func_id: 05-09-01
+  id: Feat-01
+  title: 创建与滚动参数 (start/step/loop/fromStart/src/spacing/delay)
+  spec: 05-ui-components/09-text-components/01-marquee/Feat-01-marquee-creation-scroll-params-spec.md
+  status: Baselined
+- func_id: 05-09-01
+  id: Feat-02
+  title: 字体样式 (fontColor/fontSize/allowScale/fontWeight/fontFamily)
+  spec: 05-ui-components/09-text-components/01-marquee/Feat-02-marquee-font-style-spec.md
+  status: Baselined
+- func_id: 05-09-01
+  id: Feat-03
+  title: 滚动策略、事件回调与多范式 (marqueeUpdateStrategy/onStart/onBounce/onFinish/onStop + MarqueeModifier + 静态 API + Cangjie FFI)
+  spec: 05-ui-components/09-text-components/01-marquee/Feat-03-marquee-strategy-events-multi-paradigm-spec.md
+  status: Baselined
 - func_id: 05-09-02
   id: Feat-01
   title: 组件初始化与双模式架构
@@ -524,6 +539,41 @@ features:
   title: 剪贴板、数据检测与菜单定制
   spec: 05-ui-components/09-text-components/02-rich-editor/Feat-09-clipboard-data-detection-menu-spec.md
   status: Baselined
+- func_id: 05-09-03
+  id: Feat-01
+  title: 组件构建与搜索按钮 (Search/SearchOptions/searchButton/SearchButtonOptions/SearchNode 组合/divider 可见性)
+  spec: 05-ui-components/09-text-components/03-search/Feat-01-search-construction-and-button-spec.md
+  status: Baselined
+- func_id: 05-09-03
+  id: Feat-02
+  title: 搜索图标与取消按钮 (searchIcon/IconOptions/SymbolGlyphModifier/cancelButton/CancelButtonOptions/CancelButtonSymbolOptions/CancelButtonStyle 枚举/图标 size/color/src/default)
+  spec: 05-ui-components/09-text-components/03-search/Feat-02-search-icon-and-cancel-button-spec.md
+  status: Baselined
+- func_id: 05-09-03
+  id: Feat-03
+  title: 文本与占位排版 (textFont/placeholderFont/placeholderColor/fontColor/textAlign/letterSpacing/lineHeight/halfLeading/textIndent/fontFeature/decoration/dividerColor/includeFontPadding/fallbackLineSpacing/textDirection/compressLeadingPunctuation/enableAutoSpacing)
+  spec: 05-ui-components/09-text-components/03-search/Feat-03-text-and-placeholder-typography-spec.md
+  status: Baselined
+- func_id: 05-09-03
+  id: Feat-04
+  title: 自适应字号与文本描边着色 (minFontSize/maxFontSize/minFontScale/maxFontScale/strokeWidth/strokeColor/strokeJoinStyle/shaderStyle)
+  spec: 05-ui-components/09-text-components/03-search/Feat-04-adaptive-font-and-stroke-shader-spec.md
+  status: Baselined
+- func_id: 05-09-03
+  id: Feat-05
+  title: 键盘与输入控制 (enableKeyboardOnFocus/enterKeyType/autoCapitalizationMode/inputFilter/customKeyboard/KeyboardOptions/keyboardAppearance/type/maxLength/enablePreviewText/enableHapticFeedback/stopBackPress)
+  spec: 05-ui-components/09-text-components/03-search/Feat-05-keyboard-and-input-control-spec.md
+  status: Baselined
+- func_id: 05-09-03
+  id: Feat-06
+  title: 选择、光标与菜单 (copyOption/selectionMenuHidden/selectionMenuOptions/selectedBackgroundColor/selectedDragPreviewStyle/enableSelectedDataDetector/caretStyle/caretPosition)
+  spec: 05-ui-components/09-text-components/03-search/Feat-06-selection-caret-and-menu-spec.md
+  status: Baselined
+- func_id: 05-09-03
+  id: Feat-07
+  title: 事件回调与控制器 (onSubmit/onChange/onWillChange/onWillInsert/onDidInsert/onWillDelete/onDidDelete/onCopy/onWillCopy/onCut/onWillCut/onPaste/onTextSelectionChange/onContentScroll/onEditChange/onWillAttachIME + SearchController)
+  spec: 05-ui-components/09-text-components/03-search/Feat-07-events-and-controller-spec.md
+  status: Baselined
 - func_id: 05-09-04
   id: Feat-01
   title: 字体属性与自适应字体
@@ -558,6 +608,56 @@ features:
   id: Feat-07
   title: 事件回调 (onCopy/onWillCopy/onTextSelectionChange/onMarqueeStateChange)
   spec: 05-ui-components/09-text-components/04-text/Feat-07-event-callbacks-spec.md
+  status: Baselined
+- func_id: 05-09-05
+  id: Feat-01
+  title: 内容创建与控制器 (TextAreaOptions/TextArea构造/setTextAreaOptions/TextAreaController:caretPosition/setTextSelection/stopEditing)
+  spec: 05-ui-components/09-text-components/05-text-area/Feat-01-content-creation-controller-spec.md
+  status: Baselined
+- func_id: 05-09-05
+  id: Feat-02
+  title: 字体与文本样式 (fontColor/fontSize/fontStyle/fontWeight/fontFamily/placeholderColor/placeholderFont/letterSpacing/lineHeight/lineSpacing/fontFeature/decoration/textIndent/halfLeading/includeFontPadding/fallbackLineSpacing/enableAutoSpacing/strokeWidth/strokeColor/strokeJoinStyle/shaderStyle/attributeModifier)
+  spec: 05-ui-components/09-text-components/05-text-area/Feat-02-font-text-styles-spec.md
+  status: Baselined
+- func_id: 05-09-05
+  id: Feat-03
+  title: 行布局与溢出截断 (textAlign/textOverflow/maxLines/minLines/minFontSize/maxFontSize/minFontScale/maxFontScale/heightAdaptivePolicy/wordBreak/lineBreakStrategy/ellipsisMode/horizontalScrolling/orphanCharOptimization/compressLeadingPunctuation/punctuationOverflow/textDirection/style:DEFAULT-INLINE)
+  spec: 05-ui-components/09-text-components/05-text-area/Feat-03-layout-overflow-spec.md
+  status: Baselined
+- func_id: 05-09-05
+  id: Feat-04
+  title: 键盘与输入法交互 (enterKeyType/onSubmit/enableKeyboardOnFocus/customKeyboard/keyboardAppearance/autoCapitalizationMode/onWillAttachIME/enablePreviewText/enableHapticFeedback/enableAutoFill/contentType/stopBackPress/voiceButton/type/TextAreaType/maxLength/inputFilter/showCounter)
+  spec: 05-ui-components/09-text-components/05-text-area/Feat-04-keyboard-ime-spec.md
+  status: Baselined
+- func_id: 05-09-05
+  id: Feat-05
+  title: 光标选择与剪贴板 (caretColor/caretStyle/selectedBackgroundColor/editMenuOptions/onCopy/onWillCopy/onCut/onWillCut/onPaste/copyOption/onTextSelectionChange/onContentScroll/selectedDragPreviewStyle/enableSelectedDataDetector/scrollBarColor/barState/selectionMenuHidden)
+  spec: 05-ui-components/09-text-components/05-text-area/Feat-05-caret-selection-clipboard-spec.md
+  status: Baselined
+- func_id: 05-09-05
+  id: Feat-06
+  title: 编辑事件回调 (onChange/onEditChange/onWillChange/onWillInsert/onDidInsert/onWillDelete/onDidDelete)
+  spec: 05-ui-components/09-text-components/05-text-area/Feat-06-editing-events-spec.md
+  status: Baselined
+- func_id: 05-09-06
+  id: Feat-01
+  title: Span 文本片段组件规格 (text/font/decoration/letterSpacing/textCase/lineHeight/textShadow/textBackgroundStyle/baselineOffset/fontVariations/onClick/onHover)
+  spec: 05-ui-components/09-text-components/06-span-components/Feat-01-span-text-spec.md
+  status: Baselined
+- func_id: 05-09-06
+  id: Feat-02
+  title: ImageSpan 图片片段组件规格 (src/verticalAlign/objectFit/colorFilter/alt/supportSvg2/baselineOffset/textBackgroundStyle/onComplete/onError)
+  spec: 05-ui-components/09-text-components/06-span-components/Feat-02-image-span-spec.md
+  status: Baselined
+- func_id: 05-09-06
+  id: Feat-03
+  title: SymbolSpan 符号片段组件规格 (fontSize/fontColor/fontWeight/effectStrategy/renderingStrategy)
+  spec: 05-ui-components/09-text-components/06-span-components/Feat-03-symbol-span-spec.md
+  status: Baselined
+- func_id: 05-09-06
+  id: Feat-04
+  title: ContainerSpan 容器片段组件规格 (textBackgroundStyle/嵌套模型)
+  spec: 05-ui-components/09-text-components/06-span-components/Feat-04-container-span-spec.md
   status: Baselined
 - func_id: 05-01-02
   id: Feat-01
