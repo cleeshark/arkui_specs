@@ -454,7 +454,7 @@ functions:
     id: '02'
     title: Inspector
   path: 03-engine-framework/07-accessibility-mechanism/02-inspector/
-  design: null
+  design: 03-engine-framework/07-accessibility-mechanism/02-inspector/design.md
   status: active
 - id: 03-08-01
   l1:
@@ -1195,7 +1195,7 @@ functions:
     id: '03'
     title: 布局回调（inspector）
   path: 04-common-capability/11-component-info/03-inspector-layout-callback/
-  design: null
+  design: 04-common-capability/11-component-info/03-inspector-layout-callback/design.md
   status: active
 - id: 04-12-01
   l1:
