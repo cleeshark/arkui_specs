@@ -2287,7 +2287,7 @@ functions:
     id: '01'
     title: Marquee
   path: 05-ui-components/09-text-components/01-marquee/
-  design: null
+  design: 05-ui-components/09-text-components/01-marquee/design.md
   status: active
 - id: 05-09-02
   l1:
@@ -2313,7 +2313,7 @@ functions:
     id: '03'
     title: Search
   path: 05-ui-components/09-text-components/03-search/
-  design: null
+  design: 05-ui-components/09-text-components/03-search/design.md
   status: active
 - id: 05-09-04
   l1:
@@ -2339,7 +2339,7 @@ functions:
     id: '05'
     title: TextArea
   path: 05-ui-components/09-text-components/05-text-area/
-  design: null
+  design: 05-ui-components/09-text-components/05-text-area/design.md
   status: active
 - id: 05-09-06
   l1:
@@ -2352,7 +2352,7 @@ functions:
     id: '06'
     title: Span类
   path: 05-ui-components/09-text-components/06-span-components/
-  design: null
+  design: 05-ui-components/09-text-components/06-span-components/design.md
   status: active
 - id: 05-09-07
   l1:
