@@ -99,6 +99,16 @@ features:
   title: 无障碍事件通知
   spec: 03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-07-accessibility-event-notification-spec.md
   status: Draft
+- func_id: 03-07-02
+  id: Feat-01
+  title: Inspector 同步树转储与属性过滤
+  spec: 03-engine-framework/07-accessibility-mechanism/02-inspector/Feat-01-sync-tree-dump-filter-spec.md
+  status: Baselined
+- func_id: 03-07-02
+  id: Feat-02
+  title: Inspector 公共 API 与异步采集
+  spec: 03-engine-framework/07-accessibility-mechanism/02-inspector/Feat-02-public-api-async-spec.md
+  status: Baselined
 - func_id: 03-08-01
   id: Feat-01
   title: LogWrapper核心框架与HiLog适配
@@ -1308,6 +1318,11 @@ features:
   id: Feat-02
   title: 无感监听接口全覆盖
   spec: 04-common-capability/11-component-info/02-observer/Feat-02-observer-api-full-coverage-spec.md
+  status: Baselined
+- func_id: 04-11-03
+  id: Feat-01
+  title: Inspector 布局/绘制回调（ComponentObserver）
+  spec: 04-common-capability/11-component-info/03-inspector-layout-callback/Feat-01-component-observer-callback-spec.md
   status: Baselined
 - func_id: 07-02-01
   id: Feat-01

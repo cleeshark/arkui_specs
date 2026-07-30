@@ -8,7 +8,7 @@
 | 特性编号 | Func-03-07-02-Feat-02 |
 | 所属 Epic | 无 |
 | 优先级 | P1 |
-| 目标版本 | API 10 起（动态 bridge）；ANI 富 API 随静态前端 |
+| 目标版本 | API 10 起；ANI 富 API 随静态前端 |
 | SIG 归属 | ArkUI SIG |
 | 状态 | Baselined |
 | 复杂度 | 复杂 |

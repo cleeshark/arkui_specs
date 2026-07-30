@@ -527,8 +527,8 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | 同步树转储与属性过滤 | [Feat-01-sync-tree-dump-filter-spec.md](03-engine-framework/07-accessibility-mechanism/02-inspector/Feat-01-sync-tree-dump-filter-spec.md) | Baselined |
-| Feat-02 | 公共 API 与异步采集 | [Feat-02-public-api-async-spec.md](03-engine-framework/07-accessibility-mechanism/02-inspector/Feat-02-public-api-async-spec.md) | Baselined |
+| Feat-01 | Inspector 同步树转储与属性过滤 | [Feat-01-sync-tree-dump-filter-spec.md](03-engine-framework/07-accessibility-mechanism/02-inspector/Feat-01-sync-tree-dump-filter-spec.md) | Baselined |
+| Feat-02 | Inspector 公共 API 与异步采集 | [Feat-02-public-api-async-spec.md](03-engine-framework/07-accessibility-mechanism/02-inspector/Feat-02-public-api-async-spec.md) | Baselined |
 
 ### 03-08-01 日志
 
@@ -902,7 +902,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | ComponentObserver 布局/绘制回调 | [Feat-01-component-observer-callback-spec.md](04-common-capability/11-component-info/03-inspector-layout-callback/Feat-01-component-observer-callback-spec.md) | Baselined |
+| Feat-01 | Inspector 布局/绘制回调（ComponentObserver） | [Feat-01-component-observer-callback-spec.md](04-common-capability/11-component-info/03-inspector-layout-callback/Feat-01-component-observer-callback-spec.md) | Baselined |
 
 ### 04-12-01 UIContext接口
 

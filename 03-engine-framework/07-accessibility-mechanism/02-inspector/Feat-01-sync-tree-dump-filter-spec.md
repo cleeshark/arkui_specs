@@ -8,12 +8,12 @@
 | 特性编号 | Func-03-07-02-Feat-01 |
 | 所属 Epic | 无 |
 | 优先级 | P1 |
-| 目标版本 | API 10 起（getInspectorTree/getInspectorByKey/sendEventByKey 动态 bridge） |
+| 目标版本 | API 10 起（getInspectorTree/getInspectorByKey/sendEventByKey） |
 | SIG 归属 | ArkUI SIG |
 | 状态 | Baselined |
-| 复杂度 | 复杂 |
+| 复杂度 | 一般 |
 
-本特性补录 `NG::Inspector` 的同步组件树 JSON 转储与逐属性过滤能力。核心是 `GetInspector(isLayoutInspector, filter, needThrow)` 主入口逐节点 `DumpInfo(json, filter)`，配合 `InspectorFilter`（AceKit inner-API：`FixedAttrBit` 位掩码 + 扩展属性 + 深度/ID 过滤）按需裁剪属性，供 DevEco Inspector、无障碍、自动化消费。与 03-08-04 DFX Dump 共用 InspectorFilter 但入口不同。本文档只描述当前实现。
+本特性补录 `NG::Inspector` 的同步组件树 JSON 转储与逐属性过滤能力。核心是 `GetInspector(isLayoutInspector, filter, needThrow)` 主入口逐节点 `DumpInfo(json, filter)`，配合 `InspectorFilter`（AceKit inner-API：`FixedAttrBit` 位掩码 + 扩展属性 + 深度/ID 过滤）按需裁剪属性，供 DevEco Inspector、自动化消费。与 03-08-04 DFX Dump 共用 InspectorFilter 但入口不同。本文档只描述当前实现。
 
 ## 本次变更范围（Delta）
 
@@ -33,7 +33,6 @@
   - `frameworks/core/components_ng/base/inspector.cpp` / `.h`（`NG::Inspector` 静态方法集）
   - `interfaces/inner_api/ace_kit/include/ui/base/inspector_filter.h`（`InspectorFilter`/`FixedAttrBit`/`TreeKey`/`InspectorConfig` 权威声明）
   - `frameworks/core/components_ng/base/inspector_filter.cpp`（filter 实现；`inspector_filter.h` 为 shim）
-  - `frameworks/core/pipeline_ng/pipeline_context.cpp`（`DumpInspector`→`OnDumpInfoNG`）
   - `frameworks/bridge/declarative_frontend/engine/jsi/jsi_view_register.cpp`（动态 bridge 入口）
 
 ## 用户故事
@@ -42,7 +41,7 @@
 
 **作为** 工具/自动化,
 **我想要** 同步获取运行时组件树的 JSON 视图（含/不含布局信息）,
-**以便** DevEco Inspector、无障碍、自动化测试消费。
+**以便** DevEco Inspector、自动化测试消费。
 
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
@@ -137,7 +136,7 @@
 
 | 约束 | 说明 |
 |------|------|
-| 分层 | SDK → bridge → NG::Inspector 单向；下游（DevEco/无障碍/UiSession）经不同入口 |
+| 分层 | SDK → bridge → NG::Inspector 单向；下游（DevEco/UiSession）经不同入口 |
 | inner-API 边界 | InspectorFilter 权威声明在 AceKit 头，engine 内为 shim |
 
 ## 非功能性需求
@@ -172,4 +171,4 @@ context-queries:
     query: "InspectorFilter FixedAttrBit SetFilterDepth SetFilterID AceKit inspector_filter"
 ```
 
-**关键文档：** `inspector.cpp/.h`、`inspector_filter.cpp`、AceKit `inspector_filter.h`、`pipeline_context.cpp`(DumpInspector)
+**关键文档：** `inspector.cpp/.h`、`inspector_filter.cpp`、AceKit `inspector_filter.h`

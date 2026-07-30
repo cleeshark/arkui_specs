@@ -11,7 +11,7 @@
 | 关联 Epic | 无 |
 | 目标 Feature | Feat-01 同步树转储与属性过滤、Feat-02 公共 API(NAPI/ANI)与异步采集 |
 | 复杂度 | 复杂 |
-| 目标版本 | API 10 起（getInspectorTree/getInspectorByKey/sendEventByKey 动态 bridge），ANI 富 API 随静态前端落地 |
+| 目标版本 | API 10 起（getInspectorTree/getInspectorByKey/sendEventByKey），ANI 富 API 随静态前端落地 |
 | Owner | ArkUI SIG / 引擎框架 |
 | 状态 | Baselined（已有实现补录；Feat-01/02 已补） |
 
@@ -19,7 +19,7 @@
 
 | 项 | 内容 |
 |----|------|
-| 问题陈述 | DevEco Studio Inspector、自动化测试（UiSession）、无障碍等下游需要一份稳定的运行时组件树 JSON 视图，并能按 key 查询单节点、向指定节点注入事件 |
+| 问题陈述 | DevEco Studio Inspector、自动化测试（UiSession）等下游需要一份稳定的运行时组件树 JSON 视图，并能按 key 查询单节点、向指定节点注入事件 |
 | 核心目标 | 提供 `NG::Inspector` 静态方法集做同步树转储/单节点查询/事件注入；`InspectorFilter` 做逐属性过滤（固定属性位 + 扩展属性 + 深度/ID 过滤）；`SimplifiedInspector` 做异步树采集与 UICommand 执行；`LayoutInspector` 做平台（OHOS/Preview）调度入口 |
 | P0 AC | （骨架）`GetInspector(isLayoutInspector, filter, needThrow)` 正确遍历树并按 filter 序列化；`GetInspectorByKey`/`GetRectangleById`/`SendEventByKey` 按 key 命中；异步路径经 `PipelineContext::GetInspectorTree` → `UiSessionManager::ReportInspectorTreeValue` 回报；InspectorFilter 的 FixedAttrBit 位掩码按需裁剪属性 |
 
@@ -65,7 +65,7 @@
 
 | Rule ID | 适用原因 | 设计结论 | 验证方式 |
 |---------|----------|----------|----------|
-| OH-ARCH-LAYERING | Inspector 涉及 SDK → Bridge → Framework → 平台调度单向 | 严格单向；下游消费（DevEco/UiSession/无障碍）经不同入口接入 | 代码评审 |
+| OH-ARCH-LAYERING | Inspector 涉及 SDK → Bridge → Framework → 平台调度单向 | 严格单向；下游消费（DevEco/UiSession）经不同入口接入 | 代码评审 |
 | OH-ARCH-API-LEVEL | getInspectorTree 等为 Public/系统 API | @since 标注；filter/异步 API 随版本扩展 | API 评审/XTS |
 | OH-ARCH-COMPONENT-BUILD | inspector ANI 模块 `inspector_ani`；NAPI 模块 `arkui.inspector` | 无新增 BUILD target | 构建验证 |
 | OH-ARCH-ERROR-LOG | 非法 key/action 由 needThrow 回传错误 | needThrow 出参指示是否需抛异常 | 单测 |
