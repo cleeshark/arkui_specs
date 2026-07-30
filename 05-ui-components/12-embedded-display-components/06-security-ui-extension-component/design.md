@@ -189,7 +189,7 @@ graph TB
 
 ```mermaid
 sequenceDiagram
-    participant ArkTS as ArkTS Code
+    participant ArkTS as "ArkTS Code"
     participant JSS as JSSecurityUIExtension
     participant SEM as SecurityUIExtensionModelNG
     participant SEP as SecurityUIExtensionPattern
@@ -203,7 +203,7 @@ sequenceDiagram
     SEP->>SEP: OnAttachToFrameNode
     SEP->>UEM: Register security extension (aliveSecurityUIExtensions_)
     SEP->>SWI: Create SecuritySessionWrapperImpl
-    SWI->>SWI: Check isTransferringCaller → true: elevate token to rootToken
+    SWI->>SWI: Check isTransferringCaller → true, elevate token to rootToken
     SWI->>Ext: Create ExtensionSession (SessionType=3)
     Ext-->>SWI: Session created
     SWI-->>SEP: Session initialized

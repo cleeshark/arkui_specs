@@ -206,13 +206,15 @@ graph TB
 
 ```mermaid
 sequenceDiagram
-    participant ArkTS as ArkTS Code
+    participant ArkTS as "ArkTS Code"
     participant JSU as JSUIExtension
     participant UM as UIExtensionModelNG
     participant UEP as UIExtensionPattern
     participant SWI as SessionWrapperImpl
-    participant Rosen as Rosen SessionService
-    participant UEA as UIExtensionAbility (远端进程)
+    participant Rosen as "Rosen SessionService"
+    participant UEA as "UIExtensionAbility (远端进程)"
+    participant JSP as JSUIExtensionProxy
+    participant UEXProxy as UIExtensionProxy
 
     ArkTS->>JSU: UIExtensionComponent(want, options)
     JSU->>UM: Create(wantWrap, placeholderMap, transferringCaller, densityDpi)

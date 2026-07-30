@@ -208,16 +208,16 @@ graph TB
 
 ```mermaid
 sequenceDiagram
-    participant ArkTS as ArkTS Code
+    participant ArkTS as "ArkTS Code"
     participant JSDC as JSDynamicComponent
     participant DMNG as DynamicModelNG
-    participant Worker as Worker Thread
+    participant Worker as "Worker Thread"
     participant DP as DynamicPattern
     participant DCR as DynamicComponentRendererImpl
 
     ArkTS->>JSDC: DynamicComponent(options)
     JSDC->>JSDC: Parse entryPoint/Worker/backgroundTransparent/allowCrossProcessNesting/allowOccupied
-    JSDC->>DMNG: Create(config: sessionType=DYNAMIC_COMPONENT)
+    JSDC->>DMNG: Create config with sessionType=DYNAMIC_COMPONENT
     DMNG->>DP: Create DynamicNode + DynamicPattern
     JSDC->>JSDC: Unwrap Worker napi_value → Worker*
     JSDC->>Worker: RegisterCallbackForWorkerEnv(callback)

@@ -183,13 +183,13 @@ graph TB
 
 ```mermaid
 sequenceDiagram
-    participant ArkTS as ArkTS Code
+    participant ArkTS as "ArkTS Code"
     participant JSP as JSPlugin
     participant PM as PluginModel
     participant PP as PluginPattern
     participant PSC as PluginSubContainer
     participant PMD as PluginManagerDelegate
-    participant BMS as BMS/AbilityRuntime
+    participant BMS as "BMS/AbilityRuntime"
 
     ArkTS->>JSP: PluginComponent(options)
     JSP->>PM: Create(RequestPluginInfo)

@@ -218,21 +218,21 @@ graph TB
 
 ```mermaid
 sequenceDiagram
-    participant ArkTS as ArkTS Code
+    participant ArkTS as "ArkTS Code"
     participant JSEC as JSEmbeddedComponent
     participant UEMNG as UIExtensionModelNG
     participant UEP as UIExtensionPattern
     participant SWI as SessionWrapperImpl
-    participant Rosen as Rosen::ExtensionSession
-    participant UEA as UIExtensionAbility (远端)
+    participant Rosen as "Rosen::ExtensionSession"
+    participant UEA as "UIExtensionAbility (远端)"
 
     ArkTS->>JSEC: EmbeddedComponent(want, type, options)
-    JSEC->>JSEC: Parse want → WantWrap; type → SessionType; options → densityDpi/windowModeStrategy/placeholderMap
+    JSEC->>JSEC: Parse want → WantWrap, type → SessionType, options → densityDpi/windowModeStrategy/placeholderMap
     JSEC->>UEMNG: Create(EmbeddedUIExtensionConfig)
     UEMNG->>UEP: Create UIExtensionNode + SetWantWrap/SetPlaceholderMap/SetDensityDpi/SetIsWindowModeFollowHost
     UEMNG->>UEMNG: SetMinWidth/MinHeight = 10vp
     UEP->>UEP: OnAttachToFrameNode → Register callbacks
-    UEP->>SWI: CreateSession(want, { uiExtensionUsage: EMBEDDED })
+    UEP->>SWI: CreateSession(want, uiExtensionUsage EMBEDDED)
     SWI->>Rosen: ExtensionSession::Create
     Rosen->>UEA: StartUIExtensionAbility
     UEA-->>Rosen: Connect callback

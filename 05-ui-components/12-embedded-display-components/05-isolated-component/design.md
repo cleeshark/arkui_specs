@@ -171,7 +171,7 @@ graph TB
 
 ```mermaid
 sequenceDiagram
-    participant ArkTS as ArkTS Code
+    participant ArkTS as "ArkTS Code"
     participant JSIC as JSIsolatedComponent
     participant UEM as UIExtensionModelNG
     participant IP as IsolatedPattern
