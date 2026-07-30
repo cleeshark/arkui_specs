@@ -883,7 +883,7 @@ functions:
     id: '01'
     title: 动态绘制属性
   path: 04-common-capability/05-custom-extension/01-draw-modifier/
-  design: null
+  design: 04-common-capability/05-custom-extension/01-draw-modifier/design.md
   status: active
 - id: 04-05-02
   l1:
@@ -896,7 +896,7 @@ functions:
     id: '02'
     title: 动态属性
   path: 04-common-capability/05-custom-extension/02-dynamic-attributes/
-  design: null
+  design: 04-common-capability/05-custom-extension/02-dynamic-attributes/design.md
   status: active
 - id: 04-05-03
   l1:
@@ -935,7 +935,7 @@ functions:
     id: '05'
     title: 自定义属性
   path: 04-common-capability/05-custom-extension/05-custom-property/
-  design: null
+  design: 04-common-capability/05-custom-extension/05-custom-property/design.md
   status: active
 - id: 04-05-06
   l1:
@@ -948,7 +948,7 @@ functions:
     id: '06'
     title: 组件Modifier
   path: 04-common-capability/05-custom-extension/06-component-modifier/
-  design: null
+  design: 04-common-capability/05-custom-extension/06-component-modifier/design.md
   status: active
 - id: 04-06-01
   l1:
@@ -974,7 +974,7 @@ functions:
     id: '02'
     title: FrameNode
   path: 04-common-capability/06-custom-node/02-frame-node/
-  design: null
+  design: 04-common-capability/06-custom-node/02-frame-node/design.md
   status: active
 - id: 04-06-03
   l1:
@@ -987,7 +987,7 @@ functions:
     id: '03'
     title: RenderNode
   path: 04-common-capability/06-custom-node/03-render-node/
-  design: null
+  design: 04-common-capability/06-custom-node/03-render-node/design.md
   status: active
 - id: 04-06-04
   l1:
@@ -1000,7 +1000,7 @@ functions:
     id: '04'
     title: BuilderNode
   path: 04-common-capability/06-custom-node/04-builder-node/
-  design: null
+  design: 04-common-capability/06-custom-node/04-builder-node/design.md
   status: active
 - id: 04-06-05
   l1:
@@ -1013,7 +1013,7 @@ functions:
     id: '05'
     title: ComponentContent
   path: 04-common-capability/06-custom-node/05-component-content/
-  design: null
+  design: 04-common-capability/06-custom-node/05-component-content/design.md
   status: active
 - id: 04-06-06
   l1:
@@ -1039,7 +1039,7 @@ functions:
     id: '07'
     title: TypedFrameNode
   path: 04-common-capability/06-custom-node/07-typed-frame-node/
-  design: null
+  design: 04-common-capability/06-custom-node/07-typed-frame-node/design.md
   status: active
 - id: 04-07-01
   l1:

@@ -299,6 +299,46 @@ features:
   title: 手势识别异常恢复增强
   spec: 04-common-capability/04-common-events/06-gesture-capability/Feat-05-gesture-recognizer-recovery-spec.md
   status: Draft
+- func_id: 04-05-01
+  id: Feat-01
+  title: DrawModifier 装配与组件门控
+  spec: 04-common-capability/05-custom-extension/01-draw-modifier/Feat-01-draw-modifier-mounting-gating-spec.md
+  status: Baselined
+- func_id: 04-05-01
+  id: Feat-02
+  title: 分层绘制回调分发
+  spec: 04-common-capability/05-custom-extension/01-draw-modifier/Feat-02-draw-modifier-layered-dispatch-spec.md
+  status: Baselined
+- func_id: 04-05-01
+  id: Feat-03
+  title: 主动刷新机制
+  spec: 04-common-capability/05-custom-extension/01-draw-modifier/Feat-03-draw-modifier-invalidate-refresh-spec.md
+  status: Baselined
+- func_id: 04-05-02
+  id: Feat-01
+  title: AttributeModifier 装配与状态监听
+  spec: 04-common-capability/05-custom-extension/02-dynamic-attributes/Feat-01-attribute-modifier-mounting-state-spec.md
+  status: Baselined
+- func_id: 04-05-02
+  id: Feat-02
+  title: 多状态属性应用与按位分发
+  spec: 04-common-capability/05-custom-extension/02-dynamic-attributes/Feat-02-attribute-modifier-multi-state-dispatch-spec.md
+  status: Baselined
+- func_id: 04-05-05
+  id: Feat-01
+  title: 自定义属性设置读取与双存储
+  spec: 04-common-capability/05-custom-extension/05-custom-property/Feat-01-custom-property-set-read-storage-spec.md
+  status: Baselined
+- func_id: 04-05-06
+  id: Feat-01
+  title: 命令式 Modifier 基类与类体系
+  spec: 04-common-capability/05-custom-extension/06-component-modifier/Feat-01-common-modifier-class-system-spec.md
+  status: Baselined
+- func_id: 04-05-06
+  id: Feat-02
+  title: ModifierUtils 对外接口
+  spec: 04-common-capability/05-custom-extension/06-component-modifier/Feat-02-modifier-utils-api-spec.md
+  status: Baselined
 - func_id: 05-01-01
   id: Feat-01
   title: Blank 组件
@@ -2113,4 +2153,134 @@ features:
   id: Feat-09
   title: C-API/NDK/ANI (OH_ArkUI_StyledString_* + 对象模型 accessor + ANI modifier)
   spec: 05-ui-components/09-text-components/10-attributed-string/Feat-09-capi-ndk-ani-spec.md
+  status: Baselined
+- func_id: 04-06-02
+  id: Feat-01
+  title: 节点创建、身份与内省
+  spec: 04-common-capability/06-custom-node/02-frame-node/Feat-01-node-creation-identity-introspection-spec.md
+  status: Baselined
+- func_id: 04-06-02
+  id: Feat-02
+  title: 树结构与挂载管理
+  spec: 04-common-capability/06-custom-node/02-frame-node/Feat-02-tree-structure-mounting-spec.md
+  status: Baselined
+- func_id: 04-06-02
+  id: Feat-03
+  title: 布局与度量
+  spec: 04-common-capability/06-custom-node/02-frame-node/Feat-03-layout-measurement-spec.md
+  status: Baselined
+- func_id: 04-06-02
+  id: Feat-04
+  title: 坐标转换与位置查询
+  spec: 04-common-capability/06-custom-node/02-frame-node/Feat-04-position-coordinate-conversion-spec.md
+  status: Baselined
+- func_id: 04-06-02
+  id: Feat-05
+  title: 渲染上下文与视觉状态
+  spec: 04-common-capability/06-custom-node/02-frame-node/Feat-05-render-context-visual-state-spec.md
+  status: Baselined
+- func_id: 04-06-02
+  id: Feat-06
+  title: 事件交互与 UIState
+  spec: 04-common-capability/06-custom-node/02-frame-node/Feat-06-event-interaction-ui-state-spec.md
+  status: Baselined
+- func_id: 04-06-02
+  id: Feat-07
+  title: 节点动画
+  spec: 04-common-capability/06-custom-node/02-frame-node/Feat-07-node-animation-spec.md
+  status: Baselined
+- func_id: 04-06-02
+  id: Feat-08
+  title: 生命周期、回收与跨语言
+  spec: 04-common-capability/06-custom-node/02-frame-node/Feat-08-lifecycle-recycle-cross-language-spec.md
+  status: Baselined
+- func_id: 04-06-03
+  id: Feat-01
+  title: RenderNode 全量规格
+  spec: 04-common-capability/06-custom-node/03-render-node/Feat-01-render-node-full-spec.md
+  status: Baselined
+- func_id: 04-06-04
+  id: Feat-01
+  title: 创建、释放与渲染类型
+  spec: 04-common-capability/06-custom-node/04-builder-node/Feat-01-creation-dispose-render-type-spec.md
+  status: Baselined
+- func_id: 04-06-04
+  id: Feat-02
+  title: 构建与更新
+  spec: 04-common-capability/06-custom-node/04-builder-node/Feat-02-build-update-spec.md
+  status: Baselined
+- func_id: 04-06-04
+  id: Feat-03
+  title: FrameNode 访问
+  spec: 04-common-capability/06-custom-node/04-builder-node/Feat-03-framenode-access-spec.md
+  status: Baselined
+- func_id: 04-06-04
+  id: Feat-04
+  title: 渲染类型与纹理
+  spec: 04-common-capability/06-custom-node/04-builder-node/Feat-04-render-type-texture-spec.md
+  status: Baselined
+- func_id: 04-06-04
+  id: Feat-05
+  title: 复用与回收
+  spec: 04-common-capability/06-custom-node/04-builder-node/Feat-05-reuse-recycle-spec.md
+  status: Baselined
+- func_id: 04-06-04
+  id: Feat-06
+  title: 输入事件分发
+  spec: 04-common-capability/06-custom-node/04-builder-node/Feat-06-input-event-dispatch-spec.md
+  status: Baselined
+- func_id: 04-06-04
+  id: Feat-07
+  title: 冻结策略
+  spec: 04-common-capability/06-custom-node/04-builder-node/Feat-07-freeze-policy-spec.md
+  status: Baselined
+- func_id: 04-06-04
+  id: Feat-08
+  title: 响应式变体
+  spec: 04-common-capability/06-custom-node/04-builder-node/Feat-08-reactive-variant-spec.md
+  status: Baselined
+- func_id: 04-06-05
+  id: Feat-01
+  title: 创建与释放
+  spec: 04-common-capability/06-custom-node/05-component-content/Feat-01-creation-dispose-spec.md
+  status: Baselined
+- func_id: 04-06-05
+  id: Feat-02
+  title: 更新配置冻结
+  spec: 04-common-capability/06-custom-node/05-component-content/Feat-02-update-config-freeze-spec.md
+  status: Baselined
+- func_id: 04-06-05
+  id: Feat-03
+  title: 复用回收
+  spec: 04-common-capability/06-custom-node/05-component-content/Feat-03-reuse-recycle-spec.md
+  status: Baselined
+- func_id: 04-06-05
+  id: Feat-04
+  title: ReactiveComponentContent
+  spec: 04-common-capability/06-custom-node/05-component-content/Feat-04-reactive-component-content-spec.md
+  status: Baselined
+- func_id: 04-06-05
+  id: Feat-05
+  title: Transfer 转换变体
+  spec: 04-common-capability/06-custom-node/05-component-content/Feat-05-transfer-dynamic-static-conversion-spec.md
+  status: Baselined
+- func_id: 04-06-07
+  id: Feat-01
+  title: TypedFrameNode 类型
+  spec: 04-common-capability/06-custom-node/07-typed-frame-node/Feat-01-typedframenode-type-spec.md
+  status: Baselined
+- func_id: 04-06-07
+  id: Feat-02
+  title: typeNode 动态工厂
+  spec: 04-common-capability/06-custom-node/07-typed-frame-node/Feat-02-typenode-dynamic-factory-spec.md
+  status: Baselined
+- func_id: 04-06-07
+  id: Feat-03
+  title: typeNode 静态工厂
+  spec: 04-common-capability/06-custom-node/07-typed-frame-node/Feat-03-typenode-static-factory-spec.md
+  status: Baselined
+- func_id: 04-06-07
+  id: Feat-04
+  title: 组件支持矩阵
+  spec: 04-common-capability/06-custom-node/07-typed-frame-node/Feat-04-component-matrix-spec.md
   status: Baselined
