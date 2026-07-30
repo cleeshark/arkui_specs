@@ -376,7 +376,7 @@ functions:
     id: '01'
     title: 事件基础框架
   path: 03-engine-framework/04-event-framework/01-event-base-framework/
-  design: null
+  design: 03-engine-framework/04-event-framework/01-event-base-framework/design.md
   status: active
 - id: 03-04-02
   l1:
@@ -753,7 +753,7 @@ functions:
     id: '01'
     title: 触摸事件
   path: 04-common-capability/04-common-events/01-touch-events/
-  design: null
+  design: 04-common-capability/04-common-events/01-touch-events/design.md
   status: active
 - id: 04-04-02
   l1:
@@ -766,7 +766,7 @@ functions:
     id: '02'
     title: 按键事件
   path: 04-common-capability/04-common-events/02-key-events/
-  design: null
+  design: 04-common-capability/04-common-events/02-key-events/design.md
   status: active
 - id: 04-04-03
   l1:
@@ -779,7 +779,7 @@ functions:
     id: '03'
     title: 事件分发和拦截
   path: 04-common-capability/04-common-events/03-event-dispatch-intercept/
-  design: null
+  design: 04-common-capability/04-common-events/03-event-dispatch-intercept/design.md
   status: active
 - id: 04-04-04
   l1:
@@ -792,7 +792,7 @@ functions:
     id: '04'
     title: 组件组合键
   path: 04-common-capability/04-common-events/04-component-shortcuts/
-  design: null
+  design: 04-common-capability/04-common-events/04-component-shortcuts/design.md
   status: active
 - id: 04-04-05
   l1:
@@ -805,7 +805,7 @@ functions:
     id: '05'
     title: 鼠标事件
   path: 04-common-capability/04-common-events/05-mouse-events/
-  design: null
+  design: 04-common-capability/04-common-events/05-mouse-events/design.md
   status: active
 - id: 04-04-06
   l1:
