@@ -2664,3 +2664,68 @@ features:
   title: 输入法交互公共 API (customKeyboard/keyboardAppearance/enableKeyboardOnFocus/onWillAttachIME/onEditChange/stopEditing + IMEClient)
   spec: 04-common-capability/14-input-interaction/04-input-method-interaction/Feat-05-text-component-keyboard-control-api-spec.md
   status: Baselined
+- func_id: 05-10-01
+  id: Feat-01
+  title: DataPanel 基础构造参数
+  spec: 05-ui-components/10-information-display-components/01-data-panel/Feat-01-data-panel-ctor-spec.md
+  status: Baselined
+- func_id: 05-10-01
+  id: Feat-02
+  title: DataPanel 样式属性
+  spec: 05-ui-components/10-information-display-components/01-data-panel/Feat-02-data-panel-style-spec.md
+  status: Baselined
+- func_id: 05-10-01
+  id: Feat-03
+  title: DataPanel 高级能力（阴影/ContentModifier/C-API）
+  spec: 05-ui-components/10-information-display-components/01-data-panel/Feat-03-data-panel-advanced-spec.md
+  status: Baselined
+- func_id: 05-10-02
+  id: Feat-01
+  title: Gauge 核心属性
+  spec: 05-ui-components/10-information-display-components/02-gauge/Feat-01-gauge-core-spec.md
+  status: Baselined
+- func_id: 05-10-02
+  id: Feat-02
+  title: Gauge 高级配置
+  spec: 05-ui-components/10-information-display-components/02-gauge/Feat-02-gauge-advanced-config-spec.md
+  status: Baselined
+- func_id: 05-10-02
+  id: Feat-03
+  title: Gauge 高级能力
+  spec: 05-ui-components/10-information-display-components/02-gauge/Feat-03-gauge-advanced-spec.md
+  status: Baselined
+- func_id: 05-10-03
+  id: Feat-01
+  title: LoadingProgress 全量规格
+  spec: 05-ui-components/10-information-display-components/03-loading-progress/Feat-01-loading-progress-full-spec.md
+  status: Baselined
+- func_id: 05-10-04
+  id: Feat-01
+  title: PatternLock 创建、核心属性与视觉样式
+  spec: 05-ui-components/10-information-display-components/04-pattern-lock/Feat-01-pattern-lock-core-properties-visual-spec.md
+  status: Baselined
+- func_id: 05-10-04
+  id: Feat-02
+  title: PatternLock 交互行为、事件与控制器
+  spec: 05-ui-components/10-information-display-components/04-pattern-lock/Feat-02-pattern-lock-interaction-events-controller-spec.md
+  status: Baselined
+- func_id: 05-10-04
+  id: Feat-03
+  title: PatternLock 多范式接口与 C-API
+  spec: 05-ui-components/10-information-display-components/04-pattern-lock/Feat-03-pattern-lock-multi-paradigm-capi-spec.md
+  status: Baselined
+- func_id: 05-10-10
+  id: Feat-01
+  title: Counter 创建、尺寸与基础样式
+  spec: 05-ui-components/10-information-display-components/10-counter/Feat-01-counter-creation-size-style-spec.md
+  status: Baselined
+- func_id: 05-10-10
+  id: Feat-02
+  title: Counter 按钮控制与事件回调
+  spec: 05-ui-components/10-information-display-components/10-counter/Feat-02-counter-button-control-events-spec.md
+  status: Baselined
+- func_id: 05-10-10
+  id: Feat-03
+  title: Counter 多范式接口与 C-API
+  spec: 05-ui-components/10-information-display-components/10-counter/Feat-03-counter-multi-paradigm-capi-spec.md
+  status: Baselined

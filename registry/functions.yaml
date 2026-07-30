@@ -2430,7 +2430,7 @@ functions:
     id: '01'
     title: DataPanel
   path: 05-ui-components/10-information-display-components/01-data-panel/
-  design: null
+  design: 05-ui-components/10-information-display-components/01-data-panel/design.md
   status: active
 - id: 05-10-02
   l1:
@@ -2443,7 +2443,7 @@ functions:
     id: '02'
     title: Gauge
   path: 05-ui-components/10-information-display-components/02-gauge/
-  design: null
+  design: 05-ui-components/10-information-display-components/02-gauge/design.md
   status: active
 - id: 05-10-03
   l1:
@@ -2456,7 +2456,7 @@ functions:
     id: '03'
     title: LoadingProgress
   path: 05-ui-components/10-information-display-components/03-loading-progress/
-  design: null
+  design: 05-ui-components/10-information-display-components/03-loading-progress/design.md
   status: active
 - id: 05-10-04
   l1:
@@ -2469,7 +2469,7 @@ functions:
     id: '04'
     title: PatternLock
   path: 05-ui-components/10-information-display-components/04-pattern-lock/
-  design: null
+  design: 05-ui-components/10-information-display-components/04-pattern-lock/design.md
   status: active
 - id: 05-10-05
   l1:
@@ -2547,7 +2547,7 @@ functions:
     id: '10'
     title: Counter
   path: 05-ui-components/10-information-display-components/10-counter/
-  design: null
+  design: 05-ui-components/10-information-display-components/10-counter/design.md
   status: active
 - id: 05-11-01
   l1:

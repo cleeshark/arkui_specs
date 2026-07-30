@@ -206,16 +206,16 @@
 | 05 组件层 | 09 文本类组件 | 08 TextInput | `05-09-08` | `05-ui-components/09-text-components/08-text-input/` | [design.md](05-ui-components/09-text-components/08-text-input/design.md) | 10 |
 | 05 组件层 | 09 文本类组件 | 09 HyperLink | `05-09-09` | `05-ui-components/09-text-components/09-hyperlink/` | [design.md](05-ui-components/09-text-components/09-hyperlink/design.md) | 3 |
 | 05 组件层 | 09 文本类组件 | 10 属性字符串 | `05-09-10` | `05-ui-components/09-text-components/10-attributed-string/` | [design.md](05-ui-components/09-text-components/10-attributed-string/design.md) | 9 |
-| 05 组件层 | 10 信息展示类组件 | 01 DataPanel | `05-10-01` | `05-ui-components/10-information-display-components/01-data-panel/` | *待补充* | 0 |
-| 05 组件层 | 10 信息展示类组件 | 02 Gauge | `05-10-02` | `05-ui-components/10-information-display-components/02-gauge/` | *待补充* | 0 |
-| 05 组件层 | 10 信息展示类组件 | 03 LoadingProgress | `05-10-03` | `05-ui-components/10-information-display-components/03-loading-progress/` | *待补充* | 0 |
-| 05 组件层 | 10 信息展示类组件 | 04 PatternLock | `05-10-04` | `05-ui-components/10-information-display-components/04-pattern-lock/` | *待补充* | 0 |
+| 05 组件层 | 10 信息展示类组件 | 01 DataPanel | `05-10-01` | `05-ui-components/10-information-display-components/01-data-panel/` | [design.md](05-ui-components/10-information-display-components/01-data-panel/design.md) | 3 |
+| 05 组件层 | 10 信息展示类组件 | 02 Gauge | `05-10-02` | `05-ui-components/10-information-display-components/02-gauge/` | [design.md](05-ui-components/10-information-display-components/02-gauge/design.md) | 3 |
+| 05 组件层 | 10 信息展示类组件 | 03 LoadingProgress | `05-10-03` | `05-ui-components/10-information-display-components/03-loading-progress/` | [design.md](05-ui-components/10-information-display-components/03-loading-progress/design.md) | 1 |
+| 05 组件层 | 10 信息展示类组件 | 04 PatternLock | `05-10-04` | `05-ui-components/10-information-display-components/04-pattern-lock/` | [design.md](05-ui-components/10-information-display-components/04-pattern-lock/design.md) | 3 |
 | 05 组件层 | 10 信息展示类组件 | 05 Progress | `05-10-05` | `05-ui-components/10-information-display-components/05-progress/` | [design.md](05-ui-components/10-information-display-components/05-progress/design.md) | 1 |
 | 05 组件层 | 10 信息展示类组件 | 06 QRCode | `05-10-06` | `05-ui-components/10-information-display-components/06-qr-code/` | [design.md](05-ui-components/10-information-display-components/06-qr-code/design.md) | 1 |
 | 05 组件层 | 10 信息展示类组件 | 07 TextClock | `05-10-07` | `05-ui-components/10-information-display-components/07-text-clock/` | [design.md](05-ui-components/10-information-display-components/07-text-clock/design.md) | 4 |
 | 05 组件层 | 10 信息展示类组件 | 08 TextTimer | `05-10-08` | `05-ui-components/10-information-display-components/08-text-timer/` | [design.md](05-ui-components/10-information-display-components/08-text-timer/design.md) | 4 |
 | 05 组件层 | 10 信息展示类组件 | 09 Badge | `05-10-09` | `05-ui-components/10-information-display-components/09-badge/` | [design.md](05-ui-components/10-information-display-components/09-badge/design.md) | 4 |
-| 05 组件层 | 10 信息展示类组件 | 10 Counter | `05-10-10` | `05-ui-components/10-information-display-components/10-counter/` | *待补充* | 0 |
+| 05 组件层 | 10 信息展示类组件 | 10 Counter | `05-10-10` | `05-ui-components/10-information-display-components/10-counter/` | [design.md](05-ui-components/10-information-display-components/10-counter/design.md) | 3 |
 | 05 组件层 | 11 卡片框架组件 | 01 FormComponent | `05-11-01` | `05-ui-components/11-card-framework-components/01-form-component/` | *待补充* | 0 |
 | 05 组件层 | 11 卡片框架组件 | 02 FormLink | `05-11-02` | `05-ui-components/11-card-framework-components/02-form-link/` | *待补充* | 0 |
 | 05 组件层 | 12 显示嵌入组件 | 01 PluginComponent | `05-12-01` | `05-ui-components/12-embedded-display-components/01-plugin-component/` | [design.md](05-ui-components/12-embedded-display-components/01-plugin-component/design.md) | 2 |
@@ -1651,21 +1651,31 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | DataPanel 基础构造参数 | [Feat-01-data-panel-ctor-spec.md](05-ui-components/10-information-display-components/01-data-panel/Feat-01-data-panel-ctor-spec.md) | Baselined |
+| Feat-02 | DataPanel 样式属性 | [Feat-02-data-panel-style-spec.md](05-ui-components/10-information-display-components/01-data-panel/Feat-02-data-panel-style-spec.md) | Baselined |
+| Feat-03 | DataPanel 高级能力（阴影/ContentModifier/C-API） | [Feat-03-data-panel-advanced-spec.md](05-ui-components/10-information-display-components/01-data-panel/Feat-03-data-panel-advanced-spec.md) | Baselined |
 
 ### 05-10-02 Gauge
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Gauge 核心属性 | [Feat-01-gauge-core-spec.md](05-ui-components/10-information-display-components/02-gauge/Feat-01-gauge-core-spec.md) | Baselined |
+| Feat-02 | Gauge 高级配置 | [Feat-02-gauge-advanced-config-spec.md](05-ui-components/10-information-display-components/02-gauge/Feat-02-gauge-advanced-config-spec.md) | Baselined |
+| Feat-03 | Gauge 高级能力 | [Feat-03-gauge-advanced-spec.md](05-ui-components/10-information-display-components/02-gauge/Feat-03-gauge-advanced-spec.md) | Baselined |
 
 ### 05-10-03 LoadingProgress
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | LoadingProgress 全量规格 | [Feat-01-loading-progress-full-spec.md](05-ui-components/10-information-display-components/03-loading-progress/Feat-01-loading-progress-full-spec.md) | Baselined |
 
 ### 05-10-04 PatternLock
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | PatternLock 创建、核心属性与视觉样式 | [Feat-01-pattern-lock-core-properties-visual-spec.md](05-ui-components/10-information-display-components/04-pattern-lock/Feat-01-pattern-lock-core-properties-visual-spec.md) | Baselined |
+| Feat-02 | PatternLock 交互行为、事件与控制器 | [Feat-02-pattern-lock-interaction-events-controller-spec.md](05-ui-components/10-information-display-components/04-pattern-lock/Feat-02-pattern-lock-interaction-events-controller-spec.md) | Baselined |
+| Feat-03 | PatternLock 多范式接口与 C-API | [Feat-03-pattern-lock-multi-paradigm-capi-spec.md](05-ui-components/10-information-display-components/04-pattern-lock/Feat-03-pattern-lock-multi-paradigm-capi-spec.md) | Baselined |
 
 ### 05-10-05 Progress
 
@@ -1710,6 +1720,9 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Counter 创建、尺寸与基础样式 | [Feat-01-counter-creation-size-style-spec.md](05-ui-components/10-information-display-components/10-counter/Feat-01-counter-creation-size-style-spec.md) | Baselined |
+| Feat-02 | Counter 按钮控制与事件回调 | [Feat-02-counter-button-control-events-spec.md](05-ui-components/10-information-display-components/10-counter/Feat-02-counter-button-control-events-spec.md) | Baselined |
+| Feat-03 | Counter 多范式接口与 C-API | [Feat-03-counter-multi-paradigm-capi-spec.md](05-ui-components/10-information-display-components/10-counter/Feat-03-counter-multi-paradigm-capi-spec.md) | Baselined |
 
 ### 05-11-01 FormComponent
 
