@@ -53,6 +53,10 @@
 
 ### US-2: 异步树采集与 UiSession 回报
 
+**作为** 工具/自动化,
+**我想要** 经后台线程异步采集组件树 JSON 并由 UiSession 回报,
+**以便** 避免阻塞 UI 线程的同时获取运行时树视图。
+
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
 | AC-2.1 | WHEN `PipelineContext::GetInspectorTree(onlyNeedVisible, config)` THEN 后台线程构建 JSON 根 | 正常 |

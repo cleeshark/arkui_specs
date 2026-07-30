@@ -99,6 +99,49 @@
 |---------|------|------------|----|
 | TASK-SKELETON-1 | Feat-01 ComponentObserver 注册与分发 | js_inspector.cpp/.h, js_engine.cpp/.h, declarative_frontend*.cpp, arkts_frontend.cpp | AC-1.x（待 Feat 补齐） |
 
+## 详细设计
+
+### 运行时交互流程
+
+ComponentObserver 回调生命周期分为注册、触发、注销三个阶段，按前端范式（声明式/静态 ArkTS）走不同分发路径：
+
+**注册阶段：**
+应用调用 `createComponentObserver(id)` → NAPI `JSCreateComponentObserver` 创建 `ComponentObserver` 实例 → 若 id 为 string 则 `jsEngine->RegisterLayoutInspectorCallback(componentId, callback)`；若 id 为 number 则 `RegisterLayoutInspectorUniqueIdCallback(uniqueId, callback)`。静态 ArkTS 前端跳过 JsEngine，直接写 `arkts_frontend` 的 `layoutCallbacks_` / `uniqueIdLayoutCallbacks_` map。`on(type, cb)` 按 `CalloutType` 枚举类型将 napi_ref 存入对应 cb*List_（cbLayoutList_ / cbDrawList_ / cbDrawChildrenList_ 等）。
+
+**触发阶段：**
+声明式/Ng 前端布局/绘制完成时调用 `jsEngine->LayoutInspectorCallback(uniqueId)` → 按 uniqueId 查找注册的回调列表 → 遍历对应 cb*List_ 依次 `napi_call_function`。静态前端从 `arkts_frontend` map 直接查找并触发。触发仅在对应生命周期阶段执行（`on("layout")` 在 `LayoutCompleted` 后触发，`on("draw")` 在 `DrawCompleted` 后触发）。
+
+**注销阶段：**
+应用调用 `off(type, cb?)` 从对应 cb*List_ / map 移除回调条目；不传 cb 则清空该 scope 全部。`Destroy`（ComponentObserver 析构）调用 `UnregisterLayoutInspectorCallback` / `UnregisterLayoutInspectorUniqueIdCallback` 从引擎卸载入口，避免回调残留。
+
+### 关键模块设计要点
+
+| 模块 | 设计要点 |
+|------|----------|
+| `js_inspector` ComponentObserver | 持有 `napi_ref cb*List_` 列表，每个 `napi_ref` 弱引用 JS 回调；`CalloutType` 枚举映射 SDK type 字符串 |
+| `JsEngine` 注册接口 | `RegisterLayoutInspectorCallback(string id, Callback)` 和 `RegisterLayoutInspectorUniqueIdCallback(int32_t uniqueId, Callback)` 双路，内部以 `unordered_map` 维护 id→callback 映射 |
+| `arkts_frontend` 独立 map | 静态前端无 JsEngine，在 `arkts_frontend` 自身维护 `layoutCallbacks_` (string→list) 和 `uniqueIdLayoutCallbacks_` (int32→list) 两个 map，触发时直接查找 |
+
+### 触发时序
+
+```
+应用层: createComponentObserver("btn1").on("layout", cb)
+  ↓ NAPI
+js_inspector: JSCreateComponentObserver
+  → 建 ComponentObserver, 存 cb 到 cbLayoutList_
+  → jsEngine->RegisterLayoutInspectorCallback("btn1", ...)
+  ↓
+渲染层布局完成
+  ↓
+declarative_frontend: LayoutCompleted
+  → jsEngine->LayoutInspectorCallback(componentId/uniqueId)
+  ↓
+JsEngine/arkts_frontend: 查 map
+  → 遍历 cbLayoutList_ → napi_call_function
+  ↓
+JS 层回调执行
+```
+
 ## 风险和开放问题
 
 | 项 | 类型 | 影响 | 处理方式 | Owner |

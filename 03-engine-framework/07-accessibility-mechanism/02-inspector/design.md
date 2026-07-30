@@ -108,6 +108,60 @@
 | TASK-SKELETON-2 | Feat-02 公共 API 与过滤 | @ohos.arkui.inspector.*, ani inspector.cpp, simplified_inspector | AC-2.x（待 Feat 补齐） |
 | TASK-SKELETON-3 | Feat-03 异步采集与 UiSession | simplified_inspector, inspector_tree_collector, ui_session_manager | AC-3.x（待 Feat 补齐） |
 
+## 详细设计
+
+### 运行时交互流程
+
+Inspector 按入口分为三条独立路径，在 UI 线程或后台线程中按需执行：
+
+**同步路径（JS/ANI 推模式）：**
+应用/工具 JS 层调用 `getInspectorTree()` → ANI 绑定 `AniGetInspectorTree` → `NG::Inspector::GetInspector(false, filter, needThrow)` → 从 `FrameNode` 树根节点开始递归 `DumpInfo(json, filter)`，逐节点通过 `InspectorFilter::CheckFixedAttr` / `CheckExtAttr` 过滤属性 → 返回 JSON 字符串。动态前端经 `jsi_view_register.cpp` bridge 同名入口走相同逻辑。`isLayoutInspector=true` 时额外嵌入布局偏移/尺寸信息。
+
+**异步路径（UiSession 拉模式）：**
+`PipelineContext::GetInspectorTree(onlyNeedVisible, config)` 在后台线程构造 `SimplifiedInspector` → 逐节点 `DumpSimplifyTreeWithParamConfig` 构建轻量 JSON → `InspectorTreeCollector` 聚合 → 最终由 `UiSessionManager::ReportInspectorTreeValue` 回报给 DevEco/自动化端。`onlyNeedVisible=true` 时走 `DumpVisibleInspectorTree` 跳过不可见节点子树剪枝。
+
+**事件注入路径：**
+`SendEventByKey(key, action, params)` 经 `FrameNode` 树按 key 查找目标节点 → 调用 `EventManager` 或直接 `AccessibilityNode` 事件接口注入指定 action。`needThrow` 为 true 时以出参返回异常状态，由调用侧决定是否向 JS 层抛异常。
+
+### 关键模块设计要点
+
+| 模块 | 设计要点 |
+|------|----------|
+| `NG::Inspector` 静态方法集 | 无状态工具类，仅操作传入的 `FrameNode` 树；`GetInspector` 主入口收 `isLayoutInspector/filter/needThrow` 三参数 |
+| `InspectorFilter` | 组合位掩码 + 扩展属性名列表 + 深度/ID 范围；`IsFastFilter()` 提前判快速路径避免不必要的位扫描 |
+| `SimplifiedInspector` | 持有 `UiCommand` 队列；`GetInspectorAsync` 注册 collector 回调，`GetInspectorBackgroundAsync` 切后台线程执行 |
+| `InspectorOffscreenNodesMgr` | `std::map` 登记 `WeakPtr<FrameNode>`，在节点 detach/attach 时更新；查询时通过 `GetFreeNodesInspector` 序列化存活节点 |
+
+### 数据流时序（同步路径）
+
+```
+JS/ANI 调用层
+  ↓ getInspectorTree/getInspectorByKey
+ANI 绑定 / jsi bridge
+  ↓ NG::Inspector::GetInspector / GetInspectorNodeByKey
+NG::Inspector 静态方法
+  ↓ 遍历 FrameNode 树，逐节点 DumpInfo
+FrameNode::DumpInfo(json, InspectorFilter)
+  ↓ InspectorFilter::CheckFixedAttr(bit) 按位掩码裁
+     CheckExtAttr(name) 按扩展属性名匹配
+  ↓ 序列化到 json 对象
+返回 JSON 字符串给调用层
+```
+
+### 数据流时序（异步路径）
+
+```
+UiSession/DevEco 侧请求
+  ↓
+PipelineContext::GetInspectorTree(onlyNeedVisible, config)
+  ↓ 后台线程
+SimplifiedInspector::DumpSimplifyTreeWithParamConfig / DumpVisibleInspectorTree
+  ↓ 逐节点轻量 JSON
+InspectorTreeCollector 聚合
+  ↓
+UiSessionManager::ReportInspectorTreeValue 回报
+```
+
 ## 风险和开放问题
 
 | 项 | 类型 | 影响 | 处理方式 | Owner |
