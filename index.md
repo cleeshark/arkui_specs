@@ -118,9 +118,9 @@
 | 04 通用能力层 | 13 字体文本 | 01 字体注册 | `04-13-01` | `04-common-capability/13-font-text/01-font-registration/` | [design.md](04-common-capability/13-font-text/01-font-registration/design.md) | 1 |
 | 04 通用能力层 | 13 字体文本 | 02 文本测量 | `04-13-02` | `04-common-capability/13-font-text/02-text-measurement/` | [design.md](04-common-capability/13-font-text/02-text-measurement/design.md) | 3 |
 | 04 通用能力层 | 14 输入交互 | 01 文本选择 | `04-14-01` | `04-common-capability/14-input-interaction/01-text-selection/` | [design.md](04-common-capability/14-input-interaction/01-text-selection/design.md) | 3 |
-| 04 通用能力层 | 14 输入交互 | 02 文本快捷键 | `04-14-02` | `04-common-capability/14-input-interaction/02-text-shortcuts/` | *待补充* | 0 |
+| 04 通用能力层 | 14 输入交互 | 02 文本快捷键 | `04-14-02` | `04-common-capability/14-input-interaction/02-text-shortcuts/` | [design.md](04-common-capability/14-input-interaction/02-text-shortcuts/design.md) | 6 |
 | 04 通用能力层 | 14 输入交互 | 03 文本交互 | `04-14-03` | `04-common-capability/14-input-interaction/03-text-interaction/` | [design.md](04-common-capability/14-input-interaction/03-text-interaction/design.md) | 6 |
-| 04 通用能力层 | 14 输入交互 | 04 键盘控制 | `04-14-04` | `04-common-capability/14-input-interaction/04-keyboard-control/` | *待补充* | 0 |
+| 04 通用能力层 | 14 输入交互 | 04 输入法交互 | `04-14-04` | `04-common-capability/14-input-interaction/04-input-method-interaction/` | [design.md](04-common-capability/14-input-interaction/04-input-method-interaction/design.md) | 5 |
 | 04 通用能力层 | 14 输入交互 | 05 自动补全能力（AutoFill） | `04-14-05` | `04-common-capability/14-input-interaction/05-autofill/` | [design.md](04-common-capability/14-input-interaction/05-autofill/design.md) | 5 |
 | 04 通用能力层 | 15 路由机制 | 01 路由管理 | `04-15-01` | `04-common-capability/15-router-mechanism/01-router-management/` | [design.md](04-common-capability/15-router-mechanism/01-router-management/design.md) | 2 |
 | 04 通用能力层 | 15 路由机制 | 02 命名路由 | `04-15-02` | `04-common-capability/15-router-mechanism/02-named-router/` | [design.md](04-common-capability/15-router-mechanism/02-named-router/design.md) | 1 |
@@ -967,6 +967,12 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 快捷键分发基础设施 (TextInputClient::HandleKeyEvent/加速表/modKeyFlags/Ctrl+V msg/纯字符/IsShortCutBlocked/numLock/Mac KEY_META) | [Feat-01-dispatch-infrastructure-spec.md](04-common-capability/14-input-interaction/02-text-shortcuts/Feat-01-dispatch-infrastructure-spec.md) | Baselined |
+| Feat-02 | 导航与光标移动快捷键 (CursorMove+12 CursorMoveXxx/PageUp-Down/方向键焦点外移/RTL/单行vs TextArea) | [Feat-02-navigation-caret-movement-spec.md](04-common-capability/14-input-interaction/02-text-shortcuts/Feat-02-navigation-caret-movement-spec.md) | Baselined |
+| Feat-03 | 选择快捷键 (HandleSelect/HandleSelectExtend/Ctrl+A 全选/Shift-flag 锚点/Ctrl+Shift+Home-End 异常) | [Feat-03-selection-shortcuts-spec.md](04-common-capability/14-input-interaction/02-text-shortcuts/Feat-03-selection-shortcuts-spec.md) | Baselined |
+| Feat-04 | 剪贴板与删除快捷键 (Ctrl+C/X/V/Insert/PASTE/DEL/FORWARD_DEL/Ctrl+Del 删词/Ctrl+D/copyOption/password 门控) | [Feat-04-clipboard-deletion-shortcuts-spec.md](04-common-capability/14-input-interaction/02-text-shortcuts/Feat-04-clipboard-deletion-shortcuts-spec.md) | Baselined |
+| Feat-05 | 撤销/重做快捷键 (Ctrl+Z/Y/Shift+Z/Alt+Del/operationRecords/RichEditorUndoManager 三策略/preview 合并) | [Feat-05-undo-redo-shortcuts-spec.md](04-common-capability/14-input-interaction/02-text-shortcuts/Feat-05-undo-redo-shortcuts-spec.md) | Baselined |
+| Feat-06 | 字体样式快捷键 RichEditor 专属 (Ctrl+B/I/U 粗体/斜体/下划线) | [Feat-06-font-style-shortcuts-spec.md](04-common-capability/14-input-interaction/02-text-shortcuts/Feat-06-font-style-shortcuts-spec.md) | Baselined |
 
 ### 04-14-03 文本交互
 
@@ -979,10 +985,15 @@
 | Feat-05 | 交互触发与状态回调 | *待补充* | Draft |
 | Feat-06 | 长按选择与实体识别 | *待补充* | Draft |
 
-### 04-14-04 键盘控制
+### 04-14-04 输入法交互
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | IME 框架交互与弹出收起控制 (InputMethodManager 焦点驱动 show/hide/attach/detach + RequestKeyboard/CloseKeyboard + onWillAttachIME) | [Feat-01-ime-framework-show-hide-control-spec.md](04-common-capability/14-input-interaction/04-input-method-interaction/Feat-01-ime-framework-show-hide-control-spec.md) | Baselined |
+| Feat-02 | 输入框避让显示 (KeyBoardAvoidMode OFFSET/RESIZE/*_WITH_CARET/NONE + TriggerAvoidOnCaretChange + 自定义键盘 supportAvoidance) | [Feat-02-input-box-keyboard-avoidance-spec.md](04-common-capability/14-input-interaction/04-input-method-interaction/Feat-02-input-box-keyboard-avoidance-spec.md) | Baselined |
+| Feat-03 | 实体键盘切换 (本仓仅传 isShowKeyboard+消费面板状态；检测在 IME 框架 推测/外部) | [Feat-03-physical-keyboard-switching-spec.md](04-common-capability/14-input-interaction/04-input-method-interaction/Feat-03-physical-keyboard-switching-spec.md) | Baselined |
+| Feat-04 | 键盘输入处理契约 (TextInputClient 抽象 + OnTextChangedListenerImpl IME→输入框桥) | [Feat-04-keyboard-input-processing-contract-spec.md](04-common-capability/14-input-interaction/04-input-method-interaction/Feat-04-keyboard-input-processing-contract-spec.md) | Baselined |
+| Feat-05 | 输入法交互公共 API (customKeyboard/keyboardAppearance/enableKeyboardOnFocus/onWillAttachIME/onEditChange/stopEditing + IMEClient) | [Feat-05-text-component-keyboard-control-api-spec.md](04-common-capability/14-input-interaction/04-input-method-interaction/Feat-05-text-component-keyboard-control-api-spec.md) | Baselined |
 
 ### 04-14-05 自动补全能力（AutoFill）
 

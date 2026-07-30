@@ -1286,7 +1286,7 @@ functions:
     id: '02'
     title: 文本快捷键
   path: 04-common-capability/14-input-interaction/02-text-shortcuts/
-  design: null
+  design: 04-common-capability/14-input-interaction/02-text-shortcuts/design.md
   status: active
 - id: 04-14-03
   l1:
@@ -1310,9 +1310,9 @@ functions:
     title: 输入交互
   l3:
     id: '04'
-    title: 键盘控制
-  path: 04-common-capability/14-input-interaction/04-keyboard-control/
-  design: null
+    title: 输入法交互
+  path: 04-common-capability/14-input-interaction/04-input-method-interaction/
+  design: 04-common-capability/14-input-interaction/04-input-method-interaction/design.md
   status: active
 - id: 04-14-05
   l1:
