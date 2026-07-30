@@ -2586,7 +2586,7 @@ functions:
     id: '01'
     title: PluginComponent
   path: 05-ui-components/12-embedded-display-components/01-plugin-component/
-  design: null
+  design: 05-ui-components/12-embedded-display-components/01-plugin-component/design.md
   status: active
 - id: 05-12-02
   l1:
@@ -2612,7 +2612,7 @@ functions:
     id: '03'
     title: UIExtensionComponent
   path: 05-ui-components/12-embedded-display-components/03-ui-extension-component/
-  design: null
+  design: 05-ui-components/12-embedded-display-components/03-ui-extension-component/design.md
   status: active
 - id: 05-12-04
   l1:
@@ -2625,7 +2625,7 @@ functions:
     id: '04'
     title: EmbeddedComponent
   path: 05-ui-components/12-embedded-display-components/04-embedded-component/
-  design: null
+  design: 05-ui-components/12-embedded-display-components/04-embedded-component/design.md
   status: active
 - id: 05-12-05
   l1:
@@ -2638,7 +2638,7 @@ functions:
     id: '05'
     title: IsolatedComponent
   path: 05-ui-components/12-embedded-display-components/05-isolated-component/
-  design: null
+  design: 05-ui-components/12-embedded-display-components/05-isolated-component/design.md
   status: active
 - id: 05-12-06
   l1:
@@ -2651,7 +2651,7 @@ functions:
     id: '06'
     title: SecurityUIExtensionComponent
   path: 05-ui-components/12-embedded-display-components/06-security-ui-extension-component/
-  design: null
+  design: 05-ui-components/12-embedded-display-components/06-security-ui-extension-component/design.md
   status: active
 - id: 05-12-07
   l1:
@@ -2664,7 +2664,7 @@ functions:
     id: '07'
     title: DynamicComponent
   path: 05-ui-components/12-embedded-display-components/07-dynamic-component/
-  design: null
+  design: 05-ui-components/12-embedded-display-components/07-dynamic-component/design.md
   status: active
 - id: 05-13-01
   l1:
