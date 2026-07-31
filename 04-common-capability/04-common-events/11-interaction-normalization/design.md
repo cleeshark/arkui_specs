@@ -9,9 +9,9 @@
 | Design ID | DESIGN-Func-04-04-11 |
 | 关联需求 | 已有能力补录（无独立 requirement.md） |
 | 关联 Epic | 无 |
-| 目标 Feature | Feat-01 按键意图归一化（KeyIntention / IntentionCode） |
-| 复杂度 | 标准 |
-| 目标版本 | ArkTS 动态 API 10 起；NDK API 14 起；ArkTS 静态 API 23 起 |
+| 目标 Feature | Feat-01 按键意图归一化（KeyIntention / IntentionCode），Feat-02 多源点击交互归一化，Feat-03 多源滑动与平移归一化，Feat-04 多源缩放与旋转归一化 |
+| 复杂度 | 复杂 |
+| 目标版本 | 按键意图：ArkTS 动态 API 10、NDK API 14、静态 API 23 起；点击/手势：Dynamic API 7/8、Native API 12、Static API 23 起 |
 | Owner | ArkUI SIG |
 | 状态 | Baselined（已有实现补录） |
 
@@ -26,6 +26,9 @@
 | 行为保持 | 当前实现即规格，不修改物理键映射、焦点优先级或 Preview 行为 |
 | 版本兼容 | 分别声明 ArkTS 动态 API 10、NDK API 14、ArkTS 静态 API 23 |
 | 风险呈现 | 通道枚举差异与 Preview UNKNOWN 行为必须显式记录，不做静默统一 |
+| 多源点击（Feat-02） | 触控、鼠标、触控板、键盘 SELECT/Enter/Space 和程序化/无障碍入口汇聚到统一点击回调，同时保留可用来源差异 |
+| 连续位移（Feat-03） | Touch 与 Axis 统一为 Pan/Swipe 生命周期；鼠标滚轮与触控板保留方向、坐标和速度差异；不承接滚动容器物理效果 |
+| 缩放旋转（Feat-04） | 多指触控、TouchPad pinch、Ctrl+滚轮与 rotate Axis 进入 Pinch/Rotation；SDK 与源码支持范围不一致时以 SDK 为契约并显式记风险 |
 
 ## 上下文和现状
 
@@ -39,6 +42,11 @@
 | arkui_ace_engine / frameworks/core/common、components_ng/event | 非指针事件分发、焦点意图解析和组件行为消费 |
 | arkui_ace_engine / frameworks/bridge | 将 KeyEventInfo.intentionCode 暴露给 ArkTS 回调 |
 | arkui_ace_engine / interfaces/native | ArkUI_KeyIntension 与 NDK getter 的公开声明和参数校验 |
+| interface_sdk-js（Feat-02~04） | ClickEvent、GestureEvent、onClick、Tap/Pan/Swipe/Pinch/Rotation 的 Dynamic/Static 公开契约 |
+| arkui_ace_engine / adapter/ohos/entrance（Feat-02~04） | Mouse→Touch 兼容转换、Mouse Wheel 序列补齐以及 scroll/pinch/rotate Axis 字段转换 |
+| arkui_ace_engine / frameworks/core/components_ng/gestures（Feat-02~04） | Click、Pan、Swipe、Pinch、Rotation recognizer 的多输入源识别和统一 GestureEvent 构造 |
+| arkui_ace_engine / frameworks/core/components_ng/event（Feat-02） | ClickEventActuator、GestureEventHub、FocusEventHandler 和程序化/无障碍点击入口 |
+| arkui_ace_engine / interfaces/native（Feat-02~04） | NativeNode 点击事件、Native Gesture recognizer 与手势结果 getter |
 
 ### 调用链层级分析
 
@@ -53,6 +61,13 @@
 | 框架消费层 | components_ng/event/focus_event_handler.cpp、base/view_abstract_model_ng.cpp | 解析焦点意图和上下文菜单触发条件 | 存量补录，无代码修改 |
 | ArkTS 桥接层 | arkts_native_frame_node_bridge.cpp、node_common_modifier.cpp | 将 GetKeyIntention() 写入 ArkTS/节点事件对象的 intentionCode | 存量补录，无代码修改 |
 | NDK 层 | interfaces/native/native_key_event.h、event/key_event_impl.cpp | 声明 ArkUI_KeyIntension，校验并返回 NDK 事件意图码 | 存量补录，无代码修改 |
+| 点击 SDK 层 | interface_sdk-js/api/@internal/component/ets/common.d.ts、arkui/component/common.static.d.ets | 定义 ClickEvent、onClick 和来源字段 | （Feat-02）存量补录，无代码修改 |
+| 指针适配层 | adapter/ohos/entrance/ace_view_ohos.cpp、mmi_event_convertor.cpp | Mouse→Touch、Mouse Wheel 补包和 Axis 字段转换 | （Feat-02~04）存量补录，无代码修改 |
+| 点击汇聚层 | components_ng/event/click_event.cpp、gesture_event_hub.cpp、focus_event_handler.cpp | 汇聚指针、键盘、程序化和无障碍点击入口 | （Feat-02）存量补录，无代码修改 |
+| 手势生命周期层 | components_ng/gestures/recognizers/gesture_recognizer.cpp | 将 Axis BEGIN/UPDATE/END/CANCEL 映射为 recognizer 生命周期 | （Feat-03~04）存量补录，无代码修改 |
+| 位移识别层 | pan_recognizer.cpp、swipe_recognizer.cpp | 将 Touch/Axis 位移归一化为 Pan/Swipe GestureEvent | （Feat-03）存量补录，无代码修改 |
+| 变换识别层 | pinch_recognizer.cpp、rotation_recognizer.cpp | 将多指触控、pinch/Ctrl+wheel/rotate Axis 归一化为 scale/angle | （Feat-04）存量补录，无代码修改 |
+| 手势 Native 层 | interfaces/native/native_gesture.h、node/gesture_impl.cpp | 创建 Native recognizer 并读取 Pan/Swipe/Pinch/Rotation 结果 | （Feat-03~04）存量补录，无代码修改 |
 
 调用链证据：OHOS 适配写入见 adapter/ohos/entrance/mmi_event_convertor.cpp:867-875；事件默认值与复制见 frameworks/core/event/key_event.h:153-162,190-204；非指针事件分发见 frameworks/core/common/event_manager.cpp:3111-3123；ArkTS 输出见 frameworks/bridge/declarative_frontend/engine/jsi/nativeModule/arkts_native_frame_node_bridge.cpp:1465-1483；NDK 输出见 interfaces/native/event/key_event_impl.cpp:145-167。
 
@@ -88,6 +103,15 @@
 | ADR-4 | 焦点解析中原始 KeyCode 与意图码的优先级 | 保持原始 KeyCode 优先，意图码仅回退 SELECT/ESCAPE/HOME | 方案A：意图码始终优先；方案B：只使用原始 KeyCode；方案C：合并后冲突时报错 | 当前行为兼容方向键、Tab、Enter、Space 等历史焦点规则；证据为 focus_event_handler.cpp:28-80 | AC-3.1~AC-3.3 |
 | ADR-5 | 菜单按键兼容方式 | action=DOWN 且 KEY_MENU 或 INTENTION_MENU 任一命中即触发 | 方案A：仅 KEY_MENU；方案B：仅 INTENTION_MENU；方案C：所有 action 均触发 | 双入口兼容未归一化与已归一化设备，DOWN 门禁避免抬键重复触发；证据为 view_abstract_model_ng.cpp:1158-1181 | AC-3.4 |
 | ADR-6 | Preview 缺失意图码的处理 | 记录为环境差异并沿用默认 UNKNOWN | 方案A：在 Preview 新增映射；方案B：从 KeyCode 推断部分值；方案C：隐藏 intentionCode 字段 | 当前任务是存量规格补录，不能提出行为修复；默认 UNKNOWN 可安全降级 | AC-4.4 |
+| ADR-F2-1 | 多输入源是否各自维护点击回调 | 通过 GestureEventHub/FocusHub 复用同一 onClick 函数 | 为 Touch、Mouse、Keyboard、Accessibility 各建回调槽 | 当前实现把用户回调同时注册到指针 actuator 和 FocusHub，程序化入口也调用该链；避免业务重复 | Feat-02 AC-1.1~AC-3.4 |
+| ADR-F2-2 | Mouse→Touch 后如何表达来源 | 保留当前转换后的 sourceType，并在内部 convertInfo 记录 MOUSE→TOUCH | 强制对外还原 MOUSE；丢弃转换信息 | 实现明确设置 sourceType=TOUCH，ArkTS 未公开 convertInfo；不能伪造不同于当前模型的来源 | Feat-02 AC-4.1~AC-4.2 |
+| ADR-F2-3 | 键盘和程序化点击如何构造位置 | 键盘取节点中心并标记 KEYBOARD；程序化点击只填可确定的目标/几何，不伪造物理输入 | 沿用上一次指针位置；统一填零坐标和 TOUCH 来源 | 当前实现可观测且避免把非物理入口误报为真实设备 | Feat-02 AC-2.3、AC-3.4 |
+| ADR-F3-1 | Axis 如何进入现有 recognizer | 在 NGGestureRecognizer 将四阶段 Axis action 映射到 Down/Move/Up/Cancel | 为 Axis 新建独立手势状态机 | 复用 Pan/Swipe 状态机和回调模型，同时保留 inputEventType=AXIS | Feat-03 AC-1.1~AC-1.3 |
+| ADR-F3-2 | 鼠标滚轮缺少 UPDATE 如何兼容 | Adapter 发送零 BEGIN 后将真实首包改为 UPDATE | recognizer 接受无 UPDATE 序列；在结束时推导位移 | 当前补包保证连续手势至少观察一次更新且不污染 recognizer 通用逻辑 | Feat-03 AC-4.1 |
+| ADR-F3-3 | Mouse 与 TouchPad 位移是否完全统一 | 只统一生命周期和 GestureEvent，保留 Mouse 单轴过滤与 TouchPad 坐标变换 | 强制使用相同 delta 算法 | 设备数据语义不同，当前实现已按 sourceTool 分支处理 | Feat-03 AC-2.4、AC-3.5 |
+| ADR-F4-1 | Pinch 的 Axis 来源如何合流 | 显式 pinchAxisScale 直接使用；Ctrl+非 TouchPad 滚轮按轴符号步进 | 仅支持多指 Touch；把所有滚轮都视为缩放 | 当前实现同时支持设备原生比例和桌面 Ctrl+wheel 惯例 | Feat-04 AC-2.1~AC-2.4 |
+| ADR-F4-2 | Pinch 与 Rotation Axis 如何避免交叉消费 | 以 isRotationEvent 分流，Rotation 只消费 rotate Axis，Pinch 忽略 rotation Axis | 让两个 recognizer 同时竞争同一 Axis | 当前字段和 early-return 规则可避免同一输入被双重解释 | Feat-04 AC-2.5、AC-3.1~AC-3.4 |
+| ADR-F4-3 | SDK 声明与 Rotation Axis 源码不一致时如何定契约 | 对外以 SDK 限制为准，源码路径作为版本基线风险 | 直接按源码扩展公开支持；忽略源码路径 | canonical SDK 是外部契约，且当前 SDK 明示触控板双指旋转不能触发 | Feat-04 AC-3.5 |
 
 ## 设计骨架
 
@@ -115,6 +139,9 @@
 | Task ID | 目标 | 受影响文件 | 依赖 |
 |---------|------|------------|------|
 | TASK-1 | Feat-01 按键意图归一化完整行为规格 | Feat-01-key-intention-normalization-spec.md | 本 Design |
+| TASK-2 | Feat-02 多源点击交互归一化完整行为规格 | Feat-02-multi-source-click-interaction-normalization-spec.md | 本 Design |
+| TASK-3 | Feat-03 多源滑动与平移归一化完整行为规格 | Feat-03-multi-source-slide-pan-normalization-spec.md | 本 Design |
+| TASK-4 | Feat-04 多源缩放与旋转归一化完整行为规格 | Feat-04-multi-source-scale-rotation-normalization-spec.md | 本 Design |
 
 ## API 签名、Kit 与权限
 
@@ -130,6 +157,11 @@
 | onKeyPreIme(event: Callback<KeyEvent, boolean>): T | Public | ArkUI | api/@internal/component/ets/common.d.ts:21199-21214 | 无 | SystemCapability.ArkUI.ArkUI.Full |
 | onKeyEventDispatch(event: Callback<KeyEvent, boolean>): T | Public | ArkUI | api/@internal/component/ets/common.d.ts:21216-21232 | 无 | SystemCapability.ArkUI.ArkUI.Full |
 | ArkUI_KeyIntension OH_ArkUI_KeyEvent_GetKeyIntensionCode(const ArkUI_UIInputEvent* event) | Public | ArkUI NDK | interfaces/native/native_key_event.h:530-537 | 无 | N/A |
+| CommonMethod<T>.onClick(Callback<ClickEvent>[, distanceThreshold]) | Public | ArkUI | api/@internal/component/ets/common.d.ts:21020-21057；api/arkui/component/common.static.d.ets:12059-12093 | 无 | SystemCapability.ArkUI.ArkUI.Full |
+| PanGesture / SwipeGesture | Public | ArkUI | api/@internal/component/ets/gesture.d.ts:1700-1868；api/arkui/component/gesture.static.d.ets:1271-1363 | 无 | SystemCapability.ArkUI.ArkUI.Full |
+| PinchGesture / RotationGesture | Public | ArkUI | api/@internal/component/ets/gesture.d.ts:1871-2080；api/arkui/component/gesture.static.d.ets:1366-1488 | 无 | SystemCapability.ArkUI.ArkUI.Full |
+| ArkUI_NativeGestureAPI_1::createPanGesture/createSwipeGesture/createPinchGesture/createRotationGesture | Public | ArkUI NDK | interfaces/native/native_gesture.h:1033-1098 | 无 | N/A |
+| OH_ArkUI_PanGesture_Get* / OH_ArkUI_SwipeGesture_Get* / OH_ArkUI_PinchGesture_Get* / OH_ArkUI_RotationGesture_GetAngle | Public | ArkUI NDK | interfaces/native/native_gesture.h:463-565 | 无 | N/A |
 
 ### 变更/废弃 API
 
@@ -173,6 +205,51 @@ graph TB
 ```
 
 架构证据：adapter/ohos/entrance/mmi_event_convertor.cpp:867-875；adapter/preview/entrance/event_dispatcher.cpp:110-126；frameworks/core/event/key_event.h:153-162,190-204；frameworks/core/common/event_manager.cpp:3111-3123。
+
+#### 多源点击归一化架构图（Feat-02）
+
+```mermaid
+graph TB
+    TOUCH["Touch DOWN/UP"] --> CLICK["ClickRecognizer"]
+    MOUSE["Mouse Left"] --> CONVERT["Mouse→Touch Adapter/Pipeline"] --> CLICK
+    PAD["TouchPad Click"] --> CLICK
+    KEY["SELECT / Enter / Space"] --> FOCUS["FocusEventHandler"]
+    A11Y["Programmatic / Accessibility"] --> ACT["GestureEventHub::ActClick"]
+    CLICK --> HUB["GestureEventHub common click"]
+    FOCUS --> HUB
+    ACT --> HUB
+    HUB --> CALLBACK["onClick / Tap callback"]
+```
+
+#### 多源滑动与平移归一化架构图（Feat-03）
+
+```mermaid
+graph TB
+    TOUCH["Touch Move"] --> LIFE["Recognizer lifecycle"]
+    WHEEL["Mouse Wheel"] --> FIX["BEGIN/UPDATE 序列补齐"] --> AXIS["AxisEvent"]
+    PAD["TouchPad Axis"] --> AXIS
+    AXIS --> LIFE
+    LIFE --> PAN["PanRecognizer"]
+    LIFE --> SWIPE["SwipeRecognizer"]
+    PAN --> EVENT["GestureEvent<br/>sourceTool + axis + AXIS"]
+    SWIPE --> EVENT
+```
+
+#### 多源缩放与旋转归一化架构图（Feat-04）
+
+```mermaid
+graph TB
+    MULTI["Multi-touch geometry"] --> PINCH["PinchRecognizer"]
+    MULTI --> ROTATE["RotationRecognizer"]
+    PADPINCH["TouchPad pinchAxisScale"] --> AXIS["AxisEvent"]
+    CTRL["Ctrl + Mouse Wheel"] --> AXIS
+    PADROTATE["Rotate Axis"] --> AXIS
+    AXIS --> SPLIT{"isRotationEvent?"}
+    SPLIT -->|否| PINCH
+    SPLIT -->|是| ROTATE
+    PINCH --> SCALE["GestureEvent scale / center"]
+    ROTATE --> ANGLE["GestureEvent angle"]
+```
 
 ### 数据流/控制流
 
@@ -220,6 +297,21 @@ frameworks/core/components_ng/event/event_constants.h:163-195 定义内部 KeyIn
 | KeyIntention | KeyEventInfo.keyIntention_ | 单次回调对象 | 否 |
 | intentionCode | ArkUIKeyEvent/NodeEvent | 单次 Native 回调 | 否 |
 
+#### 多源交互事件数据模型（Feat-02~04）
+
+| 数据 | 关键字段 | 来源 | 生命周期 |
+|------|----------|------|----------|
+| TouchEvent | sourceType、sourceTool、deviceId、convertInfo、坐标 | 触控或 Mouse→Touch | 单次指针分发 |
+| AxisEvent | horizontalAxis、verticalAxis、pinchAxisScale、rotateAxisAngle、isRotationEvent、pressedCodes | Mouse Wheel/TouchPad/MMI rotate | 单次 Axis 分发 |
+| GestureEvent | inputEventType、sourceDevice、sourceTool、deviceId、axis、scale、angle、center | Click/Pan/Swipe/Pinch/Rotation recognizer | 单次手势回调 |
+| Recognizer 状态 | READY/DETECTING/SUCCEED/FAIL、累计位移/比例/角度 | 手势识别器 | 单次手势序列 |
+
+```cpp
+// 语义摘要，字段以真实事件类型定义为准。
+AxisEvent { horizontalAxis, verticalAxis, pinchAxisScale, rotateAxisAngle, isRotationEvent, sourceTool };
+GestureEvent { inputEventType, sourceDevice, sourceTool, deviceId, scale, angle, axisHorizontal, axisVertical };
+```
+
 ### 算法与状态机
 
 本特性在 ACE 生产路径没有独立归一化状态机。核心决策流程如下：
@@ -249,6 +341,10 @@ graph TD
 | Menu 单测 | KEY_MENU/INTENTION_MENU + DOWN 门禁 | 构造 FocusHub 事件 | 菜单回调断言 |
 | NDK Level0 | 有效值与非法输入 | 构造 ArkUI_UIInputEvent | 返回值和错误状态 |
 | Preview 集成 | 未写入意图时的 UNKNOWN 降级 | Preview KeyEvent | ArkTS 回调字段断言 |
+| 多源 Click（Feat-02） | Touch/Mouse/TouchPad/Keyboard/ActClick 调用同一业务回调 | 构造各类输入或直接调用 ActClick | 回调计数、inputEventType、来源和中心坐标 |
+| Pan/Swipe Axis（Feat-03） | 四阶段映射、鼠标补包、方向过滤和 Axis 字段 | 构造 AxisEvent 与 sourceTool | Start/Update/End、delta、sourceTool、inputEventType |
+| Pinch/Rotation Axis（Feat-04） | pinchScale、Ctrl+wheel、rotateAxis 和分流 | 构造 AxisEvent/pressedCodes | scale、angle、零截断、isRotationEvent 排除 |
+| SDK 一致性（Feat-04） | 触控板旋转声明与源码路径差异 | 对比 canonical SDK 和 recognizer | 风险条目持续存在直至版本基线对齐 |
 
 已有 NDK 证据：test/unittest/interfaces/ace_key_event/oh_arkui_keyevent_getkeyintensioncode_test.cpp:24-79；焦点证据：test/unittest/core/event/focus_event_handler_test_ng.cpp:180-194；菜单证据：test/unittest/core/base/view_abstract_model_test_ng.cpp:1023-1033。
 
@@ -329,6 +425,30 @@ RegisterContextMenuKeyEvent 仅处理 DOWN；原始 KEY_MENU 或 INTENTION_MENU 
 
 Preview ConvertKeyEvent 复制 code、key、action、pressedCodes、时间戳、metaKey、deviceId、sourceType 和锁键状态，但没有写入 keyIntention，见 adapter/preview/entrance/event_dispatcher.cpp:110-126。由于 KeyEvent 默认值为 UNKNOWN，Preview 当前对意图码统一表现为 -1。本设计仅记录这一存量差异，不改变实现。
 
+### 多源点击交互归一化
+
+ClickEventActuator 在存在用户或框架点击回调时创建统一 ClickRecognizer，并将 recognizer 同时加入触摸命中结果和响应链，见 frameworks/core/components_ng/event/click_event.cpp:35-60。GestureEventHub::SetUserOnClick 将同一点击函数写入 common click 和 FocusHub，见 frameworks/core/components_ng/event/gesture_event_hub.cpp:815-833；因此指针和键盘最终调用相同业务回调。
+
+鼠标左键可在 AceView 输入兼容路径转换为 TouchEvent，转换后 sourceType 为 TOUCH，convertInfo 记录 MOUSE→TOUCH，见 adapter/ohos/entrance/mmi_event_convertor.cpp:1309-1336；Pipeline 也能将左键 PRESS/RELEASE/MOVE/CANCEL 转为触摸分发，见 frameworks/core/pipeline_ng/pipeline_context.cpp:5175-5186。ClickRecognizer 针对 TOUCH 与 MOUSE/TOUCH_PAD 使用不同多击超时，见 click_recognizer.cpp:140-150，并在成功回调中复制来源、工具、设备、输入类型和转换信息，见同文件 580-637。
+
+焦点链把可处理的 SELECT 转为 SPACE 后调用 OnClick；合成 GestureEvent 使用节点中心、KEYBOARD 输入类型和 KeyEvent 的 source/deviceId，见 frameworks/core/components_ng/event/focus_event_handler.cpp:207-225,306-340。GestureEventHub::ActClick 则为程序化/无障碍入口构造目标区域，优先调用普通 actuator，缺失时回退到无障碍 ClickRecognizer 并上报 CLICK，见 gesture_event_hub.cpp:1115-1155。
+
+### 多源滑动与平移归一化
+
+NGGestureRecognizer 将 Axis BEGIN/UPDATE/END/CANCEL 分别映射到 Down/Move/Up/Cancel，并在 BEGIN 记录 source、tool、deviceId 与 inputEventType=AXIS，见 frameworks/core/components_ng/gestures/recognizers/gesture_recognizer.cpp:216-250。AceView 对鼠标滚轮首包先发送零增量 BEGIN，再把真实首包转换为 UPDATE，从而补齐连续手势生命周期，见 adapter/ohos/entrance/ace_view_ohos.cpp:498-513。
+
+PanRecognizer 的 Axis BEGIN 校验 fingers 与 direction 后初始化伪触点和速度跟踪；UPDATE 将轴值转换为 delta 并触发 Start/Update。MOUSE 按方向清零禁用轴，TOUCHPAD 在节点变换空间计算 delta，见 pan_recognizer.cpp:331-377,548-609。生成 GestureEvent 时保留轴值、sourceTool、pressedCodes、pointerEventId、convertInfo 和 AXIS 类型，见同文件 906-929。
+
+SwipeRecognizer 在 Axis UPDATE 中累计非零 offset 并校验方向角；Axis END 对零累计位移直接拒绝，MOUSE 路径将 resultSpeed 设为 0 后完成裁决，见 swipe_recognizer.cpp:221-250,317-353。本设计只定义输入到 Pan/Swipe/GestureEvent 的归一化，不定义 Scrollable 的摩擦、惯性、回弹和边缘效果。
+
+### 多源缩放与旋转归一化
+
+PinchRecognizer 同时支持多点 Touch 和 Axis。Axis BEGIN 在 pinchAxisScale 约等于 1，或 Ctrl 按下且来源工具不是 TOUCHPAD 时进入 DETECTING；UPDATE 优先直接采用非零 pinchAxisScale，否则按滚轮轴符号以固定步长更新，并把非正结果截断为 0，见 frameworks/core/components_ng/gestures/recognizers/pinch_recognizer.cpp:95-157,303-328。rotation Axis 和已结束 pinch 被提前排除，避免重复消费。
+
+ConvertAxisEvent 从 MMI 复制 scroll、pinch、rotate 四类字段，并通过 rotate action 设置 isRotationEvent，见 adapter/ohos/entrance/mmi_event_convertor.cpp:718-741。RotationRecognizer 只处理 isRotationEvent=true 的 Axis BEGIN/UPDATE，记录 initialAngle，超过阈值后输出归一化角度，见 rotation_recognizer.cpp:120-137,270-297。
+
+Dynamic SDK 的 RotationGesture 文案说明触控板双指旋转不能触发，见 interface/sdk-js/api/@internal/component/ets/gesture.d.ts:1987-1996；当前源码仍存在 rotation Axis 路径。由于 SDK 是外部契约，本设计不据此扩展公开支持范围，只记录目标 ace_engine 与 SDK 版本基线可能未完全对齐的风险。
+
 ## 风险和开放问题
 
 | 项 | 类型 | 影响 | 处理方式 | Owner |
@@ -338,6 +458,12 @@ Preview ConvertKeyEvent 复制 code、key、action、pressedCodes、时间戳、
 | Preview 未写入 keyIntention | 测试 | 中 | 记录为环境兼容差异，Preview 用例断言 UNKNOWN | ArkUI SIG |
 | 物理键到意图的映射由 MMI 提供 | 架构 | 中 | ACE 侧仅验证透传；映射正确性由 MMI 契约和测试负责 | MMI / ArkUI SIG |
 | Public C API 保留 KeyIntension 的历史拼写 | API | 低 | 文档和代码严格使用既有符号，不做重命名 | ArkUI SIG |
+| Mouse→Touch 后公开 source 可能表现为 TOUCH（Feat-02） | 兼容 | 中 | 规格明确转换后来源与内部 convertInfo 的信息边界，应用不得仅凭 source 反推物理设备 | ArkUI SIG |
+| onClick 非正 distanceThreshold 的 SDK 文案与实现策略不同（Feat-02） | API | 中 | SDK 作为公开参数契约，源码无限阈值行为作为偏差记录并配置一致性测试 | ArkUI SIG |
+| Mouse Wheel 与 TouchPad 的 delta/速度算法不同（Feat-03） | 兼容 | 中 | 只承诺统一生命周期和事件类型，不承诺数值完全等价 | ArkUI SIG |
+| 鼠标滚轮依赖 Adapter 补齐 UPDATE（Feat-03） | 适配 | 中 | Adapter UT 固化 BEGIN→UPDATE→END，避免平台序列变化破坏 recognizer | ArkUI SIG / MMI |
+| Dynamic SDK 限制触控板双指旋转，但源码存在 rotate Axis 路径（Feat-04） | API | 高 | 对外以 SDK 为准；在版本基线对齐前保留风险和交叉测试，不静默宣称支持 | ArkUI SIG / SDK SIG |
+| Ctrl+滚轮 scale 为固定步长而原生 pinch 使用设备比例（Feat-04） | 兼容 | 中 | 规格只统一 PinchGesture 回调，不承诺两类来源的 scale 曲线一致 | ArkUI SIG |
 
 ## 设计审批
 
