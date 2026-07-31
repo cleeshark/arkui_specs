@@ -1,27 +1,27 @@
 # 特性规格
 
-> Func-04-17-01-Feat-04 DynamicComponent：固化 DynamicComponent 的创建、约束和渲染机制。
+> Func-04-17-01-Feat-04 跨线程动态组件加载：固化 DynamicComponent 的跨线程 Worker 加载、Placeholder 状态机和 Worker 数量约束机制。
 
 ## 概述
 
 | 属性 | 值 |
 |------|-----|
-| 特性名称 | DynamicComponent |
+| 特性名称 | 跨线程动态组件加载 |
 | 特性编号 | Func-04-17-01-Feat-04 |
 | 所属 Epic | 无（已有能力补录） |
 | 优先级 | P1 |
 | 目标版本 | Dynamic API 10+；Static 统一为 API 23 |
 | SIG 归属 | ArkUI SIG |
-| 状态 | Draft |
+| 状态 | Baselined |
 | 复杂度 | 标准 |
 
 ## 本次变更范围（Delta）
 
 | 类型 | 内容 | 说明 |
 |------|------|------|
-| ADDED | DynamicComponent 创建行为 | 补录 DynamicPattern 创建 + DynamicParam 参数 |
-| ADDED | Placeholder 机制 | 补录 5 种 Placeholder 类型枚举 |
-| ADDED | Worker 约束 | 补录 DC_MAX_NUM_IN_WORKER = 4 约束 |
+| ADDED | 跨线程 Worker 加载机制 | 补录 DynamicComponent 在 Worker 线程中加载和渲染组件的流程 |
+| ADDED | Worker 数量约束 | 补录 DC_MAX_NUM_IN_WORKER=4 的并发限制 |
+| ADDED | 跨线程 Placeholder 状态机 | 补录动态组件加载期间的 Placeholder 状态切换 |
 
 ## 输入文档
 
@@ -33,41 +33,40 @@
 
 ## 用户故事
 
-### US-1: 创建 DynamicComponent
-
-**作为** 应用开发者,
-**我想要** 通过 `DynamicComponent(options)` 创建动态组件,
-**以便** 在 Worker 中动态加载和渲染组件。
-
-| AC编号 | 验收标准 | 类型 |
-|--------|---------|------|
-| AC-1.1 | WHEN 调用 `DynamicComponent({entryPoint: "main", workerId: "w1"})` THEN 创建 DynamicPattern，使用 DynamicParam 初始化 | 正常 |
-| AC-1.2 | WHEN 设置 `backgroundTransparent: true` THEN 组件背景透明 | 正常 |
-| AC-1.3 | WHEN 设置 `isReportFrameEvent: true` THEN 启用帧事件上报 | 正常 |
-
-### US-2: Placeholder 状态管理
+### US-1: 跨线程组件加载
 
 **作为** 框架,
-**我想要** 在不同状态下显示不同的 Placeholder,
-**以便** 在组件加载/旋转/折叠时提供视觉反馈。
+**我想要** 通过 `DynamicComponent` 在指定 Worker 线程中加载和渲染组件,
+**以便** 将组件构建和渲染从主线程卸载到 Worker 线程，避免阻塞 UI。
 
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
-| AC-2.1 | WHEN 组件未初始化 THEN 显示 `initPlaceholder`（PlaceholderType::INIT） | 正常 |
-| AC-2.2 | WHEN 组件旋转 THEN 显示 `rotationPlaceholder`（PlaceholderType::ROTATION） | 正常 |
-| AC-2.3 | WHEN 组件折叠展开 THEN 显示 `foldToExpandPlaceholder`（PlaceholderType::FOLD_TO_EXPAND） | 正常 |
-| AC-2.4 | WHEN 组件状态未定义 THEN 显示 `undefinedPlaceholder`（PlaceholderType::UNDEFINED） | 正常 |
+| AC-1.1 | WHEN 宿主调用 `DynamicComponent({entryPoint: "main", workerId: "w1"})` THEN 框架创建 `DynamicPattern`，解析 `DynamicParam`（workerId/entryPoint/backgroundTransparent），SessionType 为 `DYNAMIC_COMPONENT` (4) | 正常 |
+| AC-1.2 | WHEN DynamicComponent 在 Worker 线程中加载组件 THEN 组件的构建（Build）和布局（Layout）在 Worker 线程执行，渲染结果通过 Surface 回传到主线程显示 | 正常 |
+| AC-1.3 | WHEN 设置 `backgroundTransparent: true` THEN Worker 线程渲染的 Surface 背景透明，宿主内容可见 | 正常 |
 
-### US-3: Worker 约束检查
+### US-2: Worker 线程约束
 
 **作为** 框架,
-**我想要** 限制每个 Worker 中的 DynamicComponent 数量,
-**以便** 防止资源耗尽。
+**我想要** 限制每个 Worker 线程中的 DynamicComponent 数量,
+**以便** 防止单个 Worker 线程资源耗尽影响系统稳定性。
 
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
-| AC-3.1 | WHEN 同一 Worker 中 DynamicComponent 数量达到 4 个 THEN 拒绝创建新的 DynamicComponent | 边界 |
-| AC-3.2 | WHEN 组件创建失败 THEN `onError` 回调被触发 | 异常 |
+| AC-2.1 | WHEN 同一 Worker 线程中已存在 4 个 DynamicComponent THEN 拒绝创建新的 DynamicComponent（`DC_MAX_NUM_IN_WORKER = 4`） | 边界 |
+| AC-2.2 | WHEN Worker 线程创建失败或组件加载失败 THEN `onError` 回调触发，宿主可感知 | 异常 |
+
+### US-3: 跨线程 Placeholder 状态机
+
+**作为** 框架,
+**我想要** 在 Worker 线程加载组件期间显示 Placeholder,
+**以便** 在组件未就绪时提供视觉反馈。
+
+| AC编号 | 验收标准 | 类型 |
+|--------|---------|------|
+| AC-3.1 | WHEN Worker 线程正在加载组件 THEN 显示 `initPlaceholder` | 正常 |
+| AC-3.2 | WHEN 组件加载完成且首次渲染 THEN Placeholder 移除，显示真实内容 | 正常 |
+| AC-3.3 | WHEN Worker 线程加载异常 THEN 进入 UNDEFINED 状态，显示 `undefinedPlaceholder` | 异常 |
 
 ---
 
@@ -75,15 +74,14 @@
 
 | AC | 关联规则 | 验证方式 | 证据 |
 |----|---------|---------|------|
-| AC-1.1 | R-1 | 单元测试 | `dynamic_pattern.cpp` |
-| AC-1.2 | R-1 | 单元测试 | `backgroundTransparent` |
-| AC-1.3 | R-1 | 单元测试 | `isReportFrameEvent` |
-| AC-2.1 | R-2 | 单元测试 | PlaceholderType::INIT |
-| AC-2.2 | R-2 | 单元测试 | PlaceholderType::ROTATION |
-| AC-2.3 | R-2 | 单元测试 | PlaceholderType::FOLD_TO_EXPAND |
-| AC-2.4 | R-2 | 单元测试 | PlaceholderType::UNDEFINED |
-| AC-3.1 | R-3 | 单元测试 | `dynamic_component_manager.cpp` |
-| AC-3.2 | R-3 | 单元测试 | onError |
+| AC-1.1 | R-1 | 集成测试 | `dynamic_pattern.cpp` |
+| AC-1.2 | R-1 | 集成测试 | Worker 线程渲染管线 |
+| AC-1.3 | R-1 | 集成测试 | Surface 透明 |
+| AC-2.1 | R-2 | 单元测试 | `dynamic_component_manager.cpp` |
+| AC-2.2 | R-2 | 集成测试 | onError |
+| AC-3.1 | R-3 | 集成测试 | Placeholder 状态机 |
+| AC-3.2 | R-3 | 集成测试 | 首次渲染 |
+| AC-3.3 | R-3 | 集成测试 | 异常状态 |
 
 ---
 
@@ -91,9 +89,9 @@
 
 | 规则ID | 类型 | 触发条件 | 预期行为 | 边界/约束 | 关联AC |
 |--------|------|----------|----------|----------|--------|
-| R-1 | 行为 | 调用 `DynamicComponent(options)` | 创建 DynamicPattern，解析 DynamicParam（workerId/entryPoint/backgroundTransparent） | SessionType = DYNAMIC_COMPONENT (4) | AC-1.1 ~ AC-1.3 |
-| R-2 | 行为 | 组件状态变化 | 根据 PlaceholderType 枚举显示对应 Placeholder | 5 种 Placeholder：INIT/ROTATION/FOLD_TO_EXPAND/UNDEFINED/NONE | AC-2.1 ~ AC-2.4 |
-| R-3 | 边界 | Worker 中 DynamicComponent 数量达到上限 | 拒绝创建，触发 onError | `DC_MAX_NUM_IN_WORKER = 4` | AC-3.1, AC-3.2 |
+| R-1 | 行为 | 宿主创建 `DynamicComponent` 节点 | 创建 `DynamicPattern`，解析 `DynamicParam`（workerId 指定目标 Worker 线程，entryPoint 指定入口点），通过 `DynamicComponentRendererImpl` 在 Worker 线程的 NativeEngine 中创建 UIContent 并渲染 | SessionType = DYNAMIC_COMPONENT (4)；组件构建和布局在 Worker 线程执行，渲染 Surface 回传主线程 | AC-1.1 ~ AC-1.3 |
+| R-2 | 边界 | 同一 Worker 线程中 DynamicComponent 数量达到 4 个 | `DynamicComponentSafeManager` 检查 `DC_MAX_NUM_IN_WORKER = 4` 约束，拒绝创建新组件，触发 onError | 约束检查在 `DynamicComponentRendererImpl` 中执行 | AC-2.1, AC-2.2 |
+| R-3 | 行为 | Worker 线程组件加载中 | 按 Placeholder 状态机显示：INIT（加载中）→ NONE（加载完成）/ UNDEFINED（加载失败） | 与跨进程 UIExtension 共享 PlaceholderType 枚举 | AC-3.1 ~ AC-3.3 |
 
 ---
 
@@ -101,9 +99,9 @@
 
 | 编号 | 对应规格项 | 验证方式 | 验证重点 |
 |------|-----------|---------|---------|
-| VM-1 | AC-1.1 ~ AC-1.3 | 单元测试 | DynamicComponent 创建 |
-| VM-2 | AC-2.1 ~ AC-2.4 | 单元测试 | Placeholder 状态切换 |
-| VM-3 | AC-3.1 ~ AC-3.2 | 单元测试 | Worker 约束 |
+| VM-1 | AC-1.1 ~ AC-1.3 | 集成测试 | 跨线程 Worker 加载：构建/布局/渲染管线 |
+| VM-2 | AC-2.1 ~ AC-2.2 | 单元测试 | Worker 数量约束 |
+| VM-3 | AC-3.1 ~ AC-3.3 | 集成测试 | Placeholder 状态机 |
 
 ---
 
@@ -113,41 +111,50 @@ N/A — 已有实现补录。
 
 ## 接口规格
 
-### DynamicComponent 参数
+### 跨线程加载架构
 
-| 参数 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| entryPoint | string | 是 | 入口点名 |
-| workerId | string | 是 | Worker ID |
-| backgroundTransparent | boolean | 否 | 背景透明 |
-| isReportFrameEvent | boolean | 否 | 启用帧事件上报 |
+```
+宿主主线程                                   Worker 线程
+  DynamicPattern                            DynamicComponentRendererImpl
+    ├─ DynamicParam 解析                      ├─ 创建 UIContent
+    │   ├─ workerId → 目标 Worker             ├─ 执行 Build/Layout
+    │   ├─ entryPoint → 入口点                ├─ 渲染到 Surface
+    │   └─ backgroundTransparent              └─ Surface 回传主线程
+    └─ Placeholder 状态机
+```
 
-### PlaceholderType 枚举
+### DynamicComponent 与 UIExtensionComponent 机制对比
 
-| 值 | 说明 |
-|----|------|
-| INIT | 初始加载占位 |
-| ROTATION | 旋转占位 |
-| FOLD_TO_EXPAND | 折叠展开占位 |
-| UNDEFINED | 未定义状态占位 |
-| NONE | 无占位 |
+| 机制 | DynamicComponent | UIExtensionComponent |
+|------|-----------------|---------------------|
+| 运行环境 | Worker 线程（同进程） | 远程 Ability（跨进程） |
+| 通信方式 | Surface 回传 | IPC 通道 + Proxy |
+| 数量约束 | 每 Worker 最多 4 个 | 无硬限制 |
+| Placeholder | 支持 | 支持 |
+| 生命周期事件 | 有限（onError） | 完整（7 个事件） |
 
 ## 兼容性声明
 
 - **已有 API 行为变更:** 否
-- **最低支持版本:** API 10
+- **最低支持版本:** Dynamic API 10；Static API 23
+
+## 架构约束
+
+| 关键约束 | 约束说明 | 影响 AC |
+|----------|---------|---------|
+| Worker 线程隔离 | 组件构建和布局在 Worker 线程执行，不与主线程共享状态 | AC-1.2 |
+| 每 Worker 最多 4 个 | `DC_MAX_NUM_IN_WORKER = 4` 硬约束 | AC-2.1 |
 
 ## 非功能性需求
 
 | 类型 | 指标/阈值 | 验证方式 |
 |------|----------|---------|
-| 性能 | 每 Worker 最多 4 个 DynamicComponent | 代码审查 |
+| 性能 | Worker 线程加载不阻塞主线程 UI | 集成测试 |
+| 可靠性 | Worker 线程异常时主线程不崩溃 | 集成测试 |
 
 ## 多设备适配声明
 
-| 设备类型 | 行为差异 | 说明 |
-|----------|---------|------|
-| 折叠屏 | 使用 foldToExpandPlaceholder | 折叠/展开状态切换 |
+无差异。
 
 ## Spec 自审清单
 
@@ -160,5 +167,5 @@ N/A — 已有实现补录。
 ```yaml
 context-queries:
   - repo: "openharmony/arkui_ace_engine"
-    query: "DynamicPattern 中 DynamicParam 的解析和 Worker 约束检查"
+    query: "DynamicComponentRendererImpl 中 Worker 线程 UIContent 创建和 Surface 回传流程"
 ```

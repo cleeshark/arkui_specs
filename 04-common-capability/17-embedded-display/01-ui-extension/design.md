@@ -1,6 +1,6 @@
 # 架构设计
 
-> 嵌入显示能力-UIExtension 功能域的架构设计文档，补录已有实现。
+> 嵌入显示能力-UIExtension 功能域的架构设计文档。本域聚焦跨进程/跨线程的嵌入显示机制，描述 Session 管理、IPC 通信、Worker 线程渲染等核心机制，而非组件 API 清单。
 
 ## 设计元数据
 
@@ -9,9 +9,9 @@
 | Design ID | DESIGN-Func-04-17-01 |
 | 关联需求 | 已有能力补录（无独立 requirement.md） |
 | 关联 Epic | 无 |
-| 目标 Feature | Feat-01 UIExtensionComponent 创建与事件, Feat-02 UIExtensionProxy 通信机制, Feat-03 SecurityUIExtensionComponent, Feat-04 DynamicComponent |
+| 目标 Feature | Feat-01 跨进程嵌入显示连接与生命周期, Feat-02 跨进程双向数据通道, Feat-03 安全隔离跨进程嵌入显示, Feat-04 跨线程动态组件加载 |
 | 复杂度 | 复杂 |
-| 目标版本 | Dynamic API 10+；Static 统一为 API 23 |
+| 目标版本 | Dynamic API 10+ |
 | Owner | ArkUI SIG |
 | 状态 | Baselined（已有实现补录） |
 
@@ -19,9 +19,9 @@
 
 | 项 | 内容 |
 |----|------|
-| 问题陈述 | 需要在 ArkUI 组件树中嵌入其他 Ability 的 UI 内容，支持双向通信和生命周期管理 |
-| 核心目标 | 提供 UIExtensionComponent / SecurityUIExtensionComponent / DynamicComponent 三种嵌入组件，支持 UIExtensionProxy 双向通信 |
-| P0 AC | 正确创建 UIExtensionComponent 并嵌入远程 UI；onRemoteReady 回调正确触发；Proxy send/sendSync 通信正常 |
+| 问题陈述 | 需要在 ArkUI 框架中支持跨进程（UIExtensionAbility）和跨线程（Worker）的嵌入显示，实现 UI 内容在不同执行环境中的嵌入和渲染 |
+| 核心目标 | 提供跨进程 Session 管理、IPC 双向数据通道、跨线程 Worker 加载、Placeholder 状态机等嵌入显示核心机制 |
+| P0 AC | 跨进程 Session 正确建立和销毁；IPC 数据通道双向通信正常；跨线程 Worker 加载不阻塞主线程；Placeholder 状态机正确切换 |
 
 ## 上下文和现状
 
