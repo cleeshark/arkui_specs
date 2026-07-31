@@ -52,7 +52,7 @@
 
 **作为** 手势框架,
 **我想要** 通过 GestureScope 为每个 touchId 维护独立的竞争识别器集合,
-**以便** 多指触摸时各手指的手势判定互不干扰。
+**以便** 多指触摸时按 touchId 管理各自的识别器成员，同时保留跨 scope 的全局阻塞和接受副作用。
 
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
@@ -60,7 +60,7 @@
 | AC-2.2 | WHEN `AddMember()` 发现识别器已存在于 scope THEN 跳过不重复添加（Existed() 检查） | 正常 |
 | AC-2.3 | WHEN 触摸事件为 UP 或 CANCEL THEN EventManager 调用 `CleanGestureScope(touchId)` 关闭并移除该 scope | 正常 |
 | AC-2.4 | WHEN scope 关闭时仍有 PENDING 状态的识别器 THEN 设置 `isDelay_=true`（延迟关闭），不立即移除 scope | 正常 |
-| AC-2.5 | WHEN 多指触摸 THEN 每个 fingerId 对应独立的 GestureScope，各自维护 `recognizers_` 列表和 `hasGestureAccepted_` 标记 | 正常 |
+| AC-2.5 | WHEN 多指触摸 THEN 每个 fingerId 对应独立的 GestureScope，各自维护 `recognizers_` 列表和 `hasGestureAccepted_` 标记；但 ACCEPT/PENDING 阻塞检查及 ACCEPT 后的通知会遍历所有 scope | 边界 |
 
 ### US-3: 阻塞判定（CheckNeedBlocked）
 
@@ -72,7 +72,7 @@
 |--------|---------|------|
 | AC-3.1 | WHEN scope 中已有其他识别器处于 PENDING 状态 THEN 后续请求 ACCEPT/PENDING 的识别器被阻塞（返回 true） | 正常 |
 | AC-3.2 | WHEN scope 中无 PENDING 状态的识别器 THEN 不阻塞（返回 false） | 正常 |
-| AC-3.3 | WHEN 被检查的识别器与 PENDING 识别器处于同一 GestureGroup 层级 THEN 不阻塞（通过 gestureGroup_ 链向上遍历判定） | 正常 |
+| AC-3.3 | WHEN scope 中存在 PENDING member THEN 仅当被检查 recognizer 就是该 member 本身，或是该 member 的某级父 GestureGroup 时不阻塞；不得扩大为任意同组 sibling 均豁免 | 边界 |
 | AC-3.4 | WHEN Referee 处理 ACCEPT/PENDING 时 THEN 遍历所有 scope 检查阻塞条件（跨 scope 检查） | 正常 |
 | AC-3.5 | WHEN 识别器被阻塞 THEN 调用 `OnBlocked()` 进入 PENDING_BLOCKED 或 SUCCEED_BLOCKED 状态 | 正常 |
 
@@ -122,7 +122,7 @@
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
 | AC-7.1 | WHEN `OnAcceptGesture()` 在 scope 中拒绝其他识别器 THEN 跳过 Bridge Mode 的识别器（不调用 OnRejected） | 正常 |
-| AC-7.2 | WHEN 识别器处于 Bridge Mode THEN `HandleEvent()` 中直接返回 true，不处理触摸事件 | 正常 |
+| AC-7.2 | WHEN 识别器处于 Bridge Mode THEN 其直接 `HandleEvent()` 入口返回 true；但主识别器可通过 `HandleBridgeModeEvent()` 向该 bridge 对象传递事件，使其自身状态机继续运行 | 边界 |
 | AC-7.3 | WHEN 识别器设置 Bridge Mode THEN `bridgeMode_` 标志为 true | 正常 |
 
 ---
@@ -148,12 +148,12 @@
 |--------|------|----------|----------|-----------|--------|
 | R-1 | 行为 | `OnAcceptGesture()` 拒绝所有其他识别器 | 每个 scope 内仅一个识别器可获胜（winner-takes-all） | — | AC-1.2 |
 | R-2 | 行为 | `HandleAcceptDisposal` 和 `HandlePendingDisposal` 遍历 gestureScopes_ | Referee 跨所有 scope 检查阻塞条件 | — | AC-1.1, AC-1.4 |
-| R-3 | 行为 | gestureScopes_ 为 unordered_map<touchId, GestureScope> | 每个 touchId 有独立的 GestureScope | — | AC-2.1~2.5 |
-| R-4 | 行为 | CheckNeedBlocked 通过 gestureGroup_ 链判定 | 同一 GestureGroup 内的识别器不互相阻塞 | — | AC-3.3 |
+| R-3 | 行为 | gestureScopes_ 为 unordered_map<touchId, GestureScope> | 每个 touchId 有独立的成员集合，但 Referee 的阻塞检查和接受通知可跨 scope | — | AC-2.1~2.5 |
+| R-4 | 行为 | CheckNeedBlocked 遇到 PENDING member | 仅对该 member 本身或其某级父 GestureGroup 返回不阻塞，不提供任意同组 sibling 豁免 | — | AC-3.3 |
 | R-5 | 行为 | HandleRejectDisposal 搜索所有 scope | PENDING 识别器拒绝后级联解除阻塞 | — | AC-4.1~4.4 |
 | R-6 | 行为 | BatchAdjudicate 优先检查 eventImportGestureGroup_ | 识别器仲裁请求先路由给父 Group 再到 Referee | — | AC-5.1~5.3 |
 | R-7 | 行为 | recognizerDelayStatus_ 和 CheckRecognizerInInnerContainer | Delay 机制仅影响内嵌容器中的识别器 | — | AC-6.1~6.3 |
-| R-8 | 行为 | OnAcceptGesture 跳过 bridgeMode_ 识别器 | Bridge Mode 识别器不参与竞争且不被拒绝 | — | AC-7.1~7.3 |
+| R-8 | 行为 | OnAcceptGesture 跳过 bridgeMode_ 识别器 | Bridge Mode 识别器不被 scope 的 winner-takes-all 逻辑拒绝；直接 HandleEvent 被跳过，但可经主识别器的 HandleBridgeModeEvent 运行状态机 | — | AC-7.1~7.3 |
 | R-9 | 行为 | ACCEPT 仲裁请求 | HandleAcceptDisposal 检查 delay 状态，若 START 且识别器在内嵌容器中则存储到 delayRecognizer_ 不立即处理 | GestureReferee | AC-1.1, AC-6.1 |
 | R-10 | 行为 | ACCEPT 仲裁请求 | HandleAcceptDisposal 遍历所有 scope 调用 CheckNeedBlocked，任一 scope 返回 true 则调用 OnBlocked() | GestureReferee | AC-1.1, AC-3.4 |
 | R-11 | 行为 | ACCEPT 且无阻塞 | HandleAcceptDisposal 无阻塞时调用 AboutToAccept() 后通知所有 scope 执行 OnAcceptGesture() | GestureReferee | AC-1.1 |
@@ -164,10 +164,10 @@
 | R-16 | 行为 | 新识别器注册 | AddMember 调用 Existed() 检查重复，不存在则 emplace_back | GestureScope | AC-2.2 |
 | R-17 | 行为 | 触摸事件结束 | CleanGestureScope 在 UP/CANCEL 时关闭 scope 并从 gestureScopes_ 移除 | GestureReferee | AC-2.3 |
 | R-18 | 行为 | 延迟关闭 | CleanGestureScope 在 scope 仍有 PENDING 时设置 isDelay_=true 不移除 | GestureReferee | AC-2.4 |
-| R-19 | 行为 | 多指触摸 | 多指触摸时各 touchId 对应独立的 GestureScope 实例 | GestureReferee | AC-2.5 |
+| R-19 | 行为 | 多指触摸 | 各 touchId 对应独立 GestureScope 成员集合；HandleAcceptDisposal/HandlePendingDisposal 仍遍历所有 scope | GestureReferee | AC-2.5 |
 | R-20 | 行为 | 阻塞检查 | CheckNeedBlocked 遍历 scope 中所有识别器，找到非自身的 PENDING 识别器则返回 true | GestureScope | AC-3.1 |
 | R-21 | 行为 | 无竞争 | CheckNeedBlocked 在无 PENDING 识别器时返回 false | GestureScope | AC-3.2 |
-| R-22 | 行为 | 同组识别器 | CheckNeedBlocked 通过 gestureGroup_ 链向上遍历，若 PENDING 识别器与被检查识别器在同一 group 层级则返回 false | GestureScope | AC-3.3 |
+| R-22 | 行为 | 遇到 PENDING member | CheckNeedBlocked 先比较 member 本身，再沿 member->GetGestureGroup() 向上遍历；只有被检查 recognizer 等于其中一项时返回 false | GestureScope | AC-3.3 |
 | R-23 | 行为 | 阻塞判定通过 | 被阻塞的识别器调用 OnBlocked() 进入 PENDING_BLOCKED 或 SUCCEED_BLOCKED 状态 | GestureScope | AC-3.5 |
 | R-24 | 行为 | PENDING→REJECT | HandleRejectDisposal 在 PENDING 识别器拒绝后遍历所有 scope 调用 UnBlockGesture() | GestureReferee | AC-4.1 |
 | R-25 | 行为 | 解除阻塞（PENDING） | UnBlockGesture 返回 PENDING_BLOCKED 识别器时调用 OnPending() | GestureReferee | AC-4.2 |
@@ -180,7 +180,7 @@
 | R-32 | 行为 | delay END | SetRecognizerDelayStatus(END) 触发 RecallOnAcceptGesture() 处理延迟的识别器 | GestureReferee | AC-6.2 |
 | R-33 | 行为 | delay START 但无内嵌 | delay 状态为 START 但无内嵌容器识别器请求时正常处理外部识别器 | GestureReferee | AC-6.3 |
 | R-34 | 行为 | 手势获胜 | OnAcceptGesture 在拒绝其他识别器时跳过 bridgeMode_=true 的识别器 | GestureScope | AC-7.1 |
-| R-35 | 行为 | 事件到达 | HandleEvent 在 bridgeMode_=true 时直接返回 true | NGGestureRecognizer | AC-7.2 |
+| R-35 | 行为 | 事件到达 | bridge 对象的直接 HandleEvent 在 bridgeMode_=true 时返回 true；主识别器会对 bridgeObjList_ 调用 HandleBridgeModeEvent，由 bridge 对象处理 DOWN/MOVE/UP/CANCEL 状态机 | NGGestureRecognizer | AC-7.2 |
 | R-36 | 行为 | 外部设置 | 设置 Bridge Mode 时 bridgeMode_ 标志为 true | NGGestureRecognizer | AC-7.3 |
 | R-37 | 异常 | HandleRejectDisposal 发现 RefereeState==FAIL | 识别器已被 FAIL | 直接返回，不做处理 | AC-1.5 |
 | R-38 | 异常 | HandleAcceptDisposal 发现 RefereeState==SUCCEED | 识别器已被 SUCCEED | 直接返回，不做处理 | AC-1.6 |
@@ -260,7 +260,7 @@
 | Scope-per-touchId | 每个 touchId 有独立 scope，但阻塞检查跨所有 scope | AC-2.1~2.5, AC-3.4 |
 | BatchAdjudicate 层级路由 | 识别器先找父 Group，Group 内部自行仲裁，仅根级到达 Referee | AC-5.1~5.3 |
 | UI 线程同步 | 仲裁在 UI 线程同步执行 | 全部 |
-| Group 层级豁免 | 同一 GestureGroup 内的识别器不互相阻塞 | AC-3.3 |
+| Group 层级豁免 | 仅 PENDING member 本身及其父 Group 链上的识别器豁免，不覆盖任意同组 sibling | AC-3.3 |
 
 > 架构规则适用性及设计方案见 design.md。
 
@@ -335,7 +335,8 @@ Feature: 手势判定仲裁
   Scenario: 多指触摸独立 scope
     Given 用户使用 3 指触摸
     Then Referee 为 fingerId=0, 1, 2 各创建独立 GestureScope
-    And 各 scope 的仲裁互不影响
+    And 各 scope 独立维护自己的 recognizers_ 成员集合
+    But ACCEPT/PENDING 阻塞检查及 ACCEPT 通知仍可遍历其他 scope
 
   Scenario: scope 延迟关闭
     Given touchId=0 的 scope 中 PanGesture 处于 PENDING 状态
@@ -345,11 +346,11 @@ Feature: 手势判定仲裁
 
   # ─── Group 层级豁免 ────────────────────────────
 
-  Scenario: 同 Group 内不互相阻塞
-    Given ExclusiveRecognizer 内部有 TapGesture 和 LongPressGesture
-    When TapGesture 请求 PENDING
-    Then LongPressGesture 请求 PENDING 时 CheckNeedBlocked 返回 false
-    （因为两者在同一 GestureGroup 层级，通过 gestureGroup_ 链判定豁免）
+  Scenario: PENDING member 的父 Group 获得层级豁免
+    Given ExclusiveRecognizer 内部的 TapGesture 已处于 PENDING
+    When CheckNeedBlocked 检查 TapGesture 本身或其父 ExclusiveRecognizer
+    Then 返回 false
+    But 不得由此推导同组的任意 sibling 都不会被阻塞
 
   Scenario: 不同 Group 互相阻塞
     Given 组件上直接挂载了 TapGesture，同时子组件上挂载了 LongPressGesture
@@ -388,6 +389,12 @@ Feature: 手势判定仲裁
     Given 同一 scope 中有正常 TapGesture 和 Bridge Mode PanGesture
     When TapGesture 请求 ACCEPT 并获胜
     Then PanGesture 不被 OnRejected()（Bridge Mode 被跳过）
+
+  Scenario: Bridge Mode 对象经主识别器处理事件
+    Given PanGesture 作为主识别器的 bridgeObj 且 bridgeMode_=true
+    When PanGesture 收到 TouchEvent
+    Then bridgeObj 的直接 HandleEvent 入口不处理事件
+    But 主识别器调用 bridgeObj.HandleBridgeModeEvent 使其状态机继续运行
 ```
 
 ---

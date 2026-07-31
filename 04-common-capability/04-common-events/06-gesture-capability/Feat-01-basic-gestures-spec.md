@@ -10,7 +10,7 @@
 | 特性编号 | Func-04-04-06-Feat-01 |
 | 所属 Epic | 无（已有能力补录） |
 | 优先级 | P0 |
-| 目标版本 | API 7（Tap/Pan），API 8（LongPress/Pinch/Rotation/Swipe） |
+| 目标版本 | 动态 API：API 7（Tap/LongPress/Pan/Pinch/Rotation）、API 8（Swipe）；静态 API：API 23 |
 | SIG 归属 | ArkUI SIG |
 | 状态 | Draft |
 | 复杂度 | 复杂 |
@@ -56,7 +56,7 @@
 | AC-2.1 | WHEN 创建 `LongPressGesture({duration: D})` THEN 手指按下后持续 D 毫秒不抬起即触发 onAction（默认 500ms） | 正常 |
 | AC-2.2 | WHEN 创建 `LongPressGesture({repeat: true})` THEN 首次触发后每隔 duration 毫秒重复触发 onAction | 正常 |
 | AC-2.3 | WHEN 创建 `LongPressGesture({repeat: false})`（默认）THEN 仅触发一次 onAction | 正常 |
-| AC-2.4 | WHEN 长按过程中手指移动超过 allowableMovement(默认 15px) THEN 识别失败，触发 onActionCancel | 异常 |
+| AC-2.4 | WHEN 长按成功前手指移动超过 allowableMovement(默认 15px) THEN 识别器进入 REJECT，不触发 onActionCancel | 异常 |
 | AC-2.5 | WHEN 手指抬起 THEN 触发 onActionEnd 回调 | 正常 |
 | AC-2.6 | WHEN 创建 `LongPressGesture({fingers: N})` THEN 需 N 指同时按下；若 isLimitFingerCount=false（默认），则 ≥N 指也可触发 | 正常 |
 | AC-2.7 | WHEN 长按成功后手指移动不超过 allowableMovement THEN 保持识别状态，不触发取消 | 边界 |
@@ -91,7 +91,7 @@
 | AC-4.2 | WHEN 捏合过程中 THEN GestureEvent.scale 提供当前缩放比例（= currentDev / initialDev） | 正常 |
 | AC-4.3 | WHEN 缩放比例计算基于所有活跃手指到焦点的平均偏差比 THEN 焦点为所有活跃手指的平均 X/Y 坐标 | 正常 |
 | AC-4.4 | WHEN 手指抬起剩余手指数 < fingers THEN 触发 onActionEnd | 边界 |
-| AC-4.5 | WHEN 创建 `PinchGesture({fingers: N})` THEN 需 ≥N 指（或精确 =N 指，取决于 isLimitFingerCount）才触发 | 正常 |
+| AC-4.5 | WHEN 创建 `PinchGesture({fingers: N})` THEN N 的有效范围为 2~5，越界回退为 2；有效值下需 ≥N 指（或精确 =N 指，取决于 isLimitFingerCount）才触发 | 边界 |
 | AC-4.6 | WHEN onActionUpdate THEN GestureEvent 提供缩放中心点（捏合焦点坐标） | 正常 |
 
 ### US-5: 旋转手势（RotationGesture）
@@ -107,7 +107,7 @@
 | AC-5.3 | WHEN 角度计算取前两个活跃手指的连线角度变化 THEN 通过 atan2 计算向量角度并累计差值 | 正常 |
 | AC-5.4 | WHEN 角度跨越 ±180° 边界 THEN 归一化正确累加（不会因角度跳变导致计算错误） | 异常 |
 | AC-5.5 | WHEN 手指抬起剩余手指数 < fingers THEN 触发 onActionEnd | 边界 |
-| AC-5.6 | WHEN 创建 `RotationGesture({fingers: N})` THEN 需 ≥N 指（或精确 =N 指，取决于 isLimitFingerCount）才触发 | 正常 |
+| AC-5.6 | WHEN 创建 `RotationGesture({fingers: N})` THEN N 的有效范围为 2~5，越界回退为 2；有效值下需 ≥N 指（或精确 =N 指，取决于 isLimitFingerCount）才触发 | 边界 |
 
 ### US-6: 滑动手势（SwipeGesture）
 
@@ -122,10 +122,10 @@
 | AC-6.3 | WHEN 创建 `SwipeGesture({direction: SwipeDirection.Vertical})` THEN 仅垂直滑动才触发 | 正常 |
 | AC-6.4 | WHEN 创建 `SwipeGesture({direction: SwipeDirection.All})`（默认）THEN 所有方向均可触发 | 正常 |
 | AC-6.5 | WHEN 滑动过程中角度变化超过 45° THEN 识别失败（CheckAngle 判定非直线滑动） | 异常 |
-| AC-6.6 | WHEN 滑动手指移动总距离 < SWIPE_MOVE_LIMITED(3.0) THEN 识别失败（非有效滑动） | 异常 |
+| AC-6.6 | WHEN 某次 MOVE 的位移不超过 SWIPE_MOVE_LIMITED(3.0) THEN 该次 MOVE 不参与角度检查；该常量不单独导致整个 Swipe 识别失败 | 边界 |
 | AC-6.7 | WHEN 识别成功 THEN GestureEvent 提供滑动速度和方向信息 | 正常 |
 | AC-6.8 | WHEN 创建 `SwipeGesture({fingers: N})` THEN 需 ≥N 指（或精确 =N 指，取决于 isLimitFingerCount）才触发 | 正常 |
-| AC-6.9 | WHEN 滑动速度计算 = 总位移 / 持续时间 THEN duration 为首个 TouchDown 到最后一个 TouchUp 的时间差 | 正常 |
+| AC-6.9 | WHEN 滑动速度计算 = 总位移 / 持续时间 THEN duration 从活跃触点数首次达到 fingers 时记录的 touchDownTime_ 计算到 TouchUp | 正常 |
 
 ### US-7: 手势挂载 API
 
@@ -177,7 +177,7 @@
 | 规则ID | 类型 | 触发条件 | 预期行为 | 边界/约束 | 关联AC |
 |--------|------|----------|----------|-----------|--------|
 | R-1 | 行为 | 适用于所有手势类型 | 6 种手势分为两类回调模式：离散手势（Tap/Swipe）仅触发 onAction；连续手势（LongPress/Pan/Pinch/Rotation）有完整生命周期 onActionStart/Update/End + onActionCancel | — | AC-1.1~6.9 |
-| R-2 | 行为 | fingers 参数有效范围 1~10 | 多指手势（除单指 Tap 外）均继承 MultiFingersRecognizer，受 fingers 和 isLimitFingerCount 控制 | — | AC-1.3, AC-2.6, AC-3.7, AC-4.5, AC-5.6, AC-6.8 |
+| R-2 | 行为 | 使用 fingers 参数 | 各手势共享 MultiFingersRecognizer 的手指数匹配能力，但参数范围按手势类型校验：Pinch/Rotation 为 2~5，越界回退 2，不存在“所有手势统一 1~10”的规则 | isLimitFingerCount 仅控制最低手指数/精确手指数匹配 | AC-1.3, AC-2.6, AC-3.7, AC-4.5, AC-5.6, AC-6.8 |
 | R-3 | 行为 | 父子组件同时绑定手势时适用 | 手势优先级分三级：Low（gesture）、High（priorityGesture）、Parallel（parallelGesture），影响父子组件手势竞争结果 | — | AC-7.1~7.3 |
 | R-4 | 行为 | 需配合 priorityGesture 使用效果最显著 | GestureMask.IgnoreInternal 仅抑制子组件的内置手势（如 List 的滚动、Button 的点击），不影响子组件通过 gesture() 添加的用户自定义手势 | — | AC-7.4 |
 | R-5 | 行为 | 适用于所有支持 fingers 参数的手势 | isLimitFingerCount 默认 false 表示 fingers 为最低要求（≥即可）；true 表示必须精确匹配 | — | AC-8.1~8.3 |
@@ -190,7 +190,7 @@
 | R-12 | 行为 | 超时触发后 | LongPressRecognizer repeat_=true 时，首次触发后每隔 duration_ 毫秒重复触发 onAction | LongPressRecognizer | AC-2.2 |
 | R-13 | 行为 | TouchMove | LongPressRecognizer 在 MOVE 时检查手指移动是否超过 allowableMovement_(默认 15px)，超过则 REJECT | LongPressRecognizer | AC-2.4 |
 | R-14 | 行为 | 手指抬起 | LongPressRecognizer 在 TouchUp 时触发 onActionEnd | LongPressRecognizer | AC-2.5 |
-| R-15 | 行为 | 移动超限或外部取消 | LongPressRecognizer 取消时触发 onActionCancel | LongPressRecognizer | AC-2.4 |
+| R-15 | 行为 | 识别器已 SUCCEED，且最后一个活动触点收到 TouchCancel | LongPressRecognizer 触发 onActionCancel；成功前移动超限只会 REJECT | LongPressRecognizer | AC-2.4 |
 | R-16 | 行为 | TouchMove | PanRecognizer 通过 IsPanGestureAccept 进行方向判定：计算 atan2(dy, dx) 角度与指定方向的偏差 | PanRecognizer | AC-3.2~3.4, AC-3.6 |
 | R-17 | 行为 | 距离达标 | PanRecognizer 在移动距离超过 distance_(默认 5.0vp) 后 ACCEPT，触发 onActionStart | PanRecognizer | AC-3.1 |
 | R-18 | 行为 | 识别成功后 TouchMove | PanRecognizer 持续 MOVE 时触发 onActionUpdate，提供 offsetX/offsetY | PanRecognizer | AC-3.9 |
@@ -203,10 +203,10 @@
 | R-25 | 行为 | 角度计算 | RotationRecognizer 将角度归一化到 [-180°, 180°] 范围，跨边界时正确累加 | RotationRecognizer | AC-5.4 |
 | R-26 | 行为 | cumulativeAngle_ | RotationRecognizer 在 | ≥ angle_ 时 ACCEPT | 累计角度达标 |
 | R-27 | 行为 | TouchMove | SwipeGestureRecognizer 通过 CheckAngle 检查滑动过程中角度变化不超过 45° | SwipeRecognizer | AC-6.5 |
-| R-28 | 行为 | 手指抬起 | SwipeGestureRecognizer 在 TouchUp 时计算速度 = 总位移 / 持续时间 | SwipeRecognizer | AC-6.9 |
+| R-28 | 行为 | 手指抬起 | SwipeGestureRecognizer 在 TouchUp 时计算速度 = 总位移 / 持续时间，起始时刻为活跃触点数首次达到 fingers 时 | SwipeRecognizer | AC-6.9 |
 | R-29 | 行为 | 速度和方向判定 | SwipeGestureRecognizer 速度 ≥ speed_(默认 300vp/s) 且方向匹配时 ACCEPT | SwipeRecognizer | AC-6.1 |
 | R-30 | 行为 | θ\ | SwipeGestureRecognizer 方向判定：HORIZONTAL 为 \ | ≤ 45°，VERTICAL 为 \ | \ |
-| R-31 | 行为 | 位移不足 | SwipeGestureRecognizer 总位移 < SWIPE_MOVE_LIMITED(3.0) 时 REJECT | SwipeRecognizer | AC-6.6 |
+| R-31 | 行为 | 单次 MOVE 位移不超过 SWIPE_MOVE_LIMITED(3.0) | SwipeGestureRecognizer 跳过该次 MOVE 的角度计算，不因该条件单独 REJECT | SwipeRecognizer | AC-6.6 |
 | R-32 | 行为 | 调用 .gesture() | gesture() 通过 GestureEventHub::AddGesture 以 GesturePriority::Low 挂载 | GestureEventHub | AC-7.1 |
 | R-33 | 行为 | 调用 .priorityGesture() | priorityGesture() 通过 AddGesture 以 GesturePriority::High 挂载 | GestureEventHub | AC-7.2 |
 | R-34 | 行为 | 调用 .parallelGesture() | parallelGesture() 通过 AddGesture 以 GesturePriority::Parallel 挂载 | GestureEventHub | AC-7.3 |
@@ -217,7 +217,7 @@
 | R-39 | 异常 | 各手指按下间隔 > MULTI_FINGER_TIMEOUT(300ms) | 多指按下超时 | 识别失败（REJECT） | AC-1.4 |
 | R-40 | 异常 | 两次点击间隔 > MULTI_TAP_TIMEOUT(300ms) | 多击超时 | tappedCount 重置，识别失败 | AC-1.7 |
 | R-41 | 异常 | 两次点击触点中心距离 > MAX_THRESHOLD_MANYTAP(60vp) | 多击焦距过大 | 识别失败 | AC-1.6 |
-| R-42 | 异常 | 长按过程中手指移动 > allowableMovement(15px) | 长按移动超限 | 触发 onActionCancel，识别失败 | AC-2.4 |
+| R-42 | 异常 | 长按成功前手指移动 > allowableMovement(15px) | 长按移动超限 | Adjudicate(REJECT)，不触发 onActionCancel | AC-2.4 |
 | R-43 | 异常 | duration 未达前手指抬起 | 长按手指抬起 | 识别失败，不触发 onAction | — |
 | R-44 | 异常 | 滑动过程中角度变化 >45° | 滑动非直线 | CheckAngle 失败，识别失败 | AC-6.5 |
 | R-45 | 异常 | 触摸手指数 > fingers 且 isLimitFingerCount=true | 手指数超限（isLimitFingerCount=true） | 识别失败 | AC-8.2 |
@@ -266,12 +266,12 @@
 
 | API | 参数 | 功能 | 关联 AC |
 |-----|------|------|---------|
-| `ArkUI_NodeHandle createTapGesture(countNum, fingersNum)` | 点击次数, 手指数 | 创建点击手势 | AC-1.1~1.7 |
-| `ArkUI_NodeHandle createLongPressGesture(fingersNum, repeatResult, durationNum)` | 手指数, 是否重复, 持续时间 | 创建长按手势 | AC-2.1~2.7 |
-| `ArkUI_NodeHandle createPanGesture(fingersNum, directions, distanceNum)` | 手指数, 方向掩码, 距离 | 创建平移手势 | AC-3.1~3.9 |
-| `ArkUI_NodeHandle createPinchGesture(fingersNum, distanceNum)` | 手指数, 距离 | 创建捏合手势 | AC-4.1~4.6 |
-| `ArkUI_NodeHandle createRotationGesture(fingersNum, angleNum)` | 手指数, 角度 | 创建旋转手势 | AC-5.1~5.6 |
-| `ArkUI_NodeHandle createSwipeGesture(fingersNum, directions, speedNum)` | 手指数, 方向, 速度 | 创建滑动手势 | AC-6.1~6.9 |
+| `ArkUI_GestureRecognizer* createTapGesture(countNum, fingersNum)` | 点击次数, 手指数 | 创建点击手势 | AC-1.1~1.7 |
+| `ArkUI_GestureRecognizer* createLongPressGesture(fingersNum, repeatResult, durationNum)` | 手指数, 是否重复, 持续时间 | 创建长按手势 | AC-2.1~2.7 |
+| `ArkUI_GestureRecognizer* createPanGesture(fingersNum, directions, distanceNum)` | 手指数, 方向掩码, 距离 | 创建平移手势 | AC-3.1~3.9 |
+| `ArkUI_GestureRecognizer* createPinchGesture(fingersNum, distanceNum)` | 手指数, 距离 | 创建捏合手势 | AC-4.1~4.6 |
+| `ArkUI_GestureRecognizer* createRotationGesture(fingersNum, angleNum)` | 手指数, 角度 | 创建旋转手势 | AC-5.1~5.6 |
+| `ArkUI_GestureRecognizer* createSwipeGesture(fingersNum, directions, speedNum)` | 手指数, 方向, 速度 | 创建滑动手势 | AC-6.1~6.9 |
 | `addGestureToNode(node, recognizer, priority, mask)` | 节点, 识别器, 优先级, 掩码 | 挂载手势到节点 | AC-7.1~7.6 |
 
 **关联枚举类型：**
@@ -305,11 +305,13 @@
 
 - **已有 API 行为变更:**
   - **API 12**: TapGesture 新增 distanceThreshold 参数（新增可选参数，不影响旧调用）
-  - 各手势 @since 版本不同：Tap/Pan @since 7，LongPress/Pinch/Rotation/Swipe @since 8
+  - 动态手势的基础版本：Tap/LongPress/Pan/Pinch/Rotation @since 7，Swipe @since 8
+  - 手势通用扩展：tag @since 11，Handler/gestureModifier @since 12，allowedTypes @since 14，isFingerCountLimited @since 15
+  - 静态 Gesture API 表面 @since 23
 - **配置文件格式变更:** 否
 - **数据存储格式变更:** 否
 - **最低支持版本:** API 7
-- **API 版本号策略:** @since 7/8 为基础版本，后续新增参数通过可选参数扩展
+- **API 版本号策略:** 动态 API 以 @since 7/8 为基础版本，后续通过可选参数/通用属性扩展；静态 API 表面从 @since 23 提供
 
 ---
 
@@ -411,10 +413,11 @@ Feature: 基础手势
     Then 首次在 500ms 时触发 onAction
     And 之后每隔 500ms 再次触发 onAction
 
-  Scenario: 长按移动超限取消
+  Scenario: 长按成功前移动超限
     Given 一个 Text 组件绑定了 LongPressGesture({duration:500})
     When 用户按下后移动超过 15px
-    Then 触发 onActionCancel
+    Then 识别器进入 REJECT
+    And 不触发 onActionCancel
 
   # ─── PanGesture ──────────────────────────────────
 
@@ -454,6 +457,11 @@ Feature: 基础手势
     Then 焦点为 (150, 150)
     And scale = currentDev / initialDev
 
+  Scenario: 捏合手指数越界回退
+    Given 一个 Image 组件绑定了 PinchGesture({fingers:6})
+    When 创建手势识别器
+    Then fingers 回退为 2
+
   # ─── RotationGesture ────────────────────────────
 
   Scenario: 双指旋转
@@ -466,6 +474,11 @@ Feature: 基础手势
     Given 一个 Image 组件绑定了 RotationGesture
     When 两指连线角度从 170° 变化到 -170°（实际旋转 20°）
     Then 累计角度正确增加 20°（不因归一化跳变出错）
+
+  Scenario: 旋转手指数越界回退
+    Given 一个 Image 组件绑定了 RotationGesture({fingers:1})
+    When 创建手势识别器
+    Then fingers 回退为 2
 
   # ─── SwipeGesture ───────────────────────────────
 
@@ -483,6 +496,12 @@ Feature: 基础手势
     Given 一个 Column 组件绑定了 SwipeGesture({direction: Horizontal})
     When 用户垂直方向快速滑动
     Then 不触发 onAction（方向不匹配）
+
+  Scenario: 小幅 MOVE 仅跳过角度检查
+    Given 一个 Column 组件绑定了 SwipeGesture
+    When 某次 MOVE 位移不超过 3.0
+    Then 该次 MOVE 不参与角度检查
+    And 不因该次小幅位移单独判定整个 Swipe 失败
 
   Scenario Outline: isLimitFingerCount 手指匹配
     Given 一个组件绑定了 PanGesture({fingers:2}) 且 isLimitFingerCount=<模式>

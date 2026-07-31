@@ -11,7 +11,7 @@
 | 关联 Epic | 无 |
 | 目标 Feature | Feat-01 基础手势, Feat-02 组合手势, Feat-03 手势判定, Feat-04 手势拦截, Feat-05 手势识别异常恢复增强 |
 | 复杂度 | 复杂 |
-| 目标版本 | API 7（TapGesture/PanGesture），API 8（LongPress/Pinch/Rotation/Swipe） |
+| 目标版本 | 基础手势动态 API：API 7（Tap/LongPress/Pan/Pinch/Rotation）、API 8（Swipe）；拦截 API 按 API 9/11/12/20/26 渐进引入；静态 Gesture API 表面 API 23 |
 | Owner | ArkUI SIG |
 | 状态 | Baselined（Feat-01~Feat-04）+ Draft（Feat-05 增量设计） |
 
@@ -69,7 +69,7 @@
 | Rule ID | 适用原因 | 设计结论 | 验证方式 |
 |---------|----------|----------|----------|
 | OH-ARCH-LAYERING | 手势涉及 API 层→Gesture 层→Recognizer 层→EventHub 层单向调用 | 严格单向：ArkTS→GestureModel→Gesture→Recognizer→GestureEventHub | 代码评审/依赖检查 |
-| OH-ARCH-API-LEVEL | TapGesture/PanGesture @since 7，LongPress/Pinch/Rotation/Swipe @since 8，后续有 API 12 distanceThreshold 新增 | 各 API 标注 @since 版本号 | API 评审/XTS |
+| OH-ARCH-API-LEVEL | Tap/LongPress/Pan/Pinch/Rotation @since 7，Swipe @since 8；hitTestBehavior @since 9，onChildTouchTest/monopolizeEvents @since 11，onTouchIntercept @since 12，onTouchTestDone @since 20，onGestureCollectIntercept @since 26 | 各 API 标注 @since 版本号 | API 评审/XTS |
 | OH-ARCH-COMPONENT-BUILD | 手势代码位于 ace_core_ng_source_set | 无需新增 BUILD.gn target | 构建验证 |
 
 ## 不涉及项承接
@@ -78,7 +78,7 @@
 |------|----------|
 | 性能 | 手势识别在 UI 线程同步执行，单帧内完成状态判定；回调执行不可阻塞 |
 | 安全与权限 | N/A — 手势 API 无权限要求 |
-| 兼容性 | API 8+ 各手势类型有 @since 差异；ClickRecognizer 多击 slop 阈值与 API 版本相关 |
+| 兼容性 | 基础手势动态 API 从 API 7/8 引入，拦截 API 跨 API 9/11/12/20/26 演进；ClickRecognizer 多击 slop 阈值与 API 版本相关 |
 | API/SDK | Public API（ArkTS + C-API 双通道） |
 | IPC/跨进程 | N/A — 手势处理在 UI 线程内 |
 | 构建与部件 | N/A — 无新增部件或 target |
@@ -98,8 +98,8 @@
 | ADR-F2-2 | onCancel 仅限 Sequence 模式 | 仅 SequencedRecognizer 设置 onActionCancel 回调，Parallel 和 Exclusive 模式不触发 | 方案A：三种模式均支持 onCancel；方案B：仅 Sequence 和 Exclusive 支持 | Parallel 模式下多个手势独立运行，"取消"语义不明确；Exclusive 由系统自动选择获胜者，无需通知取消 | 开发者在 Parallel/Exclusive 模式中不应依赖 onCancel |
 | ADR-F2-3 | Exclusive 单赢家 + 失败转移 | activeRecognizer_ 失败后通过 UnBlockGesture 解除其他被阻塞的手势继续竞争 | 方案A：一旦 active 失败则整个组失败；方案B：所有手势重新开始竞争 | 失败转移提高互斥组的容错性（如 PanGesture 水平方向失败后自动尝试垂直方向） | 开发者可利用失败转移实现"方向自适应"的拖动 |
 | ADR-F2-4 | GestureGroup 支持嵌套 | GestureGroup 可包含其他 GestureGroup，操作递归执行 | 方案A：禁止嵌套（简化实现）；方案B：限制最大嵌套深度 | 嵌套允许复杂组合（如 Sequence 内含 Exclusive 子组），无硬性深度限制 | 过深嵌套可能影响性能，但实际场景很少超过 2-3 层 |
-| ADR-F3-1 | Scope-per-touchId 设计 | 每个 touchId 有独立 GestureScope，但阻塞检查跨所有 scope | 方案A：单全局 scope（多指手势互相干扰）；方案B：per-component scope（粒度过细） | 独立 scope 保证多指触摸互不干扰，跨 scope 检查保证全局一致性 | 多指手势判定正确 |
-| ADR-F3-2 | Group 层级豁免阻塞 | CheckNeedBlocked 通过 gestureGroup_ 链向上遍历，同一 Group 内识别器不互相阻塞 | 方案A：不豁免（Group 内竞争由 Group 自行处理但 Group 外也会阻塞）；方案B：仅豁免直接父子 | Group 内部的仲裁由 Group（如 ExclusiveRecognizer）自行处理，Referee 不应干预 | Group 内部仲裁逻辑不被 Referee 打断 |
+| ADR-F3-1 | Scope-per-touchId 设计 | 每个 touchId 有独立 GestureScope 成员集合，但阻塞检查和 ACCEPT 通知遍历所有 scope | 方案A：单全局 scope；方案B：per-component scope | per-touchId 分开成员和生命周期，跨 scope 副作用则保留 Referee 的全局仲裁语义 | 不得将“成员独立”写成“仲裁互不影响” |
+| ADR-F3-2 | Group 层级豁免阻塞 | CheckNeedBlocked 遇到 PENDING member 时，仅对 member 本身或其某级父 GestureGroup 返回不阻塞 | 方案A：任意同组 sibling 全部豁免；方案B：不做 Group 链判定 | 源码比较的是“被检查 recognizer 是否为 PENDING member/其父 Group”，不是 sibling 归属关系 | 避免将定向豁免扩大为整组豁免 |
 | ADR-F3-3 | BatchAdjudicate 分层路由 | 识别器先路由给父 Group，仅根级到达 Referee | 方案A：所有识别器直接到 Referee（Group 无法自行仲裁）；方案B：Group 注册为唯一识别器（丢失子识别器信息） | 分层路由让 Group 有完全的内部仲裁自主权，Referee 仅处理根级竞争 | Feat-02 组合手势的仲裁逻辑正确 |
 | ADR-F3-4 | Delay 延迟接受机制 | RecognizerDelayStatus START/END 允许延迟内嵌容器识别器的接受 | 方案A：无延迟（内嵌容器手势可能过早获胜）；方案B：固定优先级（外层始终优先） | 延迟机制允许在特定场景下让外层容器有机会先处理手势 | 嵌套 Scroll+手势场景正确 |
 | ADR-F4-1 | 拦截机制分层执行 | 5 层拦截按 Hit Test → 手势收集 → 手势识别 → 事件响应 → 原始事件有序执行 | 方案A：单一拦截点（无法精细控制）；方案B：全量回调（性能开销大） | 分层拦截允许各阶段有独立的控制点，开发者按需选择 | 各层拦截 API 的 @since 版本不同 |
@@ -165,12 +165,15 @@
 
 | API | 参数 | 功能 |
 |-----|------|------|
-| `createTapGesture(countNum, fingersNum)` | 点击次数, 手指数 | 创建点击手势 |
-| `createLongPressGesture(fingersNum, repeatResult, durationNum)` | 手指数, 是否重复, 持续时间 | 创建长按手势 |
-| `createPanGesture(fingersNum, directions, distanceNum)` | 手指数, 方向掩码, 距离 | 创建平移手势 |
-| `createPinchGesture(fingersNum, distanceNum)` | 手指数, 距离 | 创建捏合手势 |
-| `createRotationGesture(fingersNum, angleNum)` | 手指数, 角度 | 创建旋转手势 |
-| `createSwipeGesture(fingersNum, directions, speedNum)` | 手指数, 方向, 速度 | 创建滑动手势 |
+| `ArkUI_GestureRecognizer* createTapGesture(countNum, fingersNum)` | 点击次数, 手指数 | 创建点击手势 |
+| `ArkUI_GestureRecognizer* createLongPressGesture(fingersNum, repeatResult, durationNum)` | 手指数, 是否重复, 持续时间 | 创建长按手势 |
+| `ArkUI_GestureRecognizer* createPanGesture(fingersNum, directions, distanceNum)` | 手指数, 方向掩码, 距离 | 创建平移手势 |
+| `ArkUI_GestureRecognizer* createPinchGesture(fingersNum, distanceNum)` | 手指数, 距离 | 创建捏合手势 |
+| `ArkUI_GestureRecognizer* createRotationGesture(fingersNum, angleNum)` | 手指数, 角度 | 创建旋转手势 |
+| `ArkUI_GestureRecognizer* createSwipeGesture(fingersNum, directions, speedNum)` | 手指数, 方向, 速度 | 创建滑动手势 |
+| `ArkUI_GestureRecognizer* createGroupGesture(ArkUI_GroupGestureMode gestureMode)` | 组合模式 | 创建组合手势 |
+| `int32_t addChildGesture(ArkUI_GestureRecognizer* group, ArkUI_GestureRecognizer* child)` | 组、子手势指针 | 添加子手势 |
+| `int32_t removeChildGesture(ArkUI_GestureRecognizer* group, ArkUI_GestureRecognizer* child)` | 组、子手势指针 | 移除子手势 |
 | `addGestureToNode(node, recognizer, priority, mask)` | 节点, 识别器, 优先级, 掩码 | 挂载手势到节点 |
 | `hitTestBehavior(value: HitTestMode): T` | Public | `common.d.ts` | - | - |
 | `onTouchIntercept(callback: (event: TouchEvent) => HitTestMode): T` | Public | `common.d.ts` | - | - |
@@ -529,6 +532,8 @@ TapGesture 创建 ClickRecognizer（`click_recognizer.cpp`），非 TapRecognize
 3. 超时 → ACCEPT，触发 onAction
 4. 若 `repeat_ == true` → 启动 repeat timer，每隔 `duration_` 持续触发 onAction
 
+成功前 MOVE 超过 `allowableMovement_` 时只执行 `Adjudicate(REJECT)`，不触发 onActionCancel。只有识别器已处于 SUCCEED，且最后一个活动触点收到 CANCEL 时，才发送 onActionCancel。
+
 **回调类型：** onAction（触发/重复触发）、onActionEnd（手指抬起）、onActionCancel（取消）
 
 ### PanGesture → PanRecognizer
@@ -559,6 +564,8 @@ TapGesture 创建 ClickRecognizer（`click_recognizer.cpp`），非 TapRecognize
 | `DEFAULT_PINCH_DISTANCE` | 5.0vp | 默认触发距离 |
 | `DEFAULT_PINCH_FINGERS` | 2 | 默认手指数 |
 
+`fingers` 有效范围为 2~5，越界时回退为 2。
+
 **Scale 计算算法（`ComputeAverageDeviation`）：**
 1. 计算焦点（所有活跃手指的平均 X/Y）
 2. 计算各手指到焦点的平均偏差：`aveDev = sqrt(aveDevX² + aveDevY²)`
@@ -579,6 +586,8 @@ TapGesture 创建 ClickRecognizer（`click_recognizer.cpp`），非 TapRecognize
 | `ONE_CIRCLE` | 360.0 | 一圈角度 |
 | 角度范围 | [-180°, 180°] | 归一化范围 |
 
+`fingers` 有效范围为 2~5，越界时回退为 2。
+
 **角度计算算法（`ComputeAngle`）：**
 1. 取前两个活跃手指（`activeFingers_`）
 2. 计算向量角度：`angle = atan2(fy - sy, fx - sx) * 180 / π`
@@ -594,12 +603,12 @@ TapGesture 创建 ClickRecognizer（`click_recognizer.cpp`），非 TapRecognize
 | 常量 | 值 | 说明 |
 |------|-----|------|
 | `DEFAULT_SLIDE_SPEED` | 300.0 vp/s | 默认速度阈值 |
-| `SWIPE_MOVE_LIMITED` | 3.0 | 移动限制 |
+| `SWIPE_MOVE_LIMITED` | 3.0 | 单次 MOVE 角度计算的最小位移过滤值，不是总位移失败阈值 |
 | 方向角度容差 | 45° | 方向判定容差 |
 
 **识别算法：**
-1. MOVE → 通过 `CheckAngle()` 检查方向一致性（角度变化不超过 45°）
-2. UP → 计算速度：`speed = distance / duration`
+1. MOVE → 单次位移大于 `SWIPE_MOVE_LIMITED` 时才通过 `CheckAngle()` 检查方向一致性；小幅 MOVE 仅跳过本次角度检查
+2. 活跃触点数首次达到 `fingers_` 时记录 `touchDownTime_`；UP 时以该时刻为起点计算 `speed = distance / duration`
 3. 若 `resultSpeed_ ≥ speed_` 且方向匹配 → ACCEPT
 4. 方向判定：HORIZONTAL（|θ| ≤ 45°）、VERTICAL（||θ| - 90°| ≤ 45°）
 
@@ -651,9 +660,9 @@ GestureGroup 通过 `gesture_group.h` 实现三种组合模式，`CreateRecogniz
 
 #### ParallelRecognizer（并行组合）
 
-所有子识别器同时接收触摸事件，多个子手势可同时成功：
+多个子手势可同时成功，事件按类型分发：
 
-1. HandleEvent 将事件分发给所有子识别器
+1. TouchEvent 仅分发给 `CheckTouchId(point.id)` 为 true 的子识别器；AxisEvent 遍历所有有效子识别器
 2. 子手势 ACCEPT → 若组已 SUCCEED 则直接接受；若组被阻塞则加入 `succeedBlockRecognizers_`
 3. 子手势 REJECT → 仅当所有子手势均失败（`CheckAllFailed`）时拒绝整个组
 4. 组被接受 → 批量接受 `currentBatchRecognizer_` 和所有 `succeedBlockRecognizers_`
@@ -662,9 +671,9 @@ GestureGroup 通过 `gesture_group.h` 实现三种组合模式，`CreateRecogniz
 
 仅一个子手势可获胜，先到先得：
 
-1. 无 activeRecognizer_ 时广播事件给所有子手势（竞争阶段）
+1. 无 activeRecognizer_ 时，TouchEvent 广播给所有 `CheckTouchId(point.id)` 为 true 的子识别器（竞争阶段）
 2. 子手势请求 PENDING → 通过 `CheckNeedBlocked` 检查是否有其他子手势已 PENDING，有则阻塞
-3. 第一个成功的子手势成为 `activeRecognizer_`，后续 MOVE/DOWN 仅分发给它
+3. MOVE/DOWN 到达时，若 `activeRecognizer_` 拥有该 touchId 则调用 `DispatchEventToActiveRecognizers`，先向 active 分发，期间 active 变更或有识别器解阻时可继续分发；否则分发给所有匹配该 touchId 的子识别器
 4. activeRecognizer_ REJECT → `UnBlockGesture` 查找被阻塞的手势（PENDING_BLOCKED/SUCCEED_BLOCKED）继续竞争
 5. 组接受 → activeRecognizer_ 被接受，所有其他子手势被 `ForceReject`
 6. UP/CANCEL 事件始终广播给所有子手势（用于状态清理）
@@ -675,7 +684,7 @@ GestureReferee 是手势系统的中央仲裁器（`gesture_referee.h`），负�
 
 #### GestureScope（竞争域）
 
-每个 touchId 对应一个独立的 GestureScope（`gesture_referee.h`），管理该触摸事件上的竞争识别器集合：
+每个 touchId 对应一个独立的 GestureScope（`gesture_referee.h`），管理该触摸事件上的竞争识别器集合。该“独立”指成员与生命周期分区；ACCEPT/PENDING 阻塞检查和 ACCEPT 后的 `OnAcceptGesture` 通知仍遍历所有 scope，因此仲裁副作用可跨 scope。
 
 | 成员 | 类型 | 用途 |
 |------|------|------|
@@ -686,7 +695,7 @@ GestureReferee 是手势系统的中央仲裁器（`gesture_referee.h`），负�
 
 关键方法：
 - `AddMember` / `DelMember`：添加/移除识别器（Existed() 检查防重复）
-- `CheckNeedBlocked`：检查是否需要阻塞（遍历查找 PENDING 状态的非同组识别器）
+- `CheckNeedBlocked`：检查是否需要阻塞（遍历查找 PENDING member，仅对 member 本身或其父 Group 链上对象豁免）
 - `OnAcceptGesture`：接受手势并拒绝所有其他（winner-takes-all，跳过 Bridge Mode）
 - `UnBlockGesture`：查找第一个 PENDING_BLOCKED/SUCCEED_BLOCKED 识别器
 
@@ -713,8 +722,10 @@ Recognizer 完成识别判定后通过 `BatchAdjudicate` 将请求路由到 Refe
 `CheckNeedBlocked` 遍历 scope 中所有识别器：
 1. 找到 PENDING 状态的识别器
 2. 若与被检查识别器是同一实例 → 不阻塞
-3. 通过 `gestureGroup_` 链向上遍历，若两者在同一 Group 层级 → 不阻塞（Group 豁免）
+3. 从该 PENDING member 的 `gestureGroup_` 向上遍历，若被检查 recognizer 等于其中某级父 Group → 不阻塞
 4. 否则 → 阻塞（返回 true）
+
+注：上述判定不能扩大为“任意同一 GestureGroup 的 sibling 均不互相阻塞”。
 
 #### Delay 延迟接受
 
@@ -726,7 +737,8 @@ Recognizer 完成识别判定后通过 `BatchAdjudicate` 将请求路由到 Refe
 
 Bridge Mode 识别器（`bridgeMode_=true`）：
 - `OnAcceptGesture` 跳过 Bridge Mode 识别器，不调用 OnRejected
-- `HandleEvent` 中直接返回 true，不处理触摸事件
+- bridge 对象的直接 `HandleEvent` 入口返回 true
+- 主识别器会遍历 `bridgeObjList_` 调用 `HandleBridgeModeEvent`，bridge 对象仍处理 DOWN/MOVE/UP/CANCEL 并运行自身状态机
 
 ### 手势拦截 (Feat-04)
 
@@ -738,25 +750,26 @@ Touch Event → [Hit Test Layer] → [Gesture Collect Layer] → [Gesture Recogn
 
 #### Hit Test 层
 
-`hitTestBehavior(HitTestMode)` 提供 7 种触摸测试模式，在 `FrameNode::TouchTest()` 中生效：
+`hitTestBehavior(HitTestMode)` 提供 6 种公开触摸测试模式，在 `FrameNode::TouchTest()` 中生效。Default/Block/Transparent/None 于 API 9 引入，BLOCK_HIERARCHY/BLOCK_DESCENDANTS 于 API 20 引入：
 
-| 模式 | 自身 | 子组件 | 被标记节点 |
-|------|------|--------|------------|
-| Default | 参与 | 参与 | 屏蔽 |
-| Block | 响应 | 阻止 | 阻止 |
-| Transparent | 参与 | 参与 | 不屏蔽 |
-| None | 不响应 | 正常 | 正常 |
-| BlockHierarchy | 阻止低优先级兄弟和父节点 | — | — |
-| BlockDescendants | 不响应 | 阻止所有后代 | — |
-| TransparentSelf | 根据事件消费动态决定 | 正常 | 正常 |
+| 模式 | 自身/子节点 | 兄弟/祖先节点 |
+|------|---------------|-----------------|
+| Default | 自身和子节点参与 | 阻止兄弟，不影响祖先 |
+| Block | 仅自身参与，阻止子节点 | 阻止兄弟和祖先 |
+| Transparent | 自身和子节点参与 | 不阻止兄弟和祖先 |
+| None | 自身不参与，不阻止子节点 | 不阻止兄弟和祖先 |
+| BLOCK_HIERARCHY | 自身和子节点参与 | 阻止低优先级兄弟和父节点 |
+| BLOCK_DESCENDANTS | 自身和所有后代不参与 | 不影响祖先 |
 
-`onTouchIntercept(callback)` 在 `GestureEventHub::ProcessTouchTestHit()` 中调用，回调返回值覆盖静态 `hitTestBehavior`。若未设置回调则退回静态值。回调接收 `TouchEventInfo`，返回 `HitTestMode`。
+SDK 公开枚举中不存在 `TransparentSelf`。
 
-`onChildTouchTest(callback)` 在子组件触摸测试阶段调用，回调接收 `TouchTestInfo` 数组，返回 `TouchResult` 控制子组件的分发策略。
+`onTouchIntercept(callback)`（API 12）在 `GestureEventHub::ProcessTouchTestHit()` 中调用，回调返回值覆盖静态 `hitTestBehavior`。若未设置回调则退回静态值。回调接收 `TouchEventInfo`，返回 `HitTestMode`。
+
+`onChildTouchTest(callback)`（API 11）在子组件触摸测试阶段调用，回调接收 `TouchTestInfo` 数组，返回 `TouchResult` 控制子组件的分发策略。`onTouchTestDone` 及 `TouchRecognizer` 类型于 API 20 引入。
 
 #### 手势收集层
 
-`onGestureCollectIntercept(callback)` 在手势收集完成后、事件分发前执行（`GestureEventHub::OnCollectTouchTarget()`），提供 5 种干预策略：
+`onGestureCollectIntercept(callback)`（API 26）在手势收集完成后、事件分发前执行（`GestureEventHub::OnCollectTouchTarget()`），提供 5 种干预策略：
 
 | 策略 | 效果 |
 |------|------|
@@ -769,7 +782,7 @@ Touch Event → [Hit Test Layer] → [Gesture Collect Layer] → [Gesture Recogn
 #### 手势识别层
 
 - **preventBegin_**：`NGGestureRecognizer` 的内部标志。当 `IsPreventBegin()` 返回 true 时，`HandleEvent()` 直接返回 true 不处理触摸事件。通过 `SetPreBeginResult()` 设置。
-- **TouchRestrict**：位标志枚举，从父组件传递到子组件。包含 CLICK、LONG_PRESS、SWIPE_LEFT/RIGHT/UP/DOWN 等位，对应类型的识别器在 `HandleEvent` 中检查 `touchRestrict_`，若匹配则不处理。
+- **TouchRestrict**：`forbiddenType` 位标志定义包含 CLICK、LONG_PRESS、SWIPE_LEFT/RIGHT/UP/DOWN。当前源码只确认 LongPressRecognizer 对 LONG_PRESS 位的消费路径；未找到 ClickRecognizer/SwipeRecognizer 对 CLICK/SWIPE_* 的对应过滤实现，因此设计不对这两类行为作已实现承诺。
 
 #### 事件响应层
 
@@ -907,11 +920,11 @@ HostPreview：
 | GestureReferee 跨 scope 遍历阻塞检查 | 性能 | 低 | scope 数量通常 ≤ 手指数（≤10），遍历开销可忽略 | 文档/标注 |
 | BatchAdjudicate 无 Referee 时直接拒绝 | 架构 | 低 | 边界条件，正常流程 Referee 始终存在 | 文档/标注 |
 | Delay 机制依赖外部触发 END | 架构 | 低 | 若外部未设置 END 则延迟的识别器永远不会被处理 | 文档/标注 |
-| hitTestBehavior 7 种模式语义复杂 | 架构 | 中 | 开发者容易混淆 Block/BlockDescendants/BlockHierarchy，需文档详尽说明 | 文档/标注 |
+| hitTestBehavior 6 种公开模式语义复杂 | 架构 | 中 | 开发者容易混淆 Block/BLOCK_DESCENDANTS/BLOCK_HIERARCHY，需同时标注 API 9/20 版本边界 | 文档/标注 |
 | onTouchIntercept 回调在触摸测试阶段同步执行 | 性能 | 中 | 回调执行时间直接影响触摸响应延迟，开发者需避免耗时操作 | 文档/标注 |
 | onGestureCollectIntercept 5 种策略组合效果不直观 | 架构 | 低 | 多层拦截叠加时行为难以预测，标注为设计决策 | 文档/标注 |
 | monopolizeEvents 独占范围仅限单触摸序列 | 架构 | 低 | 多指场景下每个触摸序列独立独占，可能不符合开发者直觉 | 文档/标注 |
-| TouchRestrict 位标志从父向子传递但无回传机制 | 架构 | 低 | 子组件无法感知被限制的原因，调试困难 | 文档/标注 |
+| TouchRestrict 常量与识别器消费路径不完全对齐 | 架构 | 中 | 当前仅 LongPress 消费路径已确认；CLICK/SWIPE_* 不得仅根据常量定义宣称已实现 | 文档/源码评审 |
 | Feat-05 误清合法 pending | 兼容性 | 中 | recognizer 级豁免 + 双击/swipe 专项单测 | ArkUI SIG |
 | Feat-05 恢复入口误判为首 down | 架构 | 中 | 以 `lastDownFingerNumber_==0` 约束，并覆盖多指/重复 down 用例 | ArkUI SIG |
 | Feat-05 扫描引入热路径抖动 | 性能 | 低 | 仅首 down 执行 O(n) 扫描，不进入 MOVE 路径 | ArkUI SIG |

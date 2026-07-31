@@ -64,6 +64,51 @@ features:
   title: 特殊窗口类型
   spec: 03-engine-framework/05-window-mechanism/01-window-mechanism/Feat-04-special-window-types-spec.md
   status: Baselined
+- func_id: 03-07-01
+  id: Feat-01
+  title: 无障碍元素信息查询响应
+  spec: 03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-01-accessibility-element-info-query-spec.md
+  status: Draft
+- func_id: 03-07-01
+  id: Feat-02
+  title: 无障碍动作执行
+  spec: 03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-02-accessibility-action-execution-spec.md
+  status: Draft
+- func_id: 03-07-01
+  id: Feat-03
+  title: 无障碍焦点移动
+  spec: 03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-03-accessibility-focus-move-spec.md
+  status: Draft
+- func_id: 03-07-01
+  id: Feat-04
+  title: 无障碍悬停探测
+  spec: 03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-04-accessibility-hover-exploration-spec.md
+  status: Draft
+- func_id: 03-07-01
+  id: Feat-05
+  title: 无障碍子树注册与跨进程接入
+  spec: 03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-05-accessibility-childtree-cross-process-spec.md
+  status: Draft
+- func_id: 03-07-01
+  id: Feat-06
+  title: 应用自绘组件无障碍接入（NDK Provider）
+  spec: 03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-06-accessibility-native-provider-spec.md
+  status: Draft
+- func_id: 03-07-01
+  id: Feat-07
+  title: 无障碍事件通知
+  spec: 03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-07-accessibility-event-notification-spec.md
+  status: Draft
+- func_id: 03-07-02
+  id: Feat-01
+  title: Inspector 同步树转储与属性过滤
+  spec: 03-engine-framework/07-accessibility-mechanism/02-inspector/Feat-01-sync-tree-dump-filter-spec.md
+  status: Baselined
+- func_id: 03-07-02
+  id: Feat-02
+  title: Inspector 公共 API 与异步采集
+  spec: 03-engine-framework/07-accessibility-mechanism/02-inspector/Feat-02-public-api-async-spec.md
+  status: Baselined
 - func_id: 03-08-01
   id: Feat-01
   title: LogWrapper核心框架与HiLog适配
@@ -139,6 +184,56 @@ features:
   title: 布局边界显示调试能力
   spec: 03-engine-framework/08-dfx-foundation/06-layout-boundary-display/Feat-01-layout-boundary-display-spec.md
   status: Baselined
+- func_id: 03-09-01
+  id: Feat-01
+  title: IPC安全框架与连接生命周期
+  spec: 03-engine-framework/09-uisession/01-uisession-service/Feat-01-ipc-security-framework-spec.md
+  status: Baselined
+- func_id: 03-09-01
+  id: Feat-02
+  title: InspectorTree查询与Web子树聚合
+  spec: 03-engine-framework/09-uisession/01-uisession-service/Feat-02-inspector-tree-query-and-web-aggregation-spec.md
+  status: Baselined
+- func_id: 03-09-01
+  id: Feat-03
+  title: 事件上报与注册计数门控
+  spec: 03-engine-framework/09-uisession/01-uisession-service/Feat-03-event-reporting-and-atomic-gating-spec.md
+  status: Baselined
+- func_id: 03-09-01
+  id: Feat-04
+  title: 命令下发与同步请求保护
+  spec: 03-engine-framework/09-uisession/01-uisession-service/Feat-04-command-dispatch-and-sync-request-spec.md
+  status: Baselined
+- func_id: 03-09-01
+  id: Feat-05
+  title: 翻译能力与DFX并发保护
+  spec: 03-engine-framework/09-uisession/01-uisession-service/Feat-05-translate-capability-and-dfx-spec.md
+  status: Baselined
+- func_id: 03-09-01
+  id: Feat-06
+  title: 内容变化检测与阈值管理
+  spec: 03-engine-framework/09-uisession/01-uisession-service/Feat-06-content-change-detection-and-threshold-spec.md
+  status: Baselined
+- func_id: 03-09-01
+  id: Feat-07
+  title: 查询能力与辅助Dump
+  spec: 03-engine-framework/09-uisession/01-uisession-service/Feat-07-query-and-auxiliary-dump-spec.md
+  status: Baselined
+- func_id: 03-09-01
+  id: Feat-08
+  title: SA验证服务与hidumper命令路由
+  spec: 03-engine-framework/09-uisession/01-uisession-service/Feat-08-sa-verification-service-spec.md
+  status: Baselined
+- func_id: 03-09-01
+  id: Feat-09
+  title: PageScene 规则感知能力
+  spec: 03-engine-framework/09-uisession/01-uisession-service/Feat-09-pagescene-rule-awareness-spec.md
+  status: Draft
+- func_id: 03-09-01
+  id: Feat-10
+  title: WM UIContentRemoteObj 验证链路
+  spec: 03-engine-framework/09-uisession/01-uisession-service/Feat-10-wm-uicontent-remoteobj-verification-spec.md
+  status: Draft
 - func_id: 04-01-01
   id: Feat-01
   title: 图片加载机制
@@ -274,6 +369,101 @@ features:
   title: 像素取整策略与布局渲染传播
   spec: 04-common-capability/24-layout-common-capability/01-pixel-rounding/Feat-01-pixel-rounding-policy-propagation-spec.md
   status: Baselined
+- func_id: 03-04-01
+  id: Feat-01
+  title: 事件数据模型与节点事件中心
+  spec: 03-engine-framework/04-event-framework/01-event-base-framework/Feat-01-event-model-and-event-hub-spec.md
+  status: Baselined
+- func_id: 03-04-01
+  id: Feat-02
+  title: 命中测试与事件目标链构建
+  spec: 03-engine-framework/04-event-framework/01-event-base-framework/Feat-02-hit-test-and-event-target-chain-spec.md
+  status: Baselined
+- func_id: 03-04-01
+  id: Feat-03
+  title: 输入事件分发与采样管线
+  spec: 03-engine-framework/04-event-framework/01-event-base-framework/Feat-03-input-dispatch-and-sampling-pipeline-spec.md
+  status: Baselined
+- func_id: 03-04-01
+  id: Feat-04
+  title: 手势仲裁与响应控制
+  spec: 03-engine-framework/04-event-framework/01-event-base-framework/Feat-04-gesture-referee-and-response-control-spec.md
+  status: Baselined
+- func_id: 03-04-01
+  id: Feat-05
+  title: 事件诊断与维测
+  spec: 03-engine-framework/04-event-framework/01-event-base-framework/Feat-05-event-diagnostics-and-inspection-spec.md
+  status: Baselined
+- func_id: 04-04-01
+  id: Feat-01
+  title: 触摸回调与传播控制
+  spec: 04-common-capability/04-common-events/01-touch-events/Feat-01-touch-callback-propagation-spec.md
+  status: Baselined
+- func_id: 04-04-01
+  id: Feat-02
+  title: 触摸事件与多点数据模型
+  spec: 04-common-capability/04-common-events/01-touch-events/Feat-02-touch-event-multipoint-data-model-spec.md
+  status: Baselined
+- func_id: 04-04-01
+  id: Feat-03
+  title: 历史采样与高级触点信息
+  spec: 04-common-capability/04-common-events/01-touch-events/Feat-03-history-sampling-advanced-touch-info-spec.md
+  status: Baselined
+- func_id: 04-04-02
+  id: Feat-01
+  title: 按键事件模型与基础回调
+  spec: 04-common-capability/04-common-events/02-key-events/Feat-01-key-event-model-basic-callback-spec.md
+  status: Baselined
+- func_id: 04-04-02
+  id: Feat-02
+  title: 前置拦截与自定义分发
+  spec: 04-common-capability/04-common-events/02-key-events/Feat-02-pre-ime-custom-dispatch-spec.md
+  status: Baselined
+- func_id: 04-04-03
+  id: Feat-01
+  title: 命中测试、拦截与响应链构建
+  spec: 04-common-capability/04-common-events/03-event-dispatch-intercept/Feat-01-hit-test-intercept-response-chain-spec.md
+  status: Baselined
+- func_id: 04-04-03
+  id: Feat-02
+  title: 触摸事件序列分发与传播控制
+  spec: 04-common-capability/04-common-events/03-event-dispatch-intercept/Feat-02-touch-sequence-dispatch-propagation-spec.md
+  status: Baselined
+- func_id: 04-04-03
+  id: Feat-03
+  title: 跨容器事件分发
+  spec: 04-common-capability/04-common-events/03-event-dispatch-intercept/Feat-03-cross-container-event-dispatch-spec.md
+  status: Baselined
+- func_id: 04-04-03
+  id: Feat-04
+  title: 自定义输入事件构造与分发
+  spec: 04-common-capability/04-common-events/03-event-dispatch-intercept/Feat-04-custom-input-event-construction-dispatch-spec.md
+  status: Baselined
+- func_id: 04-04-04
+  id: Feat-01
+  title: 组件组合键注册与触发
+  spec: 04-common-capability/04-common-events/04-component-shortcuts/Feat-01-component-shortcut-registration-trigger-spec.md
+  status: Baselined
+- func_id: 04-04-05
+  id: Feat-01
+  title: 鼠标事件注册、命中与分发
+  spec: 04-common-capability/04-common-events/05-mouse-events/Feat-01-mouse-event-registration-hit-test-dispatch-spec.md
+  status: Baselined
+- func_id: 04-04-05
+  id: Feat-02
+  title: 鼠标事件数据模型与版本演进
+  spec: 04-common-capability/04-common-events/05-mouse-events/Feat-02-mouse-event-data-model-version-evolution-spec.md
+  status: Baselined
+- func_id: 04-04-05
+  id: Feat-03
+  title: 悬停事件与视觉反馈
+  spec: null
+  status: Draft
+- func_id: 04-04-05
+  id: Feat-04
+  title: 鼠标光标样式与自定义光标
+  spec: 04-common-capability/04-common-events/05-mouse-events/Feat-04-mouse-cursor-style-custom-cursor-spec.md
+  status: Baselined
 - func_id: 04-04-06
   id: Feat-01
   title: 基础手势 (Tap/LongPress/Pan/Pinch/Rotation/Swipe)
@@ -384,6 +574,21 @@ features:
   title: ImageAnimator 事件回调与多范式接口
   spec: 05-ui-components/08-image-components/02-image-animator/Feat-03-image-animator-events-interfaces-spec.md
   status: Baselined
+- func_id: 05-09-01
+  id: Feat-01
+  title: 创建与滚动参数 (start/step/loop/fromStart/src/spacing/delay)
+  spec: 05-ui-components/09-text-components/01-marquee/Feat-01-marquee-creation-scroll-params-spec.md
+  status: Baselined
+- func_id: 05-09-01
+  id: Feat-02
+  title: 字体样式 (fontColor/fontSize/allowScale/fontWeight/fontFamily)
+  spec: 05-ui-components/09-text-components/01-marquee/Feat-02-marquee-font-style-spec.md
+  status: Baselined
+- func_id: 05-09-01
+  id: Feat-03
+  title: 滚动策略、事件回调与多范式 (marqueeUpdateStrategy/onStart/onBounce/onFinish/onStop + MarqueeModifier + 静态 API + Cangjie FFI)
+  spec: 05-ui-components/09-text-components/01-marquee/Feat-03-marquee-strategy-events-multi-paradigm-spec.md
+  status: Baselined
 - func_id: 05-09-02
   id: Feat-01
   title: 组件初始化与双模式架构
@@ -429,6 +634,41 @@ features:
   title: 剪贴板、数据检测与菜单定制
   spec: 05-ui-components/09-text-components/02-rich-editor/Feat-09-clipboard-data-detection-menu-spec.md
   status: Baselined
+- func_id: 05-09-03
+  id: Feat-01
+  title: 组件构建与搜索按钮 (Search/SearchOptions/searchButton/SearchButtonOptions/SearchNode 组合/divider 可见性)
+  spec: 05-ui-components/09-text-components/03-search/Feat-01-search-construction-and-button-spec.md
+  status: Baselined
+- func_id: 05-09-03
+  id: Feat-02
+  title: 搜索图标与取消按钮 (searchIcon/IconOptions/SymbolGlyphModifier/cancelButton/CancelButtonOptions/CancelButtonSymbolOptions/CancelButtonStyle 枚举/图标 size/color/src/default)
+  spec: 05-ui-components/09-text-components/03-search/Feat-02-search-icon-and-cancel-button-spec.md
+  status: Baselined
+- func_id: 05-09-03
+  id: Feat-03
+  title: 文本与占位排版 (textFont/placeholderFont/placeholderColor/fontColor/textAlign/letterSpacing/lineHeight/halfLeading/textIndent/fontFeature/decoration/dividerColor/includeFontPadding/fallbackLineSpacing/textDirection/compressLeadingPunctuation/enableAutoSpacing)
+  spec: 05-ui-components/09-text-components/03-search/Feat-03-text-and-placeholder-typography-spec.md
+  status: Baselined
+- func_id: 05-09-03
+  id: Feat-04
+  title: 自适应字号与文本描边着色 (minFontSize/maxFontSize/minFontScale/maxFontScale/strokeWidth/strokeColor/strokeJoinStyle/shaderStyle)
+  spec: 05-ui-components/09-text-components/03-search/Feat-04-adaptive-font-and-stroke-shader-spec.md
+  status: Baselined
+- func_id: 05-09-03
+  id: Feat-05
+  title: 键盘与输入控制 (enableKeyboardOnFocus/enterKeyType/autoCapitalizationMode/inputFilter/customKeyboard/KeyboardOptions/keyboardAppearance/type/maxLength/enablePreviewText/enableHapticFeedback/stopBackPress)
+  spec: 05-ui-components/09-text-components/03-search/Feat-05-keyboard-and-input-control-spec.md
+  status: Baselined
+- func_id: 05-09-03
+  id: Feat-06
+  title: 选择、光标与菜单 (copyOption/selectionMenuHidden/selectionMenuOptions/selectedBackgroundColor/selectedDragPreviewStyle/enableSelectedDataDetector/caretStyle/caretPosition)
+  spec: 05-ui-components/09-text-components/03-search/Feat-06-selection-caret-and-menu-spec.md
+  status: Baselined
+- func_id: 05-09-03
+  id: Feat-07
+  title: 事件回调与控制器 (onSubmit/onChange/onWillChange/onWillInsert/onDidInsert/onWillDelete/onDidDelete/onCopy/onWillCopy/onCut/onWillCut/onPaste/onTextSelectionChange/onContentScroll/onEditChange/onWillAttachIME + SearchController)
+  spec: 05-ui-components/09-text-components/03-search/Feat-07-events-and-controller-spec.md
+  status: Baselined
 - func_id: 05-09-04
   id: Feat-01
   title: 字体属性与自适应字体
@@ -463,6 +703,56 @@ features:
   id: Feat-07
   title: 事件回调 (onCopy/onWillCopy/onTextSelectionChange/onMarqueeStateChange)
   spec: 05-ui-components/09-text-components/04-text/Feat-07-event-callbacks-spec.md
+  status: Baselined
+- func_id: 05-09-05
+  id: Feat-01
+  title: 内容创建与控制器 (TextAreaOptions/TextArea构造/setTextAreaOptions/TextAreaController:caretPosition/setTextSelection/stopEditing)
+  spec: 05-ui-components/09-text-components/05-text-area/Feat-01-content-creation-controller-spec.md
+  status: Baselined
+- func_id: 05-09-05
+  id: Feat-02
+  title: 字体与文本样式 (fontColor/fontSize/fontStyle/fontWeight/fontFamily/placeholderColor/placeholderFont/letterSpacing/lineHeight/lineSpacing/fontFeature/decoration/textIndent/halfLeading/includeFontPadding/fallbackLineSpacing/enableAutoSpacing/strokeWidth/strokeColor/strokeJoinStyle/shaderStyle/attributeModifier)
+  spec: 05-ui-components/09-text-components/05-text-area/Feat-02-font-text-styles-spec.md
+  status: Baselined
+- func_id: 05-09-05
+  id: Feat-03
+  title: 行布局与溢出截断 (textAlign/textOverflow/maxLines/minLines/minFontSize/maxFontSize/minFontScale/maxFontScale/heightAdaptivePolicy/wordBreak/lineBreakStrategy/ellipsisMode/horizontalScrolling/orphanCharOptimization/compressLeadingPunctuation/punctuationOverflow/textDirection/style:DEFAULT-INLINE)
+  spec: 05-ui-components/09-text-components/05-text-area/Feat-03-layout-overflow-spec.md
+  status: Baselined
+- func_id: 05-09-05
+  id: Feat-04
+  title: 键盘与输入法交互 (enterKeyType/onSubmit/enableKeyboardOnFocus/customKeyboard/keyboardAppearance/autoCapitalizationMode/onWillAttachIME/enablePreviewText/enableHapticFeedback/enableAutoFill/contentType/stopBackPress/voiceButton/type/TextAreaType/maxLength/inputFilter/showCounter)
+  spec: 05-ui-components/09-text-components/05-text-area/Feat-04-keyboard-ime-spec.md
+  status: Baselined
+- func_id: 05-09-05
+  id: Feat-05
+  title: 光标选择与剪贴板 (caretColor/caretStyle/selectedBackgroundColor/editMenuOptions/onCopy/onWillCopy/onCut/onWillCut/onPaste/copyOption/onTextSelectionChange/onContentScroll/selectedDragPreviewStyle/enableSelectedDataDetector/scrollBarColor/barState/selectionMenuHidden)
+  spec: 05-ui-components/09-text-components/05-text-area/Feat-05-caret-selection-clipboard-spec.md
+  status: Baselined
+- func_id: 05-09-05
+  id: Feat-06
+  title: 编辑事件回调 (onChange/onEditChange/onWillChange/onWillInsert/onDidInsert/onWillDelete/onDidDelete)
+  spec: 05-ui-components/09-text-components/05-text-area/Feat-06-editing-events-spec.md
+  status: Baselined
+- func_id: 05-09-06
+  id: Feat-01
+  title: Span 文本片段组件规格 (text/font/decoration/letterSpacing/textCase/lineHeight/textShadow/textBackgroundStyle/baselineOffset/fontVariations/onClick/onHover)
+  spec: 05-ui-components/09-text-components/06-span-components/Feat-01-span-text-spec.md
+  status: Baselined
+- func_id: 05-09-06
+  id: Feat-02
+  title: ImageSpan 图片片段组件规格 (src/verticalAlign/objectFit/colorFilter/alt/supportSvg2/baselineOffset/textBackgroundStyle/onComplete/onError)
+  spec: 05-ui-components/09-text-components/06-span-components/Feat-02-image-span-spec.md
+  status: Baselined
+- func_id: 05-09-06
+  id: Feat-03
+  title: SymbolSpan 符号片段组件规格 (fontSize/fontColor/fontWeight/effectStrategy/renderingStrategy)
+  spec: 05-ui-components/09-text-components/06-span-components/Feat-03-symbol-span-spec.md
+  status: Baselined
+- func_id: 05-09-06
+  id: Feat-04
+  title: ContainerSpan 容器片段组件规格 (textBackgroundStyle/嵌套模型)
+  spec: 05-ui-components/09-text-components/06-span-components/Feat-04-container-span-spec.md
   status: Baselined
 - func_id: 05-01-02
   id: Feat-01
@@ -839,6 +1129,66 @@ features:
   title: NavDestination 模式/安全区/转场动画/状态恢复
   spec: 05-ui-components/02-navigation-components/03-nav-destination/Feat-04-nav-destination-mode-safe-area-transition-recovery-spec.md
   status: Baselined
+- func_id: 05-12-01
+  id: Feat-01
+  title: PluginComponent创建/模板/数据与事件回调
+  spec: 05-ui-components/12-embedded-display-components/01-plugin-component/Feat-01-plugin-component-creation-events-spec.md
+  status: Baselined
+- func_id: 05-12-01
+  id: Feat-02
+  title: PluginComponent跨组件Push/Request Manager
+  spec: 05-ui-components/12-embedded-display-components/01-plugin-component/Feat-02-plugin-component-manager-spec.md
+  status: Baselined
+- func_id: 05-12-02
+  id: Feat-01
+  title: AbilityComponent完整规格（已废弃补录）
+  spec: 05-ui-components/12-embedded-display-components/02-ability-component/Feat-01-ability-component-cross-process-embed-deprecated-spec.md
+  status: Draft
+- func_id: 05-12-03
+  id: Feat-01
+  title: UIExtensionComponent创建/选项/Proxy通信
+  spec: 05-ui-components/12-embedded-display-components/03-ui-extension-component/Feat-01-ui-extension-creation-proxy-spec.md
+  status: Baselined
+- func_id: 05-12-03
+  id: Feat-02
+  title: UIExtensionComponent事件回调
+  spec: 05-ui-components/12-embedded-display-components/03-ui-extension-component/Feat-02-ui-extension-events-spec.md
+  status: Baselined
+- func_id: 05-12-03
+  id: Feat-03
+  title: UIExtensionComponent废弃事件与兼容性
+  spec: 05-ui-components/12-embedded-display-components/03-ui-extension-component/Feat-03-ui-extension-deprecated-compat-spec.md
+  status: Baselined
+- func_id: 05-12-04
+  id: Feat-01
+  title: EmbeddedComponent创建/选项/DPI策略
+  spec: 05-ui-components/12-embedded-display-components/04-embedded-component/Feat-01-embedded-creation-dpi-spec.md
+  status: Baselined
+- func_id: 05-12-04
+  id: Feat-02
+  title: EmbeddedComponent事件回调
+  spec: 05-ui-components/12-embedded-display-components/04-embedded-component/Feat-02-embedded-events-spec.md
+  status: Baselined
+- func_id: 05-12-05
+  id: Feat-01
+  title: IsolatedComponent完整规格
+  spec: 05-ui-components/12-embedded-display-components/05-isolated-component/Feat-01-isolated-component-spec.md
+  status: Baselined
+- func_id: 05-12-06
+  id: Feat-01
+  title: SecurityUIExtensionComponent创建/Proxy/安全策略
+  spec: 05-ui-components/12-embedded-display-components/06-security-ui-extension-component/Feat-01-security-creation-proxy-spec.md
+  status: Baselined
+- func_id: 05-12-06
+  id: Feat-02
+  title: SecurityUIExtensionComponent事件回调
+  spec: 05-ui-components/12-embedded-display-components/06-security-ui-extension-component/Feat-02-security-events-spec.md
+  status: Baselined
+- func_id: 05-12-07
+  id: Feat-01
+  title: DynamicComponent完整规格
+  spec: 05-ui-components/12-embedded-display-components/07-dynamic-component/Feat-01-dynamic-component-spec.md
+  status: Baselined
 - func_id: 05-13-01
   id: Feat-01
   title: 创建、类型与表面生命周期（核心）
@@ -999,6 +1349,26 @@ features:
   title: 路由栈保存与恢复机制
   spec: 04-common-capability/07-migration-recovery/02-router-stack-recovery/Feat-01-router-stack-save-restore-spec.md
   status: Draft
+- func_id: 04-08-01
+  id: Feat-01
+  title: 窗口标题栏与工具栏
+  spec: 04-common-capability/08-root-view/01-window-toolbar/Feat-01-container-titlebar-toolbar-spec.md
+  status: Baselined
+- func_id: 04-08-01
+  id: Feat-02
+  title: '@ohos.window.titlebar.component 静态组件与构建'
+  spec: 04-common-capability/08-root-view/01-window-toolbar/Feat-02-titlebar-static-component-spec.md
+  status: Baselined
+- func_id: 04-08-02
+  id: Feat-01
+  title: AppBar 构建与 AtomicServicePattern
+  spec: 04-common-capability/08-root-view/02-atomic-service-appbar/Feat-01-appbar-build-pattern-spec.md
+  status: Baselined
+- func_id: 04-08-02
+  id: Feat-02
+  title: AtomicServiceBar 编程 API
+  spec: 04-common-capability/08-root-view/02-atomic-service-appbar/Feat-02-atomic-service-bar-api-spec.md
+  status: Baselined
 - func_id: 04-15-02
   id: Feat-01
   title: 命名路由跳转与替换
@@ -1273,6 +1643,11 @@ features:
   id: Feat-02
   title: 无感监听接口全覆盖
   spec: 04-common-capability/11-component-info/02-observer/Feat-02-observer-api-full-coverage-spec.md
+  status: Baselined
+- func_id: 04-11-03
+  id: Feat-01
+  title: Inspector 布局/绘制回调（ComponentObserver）
+  spec: 04-common-capability/11-component-info/03-inspector-layout-callback/Feat-01-component-observer-callback-spec.md
   status: Baselined
 - func_id: 07-02-01
   id: Feat-01
@@ -1654,11 +2029,6 @@ features:
   title: 占位组件交叉引用
   spec: 04-common-capability/06-custom-node/01-placeholder-component/Feat-01-placeholder-component-cross-reference-spec.md
   status: Baselined
-- func_id: 05-12-02
-  id: Feat-01
-  title: AbilityComponent 跨进程能力嵌入（已废弃）
-  spec: 05-ui-components/12-embedded-display-components/02-ability-component/Feat-01-ability-component-cross-process-embed-deprecated-spec.md
-  status: Baselined
 - func_id: 04-03-05
   id: Feat-01
   title: 弹窗类属性（bindPopup/bindMenu/bindContextMenu）
@@ -1683,6 +2053,11 @@ features:
   id: Feat-01
   title: 信息展示类组件自定义内容（ContentModifier）
   spec: 04-common-capability/05-custom-extension/04-content-modifier-display/Feat-01-content-modifier-display-spec.md
+  status: Baselined
+- func_id: 04-05-07
+  id: Feat-01
+  title: gestureModifier 动态手势配置
+  spec: 04-common-capability/05-custom-extension/07-gesture-modifier/Feat-01-gesture-modifier-dynamic-configuration-spec.md
   status: Baselined
 - func_id: 04-16-01
   id: Feat-01
@@ -1723,6 +2098,76 @@ features:
   id: Feat-01
   title: bindContentCover 全模态弹窗全量规格
   spec: 05-ui-components/07-modal-components/02-full-modal/Feat-01-full-modal-full-spec.md
+  status: Baselined
+- func_id: 05-10-05
+  id: Feat-01
+  title: Progress 组件全量规格
+  spec: 05-ui-components/10-information-display-components/05-progress/Feat-01-progress-full-spec.md
+  status: Baselined
+- func_id: 05-10-06
+  id: Feat-01
+  title: QRCode 组件核心规格
+  spec: 05-ui-components/10-information-display-components/06-qr-code/Feat-01-qrcode-display-spec.md
+  status: Baselined
+- func_id: 05-10-07
+  id: Feat-01
+  title: TextClock 时间显示与格式化
+  spec: 05-ui-components/10-information-display-components/07-text-clock/Feat-01-time-format-spec.md
+  status: Baselined
+- func_id: 05-10-07
+  id: Feat-02
+  title: TextClock 控制器与更新调度
+  spec: 05-ui-components/10-information-display-components/07-text-clock/Feat-02-controller-scheduling-spec.md
+  status: Baselined
+- func_id: 05-10-07
+  id: Feat-03
+  title: TextClock 文本样式与 ContentModifier
+  spec: 05-ui-components/10-information-display-components/07-text-clock/Feat-03-style-content-modifier-spec.md
+  status: Baselined
+- func_id: 05-10-07
+  id: Feat-04
+  title: TextClock 事件、配置变更与组件化
+  spec: 05-ui-components/10-information-display-components/07-text-clock/Feat-04-events-config-componentization-spec.md
+  status: Baselined
+- func_id: 05-10-08
+  id: Feat-01
+  title: TextTimer 计时模式与格式化
+  spec: 05-ui-components/10-information-display-components/08-text-timer/Feat-01-timing-modes-format-spec.md
+  status: Baselined
+- func_id: 05-10-08
+  id: Feat-02
+  title: TextTimer 控制器与事件
+  spec: 05-ui-components/10-information-display-components/08-text-timer/Feat-02-controller-events-spec.md
+  status: Baselined
+- func_id: 05-10-08
+  id: Feat-03
+  title: TextTimer 文本样式与 ContentModifier
+  spec: 05-ui-components/10-information-display-components/08-text-timer/Feat-03-style-content-modifier-spec.md
+  status: Baselined
+- func_id: 05-10-08
+  id: Feat-04
+  title: TextTimer 可见区优化与组件化
+  spec: 05-ui-components/10-information-display-components/08-text-timer/Feat-04-visibility-componentization-spec.md
+  status: Baselined
+- func_id: 05-10-09
+  id: Feat-01
+  title: Badge 内容模式
+  spec: 05-ui-components/10-information-display-components/09-badge/Feat-01-content-modes-spec.md
+  status: Baselined
+- func_id: 05-10-09
+  id: Feat-02
+  title: Badge 位置与布局
+  spec: 05-ui-components/10-information-display-components/09-badge/Feat-02-position-layout-spec.md
+  status: Baselined
+- func_id: 05-10-09
+  id: Feat-03
+  title: Badge 样式、主题与老年模式
+  spec: 05-ui-components/10-information-display-components/09-badge/Feat-03-style-theme-aging-spec.md
+  status: Baselined
+- func_id: 05-10-09
+  id: Feat-04
+  title: Badge 无障碍与组件化
+  spec: 05-ui-components/10-information-display-components/09-badge/Feat-04-accessibility-componentization-spec.md
   status: Baselined
 - func_id: 05-15-01
   id: Feat-01
@@ -2388,4 +2833,124 @@ features:
   id: Feat-04
   title: 组件支持矩阵
   spec: 04-common-capability/06-custom-node/07-typed-frame-node/Feat-04-component-matrix-spec.md
+  status: Baselined
+- func_id: 04-14-02
+  id: Feat-01
+  title: 快捷键分发基础设施 (TextInputClient::HandleKeyEvent/加速表/modKeyFlags/Ctrl+V msg/纯字符/IsShortCutBlocked/numLock/Mac KEY_META)
+  spec: 04-common-capability/14-input-interaction/02-text-shortcuts/Feat-01-dispatch-infrastructure-spec.md
+  status: Baselined
+- func_id: 04-14-02
+  id: Feat-02
+  title: 导航与光标移动快捷键 (CursorMove+12 CursorMoveXxx/PageUp-Down/方向键焦点外移/RTL/单行vs TextArea)
+  spec: 04-common-capability/14-input-interaction/02-text-shortcuts/Feat-02-navigation-caret-movement-spec.md
+  status: Baselined
+- func_id: 04-14-02
+  id: Feat-03
+  title: 选择快捷键 (HandleSelect/HandleSelectExtend/Ctrl+A 全选/Shift-flag 锚点/Ctrl+Shift+Home-End 异常)
+  spec: 04-common-capability/14-input-interaction/02-text-shortcuts/Feat-03-selection-shortcuts-spec.md
+  status: Baselined
+- func_id: 04-14-02
+  id: Feat-04
+  title: 剪贴板与删除快捷键 (Ctrl+C/X/V/Insert/PASTE/DEL/FORWARD_DEL/Ctrl+Del 删词/Ctrl+D/copyOption/password 门控)
+  spec: 04-common-capability/14-input-interaction/02-text-shortcuts/Feat-04-clipboard-deletion-shortcuts-spec.md
+  status: Baselined
+- func_id: 04-14-02
+  id: Feat-05
+  title: 撤销/重做快捷键 (Ctrl+Z/Y/Shift+Z/Alt+Del/operationRecords/RichEditorUndoManager 三策略/preview 合并)
+  spec: 04-common-capability/14-input-interaction/02-text-shortcuts/Feat-05-undo-redo-shortcuts-spec.md
+  status: Baselined
+- func_id: 04-14-02
+  id: Feat-06
+  title: 字体样式快捷键 RichEditor 专属 (Ctrl+B/I/U 粗体/斜体/下划线)
+  spec: 04-common-capability/14-input-interaction/02-text-shortcuts/Feat-06-font-style-shortcuts-spec.md
+  status: Baselined
+- func_id: 04-14-04
+  id: Feat-01
+  title: IME 框架交互与弹出收起控制 (InputMethodManager 焦点驱动 show/hide/attach/detach + RequestKeyboard/CloseKeyboard + onWillAttachIME)
+  spec: 04-common-capability/14-input-interaction/04-input-method-interaction/Feat-01-ime-framework-show-hide-control-spec.md
+  status: Baselined
+- func_id: 04-14-04
+  id: Feat-02
+  title: 输入框避让显示 (KeyBoardAvoidMode OFFSET/RESIZE/*_WITH_CARET/NONE + TriggerAvoidOnCaretChange + 自定义键盘 supportAvoidance)
+  spec: 04-common-capability/14-input-interaction/04-input-method-interaction/Feat-02-input-box-keyboard-avoidance-spec.md
+  status: Baselined
+- func_id: 04-14-04
+  id: Feat-03
+  title: 实体键盘切换 (本仓仅传 isShowKeyboard+消费面板状态；检测经全仓检索确认不在本仓，属外部 IME 框架)
+  spec: 04-common-capability/14-input-interaction/04-input-method-interaction/Feat-03-physical-keyboard-switching-spec.md
+  status: Baselined
+- func_id: 04-14-04
+  id: Feat-04
+  title: 键盘输入处理契约 (TextInputClient 抽象 + OnTextChangedListenerImpl IME→输入框桥)
+  spec: 04-common-capability/14-input-interaction/04-input-method-interaction/Feat-04-keyboard-input-processing-contract-spec.md
+  status: Baselined
+- func_id: 04-14-04
+  id: Feat-05
+  title: 输入法交互公共 API (customKeyboard/keyboardAppearance/enableKeyboardOnFocus/onWillAttachIME/onEditChange/stopEditing + IMEClient)
+  spec: 04-common-capability/14-input-interaction/04-input-method-interaction/Feat-05-text-component-keyboard-control-api-spec.md
+  status: Baselined
+- func_id: 05-10-01
+  id: Feat-01
+  title: DataPanel 基础构造参数
+  spec: 05-ui-components/10-information-display-components/01-data-panel/Feat-01-data-panel-ctor-spec.md
+  status: Baselined
+- func_id: 05-10-01
+  id: Feat-02
+  title: DataPanel 样式属性
+  spec: 05-ui-components/10-information-display-components/01-data-panel/Feat-02-data-panel-style-spec.md
+  status: Baselined
+- func_id: 05-10-01
+  id: Feat-03
+  title: DataPanel 高级能力（阴影/ContentModifier/C-API）
+  spec: 05-ui-components/10-information-display-components/01-data-panel/Feat-03-data-panel-advanced-spec.md
+  status: Baselined
+- func_id: 05-10-02
+  id: Feat-01
+  title: Gauge 核心属性
+  spec: 05-ui-components/10-information-display-components/02-gauge/Feat-01-gauge-core-spec.md
+  status: Baselined
+- func_id: 05-10-02
+  id: Feat-02
+  title: Gauge 高级配置
+  spec: 05-ui-components/10-information-display-components/02-gauge/Feat-02-gauge-advanced-config-spec.md
+  status: Baselined
+- func_id: 05-10-02
+  id: Feat-03
+  title: Gauge 高级能力
+  spec: 05-ui-components/10-information-display-components/02-gauge/Feat-03-gauge-advanced-spec.md
+  status: Baselined
+- func_id: 05-10-03
+  id: Feat-01
+  title: LoadingProgress 全量规格
+  spec: 05-ui-components/10-information-display-components/03-loading-progress/Feat-01-loading-progress-full-spec.md
+  status: Baselined
+- func_id: 05-10-04
+  id: Feat-01
+  title: PatternLock 创建、核心属性与视觉样式
+  spec: 05-ui-components/10-information-display-components/04-pattern-lock/Feat-01-pattern-lock-core-properties-visual-spec.md
+  status: Baselined
+- func_id: 05-10-04
+  id: Feat-02
+  title: PatternLock 交互行为、事件与控制器
+  spec: 05-ui-components/10-information-display-components/04-pattern-lock/Feat-02-pattern-lock-interaction-events-controller-spec.md
+  status: Baselined
+- func_id: 05-10-04
+  id: Feat-03
+  title: PatternLock 多范式接口与 C-API
+  spec: 05-ui-components/10-information-display-components/04-pattern-lock/Feat-03-pattern-lock-multi-paradigm-capi-spec.md
+  status: Baselined
+- func_id: 05-10-10
+  id: Feat-01
+  title: Counter 创建、尺寸与基础样式
+  spec: 05-ui-components/10-information-display-components/10-counter/Feat-01-counter-creation-size-style-spec.md
+  status: Baselined
+- func_id: 05-10-10
+  id: Feat-02
+  title: Counter 按钮控制与事件回调
+  spec: 05-ui-components/10-information-display-components/10-counter/Feat-02-counter-button-control-events-spec.md
+  status: Baselined
+- func_id: 05-10-10
+  id: Feat-03
+  title: Counter 多范式接口与 C-API
+  spec: 05-ui-components/10-information-display-components/10-counter/Feat-03-counter-multi-paradigm-capi-spec.md
   status: Baselined

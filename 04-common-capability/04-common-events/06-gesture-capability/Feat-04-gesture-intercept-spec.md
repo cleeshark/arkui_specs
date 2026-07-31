@@ -10,7 +10,7 @@
 | 特性编号 | Func-04-04-06-Feat-04 |
 | 所属 Epic | 无（已有能力补录） |
 | 优先级 | P1 |
-| 目标版本 | API 8（hitTestBehavior/onTouch），API 11（onTouchIntercept），API 12（monopolizeEvents/onGestureCollectIntercept/onChildTouchTest） |
+| 目标版本 | API 7（onTouch）、9（hitTestBehavior）、11（onChildTouchTest/monopolizeEvents）、12（onTouchIntercept/内置手势并行）、20（onTouchTestDone/TouchRecognizer）、26（shouldRecognizerParallelWith/onGestureCollectIntercept） |
 | SIG 归属 | ArkUI SIG |
 | 状态 | Draft |
 | 复杂度 | 复杂 |
@@ -39,13 +39,13 @@
 
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
-| AC-1.1 | WHEN 设置 `HitTestMode.Default` THEN 自身和子组件参与触摸测试，但屏蔽被标记的节点 | 正常 |
-| AC-1.2 | WHEN 设置 `HitTestMode.Block` THEN 自身响应触摸，阻止子组件和被标记节点参与 | 正常 |
-| AC-1.3 | WHEN 设置 `HitTestMode.Transparent` THEN 自身和子组件参与触摸测试，不屏蔽被标记节点 | 正常 |
-| AC-1.4 | WHEN 设置 `HitTestMode.None` THEN 自身不响应触摸事件，子组件正常响应 | 正常 |
-| AC-1.5 | WHEN 设置 `HitTestMode.BlockHierarchy` THEN 阻止所有低优先级兄弟节点和父节点接收触摸 | 正常 |
-| AC-1.6 | WHEN 设置 `HitTestMode.BlockDescendants` THEN 自身和所有后代节点均不响应触摸事件 | 正常 |
-| AC-1.7 | WHEN 设置 `HitTestMode.TransparentSelf` THEN 根据触摸事件是否被消费动态决定自身透明性 | 正常 |
+| AC-1.1 | WHEN 设置 `HitTestMode.Default` THEN 自身和子组件参与触摸测试，阻止兄弟节点继续命中，不影响祖先节点 | 正常 |
+| AC-1.2 | WHEN 设置 `HitTestMode.Block` THEN 自身参与触摸测试，并阻止子节点、兄弟节点和祖先节点参与 | 正常 |
+| AC-1.3 | WHEN 设置 `HitTestMode.Transparent` THEN 自身和子组件参与触摸测试，不阻止兄弟节点和祖先节点 | 正常 |
+| AC-1.4 | WHEN 设置 `HitTestMode.None` THEN 自身不参与触摸测试，不阻止子节点、兄弟节点和祖先节点 | 正常 |
+| AC-1.5 | WHEN 设置 `HitTestMode.BLOCK_HIERARCHY` THEN 自身和子节点参与触摸测试，并阻止低优先级兄弟节点和父节点参与 | 正常 |
+| AC-1.6 | WHEN 设置 `HitTestMode.BLOCK_DESCENDANTS` THEN 自身及所有后代节点均不参与触摸测试，不影响祖先节点 | 正常 |
+| AC-1.7 | WHEN 查验 SDK `HitTestMode` THEN 公开枚举仅包含 Default/Block/Transparent/None/BLOCK_HIERARCHY/BLOCK_DESCENDANTS，不存在 `TransparentSelf` | 边界 |
 
 ### US-2: onTouchIntercept 动态拦截触摸
 
@@ -117,9 +117,9 @@
 
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
-| AC-7.1 | WHEN TouchRestrict 包含 CLICK 位 THEN 点击类手势（ClickRecognizer）被限制 | 正常 |
+| AC-7.1 | WHEN TouchRestrict 包含 CLICK 位 THEN 仅能确认该位已定义；当前 ace_engine 未找到 ClickRecognizer 消费 `forbiddenType` 并执行过滤的路径，不声明点击已被限制 | 边界 |
 | AC-7.2 | WHEN TouchRestrict 包含 LONG_PRESS 位 THEN 长按手势被限制 | 正常 |
-| AC-7.3 | WHEN TouchRestrict 包含方向标志（SWIPE_LEFT/RIGHT/UP/DOWN）THEN 对应方向的滑动手势被限制 | 正常 |
+| AC-7.3 | WHEN TouchRestrict 包含方向标志（SWIPE_LEFT/RIGHT/UP/DOWN）THEN 仅能确认这些位已定义；当前 ace_engine 未找到 SwipeRecognizer 消费 `forbiddenType` 并执行方向过滤的路径 | 边界 |
 
 ### US-8: onTouch 原始触摸事件
 
@@ -154,21 +154,21 @@
 
 | 规则ID | 类型 | 触发条件 | 预期行为 | 边界/约束 | 关联AC |
 |--------|------|----------|----------|-----------|--------|
-| R-1 | 行为 | 静态设置，在触摸测试阶段生效 | hitTestBehavior 有 7 种模式，每种决定组件自身和后代是否参与触摸测试及是否屏蔽其他节点 | — | AC-1.1~1.7 |
+| R-1 | 行为 | 静态设置，在触摸测试阶段生效 | hitTestBehavior 有 6 种公开模式：API 9 引入 4 种基础模式，API 20 新增 BLOCK_HIERARCHY/BLOCK_DESCENDANTS | 不存在 TransparentSelf | AC-1.1~1.7 |
 | R-2 | 行为 | 回调在触摸测试时动态调用 | onTouchIntercept 回调返回值优先于静态 hitTestBehavior | — | AC-2.1~2.5 |
 | R-3 | 行为 | 回调在手势层级构建后、事件分发前执行 | onGestureCollectIntercept 有 5 种干预策略，在手势收集阶段执行 | — | AC-3.1~3.5 |
 | R-4 | 行为 | 回调在子组件触摸测试时执行 | onChildTouchTest 允许父组件根据触摸信息控制子组件分发 | — | AC-4.1~4.2 |
 | R-5 | 行为 | 仅当 monopolizeEvents=true 时 ResponseCtrl 生效 | monopolizeEvents 通过 ResponseCtrl 实现首节点独占，独占范围为一个触摸序列 | — | AC-5.1~5.3 |
 | R-6 | 行为 | 识别器内部标志 | preventBegin 阻止识别器处理触摸事件，但不清除已设置的回调 | — | AC-6.1~6.2 |
-| R-7 | 行为 | 从父组件传递到子组件 | TouchRestrict 使用位标志组合，可同时限制多种手势类型 | — | AC-7.1~7.3 |
+| R-7 | 行为 | TouchRestrict.forbiddenType 使用位标志 | CLICK/LONG_PRESS/SWIPE_* 常量均已定义，但当前源码仅确认 LongPressRecognizer 实际消费 LONG_PRESS 位 | CLICK/SWIPE_* 不声明已实现识别器过滤 | AC-7.1~7.3 |
 | R-8 | 行为 | 回调在事件分发管线早期 | onTouch 回调在手势识别器之前执行，可消费原始触摸事件 | — | AC-8.1~8.2 |
-| R-9 | 行为 | 触摸测试阶段 | HitTestMode.Default 下自身和子组件参与触摸测试 | FrameNode | AC-1.1 |
-| R-10 | 行为 | 触摸测试阶段 | HitTestMode.Block 阻止子组件参与，仅自身响应 | FrameNode | AC-1.2 |
-| R-11 | 行为 | 触摸测试阶段 | HitTestMode.Transparent 允许穿透到被标记节点 | FrameNode | AC-1.3 |
-| R-12 | 行为 | 触摸测试阶段 | HitTestMode.None 自身不响应但子组件正常 | FrameNode | AC-1.4 |
-| R-13 | 行为 | 触摸测试阶段 | HitTestMode.BlockHierarchy 阻止低优先级兄弟和父节点 | FrameNode | AC-1.5 |
-| R-14 | 行为 | 触摸测试阶段 | HitTestMode.BlockDescendants 阻止自身和所有后代 | FrameNode | AC-1.6 |
-| R-15 | 行为 | 触摸测试阶段 | HitTestMode.TransparentSelf 根据事件消费状态动态决定 | FrameNode | AC-1.7 |
+| R-9 | 行为 | 触摸测试阶段 | HitTestMode.Default 下自身和子组件参与，阻止 sibling，不影响 ancestor | FrameNode | AC-1.1 |
+| R-10 | 行为 | 触摸测试阶段 | HitTestMode.Block 仅自身参与，阻止 child/sibling/ancestor | FrameNode | AC-1.2 |
+| R-11 | 行为 | 触摸测试阶段 | HitTestMode.Transparent 下自身和子组件参与，不阻止 sibling/ancestor | FrameNode | AC-1.3 |
+| R-12 | 行为 | 触摸测试阶段 | HitTestMode.None 自身不参与，不阻止 child/sibling/ancestor | FrameNode | AC-1.4 |
+| R-13 | 行为 | 触摸测试阶段 | HitTestMode.BLOCK_HIERARCHY 下自身和子节点参与，阻止低优先级 sibling 和 parent | FrameNode | AC-1.5 |
+| R-14 | 行为 | 触摸测试阶段 | HitTestMode.BLOCK_DESCENDANTS 阻止自身和所有 descendant，不影响 ancestor | FrameNode | AC-1.6 |
+| R-15 | 边界 | SDK 枚举查验 | HitTestMode 无 TransparentSelf 成员 | 不得以内部实现名或未公开概念扩充公开 API | AC-1.7 |
 | R-16 | 行为 | 触摸测试阶段 | onTouchIntercept 回调在 ProcessTouchTestHit 时调用 | GestureEventHub | AC-2.1 |
 | R-17 | 行为 | 回调返回 | 回调返回 HitTestMode.None 时组件不接收该触摸 | GestureEventHub | AC-2.2 |
 | R-18 | 行为 | 回调返回 | 回调返回 HitTestMode.Block 时组件拦截触摸 | GestureEventHub | AC-2.3 |
@@ -186,9 +186,9 @@
 | R-30 | 行为 | 默认行为 | monopolizeEvents=false 时所有命中组件均可响应 | ResponseCtrl | AC-5.3 |
 | R-31 | 行为 | 触摸事件到达 | preventBegin_=true 时 HandleEvent 直接返回 true | NGGestureRecognizer | AC-6.1 |
 | R-32 | 行为 | 标志变更 | preventBegin_ 变为 false 后恢复正常处理 | NGGestureRecognizer | AC-6.2 |
-| R-33 | 行为 | 触摸测试 | TouchRestrict CLICK 位阻止 ClickRecognizer | TouchRestrict | AC-7.1 |
+| R-33 | 边界 | TouchRestrict 包含 CLICK 位 | 常量存在，但当前未找到 ClickRecognizer 消费 forbiddenType 的源码路径 | TouchRestrict | AC-7.1 |
 | R-34 | 行为 | 触摸测试 | TouchRestrict LONG_PRESS 位阻止 LongPressRecognizer | TouchRestrict | AC-7.2 |
-| R-35 | 行为 | 触摸测试 | TouchRestrict 方向位阻止对应方向的 SwipeRecognizer | TouchRestrict | AC-7.3 |
+| R-35 | 边界 | TouchRestrict 包含 SWIPE_* 方向位 | 常量存在，但当前未找到 SwipeRecognizer 消费 forbiddenType 的源码路径 | TouchRestrict | AC-7.3 |
 | R-36 | 行为 | 触摸事件到达 | onTouch 回调在触摸事件分发早期触发 | TouchEvent | AC-8.1 |
 | R-37 | 行为 | 回调中消费 | onTouch 回调消费事件后影响后续手势识别 | TouchEvent | AC-8.2 |
 | R-38 | 异常 | 无回调 | onTouchIntercept 回调未设置 | 使用静态 hitTestBehavior | AC-2.4 |
@@ -205,13 +205,13 @@
 
 | 编号 | 对应规格项 | 验证方式 | 验证重点 |
 |------|------------|----------|----------|
-| VM-1 | R-9~R-15, AC-1.1~1.7 | 单测/XTS | hitTestBehavior 7 种模式正确 |
+| VM-1 | R-9~R-15, AC-1.1~1.7 | 单测/XTS + SDK 查验 | hitTestBehavior 6 种公开模式及版本边界正确 |
 | VM-2 | R-16~R-20, AC-2.1~2.5 | 单测 | onTouchIntercept 动态返回值生效 |
 | VM-3 | R-21~R-25, AC-3.1~3.5 | 单测 | onGestureCollectIntercept 5 种干预策略 |
 | VM-4 | R-26~R-27, AC-4.1~4.2 | 单测 | onChildTouchTest 子组件分发控制 |
 | VM-5 | R-28~R-30, AC-5.1~5.3 | 单测 | monopolizeEvents 首节点独占 |
 | VM-6 | R-31~R-32, AC-6.1~6.2 | 单测 | preventBegin 阻止和恢复 |
-| VM-7 | R-33~R-35, AC-7.1~7.3 | 单测 | TouchRestrict 位标志过滤 |
+| VM-7 | R-33~R-35, AC-7.1~7.3 | 源码评审/单测 | LongPress 消费路径；CLICK/SWIPE_* 仅常量定义、无已确认消费路径 |
 | VM-8 | R-36~R-37, AC-8.1~8.2 | 单测 | onTouch 原始事件消费 |
 | VM-9 | 全量 | XTS/集成 | 端到端拦截场景正确 |
 
@@ -223,18 +223,21 @@
 
 | API 签名 | 类型 | 功能描述 | @since | 关联 AC |
 |----------|------|----------|--------|---------|
-| `hitTestBehavior(value: HitTestMode): T` | Public | 设置触摸测试行为模式 | 8 | AC-1.1~1.7 |
-| `onTouchIntercept(callback: (event: TouchEvent) => HitTestMode): T` | Public | 动态拦截触摸回调 | 11 | AC-2.1~2.5 |
-| `onGestureCollectIntercept(callback: GestureCollectInterceptCallback): T` | Public | 手势收集阶段拦截 | 12 | AC-3.1~3.5 |
-| `onChildTouchTest(callback: (value: Array\<TouchTestInfo\>) => TouchResult): T` | Public | 子组件触摸测试控制 | 12 | AC-4.1~4.2 |
-| `monopolizeEvents(monopolize: boolean): T` | Public | 首节点独占事件 | 12 | AC-5.1~5.3 |
+| `hitTestBehavior(value: HitTestMode): T` | Public | 设置触摸测试行为模式 | 9 | AC-1.1~1.7 |
+| `onTouchIntercept(callback: (event: TouchEvent) => HitTestMode): T` | Public | 动态拦截触摸回调 | 12 | AC-2.1~2.5 |
+| `onGestureCollectIntercept(callback: GestureCollectInterceptCallback): T` | Public | 手势收集阶段拦截 | 26 | AC-3.1~3.5 |
+| `onChildTouchTest(callback: (value: Array\<TouchTestInfo\>) => TouchResult): T` | Public | 子组件触摸测试控制 | 11 | AC-4.1~4.2 |
+| `monopolizeEvents(monopolize: boolean): T` | Public | 首节点独占事件 | 11 | AC-5.1~5.3 |
+| `shouldBuiltInRecognizerParallelWith(callback)` | Public | 设置内置手势与响应链其他手势的并行关系 | 12 | —（版本边界） |
+| `onTouchTestDone(callback: TouchTestDoneCallback): T` | Public | 命中测试完成后控制 TouchRecognizer 是否继续参与 | 20 | —（版本边界） |
+| `shouldRecognizerParallelWith(callback)` | Public | 设置当前组件手势与响应链其他手势的并行关系 | 26 | —（版本边界） |
 | `onTouch(event: (event: TouchEvent) => void): T` | Public | 原始触摸事件回调 | 7 | AC-8.1~8.2 |
 
 **关联枚举类型：**
 
 | 类型名 | 定义 | 位置 |
 |--------|------|------|
-| `HitTestMode` | `{ Default, Block, Transparent, None, BlockHierarchy, BlockDescendants, TransparentSelf }` | `common.d.ts` |
+| `HitTestMode` | `{ Default, Block, Transparent, None, BLOCK_HIERARCHY, BLOCK_DESCENDANTS }` | `enums.d.ts` |
 | `GestureCollectIntervention` | `{ CONTINUE, DISCARD_LOWER, DISCARD_HIGHER, DISCARD_SELF, DISCARD_LOWER_PRIORITY_SIBLINGS }` | `common.d.ts` |
 
 ### 变更/废弃 API
@@ -260,7 +263,7 @@
 - **已有 API 行为变更:** 否
 - **配置文件格式变更:** 否
 - **数据存储格式变更:** 否
-- **最低支持版本:** API 7（onTouch），API 8（hitTestBehavior），API 11（onTouchIntercept），API 12（monopolizeEvents/onGestureCollectIntercept/onChildTouchTest）
+- **最低支持版本:** API 7（onTouch），API 9（hitTestBehavior 基础四模式），API 11（onChildTouchTest/monopolizeEvents），API 12（onTouchIntercept/内置手势并行），API 20（BLOCK_HIERARCHY/BLOCK_DESCENDANTS/onTouchTestDone/TouchRecognizer），API 26（shouldRecognizerParallelWith/onGestureCollectIntercept）
 - **API 版本号策略:** 各 API 按 @since 标注版本，新增 API 为新增重载
 
 ---
@@ -272,7 +275,7 @@
 | 拦截分层执行 | Hit Test → 手势收集 → 手势识别 → 事件响应，各层有序执行 | 全部 |
 | onTouchIntercept 优先于静态 hitTestBehavior | 动态回调覆盖静态配置 | AC-2.5 |
 | ResponseCtrl 每触摸序列独立 | 首节点记录在触摸序列结束时重置 | AC-5.1~5.3 |
-| TouchRestrict 从父向子传递 | 父组件的限制传递到子组件的手势识别器 | AC-7.1~7.3 |
+| TouchRestrict 实现边界 | forbiddenType 定义 CLICK/LONG_PRESS/SWIPE_* 位，当前仅有 LongPress 的识别器消费路径已被源码确认 | AC-7.1~7.3 |
 
 > 架构规则适用性及设计方案见 design.md。
 
@@ -340,11 +343,16 @@ Feature: 手势拦截
     When 用户点击重叠区域
     Then 下层被标记的组件接收触摸事件
 
-  Scenario: BlockDescendants 阻止所有后代
-    Given 一个容器设置 hitTestBehavior(BlockDescendants)
+  Scenario: BLOCK_DESCENDANTS 阻止所有后代
+    Given 一个容器设置 hitTestBehavior(BLOCK_DESCENDANTS)
     And 多层嵌套的子组件绑定了手势
     When 用户点击任意子组件区域
     Then 容器和所有子组件均不响应
+
+  Scenario: SDK 不存在 TransparentSelf
+    Given 开发者查询 HitTestMode 公开枚举
+    Then 仅包含 6 种公开模式
+    And 不存在 TransparentSelf
 
   # ─── onTouchIntercept ────────────────────────────
 
@@ -397,11 +405,12 @@ Feature: 手势拦截
 
   # ─── TouchRestrict ──────────────────────────────
 
-  Scenario: 限制点击手势
+  Scenario: CLICK 位仅确认常量定义
     Given 父组件传递 TouchRestrict 包含 CLICK 位
     And 子组件绑定了 TapGesture
     When 用户点击子组件
-    Then ClickRecognizer 被限制，不识别点击手势
+    Then 不得仅根据 CLICK 位的定义声明 ClickRecognizer 已实施过滤
+    And 需有 ClickRecognizer 消费 forbiddenType 的源码路径后才能声明该行为
 ```
 
 ---
