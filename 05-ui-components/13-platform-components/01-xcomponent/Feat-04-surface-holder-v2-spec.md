@@ -50,6 +50,10 @@
 
 ### US-2: 注册 SurfaceCallback
 
+**作为** NDK 应用开发者,
+**我想要** 经 `SurfaceCallback_Create`/`Set*Event`/`AddSurfaceCallback` 注册表面回调,
+**以便** 监听表面创建/变更/销毁/显隐事件。
+
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
 | AC-2.1 | WHEN `SurfaceCallback_Create` THEN 返回空回调对象（5 个函数指针）；失败返回 nullptr + INTERNAL_ERROR | 正常 |
@@ -59,6 +63,10 @@
 | AC-2.5 | WHEN `RemoveSurfaceCallback(holder, cb)` 且 cb 在列表 THEN 移除返回 NO_ERROR；不存在返回 PARAM_INVALID | 正常 |
 
 ### US-3: 显式表面生命周期（Initialize/Finalize）
+
+**作为** NDK 应用开发者,
+**我想要** 经 `SetAutoInitialize`/`Initialize`/`Finalize` 控制表面显式初始化与释放,
+**以便** 按需管理表面生命周期。
 
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
@@ -71,6 +79,10 @@
 | AC-3.7 | WHEN `IsInitialized(node, &flag)` THEN 返回当前 isInitialized_ | 正常 |
 
 ### US-4: SurfaceConfig（@since 22）
+
+**作为** NDK 应用开发者,
+**我想要** 经 `XComponentSurfaceConfig_Create`/`SetIsOpaque`/`SurfaceHolder_SetSurfaceConfig` 配置表面不透明属性,
+**以便** 控制表面合成行为。
 
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
