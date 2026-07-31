@@ -67,6 +67,10 @@
 
 ### US-3: 获取表面矩形
 
+**作为** 应用开发者,
+**我想要** 经 `getXComponentSurfaceRect()` 查询 XComponent 表面在父组件中的矩形位置（offsetX/offsetY/surfaceWidth/surfaceHeight）,
+**以便** 定位与适配表面区域。
+
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
 | AC-3.1 | WHEN 调用 `getXComponentSurfaceRect()` THEN 返回 {offsetX, offsetY, surfaceWidth, surfaceHeight}（pattern null 时全 0） | 正常 |

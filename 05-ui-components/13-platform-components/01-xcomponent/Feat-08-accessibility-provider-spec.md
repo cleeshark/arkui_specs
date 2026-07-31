@@ -46,6 +46,10 @@
 
 ### US-2: 创建/销毁 V2 provider（since 20）
 
+**作为** NDK 应用开发者,
+**我想要** 经 `OH_ArkUI_AccessibilityProvider_Create`/`Dispose` 创建/销毁 V2 无障碍 provider,
+**以便** 为自绘内容提供无障碍能力。
+
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
 | AC-2.1 | WHEN `OH_ArkUI_AccessibilityProvider_Create(node)` 且未取 legacy native THEN 创建 provider、注册静态 map、ResetAndInitializeNodeHandleAccessibility，返回指针 | 正常 |
@@ -54,6 +58,10 @@
 | AC-2.4 | WHEN `Dispose(provider)` 且 provider 匹配 THEN 从 map 移除、UninitializeAccessibility、delete；不匹配 no-op | 正常 |
 
 ### US-3: 子树注册/注销
+
+**作为** NDK 应用开发者,
+**我想要** 经 `OnRegister`/`OnDeregister`/`OnSetChildTree` 注册/注销无障碍子树,
+**以便** 跨进程无障碍树正确组装。
 
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|

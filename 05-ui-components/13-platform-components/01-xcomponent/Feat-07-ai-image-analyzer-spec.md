@@ -49,6 +49,10 @@
 
 ### US-2: 启动/停止分析（NDK 异步回调）
 
+**作为** NDK 应用开发者,
+**我想要** 经 `OH_ArkUI_XComponent_StartImageAnalyzer` 启动图像分析并经回调获取结果,
+**以便** 异步获得 AI 分析结果与错误码。
+
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
 | AC-2.1 | WHEN `OH_ArkUI_XComponent_StartImageAnalyzer(node, userData, cb)` 且节点有效 + cb 非空 THEN 立即返回 ERROR_CODE_NO_ERROR(0)，结果经 cb 异步回调一次 | 正常 |
@@ -60,6 +64,10 @@
 | AC-2.7 | WHEN `OH_ArkUI_XComponent_StopImageAnalyzer(node)` THEN DestroyAnalyzerOverlay，返回 NO_ERROR(0) | 正常 |
 
 ### US-3: ArkTS Controller promise 路径
+
+**作为** ArkTS 应用开发者,
+**我想要** 经 `startImageAnalyzer` Promise 接口启动图像分析,
+**以便** 以 Promise 方式获得结果或错误。
 
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|

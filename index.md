@@ -104,8 +104,8 @@
 | 04 通用能力层 | 07 迁移恢复 | 01 分布式路由迁移能力 | `04-07-01` | `04-common-capability/07-migration-recovery/01-distributed-router-migration/` | *待补充* | 0 |
 | 04 通用能力层 | 07 迁移恢复 | 02 路由栈恢复 | `04-07-02` | `04-common-capability/07-migration-recovery/02-router-stack-recovery/` | [design.md](04-common-capability/07-migration-recovery/02-router-stack-recovery/design.md) | 1 |
 | 04 通用能力层 | 07 迁移恢复 | 03 组件迁移机制 | `04-07-03` | `04-common-capability/07-migration-recovery/03-component-migration/` | *待补充* | 0 |
-| 04 通用能力层 | 08 根视图 | 01 窗口工具栏 | `04-08-01` | `04-common-capability/08-root-view/01-window-toolbar/` | *待补充* | 0 |
-| 04 通用能力层 | 08 根视图 | 02 元服务AppBar | `04-08-02` | `04-common-capability/08-root-view/02-atomic-service-appbar/` | *待补充* | 0 |
+| 04 通用能力层 | 08 根视图 | 01 窗口工具栏 | `04-08-01` | `04-common-capability/08-root-view/01-window-toolbar/` | [design.md](04-common-capability/08-root-view/01-window-toolbar/design.md) | 2 |
+| 04 通用能力层 | 08 根视图 | 02 元服务AppBar | `04-08-02` | `04-common-capability/08-root-view/02-atomic-service-appbar/` | [design.md](04-common-capability/08-root-view/02-atomic-service-appbar/design.md) | 2 |
 | 04 通用能力层 | 08 根视图 | 03 浮层能力 | `04-08-03` | `04-common-capability/08-root-view/03-overlay-capability/` | [design.md](04-common-capability/08-root-view/03-overlay-capability/design.md) | 1 |
 | 04 通用能力层 | 09 焦点框架 | 01 焦点机制 | `04-09-01` | `04-common-capability/09-focus-framework/01-focus-mechanism/` | *待补充* | 0 |
 | 04 通用能力层 | 10 组件截图 | 01 离屏截图 | `04-10-01` | `04-common-capability/10-component-screenshot/01-offscreen-screenshot/` | *待补充* | 0 |
@@ -880,11 +880,15 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 窗口标题栏与工具栏 | [Feat-01-container-titlebar-toolbar-spec.md](04-common-capability/08-root-view/01-window-toolbar/Feat-01-container-titlebar-toolbar-spec.md) | Baselined |
+| Feat-02 | @ohos.window.titlebar.component 静态组件与构建 | [Feat-02-titlebar-static-component-spec.md](04-common-capability/08-root-view/01-window-toolbar/Feat-02-titlebar-static-component-spec.md) | Baselined |
 
 ### 04-08-02 元服务AppBar
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | AppBar 构建与 AtomicServicePattern | [Feat-01-appbar-build-pattern-spec.md](04-common-capability/08-root-view/02-atomic-service-appbar/Feat-01-appbar-build-pattern-spec.md) | Baselined |
+| Feat-02 | AtomicServiceBar 编程 API | [Feat-02-atomic-service-bar-api-spec.md](04-common-capability/08-root-view/02-atomic-service-appbar/Feat-02-atomic-service-bar-api-spec.md) | Baselined |
 
 ### 04-08-03 浮层能力
 
@@ -991,7 +995,7 @@
 |--------|----------|-----------|------|
 | Feat-01 | IME 框架交互与弹出收起控制 (InputMethodManager 焦点驱动 show/hide/attach/detach + RequestKeyboard/CloseKeyboard + onWillAttachIME) | [Feat-01-ime-framework-show-hide-control-spec.md](04-common-capability/14-input-interaction/04-input-method-interaction/Feat-01-ime-framework-show-hide-control-spec.md) | Baselined |
 | Feat-02 | 输入框避让显示 (KeyBoardAvoidMode OFFSET/RESIZE/*_WITH_CARET/NONE + TriggerAvoidOnCaretChange + 自定义键盘 supportAvoidance) | [Feat-02-input-box-keyboard-avoidance-spec.md](04-common-capability/14-input-interaction/04-input-method-interaction/Feat-02-input-box-keyboard-avoidance-spec.md) | Baselined |
-| Feat-03 | 实体键盘切换 (本仓仅传 isShowKeyboard+消费面板状态；检测在 IME 框架 推测/外部) | [Feat-03-physical-keyboard-switching-spec.md](04-common-capability/14-input-interaction/04-input-method-interaction/Feat-03-physical-keyboard-switching-spec.md) | Baselined |
+| Feat-03 | 实体键盘切换 (本仓仅传 isShowKeyboard+消费面板状态；检测经全仓检索确认不在本仓，属外部 IME 框架) | [Feat-03-physical-keyboard-switching-spec.md](04-common-capability/14-input-interaction/04-input-method-interaction/Feat-03-physical-keyboard-switching-spec.md) | Baselined |
 | Feat-04 | 键盘输入处理契约 (TextInputClient 抽象 + OnTextChangedListenerImpl IME→输入框桥) | [Feat-04-keyboard-input-processing-contract-spec.md](04-common-capability/14-input-interaction/04-input-method-interaction/Feat-04-keyboard-input-processing-contract-spec.md) | Baselined |
 | Feat-05 | 输入法交互公共 API (customKeyboard/keyboardAppearance/enableKeyboardOnFocus/onWillAttachIME/onEditChange/stopEditing + IMEClient) | [Feat-05-text-component-keyboard-control-api-spec.md](04-common-capability/14-input-interaction/04-input-method-interaction/Feat-05-text-component-keyboard-control-api-spec.md) | Baselined |
 
@@ -1745,7 +1749,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | AbilityComponent完整规格（已废弃补录） | *待补充* | Draft |
+| Feat-01 | AbilityComponent完整规格（已废弃补录） | [Feat-01-ability-component-cross-process-embed-deprecated-spec.md](05-ui-components/12-embedded-display-components/02-ability-component/Feat-01-ability-component-cross-process-embed-deprecated-spec.md) | Draft |
 
 ### 05-12-03 UIExtensionComponent
 

@@ -48,6 +48,10 @@
 
 ### US-2: 设置 HDR 背景色
 
+**作为** 应用开发者,
+**我想要** 经 `SetBackgroundColor` 设置含 headroom/色域的 HDR 背景色并按类型分支生效,
+**以便** HDR 内容呈现正确背景。
+
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
 | AC-2.1 | WHEN SetBackgroundColor 且颜色含 headroom THEN 走 ForHDR(colorSpace,{r,g,b,a,headRoom}) | 正常 |
@@ -56,6 +60,10 @@
 | AC-2.4 | WHEN type=COMPONENT THEN 背景色 setter no-op；type=SURFACE 需 API≥11（IsBackGroundColorAvailable） | 边界 |
 
 ### US-3: SDR ratio
+
+**作为** 应用开发者,
+**我想要** 经 `UpdateSdrRatioIfNeed` 按 SDR 比例校正尺寸上报,
+**以便** HDR/SDR 混合场景下尺寸正确。
 
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|

@@ -48,12 +48,20 @@
 
 ### US-2: 注册/注销帧回调
 
+**作为** NDK 应用开发者,
+**我想要** 经 `RegisterOnFrameCallback`/`UnregisterOnFrameCallback` 注册/注销每帧回调,
+**以便** 与渲染管线同步刷新。
+
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
 | AC-2.1 | WHEN `RegisterOnFrameCallback(component, cb)` THEN 存储 cb、返回 SUCCESS；cb(component, timestamp, targetTimestamp) 每帧派发 | 正常 |
 | AC-2.2 | WHEN `UnregisterOnFrameCallback(component)` THEN 清除 cb、DelFromPipelineOnContainer、返回 SUCCESS | 正常 |
 
 ### US-3: 节点 API 变体（@since 20）
+
+**作为** NDK 应用开发者,
+**我想要** 经节点 API `OH_ArkUI_XComponent_SetExpectedFrameRateRange` 设置期望帧率范围,
+**以便** 调节 XComponent 渲染帧率。
 
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|

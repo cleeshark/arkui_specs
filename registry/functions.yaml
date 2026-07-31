@@ -1104,7 +1104,7 @@ functions:
     id: '01'
     title: 窗口工具栏
   path: 04-common-capability/08-root-view/01-window-toolbar/
-  design: null
+  design: 04-common-capability/08-root-view/01-window-toolbar/design.md
   status: active
 - id: 04-08-02
   l1:
@@ -1117,7 +1117,7 @@ functions:
     id: '02'
     title: 元服务AppBar
   path: 04-common-capability/08-root-view/02-atomic-service-appbar/
-  design: null
+  design: 04-common-capability/08-root-view/02-atomic-service-appbar/design.md
   status: active
 - id: 04-08-03
   l1:

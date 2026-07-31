@@ -1047,7 +1047,7 @@ features:
 - func_id: 05-12-02
   id: Feat-01
   title: AbilityComponent完整规格（已废弃补录）
-  spec: null
+  spec: 05-ui-components/12-embedded-display-components/02-ability-component/Feat-01-ability-component-cross-process-embed-deprecated-spec.md
   status: Draft
 - func_id: 05-12-03
   id: Feat-01
@@ -1254,6 +1254,26 @@ features:
   title: 路由栈保存与恢复机制
   spec: 04-common-capability/07-migration-recovery/02-router-stack-recovery/Feat-01-router-stack-save-restore-spec.md
   status: Draft
+- func_id: 04-08-01
+  id: Feat-01
+  title: 窗口标题栏与工具栏
+  spec: 04-common-capability/08-root-view/01-window-toolbar/Feat-01-container-titlebar-toolbar-spec.md
+  status: Baselined
+- func_id: 04-08-01
+  id: Feat-02
+  title: '@ohos.window.titlebar.component 静态组件与构建'
+  spec: 04-common-capability/08-root-view/01-window-toolbar/Feat-02-titlebar-static-component-spec.md
+  status: Baselined
+- func_id: 04-08-02
+  id: Feat-01
+  title: AppBar 构建与 AtomicServicePattern
+  spec: 04-common-capability/08-root-view/02-atomic-service-appbar/Feat-01-appbar-build-pattern-spec.md
+  status: Baselined
+- func_id: 04-08-02
+  id: Feat-02
+  title: AtomicServiceBar 编程 API
+  spec: 04-common-capability/08-root-view/02-atomic-service-appbar/Feat-02-atomic-service-bar-api-spec.md
+  status: Baselined
 - func_id: 04-15-02
   id: Feat-01
   title: 命名路由跳转与替换
