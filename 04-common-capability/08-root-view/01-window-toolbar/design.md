@@ -146,27 +146,30 @@
 
 ### ContainerModal 排版管理器
 
-`ContainerModalToolBar::InitToolBarManager` 是排版核心入口。调用 `ContainerModalView::CreateSideBar/NavBar/NavDest` 创建容器行，然后按 ToolBarItem 的 placement 枚举值装入对应位置：
+`ContainerModalToolBar::InitToolBarManager` 是排版核心入口（`frameworks/core/components_ng/pattern/container_modal/container_modal_toolbar.cpp:56`），从 `pipeline->GetToolbarManager()`（`frameworks/core/pipeline_ng/pipeline_context.h:885`）取回 `ToolbarManager`。容器行由 `ContainerModalView::Create` 构建（`frameworks/core/components_ng/pattern/container_modal/container_modal_view.cpp:69`），其中标题行 `BuildTitleRow` 用 `ToolBarRowPattern`（同文件 `:137`）。
+
+ToolBarItem 的装入位置按 placement 枚举解析：`ParsePlacementType`（`container_modal_toolbar.cpp:154`）经 `GetItemTypeFromTag`（同文件 `:178`）映射为 `SIDE_BAR_START/END`、`NAV_BAR_START/END`、`NAVDEST_START/END`，再由 `AddToolbarItemToRow`（`:317`）/ `AddToolbarItemToSpecificRow`（`:337`）装入对应行：
 
 | placement | 装入目标 |
 |-----------|----------|
-| `TOP_BAR_LEADING` | SideBar 或 NavBar 前导区 |
-| `TOP_BAR_TRAILING` | NavDest 尾随区 |
+| `SIDE_BAR_START/END` | SideBar 前导/尾随区 |
+| `NAV_BAR_START/END` | NavBar 前导/尾随区 |
+| `NAVDEST_START/END` | NavDest 前导/尾随区 |
 
-`ToolBarItem` 本身由 `DynamicModuleHelper("ToolBarItem")` 动态加载对应组件 so，`ToolBarItemPattern` 承接属性更新。`ToolbarManager` 为 ContainerModal 与 Navigation 共用。
+`ToolBarItem` 由 `DynamicModuleHelper::GetDynamicModule("ToolBarItem")` 动态加载对应组件 so（`frameworks/core/interfaces/native/implementation/tool_bar_item_modifier.cpp:29`），`ToolBarItemPattern` 承接属性更新，模型入口为 `ToolBarItemModelNG::Create`（`frameworks/core/components_ng/pattern/toolbaritem/toolbaritem_model_ng.cpp:26`）。`ToolbarManager` 由 `PipelineContext` 持有（`frameworks/core/pipeline_ng/pipeline_context.h:1539`），为 ContainerModal 与 Navigation 共用。
 
 ### 平台标题栏接口
 
-`UIContentImpl` 提供 4 组标题栏控制方法，均作用于当前 ContainerModal：
+`UIContentImpl`（`adapter/ohos/entrance/ui_content_impl.cpp`）提供 4 组标题栏控制方法，均作用于当前 ContainerModal：
 
-- `SetContainerModalTitleVisible(bool)` — 控制标题栏显示/隐藏
-- `SetContainerModalTitleHeight(int32_t)` — 设置标题高度
-- `GetContainerModalButtonsRect()` / `SubscribeContainerModalButtonsRectChange` — 按钮区域矩形查询与变化订阅
-- `EnableContainerModalCustomGesture` / `OnContainerModalEvent` — 增强变体手势与事件
+- `SetContainerModalTitleVisible(bool, bool)` — 控制标题栏显示/隐藏（`ui_content_impl.cpp:5681`，转发至 `ContainerModalPattern::SetContainerModalTitleVisible`，`frameworks/core/components_ng/pattern/container_modal/container_modal_pattern.cpp:597`）
+- `SetContainerModalTitleHeight(int32_t)` — 设置标题高度（`ui_content_impl.cpp:5707`）
+- `GetContainerModalButtonsRect()` / `SubscribeContainerModalButtonsRectChange` — 按钮区域矩形查询与变化订阅（`ui_content_impl.cpp:5760` / `:5775`，按钮区计算在 `frameworks/core/components_ng/manager/avoid_info/avoid_info_manager.cpp:137`）
+- `EnableContainerModalCustomGesture` / `OnContainerModalEvent` — 增强变体手势与事件（`ui_content_impl.cpp:6644` / `:6049`）
 
 ### 静态组件构建
 
-`@ohos.window.titlebar.component.defalut.ets` 提供 TitleBar/ButtonBar 默认实现，经 `generate_static_abc` 产出 abc 随静态前端加载。`ContainerModalStaticPattern/View/Bridge` 承载静态范式容器。Arkoala 侧 `XBarProxy.ts` 通过反射类名注册 create-func。
+`@ohos.window.titlebar.component.defalut.ets`（`frameworks/core/components_ng/pattern/container_modal/static/source/@ohos.window.titlebar.component.defalut.ets`）提供 TitleBar/ButtonBar 默认实现，经 `generate_static_abc` 产出 abc 随静态前端加载。`ContainerModalStaticPattern/View/Bridge`（`frameworks/core/components_ng/pattern/container_modal/static/container_modal_static_pattern.cpp`、`container_modal_static_view.cpp`、`container_modal_static_bridge.cpp`）承载静态范式容器。Arkoala 侧 `XBarProxy`（`frameworks/bridge/arkts_frontend/koala_projects/arkoala-arkts/arkui-ohos/src/XBarProxy.ts:43`）经 `frontend->InitXBarProxy()`（`frameworks/core/common/frontend.h:486`）注册 create-func。
 
 ## 风险和开放问题
 

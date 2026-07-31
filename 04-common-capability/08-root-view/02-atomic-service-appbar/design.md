@@ -154,7 +154,7 @@
 
 ### AppBar 构建流程
 
-元服务启动时，`pipeline->GetInstallationFree()` 返回 true 触发 `AppBarView::BuildAppbar`。构建树为 `AtomicService(Column) > JsView > Stage+MenuBarRow > MenuBar`：
+元服务启动时，`pipeline->GetInstallationFree()` 返回 true 触发 `AppBarView::BuildAppbar`（`frameworks/core/components_ng/pattern/app_bar/app_bar_view.cpp:204`，InstallationFree 守卫见同文件 `:571`）。构建树为 `AtomicService(Column) > JsView > Stage+MenuBarRow > MenuBar`：
 
 ```
 AtomicService (Column, AtomicServicePattern)
@@ -163,7 +163,7 @@ AtomicService (Column, AtomicServicePattern)
        └── MenuBar (菜单按钮 | 分割线 | 关闭按钮)
 ```
 
-`AtomicServicePattern` 继承 `LinearLayoutPattern`，管理颜色/布局更新、安全区回调、`SetIsAtomicService(true)` 标记和返回按压（`FireAbilityCloseEvent`）。`AtomicServiceLayoutAlgorithm` 实现避让/overlay 布局算法。
+`AtomicServicePattern` 继承 `LinearLayoutPattern`（`frameworks/core/components_ng/pattern/app_bar/atomic_service_pattern.h:26`），管理颜色/布局更新、安全区回调、`SetIsAtomicService(true)` 标记（`atomic_service_pattern.cpp:64`）和返回按压 `FireAbilityCloseEvent`（同文件 `:564`）。`AtomicServiceLayoutAlgorithm`（`frameworks/core/components_ng/pattern/app_bar/atomic_service_layout_algorithm.cpp`）实现避让/overlay 布局算法。
 
 ### 对外 API 入口
 
@@ -171,16 +171,16 @@ AtomicService (Column, AtomicServicePattern)
 
 | 入口 | 模块 | 方法 |
 |------|------|------|
-| NAPI | `js_atomic_service_bar.cpp` | `setVisible/setBackgroundColor/setTitleContent/setTitleFontStyle/setIconColor/getBarRect/onBarRectChange` |
-| C-API | `atomic_service_modifier.cpp`, `node_utils.cpp` | `AtomicServiceMenuBarSetVisible`（InstallationFree 守卫） |
-| C-API accessor | `ui_context_atomic_service_bar_accessor.cpp` | `getBarRect` 等方法 |
+| NAPI | `interfaces/napi/kits/atomic_service_bar/js_atomic_service_bar.cpp` | `setVisible/setBackgroundColor/setTitleContent/setTitleFontStyle/setIconColor/getBarRect/onBarRectChange`（注册于同文件 `:306`-`:312`） |
+| C-API | `frameworks/core/interfaces/native/node/atomic_service_modifier.cpp`、`interfaces/native/node/node_utils.cpp` | `OH_ArkUI_NativeModule_AtomicServiceMenuBarSetVisible`（`node_utils.cpp:1009`，InstallationFree 守卫） |
+| C-API accessor | `frameworks/core/interfaces/native/implementation/ui_context_atomic_service_bar_accessor.cpp` | `getBarRect` 等方法 |
 | 静态前端 | `@ohos.arkui.UIContext.ts`, `UIContextImpl.ets` | `AtomicServiceBar` 接口 + `getAtomicServiceBar()` |
 
 `UIContext.getAtomicServiceBar()` 经 `UIContextAtomicServiceBarAccessor` 返回 `AtomicServiceBar` 实例，用于 Query/Event 操作。
 
 ### 自定义 AppBar
 
-`CustomAppBarNode : CustomNode` 支持 `RegistAppBarNodeBuilder` 注册 CJ/ArkTS builder，构建自定义菜单栏内容。`AppBarHelper::QueryAppGalleryBundleName`（各平台 OSAL 实现）为平台查询入口。
+`CustomAppBarNode : CustomNode`（`frameworks/core/components_ng/pattern/custom/custom_app_bar_node.h`）支持 `AppBarView::RegistAppBarNodeBuilder`（`frameworks/core/components_ng/pattern/app_bar/app_bar_view.cpp:103`）注册 CJ/ArkTS builder，构建自定义菜单栏内容。`AppBarHelper::QueryAppGalleryBundleName`（同文件 `:80`，各平台 OSAL 实现）为平台查询入口。
 
 ## 风险和开放问题
 
