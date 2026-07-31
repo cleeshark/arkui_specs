@@ -441,7 +441,7 @@ functions:
     id: '01'
     title: 无障碍能力
   path: 03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/
-  design: null
+  design: 03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/design.md
   status: active
 - id: 03-07-02
   l1:
@@ -454,7 +454,7 @@ functions:
     id: '02'
     title: Inspector
   path: 03-engine-framework/07-accessibility-mechanism/02-inspector/
-  design: null
+  design: 03-engine-framework/07-accessibility-mechanism/02-inspector/design.md
   status: active
 - id: 03-08-01
   l1:
@@ -533,6 +533,19 @@ functions:
     title: 布局边界显示
   path: 03-engine-framework/08-dfx-foundation/06-layout-boundary-display/
   design: 03-engine-framework/08-dfx-foundation/06-layout-boundary-display/design.md
+  status: active
+- id: 03-09-01
+  l1:
+    id: '03'
+    title: 引擎框架层
+  l2:
+    id: '09'
+    title: UISession
+  l3:
+    id: '01'
+    title: UISession 服务
+  path: 03-engine-framework/09-uisession/01-uisession-service/
+  design: 03-engine-framework/09-uisession/01-uisession-service/design.md
   status: active
 - id: 04-01-01
   l1:
@@ -883,7 +896,7 @@ functions:
     id: '01'
     title: 动态绘制属性
   path: 04-common-capability/05-custom-extension/01-draw-modifier/
-  design: null
+  design: 04-common-capability/05-custom-extension/01-draw-modifier/design.md
   status: active
 - id: 04-05-02
   l1:
@@ -896,7 +909,7 @@ functions:
     id: '02'
     title: 动态属性
   path: 04-common-capability/05-custom-extension/02-dynamic-attributes/
-  design: null
+  design: 04-common-capability/05-custom-extension/02-dynamic-attributes/design.md
   status: active
 - id: 04-05-03
   l1:
@@ -935,7 +948,7 @@ functions:
     id: '05'
     title: 自定义属性
   path: 04-common-capability/05-custom-extension/05-custom-property/
-  design: null
+  design: 04-common-capability/05-custom-extension/05-custom-property/design.md
   status: active
 - id: 04-05-06
   l1:
@@ -948,7 +961,7 @@ functions:
     id: '06'
     title: 组件Modifier
   path: 04-common-capability/05-custom-extension/06-component-modifier/
-  design: null
+  design: 04-common-capability/05-custom-extension/06-component-modifier/design.md
   status: active
 - id: 04-06-01
   l1:
@@ -974,7 +987,7 @@ functions:
     id: '02'
     title: FrameNode
   path: 04-common-capability/06-custom-node/02-frame-node/
-  design: null
+  design: 04-common-capability/06-custom-node/02-frame-node/design.md
   status: active
 - id: 04-06-03
   l1:
@@ -987,7 +1000,7 @@ functions:
     id: '03'
     title: RenderNode
   path: 04-common-capability/06-custom-node/03-render-node/
-  design: null
+  design: 04-common-capability/06-custom-node/03-render-node/design.md
   status: active
 - id: 04-06-04
   l1:
@@ -1000,7 +1013,7 @@ functions:
     id: '04'
     title: BuilderNode
   path: 04-common-capability/06-custom-node/04-builder-node/
-  design: null
+  design: 04-common-capability/06-custom-node/04-builder-node/design.md
   status: active
 - id: 04-06-05
   l1:
@@ -1013,7 +1026,7 @@ functions:
     id: '05'
     title: ComponentContent
   path: 04-common-capability/06-custom-node/05-component-content/
-  design: null
+  design: 04-common-capability/06-custom-node/05-component-content/design.md
   status: active
 - id: 04-06-06
   l1:
@@ -1039,7 +1052,7 @@ functions:
     id: '07'
     title: TypedFrameNode
   path: 04-common-capability/06-custom-node/07-typed-frame-node/
-  design: null
+  design: 04-common-capability/06-custom-node/07-typed-frame-node/design.md
   status: active
 - id: 04-07-01
   l1:
@@ -1182,7 +1195,7 @@ functions:
     id: '03'
     title: 布局回调（inspector）
   path: 04-common-capability/11-component-info/03-inspector-layout-callback/
-  design: null
+  design: 04-common-capability/11-component-info/03-inspector-layout-callback/design.md
   status: active
 - id: 04-12-01
   l1:
@@ -1273,7 +1286,7 @@ functions:
     id: '02'
     title: 文本快捷键
   path: 04-common-capability/14-input-interaction/02-text-shortcuts/
-  design: null
+  design: 04-common-capability/14-input-interaction/02-text-shortcuts/design.md
   status: active
 - id: 04-14-03
   l1:
@@ -1297,9 +1310,9 @@ functions:
     title: 输入交互
   l3:
     id: '04'
-    title: 键盘控制
-  path: 04-common-capability/14-input-interaction/04-keyboard-control/
-  design: null
+    title: 输入法交互
+  path: 04-common-capability/14-input-interaction/04-input-method-interaction/
+  design: 04-common-capability/14-input-interaction/04-input-method-interaction/design.md
   status: active
 - id: 04-14-05
   l1:
@@ -2287,7 +2300,7 @@ functions:
     id: '01'
     title: Marquee
   path: 05-ui-components/09-text-components/01-marquee/
-  design: null
+  design: 05-ui-components/09-text-components/01-marquee/design.md
   status: active
 - id: 05-09-02
   l1:
@@ -2313,7 +2326,7 @@ functions:
     id: '03'
     title: Search
   path: 05-ui-components/09-text-components/03-search/
-  design: null
+  design: 05-ui-components/09-text-components/03-search/design.md
   status: active
 - id: 05-09-04
   l1:
@@ -2339,7 +2352,7 @@ functions:
     id: '05'
     title: TextArea
   path: 05-ui-components/09-text-components/05-text-area/
-  design: null
+  design: 05-ui-components/09-text-components/05-text-area/design.md
   status: active
 - id: 05-09-06
   l1:
@@ -2352,7 +2365,7 @@ functions:
     id: '06'
     title: Span类
   path: 05-ui-components/09-text-components/06-span-components/
-  design: null
+  design: 05-ui-components/09-text-components/06-span-components/design.md
   status: active
 - id: 05-09-07
   l1:
@@ -2417,7 +2430,7 @@ functions:
     id: '01'
     title: DataPanel
   path: 05-ui-components/10-information-display-components/01-data-panel/
-  design: null
+  design: 05-ui-components/10-information-display-components/01-data-panel/design.md
   status: active
 - id: 05-10-02
   l1:
@@ -2430,7 +2443,7 @@ functions:
     id: '02'
     title: Gauge
   path: 05-ui-components/10-information-display-components/02-gauge/
-  design: null
+  design: 05-ui-components/10-information-display-components/02-gauge/design.md
   status: active
 - id: 05-10-03
   l1:
@@ -2443,7 +2456,7 @@ functions:
     id: '03'
     title: LoadingProgress
   path: 05-ui-components/10-information-display-components/03-loading-progress/
-  design: null
+  design: 05-ui-components/10-information-display-components/03-loading-progress/design.md
   status: active
 - id: 05-10-04
   l1:
@@ -2456,7 +2469,7 @@ functions:
     id: '04'
     title: PatternLock
   path: 05-ui-components/10-information-display-components/04-pattern-lock/
-  design: null
+  design: 05-ui-components/10-information-display-components/04-pattern-lock/design.md
   status: active
 - id: 05-10-05
   l1:
@@ -2469,7 +2482,7 @@ functions:
     id: '05'
     title: Progress
   path: 05-ui-components/10-information-display-components/05-progress/
-  design: null
+  design: 05-ui-components/10-information-display-components/05-progress/design.md
   status: active
 - id: 05-10-06
   l1:
@@ -2482,7 +2495,7 @@ functions:
     id: '06'
     title: QRCode
   path: 05-ui-components/10-information-display-components/06-qr-code/
-  design: null
+  design: 05-ui-components/10-information-display-components/06-qr-code/design.md
   status: active
 - id: 05-10-07
   l1:
@@ -2495,7 +2508,7 @@ functions:
     id: '07'
     title: TextClock
   path: 05-ui-components/10-information-display-components/07-text-clock/
-  design: null
+  design: 05-ui-components/10-information-display-components/07-text-clock/design.md
   status: active
 - id: 05-10-08
   l1:
@@ -2508,7 +2521,7 @@ functions:
     id: 08
     title: TextTimer
   path: 05-ui-components/10-information-display-components/08-text-timer/
-  design: null
+  design: 05-ui-components/10-information-display-components/08-text-timer/design.md
   status: active
 - id: 05-10-09
   l1:
@@ -2521,7 +2534,7 @@ functions:
     id: 09
     title: Badge
   path: 05-ui-components/10-information-display-components/09-badge/
-  design: null
+  design: 05-ui-components/10-information-display-components/09-badge/design.md
   status: active
 - id: 05-10-10
   l1:
@@ -2534,7 +2547,7 @@ functions:
     id: '10'
     title: Counter
   path: 05-ui-components/10-information-display-components/10-counter/
-  design: null
+  design: 05-ui-components/10-information-display-components/10-counter/design.md
   status: active
 - id: 05-11-01
   l1:
@@ -2573,7 +2586,7 @@ functions:
     id: '01'
     title: PluginComponent
   path: 05-ui-components/12-embedded-display-components/01-plugin-component/
-  design: null
+  design: 05-ui-components/12-embedded-display-components/01-plugin-component/design.md
   status: active
 - id: 05-12-02
   l1:
@@ -2599,7 +2612,7 @@ functions:
     id: '03'
     title: UIExtensionComponent
   path: 05-ui-components/12-embedded-display-components/03-ui-extension-component/
-  design: null
+  design: 05-ui-components/12-embedded-display-components/03-ui-extension-component/design.md
   status: active
 - id: 05-12-04
   l1:
@@ -2612,7 +2625,7 @@ functions:
     id: '04'
     title: EmbeddedComponent
   path: 05-ui-components/12-embedded-display-components/04-embedded-component/
-  design: null
+  design: 05-ui-components/12-embedded-display-components/04-embedded-component/design.md
   status: active
 - id: 05-12-05
   l1:
@@ -2625,7 +2638,7 @@ functions:
     id: '05'
     title: IsolatedComponent
   path: 05-ui-components/12-embedded-display-components/05-isolated-component/
-  design: null
+  design: 05-ui-components/12-embedded-display-components/05-isolated-component/design.md
   status: active
 - id: 05-12-06
   l1:
@@ -2638,7 +2651,7 @@ functions:
     id: '06'
     title: SecurityUIExtensionComponent
   path: 05-ui-components/12-embedded-display-components/06-security-ui-extension-component/
-  design: null
+  design: 05-ui-components/12-embedded-display-components/06-security-ui-extension-component/design.md
   status: active
 - id: 05-12-07
   l1:
@@ -2651,7 +2664,7 @@ functions:
     id: '07'
     title: DynamicComponent
   path: 05-ui-components/12-embedded-display-components/07-dynamic-component/
-  design: null
+  design: 05-ui-components/12-embedded-display-components/07-dynamic-component/design.md
   status: active
 - id: 05-13-01
   l1:

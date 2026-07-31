@@ -53,14 +53,15 @@
 | 03 引擎框架层 | 05 窗口机制 | 01 窗口机制 | `03-05-01` | `03-engine-framework/05-window-mechanism/01-window-mechanism/` | [design.md](03-engine-framework/05-window-mechanism/01-window-mechanism/design.md) | 4 |
 | 03 引擎框架层 | 05 窗口机制 | 02 子窗机制 | `03-05-02` | `03-engine-framework/05-window-mechanism/02-subwindow-mechanism/` | [design.md](03-engine-framework/05-window-mechanism/02-subwindow-mechanism/design.md) | 3 |
 | 03 引擎框架层 | 06 多实例管理 | 01 多实例管理 | `03-06-01` | `03-engine-framework/06-multi-instance-management/01-multi-instance-management/` | [design.md](03-engine-framework/06-multi-instance-management/01-multi-instance-management/design.md) | 1 |
-| 03 引擎框架层 | 07 无障碍机制 | 01 无障碍能力 | `03-07-01` | `03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/` | *待补充* | 0 |
-| 03 引擎框架层 | 07 无障碍机制 | 02 Inspector | `03-07-02` | `03-engine-framework/07-accessibility-mechanism/02-inspector/` | *待补充* | 0 |
+| 03 引擎框架层 | 07 无障碍机制 | 01 无障碍能力 | `03-07-01` | `03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/` | [design.md](03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/design.md) | 7 |
+| 03 引擎框架层 | 07 无障碍机制 | 02 Inspector | `03-07-02` | `03-engine-framework/07-accessibility-mechanism/02-inspector/` | [design.md](03-engine-framework/07-accessibility-mechanism/02-inspector/design.md) | 2 |
 | 03 引擎框架层 | 08 DFX | 01 日志 | `03-08-01` | `03-engine-framework/08-dfx-foundation/01-logging/` | [design.md](03-engine-framework/08-dfx-foundation/01-logging/design.md) | 3 |
 | 03 引擎框架层 | 08 DFX | 02 内存管理 | `03-08-02` | `03-engine-framework/08-dfx-foundation/02-memory-management/` | [design.md](03-engine-framework/08-dfx-foundation/02-memory-management/design.md) | 4 |
 | 03 引擎框架层 | 08 DFX | 03 Trace打点 | `03-08-03` | `03-engine-framework/08-dfx-foundation/03-trace/` | [design.md](03-engine-framework/08-dfx-foundation/03-trace/design.md) | 3 |
 | 03 引擎框架层 | 08 DFX | 04 Dump机制 | `03-08-04` | `03-engine-framework/08-dfx-foundation/04-dump-mechanism/` | [design.md](03-engine-framework/08-dfx-foundation/04-dump-mechanism/design.md) | 4 |
 | 03 引擎框架层 | 08 DFX | 05 Benchmark | `03-08-05` | `03-engine-framework/08-dfx-foundation/05-benchmark/` | *待补充* | 0 |
 | 03 引擎框架层 | 08 DFX | 06 布局边界显示 | `03-08-06` | `03-engine-framework/08-dfx-foundation/06-layout-boundary-display/` | [design.md](03-engine-framework/08-dfx-foundation/06-layout-boundary-display/design.md) | 1 |
+| 03 引擎框架层 | 09 UISession | 01 UISession 服务 | `03-09-01` | `03-engine-framework/09-uisession/01-uisession-service/` | [design.md](03-engine-framework/09-uisession/01-uisession-service/design.md) | 10 |
 | 04 通用能力层 | 01 图片加载能力 | 01 图片加载机制 | `04-01-01` | `04-common-capability/01-image-loading/01-image-loading-mechanism/` | [design.md](04-common-capability/01-image-loading/01-image-loading-mechanism/design.md) | 1 |
 | 04 通用能力层 | 01 图片加载能力 | 02 Svg解析 | `04-01-02` | `04-common-capability/01-image-loading/02-svg-parsing/` | [design.md](04-common-capability/01-image-loading/02-svg-parsing/design.md) | 4 |
 | 04 通用能力层 | 01 图片加载能力 | 03 DrawableDescriptor 能力 | `04-01-03` | `04-common-capability/01-image-loading/03-drawable-descriptor/` | [design.md](04-common-capability/01-image-loading/03-drawable-descriptor/design.md) | 1 |
@@ -87,19 +88,19 @@
 | 04 通用能力层 | 04 通用事件 | 09 组件相关事件 | `04-04-09` | `04-common-capability/04-common-events/09-component-related-events/` | [design.md](04-common-capability/04-common-events/09-component-related-events/design.md) | 2 |
 | 04 通用能力层 | 04 通用事件 | 10 可见区域机制 | `04-04-10` | `04-common-capability/04-common-events/10-visible-area-mechanism/` | [design.md](04-common-capability/04-common-events/10-visible-area-mechanism/design.md) | 2 |
 | 04 通用能力层 | 04 通用事件 | 11 交互归一化 | `04-04-11` | `04-common-capability/04-common-events/11-interaction-normalization/` | [design.md](04-common-capability/04-common-events/11-interaction-normalization/design.md) | 1 |
-| 04 通用能力层 | 05 自定义扩展能力 | 01 动态绘制属性 | `04-05-01` | `04-common-capability/05-custom-extension/01-draw-modifier/` | *待补充* | 0 |
-| 04 通用能力层 | 05 自定义扩展能力 | 02 动态属性 | `04-05-02` | `04-common-capability/05-custom-extension/02-dynamic-attributes/` | *待补充* | 0 |
+| 04 通用能力层 | 05 自定义扩展能力 | 01 动态绘制属性 | `04-05-01` | `04-common-capability/05-custom-extension/01-draw-modifier/` | [design.md](04-common-capability/05-custom-extension/01-draw-modifier/design.md) | 3 |
+| 04 通用能力层 | 05 自定义扩展能力 | 02 动态属性 | `04-05-02` | `04-common-capability/05-custom-extension/02-dynamic-attributes/` | [design.md](04-common-capability/05-custom-extension/02-dynamic-attributes/design.md) | 2 |
 | 04 通用能力层 | 05 自定义扩展能力 | 03 自定义内容 -（表单类组件） | `04-05-03` | `04-common-capability/05-custom-extension/03-content-modifier-form/` | [design.md](04-common-capability/05-custom-extension/03-content-modifier-form/design.md) | 1 |
 | 04 通用能力层 | 05 自定义扩展能力 | 04 自定义内容 -（信息展示类） | `04-05-04` | `04-common-capability/05-custom-extension/04-content-modifier-display/` | [design.md](04-common-capability/05-custom-extension/04-content-modifier-display/design.md) | 1 |
-| 04 通用能力层 | 05 自定义扩展能力 | 05 自定义属性 | `04-05-05` | `04-common-capability/05-custom-extension/05-custom-property/` | *待补充* | 0 |
-| 04 通用能力层 | 05 自定义扩展能力 | 06 组件Modifier | `04-05-06` | `04-common-capability/05-custom-extension/06-component-modifier/` | *待补充* | 0 |
+| 04 通用能力层 | 05 自定义扩展能力 | 05 自定义属性 | `04-05-05` | `04-common-capability/05-custom-extension/05-custom-property/` | [design.md](04-common-capability/05-custom-extension/05-custom-property/design.md) | 1 |
+| 04 通用能力层 | 05 自定义扩展能力 | 06 组件Modifier | `04-05-06` | `04-common-capability/05-custom-extension/06-component-modifier/` | [design.md](04-common-capability/05-custom-extension/06-component-modifier/design.md) | 2 |
 | 04 通用能力层 | 06 自定义节点能力 | 01 占位组件 | `04-06-01` | `04-common-capability/06-custom-node/01-placeholder-component/` | [design.md](04-common-capability/06-custom-node/01-placeholder-component/design.md) | 1 |
-| 04 通用能力层 | 06 自定义节点能力 | 02 FrameNode | `04-06-02` | `04-common-capability/06-custom-node/02-frame-node/` | *待补充* | 0 |
-| 04 通用能力层 | 06 自定义节点能力 | 03 RenderNode | `04-06-03` | `04-common-capability/06-custom-node/03-render-node/` | *待补充* | 0 |
-| 04 通用能力层 | 06 自定义节点能力 | 04 BuilderNode | `04-06-04` | `04-common-capability/06-custom-node/04-builder-node/` | *待补充* | 0 |
-| 04 通用能力层 | 06 自定义节点能力 | 05 ComponentContent | `04-06-05` | `04-common-capability/06-custom-node/05-component-content/` | *待补充* | 0 |
+| 04 通用能力层 | 06 自定义节点能力 | 02 FrameNode | `04-06-02` | `04-common-capability/06-custom-node/02-frame-node/` | [design.md](04-common-capability/06-custom-node/02-frame-node/design.md) | 8 |
+| 04 通用能力层 | 06 自定义节点能力 | 03 RenderNode | `04-06-03` | `04-common-capability/06-custom-node/03-render-node/` | [design.md](04-common-capability/06-custom-node/03-render-node/design.md) | 1 |
+| 04 通用能力层 | 06 自定义节点能力 | 04 BuilderNode | `04-06-04` | `04-common-capability/06-custom-node/04-builder-node/` | [design.md](04-common-capability/06-custom-node/04-builder-node/design.md) | 8 |
+| 04 通用能力层 | 06 自定义节点能力 | 05 ComponentContent | `04-06-05` | `04-common-capability/06-custom-node/05-component-content/` | [design.md](04-common-capability/06-custom-node/05-component-content/design.md) | 5 |
 | 04 通用能力层 | 06 自定义节点能力 | 06 NodeAdapter | `04-06-06` | `04-common-capability/06-custom-node/06-node-adapter/` | [design.md](04-common-capability/06-custom-node/06-node-adapter/design.md) | 1 |
-| 04 通用能力层 | 06 自定义节点能力 | 07 TypedFrameNode | `04-06-07` | `04-common-capability/06-custom-node/07-typed-frame-node/` | *待补充* | 0 |
+| 04 通用能力层 | 06 自定义节点能力 | 07 TypedFrameNode | `04-06-07` | `04-common-capability/06-custom-node/07-typed-frame-node/` | [design.md](04-common-capability/06-custom-node/07-typed-frame-node/design.md) | 4 |
 | 04 通用能力层 | 07 迁移恢复 | 01 分布式路由迁移能力 | `04-07-01` | `04-common-capability/07-migration-recovery/01-distributed-router-migration/` | *待补充* | 0 |
 | 04 通用能力层 | 07 迁移恢复 | 02 路由栈恢复 | `04-07-02` | `04-common-capability/07-migration-recovery/02-router-stack-recovery/` | [design.md](04-common-capability/07-migration-recovery/02-router-stack-recovery/design.md) | 1 |
 | 04 通用能力层 | 07 迁移恢复 | 03 组件迁移机制 | `04-07-03` | `04-common-capability/07-migration-recovery/03-component-migration/` | *待补充* | 0 |
@@ -110,16 +111,16 @@
 | 04 通用能力层 | 10 组件截图 | 01 离屏截图 | `04-10-01` | `04-common-capability/10-component-screenshot/01-offscreen-screenshot/` | *待补充* | 0 |
 | 04 通用能力层 | 11 组件信息获取 | 01 ComponentUtils | `04-11-01` | `04-common-capability/11-component-info/01-component-utils/` | [design.md](04-common-capability/11-component-info/01-component-utils/design.md) | 2 |
 | 04 通用能力层 | 11 组件信息获取 | 02 无感监听（observer） | `04-11-02` | `04-common-capability/11-component-info/02-observer/` | [design.md](04-common-capability/11-component-info/02-observer/design.md) | 2 |
-| 04 通用能力层 | 11 组件信息获取 | 03 布局回调（inspector） | `04-11-03` | `04-common-capability/11-component-info/03-inspector-layout-callback/` | *待补充* | 0 |
+| 04 通用能力层 | 11 组件信息获取 | 03 布局回调（inspector） | `04-11-03` | `04-common-capability/11-component-info/03-inspector-layout-callback/` | [design.md](04-common-capability/11-component-info/03-inspector-layout-callback/design.md) | 1 |
 | 04 通用能力层 | 12 UI上下文 | 01 UIContext接口 | `04-12-01` | `04-common-capability/12-ui-context/01-ui-context-interface/` | [design.md](04-common-capability/12-ui-context/01-ui-context-interface/design.md) | 4 |
 | 04 通用能力层 | 12 UI上下文 | 02 Ability上下文 | `04-12-02` | `04-common-capability/12-ui-context/02-ability-context/` | [design.md](04-common-capability/12-ui-context/02-ability-context/design.md) | 1 |
 | 04 通用能力层 | 12 UI上下文 | 03 Frame回调接口 | `04-12-03` | `04-common-capability/12-ui-context/03-frame-callback/` | [design.md](04-common-capability/12-ui-context/03-frame-callback/design.md) | 1 |
 | 04 通用能力层 | 13 字体文本 | 01 字体注册 | `04-13-01` | `04-common-capability/13-font-text/01-font-registration/` | [design.md](04-common-capability/13-font-text/01-font-registration/design.md) | 1 |
 | 04 通用能力层 | 13 字体文本 | 02 文本测量 | `04-13-02` | `04-common-capability/13-font-text/02-text-measurement/` | [design.md](04-common-capability/13-font-text/02-text-measurement/design.md) | 3 |
 | 04 通用能力层 | 14 输入交互 | 01 文本选择 | `04-14-01` | `04-common-capability/14-input-interaction/01-text-selection/` | [design.md](04-common-capability/14-input-interaction/01-text-selection/design.md) | 3 |
-| 04 通用能力层 | 14 输入交互 | 02 文本快捷键 | `04-14-02` | `04-common-capability/14-input-interaction/02-text-shortcuts/` | *待补充* | 0 |
+| 04 通用能力层 | 14 输入交互 | 02 文本快捷键 | `04-14-02` | `04-common-capability/14-input-interaction/02-text-shortcuts/` | [design.md](04-common-capability/14-input-interaction/02-text-shortcuts/design.md) | 6 |
 | 04 通用能力层 | 14 输入交互 | 03 文本交互 | `04-14-03` | `04-common-capability/14-input-interaction/03-text-interaction/` | [design.md](04-common-capability/14-input-interaction/03-text-interaction/design.md) | 6 |
-| 04 通用能力层 | 14 输入交互 | 04 键盘控制 | `04-14-04` | `04-common-capability/14-input-interaction/04-keyboard-control/` | *待补充* | 0 |
+| 04 通用能力层 | 14 输入交互 | 04 输入法交互 | `04-14-04` | `04-common-capability/14-input-interaction/04-input-method-interaction/` | [design.md](04-common-capability/14-input-interaction/04-input-method-interaction/design.md) | 5 |
 | 04 通用能力层 | 14 输入交互 | 05 自动补全能力（AutoFill） | `04-14-05` | `04-common-capability/14-input-interaction/05-autofill/` | [design.md](04-common-capability/14-input-interaction/05-autofill/design.md) | 5 |
 | 04 通用能力层 | 15 路由机制 | 01 路由管理 | `04-15-01` | `04-common-capability/15-router-mechanism/01-router-management/` | [design.md](04-common-capability/15-router-mechanism/01-router-management/design.md) | 2 |
 | 04 通用能力层 | 15 路由机制 | 02 命名路由 | `04-15-02` | `04-common-capability/15-router-mechanism/02-named-router/` | [design.md](04-common-capability/15-router-mechanism/02-named-router/design.md) | 1 |
@@ -195,35 +196,35 @@
 | 05 组件层 | 08 图片类组件 | 01 Image | `05-08-01` | `05-ui-components/08-image-components/01-image/` | [design.md](05-ui-components/08-image-components/01-image/design.md) | 5 |
 | 05 组件层 | 08 图片类组件 | 02 ImageAnimator | `05-08-02` | `05-ui-components/08-image-components/02-image-animator/` | [design.md](05-ui-components/08-image-components/02-image-animator/design.md) | 3 |
 | 05 组件层 | 08 图片类组件 | 03 MediaCachedImage | `05-08-03` | `05-ui-components/08-image-components/03-media-cached-image/` | *待补充* | 0 |
-| 05 组件层 | 09 文本类组件 | 01 Marquee | `05-09-01` | `05-ui-components/09-text-components/01-marquee/` | *待补充* | 0 |
+| 05 组件层 | 09 文本类组件 | 01 Marquee | `05-09-01` | `05-ui-components/09-text-components/01-marquee/` | [design.md](05-ui-components/09-text-components/01-marquee/design.md) | 3 |
 | 05 组件层 | 09 文本类组件 | 02 RichEditor | `05-09-02` | `05-ui-components/09-text-components/02-rich-editor/` | [design.md](05-ui-components/09-text-components/02-rich-editor/design.md) | 9 |
-| 05 组件层 | 09 文本类组件 | 03 Search | `05-09-03` | `05-ui-components/09-text-components/03-search/` | *待补充* | 0 |
+| 05 组件层 | 09 文本类组件 | 03 Search | `05-09-03` | `05-ui-components/09-text-components/03-search/` | [design.md](05-ui-components/09-text-components/03-search/design.md) | 7 |
 | 05 组件层 | 09 文本类组件 | 04 Text | `05-09-04` | `05-ui-components/09-text-components/04-text/` | [design.md](05-ui-components/09-text-components/04-text/design.md) | 7 |
-| 05 组件层 | 09 文本类组件 | 05 TextArea | `05-09-05` | `05-ui-components/09-text-components/05-text-area/` | *待补充* | 0 |
-| 05 组件层 | 09 文本类组件 | 06 Span类 | `05-09-06` | `05-ui-components/09-text-components/06-span-components/` | *待补充* | 0 |
+| 05 组件层 | 09 文本类组件 | 05 TextArea | `05-09-05` | `05-ui-components/09-text-components/05-text-area/` | [design.md](05-ui-components/09-text-components/05-text-area/design.md) | 6 |
+| 05 组件层 | 09 文本类组件 | 06 Span类 | `05-09-06` | `05-ui-components/09-text-components/06-span-components/` | [design.md](05-ui-components/09-text-components/06-span-components/design.md) | 4 |
 | 05 组件层 | 09 文本类组件 | 07 SymbolGlyph | `05-09-07` | `05-ui-components/09-text-components/07-symbol-glyph/` | [design.md](05-ui-components/09-text-components/07-symbol-glyph/design.md) | 8 |
 | 05 组件层 | 09 文本类组件 | 08 TextInput | `05-09-08` | `05-ui-components/09-text-components/08-text-input/` | [design.md](05-ui-components/09-text-components/08-text-input/design.md) | 10 |
 | 05 组件层 | 09 文本类组件 | 09 HyperLink | `05-09-09` | `05-ui-components/09-text-components/09-hyperlink/` | [design.md](05-ui-components/09-text-components/09-hyperlink/design.md) | 3 |
 | 05 组件层 | 09 文本类组件 | 10 属性字符串 | `05-09-10` | `05-ui-components/09-text-components/10-attributed-string/` | [design.md](05-ui-components/09-text-components/10-attributed-string/design.md) | 9 |
-| 05 组件层 | 10 信息展示类组件 | 01 DataPanel | `05-10-01` | `05-ui-components/10-information-display-components/01-data-panel/` | *待补充* | 0 |
-| 05 组件层 | 10 信息展示类组件 | 02 Gauge | `05-10-02` | `05-ui-components/10-information-display-components/02-gauge/` | *待补充* | 0 |
-| 05 组件层 | 10 信息展示类组件 | 03 LoadingProgress | `05-10-03` | `05-ui-components/10-information-display-components/03-loading-progress/` | *待补充* | 0 |
-| 05 组件层 | 10 信息展示类组件 | 04 PatternLock | `05-10-04` | `05-ui-components/10-information-display-components/04-pattern-lock/` | *待补充* | 0 |
-| 05 组件层 | 10 信息展示类组件 | 05 Progress | `05-10-05` | `05-ui-components/10-information-display-components/05-progress/` | *待补充* | 0 |
-| 05 组件层 | 10 信息展示类组件 | 06 QRCode | `05-10-06` | `05-ui-components/10-information-display-components/06-qr-code/` | *待补充* | 0 |
-| 05 组件层 | 10 信息展示类组件 | 07 TextClock | `05-10-07` | `05-ui-components/10-information-display-components/07-text-clock/` | *待补充* | 0 |
-| 05 组件层 | 10 信息展示类组件 | 08 TextTimer | `05-10-08` | `05-ui-components/10-information-display-components/08-text-timer/` | *待补充* | 0 |
-| 05 组件层 | 10 信息展示类组件 | 09 Badge | `05-10-09` | `05-ui-components/10-information-display-components/09-badge/` | *待补充* | 0 |
-| 05 组件层 | 10 信息展示类组件 | 10 Counter | `05-10-10` | `05-ui-components/10-information-display-components/10-counter/` | *待补充* | 0 |
+| 05 组件层 | 10 信息展示类组件 | 01 DataPanel | `05-10-01` | `05-ui-components/10-information-display-components/01-data-panel/` | [design.md](05-ui-components/10-information-display-components/01-data-panel/design.md) | 3 |
+| 05 组件层 | 10 信息展示类组件 | 02 Gauge | `05-10-02` | `05-ui-components/10-information-display-components/02-gauge/` | [design.md](05-ui-components/10-information-display-components/02-gauge/design.md) | 3 |
+| 05 组件层 | 10 信息展示类组件 | 03 LoadingProgress | `05-10-03` | `05-ui-components/10-information-display-components/03-loading-progress/` | [design.md](05-ui-components/10-information-display-components/03-loading-progress/design.md) | 1 |
+| 05 组件层 | 10 信息展示类组件 | 04 PatternLock | `05-10-04` | `05-ui-components/10-information-display-components/04-pattern-lock/` | [design.md](05-ui-components/10-information-display-components/04-pattern-lock/design.md) | 3 |
+| 05 组件层 | 10 信息展示类组件 | 05 Progress | `05-10-05` | `05-ui-components/10-information-display-components/05-progress/` | [design.md](05-ui-components/10-information-display-components/05-progress/design.md) | 1 |
+| 05 组件层 | 10 信息展示类组件 | 06 QRCode | `05-10-06` | `05-ui-components/10-information-display-components/06-qr-code/` | [design.md](05-ui-components/10-information-display-components/06-qr-code/design.md) | 1 |
+| 05 组件层 | 10 信息展示类组件 | 07 TextClock | `05-10-07` | `05-ui-components/10-information-display-components/07-text-clock/` | [design.md](05-ui-components/10-information-display-components/07-text-clock/design.md) | 4 |
+| 05 组件层 | 10 信息展示类组件 | 08 TextTimer | `05-10-08` | `05-ui-components/10-information-display-components/08-text-timer/` | [design.md](05-ui-components/10-information-display-components/08-text-timer/design.md) | 4 |
+| 05 组件层 | 10 信息展示类组件 | 09 Badge | `05-10-09` | `05-ui-components/10-information-display-components/09-badge/` | [design.md](05-ui-components/10-information-display-components/09-badge/design.md) | 4 |
+| 05 组件层 | 10 信息展示类组件 | 10 Counter | `05-10-10` | `05-ui-components/10-information-display-components/10-counter/` | [design.md](05-ui-components/10-information-display-components/10-counter/design.md) | 3 |
 | 05 组件层 | 11 卡片框架组件 | 01 FormComponent | `05-11-01` | `05-ui-components/11-card-framework-components/01-form-component/` | *待补充* | 0 |
 | 05 组件层 | 11 卡片框架组件 | 02 FormLink | `05-11-02` | `05-ui-components/11-card-framework-components/02-form-link/` | *待补充* | 0 |
-| 05 组件层 | 12 显示嵌入组件 | 01 PluginComponent | `05-12-01` | `05-ui-components/12-embedded-display-components/01-plugin-component/` | *待补充* | 0 |
+| 05 组件层 | 12 显示嵌入组件 | 01 PluginComponent | `05-12-01` | `05-ui-components/12-embedded-display-components/01-plugin-component/` | [design.md](05-ui-components/12-embedded-display-components/01-plugin-component/design.md) | 2 |
 | 05 组件层 | 12 显示嵌入组件 | 02 AbilityComponent | `05-12-02` | `05-ui-components/12-embedded-display-components/02-ability-component/` | [design.md](05-ui-components/12-embedded-display-components/02-ability-component/design.md) | 1 |
-| 05 组件层 | 12 显示嵌入组件 | 03 UIExtensionComponent | `05-12-03` | `05-ui-components/12-embedded-display-components/03-ui-extension-component/` | *待补充* | 0 |
-| 05 组件层 | 12 显示嵌入组件 | 04 EmbeddedComponent | `05-12-04` | `05-ui-components/12-embedded-display-components/04-embedded-component/` | *待补充* | 0 |
-| 05 组件层 | 12 显示嵌入组件 | 05 IsolatedComponent | `05-12-05` | `05-ui-components/12-embedded-display-components/05-isolated-component/` | *待补充* | 0 |
-| 05 组件层 | 12 显示嵌入组件 | 06 SecurityUIExtensionComponent | `05-12-06` | `05-ui-components/12-embedded-display-components/06-security-ui-extension-component/` | *待补充* | 0 |
-| 05 组件层 | 12 显示嵌入组件 | 07 DynamicComponent | `05-12-07` | `05-ui-components/12-embedded-display-components/07-dynamic-component/` | *待补充* | 0 |
+| 05 组件层 | 12 显示嵌入组件 | 03 UIExtensionComponent | `05-12-03` | `05-ui-components/12-embedded-display-components/03-ui-extension-component/` | [design.md](05-ui-components/12-embedded-display-components/03-ui-extension-component/design.md) | 3 |
+| 05 组件层 | 12 显示嵌入组件 | 04 EmbeddedComponent | `05-12-04` | `05-ui-components/12-embedded-display-components/04-embedded-component/` | [design.md](05-ui-components/12-embedded-display-components/04-embedded-component/design.md) | 2 |
+| 05 组件层 | 12 显示嵌入组件 | 05 IsolatedComponent | `05-12-05` | `05-ui-components/12-embedded-display-components/05-isolated-component/` | [design.md](05-ui-components/12-embedded-display-components/05-isolated-component/design.md) | 1 |
+| 05 组件层 | 12 显示嵌入组件 | 06 SecurityUIExtensionComponent | `05-12-06` | `05-ui-components/12-embedded-display-components/06-security-ui-extension-component/` | [design.md](05-ui-components/12-embedded-display-components/06-security-ui-extension-component/design.md) | 2 |
+| 05 组件层 | 12 显示嵌入组件 | 07 DynamicComponent | `05-12-07` | `05-ui-components/12-embedded-display-components/07-dynamic-component/` | [design.md](05-ui-components/12-embedded-display-components/07-dynamic-component/design.md) | 1 |
 | 05 组件层 | 13 平台类组件 | 01 XComponent | `05-13-01` | `05-ui-components/13-platform-components/01-xcomponent/` | [design.md](05-ui-components/13-platform-components/01-xcomponent/design.md) | 8 |
 | 05 组件层 | 13 平台类组件 | 02 Video | `05-13-02` | `05-ui-components/13-platform-components/02-video/` | [design.md](05-ui-components/13-platform-components/02-video/design.md) | 3 |
 | 05 组件层 | 14 绘制类组件 | 01 Shape | `05-14-01` | `05-ui-components/14-drawing-components/01-shape/` | [design.md](05-ui-components/14-drawing-components/01-shape/design.md) | 6 |
@@ -515,11 +516,20 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 无障碍元素信息查询响应 | [Feat-01-accessibility-element-info-query-spec.md](03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-01-accessibility-element-info-query-spec.md) | Draft |
+| Feat-02 | 无障碍动作执行 | [Feat-02-accessibility-action-execution-spec.md](03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-02-accessibility-action-execution-spec.md) | Draft |
+| Feat-03 | 无障碍焦点移动 | [Feat-03-accessibility-focus-move-spec.md](03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-03-accessibility-focus-move-spec.md) | Draft |
+| Feat-04 | 无障碍悬停探测 | [Feat-04-accessibility-hover-exploration-spec.md](03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-04-accessibility-hover-exploration-spec.md) | Draft |
+| Feat-05 | 无障碍子树注册与跨进程接入 | [Feat-05-accessibility-childtree-cross-process-spec.md](03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-05-accessibility-childtree-cross-process-spec.md) | Draft |
+| Feat-06 | 应用自绘组件无障碍接入（NDK Provider） | [Feat-06-accessibility-native-provider-spec.md](03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-06-accessibility-native-provider-spec.md) | Draft |
+| Feat-07 | 无障碍事件通知 | [Feat-07-accessibility-event-notification-spec.md](03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-07-accessibility-event-notification-spec.md) | Draft |
 
 ### 03-07-02 Inspector
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Inspector 同步树转储与属性过滤 | [Feat-01-sync-tree-dump-filter-spec.md](03-engine-framework/07-accessibility-mechanism/02-inspector/Feat-01-sync-tree-dump-filter-spec.md) | Baselined |
+| Feat-02 | Inspector 公共 API 与异步采集 | [Feat-02-public-api-async-spec.md](03-engine-framework/07-accessibility-mechanism/02-inspector/Feat-02-public-api-async-spec.md) | Baselined |
 
 ### 03-08-01 日志
 
@@ -565,6 +575,21 @@
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
 | Feat-01 | 布局边界显示调试能力 | [Feat-01-layout-boundary-display-spec.md](03-engine-framework/08-dfx-foundation/06-layout-boundary-display/Feat-01-layout-boundary-display-spec.md) | Baselined |
+
+### 03-09-01 UISession 服务
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | IPC安全框架与连接生命周期 | [Feat-01-ipc-security-framework-spec.md](03-engine-framework/09-uisession/01-uisession-service/Feat-01-ipc-security-framework-spec.md) | Baselined |
+| Feat-02 | InspectorTree查询与Web子树聚合 | [Feat-02-inspector-tree-query-and-web-aggregation-spec.md](03-engine-framework/09-uisession/01-uisession-service/Feat-02-inspector-tree-query-and-web-aggregation-spec.md) | Baselined |
+| Feat-03 | 事件上报与注册计数门控 | [Feat-03-event-reporting-and-atomic-gating-spec.md](03-engine-framework/09-uisession/01-uisession-service/Feat-03-event-reporting-and-atomic-gating-spec.md) | Baselined |
+| Feat-04 | 命令下发与同步请求保护 | [Feat-04-command-dispatch-and-sync-request-spec.md](03-engine-framework/09-uisession/01-uisession-service/Feat-04-command-dispatch-and-sync-request-spec.md) | Baselined |
+| Feat-05 | 翻译能力与DFX并发保护 | [Feat-05-translate-capability-and-dfx-spec.md](03-engine-framework/09-uisession/01-uisession-service/Feat-05-translate-capability-and-dfx-spec.md) | Baselined |
+| Feat-06 | 内容变化检测与阈值管理 | [Feat-06-content-change-detection-and-threshold-spec.md](03-engine-framework/09-uisession/01-uisession-service/Feat-06-content-change-detection-and-threshold-spec.md) | Baselined |
+| Feat-07 | 查询能力与辅助Dump | [Feat-07-query-and-auxiliary-dump-spec.md](03-engine-framework/09-uisession/01-uisession-service/Feat-07-query-and-auxiliary-dump-spec.md) | Baselined |
+| Feat-08 | SA验证服务与hidumper命令路由 | [Feat-08-sa-verification-service-spec.md](03-engine-framework/09-uisession/01-uisession-service/Feat-08-sa-verification-service-spec.md) | Baselined |
+| Feat-09 | PageScene 规则感知能力 | [Feat-09-pagescene-rule-awareness-spec.md](03-engine-framework/09-uisession/01-uisession-service/Feat-09-pagescene-rule-awareness-spec.md) | Draft |
+| Feat-10 | WM UIContentRemoteObj 验证链路 | [Feat-10-wm-uicontent-remoteobj-verification-spec.md](03-engine-framework/09-uisession/01-uisession-service/Feat-10-wm-uicontent-remoteobj-verification-spec.md) | Draft |
 
 ### 04-01-01 图片加载机制
 
@@ -747,11 +772,16 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | DrawModifier 装配与组件门控 | [Feat-01-draw-modifier-mounting-gating-spec.md](04-common-capability/05-custom-extension/01-draw-modifier/Feat-01-draw-modifier-mounting-gating-spec.md) | Baselined |
+| Feat-02 | 分层绘制回调分发 | [Feat-02-draw-modifier-layered-dispatch-spec.md](04-common-capability/05-custom-extension/01-draw-modifier/Feat-02-draw-modifier-layered-dispatch-spec.md) | Baselined |
+| Feat-03 | 主动刷新机制 | [Feat-03-draw-modifier-invalidate-refresh-spec.md](04-common-capability/05-custom-extension/01-draw-modifier/Feat-03-draw-modifier-invalidate-refresh-spec.md) | Baselined |
 
 ### 04-05-02 动态属性
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | AttributeModifier 装配与状态监听 | [Feat-01-attribute-modifier-mounting-state-spec.md](04-common-capability/05-custom-extension/02-dynamic-attributes/Feat-01-attribute-modifier-mounting-state-spec.md) | Baselined |
+| Feat-02 | 多状态属性应用与按位分发 | [Feat-02-attribute-modifier-multi-state-dispatch-spec.md](04-common-capability/05-custom-extension/02-dynamic-attributes/Feat-02-attribute-modifier-multi-state-dispatch-spec.md) | Baselined |
 
 ### 04-05-03 自定义内容 -（表单类组件）
 
@@ -769,11 +799,14 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 自定义属性设置读取与双存储 | [Feat-01-custom-property-set-read-storage-spec.md](04-common-capability/05-custom-extension/05-custom-property/Feat-01-custom-property-set-read-storage-spec.md) | Baselined |
 
 ### 04-05-06 组件Modifier
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 命令式 Modifier 基类与类体系 | [Feat-01-common-modifier-class-system-spec.md](04-common-capability/05-custom-extension/06-component-modifier/Feat-01-common-modifier-class-system-spec.md) | Baselined |
+| Feat-02 | ModifierUtils 对外接口 | [Feat-02-modifier-utils-api-spec.md](04-common-capability/05-custom-extension/06-component-modifier/Feat-02-modifier-utils-api-spec.md) | Baselined |
 
 ### 04-06-01 占位组件
 
@@ -785,21 +818,43 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 节点创建、身份与内省 | [Feat-01-node-creation-identity-introspection-spec.md](04-common-capability/06-custom-node/02-frame-node/Feat-01-node-creation-identity-introspection-spec.md) | Baselined |
+| Feat-02 | 树结构与挂载管理 | [Feat-02-tree-structure-mounting-spec.md](04-common-capability/06-custom-node/02-frame-node/Feat-02-tree-structure-mounting-spec.md) | Baselined |
+| Feat-03 | 布局与度量 | [Feat-03-layout-measurement-spec.md](04-common-capability/06-custom-node/02-frame-node/Feat-03-layout-measurement-spec.md) | Baselined |
+| Feat-04 | 坐标转换与位置查询 | [Feat-04-position-coordinate-conversion-spec.md](04-common-capability/06-custom-node/02-frame-node/Feat-04-position-coordinate-conversion-spec.md) | Baselined |
+| Feat-05 | 渲染上下文与视觉状态 | [Feat-05-render-context-visual-state-spec.md](04-common-capability/06-custom-node/02-frame-node/Feat-05-render-context-visual-state-spec.md) | Baselined |
+| Feat-06 | 事件交互与 UIState | [Feat-06-event-interaction-ui-state-spec.md](04-common-capability/06-custom-node/02-frame-node/Feat-06-event-interaction-ui-state-spec.md) | Baselined |
+| Feat-07 | 节点动画 | [Feat-07-node-animation-spec.md](04-common-capability/06-custom-node/02-frame-node/Feat-07-node-animation-spec.md) | Baselined |
+| Feat-08 | 生命周期、回收与跨语言 | [Feat-08-lifecycle-recycle-cross-language-spec.md](04-common-capability/06-custom-node/02-frame-node/Feat-08-lifecycle-recycle-cross-language-spec.md) | Baselined |
 
 ### 04-06-03 RenderNode
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | RenderNode 全量规格 | [Feat-01-render-node-full-spec.md](04-common-capability/06-custom-node/03-render-node/Feat-01-render-node-full-spec.md) | Baselined |
 
 ### 04-06-04 BuilderNode
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 创建、释放与渲染类型 | [Feat-01-creation-dispose-render-type-spec.md](04-common-capability/06-custom-node/04-builder-node/Feat-01-creation-dispose-render-type-spec.md) | Baselined |
+| Feat-02 | 构建与更新 | [Feat-02-build-update-spec.md](04-common-capability/06-custom-node/04-builder-node/Feat-02-build-update-spec.md) | Baselined |
+| Feat-03 | FrameNode 访问 | [Feat-03-framenode-access-spec.md](04-common-capability/06-custom-node/04-builder-node/Feat-03-framenode-access-spec.md) | Baselined |
+| Feat-04 | 渲染类型与纹理 | [Feat-04-render-type-texture-spec.md](04-common-capability/06-custom-node/04-builder-node/Feat-04-render-type-texture-spec.md) | Baselined |
+| Feat-05 | 复用与回收 | [Feat-05-reuse-recycle-spec.md](04-common-capability/06-custom-node/04-builder-node/Feat-05-reuse-recycle-spec.md) | Baselined |
+| Feat-06 | 输入事件分发 | [Feat-06-input-event-dispatch-spec.md](04-common-capability/06-custom-node/04-builder-node/Feat-06-input-event-dispatch-spec.md) | Baselined |
+| Feat-07 | 冻结策略 | [Feat-07-freeze-policy-spec.md](04-common-capability/06-custom-node/04-builder-node/Feat-07-freeze-policy-spec.md) | Baselined |
+| Feat-08 | 响应式变体 | [Feat-08-reactive-variant-spec.md](04-common-capability/06-custom-node/04-builder-node/Feat-08-reactive-variant-spec.md) | Baselined |
 
 ### 04-06-05 ComponentContent
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 创建与释放 | [Feat-01-creation-dispose-spec.md](04-common-capability/06-custom-node/05-component-content/Feat-01-creation-dispose-spec.md) | Baselined |
+| Feat-02 | 更新配置冻结 | [Feat-02-update-config-freeze-spec.md](04-common-capability/06-custom-node/05-component-content/Feat-02-update-config-freeze-spec.md) | Baselined |
+| Feat-03 | 复用回收 | [Feat-03-reuse-recycle-spec.md](04-common-capability/06-custom-node/05-component-content/Feat-03-reuse-recycle-spec.md) | Baselined |
+| Feat-04 | ReactiveComponentContent | [Feat-04-reactive-component-content-spec.md](04-common-capability/06-custom-node/05-component-content/Feat-04-reactive-component-content-spec.md) | Baselined |
+| Feat-05 | Transfer 转换变体 | [Feat-05-transfer-dynamic-static-conversion-spec.md](04-common-capability/06-custom-node/05-component-content/Feat-05-transfer-dynamic-static-conversion-spec.md) | Baselined |
 
 ### 04-06-06 NodeAdapter
 
@@ -811,6 +866,10 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | TypedFrameNode 类型 | [Feat-01-typedframenode-type-spec.md](04-common-capability/06-custom-node/07-typed-frame-node/Feat-01-typedframenode-type-spec.md) | Baselined |
+| Feat-02 | typeNode 动态工厂 | [Feat-02-typenode-dynamic-factory-spec.md](04-common-capability/06-custom-node/07-typed-frame-node/Feat-02-typenode-dynamic-factory-spec.md) | Baselined |
+| Feat-03 | typeNode 静态工厂 | [Feat-03-typenode-static-factory-spec.md](04-common-capability/06-custom-node/07-typed-frame-node/Feat-03-typenode-static-factory-spec.md) | Baselined |
+| Feat-04 | 组件支持矩阵 | [Feat-04-component-matrix-spec.md](04-common-capability/06-custom-node/07-typed-frame-node/Feat-04-component-matrix-spec.md) | Baselined |
 
 ### 04-07-01 分布式路由迁移能力
 
@@ -878,6 +937,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Inspector 布局/绘制回调（ComponentObserver） | [Feat-01-component-observer-callback-spec.md](04-common-capability/11-component-info/03-inspector-layout-callback/Feat-01-component-observer-callback-spec.md) | Baselined |
 
 ### 04-12-01 UIContext接口
 
@@ -926,6 +986,12 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 快捷键分发基础设施 (TextInputClient::HandleKeyEvent/加速表/modKeyFlags/Ctrl+V msg/纯字符/IsShortCutBlocked/numLock/Mac KEY_META) | [Feat-01-dispatch-infrastructure-spec.md](04-common-capability/14-input-interaction/02-text-shortcuts/Feat-01-dispatch-infrastructure-spec.md) | Baselined |
+| Feat-02 | 导航与光标移动快捷键 (CursorMove+12 CursorMoveXxx/PageUp-Down/方向键焦点外移/RTL/单行vs TextArea) | [Feat-02-navigation-caret-movement-spec.md](04-common-capability/14-input-interaction/02-text-shortcuts/Feat-02-navigation-caret-movement-spec.md) | Baselined |
+| Feat-03 | 选择快捷键 (HandleSelect/HandleSelectExtend/Ctrl+A 全选/Shift-flag 锚点/Ctrl+Shift+Home-End 异常) | [Feat-03-selection-shortcuts-spec.md](04-common-capability/14-input-interaction/02-text-shortcuts/Feat-03-selection-shortcuts-spec.md) | Baselined |
+| Feat-04 | 剪贴板与删除快捷键 (Ctrl+C/X/V/Insert/PASTE/DEL/FORWARD_DEL/Ctrl+Del 删词/Ctrl+D/copyOption/password 门控) | [Feat-04-clipboard-deletion-shortcuts-spec.md](04-common-capability/14-input-interaction/02-text-shortcuts/Feat-04-clipboard-deletion-shortcuts-spec.md) | Baselined |
+| Feat-05 | 撤销/重做快捷键 (Ctrl+Z/Y/Shift+Z/Alt+Del/operationRecords/RichEditorUndoManager 三策略/preview 合并) | [Feat-05-undo-redo-shortcuts-spec.md](04-common-capability/14-input-interaction/02-text-shortcuts/Feat-05-undo-redo-shortcuts-spec.md) | Baselined |
+| Feat-06 | 字体样式快捷键 RichEditor 专属 (Ctrl+B/I/U 粗体/斜体/下划线) | [Feat-06-font-style-shortcuts-spec.md](04-common-capability/14-input-interaction/02-text-shortcuts/Feat-06-font-style-shortcuts-spec.md) | Baselined |
 
 ### 04-14-03 文本交互
 
@@ -938,10 +1004,15 @@
 | Feat-05 | 交互触发与状态回调 | *待补充* | Draft |
 | Feat-06 | 长按选择与实体识别 | *待补充* | Draft |
 
-### 04-14-04 键盘控制
+### 04-14-04 输入法交互
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | IME 框架交互与弹出收起控制 (InputMethodManager 焦点驱动 show/hide/attach/detach + RequestKeyboard/CloseKeyboard + onWillAttachIME) | [Feat-01-ime-framework-show-hide-control-spec.md](04-common-capability/14-input-interaction/04-input-method-interaction/Feat-01-ime-framework-show-hide-control-spec.md) | Baselined |
+| Feat-02 | 输入框避让显示 (KeyBoardAvoidMode OFFSET/RESIZE/*_WITH_CARET/NONE + TriggerAvoidOnCaretChange + 自定义键盘 supportAvoidance) | [Feat-02-input-box-keyboard-avoidance-spec.md](04-common-capability/14-input-interaction/04-input-method-interaction/Feat-02-input-box-keyboard-avoidance-spec.md) | Baselined |
+| Feat-03 | 实体键盘切换 (本仓仅传 isShowKeyboard+消费面板状态；检测经全仓检索确认不在本仓，属外部 IME 框架) | [Feat-03-physical-keyboard-switching-spec.md](04-common-capability/14-input-interaction/04-input-method-interaction/Feat-03-physical-keyboard-switching-spec.md) | Baselined |
+| Feat-04 | 键盘输入处理契约 (TextInputClient 抽象 + OnTextChangedListenerImpl IME→输入框桥) | [Feat-04-keyboard-input-processing-contract-spec.md](04-common-capability/14-input-interaction/04-input-method-interaction/Feat-04-keyboard-input-processing-contract-spec.md) | Baselined |
+| Feat-05 | 输入法交互公共 API (customKeyboard/keyboardAppearance/enableKeyboardOnFocus/onWillAttachIME/onEditChange/stopEditing + IMEClient) | [Feat-05-text-component-keyboard-control-api-spec.md](04-common-capability/14-input-interaction/04-input-method-interaction/Feat-05-text-component-keyboard-control-api-spec.md) | Baselined |
 
 ### 04-14-05 自动补全能力（AutoFill）
 
@@ -1483,6 +1554,9 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 创建与滚动参数 (start/step/loop/fromStart/src/spacing/delay) | [Feat-01-marquee-creation-scroll-params-spec.md](05-ui-components/09-text-components/01-marquee/Feat-01-marquee-creation-scroll-params-spec.md) | Baselined |
+| Feat-02 | 字体样式 (fontColor/fontSize/allowScale/fontWeight/fontFamily) | [Feat-02-marquee-font-style-spec.md](05-ui-components/09-text-components/01-marquee/Feat-02-marquee-font-style-spec.md) | Baselined |
+| Feat-03 | 滚动策略、事件回调与多范式 (marqueeUpdateStrategy/onStart/onBounce/onFinish/onStop + MarqueeModifier + 静态 API + Cangjie FFI) | [Feat-03-marquee-strategy-events-multi-paradigm-spec.md](05-ui-components/09-text-components/01-marquee/Feat-03-marquee-strategy-events-multi-paradigm-spec.md) | Baselined |
 
 ### 05-09-02 RichEditor
 
@@ -1502,6 +1576,13 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 组件构建与搜索按钮 (Search/SearchOptions/searchButton/SearchButtonOptions/SearchNode 组合/divider 可见性) | [Feat-01-search-construction-and-button-spec.md](05-ui-components/09-text-components/03-search/Feat-01-search-construction-and-button-spec.md) | Baselined |
+| Feat-02 | 搜索图标与取消按钮 (searchIcon/IconOptions/SymbolGlyphModifier/cancelButton/CancelButtonOptions/CancelButtonSymbolOptions/CancelButtonStyle 枚举/图标 size/color/src/default) | [Feat-02-search-icon-and-cancel-button-spec.md](05-ui-components/09-text-components/03-search/Feat-02-search-icon-and-cancel-button-spec.md) | Baselined |
+| Feat-03 | 文本与占位排版 (textFont/placeholderFont/placeholderColor/fontColor/textAlign/letterSpacing/lineHeight/halfLeading/textIndent/fontFeature/decoration/dividerColor/includeFontPadding/fallbackLineSpacing/textDirection/compressLeadingPunctuation/enableAutoSpacing) | [Feat-03-text-and-placeholder-typography-spec.md](05-ui-components/09-text-components/03-search/Feat-03-text-and-placeholder-typography-spec.md) | Baselined |
+| Feat-04 | 自适应字号与文本描边着色 (minFontSize/maxFontSize/minFontScale/maxFontScale/strokeWidth/strokeColor/strokeJoinStyle/shaderStyle) | [Feat-04-adaptive-font-and-stroke-shader-spec.md](05-ui-components/09-text-components/03-search/Feat-04-adaptive-font-and-stroke-shader-spec.md) | Baselined |
+| Feat-05 | 键盘与输入控制 (enableKeyboardOnFocus/enterKeyType/autoCapitalizationMode/inputFilter/customKeyboard/KeyboardOptions/keyboardAppearance/type/maxLength/enablePreviewText/enableHapticFeedback/stopBackPress) | [Feat-05-keyboard-and-input-control-spec.md](05-ui-components/09-text-components/03-search/Feat-05-keyboard-and-input-control-spec.md) | Baselined |
+| Feat-06 | 选择、光标与菜单 (copyOption/selectionMenuHidden/selectionMenuOptions/selectedBackgroundColor/selectedDragPreviewStyle/enableSelectedDataDetector/caretStyle/caretPosition) | [Feat-06-selection-caret-and-menu-spec.md](05-ui-components/09-text-components/03-search/Feat-06-selection-caret-and-menu-spec.md) | Baselined |
+| Feat-07 | 事件回调与控制器 (onSubmit/onChange/onWillChange/onWillInsert/onDidInsert/onWillDelete/onDidDelete/onCopy/onWillCopy/onCut/onWillCut/onPaste/onTextSelectionChange/onContentScroll/onEditChange/onWillAttachIME + SearchController) | [Feat-07-events-and-controller-spec.md](05-ui-components/09-text-components/03-search/Feat-07-events-and-controller-spec.md) | Baselined |
 
 ### 05-09-04 Text
 
@@ -1519,11 +1600,21 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 内容创建与控制器 (TextAreaOptions/TextArea构造/setTextAreaOptions/TextAreaController:caretPosition/setTextSelection/stopEditing) | [Feat-01-content-creation-controller-spec.md](05-ui-components/09-text-components/05-text-area/Feat-01-content-creation-controller-spec.md) | Baselined |
+| Feat-02 | 字体与文本样式 (fontColor/fontSize/fontStyle/fontWeight/fontFamily/placeholderColor/placeholderFont/letterSpacing/lineHeight/lineSpacing/fontFeature/decoration/textIndent/halfLeading/includeFontPadding/fallbackLineSpacing/enableAutoSpacing/strokeWidth/strokeColor/strokeJoinStyle/shaderStyle/attributeModifier) | [Feat-02-font-text-styles-spec.md](05-ui-components/09-text-components/05-text-area/Feat-02-font-text-styles-spec.md) | Baselined |
+| Feat-03 | 行布局与溢出截断 (textAlign/textOverflow/maxLines/minLines/minFontSize/maxFontSize/minFontScale/maxFontScale/heightAdaptivePolicy/wordBreak/lineBreakStrategy/ellipsisMode/horizontalScrolling/orphanCharOptimization/compressLeadingPunctuation/punctuationOverflow/textDirection/style:DEFAULT-INLINE) | [Feat-03-layout-overflow-spec.md](05-ui-components/09-text-components/05-text-area/Feat-03-layout-overflow-spec.md) | Baselined |
+| Feat-04 | 键盘与输入法交互 (enterKeyType/onSubmit/enableKeyboardOnFocus/customKeyboard/keyboardAppearance/autoCapitalizationMode/onWillAttachIME/enablePreviewText/enableHapticFeedback/enableAutoFill/contentType/stopBackPress/voiceButton/type/TextAreaType/maxLength/inputFilter/showCounter) | [Feat-04-keyboard-ime-spec.md](05-ui-components/09-text-components/05-text-area/Feat-04-keyboard-ime-spec.md) | Baselined |
+| Feat-05 | 光标选择与剪贴板 (caretColor/caretStyle/selectedBackgroundColor/editMenuOptions/onCopy/onWillCopy/onCut/onWillCut/onPaste/copyOption/onTextSelectionChange/onContentScroll/selectedDragPreviewStyle/enableSelectedDataDetector/scrollBarColor/barState/selectionMenuHidden) | [Feat-05-caret-selection-clipboard-spec.md](05-ui-components/09-text-components/05-text-area/Feat-05-caret-selection-clipboard-spec.md) | Baselined |
+| Feat-06 | 编辑事件回调 (onChange/onEditChange/onWillChange/onWillInsert/onDidInsert/onWillDelete/onDidDelete) | [Feat-06-editing-events-spec.md](05-ui-components/09-text-components/05-text-area/Feat-06-editing-events-spec.md) | Baselined |
 
 ### 05-09-06 Span类
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Span 文本片段组件规格 (text/font/decoration/letterSpacing/textCase/lineHeight/textShadow/textBackgroundStyle/baselineOffset/fontVariations/onClick/onHover) | [Feat-01-span-text-spec.md](05-ui-components/09-text-components/06-span-components/Feat-01-span-text-spec.md) | Baselined |
+| Feat-02 | ImageSpan 图片片段组件规格 (src/verticalAlign/objectFit/colorFilter/alt/supportSvg2/baselineOffset/textBackgroundStyle/onComplete/onError) | [Feat-02-image-span-spec.md](05-ui-components/09-text-components/06-span-components/Feat-02-image-span-spec.md) | Baselined |
+| Feat-03 | SymbolSpan 符号片段组件规格 (fontSize/fontColor/fontWeight/effectStrategy/renderingStrategy) | [Feat-03-symbol-span-spec.md](05-ui-components/09-text-components/06-span-components/Feat-03-symbol-span-spec.md) | Baselined |
+| Feat-04 | ContainerSpan 容器片段组件规格 (textBackgroundStyle/嵌套模型) | [Feat-04-container-span-spec.md](05-ui-components/09-text-components/06-span-components/Feat-04-container-span-spec.md) | Baselined |
 
 ### 05-09-07 SymbolGlyph
 
@@ -1579,51 +1670,78 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | DataPanel 基础构造参数 | [Feat-01-data-panel-ctor-spec.md](05-ui-components/10-information-display-components/01-data-panel/Feat-01-data-panel-ctor-spec.md) | Baselined |
+| Feat-02 | DataPanel 样式属性 | [Feat-02-data-panel-style-spec.md](05-ui-components/10-information-display-components/01-data-panel/Feat-02-data-panel-style-spec.md) | Baselined |
+| Feat-03 | DataPanel 高级能力（阴影/ContentModifier/C-API） | [Feat-03-data-panel-advanced-spec.md](05-ui-components/10-information-display-components/01-data-panel/Feat-03-data-panel-advanced-spec.md) | Baselined |
 
 ### 05-10-02 Gauge
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Gauge 核心属性 | [Feat-01-gauge-core-spec.md](05-ui-components/10-information-display-components/02-gauge/Feat-01-gauge-core-spec.md) | Baselined |
+| Feat-02 | Gauge 高级配置 | [Feat-02-gauge-advanced-config-spec.md](05-ui-components/10-information-display-components/02-gauge/Feat-02-gauge-advanced-config-spec.md) | Baselined |
+| Feat-03 | Gauge 高级能力 | [Feat-03-gauge-advanced-spec.md](05-ui-components/10-information-display-components/02-gauge/Feat-03-gauge-advanced-spec.md) | Baselined |
 
 ### 05-10-03 LoadingProgress
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | LoadingProgress 全量规格 | [Feat-01-loading-progress-full-spec.md](05-ui-components/10-information-display-components/03-loading-progress/Feat-01-loading-progress-full-spec.md) | Baselined |
 
 ### 05-10-04 PatternLock
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | PatternLock 创建、核心属性与视觉样式 | [Feat-01-pattern-lock-core-properties-visual-spec.md](05-ui-components/10-information-display-components/04-pattern-lock/Feat-01-pattern-lock-core-properties-visual-spec.md) | Baselined |
+| Feat-02 | PatternLock 交互行为、事件与控制器 | [Feat-02-pattern-lock-interaction-events-controller-spec.md](05-ui-components/10-information-display-components/04-pattern-lock/Feat-02-pattern-lock-interaction-events-controller-spec.md) | Baselined |
+| Feat-03 | PatternLock 多范式接口与 C-API | [Feat-03-pattern-lock-multi-paradigm-capi-spec.md](05-ui-components/10-information-display-components/04-pattern-lock/Feat-03-pattern-lock-multi-paradigm-capi-spec.md) | Baselined |
 
 ### 05-10-05 Progress
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Progress 组件全量规格 | [Feat-01-progress-full-spec.md](05-ui-components/10-information-display-components/05-progress/Feat-01-progress-full-spec.md) | Baselined |
 
 ### 05-10-06 QRCode
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | QRCode 组件核心规格 | [Feat-01-qrcode-display-spec.md](05-ui-components/10-information-display-components/06-qr-code/Feat-01-qrcode-display-spec.md) | Baselined |
 
 ### 05-10-07 TextClock
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | TextClock 时间显示与格式化 | [Feat-01-time-format-spec.md](05-ui-components/10-information-display-components/07-text-clock/Feat-01-time-format-spec.md) | Baselined |
+| Feat-02 | TextClock 控制器与更新调度 | [Feat-02-controller-scheduling-spec.md](05-ui-components/10-information-display-components/07-text-clock/Feat-02-controller-scheduling-spec.md) | Baselined |
+| Feat-03 | TextClock 文本样式与 ContentModifier | [Feat-03-style-content-modifier-spec.md](05-ui-components/10-information-display-components/07-text-clock/Feat-03-style-content-modifier-spec.md) | Baselined |
+| Feat-04 | TextClock 事件、配置变更与组件化 | [Feat-04-events-config-componentization-spec.md](05-ui-components/10-information-display-components/07-text-clock/Feat-04-events-config-componentization-spec.md) | Baselined |
 
 ### 05-10-08 TextTimer
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | TextTimer 计时模式与格式化 | [Feat-01-timing-modes-format-spec.md](05-ui-components/10-information-display-components/08-text-timer/Feat-01-timing-modes-format-spec.md) | Baselined |
+| Feat-02 | TextTimer 控制器与事件 | [Feat-02-controller-events-spec.md](05-ui-components/10-information-display-components/08-text-timer/Feat-02-controller-events-spec.md) | Baselined |
+| Feat-03 | TextTimer 文本样式与 ContentModifier | [Feat-03-style-content-modifier-spec.md](05-ui-components/10-information-display-components/08-text-timer/Feat-03-style-content-modifier-spec.md) | Baselined |
+| Feat-04 | TextTimer 可见区优化与组件化 | [Feat-04-visibility-componentization-spec.md](05-ui-components/10-information-display-components/08-text-timer/Feat-04-visibility-componentization-spec.md) | Baselined |
 
 ### 05-10-09 Badge
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Badge 内容模式 | [Feat-01-content-modes-spec.md](05-ui-components/10-information-display-components/09-badge/Feat-01-content-modes-spec.md) | Baselined |
+| Feat-02 | Badge 位置与布局 | [Feat-02-position-layout-spec.md](05-ui-components/10-information-display-components/09-badge/Feat-02-position-layout-spec.md) | Baselined |
+| Feat-03 | Badge 样式、主题与老年模式 | [Feat-03-style-theme-aging-spec.md](05-ui-components/10-information-display-components/09-badge/Feat-03-style-theme-aging-spec.md) | Baselined |
+| Feat-04 | Badge 无障碍与组件化 | [Feat-04-accessibility-componentization-spec.md](05-ui-components/10-information-display-components/09-badge/Feat-04-accessibility-componentization-spec.md) | Baselined |
 
 ### 05-10-10 Counter
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Counter 创建、尺寸与基础样式 | [Feat-01-counter-creation-size-style-spec.md](05-ui-components/10-information-display-components/10-counter/Feat-01-counter-creation-size-style-spec.md) | Baselined |
+| Feat-02 | Counter 按钮控制与事件回调 | [Feat-02-counter-button-control-events-spec.md](05-ui-components/10-information-display-components/10-counter/Feat-02-counter-button-control-events-spec.md) | Baselined |
+| Feat-03 | Counter 多范式接口与 C-API | [Feat-03-counter-multi-paradigm-capi-spec.md](05-ui-components/10-information-display-components/10-counter/Feat-03-counter-multi-paradigm-capi-spec.md) | Baselined |
 
 ### 05-11-01 FormComponent
 
@@ -1639,37 +1757,48 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | PluginComponent创建/模板/数据与事件回调 | [Feat-01-plugin-component-creation-events-spec.md](05-ui-components/12-embedded-display-components/01-plugin-component/Feat-01-plugin-component-creation-events-spec.md) | Baselined |
+| Feat-02 | PluginComponent跨组件Push/Request Manager | [Feat-02-plugin-component-manager-spec.md](05-ui-components/12-embedded-display-components/01-plugin-component/Feat-02-plugin-component-manager-spec.md) | Baselined |
 
 ### 05-12-02 AbilityComponent
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | AbilityComponent 跨进程能力嵌入（已废弃） | [Feat-01-ability-component-cross-process-embed-deprecated-spec.md](05-ui-components/12-embedded-display-components/02-ability-component/Feat-01-ability-component-cross-process-embed-deprecated-spec.md) | Baselined |
+| Feat-01 | AbilityComponent完整规格（已废弃补录） | *待补充* | Draft |
 
 ### 05-12-03 UIExtensionComponent
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | UIExtensionComponent创建/选项/Proxy通信 | [Feat-01-ui-extension-creation-proxy-spec.md](05-ui-components/12-embedded-display-components/03-ui-extension-component/Feat-01-ui-extension-creation-proxy-spec.md) | Baselined |
+| Feat-02 | UIExtensionComponent事件回调 | [Feat-02-ui-extension-events-spec.md](05-ui-components/12-embedded-display-components/03-ui-extension-component/Feat-02-ui-extension-events-spec.md) | Baselined |
+| Feat-03 | UIExtensionComponent废弃事件与兼容性 | [Feat-03-ui-extension-deprecated-compat-spec.md](05-ui-components/12-embedded-display-components/03-ui-extension-component/Feat-03-ui-extension-deprecated-compat-spec.md) | Baselined |
 
 ### 05-12-04 EmbeddedComponent
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | EmbeddedComponent创建/选项/DPI策略 | [Feat-01-embedded-creation-dpi-spec.md](05-ui-components/12-embedded-display-components/04-embedded-component/Feat-01-embedded-creation-dpi-spec.md) | Baselined |
+| Feat-02 | EmbeddedComponent事件回调 | [Feat-02-embedded-events-spec.md](05-ui-components/12-embedded-display-components/04-embedded-component/Feat-02-embedded-events-spec.md) | Baselined |
 
 ### 05-12-05 IsolatedComponent
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | IsolatedComponent完整规格 | [Feat-01-isolated-component-spec.md](05-ui-components/12-embedded-display-components/05-isolated-component/Feat-01-isolated-component-spec.md) | Baselined |
 
 ### 05-12-06 SecurityUIExtensionComponent
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | SecurityUIExtensionComponent创建/Proxy/安全策略 | [Feat-01-security-creation-proxy-spec.md](05-ui-components/12-embedded-display-components/06-security-ui-extension-component/Feat-01-security-creation-proxy-spec.md) | Baselined |
+| Feat-02 | SecurityUIExtensionComponent事件回调 | [Feat-02-security-events-spec.md](05-ui-components/12-embedded-display-components/06-security-ui-extension-component/Feat-02-security-events-spec.md) | Baselined |
 
 ### 05-12-07 DynamicComponent
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | DynamicComponent完整规格 | [Feat-01-dynamic-component-spec.md](05-ui-components/12-embedded-display-components/07-dynamic-component/Feat-01-dynamic-component-spec.md) | Baselined |
 
 ### 05-13-01 XComponent
 

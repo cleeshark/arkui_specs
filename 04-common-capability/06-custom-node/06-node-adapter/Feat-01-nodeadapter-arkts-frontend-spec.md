@@ -147,7 +147,7 @@
 | 规则ID | 类型 | 触发条件 | 预期行为 | 边界/约束 | 关联AC |
 |--------|------|---------|---------|----------|--------|
 | R-1 | 行为 | `new NodeAdapter()` | `createAdapter()`→`nativePtr_=UINodeAdapter*`；`_isDisposed=false` | `nativePtr_` 非 raw handle | AC-1.1 |
-| R-2 | 行为 | 构造 `setCallbacks` | attach/detach trampoline 无条件注册；getId/create/dispose/update 仅构造时 `!==undefined` 注册 | 子类方法覆写生效，构造后赋值不生效 | AC-1.2,AC-1.3,AC-1.4 |
+| R-2 | 行为 | 构造 `setCallbacks` | attach/detach trampoline 无条件注册；getId/create/dispose/update 仅构造时 `!==undefined` 注册 | 子类方法覆写生效；构造后赋值的方法不被注册（注册仅构造时检查），回调不被调用 | AC-1.2,AC-1.3,AC-1.4 |
 | R-3 | 行为 | `dispose()` | `_isDisposed=true`→fire 生命周期回调→detach 宿主→`nativeRef_.dispose()`→`nativePtr_=null` | 顺序固定；先解绑宿主 | AC-2.1 |
 | R-4 | 行为 | `totalNodeCount` setter（count≥0） | `setTotalNodeCount`+缓存 `count_` | count∈[0,+∞) | AC-3.1 |
 | R-5 | 边界 | `totalNodeCount` setter（count<0） | 静默 return，不调 native、不更新缓存 | 负数忽略 | AC-3.2 |
@@ -320,7 +320,7 @@ Feature: NodeAdapter ArkTS 前端
     Then setCallbacks 在构造时绑定 4 个 trampoline
     And 引擎取节点时 onCreateChild/onGetChildId 正常触发
 
-  Scenario: 构造后赋值回调不生效
+  Scenario: 构造后赋值回调不被注册（不被调用）
     Given const adapter = new NodeAdapter()
     When 构造后执行 adapter.onCreateChild = (index) => node
     Then onCreateChild 未注册（setCallbacks 已执行）
