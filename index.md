@@ -48,7 +48,7 @@
 | 03 引擎框架层 | 03 资源主题 | 02 主题分层访问 | `03-03-02` | `03-engine-framework/03-resource-theme/02-theme-layered-access/` | [design.md](03-engine-framework/03-resource-theme/02-theme-layered-access/design.md) | 1 |
 | 03 引擎框架层 | 03 资源主题 | 03 Theme框架 | `03-03-03` | `03-engine-framework/03-resource-theme/03-theme-framework/` | [design.md](03-engine-framework/03-resource-theme/03-theme-framework/design.md) | 2 |
 | 03 引擎框架层 | 03 资源主题 | 04 资源动态切换 | `03-03-04` | `03-engine-framework/03-resource-theme/04-resource-dynamic-switching/` | [design.md](03-engine-framework/03-resource-theme/04-resource-dynamic-switching/design.md) | 1 |
-| 03 引擎框架层 | 04 事件框架 | 01 事件基础框架 | `03-04-01` | `03-engine-framework/04-event-framework/01-event-base-framework/` | *待补充* | 0 |
+| 03 引擎框架层 | 04 事件框架 | 01 事件基础框架 | `03-04-01` | `03-engine-framework/04-event-framework/01-event-base-framework/` | [design.md](03-engine-framework/04-event-framework/01-event-base-framework/design.md) | 5 |
 | 03 引擎框架层 | 04 事件框架 | 02 拖拽框架 | `03-04-02` | `03-engine-framework/04-event-framework/02-drag-framework/` | *待补充* | 0 |
 | 03 引擎框架层 | 05 窗口机制 | 01 窗口机制 | `03-05-01` | `03-engine-framework/05-window-mechanism/01-window-mechanism/` | [design.md](03-engine-framework/05-window-mechanism/01-window-mechanism/design.md) | 4 |
 | 03 引擎框架层 | 05 窗口机制 | 02 子窗机制 | `03-05-02` | `03-engine-framework/05-window-mechanism/02-subwindow-mechanism/` | [design.md](03-engine-framework/05-window-mechanism/02-subwindow-mechanism/design.md) | 3 |
@@ -77,11 +77,11 @@
 | 04 通用能力层 | 03 通用属性 | 09 无障碍属性 | `04-03-09` | `04-common-capability/03-common-attributes/09-accessibility-attributes/` | *待补充* | 0 |
 | 04 通用能力层 | 03 通用属性 | 10 图片相关属性 | `04-03-10` | `04-common-capability/03-common-attributes/10-image-related-attributes/` | [design.md](04-common-capability/03-common-attributes/10-image-related-attributes/design.md) | 1 |
 | 04 通用能力层 | 03 通用属性 | 11 文本通用属性 | `04-03-11` | `04-common-capability/03-common-attributes/11-text-common-attributes/` | [design.md](04-common-capability/03-common-attributes/11-text-common-attributes/design.md) | 5 |
-| 04 通用能力层 | 04 通用事件 | 01 触摸事件 | `04-04-01` | `04-common-capability/04-common-events/01-touch-events/` | *待补充* | 0 |
-| 04 通用能力层 | 04 通用事件 | 02 按键事件 | `04-04-02` | `04-common-capability/04-common-events/02-key-events/` | *待补充* | 0 |
-| 04 通用能力层 | 04 通用事件 | 03 事件分发和拦截 | `04-04-03` | `04-common-capability/04-common-events/03-event-dispatch-intercept/` | *待补充* | 0 |
-| 04 通用能力层 | 04 通用事件 | 04 组件组合键 | `04-04-04` | `04-common-capability/04-common-events/04-component-shortcuts/` | *待补充* | 0 |
-| 04 通用能力层 | 04 通用事件 | 05 鼠标事件 | `04-04-05` | `04-common-capability/04-common-events/05-mouse-events/` | *待补充* | 0 |
+| 04 通用能力层 | 04 通用事件 | 01 触摸事件 | `04-04-01` | `04-common-capability/04-common-events/01-touch-events/` | [design.md](04-common-capability/04-common-events/01-touch-events/design.md) | 3 |
+| 04 通用能力层 | 04 通用事件 | 02 按键事件 | `04-04-02` | `04-common-capability/04-common-events/02-key-events/` | [design.md](04-common-capability/04-common-events/02-key-events/design.md) | 2 |
+| 04 通用能力层 | 04 通用事件 | 03 事件分发和拦截 | `04-04-03` | `04-common-capability/04-common-events/03-event-dispatch-intercept/` | [design.md](04-common-capability/04-common-events/03-event-dispatch-intercept/design.md) | 4 |
+| 04 通用能力层 | 04 通用事件 | 04 组件组合键 | `04-04-04` | `04-common-capability/04-common-events/04-component-shortcuts/` | [design.md](04-common-capability/04-common-events/04-component-shortcuts/design.md) | 1 |
+| 04 通用能力层 | 04 通用事件 | 05 鼠标事件 | `04-04-05` | `04-common-capability/04-common-events/05-mouse-events/` | [design.md](04-common-capability/04-common-events/05-mouse-events/design.md) | 4 |
 | 04 通用能力层 | 04 通用事件 | 06 手势能力 | `04-04-06` | `04-common-capability/04-common-events/06-gesture-capability/` | [design.md](04-common-capability/04-common-events/06-gesture-capability/design.md) | 5 |
 | 04 通用能力层 | 04 通用事件 | 07 拖拽能力 | `04-04-07` | `04-common-capability/04-common-events/07-drag-capability/` | *待补充* | 0 |
 | 04 通用能力层 | 04 通用事件 | 08 手写笔能力 | `04-04-08` | `04-common-capability/04-common-events/08-stylus-capability/` | *待补充* | 0 |
@@ -94,6 +94,7 @@
 | 04 通用能力层 | 05 自定义扩展能力 | 04 自定义内容 -（信息展示类） | `04-05-04` | `04-common-capability/05-custom-extension/04-content-modifier-display/` | [design.md](04-common-capability/05-custom-extension/04-content-modifier-display/design.md) | 1 |
 | 04 通用能力层 | 05 自定义扩展能力 | 05 自定义属性 | `04-05-05` | `04-common-capability/05-custom-extension/05-custom-property/` | [design.md](04-common-capability/05-custom-extension/05-custom-property/design.md) | 1 |
 | 04 通用能力层 | 05 自定义扩展能力 | 06 组件Modifier | `04-05-06` | `04-common-capability/05-custom-extension/06-component-modifier/` | [design.md](04-common-capability/05-custom-extension/06-component-modifier/design.md) | 2 |
+| 04 通用能力层 | 05 自定义扩展能力 | 07 手势Modifier | `04-05-07` | `04-common-capability/05-custom-extension/07-gesture-modifier/` | [design.md](04-common-capability/05-custom-extension/07-gesture-modifier/design.md) | 1 |
 | 04 通用能力层 | 06 自定义节点能力 | 01 占位组件 | `04-06-01` | `04-common-capability/06-custom-node/01-placeholder-component/` | [design.md](04-common-capability/06-custom-node/01-placeholder-component/design.md) | 1 |
 | 04 通用能力层 | 06 自定义节点能力 | 02 FrameNode | `04-06-02` | `04-common-capability/06-custom-node/02-frame-node/` | [design.md](04-common-capability/06-custom-node/02-frame-node/design.md) | 8 |
 | 04 通用能力层 | 06 自定义节点能力 | 03 RenderNode | `04-06-03` | `04-common-capability/06-custom-node/03-render-node/` | [design.md](04-common-capability/06-custom-node/03-render-node/design.md) | 1 |
@@ -483,6 +484,11 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 事件数据模型与节点事件中心 | [Feat-01-event-model-and-event-hub-spec.md](03-engine-framework/04-event-framework/01-event-base-framework/Feat-01-event-model-and-event-hub-spec.md) | Baselined |
+| Feat-02 | 命中测试与事件目标链构建 | [Feat-02-hit-test-and-event-target-chain-spec.md](03-engine-framework/04-event-framework/01-event-base-framework/Feat-02-hit-test-and-event-target-chain-spec.md) | Baselined |
+| Feat-03 | 输入事件分发与采样管线 | [Feat-03-input-dispatch-and-sampling-pipeline-spec.md](03-engine-framework/04-event-framework/01-event-base-framework/Feat-03-input-dispatch-and-sampling-pipeline-spec.md) | Baselined |
+| Feat-04 | 手势仲裁与响应控制 | [Feat-04-gesture-referee-and-response-control-spec.md](03-engine-framework/04-event-framework/01-event-base-framework/Feat-04-gesture-referee-and-response-control-spec.md) | Baselined |
+| Feat-05 | 事件诊断与维测 | [Feat-05-event-diagnostics-and-inspection-spec.md](03-engine-framework/04-event-framework/01-event-base-framework/Feat-05-event-diagnostics-and-inspection-spec.md) | Baselined |
 
 ### 03-04-02 拖拽框架
 
@@ -701,26 +707,40 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 触摸回调与传播控制 | [Feat-01-touch-callback-propagation-spec.md](04-common-capability/04-common-events/01-touch-events/Feat-01-touch-callback-propagation-spec.md) | Baselined |
+| Feat-02 | 触摸事件与多点数据模型 | [Feat-02-touch-event-multipoint-data-model-spec.md](04-common-capability/04-common-events/01-touch-events/Feat-02-touch-event-multipoint-data-model-spec.md) | Baselined |
+| Feat-03 | 历史采样与高级触点信息 | [Feat-03-history-sampling-advanced-touch-info-spec.md](04-common-capability/04-common-events/01-touch-events/Feat-03-history-sampling-advanced-touch-info-spec.md) | Baselined |
 
 ### 04-04-02 按键事件
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 按键事件模型与基础回调 | [Feat-01-key-event-model-basic-callback-spec.md](04-common-capability/04-common-events/02-key-events/Feat-01-key-event-model-basic-callback-spec.md) | Baselined |
+| Feat-02 | 前置拦截与自定义分发 | [Feat-02-pre-ime-custom-dispatch-spec.md](04-common-capability/04-common-events/02-key-events/Feat-02-pre-ime-custom-dispatch-spec.md) | Baselined |
 
 ### 04-04-03 事件分发和拦截
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 命中测试、拦截与响应链构建 | [Feat-01-hit-test-intercept-response-chain-spec.md](04-common-capability/04-common-events/03-event-dispatch-intercept/Feat-01-hit-test-intercept-response-chain-spec.md) | Baselined |
+| Feat-02 | 触摸事件序列分发与传播控制 | [Feat-02-touch-sequence-dispatch-propagation-spec.md](04-common-capability/04-common-events/03-event-dispatch-intercept/Feat-02-touch-sequence-dispatch-propagation-spec.md) | Baselined |
+| Feat-03 | 跨容器事件分发 | [Feat-03-cross-container-event-dispatch-spec.md](04-common-capability/04-common-events/03-event-dispatch-intercept/Feat-03-cross-container-event-dispatch-spec.md) | Baselined |
+| Feat-04 | 自定义输入事件构造与分发 | [Feat-04-custom-input-event-construction-dispatch-spec.md](04-common-capability/04-common-events/03-event-dispatch-intercept/Feat-04-custom-input-event-construction-dispatch-spec.md) | Baselined |
 
 ### 04-04-04 组件组合键
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 组件组合键注册与触发 | [Feat-01-component-shortcut-registration-trigger-spec.md](04-common-capability/04-common-events/04-component-shortcuts/Feat-01-component-shortcut-registration-trigger-spec.md) | Baselined |
 
 ### 04-04-05 鼠标事件
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 鼠标事件注册、命中与分发 | [Feat-01-mouse-event-registration-hit-test-dispatch-spec.md](04-common-capability/04-common-events/05-mouse-events/Feat-01-mouse-event-registration-hit-test-dispatch-spec.md) | Baselined |
+| Feat-02 | 鼠标事件数据模型与版本演进 | [Feat-02-mouse-event-data-model-version-evolution-spec.md](04-common-capability/04-common-events/05-mouse-events/Feat-02-mouse-event-data-model-version-evolution-spec.md) | Baselined |
+| Feat-03 | 悬停事件与视觉反馈 | *待补充* | Draft |
+| Feat-04 | 鼠标光标样式与自定义光标 | [Feat-04-mouse-cursor-style-custom-cursor-spec.md](04-common-capability/04-common-events/05-mouse-events/Feat-04-mouse-cursor-style-custom-cursor-spec.md) | Baselined |
 
 ### 04-04-06 手势能力
 
@@ -796,6 +816,12 @@
 |--------|----------|-----------|------|
 | Feat-01 | 命令式 Modifier 基类与类体系 | [Feat-01-common-modifier-class-system-spec.md](04-common-capability/05-custom-extension/06-component-modifier/Feat-01-common-modifier-class-system-spec.md) | Baselined |
 | Feat-02 | ModifierUtils 对外接口 | [Feat-02-modifier-utils-api-spec.md](04-common-capability/05-custom-extension/06-component-modifier/Feat-02-modifier-utils-api-spec.md) | Baselined |
+
+### 04-05-07 手势Modifier
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | gestureModifier 动态手势配置 | [Feat-01-gesture-modifier-dynamic-configuration-spec.md](04-common-capability/05-custom-extension/07-gesture-modifier/Feat-01-gesture-modifier-dynamic-configuration-spec.md) | Baselined |
 
 ### 04-06-01 占位组件
 
