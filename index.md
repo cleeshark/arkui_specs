@@ -94,6 +94,7 @@
 | 04 通用能力层 | 05 自定义扩展能力 | 04 自定义内容 -（信息展示类） | `04-05-04` | `04-common-capability/05-custom-extension/04-content-modifier-display/` | [design.md](04-common-capability/05-custom-extension/04-content-modifier-display/design.md) | 1 |
 | 04 通用能力层 | 05 自定义扩展能力 | 05 自定义属性 | `04-05-05` | `04-common-capability/05-custom-extension/05-custom-property/` | [design.md](04-common-capability/05-custom-extension/05-custom-property/design.md) | 1 |
 | 04 通用能力层 | 05 自定义扩展能力 | 06 组件Modifier | `04-05-06` | `04-common-capability/05-custom-extension/06-component-modifier/` | [design.md](04-common-capability/05-custom-extension/06-component-modifier/design.md) | 2 |
+| 04 通用能力层 | 05 自定义扩展能力 | 07 手势Modifier | `04-05-07` | `04-common-capability/05-custom-extension/07-gesture-modifier/` | [design.md](04-common-capability/05-custom-extension/07-gesture-modifier/design.md) | 1 |
 | 04 通用能力层 | 06 自定义节点能力 | 01 占位组件 | `04-06-01` | `04-common-capability/06-custom-node/01-placeholder-component/` | [design.md](04-common-capability/06-custom-node/01-placeholder-component/design.md) | 1 |
 | 04 通用能力层 | 06 自定义节点能力 | 02 FrameNode | `04-06-02` | `04-common-capability/06-custom-node/02-frame-node/` | [design.md](04-common-capability/06-custom-node/02-frame-node/design.md) | 8 |
 | 04 通用能力层 | 06 自定义节点能力 | 03 RenderNode | `04-06-03` | `04-common-capability/06-custom-node/03-render-node/` | [design.md](04-common-capability/06-custom-node/03-render-node/design.md) | 1 |
@@ -815,6 +816,12 @@
 |--------|----------|-----------|------|
 | Feat-01 | 命令式 Modifier 基类与类体系 | [Feat-01-common-modifier-class-system-spec.md](04-common-capability/05-custom-extension/06-component-modifier/Feat-01-common-modifier-class-system-spec.md) | Baselined |
 | Feat-02 | ModifierUtils 对外接口 | [Feat-02-modifier-utils-api-spec.md](04-common-capability/05-custom-extension/06-component-modifier/Feat-02-modifier-utils-api-spec.md) | Baselined |
+
+### 04-05-07 手势Modifier
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | gestureModifier 动态手势配置 | [Feat-01-gesture-modifier-dynamic-configuration-spec.md](04-common-capability/05-custom-extension/07-gesture-modifier/Feat-01-gesture-modifier-dynamic-configuration-spec.md) | Baselined |
 
 ### 04-06-01 占位组件
 

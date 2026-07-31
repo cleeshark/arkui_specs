@@ -963,6 +963,19 @@ functions:
   path: 04-common-capability/05-custom-extension/06-component-modifier/
   design: 04-common-capability/05-custom-extension/06-component-modifier/design.md
   status: active
+- id: 04-05-07
+  l1:
+    id: '04'
+    title: 通用能力层
+  l2:
+    id: '05'
+    title: 自定义扩展能力
+  l3:
+    id: '07'
+    title: 手势Modifier
+  path: 04-common-capability/05-custom-extension/07-gesture-modifier/
+  design: 04-common-capability/05-custom-extension/07-gesture-modifier/design.md
+  status: active
 - id: 04-06-01
   l1:
     id: '04'

@@ -2034,6 +2034,11 @@ features:
   title: 信息展示类组件自定义内容（ContentModifier）
   spec: 04-common-capability/05-custom-extension/04-content-modifier-display/Feat-01-content-modifier-display-spec.md
   status: Baselined
+- func_id: 04-05-07
+  id: Feat-01
+  title: gestureModifier 动态手势配置
+  spec: 04-common-capability/05-custom-extension/07-gesture-modifier/Feat-01-gesture-modifier-dynamic-configuration-spec.md
+  status: Baselined
 - func_id: 04-16-01
   id: Feat-01
   title: UIAppearance（深浅色模式与外观管理）
