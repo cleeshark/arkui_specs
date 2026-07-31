@@ -49,7 +49,7 @@
 | 03 引擎框架层 | 03 资源主题 | 03 Theme框架 | `03-03-03` | `03-engine-framework/03-resource-theme/03-theme-framework/` | [design.md](03-engine-framework/03-resource-theme/03-theme-framework/design.md) | 2 |
 | 03 引擎框架层 | 03 资源主题 | 04 资源动态切换 | `03-03-04` | `03-engine-framework/03-resource-theme/04-resource-dynamic-switching/` | [design.md](03-engine-framework/03-resource-theme/04-resource-dynamic-switching/design.md) | 1 |
 | 03 引擎框架层 | 04 事件框架 | 01 事件基础框架 | `03-04-01` | `03-engine-framework/04-event-framework/01-event-base-framework/` | [design.md](03-engine-framework/04-event-framework/01-event-base-framework/design.md) | 5 |
-| 03 引擎框架层 | 04 事件框架 | 02 拖拽框架 | `03-04-02` | `03-engine-framework/04-event-framework/02-drag-framework/` | *待补充* | 0 |
+| 03 引擎框架层 | 04 事件框架 | 02 拖拽框架 | `03-04-02` | `03-engine-framework/04-event-framework/02-drag-framework/` | [design.md](03-engine-framework/04-event-framework/02-drag-framework/design.md) | 6 |
 | 03 引擎框架层 | 05 窗口机制 | 01 窗口机制 | `03-05-01` | `03-engine-framework/05-window-mechanism/01-window-mechanism/` | [design.md](03-engine-framework/05-window-mechanism/01-window-mechanism/design.md) | 4 |
 | 03 引擎框架层 | 05 窗口机制 | 02 子窗机制 | `03-05-02` | `03-engine-framework/05-window-mechanism/02-subwindow-mechanism/` | [design.md](03-engine-framework/05-window-mechanism/02-subwindow-mechanism/design.md) | 3 |
 | 03 引擎框架层 | 06 多实例管理 | 01 多实例管理 | `03-06-01` | `03-engine-framework/06-multi-instance-management/01-multi-instance-management/` | [design.md](03-engine-framework/06-multi-instance-management/01-multi-instance-management/design.md) | 1 |
@@ -69,7 +69,7 @@
 | 04 通用能力层 | 03 通用属性 | 01 布局属性 | `04-03-01` | `04-common-capability/03-common-attributes/01-layout-attributes/` | [design.md](04-common-capability/03-common-attributes/01-layout-attributes/design.md) | 3 |
 | 04 通用能力层 | 03 通用属性 | 02 视效属性 | `04-03-02` | `04-common-capability/03-common-attributes/02-visual-effect-attributes/` | [design.md](04-common-capability/03-common-attributes/02-visual-effect-attributes/design.md) | 1 |
 | 04 通用能力层 | 03 通用属性 | 03 基础属性 | `04-03-03` | `04-common-capability/03-common-attributes/03-basic-attributes/` | [design.md](04-common-capability/03-common-attributes/03-basic-attributes/design.md) | 5 |
-| 04 通用能力层 | 03 通用属性 | 04 交互属性 | `04-03-04` | `04-common-capability/03-common-attributes/04-interaction-attributes/` | *待补充* | 0 |
+| 04 通用能力层 | 03 通用属性 | 04 交互属性 | `04-03-04` | `04-common-capability/03-common-attributes/04-interaction-attributes/` | [design.md](04-common-capability/03-common-attributes/04-interaction-attributes/design.md) | 3 |
 | 04 通用能力层 | 03 通用属性 | 05 弹窗类属性 | `04-03-05` | `04-common-capability/03-common-attributes/05-popup-attributes/` | [design.md](04-common-capability/03-common-attributes/05-popup-attributes/design.md) | 1 |
 | 04 通用能力层 | 03 通用属性 | 06 模态属性 | `04-03-06` | `04-common-capability/03-common-attributes/06-modal-attributes/` | [design.md](04-common-capability/03-common-attributes/06-modal-attributes/design.md) | 1 |
 | 04 通用能力层 | 03 通用属性 | 07 样式属性 | `04-03-07` | `04-common-capability/03-common-attributes/07-style-attributes/` | [design.md](04-common-capability/03-common-attributes/07-style-attributes/design.md) | 2 |
@@ -83,7 +83,7 @@
 | 04 通用能力层 | 04 通用事件 | 04 组件组合键 | `04-04-04` | `04-common-capability/04-common-events/04-component-shortcuts/` | [design.md](04-common-capability/04-common-events/04-component-shortcuts/design.md) | 1 |
 | 04 通用能力层 | 04 通用事件 | 05 鼠标事件 | `04-04-05` | `04-common-capability/04-common-events/05-mouse-events/` | [design.md](04-common-capability/04-common-events/05-mouse-events/design.md) | 4 |
 | 04 通用能力层 | 04 通用事件 | 06 手势能力 | `04-04-06` | `04-common-capability/04-common-events/06-gesture-capability/` | [design.md](04-common-capability/04-common-events/06-gesture-capability/design.md) | 5 |
-| 04 通用能力层 | 04 通用事件 | 07 拖拽能力 | `04-04-07` | `04-common-capability/04-common-events/07-drag-capability/` | *待补充* | 0 |
+| 04 通用能力层 | 04 通用事件 | 07 拖拽能力 | `04-04-07` | `04-common-capability/04-common-events/07-drag-capability/` | [design.md](04-common-capability/04-common-events/07-drag-capability/design.md) | 7 |
 | 04 通用能力层 | 04 通用事件 | 08 手写笔能力 | `04-04-08` | `04-common-capability/04-common-events/08-stylus-capability/` | *待补充* | 0 |
 | 04 通用能力层 | 04 通用事件 | 09 组件相关事件 | `04-04-09` | `04-common-capability/04-common-events/09-component-related-events/` | *待补充* | 0 |
 | 04 通用能力层 | 04 通用事件 | 10 可见区域机制 | `04-04-10` | `04-common-capability/04-common-events/10-visible-area-mechanism/` | *待补充* | 0 |
@@ -109,7 +109,7 @@
 | 04 通用能力层 | 08 根视图 | 02 元服务AppBar | `04-08-02` | `04-common-capability/08-root-view/02-atomic-service-appbar/` | [design.md](04-common-capability/08-root-view/02-atomic-service-appbar/design.md) | 2 |
 | 04 通用能力层 | 08 根视图 | 03 浮层能力 | `04-08-03` | `04-common-capability/08-root-view/03-overlay-capability/` | [design.md](04-common-capability/08-root-view/03-overlay-capability/design.md) | 1 |
 | 04 通用能力层 | 09 焦点框架 | 01 焦点机制 | `04-09-01` | `04-common-capability/09-focus-framework/01-focus-mechanism/` | *待补充* | 0 |
-| 04 通用能力层 | 10 组件截图 | 01 离屏截图 | `04-10-01` | `04-common-capability/10-component-screenshot/01-offscreen-screenshot/` | *待补充* | 0 |
+| 04 通用能力层 | 10 组件截图 | 01 离屏截图 | `04-10-01` | `04-common-capability/10-component-screenshot/01-offscreen-screenshot/` | [design.md](04-common-capability/10-component-screenshot/01-offscreen-screenshot/design.md) | 5 |
 | 04 通用能力层 | 11 组件信息获取 | 01 ComponentUtils | `04-11-01` | `04-common-capability/11-component-info/01-component-utils/` | *待补充* | 0 |
 | 04 通用能力层 | 11 组件信息获取 | 02 无感监听（observer） | `04-11-02` | `04-common-capability/11-component-info/02-observer/` | [design.md](04-common-capability/11-component-info/02-observer/design.md) | 2 |
 | 04 通用能力层 | 11 组件信息获取 | 03 布局回调（inspector） | `04-11-03` | `04-common-capability/11-component-info/03-inspector-layout-callback/` | [design.md](04-common-capability/11-component-info/03-inspector-layout-callback/design.md) | 1 |
@@ -494,6 +494,12 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Drag initiation and pre-drag state machine | [Feat-01-drag-initiation-predrag-state-machine-spec.md](03-engine-framework/04-event-framework/02-drag-framework/Feat-01-drag-initiation-predrag-state-machine-spec.md) | Baselined |
+| Feat-02 | Drag source-target routing and lifecycle dispatch | [Feat-02-drag-source-target-routing-lifecycle-dispatch-spec.md](03-engine-framework/04-event-framework/02-drag-framework/Feat-02-drag-source-target-routing-lifecycle-dispatch-spec.md) | Baselined |
+| Feat-03 | Drag data transport and drop negotiation | [Feat-03-drag-data-transport-drop-negotiation-spec.md](03-engine-framework/04-event-framework/02-drag-framework/Feat-03-drag-data-transport-drop-negotiation-spec.md) | Baselined |
+| Feat-04 | Drag preview overlay animation and visual effects | [Feat-04-drag-preview-overlay-animation-visual-effects-spec.md](03-engine-framework/04-event-framework/02-drag-framework/Feat-04-drag-preview-overlay-animation-visual-effects-spec.md) | Baselined |
+| Feat-05 | Drag spring loading and specialized modes | [Feat-05-drag-spring-loading-specialized-modes-spec.md](03-engine-framework/04-event-framework/02-drag-framework/Feat-05-drag-spring-loading-specialized-modes-spec.md) | Baselined |
+| Feat-06 | Drag multi-display device and container integration | [Feat-06-drag-multi-display-device-container-integration-spec.md](03-engine-framework/04-event-framework/02-drag-framework/Feat-06-drag-multi-display-device-container-integration-spec.md) | Baselined |
 
 ### 03-05-01 窗口机制
 
@@ -656,6 +662,9 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 指针、悬停与无障碍悬停事件 | [Feat-01-pointer-hover-accessibility-hover-spec.md](04-common-capability/03-common-attributes/04-interaction-attributes/Feat-01-pointer-hover-accessibility-hover-spec.md) | Baselined |
+| Feat-02 | 键盘与外设输入事件 | [Feat-02-keyboard-peripheral-input-events-spec.md](04-common-capability/03-common-attributes/04-interaction-attributes/Feat-02-keyboard-peripheral-input-events-spec.md) | Baselined |
+| Feat-03 | 组件可用性与点击反馈 | [Feat-03-enabled-click-feedback-spec.md](04-common-capability/03-common-attributes/04-interaction-attributes/Feat-03-enabled-click-feedback-spec.md) | Baselined |
 
 ### 04-03-05 弹窗类属性
 
@@ -756,6 +765,13 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | Component drag source and target configuration | [Feat-01-component-drag-source-target-configuration-spec.md](04-common-capability/04-common-events/07-drag-capability/Feat-01-component-drag-source-target-configuration-spec.md) | Baselined |
+| Feat-02 | Component drag lifecycle and event contract | [Feat-02-component-drag-lifecycle-event-contract-spec.md](04-common-capability/04-common-events/07-drag-capability/Feat-02-component-drag-lifecycle-event-contract-spec.md) | Baselined |
+| Feat-03 | Drag data result and asynchronous transfer | [Feat-03-drag-data-result-asynchronous-transfer-spec.md](04-common-capability/04-common-events/07-drag-capability/Feat-03-drag-data-result-asynchronous-transfer-spec.md) | Baselined |
+| Feat-04 | Drag preview and interaction presentation | [Feat-04-drag-preview-interaction-presentation-spec.md](04-common-capability/04-common-events/07-drag-capability/Feat-04-drag-preview-interaction-presentation-spec.md) | Baselined |
+| Feat-05 | Programmatic drag action and controller APIs | [Feat-05-programmatic-drag-action-controller-apis-spec.md](04-common-capability/04-common-events/07-drag-capability/Feat-05-programmatic-drag-action-controller-apis-spec.md) | Baselined |
+| Feat-06 | Drop completion feedback and deferred finalization | [Feat-06-drop-completion-feedback-deferred-finalization-spec.md](04-common-capability/04-common-events/07-drag-capability/Feat-06-drop-completion-feedback-deferred-finalization-spec.md) | Baselined |
+| Feat-07 | Spring loading and hover detection | [Feat-07-spring-loading-hover-detection-spec.md](04-common-capability/04-common-events/07-drag-capability/Feat-07-spring-loading-hover-detection-spec.md) | Baselined |
 
 ### 04-04-08 手写笔能力
 
@@ -931,6 +947,11 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 独立 componentSnapshot 模块接口与迁移 | [Feat-01-component-snapshot-module-migration-spec.md](04-common-capability/10-component-screenshot/01-offscreen-screenshot/Feat-01-component-snapshot-module-migration-spec.md) | Baselined |
+| Feat-02 | UIContext 已挂载节点与范围截图 | [Feat-02-uicontext-mounted-range-snapshot-spec.md](04-common-capability/10-component-screenshot/01-offscreen-screenshot/Feat-02-uicontext-mounted-range-snapshot-spec.md) | Baselined |
+| Feat-03 | UIContext Builder 与 ComponentContent 离屏截图 | [Feat-03-uicontext-offscreen-builder-component-content-spec.md](04-common-capability/10-component-screenshot/01-offscreen-screenshot/Feat-03-uicontext-offscreen-builder-component-content-spec.md) | Baselined |
+| Feat-04 | 截图选项、错误码与跨前端差异 | [Feat-04-snapshot-options-errors-frontend-differences-spec.md](04-common-capability/10-component-screenshot/01-offscreen-screenshot/Feat-04-snapshot-options-errors-frontend-differences-spec.md) | Baselined |
+| Feat-05 | C API 节点截图与尺寸限制 | [Feat-05-capi-node-snapshot-size-limitation-spec.md](04-common-capability/10-component-screenshot/01-offscreen-screenshot/Feat-05-capi-node-snapshot-size-limitation-spec.md) | Baselined |
 
 ### 04-11-01 ComponentUtils
 

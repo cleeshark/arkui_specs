@@ -2174,6 +2174,111 @@ features:
   title: WithTheme 主题作用域组件全量规格
   spec: 05-ui-components/15-theme-components/01-with-theme/Feat-01-with-theme-full-spec.md
   status: Baselined
+- func_id: 03-04-02
+  id: Feat-01
+  title: Drag initiation and pre-drag state machine
+  spec: 03-engine-framework/04-event-framework/02-drag-framework/Feat-01-drag-initiation-predrag-state-machine-spec.md
+  status: Baselined
+- func_id: 03-04-02
+  id: Feat-02
+  title: Drag source-target routing and lifecycle dispatch
+  spec: 03-engine-framework/04-event-framework/02-drag-framework/Feat-02-drag-source-target-routing-lifecycle-dispatch-spec.md
+  status: Baselined
+- func_id: 03-04-02
+  id: Feat-03
+  title: Drag data transport and drop negotiation
+  spec: 03-engine-framework/04-event-framework/02-drag-framework/Feat-03-drag-data-transport-drop-negotiation-spec.md
+  status: Baselined
+- func_id: 03-04-02
+  id: Feat-04
+  title: Drag preview overlay animation and visual effects
+  spec: 03-engine-framework/04-event-framework/02-drag-framework/Feat-04-drag-preview-overlay-animation-visual-effects-spec.md
+  status: Baselined
+- func_id: 03-04-02
+  id: Feat-05
+  title: Drag hover detection
+  spec: 03-engine-framework/04-event-framework/02-drag-framework/Feat-05-drag-spring-loading-specialized-modes-spec.md
+  status: Baselined
+- func_id: 03-04-02
+  id: Feat-06
+  title: Drag multi-display device and container integration
+  spec: 03-engine-framework/04-event-framework/02-drag-framework/Feat-06-drag-multi-display-device-container-integration-spec.md
+  status: Baselined
+- func_id: 04-04-07
+  id: Feat-01
+  title: Component drag source and target configuration
+  spec: 04-common-capability/04-common-events/07-drag-capability/Feat-01-component-drag-source-target-configuration-spec.md
+  status: Baselined
+- func_id: 04-04-07
+  id: Feat-02
+  title: Component drag lifecycle and event contract
+  spec: 04-common-capability/04-common-events/07-drag-capability/Feat-02-component-drag-lifecycle-event-contract-spec.md
+  status: Baselined
+- func_id: 04-04-07
+  id: Feat-03
+  title: Drag data result and asynchronous transfer
+  spec: 04-common-capability/04-common-events/07-drag-capability/Feat-03-drag-data-result-asynchronous-transfer-spec.md
+  status: Baselined
+- func_id: 04-04-07
+  id: Feat-04
+  title: Drag preview and interaction presentation
+  spec: 04-common-capability/04-common-events/07-drag-capability/Feat-04-drag-preview-interaction-presentation-spec.md
+  status: Baselined
+- func_id: 04-04-07
+  id: Feat-05
+  title: Programmatic drag action and controller APIs
+  spec: 04-common-capability/04-common-events/07-drag-capability/Feat-05-programmatic-drag-action-controller-apis-spec.md
+  status: Baselined
+- func_id: 04-04-07
+  id: Feat-06
+  title: Drop completion feedback and deferred finalization
+  spec: 04-common-capability/04-common-events/07-drag-capability/Feat-06-drop-completion-feedback-deferred-finalization-spec.md
+  status: Baselined
+- func_id: 04-04-07
+  id: Feat-07
+  title: Drag hover detection
+  spec: 04-common-capability/04-common-events/07-drag-capability/Feat-07-spring-loading-hover-detection-spec.md
+  status: Baselined
+- func_id: 04-03-04
+  id: Feat-01
+  title: 鼠标光标与悬浮效果
+  spec: 04-common-capability/03-common-attributes/04-interaction-attributes/Feat-01-pointer-hover-accessibility-hover-spec.md
+  status: Baselined
+- func_id: 04-03-04
+  id: Feat-02
+  title: 触摸热区、触摸控制与事件独占
+  spec: 04-common-capability/03-common-attributes/04-interaction-attributes/Feat-02-keyboard-peripheral-input-events-spec.md
+  status: Baselined
+- func_id: 04-03-04
+  id: Feat-03
+  title: 禁用控制与点击反馈
+  spec: 04-common-capability/03-common-attributes/04-interaction-attributes/Feat-03-enabled-click-feedback-spec.md
+  status: Baselined
+- func_id: 04-10-01
+  id: Feat-01
+  title: 独立 componentSnapshot 模块接口与迁移
+  spec: 04-common-capability/10-component-screenshot/01-offscreen-screenshot/Feat-01-component-snapshot-module-migration-spec.md
+  status: Baselined
+- func_id: 04-10-01
+  id: Feat-02
+  title: UIContext 已挂载节点与范围截图
+  spec: 04-common-capability/10-component-screenshot/01-offscreen-screenshot/Feat-02-uicontext-mounted-range-snapshot-spec.md
+  status: Baselined
+- func_id: 04-10-01
+  id: Feat-03
+  title: UIContext Builder 与 ComponentContent 离屏截图
+  spec: 04-common-capability/10-component-screenshot/01-offscreen-screenshot/Feat-03-uicontext-offscreen-builder-component-content-spec.md
+  status: Baselined
+- func_id: 04-10-01
+  id: Feat-04
+  title: 截图选项、错误码与跨前端差异
+  spec: 04-common-capability/10-component-screenshot/01-offscreen-screenshot/Feat-04-snapshot-options-errors-frontend-differences-spec.md
+  status: Baselined
+- func_id: 04-10-01
+  id: Feat-05
+  title: C API 节点截图与尺寸限制
+  spec: 04-common-capability/10-component-screenshot/01-offscreen-screenshot/Feat-05-capi-node-snapshot-size-limitation-spec.md
+  status: Baselined
 - func_id: 05-03-03
   id: Feat-01
   title: ScrollBar 核心构造与绑定

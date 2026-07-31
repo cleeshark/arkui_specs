@@ -389,7 +389,7 @@ functions:
     id: '02'
     title: 拖拽框架
   path: 03-engine-framework/04-event-framework/02-drag-framework/
-  design: null
+  design: 03-engine-framework/04-event-framework/02-drag-framework/design.md
   status: active
 - id: 03-05-01
   l1:
@@ -649,7 +649,7 @@ functions:
     id: '04'
     title: 交互属性
   path: 04-common-capability/03-common-attributes/04-interaction-attributes/
-  design: null
+  design: 04-common-capability/03-common-attributes/04-interaction-attributes/design.md
   status: active
 - id: 04-03-05
   l1:
@@ -831,7 +831,7 @@ functions:
     id: '07'
     title: 拖拽能力
   path: 04-common-capability/04-common-events/07-drag-capability/
-  design: null
+  design: 04-common-capability/04-common-events/07-drag-capability/design.md
   status: active
 - id: 04-04-08
   l1:
@@ -1169,7 +1169,7 @@ functions:
     id: '01'
     title: 离屏截图
   path: 04-common-capability/10-component-screenshot/01-offscreen-screenshot/
-  design: null
+  design: 04-common-capability/10-component-screenshot/01-offscreen-screenshot/design.md
   status: active
 - id: 04-11-01
   l1:
