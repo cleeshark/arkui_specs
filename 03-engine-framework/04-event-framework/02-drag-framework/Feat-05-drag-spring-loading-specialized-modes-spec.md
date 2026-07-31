@@ -16,7 +16,7 @@
 
 | 类型 | 内容 | 说明 |
 |---|---|---|
-| ADDED | 通用弹簧加载状态机和 API 边界 | 不涉及具体组件专用拖拽。 |
+| ADDED | 拖拽悬停监测状态机和 API 边界 | 不涉及具体组件专用拖拽。 |
 
 ## 输入文档
 
@@ -25,13 +25,13 @@
 
 ## 用户故事
 
-### US-1: 悬停弹簧加载
+### US-1: 拖拽悬停监测
 
 作为拖拽目标开发者，我希望在悬停满足配置时接收 begin/update/end/cancel，并能终止或更新配置。
 
 | AC编号 | 验收标准 | 类型 |
 |---|---|---|
-| AC-1.1 | WHEN 目标注册弹簧加载回调且收到 Enter/Move，THEN 创建检测器并按状态机通知。 | 正常 |
+| AC-1.1 | WHEN 目标注册悬停监测回调且收到 Enter/Move，THEN 创建检测器并按状态机通知。 | 正常 |
 | AC-1.2 | WHEN 新目标、速度阈值、Leave 或拖拽结束发生，THEN 当前检测取消或重启并回到 IDLE。 | 边界 |
 | AC-1.3 | WHEN 应用不提供配置，THEN 使用 still 500ms、update 100ms、3 次通知、finish 100ms。 | 正常 |
 | AC-1.4 | WHEN 回调 abort 或更新配置，THEN 后续状态推进遵循终止或新配置。 | 恢复 |
@@ -111,9 +111,9 @@
 ## 行为场景（Gherkin）
 
 ```gherkin
-Feature: 拖拽弹簧加载
+Feature: 拖拽悬停监测
   Scenario: 悬停后终止
-    Given 目标已注册弹簧加载回调
+    Given 目标已注册悬停监测回调
     When 拖拽 Leave 或回调 abort
     Then 检测器进入 CANCEL 并回到 IDLE
 ```
