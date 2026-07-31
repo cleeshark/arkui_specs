@@ -9,7 +9,7 @@
 | Design ID | DESIGN-Func-04-04-07 |
 | 关联需求 | 已有能力补录（无独立 requirement.md） |
 | 关联 Epic | 04-common-capability / 04-common-events / 07-drag-capability |
-| 目标 Feature | Feat-01 组件拖拽源与目标配置，Feat-02 组件拖拽生命周期与事件契约，Feat-03 拖拽数据、结果与异步传输，Feat-04 拖拽预览与交互呈现，Feat-05 程序化 DragAction 与 DragController API，Feat-06 落放完成、反馈与延迟结束，Feat-07 弹簧加载与悬停检测 |
+| 目标 Feature | Feat-01 组件拖拽源与目标配置，Feat-02 组件拖拽生命周期与事件契约，Feat-03 拖拽数据、结果与异步传输，Feat-04 拖拽预览与交互呈现，Feat-05 程序化 DragAction 与 DragController API，Feat-06 落放完成、反馈与延迟结束，Feat-07 悬停检测 |
 | 复杂度 | 关键 |
 | 目标版本 | 动态 ArkTS API 10/11/15；静态 ArkTS API 23；C API API 12 |
 | Owner | ArkUI SIG |
@@ -89,7 +89,7 @@
 | 预览渲染、动画和视觉交互 | 由 Feat-04 承接；本 Feat 仅定义预览配置与来源优先级。 |
 | 程序化 DragAction/DragController | 由 Feat-05 承接。 |
 | 落放结束、反馈和延迟完成 | 由 Feat-06 承接。 |
-| 弹簧加载/悬停检测 | 由 Feat-07 承接。 |
+| 悬停检测 | 由 Feat-07 承接。 |
 
 ## 关键设计决策
 
@@ -145,7 +145,7 @@
 | Feat-04 | 预览与交互呈现 | Preview options、overlay、animation | Feat-01 |
 | Feat-05 | 程序化 DragAction/DragController | UIContext、DragAction、C API | Feat-01 |
 | Feat-06 | 落放完成、反馈与延迟结束 | Drop result、pending completion、InteractionInterface | Feat-02、Feat-03 |
-| Feat-07 | 弹簧加载与悬停检测 | SpringLoading、CommonMethod | Feat-02 |
+| Feat-07 | 悬停检测 | SpringLoading、CommonMethod | Feat-02 |
 
 ## API 签名、Kit 与权限
 
@@ -247,7 +247,7 @@ type DeferredDropCompletion = {
 
 该模型是 `DragDropGlobalController` 既有状态的概念映射；ID 匹配和完成后的回调/复位实现见 `frameworks/core/components_ng/manager/drag_drop/drag_drop_global_controller.cpp:224-294`。
 
-#### 弹簧加载数据模型（Feat-07）
+#### 悬停监测数据模型（Feat-07）
 
 ```typescript
 interface DragSpringLoadingConfiguration {
@@ -318,7 +318,7 @@ class SpringLoadingContext {
 
 ArkTS `DragResult` 与 `DragBehavior` 从 API 10 表达落放结果和 copy/move 意图；behavior 只影响徽标和源端反馈，并不决定实际数据处理。动态 custom drop animation 必须在 onDrop 中且先设置 `useCustomDropAnimation`，静态 API 23 提供对应合同。C API 12 可在当前 event 禁用默认动画；C API 19 的 pending 仅能在 onDrop 阶段申请，GlobalController 保存递增 request ID 并只接受匹配 ID 的 result、operation 与完成通知，完成时调用保存的 stop callback 后复位。C API 24 才增加 pending 后默认动画开关通知；在错误阶段或 ID 不匹配时，adapter 返回 `DRAG_DROP_OPERATION_NOT_ALLOWED`。UIContext API 26.0.0 的跟手中断不是丢弃动画，而是消费并执行待执行回调。证据：`<OH_ROOT>/interface_sdk-js/api/@internal/component/ets/common.d.ts:10670-10675,11504,11676-11684`，`<OH_ROOT>/interface_sdk-js/api/arkui/component/common.static.d.ets:6439-6449,6566-6572`，`<OH_ROOT>/interface_sdk_c/arkui/ace_engine/native/drag_and_drop.h:225,952-1033`，`interfaces/native/event/drag_and_drop_impl.cpp:925-1005`，`frameworks/core/components_ng/manager/drag_drop/drag_drop_func_wrapper.cpp:404-444`，`frameworks/core/components_ng/manager/drag_drop/drag_drop_global_controller.cpp:224-340`。
 
-### 弹簧加载与悬停检测
+### 悬停检测
 
 `onDragSpringLoading` 是通用目标端能力，不包含普通鼠标 hover、无障碍 hover 或具体 Text/TextField 组件行为。DragDropManager 在 ENTER/MOVE 时把当前命中 FrameNode、坐标、时间戳和 extraInfo 交给 detector；目标变化会复位并从新目标开始。IDLE 根据节点 `DragDropRelatedConfigurations` 的 `stillTimeLimit` 延迟进入 BEGIN；BEGIN 获取配置、构建带 summary/extraInfos 的 context，随后根据 `updateNotifyCount` 调度 UPDATE 或 END。UPDATE 到达次数上限后等待 `updateToFinishInterval` 再进入 END。LEAVE、drag end、目标改变或速度阈值会使未进入 END 的周期转 CANCEL 并复位。`abort()` 的公开合同是不触发 CANCEL；`updateConfiguration()` 仅 BEGIN 有效且只覆盖当前周期。动态 ArkTS 为 API 20，静态 ArkTS 为 API 26.0.0，C header 未提供等价 API。证据：`frameworks/core/components_ng/manager/drag_drop/drag_drop_manager.cpp:1291-1295,1934-1943,3610-3624`，`frameworks/core/components_ng/manager/drag_drop/drag_drop_spring_loading/drag_drop_spring_loading_detector.cpp:48-149`，`drag_drop_spring_loading_state_idle.cpp:22-40`，`drag_drop_spring_loading_state_begin.cpp:22-70`，`drag_drop_spring_loading_state_update.cpp:22-68`，`<OH_ROOT>/interface_sdk-js/api/@ohos.arkui.dragController.d.ts:569-812`。
 

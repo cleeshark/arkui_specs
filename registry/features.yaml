@@ -1791,7 +1791,7 @@ features:
   status: Baselined
 - func_id: 04-04-07
   id: Feat-07
-  title: Spring loading and hover detection
+  title: Drag hover detection
   spec: 04-common-capability/04-common-events/07-drag-capability/Feat-07-spring-loading-hover-detection-spec.md
   status: Baselined
 - func_id: 04-03-04

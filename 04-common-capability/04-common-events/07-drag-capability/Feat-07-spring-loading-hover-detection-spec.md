@@ -4,7 +4,7 @@
 
 | 字段 | 内容 |
 |---|---|
-| 特性名称 | 弹簧加载与拖拽悬停检测 |
+| 特性名称 | 拖拽悬停检测 |
 | 特性编号 | Func-04-04-07-Feat-07 |
 | 所属 Epic | 04-common-capability / 04-common-events / 07-drag-capability |
 | 优先级 | P1 |
@@ -212,7 +212,7 @@
 ## 行为场景（可选，Gherkin）
 
 ```gherkin
-Feature: 弹簧加载与拖拽悬停检测
+Feature: 拖拽悬停检测
   Scenario: 稳定悬停完成一个检测周期
     Given 拖拽物进入已绑定 onDragSpringLoading 的目标
     When 在 stillTimeLimit 内未超过移动阈值并保持停留

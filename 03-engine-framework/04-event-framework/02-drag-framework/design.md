@@ -65,7 +65,7 @@
 | 目标命中、enter/move/leave/drop 派发 | 由 Feat-02 承接。 |
 | UDMF 数据协商与落放结果 | 由 Feat-03 承接。 |
 | 预览材质、动画与视觉效果 | 由 Feat-04 承接；本 Feat 仅覆盖预览在起拖时的状态作用。 |
-| 弹簧加载和文本专用模式 | 由 Feat-05 承接。 |
+| 悬停监测和文本专用模式 | 由 Feat-05 承接。 |
 | 多显示器、远端和容器集成 | 由 Feat-06 承接。 |
 
 ## 关键设计决策
@@ -110,7 +110,7 @@
 | Feat-02 | 源目标路由与生命周期派发 | `drag_drop_manager.cpp`、EventHub | Feat-01 |
 | Feat-03 | 数据传输与落放协商 | UDMF、DragDropManager | Feat-02 |
 | Feat-04 | 预览覆盖层与动画 | overlay/subwindow/drag preview | Feat-01 |
-| Feat-05 | 弹簧加载与专用模式 | spring_loading/text_drag | Feat-01 |
+| Feat-05 | 悬停监测与专用模式 | spring_loading/text_drag | Feat-01 |
 | Feat-06 | 多设备和容器集成 | InteractionInterface/container/window | Feat-01 |
 
 ## API 签名、Kit 与权限
@@ -275,7 +275,7 @@ ArkUI 将 `DragData` 和 `GetDragCallback` 交给 `InteractionInterface::StartDr
 
 预览按多选、缓存、配置 PixelMap、自定义节点及兜底来源解析。ArkUI Overlay、子窗口预览和 MSDP 系统拖拽窗口是不同承载，按输入源和动画模式交接；默认/定制/follow-hand-morph 路径均须回收 map、gather、filter 和窗口可见性。证据：`frameworks/core/components_ng/event/gesture_event_hub_drag.cpp:786-870,1362-1442`，`drag_drop_manager.cpp:1652-1810,2845-2960`。
 
-### 通用弹簧加载
+### 通用悬停监测
 
 仅注册客户回调的目标启用通用 detector。它以 IDLE、BEGIN、UPDATE、END、CANCEL 管理悬停，支持 abort/配置更新；具体 Text/TextField 专用拖拽不属于本功能域规格。证据：`frameworks/core/components_ng/manager/drag_drop/drag_drop_spring_loading/drag_drop_spring_loading_detector.cpp:27-126`，`drag_drop_manager.cpp:1928-1949,3610`。
 
