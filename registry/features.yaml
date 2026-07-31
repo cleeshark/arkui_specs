@@ -534,6 +534,21 @@ features:
   title: 按键意图归一化（KeyIntention / IntentionCode）
   spec: 04-common-capability/04-common-events/11-interaction-normalization/Feat-01-key-intention-normalization-spec.md
   status: Baselined
+- func_id: 04-04-11
+  id: Feat-02
+  title: 多源点击交互归一化
+  spec: 04-common-capability/04-common-events/11-interaction-normalization/Feat-02-multi-source-click-interaction-normalization-spec.md
+  status: Baselined
+- func_id: 04-04-11
+  id: Feat-03
+  title: 多源滑动与平移归一化
+  spec: 04-common-capability/04-common-events/11-interaction-normalization/Feat-03-multi-source-slide-pan-normalization-spec.md
+  status: Baselined
+- func_id: 04-04-11
+  id: Feat-04
+  title: 多源缩放与旋转归一化
+  spec: 04-common-capability/04-common-events/11-interaction-normalization/Feat-04-multi-source-scale-rotation-normalization-spec.md
+  status: Baselined
 - func_id: 04-05-01
   id: Feat-01
   title: DrawModifier 装配与组件门控
