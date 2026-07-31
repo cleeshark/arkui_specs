@@ -288,7 +288,7 @@
 - **API 版本号策略:** 核心导航算法未发现 Target API 门控；按键触发点击在 API 18 存在焦点激活门槛分支，该点击行为归 Feat-06 邻接约束。
 - **nextFocus 兼容风险:** `RequestUserNextFocus` 目标不存在或请求失败时返回 false，随后继续默认算法；不得据此实现承诺“始终停留当前节点”。
 - **运行时容器差异:** focusWindowId、DynamicRender、全局 RTL 和组件局部 LayoutDirection 会改变边界或方向选择，但不改变公开 API 签名。
-- **SDK 声明核验:** 当前 ace_engine 检出不含 `interface/sdk-js/api/` canonical SDK 类型目录；本特性无新增 API，不扩张仓内实现为新的公开契约。
+- **SDK 声明核验:** 目标 ace_engine 仓库基线未纳入 `interface/sdk-js/api/` canonical SDK 类型目录；本特性无新增 API，不扩张仓内实现为新的公开契约。
 
 ## 架构约束
 
@@ -415,7 +415,7 @@ Feature: 焦点导航与遍历算法
 - [x] 无语义模糊表述（“快速”“稳定”“尽可能”等）
 - [x] AC 与规则表交叉一致（每个 AC 至少关联一条规则，每条规则至少关联一个 AC）
 - [x] 规则表每条通过 5 项质量检查（可复现/可观测/边界值/关联AC/无冲突）
-- [x] 所有源码路径和行号来自当前检出；未把未来改进写成现行行为
+- [x] 所有源码路径和行号均对应目标仓库基线；未把未来改进写成现行行为
 - [x] 已明确 Feat-04/05/06 边界及 nextFocus 契约差异
 
 ## context-references

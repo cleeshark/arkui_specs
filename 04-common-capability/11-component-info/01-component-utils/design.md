@@ -25,7 +25,7 @@
 | 返回模型 | `ComponentInfo` 固定包含 size、三类 offset、translate、scale、rotate、transform |
 | 版本基线 | Feat-01：API 10 引入、API 11 支持 Atomic Service、API 18 废弃模块级入口并迁移到 UIContext；Feat-02：API 23 dynamic/static、System API、Stage-only |
 | 异常基线 | UI 执行上下文缺失抛 `100001`；组件 id 未命中返回默认初始化结果 |
-| 功能域边界 | Feat-02 的 canonical SDK 声明筛选契约；仓内默认实现仅透传 `images`，vendor 算法、ANI/CJ/UIContext/NDK/ArkUI-X 等价实现不在当前检出范围 |
+| 功能域边界 | Feat-02 的 canonical SDK 声明筛选契约；仓内默认实现仅透传 `images`，vendor 算法、ANI/CJ/UIContext/NDK/ArkUI-X 等价实现未纳入目标仓库基线 |
 
 ## 上下文和现状
 
@@ -57,7 +57,7 @@
 | 5. 查询服务层 | `frameworks/core/components_ng/base/inspector.cpp` | 按 inspectorId 搜索离屏节点和主树，提取 Rectangle | 文档补录 |
 | 6. 节点几何层 | FrameNode、GeometryNode、RenderContext、PipelineContext | 提供 frame size、PaintRect、窗口偏移、变换属性和窗口矩形 | 文档补录 |
 | 7. 验证层 | `test/unittest/core/base/inspector_test_ng.cpp` | 验证核心查询、动态组件偏移、PX/PERCENT 换算和空上下文 | 补齐验证映射，不改测试 |
-| 8. 产品扩展构建层 | `interfaces/napi/kits/componentutils/BUILD.gn`、`build/ace_ext.gni`、vendor/ace_engine_ext 外部配置 | （Feat-02）在仓内默认实现与外部算法实现之间进行编译期替换 | 记录替换边界；外部源码未检出 |
+| 8. 产品扩展构建层 | `interfaces/napi/kits/componentutils/BUILD.gn`、`build/ace_ext.gni`、vendor/ace_engine_ext 外部配置 | （Feat-02）在仓内默认实现与外部算法实现之间进行编译期替换 | 记录替换边界；外部源码未纳入目标仓库基线 |
 
 调用方向保持“SDK/UIContext → 语言桥接 → FrontendDelegate/Inspector → FrameNode/RenderContext/PipelineContext”，底层节点与渲染对象不反向依赖语言桥接。
 
@@ -228,7 +228,7 @@ graph TB
 | F2-1 | 系统应用 | `arkui.componentUtils` NAPI | `GetItemsInShapePathParams` | API 23 System API，Stage 模型限定 |
 | F2-2 | `JSGetItemsInShapePath` | `MistouchPrevention::GetItemsInShapePath` | 第一个 NAPI 实参 | NAPI 模块固定导出同一函数名 |
 | F2-3A | 默认构建 | `js_mistouch_prevention.cpp` | `value.images` | 不读取 `shapePath`、`ratio` 或 ImageItem 内容，直接返回属性值 |
-| F2-3B | vendor 构建 | 外部 source list | 输入模型与外部依赖 | 当前检出范围仅确认替换机制，无法确认算法 |
+| F2-3B | vendor 构建 | 外部 source list | 输入模型与外部依赖 | 目标仓库基线仅确认替换机制，无法确认算法 |
 | F2-4 | NAPI | 系统应用 | `ImageItem[]` 或默认实现的实际值 | 默认实现可能返回 `[]`、`undefined` 或任意 `images` 值 |
 
 ### 时序设计
@@ -491,7 +491,7 @@ canonical dynamic 声明在 `interface_sdk-js/api/@ohos.arkui.componentUtils.d.t
 
 `interfaces/napi/kits/componentutils/BUILD.gn:19-46` 在 `napi_componentutils_static` 中始终编译 `js_component_utils.cpp`，并根据 `vendor_configs.ace_engine_mistouch_prevention` 是否定义选择实现源：未定义时加入仓内 `js_mistouch_prevention.cpp`；定义时加入 `ace_engine_mistouch_prevention_mode` 提供的外部 source list，同时链接 OpenCV core/calib3d/imgproc、image_framework image/image_native 和 PixelMap/PixelMap NDK 依赖。
 
-`build/ace_ext.gni:16-41` 先尝试从 `//foundation/arkui/ace_engine_ext/build/config.gni` 导入 vendor 配置，再尝试从 `//vendor/${product_company}/foundation/ace/ace_engine_ext/ace_engine_ext.gni` 导入产品配置。当前检出范围没有对应 vendor 实现源，因此只能确认“默认实现与外部实现编译期互斥替换”的边界，不能确认形状相交、像素采样、旋转处理、zIndex 排序、ratio 比较或异常恢复算法。`bundle.json:95,120` 已列出 image_framework 和 opencv，但不能据此证明任一具体算法已实现。
+`build/ace_ext.gni:16-41` 先尝试从 `//foundation/arkui/ace_engine_ext/build/config.gni` 导入 vendor 配置，再尝试从 `//vendor/${product_company}/foundation/ace/ace_engine_ext/ace_engine_ext.gni` 导入产品配置。目标仓库基线未纳入对应 vendor 实现源，因此只能确认“默认实现与外部实现编译期互斥替换”的边界，不能确认形状相交、像素采样、旋转处理、zIndex 排序、ratio 比较或异常恢复算法。`bundle.json:95,120` 已列出 image_framework 和 opencv，但不能据此证明任一具体算法已实现。
 
 ### 声明通道与验证资产缺口
 
@@ -513,7 +513,7 @@ SDK 同时提供 dynamic 和 static API 23 声明，而当前 ace_engine 符号�
 | RISK-F2-1 SDK 定义区域筛选，但仓内默认实现直接透传 `images` | API | 高 | 规格同时固化契约与当前偏差；产品可用性必须以 vendor 实现和集成测试为证据 | ArkUI API / Product Integration |
 | RISK-F2-2 无参、缺属性和错误类型输入产生 `[]`、`undefined` 或任意值 | API | 高 | 建立默认 NAPI 参数矩阵测试；不在补录中发明统一错误码或修复行为 | ArkUI Runtime |
 | RISK-F2-3 dynamic/static 声明与 dynamic-NAPI-only 检出结果不一致 | 兼容 | 高 | 分通道验证并标注 static ANI、CJ、NDK、UIContext、ArkUI-X 覆盖缺口 | ArkUI ArkTS Static / Runtime |
-| RISK-F2-4 vendor 算法和专用测试未包含在当前检出代码中 | 架构 | 高 | 仅记录构建替换边界；产品集成必须提供实际源码、算法规格与验证证据 | Product Integration |
+| RISK-F2-4 vendor 算法和专用测试未纳入目标仓库基线 | 架构 | 高 | 仅记录构建替换边界；产品集成必须提供实际源码、算法规格与验证证据 | Product Integration |
 
 ## 设计审批
 

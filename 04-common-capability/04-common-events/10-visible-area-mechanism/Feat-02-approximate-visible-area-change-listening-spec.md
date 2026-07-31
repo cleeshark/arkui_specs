@@ -29,7 +29,7 @@
 | 文档 | 路径 | 状态 |
 |------|------|------|
 | Design | `specs/04-common-capability/04-common-events/10-visible-area-mechanism/design.md` | 本次增量合并 |
-| Dynamic SDK | `interface/sdk-js/api/@internal/component/ets/common.d.ts:24562-24574,29240-29272,29421-29432` | 已核查；来自本机可用 SDK checkout，未确认与目标 ace_engine 同基线 |
+| Dynamic SDK | `interface/sdk-js/api/@internal/component/ets/common.d.ts:24562-24574,29240-29272,29421-29432` | 已核查；该 SDK 证据尚未确认与目标 ace_engine 源码属于同一版本基线 |
 | Dynamic Bridge | `frameworks/bridge/declarative_frontend/jsview/js_view_abstract.cpp:12108-12162` | 已核查 |
 | Modifier Bridge | `frameworks/bridge/declarative_frontend/ark_component/src/ArkComponent.ts:4046-4058,5888-5901,6299-6301` | 已核查 |
 | Static/生成入口 | `frameworks/core/interfaces/native/implementation/common_method_modifier.cpp:7246-7283`；`frameworks/core/interfaces/native/implementation/ui_common_event_accessor.cpp:242-260` | 已核查 |
@@ -37,7 +37,7 @@
 | Native API | `interfaces/native/native_type.h:3693-3807`；`interfaces/native/native_node.h:10538-10555,14348-14376` | 已核查 |
 | Native 映射 | `interfaces/native/node/node_model.cpp:550-647,1779-1825`；`interfaces/native/node/node_utils.cpp:936-970` | 已核查 |
 
-> 本文档描述存量实现，不提出行为修正。目标 checkout 缺少同基线 `interface_sdk-js`，因此无法从当前源码反推未在可用 canonical SDK 中出现的 Static 或 `measureFromViewport` 开放版本。
+> 本文档描述存量实现，不提出行为修正。目标仓库基线未纳入同版本的 `interface_sdk-js`，因此无法从 ace_engine 源码反推未在已核查 canonical SDK 证据中出现的 Static 或 `measureFromViewport` 开放版本。
 
 ## 用户故事
 

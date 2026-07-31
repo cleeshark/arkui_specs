@@ -203,7 +203,7 @@
 | API | 签名 | 版本/范围 | 行为 | 关联 AC |
 |-----|------|-----------|------|---------|
 | Native focus activate | `void OH_ArkUI_FocusActivate(ArkUI_ContextHandle uiContext, bool isActive, bool isAutoInactive)` | Public C，since 15 | 设置当前 UI 实例激活状态和 pointer 自动失活策略 | AC-1.1~1.5, AC-3.1~3.5 |
-| ArkTS focusBox | `focusBox(style: FocusBoxStyle): T` | Public ArkTS；canonical SDK 未随检出提供 | 配置 margin、strokeWidth、strokeColor | AC-4.5~4.6, AC-5.4 |
+| ArkTS focusBox | `focusBox(style: FocusBoxStyle): T` | Public ArkTS；目标仓库基线未纳入 canonical SDK | 配置 margin、strokeWidth、strokeColor | AC-4.5~4.6, AC-5.4 |
 | Native focus box attribute | size=3：margin、strokeWidth、color | Public Native Attribute | size 非 3 返回参数错误；reset 清自定义样式 | AC-4.6, VM-7 |
 
 `FocusStyleType`、`FocusPaintParam`、内部 Rect 回调和 FocusManager reason 为 Inner C++ 模型，不构成 SDK 稳定性承诺。
@@ -215,7 +215,7 @@
 - **Target API 18:** inactive 时不再允许焦点键盘点击；旧版本还受 AppTheme 兼容开关影响。
 - **样式兼容:** FocusBox 自定义字段优先于组件 FocusPaintParam 和主题；未配置字段继续逐级回退。
 - **跨窗口:** 激活状态会向关联主/子窗口传播；监听器可能在本窗口视觉完成前观察到新状态。
-- **SDK 核验:** canonical `interface/sdk-js/api/` 未随当前检出提供，ArkTS `focusBox` 发布注解未经 canonical d.ts/d.ets 验证。
+- **SDK 核验:** 目标仓库基线未纳入 canonical `interface/sdk-js/api/`，ArkTS `focusBox` 发布注解未经 canonical d.ts/d.ets 验证。
 
 ## 架构约束
 

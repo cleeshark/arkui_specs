@@ -192,7 +192,7 @@
 
 ### 接口定义
 
-当前检出不含 canonical SDK 类型目录；以下签名依据仓内动态前端类型和实现核验，并以公共焦点属性规格为发布契约参考。
+目标仓库基线未纳入 canonical SDK 类型目录；以下签名依据仓内动态前端类型和实现核验，并以公共焦点属性规格为发布契约参考。
 
 **focusScopeId**
 
@@ -252,7 +252,7 @@
 - **API 版本号策略:** 不新增 `@since`；核心域算法无 Target API 分支。
 - **前端差异:** 动态前端首参非 string 的 `focusScopeId` 会转为空 ID；静态前端 optional 缺失也落空 ID。动态 `focusScopePriority` 仅在参数长度恰为 2 且第二项为 number 时读取 priority。
 - **注册兼容风险:** Scope 从非空 ID A 改为新 ID B 前不会主动移除 A 映射；重复设置非 AUTO priority 可能累积重复 WeakPtr。
-- **SDK 核验:** canonical `interface/sdk-js/api/` 未随当前检出提供，签名标记为未经 canonical d.ts/d.ets 验证。
+- **SDK 核验:** 目标仓库基线未纳入 canonical `interface/sdk-js/api/`，签名标记为未经 canonical d.ts/d.ets 验证。
 
 ## 架构约束
 

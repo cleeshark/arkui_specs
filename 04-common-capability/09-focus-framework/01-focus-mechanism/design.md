@@ -88,7 +88,7 @@
 | OH-ARCH-LAYERING | Pattern、FrameNode、EventHub、FocusHub 和 UINode 存在分层调用 | Pattern 提供配置，FrameNode 持有实例，EventHub 委托，FocusHub 执行规则，UINode 提供树关系；禁止反向建立第二所有权 | 架构评审/UT |
 | OH-ARCH-SUBSYSTEM | Feat-01 全部位于 ace_engine NG 子系统 | 不新增跨子系统依赖；公共接口仓不受影响 | 依赖检查 |
 | OH-ARCH-IPC-SAF | 无 IPC/SA 调用 | N/A，不建立跨进程信任边界 | 源码审查 |
-| OH-ARCH-API-LEVEL | 不新增 Public/System/Inner API，但 Feat-02 需核验既有 ArkTS/C API 行为 | Public C API 以 `native_interface_focus.h` 为准；ArkTS canonical SDK 类型目录未随当前检出提供，仓内 ETS/NAPI 签名标记为未经 canonical d.ts 验证 | API 评审 |
+| OH-ARCH-API-LEVEL | 不新增 Public/System/Inner API，但 Feat-02 需核验既有 ArkTS/C API 行为 | Public C API 以 `native_interface_focus.h` 为准；目标仓库基线未纳入 ArkTS canonical SDK 类型目录，仓内 ETS/NAPI 签名标记为未经 canonical d.ts 验证 | API 评审 |
 | OH-ARCH-COMPONENT-BUILD | 使用既有 `components_ng/base` 与 `components_ng/event` 构建目标 | 无 BUILD.gn 或 bundle.json 修改 | `generate_site`/构建配置审查 |
 | OH-ARCH-ERROR-LOG | 请求失败通过一次性分类回调和整数错误码回报 | 不新增错误码；沿用 150001/150002/150003，现有日志继续使用 ACE_FOCUS 标签 | UT/hilog 审查 |
 
@@ -238,13 +238,13 @@ Feat-01 仅补录 `frameworks/core/` 内部 C++ 行为，不新增开放 API。�
 
 | API 签名 | 类型 | Kit | 声明位置 | 权限要求 | SysCap |
 |----------|------|-----|----------|----------|--------|
-| `focusController.requestFocus(key: string): void` | Public ArkTS/ANI | ArkUI | `interfaces/ets/ani/focuscontroller/ets/@ohos.arkui.focusController.ets:19-26`；canonical SDK d.ts 未随当前检出提供 | 无新增权限 | 仓内 ETS 未声明；以 SDK 发布声明为准 |
-| `focusController.clearFocus(): void` | Public ArkTS/ANI | ArkUI | `interfaces/ets/ani/focuscontroller/ets/@ohos.arkui.focusController.ets:19-26`；canonical SDK d.ts 未随当前检出提供 | 无新增权限 | 仓内 ETS 未声明；以 SDK 发布声明为准 |
+| `focusController.requestFocus(key: string): void` | Public ArkTS/ANI | ArkUI | `interfaces/ets/ani/focuscontroller/ets/@ohos.arkui.focusController.ets:19-26`；目标仓库基线未纳入 canonical SDK d.ts | 无新增权限 | 仓内 ETS 未声明；以 SDK 发布声明为准 |
+| `focusController.clearFocus(): void` | Public ArkTS/ANI | ArkUI | `interfaces/ets/ani/focuscontroller/ets/@ohos.arkui.focusController.ets:19-26`；目标仓库基线未纳入 canonical SDK d.ts | 无新增权限 | 仓内 ETS 未声明；以 SDK 发布声明为准 |
 | `OH_ArkUI_FocusRequest(ArkUI_NodeHandle)` | Public C API，since 15 | ArkUI | `interfaces/native/native_interface_focus.h:16-69` | 无 | `SystemCapability.ArkUI.ArkUI.Full` |
 | `OH_ArkUI_FocusClear(ArkUI_ContextHandle)` | Public C API，since 15 | ArkUI | `interfaces/native/native_interface_focus.h:16-77` | 无 | `SystemCapability.ArkUI.ArkUI.Full` |
 | `PipelineContext::RequestFocus(const std::string&, bool)` | Inner C++ | N/A | `frameworks/core/pipeline_ng/pipeline_context.h:623` | 无 | N/A |
 
-Feat-02 不新增或变更接口。ArkTS 行为由仓内 ETS/ANI/NAPI 实现交叉核验，但因当前检出不含 `interface/sdk-js/api/`，不得将仓内声明替代为 canonical SDK 契约；该缺口保留在风险表。
+Feat-02 不新增或变更接口。ArkTS 行为由仓内 ETS/ANI/NAPI 实现交叉核验，但因目标仓库基线未纳入 `interface/sdk-js/api/`，不得将仓内声明替代为 canonical SDK 契约；该缺口保留在风险表。
 
 ### 既有内部导航入口核验（Feat-03）
 
@@ -260,8 +260,8 @@ Feat-03 不新增或变更接口。上述方法仅用于实现追溯；公共 `n
 
 | API 签名 | 类型 | Kit | 声明位置 | 权限要求 | SysCap |
 |----------|------|-----|----------|----------|--------|
-| `focusScopeId(id: string, isGroup?: boolean, arrowStepOut?: boolean): T` | Public ArkTS，since 23 | ArkUI | `frameworks/bridge/declarative_frontend/ark_component/types/index.d.ts:832`；canonical SDK 未随检出提供 | 无 | 以 SDK 发布声明为准 |
-| `focusScopePriority(scopeId: string, priority?: FocusPriority): T` | Public ArkTS，since 23 | ArkUI | `frameworks/bridge/declarative_frontend/ark_component/types/index.d.ts:833`；canonical SDK 未随检出提供 | 无 | 以 SDK 发布声明为准 |
+| `focusScopeId(id: string, isGroup?: boolean, arrowStepOut?: boolean): T` | Public ArkTS，since 23 | ArkUI | `frameworks/bridge/declarative_frontend/ark_component/types/index.d.ts:832`；目标仓库基线未纳入 canonical SDK | 无 | 以 SDK 发布声明为准 |
+| `focusScopePriority(scopeId: string, priority?: FocusPriority): T` | Public ArkTS，since 23 | ArkUI | `frameworks/bridge/declarative_frontend/ark_component/types/index.d.ts:833`；目标仓库基线未纳入 canonical SDK | 无 | 以 SDK 发布声明为准 |
 | `ArkUI_FocusPriority` | Public C enum，since 23 | ArkUI | `interfaces/native/native_type.h:1337-1349` | 无 | ArkUI Full |
 | `FocusHub::SetFocusScopeId/SetFocusScopePriority` | Inner C++ | N/A | `frameworks/core/components_ng/event/focus_hub.h:667-700` | 无 | N/A |
 
@@ -271,8 +271,8 @@ Feat-04 不新增或变更接口。动态、静态和 Native 属性入口最终�
 
 | API 签名 | 类型 | Kit | 声明位置 | 权限要求 | SysCap |
 |----------|------|-----|----------|----------|--------|
-| `defaultFocus(value: boolean): T` | Public ArkTS | ArkUI | `frameworks/bridge/declarative_frontend/ark_component/types/index.d.ts:828`；canonical SDK 未随检出提供 | 无 | 以 SDK 发布声明为准 |
-| `groupDefaultFocus(value: boolean): T` | Public ArkTS | ArkUI | `frameworks/bridge/declarative_frontend/ark_component/types/index.d.ts:829`；canonical SDK 未随检出提供 | 无 | 以 SDK 发布声明为准 |
+| `defaultFocus(value: boolean): T` | Public ArkTS | ArkUI | `frameworks/bridge/declarative_frontend/ark_component/types/index.d.ts:828`；目标仓库基线未纳入 canonical SDK | 无 | 以 SDK 发布声明为准 |
+| `groupDefaultFocus(value: boolean): T` | Public ArkTS | ArkUI | `frameworks/bridge/declarative_frontend/ark_component/types/index.d.ts:829`；目标仓库基线未纳入 canonical SDK | 无 | 以 SDK 发布声明为准 |
 | `FocusView::FocusViewShow/Hide/Close/RequestDefaultFocus` | Inner C++ | N/A | `frameworks/core/components_ng/manager/focus/focus_view.h:51-68` | 无 | N/A |
 | `FocusManager::WindowFocus/SetFocusViewRootScope` | Inner C++ | N/A | `frameworks/core/components_ng/manager/focus/focus_manager.h` | 无 | N/A |
 
@@ -283,7 +283,7 @@ Feat-05 不新增或变更接口。FocusView 和 FocusManager 方法仅用于实
 | API 签名 | 类型 | Kit | 声明位置 | 权限要求 | SysCap |
 |----------|------|-----|----------|----------|--------|
 | `OH_ArkUI_FocusActivate(context, isActive, isAutoInactive)` | Public C，since 15 | ArkUI | `interfaces/native/native_interface_focus.h:79-89` | 无 | ArkUI Full |
-| `focusBox(style: FocusBoxStyle): T` | Public ArkTS | ArkUI | `frameworks/bridge/declarative_frontend/ark_component/types/index.d.ts:831`；canonical SDK 未随检出提供 | 无 | 以 SDK 发布声明为准 |
+| `focusBox(style: FocusBoxStyle): T` | Public ArkTS | ArkUI | `frameworks/bridge/declarative_frontend/ark_component/types/index.d.ts:831`；目标仓库基线未纳入 canonical SDK | 无 | 以 SDK 发布声明为准 |
 | `FocusManager::SetIsFocusActive` | Inner C++ | N/A | `frameworks/core/components_ng/manager/focus/focus_manager.h:343-353` | 无 | N/A |
 | `FocusHub::PaintAllFocusState/ClearAllFocusState` | Inner C++ | N/A | `frameworks/core/components_ng/event/focus_hub.h:597-606` | 无 | N/A |
 
@@ -783,7 +783,7 @@ sequenceDiagram
 
 ### 接口参数规约
 
-不涉及 Public/System/Inner API 变更。本节不新增可供 code-gen 消费的开放接口参数。Feat-02 对既有请求/清除入口进行约束；Feat-03 仅核验 `RequestNextFocusByKey`、`HandleFocusByTabIndex` 和 `ScopeFocusAlgorithm` 等内部入口。公共 `nextFocus/tabIndex/tabStop` 参数继续由 `Func-04-03-03-Feat-05` 定义。ArkTS canonical SDK d.ts 未随当前检出提供，因此仓内实现仅作为行为核验，不替代发布契约。
+不涉及 Public/System/Inner API 变更。本节不新增可供 code-gen 消费的开放接口参数。Feat-02 对既有请求/清除入口进行约束；Feat-03 仅核验 `RequestNextFocusByKey`、`HandleFocusByTabIndex` 和 `ScopeFocusAlgorithm` 等内部入口。公共 `nextFocus/tabIndex/tabStop` 参数继续由 `Func-04-03-03-Feat-05` 定义。目标仓库基线未纳入 ArkTS canonical SDK d.ts，因此仓内实现仅作为行为核验，不替代发布契约。
 
 ### 线程与并发模型
 
@@ -1049,7 +1049,7 @@ Key DOWN 携带 activeMark 时显式激活或失活；Tab、joystick 方向键�
 | 普通事务清 history 与 LOST_FOCUS_TO_VIEW_ROOT 保 history 缺对照时序 UT | 测试 | 中 | VM-11 增加相同树结构下的 startReason 对照 | ArkUI Test Owner |
 | 窗口多步更新只应一次 report/paint，现有 UT 未验证监听和绘制次数 | 测试 | 中 | ADR-F2-7 与 VM-12 增加计数和最终候选断言 | ArkUI Test Owner |
 | FreeNode RemoveSelf 现有 UT 未真实驱动 Free→attach→pending task | 测试 | 高 | Feat-02 VM-13 显式设置 Free 状态并验证 attach 前后最终一致性 | ArkUI MultiThread Owner |
-| 当前检出缺少 canonical SDK d.ts，ArkTS requestFocus/clearFocus 仅完成仓内 ETS/ANI/NAPI 核验 | API | 中 | 规格标记未经 canonical d.ts 验证；后续在完整 OpenHarmony 工作区补做 SDK 权威核验 | ArkUI API Owner |
+| 目标仓库基线未纳入 canonical SDK d.ts，ArkTS requestFocus/clearFocus 仅完成仓内 ETS/ANI/NAPI 核验 | API | 中 | 规格标记未经 canonical d.ts 验证；后续基于匹配版本的完整 OpenHarmony 基线补做 SDK 权威核验 | ArkUI API Owner |
 | 公共焦点属性规格声明 nextFocus 目标不存在时停留当前节点，但内部实现会继续默认算法 | 兼容 | 高 | ADR-F3-2 与 Feat-03 VM-3 固化源码现状；后续统一跨规格契约，不在本次改产品行为 | ArkUI API Owner |
 | 线性遍历无历史游标时正向从第二项开始、反向立即失败，首轮方向不对称 | 兼容 | 高 | ADR-F3-3 与 VM-6 增加真实多节点树回归，禁止文档误写成对称首尾起点 | ArkUI Focus Owner |
 | focusWindowId/DynamicRender Tab 特殊分支在普通复位前提前返回，可能遗留 `isFocusingByTab=true` | 可靠性 | 高 | ADR-F3-8 与 VM-4 断言返回值和 flag；作为现状风险单独评估修复 | ArkUI Focus Owner |
@@ -1072,7 +1072,7 @@ Key DOWN 携带 activeMark 时显式激活或失活；Tab、joystick 方向键�
 | autoFocusTransfer=false 且普通 close 非 detach 时直接忽略，View show 标志和栈项可能继续保留 | 兼容 | 高 | ADR-F5-5 与 VM-3 覆盖普通 close/detach 对照，并在组件生命周期评审中明确调用方式 | ArkUI Component Owner |
 | close 后栈为空或新栈顶不可聚焦只记录错误，不自动寻找其他可聚焦 View | 可靠性 | 高 | Feat-05 VM-3 固化错误报告和 lastFocusView 状态；修复需单独设计 |
 | API 26 UIExtensionWindow inactive 时保留 ViewRoot 标志，旧版本则强制恢复叶节点，跨版本可观察焦点位置差异 | 兼容 | 高 | ADR-F5-6 与 VM-5 建立 API 25/26、active/inactive 四象限测试 | ArkUI Window Owner |
-| 当前检出缺少 canonical SDK d.ts，defaultFocus/groupDefaultFocus 的发布版本与完整注解未完成权威核验 | API | 中 | 规格标记未经 canonical d.ts/d.ets 验证；在完整 SDK 工作区补做核验 | ArkUI API Owner |
+| 目标仓库基线未纳入 canonical SDK d.ts，defaultFocus/groupDefaultFocus 的发布版本与完整注解未完成权威核验 | API | 中 | 规格标记未经 canonical d.ts/d.ets 验证；基于匹配版本的完整 SDK 基线补做核验 | ArkUI API Owner |
 | USE_API 在状态同值时仍可修改 autoFocusInactive，但返回 false，调用方可能把 false 误解为配置未生效 | API | 高 | ADR-F6-1 与 Feat-06 VM-1 固化“策略已更新、状态未变化”的双结果 | ArkUI API Owner |
 | ACTIVE_MARK 在状态变化时提前返回 true，绕过系统禁止激活和 pointer 自动失活保护 | 兼容 | 高 | ADR-F6-1 与 VM-1 对比 ACTIVE_MARK、USE_API、DEFAULT；不在补录中重排准入 | ArkUI Focus Owner |
 | 跨窗口同步和监听发生在当前窗口 visual root 校验前，绘制失败时外部已观察到新 active | 可靠性 | 高 | ADR-F6-3 与 VM-3 构造缺 Root/Hub 场景并验证不回滚状态 | ArkUI Window Owner |
@@ -1081,7 +1081,7 @@ Key DOWN 携带 activeMark 时显式激活或失活；Tab、joystick 方向键�
 | 全链无样式会临时改写尾节点 FocusStyleType=FORCE_BORDER，异常中断 ClearAll 可能延长临时状态 | 可靠性 | 中 | ADR-F6-6 与 VM-5 覆盖激活/失活、切焦和销毁清理 | ArkUI Focus Owner |
 | FocusStyle 非 NONE 才清 RenderContext；仅依赖 UI state 或 FocusBox 的组合需防止旧绘制残留 | 测试 | 中 | VM-4/VM-5 覆盖 style 动态切换、状态样式和自定义 Box 清理 | ArkUI Render Owner |
 | Target API 18 前 inactive 键盘点击受主题开关影响，设备主题差异可能导致相同应用行为不同 | 兼容 | 中 | ADR-F6-7 与 VM-6 固化 API 17 的 theme true/false 矩阵 | ArkUI Theme Owner |
-| 当前检出缺少 canonical SDK d.ts，focusBox 的公开版本、LengthMetrics 和资源类型注解未完成权威核验 | API | 中 | 规格标记未经 canonical d.ts/d.ets 验证；在完整 SDK 工作区补做核验 | ArkUI API Owner |
+| 目标仓库基线未纳入 canonical SDK d.ts，focusBox 的公开版本、LengthMetrics 和资源类型注解未完成权威核验 | API | 中 | 规格标记未经 canonical d.ts/d.ets 验证；基于匹配版本的完整 SDK 基线补做核验 | ArkUI API Owner |
 
 ## 设计审批
 

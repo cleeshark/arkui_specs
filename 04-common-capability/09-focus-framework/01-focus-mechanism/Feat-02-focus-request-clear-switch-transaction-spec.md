@@ -40,7 +40,7 @@
 | 焦点请求与清除核心实现 | `frameworks/core/components_ng/event/focus_hub.cpp:478-715,1263-1280,1384-1407,1478-1485,2480-2539` | 已核验 |
 | Pipeline 调度实现 | `frameworks/core/pipeline_ng/pipeline_context.cpp:1803-1881,5436-5480`、`frameworks/core/pipeline_ng/pipeline_context.h:1541-1543` | 已核验 |
 | FocusManager 事务实现 | `frameworks/core/components_ng/manager/focus/focus_manager.cpp:276-289,398-451,485-569`、`focus_manager.h:219-250` | 已核验 |
-| ArkTS/ANI/NAPI 入口 | `interfaces/ets/ani/focuscontroller/ets/@ohos.arkui.focusController.ets:17-26`、`interfaces/napi/kits/focus_controller/js_focus_controller.cpp:26-101` | 仓内接口面已核验；canonical SDK 声明未随当前检出提供 |
+| ArkTS/ANI/NAPI 入口 | `interfaces/ets/ani/focuscontroller/ets/@ohos.arkui.focusController.ets:17-26`、`interfaces/napi/kits/focus_controller/js_focus_controller.cpp:26-101` | 仓内接口面已核验；目标仓库基线未纳入 canonical SDK 声明 |
 | Native C API | `interfaces/native/native_interface_focus.h:16-77`、`interfaces/native/node/native_interface_focus.cpp:24-48` | 已核验 |
 | FreeNode 多线程实现 | `frameworks/base/utils/multi_thread.h:19-29`、`frameworks/core/components_ng/event/focus_hub_multithread.cpp:22-57`、`frameworks/core/components_ng/base/ui_node_multi_thread.cpp:39-51,105-130` | 已核验 |
 | 焦点 UT | `test/unittest/core/event/focus_core/`、`test/unittest/core/manager/focus_manager_test_ng.cpp`、`test/unittest/core/pipeline/pipeline_context_test_ng_two.cpp` | 已核验 |
@@ -202,7 +202,7 @@
 
 ### 接口定义
 
-本特性不新增接口。以下既有开放入口和内部入口用于限定当前实现行为；ArkTS canonical SDK 类型目录未随当前源码检出提供，ArkTS 签名仅以仓内 ETS/ANI 声明交叉核验，不扩张为新的 API 承诺。
+本特性不新增接口。以下既有开放入口和内部入口用于限定当前实现行为；目标仓库基线未纳入 ArkTS canonical SDK 类型目录，ArkTS 签名仅以仓内 ETS/ANI 声明交叉核验，不扩张为新的 API 承诺。
 
 **focusController.requestFocus**
 
@@ -348,7 +348,7 @@
 - **数据存储格式变更:** 否；焦点请求和事务状态仅存在于运行时对象。
 - **最低支持版本:** 与 NG 焦点框架现有支持范围一致；Native 焦点 C API 自 API 15 提供（`interfaces/native/native_interface_focus.h:16-77`）。
 - **API 版本号策略:** Feat-02 核心请求、清除、切换和事务路径未发现 Target API 分支，不新增 `@since`。
-- **ArkTS 声明核验:** 当前 ace_engine 检出不含 `interface/sdk-js/api/` canonical SDK 类型目录；`focusController.requestFocus/clearFocus` 已依据仓内 ANI ETS 与 NAPI 实现核验，仍标记为“未经 canonical d.ts 验证”。
+- **ArkTS 声明核验:** 目标 ace_engine 仓库基线未纳入 `interface/sdk-js/api/` canonical SDK 类型目录；`focusController.requestFocus/clearFocus` 已依据仓内 ANI ETS 与 NAPI 实现核验，仍标记为“未经 canonical d.ts 验证”。
 - **运行时返回兼容性:** 同步按 ID 的 bool 仅代表预检查结果；异步 false 不代表未调度；callback 与整数错误码是独立通道。
 - **生命周期兼容性:** FreeNode 的 RemoveSelf 在 attach 前后采用最终一致性，不承诺同步清理。
 

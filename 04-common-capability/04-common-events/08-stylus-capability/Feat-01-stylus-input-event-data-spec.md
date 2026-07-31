@@ -34,7 +34,7 @@
 | NDK API 实现 | `interfaces/native/event/ui_input_event.cpp:336`、`:2215`、`:2254`、`:2334`、`:2843`、`:4268`、`:4315`、`:4861`、`:4892` | 已核对 |
 | ArkTS 动态桥接 | `frameworks/bridge/declarative_frontend/engine/functions/js_touch_function.cpp:63`、`js_click_function.cpp:45`、`frameworks/bridge/declarative_frontend/engine/jsi/nativeModule/arkts_native_common_bridge.cpp:9748` | 已核对 |
 
-> 当前源码树未包含 `interface/sdk-js/api/@internal/component/ets/common.d.ts` 和 `interface/sdk-js/api/arkui/component/common.static.d.ets`。因此本规格中的动态 ArkTS 字段签名标记为“未经 canonical d.ts 验证”；NDK 签名及版本以仓内公开头文件为准。
+> 目标仓库基线未纳入 `interface/sdk-js/api/@internal/component/ets/common.d.ts` 和 `interface/sdk-js/api/arkui/component/common.static.d.ets`。因此本规格中的动态 ArkTS 字段签名标记为“未经 canonical d.ts 验证”；NDK 签名及版本以仓内公开头文件为准。
 
 ## 用户故事
 
@@ -208,7 +208,7 @@
 | `OH_ArkUI_ClonedEvent_SetTiltAngle` | Public NDK | cloned event, tiltX, tiltY | ArkUI_ErrorCode | NO_ERROR/PARAM_INVALID/NOT_CLONED/TYPE_NOT_SUPPORT | 写克隆 Touch 倾角 | AC-5.1, AC-5.4, AC-5.7 |
 | `OH_ArkUI_ClonedEvent_SetRollAngle` | Public NDK | cloned event, rollAngle | ArkUI_ErrorCode | NO_ERROR/PARAM_INVALID/NOT_CLONED/TYPE_NOT_SUPPORT | 写克隆 Touch 旋转角 | AC-5.1, AC-5.5~5.7 |
 
-ArkTS 现有字段：`BaseEvent.pressure`、`tiltX`、`tiltY`、`rollAngle?`、`sourceTool`。仓内静态生成契约见 `common.ets:94-104`；动态 canonical d.ts 未随当前源码树提供，故签名未经 canonical d.ts 验证。
+ArkTS 现有字段：`BaseEvent.pressure`、`tiltX`、`tiltY`、`rollAngle?`、`sourceTool`。仓内静态生成契约见 `common.ets:94-104`；目标仓库基线未纳入动态 canonical d.ts，故签名未经 canonical d.ts 验证。
 
 ### 变更/废弃 API
 
@@ -312,7 +312,7 @@ ArkTS 现有字段：`BaseEvent.pressure`、`tiltX`、`tiltY`、`rollAngle?`、`
 - **最低支持版本:** ArkTS 字段版本需由 canonical SDK 声明复核；本规格覆盖的 NDK 接口最低为 API 12。
 - **API 版本号策略:** NDK tool type/pressure/tilt/history 为 API 12；rollAngle 为 API 17；latest-status 为 API 20；克隆事件 setter 为 API 24。
 - **已知实现差异:** Hover pressure 固定为 `0`；Axis 动态桥不输出 rollAngle；普通 Touch 当前 pressure/tilt getter 忽略 pointerIndex；克隆 hover-move rollAngle 存在写读字段不对称。
-- **SDK 交叉验证风险:** 当前 checkout 缺少 canonical `common.d.ts`/`common.static.d.ets`，静态字段形态仅由仓内生成文件验证，动态注释语义与 `@since` 需在具备 SDK 仓时复核。
+- **SDK 交叉验证风险:** 目标仓库基线未纳入 canonical `common.d.ts`/`common.static.d.ets`，静态字段形态仅由仓内生成文件验证，动态注释语义与 `@since` 需在取得匹配版本的 SDK 证据后复核。
 
 ## 架构约束
 

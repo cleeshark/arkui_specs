@@ -35,7 +35,7 @@
 | 回调构造 | `frameworks/core/event/mouse_event.cpp:69` | 已核对 |
 | Public NDK 事件 | `interfaces/native/native_node.h:10525`、`:10555` | 已核对 |
 
-> 当前源码树未包含 canonical ArkTS SDK 声明。`onHover/onHoverMove` 的签名由仓内静态生成契约和 inner-api `.d.ets` 交叉验证，ArkTS `@since` 注释未经 canonical d.ts 验证。
+> 目标仓库基线未纳入 canonical ArkTS SDK 声明。`onHover/onHoverMove` 的签名由仓内静态生成契约和 inner-api `.d.ets` 交叉验证，ArkTS `@since` 注释未经 canonical d.ts 验证。
 
 ## 用户故事
 

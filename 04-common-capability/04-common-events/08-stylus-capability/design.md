@@ -25,7 +25,7 @@
 | 行为基线 | 以当前实现为规格；Hover pressure 固定为零、普通 Touch getter 读取最后触点、克隆 hover-move rollAngle 写读不对称均作为现状记录 |
 | API 双通道 | ArkTS 侧覆盖 Touch/Mouse/Hover/Click/Axis 事件数据；NDK 侧覆盖当前、历史和克隆事件接口 |
 | 版本边界 | NDK tool/pressure/tilt/history 为 API 12，rollAngle 为 API 17，latest-status 为 API 20，克隆 setter 为 API 24 |
-| SDK 验证边界 | 当前源码树缺少 canonical `interface/sdk-js/api` 声明；仓内静态生成契约可验证字段形态，但动态 ArkTS 注释和 `@since` 仍需在 SDK 仓中复核 |
+| SDK 验证边界 | 目标仓库基线未纳入 canonical `interface/sdk-js/api` 声明；仓内静态生成契约可验证字段形态，但动态 ArkTS 注释和 `@since` 仍需在匹配版本的 SDK 中复核 |
 
 ## 上下文和现状
 
@@ -676,7 +676,7 @@ ResultData 的 errorCode/errorMessage 无默认初始化。SET_TEXT 在校验 da
 
 | 项 | 类型 | 影响 | 处理方式 | Owner |
 |----|------|------|----------|-------|
-| 当前源码树缺少 canonical ArkTS `common.d.ts/common.static.d.ets` | API | 高 | 规格明确标注未经 canonical d.ts 验证；取得 SDK 仓后复核字段注释、`@since`、单位和 rollAngle 语义，不以内部实现替代公开契约 | ArkUI API Owner |
+| 目标仓库基线未纳入 canonical ArkTS `common.d.ts/common.static.d.ets` | API | 高 | 规格明确标注未经 canonical d.ts 验证；取得匹配版本的 SDK 证据后复核字段注释、`@since`、单位和 rollAngle 语义，不以内部实现替代公开契约 | ArkUI API Owner |
 | 内部 SourceTool 扩展类型在静态公开转换中返回 `-1` | API | 中 | 在兼容性和 AC 中保持可见，测试 RUBBER/BRUSH/PENCIL/AIRBRUSH/LENS 降级行为 | ArkUI Frontend Owner |
 | SDK 可选 rollAngle 与动态桥常写 `0` 存在属性存在性差异 | API | 中 | 类型契约与运行时行为分开验证，不将零值解释为硬件已提供旋转角 | ArkUI Frontend Owner |
 | Hover pressure 固定为 `0` | 架构 | 中 | 为 Hover 建立独立规则，不复用 Touch pressure 断言 | ArkUI Event Owner |

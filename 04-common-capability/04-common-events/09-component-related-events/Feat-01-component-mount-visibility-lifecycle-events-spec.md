@@ -28,7 +28,7 @@
 | 文档 | 路径 | 状态 |
 |------|------|------|
 | Design | `specs/04-common-capability/04-common-events/09-component-related-events/design.md` | 本次生成 |
-| Dynamic SDK | `interface/sdk-js/api/@internal/component/ets/common.d.ts:22222-22324` | 已核查，来源 checkout 与 ace_engine 版本不完全匹配 |
+| Dynamic SDK | `interface/sdk-js/api/@internal/component/ets/common.d.ts:22222-22324` | 已核查；该 SDK 证据与目标 ace_engine 源码不属于同一版本基线 |
 | Static SDK | `interface/sdk-js/api/arkui/component/common.static.d.ets:12795-12834` | 已核查 |
 | 核心实现 | `frameworks/core/components_ng/base/frame_node.cpp:1874-1900,2162-2183` | 已核查 |
 | 事件存储与触发 | `frameworks/core/components_ng/event/event_hub.cpp:608-645,673-728,795-817` | 已核查 |
@@ -268,7 +268,7 @@
 - **配置文件格式变更:** 否。
 - **数据存储格式变更:** 否。
 - **最低支持版本:** Dynamic ArkTS API 7；完整四事件 ArkTS/Native 链路为 API 12；Static 为 API 23。
-- **API 版本号策略:** 按 canonical SDK 和 Native 头文件的 `@since` 标注；Dynamic SDK 证据来自版本不完全匹配的 checkout，后续取得同版本 SDK 时需复核行号与声明。
+- **API 版本号策略:** 按 canonical SDK 和 Native 头文件的 `@since` 标注；Dynamic SDK 证据与目标 ace_engine 源码的版本基线不完全匹配，取得匹配版本的 SDK 证据后需复核行号与声明。
 
 ## 架构约束
 

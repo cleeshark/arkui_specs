@@ -29,7 +29,7 @@
 | 文档 | 路径 | 状态 |
 |------|------|------|
 | Design | `specs/04-common-capability/04-common-events/10-visible-area-mechanism/design.md` | 本次生成 |
-| Dynamic SDK | `interface/sdk-js/api/@internal/component/ets/common.d.ts:24494-24563` | 已核查；来源 SDK checkout 与当前 ace_engine 提交非同一仓 |
+| Dynamic SDK | `interface/sdk-js/api/@internal/component/ets/common.d.ts:24494-24563` | 已核查；该 SDK 证据与目标 ace_engine 源码不属于同一版本基线 |
 | Static SDK | `interface/sdk-js/api/arkui/component/common.static.d.ets:13706-13734` | 已核查；Static 两参/三参分别按 API 23/26 记录 |
 | Dynamic Bridge | `frameworks/bridge/declarative_frontend/jsview/js_view_abstract.cpp:12060-12105` | 已核查 |
 | Modifier Bridge | `frameworks/bridge/declarative_frontend/ark_component/src/ArkComponent.ts:4032-4042,5874-5887` | 已核查 |

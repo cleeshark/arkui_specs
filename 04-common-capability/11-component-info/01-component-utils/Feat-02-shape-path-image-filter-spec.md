@@ -21,7 +21,7 @@
 |------|------|------|
 | ADDED | `getItemsInShapePath(value: GetItemsInShapePathParams): Array<ImageItem>` System API 契约 | 补录 API 23 dynamic/static 声明、Stage 模型限制、参数模型和 `ratio` 默认值 `0.15` |
 | ADDED | 仓内默认 NAPI 实现的可观测行为 | 明确默认实现不执行形状、像素、矩形、旋转或阈值筛选，而是直接透传 `images` 属性 |
-| ADDED | vendor 编译期替换边界 | 明确产品配置可替换默认实现并引入 OpenCV 与 image_framework 依赖，但当前检出代码不包含 vendor 算法和对应测试 |
+| ADDED | vendor 编译期替换边界 | 明确产品配置可替换默认实现并引入 OpenCV 与 image_framework 依赖，但目标仓库基线未纳入 vendor 算法和对应测试 |
 | ADDED | 动态/静态声明与实现通道差异 | canonical SDK 同时声明 dynamic/static，当前 ace_engine 仅检出动态 NAPI 导出，未检出 ANI、CJ、UIContext、NDK 或 ArkUI-X 等价实现 |
 
 ## 输入文档
@@ -77,7 +77,7 @@
 |--------|----------|------|
 | AC-3.1 | WHEN 构建未定义 `vendor_configs.ace_engine_mistouch_prevention` THEN `napi_componentutils_static` 编译仓内 `js_mistouch_prevention.cpp` 默认实现 | 正常 |
 | AC-3.2 | WHEN 构建定义 `vendor_configs.ace_engine_mistouch_prevention` THEN source list 改由 `ace_engine_mistouch_prevention_mode` 提供，并加入 OpenCV、image_framework 与 PixelMap 相关依赖 | 正常 |
-| AC-3.3 | WHEN 评审 vendor 路径的筛选算法、阈值边界和异常行为 THEN 当前检出代码只证明替换接口与依赖，不能推导未检出的 vendor 实现行为 | 边界 |
+| AC-3.3 | WHEN 评审 vendor 路径的筛选算法、阈值边界和异常行为 THEN 目标仓库基线只证明替换接口与依赖，不能推导未纳入该基线的 vendor 实现行为 | 边界 |
 | AC-3.4 | WHEN 核对 API 23 前端覆盖 THEN canonical SDK 同时声明 dynamic/static，但当前 ace_engine 仅检出动态 NAPI 导出，未检出 ANI、CJ、UIContext、NDK 或 ArkUI-X 等价实现 | 异常 |
 | AC-3.5 | WHEN 评估现有验证证据 THEN 当前仓未检出该 API 的专用 UT、XTS 或示例，默认实现和 vendor 替换均需要独立验证资产 | 异常 |
 
@@ -92,7 +92,7 @@
 | AC-2.5 | R-9 | 已有默认实现 | 多实参 NAPI 测试 | `js_mistouch_prevention.cpp:28-35` |
 | AC-3.1~AC-3.3 | R-10~R-11 | 已有构建边界 | GN 配置矩阵审查、产品构建验证 | `BUILD.gn:19-46`; `ace_ext.gni:16-41`; `bundle.json:95,120` |
 | AC-3.4 | R-12 | 通道缺口 | SDK/实现符号扫描、static 调用验证 | `js_component_utils.cpp:227-237`; canonical SDK dynamic/static 声明 |
-| AC-3.5 | R-13 | 验证缺口 | 测试目录与符号扫描 | 当前检出仓库搜索结果 |
+| AC-3.5 | R-13 | 验证缺口 | 测试目录与符号扫描 | 目标仓库基线搜索结果 |
 
 ## 规则定义
 
@@ -108,7 +108,7 @@
 | R-8 | 异常 | 默认 NAPI 的 `images` 属性值为非数组值，包括 `null`、number、string 或普通对象 | 原样返回该值 | 不执行数组检查、复制或元素验证 | AC-2.4 |
 | R-9 | 边界 | 默认 NAPI 调用实参个数大于 1 | 仅读取第一个实参 | `argc` 请求上限为 1，后续实参被忽略 | AC-2.5 |
 | R-10 | 行为 | 未定义 mistouch prevention vendor 配置 | 编译 `js_mistouch_prevention.cpp` | 该路径是仓内默认占位实现 | AC-3.1 |
-| R-11 | 行为 | 定义 mistouch prevention vendor 配置 | 使用外部 source list，并链接 OpenCV 与 image/PixelMap 依赖 | vendor 源码不在当前检出范围，不规定其算法结果 | AC-3.2、AC-3.3 |
+| R-11 | 行为 | 定义 mistouch prevention vendor 配置 | 使用外部 source list，并链接 OpenCV 与 image/PixelMap 依赖 | vendor 源码未纳入目标仓库基线，不规定其算法结果 | AC-3.2、AC-3.3 |
 | R-12 | 异常 | 对照 dynamic/static SDK 与当前 ace_engine 导出 | 动态 NAPI 有 `getItemsInShapePath` 导出；其他等价运行时入口未检出 | static 声明存在不等同于 ANI 后端已实现 | AC-3.4 |
 | R-13 | 异常 | 搜索当前仓库的 API 专用验证资产 | 记录专用 UT、XTS、示例均未检出 | 不以 Feat-01 的 ComponentUtils 测试替代本 API 验证 | AC-3.5 |
 

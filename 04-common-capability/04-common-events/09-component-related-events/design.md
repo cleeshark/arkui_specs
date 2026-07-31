@@ -36,7 +36,7 @@
 | 仓库 | 补充架构说明 |
 |------|--------------|
 | `arkui_ace_engine` | 提供 Dynamic/Static 桥接、ViewAbstract、Native Node、EventHub、FrameNode/UINode 生命周期与测试 |
-| `interface_sdk-js` | 提供 Dynamic/Static ArkTS 公共接口签名、SysCap 和 `@since` 声明；Dynamic 证据与目标源码 checkout 版本不完全匹配 |
+| `interface_sdk-js` | 提供 Dynamic/Static ArkTS 公共接口签名、SysCap 和 `@since` 声明；Dynamic 证据与目标源码的版本基线不完全匹配 |
 | `arkui_ace_engine`（Feat-02） | 提供 area/size 前端桥接、Pipeline area 节点调度、FrameNode 几何快照、interval 延迟任务、Native payload 与测试 |
 | `interface_sdk-js`（Feat-02） | 声明 Area、SizeOptions、AreaChangeOptions、Dynamic/Static 版本和布局触发契约 |
 
@@ -563,7 +563,7 @@ Dynamic area 的 API>=11 undefined 可清理；Dynamic size direct 对 undefined
 
 | 项 | 类型 | 影响 | 处理方式 | Owner |
 |----|------|------|----------|-------|
-| Dynamic SDK checkout 与目标 ace_engine 版本不完全匹配 | API | 中 | 规格记录当前核查来源；取得同版本 SDK 后复核签名、`@since` 和行号 | ArkUI SIG |
+| 已核查的 Dynamic SDK 与目标 ace_engine 版本基线不完全匹配 | API | 中 | 规格记录已核查证据；取得匹配版本的 SDK 证据后复核签名、`@since` 和行号 | ArkUI SIG |
 | Dynamic SDK 声明要求函数，但实现支持 API >= 11 的 `undefined` 清理 | API | 中 | 在兼容性和参数规约中同时记录声明与实现，不静默合并 | ArkUI SIG |
 | Legacy 管线不实现 attach/detach 和 Disable | 架构 | 中 | 明确管线适用范围，补充双管线测试 | ArkUI SIG |
 | 快速 attach/detach 时 pending appear 任务不显式取消 | 架构 | 中 | 作为可观察时序边界记录，使用可控 TaskExecutor 回归测试 | ArkUI SIG |

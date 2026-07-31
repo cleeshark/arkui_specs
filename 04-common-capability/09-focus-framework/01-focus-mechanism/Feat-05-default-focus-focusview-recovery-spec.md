@@ -180,7 +180,7 @@
 
 ### 接口定义
 
-当前检出不含 canonical SDK 类型目录；以下签名依据仓内动态类型与实现核验，未经 canonical d.ts/d.ets 验证。
+目标仓库基线未纳入 canonical SDK 类型目录；以下签名依据仓内动态类型与实现核验，未经 canonical d.ts/d.ets 验证。
 
 | API | 签名 | 入参 | 行为 | 关联 AC |
 |-----|------|------|------|---------|
@@ -196,7 +196,7 @@ FocusView、FocusManager、ViewRoot 和窗口恢复方法均为 Inner C++ 实现
 - **Target API:** UIExtensionWindow 在 Target API 26 起，inactive 状态不再强制把 ViewRoot 标记切为非根聚焦。
 - **自动转移:** `autoFocusTransfer=false` 会保留部分旧焦点并以 ViewRoot/栈重排恢复，不能假设 show/hide/close 总会主动迁移焦点。
 - **默认唯一性:** 实现按树序取首个命中，不校验同一 View 内只存在一个 default 或 groupDefault。
-- **SDK 核验:** canonical `interface/sdk-js/api/` 未随当前检出提供。
+- **SDK 核验:** 目标仓库基线未纳入 canonical `interface/sdk-js/api/`。
 
 ## 架构约束
 
