@@ -376,7 +376,7 @@ functions:
     id: '01'
     title: 事件基础框架
   path: 03-engine-framework/04-event-framework/01-event-base-framework/
-  design: null
+  design: 03-engine-framework/04-event-framework/01-event-base-framework/design.md
   status: active
 - id: 03-04-02
   l1:
@@ -389,7 +389,7 @@ functions:
     id: '02'
     title: 拖拽框架
   path: 03-engine-framework/04-event-framework/02-drag-framework/
-  design: null
+  design: 03-engine-framework/04-event-framework/02-drag-framework/design.md
   status: active
 - id: 03-05-01
   l1:
@@ -753,7 +753,7 @@ functions:
     id: '01'
     title: 触摸事件
   path: 04-common-capability/04-common-events/01-touch-events/
-  design: null
+  design: 04-common-capability/04-common-events/01-touch-events/design.md
   status: active
 - id: 04-04-02
   l1:
@@ -766,7 +766,7 @@ functions:
     id: '02'
     title: 按键事件
   path: 04-common-capability/04-common-events/02-key-events/
-  design: null
+  design: 04-common-capability/04-common-events/02-key-events/design.md
   status: active
 - id: 04-04-03
   l1:
@@ -779,7 +779,7 @@ functions:
     id: '03'
     title: 事件分发和拦截
   path: 04-common-capability/04-common-events/03-event-dispatch-intercept/
-  design: null
+  design: 04-common-capability/04-common-events/03-event-dispatch-intercept/design.md
   status: active
 - id: 04-04-04
   l1:
@@ -792,7 +792,7 @@ functions:
     id: '04'
     title: 组件组合键
   path: 04-common-capability/04-common-events/04-component-shortcuts/
-  design: null
+  design: 04-common-capability/04-common-events/04-component-shortcuts/design.md
   status: active
 - id: 04-04-05
   l1:
@@ -805,7 +805,7 @@ functions:
     id: '05'
     title: 鼠标事件
   path: 04-common-capability/04-common-events/05-mouse-events/
-  design: null
+  design: 04-common-capability/04-common-events/05-mouse-events/design.md
   status: active
 - id: 04-04-06
   l1:
@@ -831,7 +831,7 @@ functions:
     id: '07'
     title: 拖拽能力
   path: 04-common-capability/04-common-events/07-drag-capability/
-  design: null
+  design: 04-common-capability/04-common-events/07-drag-capability/design.md
   status: active
 - id: 04-04-08
   l1:
@@ -962,6 +962,19 @@ functions:
     title: 组件Modifier
   path: 04-common-capability/05-custom-extension/06-component-modifier/
   design: 04-common-capability/05-custom-extension/06-component-modifier/design.md
+  status: active
+- id: 04-05-07
+  l1:
+    id: '04'
+    title: 通用能力层
+  l2:
+    id: '05'
+    title: 自定义扩展能力
+  l3:
+    id: '07'
+    title: 手势Modifier
+  path: 04-common-capability/05-custom-extension/07-gesture-modifier/
+  design: 04-common-capability/05-custom-extension/07-gesture-modifier/design.md
   status: active
 - id: 04-06-01
   l1:
@@ -1104,7 +1117,7 @@ functions:
     id: '01'
     title: 窗口工具栏
   path: 04-common-capability/08-root-view/01-window-toolbar/
-  design: null
+  design: 04-common-capability/08-root-view/01-window-toolbar/design.md
   status: active
 - id: 04-08-02
   l1:
@@ -1117,7 +1130,7 @@ functions:
     id: '02'
     title: 元服务AppBar
   path: 04-common-capability/08-root-view/02-atomic-service-appbar/
-  design: null
+  design: 04-common-capability/08-root-view/02-atomic-service-appbar/design.md
   status: active
 - id: 04-08-03
   l1:
@@ -1156,7 +1169,7 @@ functions:
     id: '01'
     title: 离屏截图
   path: 04-common-capability/10-component-screenshot/01-offscreen-screenshot/
-  design: null
+  design: 04-common-capability/10-component-screenshot/01-offscreen-screenshot/design.md
   status: active
 - id: 04-11-01
   l1:

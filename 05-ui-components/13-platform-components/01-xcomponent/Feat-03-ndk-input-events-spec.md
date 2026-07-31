@@ -56,6 +56,10 @@
 
 ### US-2: 注册与接收鼠标事件
 
+**作为** NDK 应用开发者,
+**我想要** 经 `RegisterMouseEventCallback`/`GetMouseEvent`/`GetExtraMouseEventInfo` 注册并接收鼠标事件,
+**以便** 处理鼠标交互（移动/动作/悬停）与修饰键状态。
+
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
 | AC-2.1 | WHEN `RegisterMouseEventCallback(component, &cb)` 非空 THEN 返回 SUCCESS，存储 DispatchMouseEvent/DispatchHoverEvent | 正常 |
@@ -66,6 +70,10 @@
 
 ### US-3: 注册与接收按键事件
 
+**作为** NDK 应用开发者,
+**我想要** 经 `RegisterKeyEventCallback(WithResult)`/`GetKeyEvent` 注册并接收按键事件,
+**以便** 处理键盘输入并控制按键是否被消费。
+
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
 | AC-3.1 | WHEN `RegisterKeyEventCallback(component, cb)` THEN 存储回调；按键发生时调用，pattern 返回 false（不消费） | 正常 |
@@ -75,6 +83,10 @@
 | AC-3.5 | WHEN `GetKeyEventModifierKeyStates/NumLockState/CapsLockState/ScrollLockState`（@since 20） THEN 返回对应状态，任一入参 null 返回 ERROR_CODE_PARAM_INVALID(401) | 正常 |
 
 ### US-4: 焦点/失焦/触摸拦截/UIInputEvent
+
+**作为** NDK 应用开发者,
+**我想要** 经焦点/失焦回调、触摸拦截回调与 `UIInputEvent` 回调接收输入交互事件,
+**以便** 完整响应焦点、触摸拦截与轴输入。
 
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|

@@ -1,6 +1,6 @@
 # 特性规格
 
-> Func-04-04-06-Feat-02 组合手势：固化 GestureGroup 三种组合模式（Sequential/Parallel/Exclusive）的行为规格。仅 NG 框架，不含 C-API。
+> Func-04-04-06-Feat-02 组合手势：固化 GestureGroup 三种组合模式（Sequential/Parallel/Exclusive）的行为规格。仅 NG 框架；行为以 ArkTS 接口为主，同步记录等价 C-API 签名。
 
 ## 概述
 
@@ -55,7 +55,7 @@
 
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
-| AC-2.1 | WHEN 创建 `GestureGroup(GestureMode.Parallel, gesture1, gesture2, ...)` THEN 所有子手势同时接收触摸事件 | 正常 |
+| AC-2.1 | WHEN 并行组接收 TouchEvent THEN 仅分发给 `CheckTouchId(point.id)` 为 true 的子识别器；WHEN 接收 AxisEvent THEN 遍历所有有效子识别器 | 正常 |
 | AC-2.2 | WHEN 一个子手势成功 THEN 不影响其他子手势的识别（多个手势可同时处于 SUCCEED 状态） | 正常 |
 | AC-2.3 | WHEN 所有子手势均失败 THEN 整个并行组失败 | 异常 |
 | AC-2.4 | WHEN 并行组被外部接受 THEN 当前请求接受的子手势和所有已被阻塞但成功的子手势（succeedBlockRecognizers_）均被接受 | 正常 |
@@ -70,13 +70,13 @@
 
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
-| AC-3.1 | WHEN 创建 `GestureGroup(GestureMode.Exclusive, gesture1, gesture2, ...)` THEN 所有子手势同时接收初始触摸事件（竞争阶段） | 边界 |
+| AC-3.1 | WHEN 互斥组在尚无 activeRecognizer_ 时接收 TouchEvent THEN 事件广播给 `CheckTouchId(point.id)` 为 true 的子识别器进行竞争 | 边界 |
 | AC-3.2 | WHEN 一个子手势进入 PENDING 状态 THEN 它成为 activeRecognizer_，其他子手势被阻塞（CheckNeedBlocked） | 正常 |
 | AC-3.3 | WHEN activeRecognizer_ 识别成功 THEN 它被接受，所有其他子手势被拒绝（ForceReject） | 正常 |
 | AC-3.4 | WHEN activeRecognizer_ 识别失败 THEN 系统尝试解除其他被阻塞的手势（UnBlockGesture）继续竞争 | 异常 |
 | AC-3.5 | WHEN 被阻塞的手势中有 SUCCEED_BLOCKED 状态的 THEN 解除阻塞后直接请求组接受，无需重新识别 | 正常 |
 | AC-3.6 | WHEN 所有子手势均失败且无可解除阻塞的手势 THEN 整个互斥组失败 | 异常 |
-| AC-3.7 | WHEN activeRecognizer_ 已选中后 THEN 后续 MOVE/DOWN 事件仅分发给 activeRecognizer_（不再广播） | 正常 |
+| AC-3.7 | WHEN MOVE/DOWN 事件到达 THEN 若 activeRecognizer_ 拥有该 touchId 则进入 active 分发路径（先发给 active，期间 active 变更/解阻时可继续分发）；否则分发给所有 `CheckTouchId(point.id)` 为 true 的子识别器 | 正常 |
 | AC-3.8 | WHEN UP/CANCEL 事件到达 THEN 始终分发给所有子手势（用于清理状态） | 正常 |
 
 ### US-4: onCancel 回调
@@ -126,7 +126,7 @@
 |--------|------|----------|----------|-----------|--------|
 | R-1 | 行为 | mode_ 参数决定创建哪种识别器 | GestureGroup 创建对应 RecognizerGroup 子类：Sequence→SequencedRecognizer，Parallel→ParallelRecognizer，Exclusive→ExclusiveRecognizer | — | AC-1.1, AC-2.1, AC-3.1 |
 | R-2 | 行为 | 序列中手势必须严格按顺序完成 | SequencedRecognizer 使用 currentIndex_ 跟踪当前活跃手势索引（从 0 开始），前一个成功后递增 | — | AC-1.1~1.8 |
-| R-3 | 行为 | 无竞争关系 | ParallelRecognizer 中所有子识别器同时接收触摸事件，多个子手势可同时成功 | — | AC-2.1~2.6 |
+| R-3 | 行为 | 无竞争关系 | ParallelRecognizer 允许多个子手势同时成功；TouchEvent 按 touchId 匹配子识别器，AxisEvent 遍历所有有效子识别器 | — | AC-2.1~2.6 |
 | R-4 | 行为 | CheckNeedBlocked 确保互斥 | ExclusiveRecognizer 使用 activeRecognizer_ 追踪当前活跃识别器，仅一个可获胜 | — | AC-3.1~3.8 |
 | R-5 | 行为 | CreateRecognizer 仅对 Sequence 模式调用 SetOnActionCancel | onCancel 回调仅在 Sequence 模式中被设置和触发，Parallel 和 Exclusive 模式不支持 | — | AC-4.1~4.4 |
 | R-6 | 行为 | RemoveChildrenByTag、ForceReject 等均递归 | GestureGroup 支持嵌套，子手势可以是另一个 GestureGroup，操作递归执行 | — | AC-5.1~5.4 |
@@ -138,19 +138,19 @@
 | R-12 | 行为 | UpdateCurrentIndex 检测到 isEventHandoverNeeded_ | SequencedRecognizer.SendTouchEventToNextRecognizer 向下一个子识别器发送合成 DOWN 事件（事件传递） | SequencedRecognizer | AC-1.5 |
 | R-13 | 行为 | 连续 LongPress 传递事件 | SequencedRecognizer.CheckBetweenTwoLongPressRecognizer 检测连续两个 LongPress，自动调整时间戳 | SequencedRecognizer | AC-1.6 |
 | R-14 | 行为 | 序列结束/失败 | SequencedRecognizer.OnResetStatus 将 currentIndex_ 重置为 0，取消 deadlineTimer_ | SequencedRecognizer | AC-1.8 |
-| R-15 | 行为 | 触摸事件到达 | ParallelRecognizer.HandleEvent 将触摸事件分发给所有子识别器 | ParallelRecognizer | AC-2.1 |
+| R-15 | 行为 | 事件到达 | ParallelRecognizer 对 TouchEvent 仅调用匹配 touchId 的子识别器，对 AxisEvent 遍历所有有效子识别器 | ParallelRecognizer | AC-2.1 |
 | R-16 | 行为 | 子手势 ACCEPT | ParallelRecognizer 中一个子手势成功不影响其他子手势 | ParallelRecognizer | AC-2.2 |
 | R-17 | 行为 | 子手势 REJECT | ParallelRecognizer.CheckAllFailed 检查是否所有子手势均失败 | ParallelRecognizer | AC-2.3 |
 | R-18 | 行为 | 组被外部接受 | ParallelRecognizer.OnAccepted 接受当前子手势并批量接受 succeedBlockRecognizers_ | ParallelRecognizer | AC-2.4 |
 | R-19 | 行为 | 组被外部拒绝 | ParallelRecognizer.OnRejected 对所有子手势递归调用 ForceReject | ParallelRecognizer | AC-2.5 |
 | R-20 | 行为 | 子手势 ACCEPT 但组 SUCCEED_BLOCKED | ParallelRecognizer 在子手势成功但组整体被阻塞时加入 succeedBlockRecognizers_ | ParallelRecognizer | AC-2.6 |
-| R-21 | 行为 | 触摸事件到达且无活跃识别器 | ExclusiveRecognizer 在无 activeRecognizer_ 时将事件广播给所有子手势（竞争阶段） | ExclusiveRecognizer | AC-3.1 |
+| R-21 | 行为 | 触摸事件到达且无活跃识别器 | ExclusiveRecognizer 将事件广播给所有 `CheckTouchId(point.id)` 为 true 的子识别器 | ExclusiveRecognizer | AC-3.1 |
 | R-22 | 行为 | 子手势请求 PENDING/ACCEPT | ExclusiveRecognizer.CheckNeedBlocked 在任何其他子手势 PENDING 时阻塞当前子手势 | ExclusiveRecognizer | AC-3.2 |
 | R-23 | 行为 | 组被外部接受 | ExclusiveRecognizer.OnAccepted 接受 activeRecognizer_ 并拒绝所有其他子手势 | ExclusiveRecognizer | AC-3.3 |
 | R-24 | 行为 | activeRecognizer_ REJECT | ExclusiveRecognizer.HandleRejectDisposal 在 activeRecognizer_ 失败时调用 UnBlockGesture 尝试解除阻塞 | ExclusiveRecognizer | AC-3.4 |
 | R-25 | 行为 | UnBlockGesture 返回 SUCCEED_BLOCKED | ExclusiveRecognizer 解除阻塞时发现 SUCCEED_BLOCKED 子手势直接请求组接受 | ExclusiveRecognizer | AC-3.5 |
 | R-26 | 行为 | CheckAllFailed 且 UnBlockGesture 返回 null | ExclusiveRecognizer 在所有子手势失败且无可解除阻塞时拒绝整个组 | ExclusiveRecognizer | AC-3.6 |
-| R-27 | 行为 | activeRecognizer_ 非 null | ExclusiveRecognizer 在 activeRecognizer_ 选定后仅向其分发 MOVE/DOWN 事件 | ExclusiveRecognizer | AC-3.7 |
+| R-27 | 行为 | MOVE/DOWN 事件到达 | activeRecognizer_ 拥有该 touchId 时调用 DispatchEventToActiveRecognizers，先向 active 分发，并处理 active 变更/解阻；否则向所有匹配该 touchId 的子识别器分发 | ExclusiveRecognizer | AC-3.7 |
 | R-28 | 行为 | 事件类型为 UP/CANCEL | ExclusiveRecognizer 始终将 UP/CANCEL 事件广播给所有子手势 | ExclusiveRecognizer | AC-3.8 |
 | R-29 | 行为 | CreateRecognizer | onCancel 回调仅在 GestureMode::Sequence 时通过 SetOnActionCancel 设置 | GestureGroup | AC-4.1 |
 | R-30 | 行为 | 序列手势失败 | SequencedRecognizer.OnRejected 中 currentIndex_ != -1 时触发 onCancel | SequencedRecognizer | AC-4.2 |
@@ -193,6 +193,14 @@
 |----------|------|----------|---------|
 | `GestureGroup(mode: GestureMode, ...gesture: GestureType[]): GestureGroupInterface` | Public | 创建组合手势 | AC-1.1, AC-2.1, AC-3.1 |
 | `GestureGroupInterface.onCancel(event: () => void): GestureGroupInterface` | Public | 设置取消回调（仅 Sequence 模式生效） | AC-4.1~4.4 |
+
+**C-API (NDK)：**
+
+| API 签名 | 功能描述 | 关联 AC |
+|----------|----------|---------|
+| `ArkUI_GestureRecognizer* createGroupGesture(ArkUI_GroupGestureMode gestureMode)` | 创建组合手势 | AC-1.1, AC-2.1, AC-3.1 |
+| `int32_t addChildGesture(ArkUI_GestureRecognizer* group, ArkUI_GestureRecognizer* child)` | 向组合手势添加子手势 | AC-5.1~5.4 |
+| `int32_t removeChildGesture(ArkUI_GestureRecognizer* group, ArkUI_GestureRecognizer* child)` | 从组合手势移除子手势 | AC-5.1~5.4 |
 
 **关联枚举类型：**
 
@@ -330,6 +338,11 @@ Feature: 组合手势
     Then PanGesture 和 PinchGesture 均可独立成功
     And 两个手势的回调均触发
 
+  Scenario: 并行组合-TouchEvent 按 touchId 分发
+    Given 并行组中只有 PanGesture 记录了 touchId=1
+    When touchId=1 的 MOVE 事件到达
+    Then 事件仅分发给 CheckTouchId(1) 为 true 的子识别器
+
   Scenario: 并行组合-全部失败
     Given 一个组件绑定了 GestureGroup(Parallel, TapGesture(), LongPressGesture())
     When 用户轻触但未长按
@@ -364,6 +377,11 @@ Feature: 组合手势
     And 随后转向垂直方向（Horizontal Pan 失败）
     Then Vertical Pan 被解除阻塞（UnBlockGesture）
     And Vertical Pan 接替成为 activeRecognizer_
+
+  Scenario: 互斥组合-active 不拥有新 touchId
+    Given 互斥组已选中不包含 touchId=2 的 activeRecognizer_
+    When touchId=2 的 DOWN 事件到达
+    Then 事件仍分发给 CheckTouchId(2) 为 true 的子识别器
 
   Scenario: 互斥组-所有手势均失败
     Given 一个组件绑定了 GestureGroup(Exclusive, TapGesture(), PanGesture())

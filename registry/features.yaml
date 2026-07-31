@@ -334,16 +334,6 @@ features:
   title: 焦点属性
   spec: 04-common-capability/03-common-attributes/03-basic-attributes/Feat-05-focus-attribute-spec.md
   status: Baselined
-- func_id: 04-03-04
-  id: Feat-01
-  title: 悬停交互反馈
-  spec: 04-common-capability/03-common-attributes/04-interaction-attributes/Feat-01-hover-interaction-feedback-spec.md
-  status: Baselined
-- func_id: 04-03-04
-  id: Feat-02
-  title: 点击交互反馈
-  spec: 04-common-capability/03-common-attributes/04-interaction-attributes/Feat-02-click-interaction-feedback-spec.md
-  status: Baselined
 - func_id: 04-03-07
   id: Feat-01
   title: 多态样式
@@ -378,6 +368,101 @@ features:
   id: Feat-01
   title: 像素取整策略与布局渲染传播
   spec: 04-common-capability/24-layout-common-capability/01-pixel-rounding/Feat-01-pixel-rounding-policy-propagation-spec.md
+  status: Baselined
+- func_id: 03-04-01
+  id: Feat-01
+  title: 事件数据模型与节点事件中心
+  spec: 03-engine-framework/04-event-framework/01-event-base-framework/Feat-01-event-model-and-event-hub-spec.md
+  status: Baselined
+- func_id: 03-04-01
+  id: Feat-02
+  title: 命中测试与事件目标链构建
+  spec: 03-engine-framework/04-event-framework/01-event-base-framework/Feat-02-hit-test-and-event-target-chain-spec.md
+  status: Baselined
+- func_id: 03-04-01
+  id: Feat-03
+  title: 输入事件分发与采样管线
+  spec: 03-engine-framework/04-event-framework/01-event-base-framework/Feat-03-input-dispatch-and-sampling-pipeline-spec.md
+  status: Baselined
+- func_id: 03-04-01
+  id: Feat-04
+  title: 手势仲裁与响应控制
+  spec: 03-engine-framework/04-event-framework/01-event-base-framework/Feat-04-gesture-referee-and-response-control-spec.md
+  status: Baselined
+- func_id: 03-04-01
+  id: Feat-05
+  title: 事件诊断与维测
+  spec: 03-engine-framework/04-event-framework/01-event-base-framework/Feat-05-event-diagnostics-and-inspection-spec.md
+  status: Baselined
+- func_id: 04-04-01
+  id: Feat-01
+  title: 触摸回调与传播控制
+  spec: 04-common-capability/04-common-events/01-touch-events/Feat-01-touch-callback-propagation-spec.md
+  status: Baselined
+- func_id: 04-04-01
+  id: Feat-02
+  title: 触摸事件与多点数据模型
+  spec: 04-common-capability/04-common-events/01-touch-events/Feat-02-touch-event-multipoint-data-model-spec.md
+  status: Baselined
+- func_id: 04-04-01
+  id: Feat-03
+  title: 历史采样与高级触点信息
+  spec: 04-common-capability/04-common-events/01-touch-events/Feat-03-history-sampling-advanced-touch-info-spec.md
+  status: Baselined
+- func_id: 04-04-02
+  id: Feat-01
+  title: 按键事件模型与基础回调
+  spec: 04-common-capability/04-common-events/02-key-events/Feat-01-key-event-model-basic-callback-spec.md
+  status: Baselined
+- func_id: 04-04-02
+  id: Feat-02
+  title: 前置拦截与自定义分发
+  spec: 04-common-capability/04-common-events/02-key-events/Feat-02-pre-ime-custom-dispatch-spec.md
+  status: Baselined
+- func_id: 04-04-03
+  id: Feat-01
+  title: 命中测试、拦截与响应链构建
+  spec: 04-common-capability/04-common-events/03-event-dispatch-intercept/Feat-01-hit-test-intercept-response-chain-spec.md
+  status: Baselined
+- func_id: 04-04-03
+  id: Feat-02
+  title: 触摸事件序列分发与传播控制
+  spec: 04-common-capability/04-common-events/03-event-dispatch-intercept/Feat-02-touch-sequence-dispatch-propagation-spec.md
+  status: Baselined
+- func_id: 04-04-03
+  id: Feat-03
+  title: 跨容器事件分发
+  spec: 04-common-capability/04-common-events/03-event-dispatch-intercept/Feat-03-cross-container-event-dispatch-spec.md
+  status: Baselined
+- func_id: 04-04-03
+  id: Feat-04
+  title: 自定义输入事件构造与分发
+  spec: 04-common-capability/04-common-events/03-event-dispatch-intercept/Feat-04-custom-input-event-construction-dispatch-spec.md
+  status: Baselined
+- func_id: 04-04-04
+  id: Feat-01
+  title: 组件组合键注册与触发
+  spec: 04-common-capability/04-common-events/04-component-shortcuts/Feat-01-component-shortcut-registration-trigger-spec.md
+  status: Baselined
+- func_id: 04-04-05
+  id: Feat-01
+  title: 鼠标事件注册、命中与分发
+  spec: 04-common-capability/04-common-events/05-mouse-events/Feat-01-mouse-event-registration-hit-test-dispatch-spec.md
+  status: Baselined
+- func_id: 04-04-05
+  id: Feat-02
+  title: 鼠标事件数据模型与版本演进
+  spec: 04-common-capability/04-common-events/05-mouse-events/Feat-02-mouse-event-data-model-version-evolution-spec.md
+  status: Baselined
+- func_id: 04-04-05
+  id: Feat-03
+  title: 悬停事件与视觉反馈
+  spec: null
+  status: Draft
+- func_id: 04-04-05
+  id: Feat-04
+  title: 鼠标光标样式与自定义光标
+  spec: 04-common-capability/04-common-events/05-mouse-events/Feat-04-mouse-cursor-style-custom-cursor-spec.md
   status: Baselined
 - func_id: 04-04-06
   id: Feat-01
@@ -1142,7 +1227,7 @@ features:
 - func_id: 05-12-02
   id: Feat-01
   title: AbilityComponent完整规格（已废弃补录）
-  spec: null
+  spec: 05-ui-components/12-embedded-display-components/02-ability-component/Feat-01-ability-component-cross-process-embed-deprecated-spec.md
   status: Draft
 - func_id: 05-12-03
   id: Feat-01
@@ -1349,6 +1434,26 @@ features:
   title: 路由栈保存与恢复机制
   spec: 04-common-capability/07-migration-recovery/02-router-stack-recovery/Feat-01-router-stack-save-restore-spec.md
   status: Draft
+- func_id: 04-08-01
+  id: Feat-01
+  title: 窗口标题栏与工具栏
+  spec: 04-common-capability/08-root-view/01-window-toolbar/Feat-01-container-titlebar-toolbar-spec.md
+  status: Baselined
+- func_id: 04-08-01
+  id: Feat-02
+  title: '@ohos.window.titlebar.component 静态组件与构建'
+  spec: 04-common-capability/08-root-view/01-window-toolbar/Feat-02-titlebar-static-component-spec.md
+  status: Baselined
+- func_id: 04-08-02
+  id: Feat-01
+  title: AppBar 构建与 AtomicServicePattern
+  spec: 04-common-capability/08-root-view/02-atomic-service-appbar/Feat-01-appbar-build-pattern-spec.md
+  status: Baselined
+- func_id: 04-08-02
+  id: Feat-02
+  title: AtomicServiceBar 编程 API
+  spec: 04-common-capability/08-root-view/02-atomic-service-appbar/Feat-02-atomic-service-bar-api-spec.md
+  status: Baselined
 - func_id: 04-15-02
   id: Feat-01
   title: 命名路由跳转与替换
@@ -2034,6 +2139,11 @@ features:
   title: 信息展示类组件自定义内容（ContentModifier）
   spec: 04-common-capability/05-custom-extension/04-content-modifier-display/Feat-01-content-modifier-display-spec.md
   status: Baselined
+- func_id: 04-05-07
+  id: Feat-01
+  title: gestureModifier 动态手势配置
+  spec: 04-common-capability/05-custom-extension/07-gesture-modifier/Feat-01-gesture-modifier-dynamic-configuration-spec.md
+  status: Baselined
 - func_id: 04-16-01
   id: Feat-01
   title: UIAppearance（深浅色模式与外观管理）
@@ -2148,6 +2258,111 @@ features:
   id: Feat-01
   title: WithTheme 主题作用域组件全量规格
   spec: 05-ui-components/15-theme-components/01-with-theme/Feat-01-with-theme-full-spec.md
+  status: Baselined
+- func_id: 03-04-02
+  id: Feat-01
+  title: Drag initiation and pre-drag state machine
+  spec: 03-engine-framework/04-event-framework/02-drag-framework/Feat-01-drag-initiation-predrag-state-machine-spec.md
+  status: Baselined
+- func_id: 03-04-02
+  id: Feat-02
+  title: Drag source-target routing and lifecycle dispatch
+  spec: 03-engine-framework/04-event-framework/02-drag-framework/Feat-02-drag-source-target-routing-lifecycle-dispatch-spec.md
+  status: Baselined
+- func_id: 03-04-02
+  id: Feat-03
+  title: Drag data transport and drop negotiation
+  spec: 03-engine-framework/04-event-framework/02-drag-framework/Feat-03-drag-data-transport-drop-negotiation-spec.md
+  status: Baselined
+- func_id: 03-04-02
+  id: Feat-04
+  title: Drag preview overlay animation and visual effects
+  spec: 03-engine-framework/04-event-framework/02-drag-framework/Feat-04-drag-preview-overlay-animation-visual-effects-spec.md
+  status: Baselined
+- func_id: 03-04-02
+  id: Feat-05
+  title: Drag hover detection
+  spec: 03-engine-framework/04-event-framework/02-drag-framework/Feat-05-drag-spring-loading-specialized-modes-spec.md
+  status: Baselined
+- func_id: 03-04-02
+  id: Feat-06
+  title: Drag multi-display device and container integration
+  spec: 03-engine-framework/04-event-framework/02-drag-framework/Feat-06-drag-multi-display-device-container-integration-spec.md
+  status: Baselined
+- func_id: 04-04-07
+  id: Feat-01
+  title: Component drag source and target configuration
+  spec: 04-common-capability/04-common-events/07-drag-capability/Feat-01-component-drag-source-target-configuration-spec.md
+  status: Baselined
+- func_id: 04-04-07
+  id: Feat-02
+  title: Component drag lifecycle and event contract
+  spec: 04-common-capability/04-common-events/07-drag-capability/Feat-02-component-drag-lifecycle-event-contract-spec.md
+  status: Baselined
+- func_id: 04-04-07
+  id: Feat-03
+  title: Drag data result and asynchronous transfer
+  spec: 04-common-capability/04-common-events/07-drag-capability/Feat-03-drag-data-result-asynchronous-transfer-spec.md
+  status: Baselined
+- func_id: 04-04-07
+  id: Feat-04
+  title: Drag preview and interaction presentation
+  spec: 04-common-capability/04-common-events/07-drag-capability/Feat-04-drag-preview-interaction-presentation-spec.md
+  status: Baselined
+- func_id: 04-04-07
+  id: Feat-05
+  title: Programmatic drag action and controller APIs
+  spec: 04-common-capability/04-common-events/07-drag-capability/Feat-05-programmatic-drag-action-controller-apis-spec.md
+  status: Baselined
+- func_id: 04-04-07
+  id: Feat-06
+  title: Drop completion feedback and deferred finalization
+  spec: 04-common-capability/04-common-events/07-drag-capability/Feat-06-drop-completion-feedback-deferred-finalization-spec.md
+  status: Baselined
+- func_id: 04-04-07
+  id: Feat-07
+  title: Drag hover detection
+  spec: 04-common-capability/04-common-events/07-drag-capability/Feat-07-spring-loading-hover-detection-spec.md
+  status: Baselined
+- func_id: 04-03-04
+  id: Feat-01
+  title: 鼠标光标与悬浮效果
+  spec: 04-common-capability/03-common-attributes/04-interaction-attributes/Feat-01-pointer-hover-accessibility-hover-spec.md
+  status: Baselined
+- func_id: 04-03-04
+  id: Feat-02
+  title: 触摸热区、触摸控制与事件独占
+  spec: 04-common-capability/03-common-attributes/04-interaction-attributes/Feat-02-keyboard-peripheral-input-events-spec.md
+  status: Baselined
+- func_id: 04-03-04
+  id: Feat-03
+  title: 禁用控制与点击反馈
+  spec: 04-common-capability/03-common-attributes/04-interaction-attributes/Feat-03-enabled-click-feedback-spec.md
+  status: Baselined
+- func_id: 04-10-01
+  id: Feat-01
+  title: 独立 componentSnapshot 模块接口与迁移
+  spec: 04-common-capability/10-component-screenshot/01-offscreen-screenshot/Feat-01-component-snapshot-module-migration-spec.md
+  status: Baselined
+- func_id: 04-10-01
+  id: Feat-02
+  title: UIContext 已挂载节点与范围截图
+  spec: 04-common-capability/10-component-screenshot/01-offscreen-screenshot/Feat-02-uicontext-mounted-range-snapshot-spec.md
+  status: Baselined
+- func_id: 04-10-01
+  id: Feat-03
+  title: UIContext Builder 与 ComponentContent 离屏截图
+  spec: 04-common-capability/10-component-screenshot/01-offscreen-screenshot/Feat-03-uicontext-offscreen-builder-component-content-spec.md
+  status: Baselined
+- func_id: 04-10-01
+  id: Feat-04
+  title: 截图选项、错误码与跨前端差异
+  spec: 04-common-capability/10-component-screenshot/01-offscreen-screenshot/Feat-04-snapshot-options-errors-frontend-differences-spec.md
+  status: Baselined
+- func_id: 04-10-01
+  id: Feat-05
+  title: C API 节点截图与尺寸限制
+  spec: 04-common-capability/10-component-screenshot/01-offscreen-screenshot/Feat-05-capi-node-snapshot-size-limitation-spec.md
   status: Baselined
 - func_id: 05-03-03
   id: Feat-01
