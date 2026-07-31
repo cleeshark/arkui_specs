@@ -636,7 +636,7 @@ functions:
     id: '04'
     title: 交互属性
   path: 04-common-capability/03-common-attributes/04-interaction-attributes/
-  design: null
+  design: 04-common-capability/03-common-attributes/04-interaction-attributes/design.md
   status: active
 - id: 04-03-05
   l1:
@@ -828,10 +828,10 @@ functions:
     id: '04'
     title: 通用事件
   l3:
-    id: 08
+    id: '08'
     title: 手写笔能力
   path: 04-common-capability/04-common-events/08-stylus-capability/
-  design: null
+  design: 04-common-capability/04-common-events/08-stylus-capability/design.md
   status: active
 - id: 04-04-09
   l1:
@@ -844,7 +844,7 @@ functions:
     id: 09
     title: 组件相关事件
   path: 04-common-capability/04-common-events/09-component-related-events/
-  design: null
+  design: 04-common-capability/04-common-events/09-component-related-events/design.md
   status: active
 - id: 04-04-10
   l1:
@@ -857,7 +857,7 @@ functions:
     id: '10'
     title: 可见区域机制
   path: 04-common-capability/04-common-events/10-visible-area-mechanism/
-  design: null
+  design: 04-common-capability/04-common-events/10-visible-area-mechanism/design.md
   status: active
 - id: 04-04-11
   l1:
@@ -870,7 +870,7 @@ functions:
     id: '11'
     title: 交互归一化
   path: 04-common-capability/04-common-events/11-interaction-normalization/
-  design: null
+  design: 04-common-capability/04-common-events/11-interaction-normalization/design.md
   status: active
 - id: 04-05-01
   l1:
@@ -1130,7 +1130,7 @@ functions:
     id: '01'
     title: 焦点机制
   path: 04-common-capability/09-focus-framework/01-focus-mechanism/
-  design: null
+  design: 04-common-capability/09-focus-framework/01-focus-mechanism/design.md
   status: active
 - id: 04-10-01
   l1:
@@ -1156,7 +1156,7 @@ functions:
     id: '01'
     title: ComponentUtils
   path: 04-common-capability/11-component-info/01-component-utils/
-  design: null
+  design: 04-common-capability/11-component-info/01-component-utils/design.md
   status: active
 - id: 04-11-02
   l1:
