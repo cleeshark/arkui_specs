@@ -1751,7 +1751,7 @@ features:
   status: Baselined
 - func_id: 03-04-02
   id: Feat-05
-  title: Drag spring loading and specialized modes
+  title: Drag hover detection
   spec: 03-engine-framework/04-event-framework/02-drag-framework/Feat-05-drag-spring-loading-specialized-modes-spec.md
   status: Baselined
 - func_id: 03-04-02
