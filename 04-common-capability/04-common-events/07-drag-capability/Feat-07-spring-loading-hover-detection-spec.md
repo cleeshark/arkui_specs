@@ -22,10 +22,10 @@
 ## 输入文档
 
 - `specs/04-common-capability/04-common-events/07-drag-capability/design.md`
-- `D:/arkui/gitCode/ArkUI/interface_sdk-js/api/@internal/component/ets/common.d.ts:24612-24632`
-- `D:/arkui/gitCode/ArkUI/interface_sdk-js/api/arkui/component/common.static.d.ets:13180-13184`
-- `D:/arkui/gitCode/ArkUI/interface_sdk-js/api/@ohos.arkui.dragController.d.ts:569-812`
-- `D:/arkui/gitCode/ArkUI/interface_sdk-js/api/@ohos.arkui.dragController.static.d.ets:373-566`
+- `<OH_ROOT>/interface_sdk-js/api/@internal/component/ets/common.d.ts:24612-24632`
+- `<OH_ROOT>/interface_sdk-js/api/arkui/component/common.static.d.ets:13180-13184`
+- `<OH_ROOT>/interface_sdk-js/api/@ohos.arkui.dragController.d.ts:569-812`
+- `<OH_ROOT>/interface_sdk-js/api/@ohos.arkui.dragController.static.d.ets:373-566`
 - `frameworks/core/components_ng/manager/drag_drop/drag_drop_spring_loading/drag_drop_spring_loading_detector.cpp:31-149`
 - `frameworks/core/components_ng/manager/drag_drop/drag_drop_spring_loading/drag_drop_spring_loading_state_idle.cpp:22-40`
 - `frameworks/core/components_ng/manager/drag_drop/drag_drop_spring_loading/drag_drop_spring_loading_state_begin.cpp:22-70`

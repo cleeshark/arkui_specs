@@ -20,7 +20,7 @@
 ## 输入文档
 
 - `specs/03-engine-framework/04-event-framework/02-drag-framework/design.md`
-- `D:/arkui/gitCode/ArkUI/docs/zh-cn/application-dev/reference/apis-arkui/arkui-ts/ts-universal-attributes-drag-drop.md`
+- `<OH_ROOT>/docs/zh-cn/application-dev/reference/apis-arkui/arkui-ts/ts-universal-attributes-drag-drop.md`
 
 ## 用户故事
 

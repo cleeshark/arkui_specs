@@ -22,9 +22,9 @@
 ## 输入文档
 
 - `specs/04-common-capability/04-common-events/07-drag-capability/design.md`
-- `D:/arkui/gitCode/ArkUI/interface_sdk-js/api/@internal/component/ets/common.d.ts:18102-18327,22585-22699`
-- `D:/arkui/gitCode/ArkUI/interface_sdk-js/api/arkui/component/common.static.d.ets:11144-11149,13204-13237`
-- `D:/arkui/gitCode/ArkUI/interface_sdk_c/arkui/ace_engine/native/drag_and_drop.h:605-775`
+- `<OH_ROOT>/interface_sdk-js/api/@internal/component/ets/common.d.ts:18102-18327,22585-22699`
+- `<OH_ROOT>/interface_sdk-js/api/arkui/component/common.static.d.ets:11144-11149,13204-13237`
+- `<OH_ROOT>/interface_sdk_c/arkui/ace_engine/native/drag_and_drop.h:605-775`
 - `interfaces/native/drag_and_drop.h:628-793`
 - `interfaces/native/event/drag_and_drop_impl.cpp:458-459,551-659`
 - `frameworks/core/components_ng/base/frame_node.h:901-975`

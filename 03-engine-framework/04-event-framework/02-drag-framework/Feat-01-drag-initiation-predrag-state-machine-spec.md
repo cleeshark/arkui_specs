@@ -23,10 +23,10 @@
 
 - `specs/03-engine-framework/04-event-framework/02-drag-framework/design.md`
 - `docs/common/interaction/Drag_Drop_Knowledge_Base_CN.md`
-- `D:/arkui/gitCode/ArkUI/docs/zh-cn/application-dev/reference/apis-arkui/arkui-ts/ts-universal-events-drag-drop.md`
-- `D:/arkui/gitCode/ArkUI/interface_sdk-js/api/@internal/component/ets/common.d.ts`
-- `D:/arkui/gitCode/ArkUI/interface_sdk-js/api/@ohos.arkui.UIContext.d.ts`
-- `D:/arkui/gitCode/ArkUI/interface_sdk_c/arkui/ace_engine/native/drag_and_drop.h`
+- `<OH_ROOT>/docs/zh-cn/application-dev/reference/apis-arkui/arkui-ts/ts-universal-events-drag-drop.md`
+- `<OH_ROOT>/interface_sdk-js/api/@internal/component/ets/common.d.ts`
+- `<OH_ROOT>/interface_sdk-js/api/@ohos.arkui.UIContext.d.ts`
+- `<OH_ROOT>/interface_sdk_c/arkui/ace_engine/native/drag_and_drop.h`
 
 ## 用户故事
 

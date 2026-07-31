@@ -292,7 +292,7 @@ class SpringLoadingContext {
 
 ### 组件源与目标配置
 
-动态 ArkTS 的 `allowDrop`、`draggable` 从 API 10 可用；静态 ArkTS 对应 API 从 API 23 可用且签名接受 `undefined`。C API 的允许类型、禁止全部类型、允许全部类型及 draggable 从 API 12 暴露。C 实现先校验 FullImpl/node/typesArray，再把设置交给 CommonModifier。证据：`D:/arkui/gitCode/ArkUI/interface_sdk-js/api/@internal/component/ets/common.d.ts:22585-22603`，`D:/arkui/gitCode/ArkUI/interface_sdk-js/api/arkui/component/common.static.d.ets:13204-13215`，`interfaces/native/drag_and_drop.h:628-677`，`interfaces/native/event/drag_and_drop_impl.cpp:458-459,611-659`。
+动态 ArkTS 的 `allowDrop`、`draggable` 从 API 10 可用；静态 ArkTS 对应 API 从 API 23 可用且签名接受 `undefined`。C API 的允许类型、禁止全部类型、允许全部类型及 draggable 从 API 12 暴露。C 实现先校验 FullImpl/node/typesArray，再把设置交给 CommonModifier。证据：`<OH_ROOT>/interface_sdk-js/api/@internal/component/ets/common.d.ts:22585-22603`，`<OH_ROOT>/interface_sdk-js/api/arkui/component/common.static.d.ets:13204-13215`，`interfaces/native/drag_and_drop.h:628-677`，`interfaces/native/event/drag_and_drop_impl.cpp:458-459,611-659`。
 
 ### 预览配置、选项与来源优先级
 
@@ -304,23 +304,64 @@ class SpringLoadingContext {
 
 ### 数据、结果与异步传输
 
-动态 ArkTS 在 API 10 提供 `setData/getData/setResult/getResult`，静态 ArkTS 对应接口从 API 23 提供，且静态 `getData()` 的公开返回值为 `UnifiedData | undefined`。`DataLoadParams` 的动态入口从 API 20、静态入口从 API 26.0.0、C 入口从 API 20 提供；数据与加载参数都写入同一事件时，以最后一次调用为准。C API API 12 覆盖数据、结果、drop operation 与 type，数组容量不足返回 `ARKUI_ERROR_CODE_BUFFER_SIZE_ERROR`；`SetDataLoadParams` 的 event 或参数为空则返回 `ARKUI_ERROR_CODE_PARAM_INVALID`。Manager 在落放过程中先处理摘要/权限和预取选择：禁用预取时检查远端并按既有逻辑后台请求，否则走本地预取；之后处理内部 onDrop。系统通知携带的结果、行为和动画写回当前 `DragEvent`，DROP 分支再派发客户回调与内部 drop。证据：`D:/arkui/gitCode/ArkUI/interface_sdk-js/api/@internal/component/ets/common.d.ts:10792,11550-11602,11787-11796`，`D:/arkui/gitCode/ArkUI/interface_sdk-js/api/arkui/component/common.static.d.ets:6005-6012,6480-6518,6637-6645`，`D:/arkui/gitCode/ArkUI/interface_sdk_c/arkui/ace_engine/native/drag_and_drop.h:237-345`，`interfaces/native/event/drag_and_drop_impl.cpp:871-882`，`frameworks/core/components_ng/manager/drag_drop/drag_drop_manager.cpp:1174-1180,1258-1268,1384-1387,1476-1533,1918-1920`。
+动态 ArkTS 在 API 10 提供 `setData/getData/setResult/getResult`，静态 ArkTS 对应接口从 API 23 提供，且静态 `getData()` 的公开返回值为 `UnifiedData | undefined`。`DataLoadParams` 的动态入口从 API 20、静态入口从 API 26.0.0、C 入口从 API 20 提供；数据与加载参数都写入同一事件时，以最后一次调用为准。C API API 12 覆盖数据、结果、drop operation 与 type，数组容量不足返回 `ARKUI_ERROR_CODE_BUFFER_SIZE_ERROR`；`SetDataLoadParams` 的 event 或参数为空则返回 `ARKUI_ERROR_CODE_PARAM_INVALID`。Manager 在落放过程中先处理摘要/权限和预取选择：禁用预取时检查远端并按既有逻辑后台请求，否则走本地预取；之后处理内部 onDrop。系统通知携带的结果、行为和动画写回当前 `DragEvent`，DROP 分支再派发客户回调与内部 drop。证据：`<OH_ROOT>/interface_sdk-js/api/@internal/component/ets/common.d.ts:10792,11550-11602,11787-11796`，`<OH_ROOT>/interface_sdk-js/api/arkui/component/common.static.d.ets:6005-6012,6480-6518,6637-6645`，`<OH_ROOT>/interface_sdk_c/arkui/ace_engine/native/drag_and_drop.h:237-345`，`interfaces/native/event/drag_and_drop_impl.cpp:871-882`，`frameworks/core/components_ng/manager/drag_drop/drag_drop_manager.cpp:1174-1180,1258-1268,1384-1387,1476-1533,1918-1920`。
 
 ### 预览、交互与 Overlay 呈现
 
-动态 ArkTS 的 `dragPreview`/`dragPreviewOptions` 从 API 11 可用，API 15 为 `dragPreview` 增加 `PreviewConfiguration`；动态 mode 从 API 12 支持数组，且 `AUTO` 与其他模式同时设置时 `AUTO` 优先。静态 ArkTS 在 API 23 提供对应 API，并接受 `undefined`。C API API 12 用 PixelMap 和 `ArkUI_DragPreviewOption` 表达缩放、默认阴影/圆角、徽标和起拖前动画；adapter 在有效 node/option 时映射到 CommonModifier，空 PixelMap 重置预览，其他空参数返回 `PARAM_INVALID`。起拖时依次选择 inspectorId PixelMap、直接 PixelMap、缩略图；随后应用默认 opacity、阴影和圆角。多选时 OverlayManager 创建 Gather Node，SceneBoard 挂到 WindowScene，普通窗口挂到 RootNode；`defaultAnimationBeforeLifting` 控制 drag-node-copy 的 Overlay 动画路径。证据：`D:/arkui/gitCode/ArkUI/interface_sdk-js/api/@internal/component/ets/common.d.ts:17886-18018,18102-18325,22645-22699`，`D:/arkui/gitCode/ArkUI/interface_sdk-js/api/arkui/component/common.static.d.ets:11015-11159,13226-13237`，`D:/arkui/gitCode/ArkUI/interface_sdk_c/arkui/ace_engine/native/drag_and_drop.h:667-775`，`interfaces/native/event/drag_and_drop_impl.cpp:540-588`，`frameworks/core/components_ng/event/drag_event.cpp:1344-1416,2121-2133`，`frameworks/core/components_ng/manager/drag_drop/utils/drag_animation_helper.cpp:610-672,771-848`。
+动态 ArkTS 的 `dragPreview`/`dragPreviewOptions` 从 API 11 可用，API 15 为 `dragPreview` 增加 `PreviewConfiguration`；动态 mode 从 API 12 支持数组，且 `AUTO` 与其他模式同时设置时 `AUTO` 优先。静态 ArkTS 在 API 23 提供对应 API，并接受 `undefined`。C API API 12 用 PixelMap 和 `ArkUI_DragPreviewOption` 表达缩放、默认阴影/圆角、徽标和起拖前动画；adapter 在有效 node/option 时映射到 CommonModifier，空 PixelMap 重置预览，其他空参数返回 `PARAM_INVALID`。起拖时依次选择 inspectorId PixelMap、直接 PixelMap、缩略图；随后应用默认 opacity、阴影和圆角。多选时 OverlayManager 创建 Gather Node，SceneBoard 挂到 WindowScene，普通窗口挂到 RootNode；`defaultAnimationBeforeLifting` 控制 drag-node-copy 的 Overlay 动画路径。证据：`<OH_ROOT>/interface_sdk-js/api/@internal/component/ets/common.d.ts:17886-18018,18102-18325,22645-22699`，`<OH_ROOT>/interface_sdk-js/api/arkui/component/common.static.d.ets:11015-11159,13226-13237`，`<OH_ROOT>/interface_sdk_c/arkui/ace_engine/native/drag_and_drop.h:667-775`，`interfaces/native/event/drag_and_drop_impl.cpp:540-588`，`frameworks/core/components_ng/event/drag_event.cpp:1344-1416,2121-2133`，`frameworks/core/components_ng/manager/drag_drop/utils/drag_animation_helper.cpp:610-672,771-848`。
 
 ### 程序化 DragAction 与 DragController
 
-动态 ArkTS 通过 API 11 的 `UIContext.getDragController()` 获得当前上下文 Controller；旧全局 `executeDrag/createDragAction` 在 API 18 废弃。静态 ArkTS 从 API 23 提供 Controller/Action，但 `startDrag()` 返回 `Promise<void> | null`，状态监听使用 `onStatusChange/offStatusChange`，与动态 `on/off('statusChange')` 不同。一个 Action 的生命周期结束后其回调无效，NAPI 路径禁止在已有拖拽时创建或执行第二个 Action。C API API 12 可由 node/context 创建 Action，设置 pointer、PixelMap、触点、UDMF 数据、PreviewOption 和 listener；pointer 只接受 0–9。C adapter 负责转换 Action；启动失败时用 `DRAG_CANCEL` 和 `ENDED` 回调 listener。最终系统起拖由 `DragDropFuncWrapper::StartDragAction` 调用 `InteractionInterface::GetInstance()->StartDrag`，ArkUI 不定义 MSDP 内部会话。证据：`D:/arkui/gitCode/ArkUI/interface_sdk-js/api/@ohos.arkui.dragController.d.ts:125-174,437-522`，`D:/arkui/gitCode/ArkUI/interface_sdk-js/api/@ohos.arkui.dragController.static.d.ets:110-151`，`D:/arkui/gitCode/ArkUI/interface_sdk-js/api/@ohos.arkui.UIContext.d.ts:3474-3569,5560-5569`，`D:/arkui/gitCode/ArkUI/interface_sdk_c/arkui/ace_engine/native/drag_and_drop.h:785-950`，`interfaces/native/event/drag_and_drop_impl.cpp:169-419`，`frameworks/core/interfaces/native/node/drag_adapter_impl.cpp:66-119`，`frameworks/core/components_ng/manager/drag_drop/drag_drop_func_wrapper.cpp:360-366`。
+动态 ArkTS 通过 API 11 的 `UIContext.getDragController()` 获得当前上下文 Controller；旧全局 `executeDrag/createDragAction` 在 API 18 废弃。静态 ArkTS 从 API 23 提供 Controller/Action，但 `startDrag()` 返回 `Promise<void> | null`，状态监听使用 `onStatusChange/offStatusChange`，与动态 `on/off('statusChange')` 不同。一个 Action 的生命周期结束后其回调无效，NAPI 路径禁止在已有拖拽时创建或执行第二个 Action。C API API 12 可由 node/context 创建 Action，设置 pointer、PixelMap、触点、UDMF 数据、PreviewOption 和 listener；pointer 只接受 0–9。C adapter 负责转换 Action；启动失败时用 `DRAG_CANCEL` 和 `ENDED` 回调 listener。最终系统起拖由 `DragDropFuncWrapper::StartDragAction` 调用 `InteractionInterface::GetInstance()->StartDrag`，ArkUI 不定义 MSDP 内部会话。证据：`<OH_ROOT>/interface_sdk-js/api/@ohos.arkui.dragController.d.ts:125-174,437-522`，`<OH_ROOT>/interface_sdk-js/api/@ohos.arkui.dragController.static.d.ets:110-151`，`<OH_ROOT>/interface_sdk-js/api/@ohos.arkui.UIContext.d.ts:3474-3569,5560-5569`，`<OH_ROOT>/interface_sdk_c/arkui/ace_engine/native/drag_and_drop.h:785-950`，`interfaces/native/event/drag_and_drop_impl.cpp:169-419`，`frameworks/core/interfaces/native/node/drag_adapter_impl.cpp:66-119`，`frameworks/core/components_ng/manager/drag_drop/drag_drop_func_wrapper.cpp:360-366`。
 
 ### 落放完成、反馈与延迟结束
 
-ArkTS `DragResult` 与 `DragBehavior` 从 API 10 表达落放结果和 copy/move 意图；behavior 只影响徽标和源端反馈，并不决定实际数据处理。动态 custom drop animation 必须在 onDrop 中且先设置 `useCustomDropAnimation`，静态 API 23 提供对应合同。C API 12 可在当前 event 禁用默认动画；C API 19 的 pending 仅能在 onDrop 阶段申请，GlobalController 保存递增 request ID 并只接受匹配 ID 的 result、operation 与完成通知，完成时调用保存的 stop callback 后复位。C API 24 才增加 pending 后默认动画开关通知；在错误阶段或 ID 不匹配时，adapter 返回 `DRAG_DROP_OPERATION_NOT_ALLOWED`。UIContext API 26.0.0 的跟手中断不是丢弃动画，而是消费并执行待执行回调。证据：`D:/arkui/gitCode/ArkUI/interface_sdk-js/api/@internal/component/ets/common.d.ts:10670-10675,11504,11676-11684`，`D:/arkui/gitCode/ArkUI/interface_sdk-js/api/arkui/component/common.static.d.ets:6439-6449,6566-6572`，`D:/arkui/gitCode/ArkUI/interface_sdk_c/arkui/ace_engine/native/drag_and_drop.h:225,952-1033`，`interfaces/native/event/drag_and_drop_impl.cpp:925-1005`，`frameworks/core/components_ng/manager/drag_drop/drag_drop_func_wrapper.cpp:404-444`，`frameworks/core/components_ng/manager/drag_drop/drag_drop_global_controller.cpp:224-340`。
+ArkTS `DragResult` 与 `DragBehavior` 从 API 10 表达落放结果和 copy/move 意图；behavior 只影响徽标和源端反馈，并不决定实际数据处理。动态 custom drop animation 必须在 onDrop 中且先设置 `useCustomDropAnimation`，静态 API 23 提供对应合同。C API 12 可在当前 event 禁用默认动画；C API 19 的 pending 仅能在 onDrop 阶段申请，GlobalController 保存递增 request ID 并只接受匹配 ID 的 result、operation 与完成通知，完成时调用保存的 stop callback 后复位。C API 24 才增加 pending 后默认动画开关通知；在错误阶段或 ID 不匹配时，adapter 返回 `DRAG_DROP_OPERATION_NOT_ALLOWED`。UIContext API 26.0.0 的跟手中断不是丢弃动画，而是消费并执行待执行回调。证据：`<OH_ROOT>/interface_sdk-js/api/@internal/component/ets/common.d.ts:10670-10675,11504,11676-11684`，`<OH_ROOT>/interface_sdk-js/api/arkui/component/common.static.d.ets:6439-6449,6566-6572`，`<OH_ROOT>/interface_sdk_c/arkui/ace_engine/native/drag_and_drop.h:225,952-1033`，`interfaces/native/event/drag_and_drop_impl.cpp:925-1005`，`frameworks/core/components_ng/manager/drag_drop/drag_drop_func_wrapper.cpp:404-444`，`frameworks/core/components_ng/manager/drag_drop/drag_drop_global_controller.cpp:224-340`。
 
 ### 弹簧加载与悬停检测
 
-`onDragSpringLoading` 是通用目标端能力，不包含普通鼠标 hover、无障碍 hover 或具体 Text/TextField 组件行为。DragDropManager 在 ENTER/MOVE 时把当前命中 FrameNode、坐标、时间戳和 extraInfo 交给 detector；目标变化会复位并从新目标开始。IDLE 根据节点 `DragDropRelatedConfigurations` 的 `stillTimeLimit` 延迟进入 BEGIN；BEGIN 获取配置、构建带 summary/extraInfos 的 context，随后根据 `updateNotifyCount` 调度 UPDATE 或 END。UPDATE 到达次数上限后等待 `updateToFinishInterval` 再进入 END。LEAVE、drag end、目标改变或速度阈值会使未进入 END 的周期转 CANCEL 并复位。`abort()` 的公开合同是不触发 CANCEL；`updateConfiguration()` 仅 BEGIN 有效且只覆盖当前周期。动态 ArkTS 为 API 20，静态 ArkTS 为 API 26.0.0，C header 未提供等价 API。证据：`frameworks/core/components_ng/manager/drag_drop/drag_drop_manager.cpp:1291-1295,1934-1943,3610-3624`，`frameworks/core/components_ng/manager/drag_drop/drag_drop_spring_loading/drag_drop_spring_loading_detector.cpp:48-149`，`drag_drop_spring_loading_state_idle.cpp:22-40`，`drag_drop_spring_loading_state_begin.cpp:22-70`，`drag_drop_spring_loading_state_update.cpp:22-68`，`D:/arkui/gitCode/ArkUI/interface_sdk-js/api/@ohos.arkui.dragController.d.ts:569-812`。
+`onDragSpringLoading` 是通用目标端能力，不包含普通鼠标 hover、无障碍 hover 或具体 Text/TextField 组件行为。DragDropManager 在 ENTER/MOVE 时把当前命中 FrameNode、坐标、时间戳和 extraInfo 交给 detector；目标变化会复位并从新目标开始。IDLE 根据节点 `DragDropRelatedConfigurations` 的 `stillTimeLimit` 延迟进入 BEGIN；BEGIN 获取配置、构建带 summary/extraInfos 的 context，随后根据 `updateNotifyCount` 调度 UPDATE 或 END。UPDATE 到达次数上限后等待 `updateToFinishInterval` 再进入 END。LEAVE、drag end、目标改变或速度阈值会使未进入 END 的周期转 CANCEL 并复位。`abort()` 的公开合同是不触发 CANCEL；`updateConfiguration()` 仅 BEGIN 有效且只覆盖当前周期。动态 ArkTS 为 API 20，静态 ArkTS 为 API 26.0.0，C header 未提供等价 API。证据：`frameworks/core/components_ng/manager/drag_drop/drag_drop_manager.cpp:1291-1295,1934-1943,3610-3624`，`frameworks/core/components_ng/manager/drag_drop/drag_drop_spring_loading/drag_drop_spring_loading_detector.cpp:48-149`，`drag_drop_spring_loading_state_idle.cpp:22-40`，`drag_drop_spring_loading_state_begin.cpp:22-70`，`drag_drop_spring_loading_state_update.cpp:22-68`，`<OH_ROOT>/interface_sdk-js/api/@ohos.arkui.dragController.d.ts:569-812`。
+
+## 架构图与时序图
+
+### 拖拽能力分层架构
+
+```mermaid
+flowchart TD
+    App["ArkTS / C API 调用方"] --> Common["CommonMethod、UIContext、DragController"]
+    Common --> Bridge["动态/静态桥接与 Native adapter"]
+    Bridge --> Node["FrameNode / EventHub / DragEvent"]
+    Node --> Manager["DragDropManager"]
+    Manager --> Preview["预览与 Overlay"]
+    Manager --> Spring["SpringLoading detector<br/>停留计时与回调状态机"]
+    Manager --> Wrapper["DragDropFuncWrapper"]
+    Wrapper --> Interaction["InteractionInterface"]
+    Interaction --> MSDP["MSDP 系统拖拽服务"]
+```
+
+SpringLoading 位于 ArkUI 目标端事件处理层：它根据目标命中、停留时长和更新计数调度回调，不表示也不创建物理弹簧动画。
+
+### 目标端拖拽与 SpringLoading 时序
+
+```mermaid
+sequenceDiagram
+    participant S as 系统拖拽事件
+    participant P as PipelineContext
+    participant M as DragDropManager
+    participant E as EventHub
+    participant D as SpringLoadingDetector
+    participant A as 应用回调
+    S->>P: ENTER / MOVE / LEAVE
+    P->>M: OnDragEvent
+    M->>E: 派发目标端 DragEvent
+    alt 已注册 onDragSpringLoading 且为 ENTER/MOVE
+        M->>D: NotifyMove(目标、时间、extraInfo)
+        D->>A: BEGIN / UPDATE / END 回调
+    else LEAVE、拖拽结束或目标变化
+        M->>D: NotifyIntercept(extraInfo)
+        D->>A: CANCEL（abort 语义除外）
+    end
+```
 
 ## 风险和开放问题
 

@@ -5,6 +5,7 @@
 | 字段 | 内容 |
 |---|---|
 | 特性名称 | 拖拽弹簧加载通用能力 |
+| 术语说明 | SpringLoading 指拖拽停留在目标节点后触发的延迟/周期回调状态机，不是物理弹簧动画效果。 |
 | 特性编号 | Func-03-04-02-Feat-05 |
 | 优先级 | P1 |
 | 目标版本 | 存量实现；动态 API 20、静态 API 26.0.0 |
@@ -20,7 +21,7 @@
 ## 输入文档
 
 - `specs/03-engine-framework/04-event-framework/02-drag-framework/design.md`
-- `D:/arkui/gitCode/ArkUI/interface_sdk-js/api/@internal/component/ets/common.d.ts`
+- `<OH_ROOT>/interface_sdk-js/api/@internal/component/ets/common.d.ts`
 
 ## 用户故事
 

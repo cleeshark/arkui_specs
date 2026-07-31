@@ -1796,17 +1796,17 @@ features:
   status: Baselined
 - func_id: 04-03-04
   id: Feat-01
-  title: 指针、悬停与无障碍悬停事件
+  title: 鼠标光标与悬浮效果
   spec: 04-common-capability/03-common-attributes/04-interaction-attributes/Feat-01-pointer-hover-accessibility-hover-spec.md
   status: Baselined
 - func_id: 04-03-04
   id: Feat-02
-  title: 键盘与外设输入事件
+  title: 触摸热区、触摸控制与事件独占
   spec: 04-common-capability/03-common-attributes/04-interaction-attributes/Feat-02-keyboard-peripheral-input-events-spec.md
   status: Baselined
 - func_id: 04-03-04
   id: Feat-03
-  title: 组件可用性与点击反馈
+  title: 禁用控制与点击反馈
   spec: 04-common-capability/03-common-attributes/04-interaction-attributes/Feat-03-enabled-click-feedback-spec.md
   status: Baselined
 - func_id: 04-10-01

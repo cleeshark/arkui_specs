@@ -22,11 +22,11 @@
 ## 输入文档
 
 - `specs/04-common-capability/04-common-events/07-drag-capability/design.md`
-- `D:/arkui/gitCode/ArkUI/interface_sdk-js/api/@internal/component/ets/common.d.ts:10670-10675,11504,11580-11605,11676-11684`
-- `D:/arkui/gitCode/ArkUI/interface_sdk-js/api/arkui/component/common.static.d.ets:6439-6449,6566-6572`
-- `D:/arkui/gitCode/ArkUI/interface_sdk-js/api/@ohos.arkui.UIContext.d.ts:3622-3625`
-- `D:/arkui/gitCode/ArkUI/interface_sdk-js/api/@ohos.arkui.UIContext.static.d.ets:2765-2768`
-- `D:/arkui/gitCode/ArkUI/interface_sdk_c/arkui/ace_engine/native/drag_and_drop.h:225,237-345,952-1033`
+- `<OH_ROOT>/interface_sdk-js/api/@internal/component/ets/common.d.ts:10670-10675,11504,11580-11605,11676-11684`
+- `<OH_ROOT>/interface_sdk-js/api/arkui/component/common.static.d.ets:6439-6449,6566-6572`
+- `<OH_ROOT>/interface_sdk-js/api/@ohos.arkui.UIContext.d.ts:3622-3625`
+- `<OH_ROOT>/interface_sdk-js/api/@ohos.arkui.UIContext.static.d.ets:2765-2768`
+- `<OH_ROOT>/interface_sdk_c/arkui/ace_engine/native/drag_and_drop.h:225,237-345,952-1033`
 - `interfaces/native/event/drag_and_drop_impl.cpp:925-1005`
 - `frameworks/core/components_ng/manager/drag_drop/drag_drop_func_wrapper.cpp:404-444`
 - `frameworks/core/components_ng/manager/drag_drop/drag_drop_global_controller.cpp:224-340`
