@@ -336,7 +336,7 @@ features:
   status: Baselined
 - func_id: 04-03-07
   id: Feat-01
-  title: 状态效果
+  title: 多态样式
   spec: 04-common-capability/03-common-attributes/07-style-attributes/Feat-01-state-effect-spec.md
   status: Baselined
 - func_id: 04-03-07
@@ -489,6 +489,51 @@ features:
   title: 手势识别异常恢复增强
   spec: 04-common-capability/04-common-events/06-gesture-capability/Feat-05-gesture-recognizer-recovery-spec.md
   status: Draft
+- func_id: 04-04-08
+  id: Feat-01
+  title: 手写笔输入事件与数据暴露
+  spec: 04-common-capability/04-common-events/08-stylus-capability/Feat-01-stylus-input-event-data-spec.md
+  status: Baselined
+- func_id: 04-04-08
+  id: Feat-02
+  title: 手写笔悬停命中与事件派发
+  spec: 04-common-capability/04-common-events/08-stylus-capability/Feat-02-stylus-hover-hit-dispatch-spec.md
+  status: Baselined
+- func_id: 04-04-08
+  id: Feat-03
+  title: 手写检测服务接入与触控拦截
+  spec: 04-common-capability/04-common-events/08-stylus-capability/Feat-03-handwriting-service-touch-interception-spec.md
+  status: Baselined
+- func_id: 04-04-08
+  id: Feat-04
+  title: 手写编辑命令与文本组件协同
+  spec: 04-common-capability/04-common-events/08-stylus-capability/Feat-04-handwriting-edit-command-text-coordination-spec.md
+  status: Baselined
+- func_id: 04-04-09
+  id: Feat-01
+  title: 组件挂载与显隐生命周期事件
+  spec: 04-common-capability/04-common-events/09-component-related-events/Feat-01-component-mount-visibility-lifecycle-events-spec.md
+  status: Baselined
+- func_id: 04-04-09
+  id: Feat-02
+  title: 组件区域与尺寸变化事件
+  spec: 04-common-capability/04-common-events/09-component-related-events/Feat-02-component-area-size-change-events-spec.md
+  status: Baselined
+- func_id: 04-04-10
+  id: Feat-01
+  title: 精确可见区域变化监听
+  spec: 04-common-capability/04-common-events/10-visible-area-mechanism/Feat-01-exact-visible-area-change-listening-spec.md
+  status: Baselined
+- func_id: 04-04-10
+  id: Feat-02
+  title: 近似可见区域变化监听
+  spec: 04-common-capability/04-common-events/10-visible-area-mechanism/Feat-02-approximate-visible-area-change-listening-spec.md
+  status: Baselined
+- func_id: 04-04-11
+  id: Feat-01
+  title: 按键意图归一化（KeyIntention / IntentionCode）
+  spec: 04-common-capability/04-common-events/11-interaction-normalization/Feat-01-key-intention-normalization-spec.md
+  status: Baselined
 - func_id: 04-05-01
   id: Feat-01
   title: DrawModifier 装配与组件门控
@@ -528,6 +573,46 @@ features:
   id: Feat-02
   title: ModifierUtils 对外接口
   spec: 04-common-capability/05-custom-extension/06-component-modifier/Feat-02-modifier-utils-api-spec.md
+  status: Baselined
+- func_id: 04-09-01
+  id: Feat-01
+  title: 焦点树与节点状态模型
+  spec: 04-common-capability/09-focus-framework/01-focus-mechanism/Feat-01-focus-tree-node-state-model-spec.md
+  status: Baselined
+- func_id: 04-09-01
+  id: Feat-02
+  title: 焦点请求、清除与切换事务
+  spec: 04-common-capability/09-focus-framework/01-focus-mechanism/Feat-02-focus-request-clear-switch-transaction-spec.md
+  status: Baselined
+- func_id: 04-09-01
+  id: Feat-03
+  title: 焦点导航与遍历算法
+  spec: 04-common-capability/09-focus-framework/01-focus-mechanism/Feat-03-focus-navigation-traversal-algorithm-spec.md
+  status: Baselined
+- func_id: 04-09-01
+  id: Feat-04
+  title: 焦点域、分组与优先级
+  spec: 04-common-capability/09-focus-framework/01-focus-mechanism/Feat-04-focus-scope-group-priority-spec.md
+  status: Baselined
+- func_id: 04-09-01
+  id: Feat-05
+  title: 默认焦点、FocusView 与焦点恢复
+  spec: 04-common-capability/09-focus-framework/01-focus-mechanism/Feat-05-default-focus-focusview-recovery-spec.md
+  status: Baselined
+- func_id: 04-09-01
+  id: Feat-06
+  title: 焦点激活与视觉指示
+  spec: 04-common-capability/09-focus-framework/01-focus-mechanism/Feat-06-focus-activation-visual-indicator-spec.md
+  status: Baselined
+- func_id: 04-11-01
+  id: Feat-01
+  title: 组件几何信息查询
+  spec: 04-common-capability/11-component-info/01-component-utils/Feat-01-component-geometry-query-spec.md
+  status: Baselined
+- func_id: 04-11-01
+  id: Feat-02
+  title: 形状区域图像项筛选
+  spec: 04-common-capability/11-component-info/01-component-utils/Feat-02-shape-path-image-filter-spec.md
   status: Baselined
 - func_id: 05-01-01
   id: Feat-01

@@ -74,7 +74,7 @@
 
 | 维度 | 设计结论 |
 |------|----------|
-| 性能 | 是 — 展开：ScrollBar 不渲染滚动内容，仅绘制滑块；API≥12 走 ScrollBarPaintMethod，之前走基类默认 | 
+| 性能 | 是 — 展开：ScrollBar 不渲染滚动内容，仅绘制滑块；API≥12 走 ScrollBarPaintMethod，之前走基类默认 |
 | 安全与权限 | N/A |
 | 兼容性 | 是 — 展开：`scrollBarColor` 接收 `ColorMetrics`（支持渐变/alpha）；reset 时回退主题 `ScrollBarTheme.ForegroundColor`；方向/状态越界回退默认值 VERTICAL/AUTO |
 | IPC/跨进程 | N/A |

@@ -84,10 +84,10 @@
 | 04 通用能力层 | 04 通用事件 | 05 鼠标事件 | `04-04-05` | `04-common-capability/04-common-events/05-mouse-events/` | [design.md](04-common-capability/04-common-events/05-mouse-events/design.md) | 4 |
 | 04 通用能力层 | 04 通用事件 | 06 手势能力 | `04-04-06` | `04-common-capability/04-common-events/06-gesture-capability/` | [design.md](04-common-capability/04-common-events/06-gesture-capability/design.md) | 5 |
 | 04 通用能力层 | 04 通用事件 | 07 拖拽能力 | `04-04-07` | `04-common-capability/04-common-events/07-drag-capability/` | [design.md](04-common-capability/04-common-events/07-drag-capability/design.md) | 7 |
-| 04 通用能力层 | 04 通用事件 | 08 手写笔能力 | `04-04-08` | `04-common-capability/04-common-events/08-stylus-capability/` | *待补充* | 0 |
-| 04 通用能力层 | 04 通用事件 | 09 组件相关事件 | `04-04-09` | `04-common-capability/04-common-events/09-component-related-events/` | *待补充* | 0 |
-| 04 通用能力层 | 04 通用事件 | 10 可见区域机制 | `04-04-10` | `04-common-capability/04-common-events/10-visible-area-mechanism/` | *待补充* | 0 |
-| 04 通用能力层 | 04 通用事件 | 11 交互归一化 | `04-04-11` | `04-common-capability/04-common-events/11-interaction-normalization/` | *待补充* | 0 |
+| 04 通用能力层 | 04 通用事件 | 08 手写笔能力 | `04-04-08` | `04-common-capability/04-common-events/08-stylus-capability/` | [design.md](04-common-capability/04-common-events/08-stylus-capability/design.md) | 4 |
+| 04 通用能力层 | 04 通用事件 | 09 组件相关事件 | `04-04-09` | `04-common-capability/04-common-events/09-component-related-events/` | [design.md](04-common-capability/04-common-events/09-component-related-events/design.md) | 2 |
+| 04 通用能力层 | 04 通用事件 | 10 可见区域机制 | `04-04-10` | `04-common-capability/04-common-events/10-visible-area-mechanism/` | [design.md](04-common-capability/04-common-events/10-visible-area-mechanism/design.md) | 2 |
+| 04 通用能力层 | 04 通用事件 | 11 交互归一化 | `04-04-11` | `04-common-capability/04-common-events/11-interaction-normalization/` | [design.md](04-common-capability/04-common-events/11-interaction-normalization/design.md) | 1 |
 | 04 通用能力层 | 05 自定义扩展能力 | 01 动态绘制属性 | `04-05-01` | `04-common-capability/05-custom-extension/01-draw-modifier/` | [design.md](04-common-capability/05-custom-extension/01-draw-modifier/design.md) | 3 |
 | 04 通用能力层 | 05 自定义扩展能力 | 02 动态属性 | `04-05-02` | `04-common-capability/05-custom-extension/02-dynamic-attributes/` | [design.md](04-common-capability/05-custom-extension/02-dynamic-attributes/design.md) | 2 |
 | 04 通用能力层 | 05 自定义扩展能力 | 03 自定义内容 -（表单类组件） | `04-05-03` | `04-common-capability/05-custom-extension/03-content-modifier-form/` | [design.md](04-common-capability/05-custom-extension/03-content-modifier-form/design.md) | 1 |
@@ -108,9 +108,9 @@
 | 04 通用能力层 | 08 根视图 | 01 窗口工具栏 | `04-08-01` | `04-common-capability/08-root-view/01-window-toolbar/` | [design.md](04-common-capability/08-root-view/01-window-toolbar/design.md) | 2 |
 | 04 通用能力层 | 08 根视图 | 02 元服务AppBar | `04-08-02` | `04-common-capability/08-root-view/02-atomic-service-appbar/` | [design.md](04-common-capability/08-root-view/02-atomic-service-appbar/design.md) | 2 |
 | 04 通用能力层 | 08 根视图 | 03 浮层能力 | `04-08-03` | `04-common-capability/08-root-view/03-overlay-capability/` | [design.md](04-common-capability/08-root-view/03-overlay-capability/design.md) | 1 |
-| 04 通用能力层 | 09 焦点框架 | 01 焦点机制 | `04-09-01` | `04-common-capability/09-focus-framework/01-focus-mechanism/` | *待补充* | 0 |
+| 04 通用能力层 | 09 焦点框架 | 01 焦点机制 | `04-09-01` | `04-common-capability/09-focus-framework/01-focus-mechanism/` | [design.md](04-common-capability/09-focus-framework/01-focus-mechanism/design.md) | 6 |
 | 04 通用能力层 | 10 组件截图 | 01 离屏截图 | `04-10-01` | `04-common-capability/10-component-screenshot/01-offscreen-screenshot/` | [design.md](04-common-capability/10-component-screenshot/01-offscreen-screenshot/design.md) | 5 |
-| 04 通用能力层 | 11 组件信息获取 | 01 ComponentUtils | `04-11-01` | `04-common-capability/11-component-info/01-component-utils/` | *待补充* | 0 |
+| 04 通用能力层 | 11 组件信息获取 | 01 ComponentUtils | `04-11-01` | `04-common-capability/11-component-info/01-component-utils/` | [design.md](04-common-capability/11-component-info/01-component-utils/design.md) | 2 |
 | 04 通用能力层 | 11 组件信息获取 | 02 无感监听（observer） | `04-11-02` | `04-common-capability/11-component-info/02-observer/` | [design.md](04-common-capability/11-component-info/02-observer/design.md) | 2 |
 | 04 通用能力层 | 11 组件信息获取 | 03 布局回调（inspector） | `04-11-03` | `04-common-capability/11-component-info/03-inspector-layout-callback/` | [design.md](04-common-capability/11-component-info/03-inspector-layout-callback/design.md) | 1 |
 | 04 通用能力层 | 12 UI上下文 | 01 UIContext接口 | `04-12-01` | `04-common-capability/12-ui-context/01-ui-context-interface/` | [design.md](04-common-capability/12-ui-context/01-ui-context-interface/design.md) | 4 |
@@ -498,7 +498,7 @@
 | Feat-02 | Drag source-target routing and lifecycle dispatch | [Feat-02-drag-source-target-routing-lifecycle-dispatch-spec.md](03-engine-framework/04-event-framework/02-drag-framework/Feat-02-drag-source-target-routing-lifecycle-dispatch-spec.md) | Baselined |
 | Feat-03 | Drag data transport and drop negotiation | [Feat-03-drag-data-transport-drop-negotiation-spec.md](03-engine-framework/04-event-framework/02-drag-framework/Feat-03-drag-data-transport-drop-negotiation-spec.md) | Baselined |
 | Feat-04 | Drag preview overlay animation and visual effects | [Feat-04-drag-preview-overlay-animation-visual-effects-spec.md](03-engine-framework/04-event-framework/02-drag-framework/Feat-04-drag-preview-overlay-animation-visual-effects-spec.md) | Baselined |
-| Feat-05 | Drag spring loading and specialized modes | [Feat-05-drag-spring-loading-specialized-modes-spec.md](03-engine-framework/04-event-framework/02-drag-framework/Feat-05-drag-spring-loading-specialized-modes-spec.md) | Baselined |
+| Feat-05 | Drag hover detection | [Feat-05-drag-spring-loading-specialized-modes-spec.md](03-engine-framework/04-event-framework/02-drag-framework/Feat-05-drag-spring-loading-specialized-modes-spec.md) | Baselined |
 | Feat-06 | Drag multi-display device and container integration | [Feat-06-drag-multi-display-device-container-integration-spec.md](03-engine-framework/04-event-framework/02-drag-framework/Feat-06-drag-multi-display-device-container-integration-spec.md) | Baselined |
 
 ### 03-05-01 窗口机制
@@ -662,9 +662,9 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | 指针、悬停与无障碍悬停事件 | [Feat-01-pointer-hover-accessibility-hover-spec.md](04-common-capability/03-common-attributes/04-interaction-attributes/Feat-01-pointer-hover-accessibility-hover-spec.md) | Baselined |
-| Feat-02 | 键盘与外设输入事件 | [Feat-02-keyboard-peripheral-input-events-spec.md](04-common-capability/03-common-attributes/04-interaction-attributes/Feat-02-keyboard-peripheral-input-events-spec.md) | Baselined |
-| Feat-03 | 组件可用性与点击反馈 | [Feat-03-enabled-click-feedback-spec.md](04-common-capability/03-common-attributes/04-interaction-attributes/Feat-03-enabled-click-feedback-spec.md) | Baselined |
+| Feat-01 | 鼠标光标与悬浮效果 | [Feat-01-pointer-hover-accessibility-hover-spec.md](04-common-capability/03-common-attributes/04-interaction-attributes/Feat-01-pointer-hover-accessibility-hover-spec.md) | Baselined |
+| Feat-02 | 触摸热区、触摸控制与事件独占 | [Feat-02-keyboard-peripheral-input-events-spec.md](04-common-capability/03-common-attributes/04-interaction-attributes/Feat-02-keyboard-peripheral-input-events-spec.md) | Baselined |
+| Feat-03 | 禁用控制与点击反馈 | [Feat-03-enabled-click-feedback-spec.md](04-common-capability/03-common-attributes/04-interaction-attributes/Feat-03-enabled-click-feedback-spec.md) | Baselined |
 
 ### 04-03-05 弹窗类属性
 
@@ -682,7 +682,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | 状态效果 | [Feat-01-state-effect-spec.md](04-common-capability/03-common-attributes/07-style-attributes/Feat-01-state-effect-spec.md) | Baselined |
+| Feat-01 | 多态样式 | [Feat-01-state-effect-spec.md](04-common-capability/03-common-attributes/07-style-attributes/Feat-01-state-effect-spec.md) | Baselined |
 | Feat-02 | 动态属性设置（attributeModifier） | [Feat-02-attribute-modifier-spec.md](04-common-capability/03-common-attributes/07-style-attributes/Feat-02-attribute-modifier-spec.md) | Baselined |
 
 ### 04-03-08 基础单位
@@ -771,27 +771,36 @@
 | Feat-04 | Drag preview and interaction presentation | [Feat-04-drag-preview-interaction-presentation-spec.md](04-common-capability/04-common-events/07-drag-capability/Feat-04-drag-preview-interaction-presentation-spec.md) | Baselined |
 | Feat-05 | Programmatic drag action and controller APIs | [Feat-05-programmatic-drag-action-controller-apis-spec.md](04-common-capability/04-common-events/07-drag-capability/Feat-05-programmatic-drag-action-controller-apis-spec.md) | Baselined |
 | Feat-06 | Drop completion feedback and deferred finalization | [Feat-06-drop-completion-feedback-deferred-finalization-spec.md](04-common-capability/04-common-events/07-drag-capability/Feat-06-drop-completion-feedback-deferred-finalization-spec.md) | Baselined |
-| Feat-07 | Spring loading and hover detection | [Feat-07-spring-loading-hover-detection-spec.md](04-common-capability/04-common-events/07-drag-capability/Feat-07-spring-loading-hover-detection-spec.md) | Baselined |
+| Feat-07 | Drag hover detection | [Feat-07-spring-loading-hover-detection-spec.md](04-common-capability/04-common-events/07-drag-capability/Feat-07-spring-loading-hover-detection-spec.md) | Baselined |
 
 ### 04-04-08 手写笔能力
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 手写笔输入事件与数据暴露 | [Feat-01-stylus-input-event-data-spec.md](04-common-capability/04-common-events/08-stylus-capability/Feat-01-stylus-input-event-data-spec.md) | Baselined |
+| Feat-02 | 手写笔悬停命中与事件派发 | [Feat-02-stylus-hover-hit-dispatch-spec.md](04-common-capability/04-common-events/08-stylus-capability/Feat-02-stylus-hover-hit-dispatch-spec.md) | Baselined |
+| Feat-03 | 手写检测服务接入与触控拦截 | [Feat-03-handwriting-service-touch-interception-spec.md](04-common-capability/04-common-events/08-stylus-capability/Feat-03-handwriting-service-touch-interception-spec.md) | Baselined |
+| Feat-04 | 手写编辑命令与文本组件协同 | [Feat-04-handwriting-edit-command-text-coordination-spec.md](04-common-capability/04-common-events/08-stylus-capability/Feat-04-handwriting-edit-command-text-coordination-spec.md) | Baselined |
 
 ### 04-04-09 组件相关事件
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 组件挂载与显隐生命周期事件 | [Feat-01-component-mount-visibility-lifecycle-events-spec.md](04-common-capability/04-common-events/09-component-related-events/Feat-01-component-mount-visibility-lifecycle-events-spec.md) | Baselined |
+| Feat-02 | 组件区域与尺寸变化事件 | [Feat-02-component-area-size-change-events-spec.md](04-common-capability/04-common-events/09-component-related-events/Feat-02-component-area-size-change-events-spec.md) | Baselined |
 
 ### 04-04-10 可见区域机制
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 精确可见区域变化监听 | [Feat-01-exact-visible-area-change-listening-spec.md](04-common-capability/04-common-events/10-visible-area-mechanism/Feat-01-exact-visible-area-change-listening-spec.md) | Baselined |
+| Feat-02 | 近似可见区域变化监听 | [Feat-02-approximate-visible-area-change-listening-spec.md](04-common-capability/04-common-events/10-visible-area-mechanism/Feat-02-approximate-visible-area-change-listening-spec.md) | Baselined |
 
 ### 04-04-11 交互归一化
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 按键意图归一化（KeyIntention / IntentionCode） | [Feat-01-key-intention-normalization-spec.md](04-common-capability/04-common-events/11-interaction-normalization/Feat-01-key-intention-normalization-spec.md) | Baselined |
 
 ### 04-05-01 动态绘制属性
 
@@ -942,6 +951,12 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 焦点树与节点状态模型 | [Feat-01-focus-tree-node-state-model-spec.md](04-common-capability/09-focus-framework/01-focus-mechanism/Feat-01-focus-tree-node-state-model-spec.md) | Baselined |
+| Feat-02 | 焦点请求、清除与切换事务 | [Feat-02-focus-request-clear-switch-transaction-spec.md](04-common-capability/09-focus-framework/01-focus-mechanism/Feat-02-focus-request-clear-switch-transaction-spec.md) | Baselined |
+| Feat-03 | 焦点导航与遍历算法 | [Feat-03-focus-navigation-traversal-algorithm-spec.md](04-common-capability/09-focus-framework/01-focus-mechanism/Feat-03-focus-navigation-traversal-algorithm-spec.md) | Baselined |
+| Feat-04 | 焦点域、分组与优先级 | [Feat-04-focus-scope-group-priority-spec.md](04-common-capability/09-focus-framework/01-focus-mechanism/Feat-04-focus-scope-group-priority-spec.md) | Baselined |
+| Feat-05 | 默认焦点、FocusView 与焦点恢复 | [Feat-05-default-focus-focusview-recovery-spec.md](04-common-capability/09-focus-framework/01-focus-mechanism/Feat-05-default-focus-focusview-recovery-spec.md) | Baselined |
+| Feat-06 | 焦点激活与视觉指示 | [Feat-06-focus-activation-visual-indicator-spec.md](04-common-capability/09-focus-framework/01-focus-mechanism/Feat-06-focus-activation-visual-indicator-spec.md) | Baselined |
 
 ### 04-10-01 离屏截图
 
@@ -957,6 +972,8 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 组件几何信息查询 | [Feat-01-component-geometry-query-spec.md](04-common-capability/11-component-info/01-component-utils/Feat-01-component-geometry-query-spec.md) | Baselined |
+| Feat-02 | 形状区域图像项筛选 | [Feat-02-shape-path-image-filter-spec.md](04-common-capability/11-component-info/01-component-utils/Feat-02-shape-path-image-filter-spec.md) | Baselined |
 
 ### 04-11-02 无感监听（observer）
 
