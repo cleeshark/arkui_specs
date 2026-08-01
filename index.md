@@ -126,10 +126,11 @@
 | 04 通用能力层 | 15 路由机制 | 01 路由管理 | `04-15-01` | `04-common-capability/15-router-mechanism/01-router-management/` | [design.md](04-common-capability/15-router-mechanism/01-router-management/design.md) | 2 |
 | 04 通用能力层 | 15 路由机制 | 02 命名路由 | `04-15-02` | `04-common-capability/15-router-mechanism/02-named-router/` | [design.md](04-common-capability/15-router-mechanism/02-named-router/design.md) | 1 |
 | 04 通用能力层 | 16 UIAppearance | 01 UIAppearance | `04-16-01` | `04-common-capability/16-ui-appearance/01-ui-appearance/` | [design.md](04-common-capability/16-ui-appearance/01-ui-appearance/design.md) | 1 |
-| 04 通用能力层 | 17 嵌入显示能力 | 01 UIExtension机制 | `04-17-01` | `04-common-capability/17-embedded-display/01-ui-extension/` | [design.md](04-common-capability/17-embedded-display/01-ui-extension/design.md) | 4 |
+| 04 通用能力层 | 17 嵌入显示能力 | 01 UIExtension机制 | `04-17-01` | `04-common-capability/17-embedded-display/01-ui-extension/` | [design.md](04-common-capability/17-embedded-display/01-ui-extension/design.md) | 3 |
 | 04 通用能力层 | 17 嵌入显示能力 | 02 IsolateComponent机制 | `04-17-02` | `04-common-capability/17-embedded-display/02-isolate-component/` | [design.md](04-common-capability/17-embedded-display/02-isolate-component/design.md) | 1 |
 | 04 通用能力层 | 17 嵌入显示能力 | 03 From卡片机制 | `04-17-03` | `04-common-capability/17-embedded-display/03-form-card/` | *待补充* | 0 |
 | 04 通用能力层 | 17 嵌入显示能力 | 04 PluginComponent机制 | `04-17-04` | `04-common-capability/17-embedded-display/04-plugin-component/` | *待补充* | 0 |
+| 04 通用能力层 | 17 嵌入显示能力 | 05 DynamicComponent机制 | `04-17-05` | `04-common-capability/17-embedded-display/05-dynamic-component/` | [design.md](04-common-capability/17-embedded-display/05-dynamic-component/design.md) | 1 |
 | 04 通用能力层 | 18 端侧渲染 | 01 同层渲染机制 | `04-18-01` | `04-common-capability/18-on-device-rendering/01-same-layer-rendering/` | [design.md](04-common-capability/18-on-device-rendering/01-same-layer-rendering/design.md) | 1 |
 | 04 通用能力层 | 19 组件复用 | 01 组件复用框架 | `04-19-01` | `04-common-capability/19-component-reuse/01-component-reuse-framework/` | [design.md](04-common-capability/19-component-reuse/01-component-reuse-framework/design.md) | 4 |
 | 04 通用能力层 | 20 媒体查询能力 | 01 MediaQuery | `04-20-01` | `04-common-capability/20-media-query/01-media-query/` | [design.md](04-common-capability/20-media-query/01-media-query/design.md) | 1 |
@@ -1104,16 +1105,15 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | UIExtensionComponent 创建与事件 | [Feat-01-ui-extension-creation-events-spec.md](04-common-capability/17-embedded-display/01-ui-extension/Feat-01-ui-extension-creation-events-spec.md) | Baselined |
-| Feat-02 | UIExtensionProxy 通信机制 | [Feat-02-ui-extension-proxy-communication-spec.md](04-common-capability/17-embedded-display/01-ui-extension/Feat-02-ui-extension-proxy-communication-spec.md) | Baselined |
-| Feat-03 | SecurityUIExtensionComponent | [Feat-03-security-ui-extension-spec.md](04-common-capability/17-embedded-display/01-ui-extension/Feat-03-security-ui-extension-spec.md) | Baselined |
-| Feat-04 | DynamicComponent | [Feat-04-dynamic-component-spec.md](04-common-capability/17-embedded-display/01-ui-extension/Feat-04-dynamic-component-spec.md) | Baselined |
+| Feat-01 | 跨进程嵌入显示连接与生命周期 | [Feat-01-ui-extension-creation-events-spec.md](04-common-capability/17-embedded-display/01-ui-extension/Feat-01-ui-extension-creation-events-spec.md) | Baselined |
+| Feat-02 | 跨进程双向数据通道 | [Feat-02-ui-extension-proxy-communication-spec.md](04-common-capability/17-embedded-display/01-ui-extension/Feat-02-ui-extension-proxy-communication-spec.md) | Baselined |
+| Feat-03 | 安全隔离跨进程嵌入显示 | [Feat-03-security-ui-extension-spec.md](04-common-capability/17-embedded-display/01-ui-extension/Feat-03-security-ui-extension-spec.md) | Baselined |
 
 ### 04-17-02 IsolateComponent机制
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | IsolateComponent 完整规格 | [Feat-01-isolate-component-spec.md](04-common-capability/17-embedded-display/02-isolate-component/Feat-01-isolate-component-spec.md) | Baselined |
+| Feat-01 | 跨线程隔离渲染 | [Feat-01-isolate-component-spec.md](04-common-capability/17-embedded-display/02-isolate-component/Feat-01-isolate-component-spec.md) | Baselined |
 
 ### 04-17-03 From卡片机制
 
@@ -1124,6 +1124,12 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+
+### 04-17-05 DynamicComponent机制
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | 跨线程动态组件加载 | [Feat-01-dynamic-component-spec.md](04-common-capability/17-embedded-display/05-dynamic-component/Feat-01-dynamic-component-spec.md) | Baselined |
 
 ### 04-18-01 同层渲染机制
 

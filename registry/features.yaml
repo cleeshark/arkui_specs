@@ -2191,28 +2191,28 @@ features:
   status: Baselined
 - func_id: 04-17-01
   id: Feat-01
-  title: UIExtensionComponent 创建与事件
+  title: 跨进程嵌入显示连接与生命周期
   spec: 04-common-capability/17-embedded-display/01-ui-extension/Feat-01-ui-extension-creation-events-spec.md
   status: Baselined
 - func_id: 04-17-01
   id: Feat-02
-  title: UIExtensionProxy 通信机制
+  title: 跨进程双向数据通道
   spec: 04-common-capability/17-embedded-display/01-ui-extension/Feat-02-ui-extension-proxy-communication-spec.md
   status: Baselined
 - func_id: 04-17-01
   id: Feat-03
-  title: SecurityUIExtensionComponent
+  title: 安全隔离跨进程嵌入显示
   spec: 04-common-capability/17-embedded-display/01-ui-extension/Feat-03-security-ui-extension-spec.md
-  status: Baselined
-- func_id: 04-17-01
-  id: Feat-04
-  title: DynamicComponent
-  spec: 04-common-capability/17-embedded-display/01-ui-extension/Feat-04-dynamic-component-spec.md
   status: Baselined
 - func_id: 04-17-02
   id: Feat-01
-  title: IsolateComponent 完整规格
+  title: 跨线程隔离渲染
   spec: 04-common-capability/17-embedded-display/02-isolate-component/Feat-01-isolate-component-spec.md
+  status: Baselined
+- func_id: 04-17-05
+  id: Feat-01
+  title: 跨线程动态组件加载
+  spec: 04-common-capability/17-embedded-display/05-dynamic-component/Feat-01-dynamic-component-spec.md
   status: Baselined
 - func_id: 04-18-01
   id: Feat-01

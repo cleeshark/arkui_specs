@@ -1,13 +1,13 @@
 # 特性规格
 
-> Func-04-17-01-Feat-04 跨线程动态组件加载：固化 DynamicComponent 的跨线程 Worker 加载、Placeholder 状态机和 Worker 数量约束机制。
+> Func-04-17-05-Feat-01 跨线程动态组件加载：固化 DynamicComponent 的跨线程 Worker 加载、Placeholder 状态机和 Worker 数量约束机制。
 
 ## 概述
 
 | 属性 | 值 |
 |------|-----|
 | 特性名称 | 跨线程动态组件加载 |
-| 特性编号 | Func-04-17-01-Feat-04 |
+| 特性编号 | Func-04-17-05-Feat-01 |
 | 所属 Epic | 无（已有能力补录） |
 | 优先级 | P1 |
 | 目标版本 | Dynamic API 10+；Static 统一为 API 23 |
@@ -27,7 +27,7 @@
 
 | 文档 | 路径 | 状态 |
 |------|------|------|
-| Design | `specs/04-common-capability/17-embedded-display/01-ui-extension/design.md` | Baselined |
+| Design | `specs/04-common-capability/17-embedded-display/05-dynamic-component/design.md` | Baselined |
 
 ---
 

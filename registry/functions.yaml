@@ -1431,6 +1431,19 @@ functions:
   path: 04-common-capability/17-embedded-display/04-plugin-component/
   design: null
   status: active
+- id: 04-17-05
+  l1:
+    id: '04'
+    title: 通用能力层
+  l2:
+    id: '17'
+    title: 嵌入显示能力
+  l3:
+    id: '05'
+    title: DynamicComponent机制
+  path: 04-common-capability/17-embedded-display/05-dynamic-component/
+  design: 04-common-capability/17-embedded-display/05-dynamic-component/design.md
+  status: active
 - id: 04-18-01
   l1:
     id: '04'

@@ -9,7 +9,7 @@
 | Design ID | DESIGN-Func-04-17-01 |
 | 关联需求 | 已有能力补录（无独立 requirement.md） |
 | 关联 Epic | 无 |
-| 目标 Feature | Feat-01 跨进程嵌入显示连接与生命周期, Feat-02 跨进程双向数据通道, Feat-03 安全隔离跨进程嵌入显示, Feat-04 跨线程动态组件加载 |
+| 目标 Feature | Feat-01 跨进程嵌入显示连接与生命周期, Feat-02 跨进程双向数据通道, Feat-03 安全隔离跨进程嵌入显示 |
 | 复杂度 | 复杂 |
 | 目标版本 | Dynamic API 10+ |
 | Owner | ArkUI SIG |
@@ -88,10 +88,9 @@
 
 | Task ID | 目标 | 受影响文件 | 依赖 |
 |---------|------|-----------|------|
-| Feat-01 | UIExtensionComponent 创建与事件 | Feat-01-ui-extension-creation-events-spec.md | 无 |
-| Feat-02 | UIExtensionProxy 通信机制 | Feat-02-ui-extension-proxy-communication-spec.md | Feat-01 |
-| Feat-03 | SecurityUIExtensionComponent | Feat-03-security-ui-extension-spec.md | Feat-01 |
-| Feat-04 | DynamicComponent | Feat-04-dynamic-component-spec.md | Feat-01 |
+| Feat-01 | 跨进程嵌入显示连接与生命周期 | Feat-01-ui-extension-creation-events-spec.md | 无 |
+| Feat-02 | 跨进程双向数据通道 | Feat-02-ui-extension-proxy-communication-spec.md | Feat-01 |
+| Feat-03 | 安全隔离跨进程嵌入显示 | Feat-03-security-ui-extension-spec.md | Feat-01 |
 
 ## API 签名、Kit 与权限
 
@@ -99,13 +98,154 @@
 |-----|------|-----|
 | `UIExtensionComponent(want, options?)` | System | ArkUI |
 | `SecurityUIExtensionComponent(want, options?)` | System | ArkUI |
-| `DynamicComponent(options)` | System | ArkUI |
 | `UIExtensionProxy.send(data)` | System | ArkUI |
 | `UIExtensionProxy.sendSync(data)` | System | ArkUI |
 
 ## 构建系统影响
 
 无 — 已有实现。
+
+## 详细设计
+
+### 跨进程 Session 建立流程
+
+嵌入显示的跨进程连接由以下核心模块协作完成：
+
+```
+宿主进程 (ArkUI)                              远程进程 (UIExtensionAbility)
+  ViewStackProcessor                              UIExtensionAbility
+    │                                               │
+    ├─ UIExtensionModelNG::CreateUIExtension        │
+    │   ├─ 解析 Want → bundleName/abilityName       │
+    │   ├─ 创建 UIExtensionNode                     │
+    │   └─ 创建 UIExtensionPattern                  │
+    │                                               │
+    ├─ UIExtensionPattern::OnAttachToFrameNode      │
+    │   ├─ SessionWrapperFactory::Create(want)      │
+    │   │   ├─ 根据 Want 类型确定 SessionType        │
+    │   │   │   ├─ UI_EXTENSION_ABILITY → SessionWrapperImpl
+    │   │   │   └─ SECURITY_UI_EXTENSION_ABILITY → SecuritySessionWrapperImpl
+    │   │   └─ 创建 SessionWrapper 实例              │
+    │   │                                           │
+    │   ├─ SessionWrapper::CreateSession() ──IPC──→ 启动 UIExtensionAbility
+    │   │   ├─ 传递 Want (含 bundleName/abilityName) │
+    │   │   ├─ 传递配置 (isTransferringCaller 等)    │
+    │   │   └─ 等待远程 Surface 创建                  │
+    │   │                                           │
+    │   └─ SessionWrapper::OnSurfaceCreated() ←─── 远程 Surface 就绪
+    │       ├─ 创建 SurfaceProxyNode                  │
+    │       └─ 触发 onRemoteReady(proxy)              │
+```
+
+**关键模块** (`frameworks/core/components_ng/pattern/ui_extension/`):
+
+| 模块 | 文件 | 职责 |
+|------|------|------|
+| UIExtensionModelNG | `ui_extension_model_ng.cpp` | 创建节点和 Pattern 的入口 |
+| UIExtensionPattern | `ui_extension_component/ui_extension_pattern.cpp` | 跨进程生命周期管理 |
+| SessionWrapperFactory | `session_wrapper_factory.cpp` | 根据 SessionType 创建对应 SessionWrapper |
+| SessionWrapperImpl | `ui_extension_component/session_wrapper_impl.cpp` | 标准跨进程 Session 实现 |
+| SecuritySessionWrapperImpl | `security_ui_extension_component/security_session_wrapper_impl.cpp` | 安全跨进程 Session 实现 |
+| SessionWrapper | `session_wrapper.h` | 抽象 Session 接口，定义 50+ IPC 方法 |
+
+### 跨进程 IPC 通信通道
+
+UIExtensionProxy 提供双向跨进程数据通道，底层通过 SessionWrapper 的 IPC 机制实现：
+
+```
+宿主进程                                      远程进程
+  UIExtensionProxy                             UIExtensionAbility
+    │                                             │
+    ├─ SendData(data) ──IPC 异步──→              onReceive(data)
+    │   └─ SessionWrapper::SendBusinessData()     │
+    │                                             │
+    ├─ SendDataSync(data) ──IPC 同步──→          onSyncReceive(data)
+    │   └─ SessionWrapper::SendBusinessDataSync() │ → return result
+    │   └─ 阻塞等待 ←──────────────────────────────
+    │                                             │
+    ├─ on("async", cb) ←──IPC 异步──             send(data)
+    │   └─ SessionWrapper::RegisterAsyncCallback()│
+    │                                             │
+    └─ on("sync", cb) ←──IPC 同步──              sendSync(data)
+        └─ SessionWrapper::RegisterSyncCallback() │
+```
+
+**通信约束**:
+- `send()` 异步发送，不阻塞宿主 UI 线程
+- `sendSync()` 同步阻塞等待远程返回，超时由系统 IPC 机制控制
+- 数据需支持序列化，不支持序列化的对象无法跨进程传递
+- Session 未就绪时调用 `send/sendSync` 直接失败
+
+### Placeholder 状态机
+
+跨进程嵌入显示在远程 UI 未就绪期间，通过 Placeholder 状态机提供视觉反馈：
+
+```mermaid
+stateDiagram-v2
+    [*] --> INIT: Session 建立中
+    INIT --> ROTATION: 设备旋转
+    INIT --> FOLD_TO_EXPAND: 折叠屏状态变化
+    INIT --> READY: onRemoteReady
+    ROTATION --> READY: Surface 重建完成
+    FOLD_TO_EXPAND --> READY: 适配完成
+    READY --> SHOWN: onDrawReady
+    INIT --> UNDEFINED: Session 异常
+    READY --> UNDEFINED: 远程进程销毁
+    UNDEFINED --> INIT: 重新建立 Session
+    SHOWN --> [*]: 正常显示
+```
+
+**PlaceholderType 枚举** (`ui_extension_config.h`):
+
+| 状态 | 枚举值 | 触发场景 | 显示内容 |
+|------|--------|---------|---------|
+| INIT | 0 | Session 建立中，远程 UI 未初始化 | initPlaceholder |
+| ROTATION | 1 | 设备旋转，远程 Surface 重建中 | rotationPlaceholder |
+| FOLD_TO_EXPAND | 2 | 折叠屏展开/折叠 | foldToExpandPlaceholder |
+| UNDEFINED | 3 | Session 异常或状态未知 | undefinedPlaceholder |
+| NONE | 4 | onDrawReady 已触发 | 移除 Placeholder |
+
+### 跨进程生命周期事件时序
+
+```
+时间线 →
+
+宿主: 创建 UIExtensionComponent
+  │
+  ├─ [Placeholder: INIT]
+  │
+  ├─ Session 建立 (IPC)
+  │   ├─ 成功 → onRemoteReady(proxy)
+  │   │   ├─ 宿主通过 proxy 发送数据
+  │   │   ├─ 远程 → onReceive(data)  ← 宿主收到数据
+  │   │   ├─ onDrawReady()           ← 首次渲染
+  │   │   │   └─ [Placeholder: NONE]
+  │   │   ├─ onResult(code, want)    ← 远程返回结果
+  │   │   ├─ onTerminated(code, want) ← 远程进程终止
+  │   │   └─ onRelease(code)         ← Session 释放
+  │   │
+  │   └─ 失败 → onError(code, name, msg)
+  │       └─ [Placeholder: UNDEFINED]
+  │
+  └─ 组件销毁 → Session 关闭
+```
+
+### 安全隔离跨进程机制
+
+SecurityUIExtensionComponent 在普通 UIExtension 机制基础上增加了安全隔离：
+
+1. **Session 类型隔离**: 使用 `SecuritySessionWrapperImpl`（SessionType=3），而非 `SessionWrapperImpl`（SessionType=1）
+2. **身份验证**: 跨进程传递调用者身份标识，远程 Ability 可验证调用者权限
+3. **安全 IPC 通道**: 底层 IPC 通道由系统安全机制保证加密和认证
+4. **安全代理**: `SecurityUIExtensionProxy` 提供与 `UIExtensionProxy` 相同的通信接口，但底层使用安全 Session
+
+### 与 DynamicComponent 和 IsolateComponent 的机制边界
+
+| 机制 | FuncID | 运行环境 | 通信方式 | 隔离级别 |
+|------|--------|---------|---------|---------|
+| UIExtension | 04-17-01 | 跨进程（远程 Ability） | IPC 通道 + Proxy 双向通信 | 进程级隔离 |
+| IsolateComponent | 04-17-02 | 跨线程（RestrictedWorker） | Surface 回传 | 严格线程隔离（每 Worker 1 个） |
+| DynamicComponent | 04-17-05 | 跨线程（Worker） | Surface 回传 | 共享线程（每 Worker 最多 4 个） |
 
 ## 风险和开放问题
 
