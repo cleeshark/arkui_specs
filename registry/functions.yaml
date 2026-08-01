@@ -714,7 +714,7 @@ functions:
     id: 09
     title: 无障碍属性
   path: 04-common-capability/03-common-attributes/09-accessibility-attributes/
-  design: null
+  design: 04-common-capability/03-common-attributes/09-accessibility-attributes/design.md
   status: active
 - id: 04-03-10
   l1:
@@ -1390,7 +1390,7 @@ functions:
     id: '01'
     title: UIExtension机制
   path: 04-common-capability/17-embedded-display/01-ui-extension/
-  design: null
+  design: 04-common-capability/17-embedded-display/01-ui-extension/design.md
   status: active
 - id: 04-17-02
   l1:
@@ -1403,7 +1403,7 @@ functions:
     id: '02'
     title: IsolateComponent机制
   path: 04-common-capability/17-embedded-display/02-isolate-component/
-  design: null
+  design: 04-common-capability/17-embedded-display/02-isolate-component/design.md
   status: active
 - id: 04-17-03
   l1:
@@ -1430,6 +1430,19 @@ functions:
     title: PluginComponent机制
   path: 04-common-capability/17-embedded-display/04-plugin-component/
   design: null
+  status: active
+- id: 04-17-05
+  l1:
+    id: '04'
+    title: 通用能力层
+  l2:
+    id: '17'
+    title: 嵌入显示能力
+  l3:
+    id: '05'
+    title: DynamicComponent机制
+  path: 04-common-capability/17-embedded-display/05-dynamic-component/
+  design: 04-common-capability/17-embedded-display/05-dynamic-component/design.md
   status: active
 - id: 04-18-01
   l1:

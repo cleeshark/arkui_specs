@@ -344,6 +344,31 @@ features:
   title: 动态属性设置（attributeModifier）
   spec: 04-common-capability/03-common-attributes/07-style-attributes/Feat-02-attribute-modifier-spec.md
   status: Baselined
+- func_id: 04-03-09
+  id: Feat-01
+  title: 基础无障碍属性
+  spec: 04-common-capability/03-common-attributes/09-accessibility-attributes/Feat-01-core-accessibility-attributes-spec.md
+  status: Baselined
+- func_id: 04-03-09
+  id: Feat-02
+  title: 无障碍焦点与导航
+  spec: 04-common-capability/03-common-attributes/09-accessibility-attributes/Feat-02-accessibility-focus-navigation-spec.md
+  status: Baselined
+- func_id: 04-03-09
+  id: Feat-03
+  title: 无障碍组选项与状态
+  spec: 04-common-capability/03-common-attributes/09-accessibility-attributes/Feat-03-accessibility-group-options-state-spec.md
+  status: Baselined
+- func_id: 04-03-09
+  id: Feat-04
+  title: 无障碍动作与虚拟节点
+  spec: 04-common-capability/03-common-attributes/09-accessibility-attributes/Feat-04-accessibility-actions-virtual-node-spec.md
+  status: Baselined
+- func_id: 04-03-09
+  id: Feat-05
+  title: Span无障碍与C-API
+  spec: 04-common-capability/03-common-attributes/09-accessibility-attributes/Feat-05-span-accessibility-c-api-spec.md
+  status: Baselined
 - func_id: 04-03-10
   id: Feat-01
   title: 背景图片通用属性
@@ -2163,6 +2188,31 @@ features:
   id: Feat-01
   title: UIAppearance（深浅色模式与外观管理）
   spec: 04-common-capability/16-ui-appearance/01-ui-appearance/Feat-01-ui-appearance-spec.md
+  status: Baselined
+- func_id: 04-17-01
+  id: Feat-01
+  title: 跨进程嵌入显示连接与生命周期
+  spec: 04-common-capability/17-embedded-display/01-ui-extension/Feat-01-ui-extension-creation-events-spec.md
+  status: Baselined
+- func_id: 04-17-01
+  id: Feat-02
+  title: 跨进程双向数据通道
+  spec: 04-common-capability/17-embedded-display/01-ui-extension/Feat-02-ui-extension-proxy-communication-spec.md
+  status: Baselined
+- func_id: 04-17-01
+  id: Feat-03
+  title: 安全隔离跨进程嵌入显示
+  spec: 04-common-capability/17-embedded-display/01-ui-extension/Feat-03-security-ui-extension-spec.md
+  status: Baselined
+- func_id: 04-17-02
+  id: Feat-01
+  title: 跨线程隔离渲染
+  spec: 04-common-capability/17-embedded-display/02-isolate-component/Feat-01-isolate-component-spec.md
+  status: Baselined
+- func_id: 04-17-05
+  id: Feat-01
+  title: 跨线程动态组件加载
+  spec: 04-common-capability/17-embedded-display/05-dynamic-component/Feat-01-dynamic-component-spec.md
   status: Baselined
 - func_id: 04-18-01
   id: Feat-01
