@@ -21,6 +21,10 @@ DOCS_DIR = SITE_DIR / "docs"
 SIDEBAR_FILE = SITE_DIR / "sidebars.js"
 DATA_DIR = SITE_DIR / "src" / "data"
 REGISTRY_JSON = DATA_DIR / "registry.json"
+SPEC_EVAL_SUMMARY_JSON = DATA_DIR / "spec-evaluation-summary.json"
+STATIC_DATA_DIR = SITE_DIR / "static" / "data"
+SPEC_EVAL_STATIC_JSON = STATIC_DATA_DIR / "spec-evaluation.json"
+SPEC_EVAL_ARCHIVE_DIR = ROOT / ".evaluator"
 
 
 def load_yaml(path: Path) -> dict[str, Any]:
@@ -208,6 +212,58 @@ def write_sidebar(sidebar: dict[str, Any]) -> None:
     )
 
 
+def empty_spec_evaluation_data() -> dict[str, Any]:
+    return {
+        "schemaVersion": 1,
+        "available": False,
+        "mode": "not-scanned",
+        "generatedAt": None,
+        "sourceRevision": None,
+        "toolVersion": None,
+        "ruleVersion": None,
+        "summary": {
+            "registeredFunctionCount": 0,
+            "completedFunctionCount": 0,
+            "errorCount": 0,
+            "gateCounts": {"pass": 0, "warn": 0, "fail": 0, "error": 0},
+            "findingCount": 0,
+            "severityCounts": {"Critical": 0, "Major": 0, "Minor": 0, "Info": 0},
+            "ruleCounts": {},
+            "featureCount": 0,
+            "documentCount": 0,
+            "claimCount": 0,
+            "resolvedClaimCount": 0,
+            "evidenceCoverage": 0.0,
+        },
+        "functions": [],
+    }
+
+
+def load_archived_spec_evaluation(archive_root: Path = SPEC_EVAL_ARCHIVE_DIR) -> dict[str, Any]:
+    pointer_path = archive_root / "latest.json"
+    if not pointer_path.is_file():
+        return empty_spec_evaluation_data()
+    pointer = json.loads(pointer_path.read_text(encoding="utf-8"))
+    report_value = pointer.get("siteReport")
+    if not isinstance(report_value, str) or not report_value:
+        raise ValueError(f"{pointer_path} must contain a non-empty siteReport path")
+    report_path = (archive_root / report_value).resolve()
+    try:
+        report_path.relative_to(archive_root.resolve())
+    except ValueError as error:
+        raise ValueError(f"archived siteReport escapes {archive_root}: {report_value}") from error
+    if not report_path.is_file():
+        raise FileNotFoundError(f"archived spec evaluation report is missing: {report_path}")
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    if not isinstance(report, dict) or not isinstance(report.get("functions"), list):
+        raise ValueError(f"invalid archived spec evaluation report: {report_path}")
+    return report
+
+
+def spec_evaluation_summary(report: dict[str, Any]) -> dict[str, Any]:
+    return {key: value for key, value in report.items() if key != "functions"}
+
+
 def generate() -> None:
     functions_data = load_yaml(FUNCTIONS_FILE)
     features_data = load_yaml(FEATURES_FILE)
@@ -218,6 +274,7 @@ def generate() -> None:
     shutil.rmtree(DOCS_DIR, ignore_errors=True)
     DOCS_DIR.mkdir(parents=True, exist_ok=True)
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+    STATIC_DATA_DIR.mkdir(parents=True, exist_ok=True)
 
     docs_to_copy = {"index.md", "registry/README.md"}
     for func in functions:
@@ -242,10 +299,21 @@ def generate() -> None:
         json.dumps(build_registry_data(top_levels, functions, features), ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
+    spec_evaluation = load_archived_spec_evaluation()
+    SPEC_EVAL_SUMMARY_JSON.write_text(
+        json.dumps(spec_evaluation_summary(spec_evaluation), ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    SPEC_EVAL_STATIC_JSON.write_text(
+        json.dumps(spec_evaluation, ensure_ascii=False, separators=(",", ":")) + "\n",
+        encoding="utf-8",
+    )
 
     print(f"generated {DOCS_DIR.relative_to(ROOT)}")
     print(f"generated {SIDEBAR_FILE.relative_to(ROOT)}")
     print(f"generated {REGISTRY_JSON.relative_to(ROOT)}")
+    print(f"generated {SPEC_EVAL_SUMMARY_JSON.relative_to(ROOT)}")
+    print(f"generated {SPEC_EVAL_STATIC_JSON.relative_to(ROOT)}")
 
 
 def main() -> int:

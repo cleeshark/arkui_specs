@@ -4,3 +4,14 @@ site/docs/
 site/node_modules/
 site/sidebars.js
 site/src/data/registry.json
+site/src/data/spec-evaluation-summary.json
+site/static/data/spec-evaluation.json
+.evaluator/.cache/
+# Keep only the site-facing archive snapshot in Git. Raw Function reports and
+# evidence remain available locally under each source revision.
+.evaluator/*.md
+!.evaluator/README.md
+.evaluator/*/
+.spec-evaluation/
+__pycache__/
+__init__.py

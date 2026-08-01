@@ -1,0 +1,14 @@
+version: 0.1.0
+allowed_repo_prefixes:
+  - frameworks/
+  - interfaces/
+  - adapter/
+  - test/
+  - specs/
+allowed_sdk_prefixes:
+  - interface/sdk-js/
+  - interface_sdk-js/
+disallowed_path_parts:
+  - site
+  - generated
+

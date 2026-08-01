@@ -2,6 +2,7 @@ import React from 'react';
 import Link from '@docusaurus/Link';
 import Layout from '@theme/Layout';
 import registry from '../data/registry.json';
+import evaluation from '../data/spec-evaluation-summary.json';
 
 function Stat({label, value}) {
   return (
@@ -81,6 +82,9 @@ export default function Home() {
                 <Link className="button button--secondary" to="/docs/registry">
                   Registry Rules
                 </Link>
+                <Link className="button button--secondary" to="/spec-evaluation">
+                  View Spec Eval
+                </Link>
               </div>
             </div>
             <div className="heroStats" aria-label="Repository summary">
@@ -89,6 +93,23 @@ export default function Home() {
               <Stat label="Registered features" value={registry.summary.featureCount} />
               <Stat label="Spec files" value={registry.summary.documentedFeatureCount} />
             </div>
+          </div>
+        </section>
+
+        <section className="pageBand">
+          <div className="contentWrap evaluationCallout">
+            <div>
+              <p className="eyebrow">Function-level quality</p>
+              <h2>Spec Evaluation Report</h2>
+              <p>
+                {evaluation.available
+                  ? `${evaluation.summary.completedFunctionCount}/${evaluation.summary.registeredFunctionCount} registered Functions scanned, with ${evaluation.summary.findingCount} findings.`
+                  : 'Run the full spec evaluator to publish Gate, rule, severity, and evidence coverage results.'}
+              </p>
+            </div>
+            <Link className="button button--primary" to="/spec-evaluation">
+              Open Evaluation Report
+            </Link>
           </div>
         </section>
 

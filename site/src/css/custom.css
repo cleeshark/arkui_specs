@@ -297,6 +297,316 @@
   gap: 6px;
 }
 
+.evaluationCallout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  padding-top: 28px;
+  padding-bottom: 28px;
+  border: 1px solid var(--portal-border);
+  border-radius: 8px;
+  background: var(--portal-soft);
+}
+
+.evaluationCallout h2,
+.evaluationCallout p {
+  margin: 0;
+}
+
+.evaluationCallout p:last-child {
+  margin-top: 8px;
+  color: var(--portal-muted);
+}
+
+.evalHero {
+  padding: 64px 0 48px;
+  border-bottom: 1px solid var(--portal-border);
+  background: linear-gradient(135deg, rgba(36, 84, 214, 0.12), rgba(159, 38, 55, 0.08));
+}
+
+.evalHero h1 {
+  margin: 0;
+  font-size: clamp(2.2rem, 5vw, 4rem);
+}
+
+.evalMeta,
+.detailMetrics,
+.detailDocs,
+.severityStrip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+}
+
+.evalMeta {
+  margin-top: 20px;
+  color: var(--portal-muted);
+  font-size: 0.88rem;
+}
+
+.evalSummaryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+}
+
+.evalSummaryCard {
+  padding: 18px;
+  border-top: 4px solid var(--portal-border);
+  border-right: 1px solid var(--portal-border);
+  border-bottom: 1px solid var(--portal-border);
+  border-left: 1px solid var(--portal-border);
+  border-radius: 8px;
+  background: var(--portal-surface);
+}
+
+.evalSummaryCard strong,
+.evalSummaryCard span {
+  display: block;
+}
+
+.evalSummaryCard strong {
+  font-size: 1.8rem;
+}
+
+.evalSummaryCard span {
+  margin-top: 6px;
+  color: var(--portal-muted);
+  font-size: 0.84rem;
+}
+
+.evalSummary-pass { border-top-color: #16835f; }
+.evalSummary-warn { border-top-color: #d28a00; }
+.evalSummary-fail { border-top-color: #c33c52; }
+.evalSummary-error { border-top-color: #6b42b5; }
+
+.evalOverviewGrid {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.7fr) minmax(0, 1.3fr);
+  gap: 40px;
+}
+
+.severityOverview {
+  display: grid;
+  gap: 8px;
+}
+
+.severityOverview > div,
+.ruleCloud > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--portal-border);
+  border-radius: 6px;
+  background: var(--portal-surface);
+}
+
+.severityOverview strong {
+  font-size: 1.2rem;
+}
+
+.ruleCloud {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 8px;
+}
+
+.ruleCloud code {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.evalControls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 180px;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.evalControls input,
+.evalControls select {
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 1px solid var(--portal-border);
+  border-radius: 6px;
+  background: var(--portal-surface);
+  color: var(--ifm-font-color-base);
+  font: inherit;
+}
+
+.evalGate,
+.severityBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.evalGate-pass { background: #e5f6ef; color: #116548; }
+.evalGate-warn { background: #fff0d8; color: #8a5600; }
+.evalGate-fail { background: #fbe6e8; color: #9f2637; }
+.evalGate-error { background: #eee6fb; color: #6330a5; }
+.severity-critical { background: #7d1728; color: white; }
+.severity-major { background: #fbe6e8; color: #9f2637; }
+.severity-minor { background: #fff0d8; color: #8a5600; }
+.severity-info { background: #e6eefb; color: #2454a6; }
+
+.evalTable .selectedRow td {
+  background: rgba(36, 84, 214, 0.08);
+}
+
+.evalModalBackdrop {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  background: rgba(10, 16, 28, 0.68);
+  backdrop-filter: blur(3px);
+}
+
+.evalModalPanel {
+  position: relative;
+  width: min(1100px, 100%);
+  max-height: calc(100vh - 64px);
+  overflow: hidden;
+  border: 1px solid var(--portal-border);
+  border-radius: 8px;
+  background: var(--portal-surface);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.32);
+}
+
+.functionDetail {
+  max-height: calc(100vh - 64px);
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.evalMuted,
+.detailEyebrow,
+.findingLocation {
+  color: var(--portal-muted);
+}
+
+.detailTitleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding-right: 44px;
+}
+
+.detailCloseButton {
+  position: absolute;
+  z-index: 1;
+  top: 14px;
+  right: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--portal-border);
+  border-radius: 50%;
+  background: var(--portal-soft);
+  color: var(--ifm-font-color-base);
+  cursor: pointer;
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.detailCloseButton:hover {
+  border-color: var(--ifm-color-primary);
+  color: var(--ifm-color-primary);
+}
+
+.detailTitleRow h2 {
+  margin: 4px 0 0;
+}
+
+.detailEyebrow {
+  font-size: 0.84rem;
+}
+
+.detailMetrics {
+  margin-top: 20px;
+  padding: 12px 0;
+  border-top: 1px solid var(--portal-border);
+  border-bottom: 1px solid var(--portal-border);
+  font-size: 0.9rem;
+}
+
+.detailDocs,
+.severityStrip {
+  margin-top: 18px;
+}
+
+.detailDocs strong {
+  width: 100%;
+}
+
+.severityStrip > span {
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--portal-soft);
+}
+
+.findingList {
+  display: grid;
+  gap: 10px;
+}
+
+.findingCard {
+  padding: 14px 16px;
+  border: 1px solid var(--portal-border);
+  border-radius: 6px;
+  background: var(--portal-soft);
+}
+
+.findingHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--portal-muted);
+  font-size: 0.82rem;
+}
+
+.findingCard p {
+  margin: 10px 0 6px;
+}
+
+.findingLocation,
+.findingRecommendation {
+  overflow-wrap: anywhere;
+  font-family: var(--ifm-font-family-monospace);
+  font-size: 0.8rem;
+}
+
+.findingRecommendation {
+  margin-top: 8px;
+}
+
+.evalErrorBox,
+.evalEmptyState {
+  padding: 18px;
+  border: 1px solid #c890df;
+  border-radius: 6px;
+  background: #f7effb;
+  color: #6330a5;
+}
+
 @media (max-width: 900px) {
   .portalHeroInner {
     grid-template-columns: 1fr;
@@ -311,6 +621,19 @@
   .sectionHeader p {
     margin-top: 8px;
   }
+
+  .evalOverviewGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .evaluationCallout {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .evalModalBackdrop {
+    padding: 16px;
+  }
 }
 
 @media (max-width: 520px) {
@@ -324,5 +647,25 @@
 
   .pageBand {
     padding: 40px 0;
+  }
+
+  .evalControls {
+    grid-template-columns: 1fr;
+  }
+
+  .evalModalBackdrop {
+    padding: 0;
+  }
+
+  .evalModalPanel {
+    width: 100%;
+    max-height: 100dvh;
+    min-height: 100dvh;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .functionDetail {
+    max-height: 100dvh;
   }
 }

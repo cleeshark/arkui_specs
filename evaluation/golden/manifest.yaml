@@ -1,0 +1,30 @@
+version: 1
+status: provisional
+description: >-
+  Function-level deterministic evaluator golden set. Expectations cover stable,
+  mechanically verifiable findings only; semantic quality remains outside this
+  manifest until expert calibration is complete.
+
+functions:
+  - func_id: 05-03-10
+    profile: multi-feature-scroll-container
+    expected_feature_count: 6
+    expected_rule_ids:
+      - HYGIENE-ABSOLUTE-PATH-001
+      - TRACE-RANGE-ID-001
+
+  - func_id: 04-06-01
+    profile: single-feature-cross-reference
+    expected_feature_count: 1
+    expected_rule_ids:
+      - DESIGN-STRUCT-H2-MISSING-001
+      - LINK-DEAD-001
+      - SPEC-STRUCT-H2-MISSING-001
+      - TRACE-AC-NO-RULE-001
+
+  - func_id: 02-01-04
+    profile: ordinary-multi-feature
+    expected_feature_count: 3
+    expected_rule_ids:
+      - REF-LINE-RANGE-001
+      - TRACE-RANGE-ID-001

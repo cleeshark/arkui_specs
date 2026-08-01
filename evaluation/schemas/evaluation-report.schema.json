@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "evaluation-report.schema.json",
+  "title": "ArkUI Function Evaluation Report",
+  "type": "object",
+  "required": ["func_id", "source_revision", "static", "semantic", "summary"],
+  "properties": {
+    "func_id": { "type": "string" },
+    "source_revision": { "type": "string" },
+    "static": { "$ref": "static-result.schema.json" },
+    "semantic": { "type": ["object", "null"] },
+    "summary": {
+      "type": "object",
+      "required": ["gate", "confidence"],
+      "properties": {
+        "gate": { "type": "string" },
+        "raw_score": { "type": ["number", "null"] },
+        "published_score": { "type": ["number", "null"] },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    }
+  }
+}
+

@@ -60,6 +60,7 @@ const config = {
         items: [
           { to: '/', label: 'Portal', position: 'left' },
           { to: '/docs', label: 'Docs', position: 'left' },
+          { to: '/spec-evaluation', label: 'Spec Eval', position: 'left' },
           {
             href: repositoryUrl,
             label: 'GitHub',

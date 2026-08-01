@@ -1,0 +1,19 @@
+version: 0.2.15
+defaults:
+  Critical: fail
+  Major: fail
+  Minor: warn
+  Info: pass
+rules:
+  - pattern: HYGIENE-ABSOLUTE-PATH-*
+    severity: Minor
+    gate: warn
+  - pattern: LINK-*
+    severity: Minor
+    gate: warn
+  - pattern: DIAGRAM-*
+    severity: Minor
+    gate: warn
+  - pattern: SDK-ROOT-MISSING-*
+    severity: Major
+    gate: fail

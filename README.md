@@ -127,7 +127,20 @@ sudo yum install xorg-x11-server-Xvfb
 
 `site/` 是 Docusaurus 站点工程。站点导航和文档输入由注册表生成。
 
-本地生成站点输入：
+先在完整 OpenHarmony 工作区中生成并归档全量评价报告：
+
+```bash
+python3 tools/spec_eval/cli.py \
+  --output .evaluator \
+  --no-cache \
+  --quiet \
+  scan --all \
+  --report-only
+```
+
+该命令扫描 `registry/functions.yaml` 中的全部 Function，将原始报告写入本地 `.evaluator/<source-revision>/`，并更新需要入库的 `.evaluator/site-report.json` 与 `.evaluator/latest.json`。质量 Gate 和单 Function 扫描异常都会保留；`--report-only` 只保证归档过程不会因为已有质量问题中断。revision 原始报告和 `.evaluator/.cache/` 不纳入版本管理。
+
+站点发布不执行扫描，只读取已归档报告。生成站点输入：
 
 ```bash
 python3 tools/generate_index.py --check
@@ -141,3 +154,5 @@ cd site
 npm ci
 npm run build
 ```
+
+`tools/generate_site.py` 根据 `.evaluator/latest.json` 选择归档快照。构建后的 `/spec-evaluation` 页面展示 Gate 分布、严重度、规则统计、证据覆盖率，以及每个 Function 的完整 Findings。GitHub Pages 仍只检出当前 specs 仓并执行轻量站点构建。
