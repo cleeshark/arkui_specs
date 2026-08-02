@@ -18,6 +18,11 @@ class TraceabilityResult:
 
 
 class TraceabilityChecker:
+    AC_TABLE_HEADERS = ("AC编号", "验收标准", "类型")
+    TRACE_TABLE_HEADERS = ("AC编号", "关联规则", "关联 Task", "验证方式", "证据")
+    RULE_TABLE_HEADERS = ("规则ID", "类型", "触发条件", "预期行为", "边界/约束", "关联AC")
+    VM_TABLE_HEADERS = ("编号", "对应规格项", "验证方式", "验证重点")
+
     def __init__(self, config: EvaluationConfig) -> None:
         self.config = config
         self.ids = IdParser()
@@ -30,11 +35,25 @@ class TraceabilityChecker:
             if document.kind != "spec" or not document.feat_id:
                 continue
             feat = document.feat_id
+            trace_applicable = any(
+                table.section == "验收追溯" and table.headers == self.TRACE_TABLE_HEADERS
+                for table in document.tables
+            ) and any(
+                table.section == "规则定义" and table.headers == self.RULE_TABLE_HEADERS
+                for table in document.tables
+            )
+            vm_applicable = any(
+                table.section == "验证映射" and table.headers == self.VM_TABLE_HEADERS
+                for table in document.tables
+            )
             suppress_no_rule: set[str] = set()
             suppress_no_vm: set[str] = set()
             suppress_rule_orphan: set[str] = set()
             for table in document.tables:
-                trace_ac_column = next((column for column in ("AC编号", "AC") if column in table.headers), None)
+                is_ac_table = table.section == "用户故事" and table.headers == self.AC_TABLE_HEADERS
+                is_trace_table = table.section == "验收追溯" and table.headers == self.TRACE_TABLE_HEADERS
+                is_rule_table = table.section == "规则定义" and table.headers == self.RULE_TABLE_HEADERS
+                is_vm_table = table.section == "验证映射" and table.headers == self.VM_TABLE_HEADERS
                 for row in table.rows:
                     for cell in row.cells:
                         for value in self.ids.find_ranges(cell):
@@ -51,12 +70,12 @@ class TraceabilityChecker:
                                 )
                             )
                     mapping = row.as_mapping(table.headers)
-                    if "编号" in table.headers and "对应规格项" in table.headers:
+                    if is_vm_table:
                         suppress_no_vm.update(
                             self._qualified_range_members(mapping.get("对应规格项", ""), "ac", feat)
                         )
-                    if trace_ac_column and "关联规则" in table.headers:
-                        range_acs = self._qualified_range_members(mapping.get(trace_ac_column, ""), "ac", feat)
+                    if is_trace_table:
+                        range_acs = self._qualified_range_members(mapping.get("AC编号", ""), "ac", feat)
                         suppress_no_rule.update(range_acs)
                         suppress_rule_orphan.update(
                             self._qualified_range_members(mapping.get("关联规则", ""), "rule", feat)
@@ -65,21 +84,21 @@ class TraceabilityChecker:
                             suppress_rule_orphan.update(
                                 self._qualified_ids(mapping.get("关联规则", ""), "rule", feat)
                             )
-                    if "规则ID" in table.headers and "关联AC" in table.headers:
+                    if is_rule_table:
                         range_acs = self._qualified_range_members(mapping.get("关联AC", ""), "ac", feat)
                         suppress_no_rule.update(range_acs)
                         if range_acs:
                             suppress_rule_orphan.update(
                                 self._qualified_ids(mapping.get("规则ID", ""), "rule", feat)
                             )
-                if "AC编号" in table.headers:
+                if is_ac_table:
                     self._add_nodes(graph, document, table, feat, "AC编号", "ac")
-                if "规则ID" in table.headers:
+                if is_rule_table:
                     self._add_rule_rows(graph, document, table, feat)
-                if "编号" in table.headers and "对应规格项" in table.headers:
+                if is_vm_table:
                     self._add_vm_rows(graph, document, table, feat)
-                if trace_ac_column and "关联规则" in table.headers:
-                    self._add_trace_rows(graph, document, table, feat, trace_ac_column)
+                if is_trace_table:
+                    self._add_trace_rows(graph, document, table, feat, "AC编号")
 
             ac_nodes = [node for node in graph.nodes.values() if node.kind == "ac" and node.node_id.startswith(f"{feat}/")]
             rule_nodes = [node for node in graph.nodes.values() if node.kind == "rule" and node.node_id.startswith(f"{feat}/")]
@@ -90,12 +109,16 @@ class TraceabilityChecker:
                 has_vm = bool(graph.outgoing(node.node_id, "verified_by"))
                 if has_rule and has_vm:
                     closed += 1
-                if not has_rule and node.node_id not in suppress_no_rule:
+                if trace_applicable and not has_rule and node.node_id not in suppress_no_rule:
                     findings.append(self._trace_finding(context, document, feat, node, "TRACE-AC-NO-RULE-001", "AC is not linked to any Rule"))
-                if not has_vm and node.node_id not in suppress_no_vm:
+                if vm_applicable and not has_vm and node.node_id not in suppress_no_vm:
                     findings.append(self._trace_finding(context, document, feat, node, "TRACE-AC-NO-VM-001", "AC is not linked to any verification mapping"))
             for node in rule_nodes:
-                if not graph.incoming(node.node_id, "specified_by") and node.node_id not in suppress_rule_orphan:
+                if (
+                    trace_applicable
+                    and not graph.incoming(node.node_id, "specified_by")
+                    and node.node_id not in suppress_rule_orphan
+                ):
                     findings.append(self._trace_finding(context, document, feat, node, "TRACE-RULE-ORPHAN-001", "Rule is not linked from any AC"))
             per_feat[feat] = {
                 "ac_count": len(ac_nodes),
@@ -103,6 +126,8 @@ class TraceabilityChecker:
                 "vm_count": len(vm_nodes),
                 "closed_ac_count": closed,
                 "closure_rate": closed / len(ac_nodes) if ac_nodes else 0.0,
+                "rule_trace_applicable": trace_applicable,
+                "vm_trace_applicable": vm_applicable,
             }
 
         all_ac = [node for node in graph.nodes.values() if node.kind == "ac"]

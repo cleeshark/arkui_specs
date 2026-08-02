@@ -10,12 +10,15 @@ from spec_eval.config import EvaluationConfig
 
 
 class SdkReader:
+    IDENTIFIER_RE = re.compile(r"[A-Za-z_$][A-Za-z0-9_$]*")
+
     def __init__(self, config: EvaluationConfig) -> None:
         self.config = config
         self.sdk_root = config.oh_root / "interface" / "sdk-js" / "api"
         self.ndk_root = config.oh_root / "interface" / "sdk_c"
         self.sdk_roots = (self.sdk_root, self.ndk_root)
         self._cache: dict[str, list[dict[str, object]]] = {}
+        self._suffix_cache: dict[str, list[dict[str, object]]] = {}
 
     def locate(self, api_name: str, limit: int = 20) -> list[dict[str, object]]:
         if api_name in self._cache:
@@ -70,4 +73,59 @@ class SdkReader:
                 }
             )
         self._cache[api_name] = matches
+        return matches
+
+    def locate_suffix(self, api_suffix: str, limit: int = 100) -> list[dict[str, object]]:
+        if api_suffix in self._suffix_cache:
+            return self._suffix_cache[api_suffix]
+        search_specs = (
+            (self.sdk_root, ("*.d.ts", "*.d.ets", "*.static.d.ets")),
+            (self.ndk_root, ("*.h", "*.hpp")),
+        )
+        output_lines: list[tuple[Path, str]] = []
+        try:
+            for root, globs in search_specs:
+                if not root.is_dir():
+                    continue
+                command = ["rg", "-n", "-m", str(limit)]
+                for glob in globs:
+                    command.extend(["--glob", glob])
+                command.extend(["--glob", "!zh-cn/**", "-F", api_suffix, "."])
+                result = subprocess.run(
+                    command,
+                    cwd=root,
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                    encoding="utf-8",
+                    errors="replace",
+                )
+                output_lines.extend((root, line) for line in result.stdout.splitlines())
+        except OSError:
+            self._suffix_cache[api_suffix] = []
+            return []
+
+        matches: list[dict[str, object]] = []
+        for root, line in output_lines:
+            try:
+                path_text, line_text, content = line.split(":", 2)
+                line_no = int(line_text)
+            except (ValueError, TypeError):
+                continue
+            resolved_names = {
+                identifier
+                for identifier in self.IDENTIFIER_RE.findall(content)
+                if identifier.endswith(api_suffix) and identifier != api_suffix
+            }
+            for resolved_name in resolved_names:
+                path = root / path_text
+                matches.append(
+                    {
+                        "path": path.resolve().relative_to(self.config.oh_root.resolve()).as_posix(),
+                        "line": line_no,
+                        "declaration": content.strip(),
+                        "resolved_api": resolved_name,
+                    }
+                )
+        self._suffix_cache[api_suffix] = matches
         return matches

@@ -1,0 +1,46 @@
+version: 1
+status: calibrated
+source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+description: Top 10 static rules, three Functions from different first-level domains per rule.
+classifications: [TRUE_POSITIVE, FALSE_POSITIVE, CASCADE, LEGACY_DEBT, ENVIRONMENT_GAP]
+
+samples:
+  - {rule_id: TRACE-RANGE-ID-001, func_id: 05-09-02, baseline_count: 292, expected_count: 292, classification: TRUE_POSITIVE, rationale: 明确使用 AC 范围写法}
+  - {rule_id: TRACE-RANGE-ID-001, func_id: 04-09-01, baseline_count: 219, expected_count: 219, classification: TRUE_POSITIVE, rationale: 明确使用 AC 范围写法}
+  - {rule_id: TRACE-RANGE-ID-001, func_id: 03-08-02, baseline_count: 46, expected_count: 46, classification: TRUE_POSITIVE, rationale: Delta、规则和验证表中存在 ID 范围}
+
+  - {rule_id: TRACE-AC-NO-VM-001, func_id: 05-03-04, baseline_count: 217, expected_count: 217, classification: TRUE_POSITIVE, rationale: 标准验证映射表只写概念名称，未关联具体 AC}
+  - {rule_id: TRACE-AC-NO-VM-001, func_id: 07-02-01, baseline_count: 201, expected_count: 0, classification: CASCADE, rationale: VM 表使用旧表头，主错误应为表字段不匹配}
+  - {rule_id: TRACE-AC-NO-VM-001, func_id: 03-05-01, baseline_count: 122, expected_count: 0, classification: CASCADE, rationale: 缺少可解析的标准验证映射表}
+
+  - {rule_id: REF-AMBIGUOUS-001, func_id: 03-05-01, baseline_count: 168, expected_count: 168, classification: TRUE_POSITIVE, rationale: cpp/h basename 在仓内存在多个候选}
+  - {rule_id: REF-AMBIGUOUS-001, func_id: 05-06-01, baseline_count: 79, expected_count: 79, classification: TRUE_POSITIVE, rationale: d.ts basename 同时搜索 ace_engine 与 interface/sdk-js 后存在多个候选}
+  - {rule_id: REF-AMBIGUOUS-001, func_id: 04-04-01, baseline_count: 77, expected_count: 85, classification: TRUE_POSITIVE, rationale: 含 ignored generated 候选的 basename 也必须提示完整仓内路径}
+
+  - {rule_id: SPEC-STRUCT-USER-STORY-001, func_id: 03-09-01, baseline_count: 51, expected_count: 51, classification: LEGACY_DEBT, rationale: 旧产物缺少作为、我想要、以便结构}
+  - {rule_id: SPEC-STRUCT-USER-STORY-001, func_id: 04-06-02, baseline_count: 44, expected_count: 44, classification: LEGACY_DEBT, rationale: 旧产物只提供部分用户故事字段}
+  - {rule_id: SPEC-STRUCT-USER-STORY-001, func_id: 05-03-04, baseline_count: 39, expected_count: 39, classification: LEGACY_DEBT, rationale: 旧产物未使用结构化用户故事}
+
+  - {rule_id: REF-NOT-FOUND-001, func_id: 05-02-01, baseline_count: 43, expected_count: 43, classification: TRUE_POSITIVE, rationale: 完整仓内路径对应文件确实不存在}
+  - {rule_id: REF-NOT-FOUND-001, func_id: 07-02-03, baseline_count: 35, expected_count: 1, classification: FALSE_POSITIVE, rationale: sdk/*.ts 是可唯一解析的仓内部分相对路径，仅保留真实缺失 BUILD.gn}
+  - {rule_id: REF-NOT-FOUND-001, func_id: 04-03-03, baseline_count: 30, expected_count: 3, classification: FALSE_POSITIVE, rationale: ignored generated basename 应转为 AMBIGUOUS，仅保留错误完整路径}
+
+  - {rule_id: SPEC-STRUCT-TABLE-FIELD-001, func_id: 05-09-03, baseline_count: 21, expected_count: 21, classification: LEGACY_DEBT, rationale: AC 编号、规则 ID 等字段含非标准空格}
+  - {rule_id: SPEC-STRUCT-TABLE-FIELD-001, func_id: 07-02-01, baseline_count: 18, expected_count: 18, classification: LEGACY_DEBT, rationale: 追溯和验证映射使用旧字段集合}
+  - {rule_id: SPEC-STRUCT-TABLE-FIELD-001, func_id: 04-06-04, baseline_count: 16, expected_count: 16, classification: LEGACY_DEBT, rationale: 用户故事和验收追溯表头不符合标准}
+
+  - {rule_id: TRACE-AC-NO-RULE-001, func_id: 03-05-01, baseline_count: 122, expected_count: 0, classification: CASCADE, rationale: 验收追溯字段错误时不生成逐 AC 连锁}
+  - {rule_id: TRACE-AC-NO-RULE-001, func_id: 04-03-01, baseline_count: 44, expected_count: 0, classification: CASCADE, rationale: 非标准关联业务规则字段由表字段规则负责}
+  - {rule_id: TRACE-AC-NO-RULE-001, func_id: 05-10-07, baseline_count: 35, expected_count: 0, classification: CASCADE, rationale: 规则编号和 R-N 表头未满足追溯前置条件}
+
+  - {rule_id: SDK-API-NOT-FOUND-001, func_id: 05-09-08, baseline_count: 38, expected_count: 34, classification: TRUE_POSITIVE, rationale: 唯一后缀可解析项已消除，模糊枚举或不存在声明继续报错}
+  - {rule_id: SDK-API-NOT-FOUND-001, func_id: 04-04-01, baseline_count: 21, expected_count: 8, classification: FALSE_POSITIVE, rationale: NDK 复合名称后缀可唯一解析；通配或分组 getter 仍要求列具体 API}
+  - {rule_id: SDK-API-NOT-FOUND-001, func_id: 03-07-01, baseline_count: 5, expected_count: 1, classification: FALSE_POSITIVE, rationale: NDK setter 后缀均可唯一解析，仅保留 ...WithInstance 非具体写法}
+
+  - {rule_id: TRACE-RULE-ORPHAN-001, func_id: 03-05-01, baseline_count: 97, expected_count: 0, classification: CASCADE, rationale: 非标准业务规则字段使已有关联未被识别}
+  - {rule_id: TRACE-RULE-ORPHAN-001, func_id: 04-03-01, baseline_count: 53, expected_count: 0, classification: CASCADE, rationale: 追溯前置表结构不完整时不生成逐 Rule 连锁}
+  - {rule_id: TRACE-RULE-ORPHAN-001, func_id: 05-03-09, baseline_count: 25, expected_count: 0, classification: CASCADE, rationale: 旧追溯和 VM 表头不满足规则适用条件}
+
+  - {rule_id: SPEC-STRUCT-H2-MISSING-001, func_id: 07-02-01, baseline_count: 35, expected_count: 35, classification: LEGACY_DEBT, rationale: 多个旧 Feature 缺少固定章节}
+  - {rule_id: SPEC-STRUCT-H2-MISSING-001, func_id: 05-02-03, baseline_count: 16, expected_count: 16, classification: LEGACY_DEBT, rationale: 一个旧格式 Feature 几乎未采用标准骨架}
+  - {rule_id: SPEC-STRUCT-H2-MISSING-001, func_id: 04-04-07, baseline_count: 12, expected_count: 12, classification: LEGACY_DEBT, rationale: 六个 Feature 均缺少概述和验收追溯}

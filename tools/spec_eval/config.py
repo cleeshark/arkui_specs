@@ -20,7 +20,7 @@ class EvaluationConfig:
     schemas_root: Path
     output_root: Path
     tool_version: str = __version__
-    rule_version: str = "0.2.15"
+    rule_version: str = "0.2.16"
 
     @classmethod
     def discover(cls, output_root: Path | None = None) -> "EvaluationConfig":

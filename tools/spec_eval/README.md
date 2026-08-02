@@ -309,10 +309,21 @@ CI脚本中，执行不完整的优先级高于质量门禁失败，不会因为
 | `citation_rules.yaml` | 源码引用检查配置 |
 | `sdk_rules.yaml` | SDK声明定位配置 |
 | `exemptions.yaml` | 带Owner、原因和到期时间的临时豁免 |
+| `rule_applicability.yaml` | 活跃静态规则的适用性、前置条件、抑制条件和推荐Gate |
 | `schemas/` | Function Context、静态结果、证据和报告JSON Schema |
 | `golden/manifest.yaml` | 真实Function Golden样本及确定性预期 |
+| `golden/static_expectations.yaml` | Top 10 Rule的30个跨域校准样本和精确Finding计数 |
 
 临时方案和任务拆分位于 [`specs/.evaluator`](../../.evaluator/)；它们不属于正式 Feature/Design 基线。
+
+规则修改后除普通单测外，还必须运行：
+
+```bash
+PYTHONPATH=specs/tools python3 -m unittest \
+  specs.tools.spec_eval.tests.test_rule_calibration -v
+```
+
+该测试验证34条活跃规则的适用性矩阵、30个Top 10跨域样本，以及已确认误报的最小复现和真实Function回归。
 
 ## 9. 缓存行为
 

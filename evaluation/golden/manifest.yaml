@@ -20,7 +20,7 @@ functions:
       - DESIGN-STRUCT-H2-MISSING-001
       - LINK-DEAD-001
       - SPEC-STRUCT-H2-MISSING-001
-      - TRACE-AC-NO-RULE-001
+      - TRACE-AC-NO-VM-001
 
   - func_id: 02-01-04
     profile: ordinary-multi-feature

@@ -15,6 +15,7 @@ class SourceReader:
     def __init__(self, config: EvaluationConfig) -> None:
         self.config = config
         self._basename_cache: dict[str, tuple[Path | None, str]] = {}
+        self._suffix_cache: dict[str, tuple[Path | None, str]] = {}
 
     def resolve(self, raw_path: str, document_directory: Path) -> tuple[Path | None, str]:
         normalized = raw_path.strip().strip("`'")
@@ -42,6 +43,8 @@ class SourceReader:
 
         if "/" not in normalized and "\\" not in normalized:
             return self._resolve_basename(normalized)
+        if not normalized.startswith(("frameworks/", "interfaces/", "adapter/", "test/", "specs/")):
+            return self._resolve_suffix(normalized.replace("\\", "/"))
         return None, "missing"
 
     def _resolve_basename(self, name: str) -> tuple[Path | None, str]:
@@ -54,7 +57,7 @@ class SourceReader:
         matches: set[Path] = set()
         try:
             for search_root in search_roots:
-                command = ["rg", "--files", "-g", name]
+                command = ["rg", "--files", "--hidden", "--no-ignore-vcs", "-g", name]
                 if search_root == sdk_root:
                     command.extend(["-g", "!zh-cn/**"])
                 result = subprocess.run(
@@ -81,6 +84,39 @@ class SourceReader:
         else:
             value = (None, "missing")
         self._basename_cache[name] = value
+        return value
+
+    def _resolve_suffix(self, suffix: str) -> tuple[Path | None, str]:
+        if suffix in self._suffix_cache:
+            return self._suffix_cache[suffix]
+        name = Path(suffix).name
+        matches: set[Path] = set()
+        try:
+            command = ["rg", "--files", "--hidden", "--no-ignore-vcs", "-g", name]
+            result = subprocess.run(
+                command,
+                cwd=self.config.repo_root,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            matches.update(
+                path.resolve()
+                for line in result.stdout.splitlines()
+                if line.strip()
+                for path in (self.config.repo_root / line,)
+                if path.is_file() and path.as_posix().endswith(suffix)
+            )
+        except OSError:
+            self._suffix_cache[suffix] = (None, "missing")
+            return self._suffix_cache[suffix]
+        if len(matches) == 1:
+            value = (next(iter(matches)), "resolved")
+        elif len(matches) > 1:
+            value = (None, "ambiguous")
+        else:
+            value = (None, "missing")
+        self._suffix_cache[suffix] = value
         return value
 
     @classmethod

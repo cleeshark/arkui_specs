@@ -1,0 +1,397 @@
+version: 0.1.0
+baseline:
+  source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+  tool_version: 0.2.23
+  rule_version: 0.2.15
+  registered_function_count: 299
+  active_rule_count: 34
+owner: spec-eval
+
+calibrated_validation:
+  tool_version: 0.2.24
+  rule_version: 0.2.16
+  registered_function_count: 299
+  completed_function_count: 299
+  tool_error_count: 0
+  finding_count: 16018
+  active_rule_count: 34
+
+classification_definitions:
+  stable_hard: 机械条件明确，可直接用于新增问题门禁
+  legacy_debt: 规则有效，但当前存量主要来自旧模板或旧生成模型，应先冻结基线
+  conditional: 仅在前置结构、源码或 SDK 环境完整时适用
+
+rules:
+  - rule_id: TRACE-RANGE-ID-001
+    checker: TraceabilityChecker
+    calibration_class: stable_hard
+    applies_to: [spec]
+    prerequisites: [Markdown 表格可解析]
+    suppress_when: []
+    default_severity: Major
+    recommended_gate: fail
+    legacy_policy: baseline_only
+    owner: spec-eval
+
+  - rule_id: TRACE-AC-NO-VM-001
+    checker: TraceabilityChecker
+    calibration_class: conditional
+    applies_to: [spec]
+    prerequisites: [用户故事 AC 表使用标准表头, 验证映射表使用标准表头]
+    suppress_when: [TRACE-RANGE-ID-001 覆盖该 AC, SPEC-STRUCT-TABLE-001 命中验证映射, SPEC-STRUCT-TABLE-FIELD-001 命中验证映射]
+    default_severity: Major
+    recommended_gate: fail
+    legacy_policy: baseline_only
+    owner: spec-eval
+
+  - rule_id: REF-AMBIGUOUS-001
+    checker: ReferenceChecker
+    calibration_class: stable_hard
+    applies_to: [spec, design]
+    prerequisites: [源码或 SDK 搜索根可用]
+    suppress_when: []
+    default_severity: Major
+    recommended_gate: fail
+    legacy_policy: baseline_only
+    owner: spec-eval
+
+  - rule_id: SPEC-STRUCT-USER-STORY-001
+    checker: SpecStructureChecker
+    calibration_class: legacy_debt
+    applies_to: [spec]
+    prerequisites: [用户故事章节存在]
+    suppress_when: [SPEC-STRUCT-H2-MISSING-001 命中用户故事]
+    default_severity: Major
+    recommended_gate: fail
+    legacy_policy: baseline_only
+    owner: spec-eval
+
+  - rule_id: REF-NOT-FOUND-001
+    checker: ReferenceChecker
+    calibration_class: conditional
+    applies_to: [spec, design]
+    prerequisites: [ace_engine 源码工作区完整]
+    suppress_when: [引用是非精确模板或通配路径]
+    default_severity: Major
+    recommended_gate: fail
+    legacy_policy: baseline_only
+    owner: spec-eval
+
+  - rule_id: SPEC-STRUCT-TABLE-FIELD-001
+    checker: SpecStructureChecker
+    calibration_class: legacy_debt
+    applies_to: [spec]
+    prerequisites: [目标章节内至少存在一个可解析表格]
+    suppress_when: []
+    default_severity: Major
+    recommended_gate: fail
+    legacy_policy: baseline_only
+    owner: spec-eval
+
+  - rule_id: TRACE-AC-NO-RULE-001
+    checker: TraceabilityChecker
+    calibration_class: conditional
+    applies_to: [spec]
+    prerequisites: [用户故事 AC 表使用标准表头, 验收追溯表使用标准表头, 规则定义表使用标准表头]
+    suppress_when: [TRACE-RANGE-ID-001 覆盖该 AC, SPEC-STRUCT-TABLE-001 命中验收追溯或规则定义, SPEC-STRUCT-TABLE-FIELD-001 命中验收追溯或规则定义]
+    default_severity: Major
+    recommended_gate: fail
+    legacy_policy: baseline_only
+    owner: spec-eval
+
+  - rule_id: SDK-API-NOT-FOUND-001
+    checker: SdkContractChecker
+    calibration_class: conditional
+    applies_to: [spec, design]
+    prerequisites: [API 表开放范围为 Public 或 System, canonical SDK 根可用]
+    suppress_when: [开放范围为 InnerApi 或未分类, SDK-ROOT-MISSING-001]
+    default_severity: Major
+    recommended_gate: fail
+    legacy_policy: baseline_only
+    owner: spec-eval
+
+  - rule_id: TRACE-RULE-ORPHAN-001
+    checker: TraceabilityChecker
+    calibration_class: conditional
+    applies_to: [spec]
+    prerequisites: [验收追溯表使用标准表头, 规则定义表使用标准表头]
+    suppress_when: [TRACE-RANGE-ID-001 覆盖该 Rule, SPEC-STRUCT-TABLE-001 命中验收追溯或规则定义, SPEC-STRUCT-TABLE-FIELD-001 命中验收追溯或规则定义]
+    default_severity: Major
+    recommended_gate: fail
+    legacy_policy: baseline_only
+    owner: spec-eval
+
+  - rule_id: SPEC-STRUCT-H2-MISSING-001
+    checker: SpecStructureChecker
+    calibration_class: legacy_debt
+    applies_to: [spec]
+    prerequisites: [文档可解析]
+    suppress_when: []
+    default_severity: Major
+    recommended_gate: fail
+    legacy_policy: baseline_only
+    owner: spec-eval
+
+  - rule_id: REF-LINE-RANGE-001
+    checker: ReferenceChecker
+    calibration_class: stable_hard
+    applies_to: [spec, design]
+    prerequisites: [引用文件唯一解析成功, 引用显式携带行号]
+    suppress_when: [REF-NOT-FOUND-001, REF-AMBIGUOUS-001, REF-ABSOLUTE-PATH-001]
+    default_severity: Major
+    recommended_gate: fail
+    legacy_policy: baseline_only
+    owner: spec-eval
+
+  - rule_id: DESIGN-STRUCT-H2-MISSING-001
+    checker: DesignStructureChecker
+    calibration_class: legacy_debt
+    applies_to: [design]
+    prerequisites: [design.md 存在且可解析]
+    suppress_when: [DESIGN-STRUCT-MISSING-001]
+    default_severity: Major
+    recommended_gate: fail
+    legacy_policy: baseline_only
+    owner: spec-eval
+
+  - rule_id: DESIGN-STRUCT-MISSING-001
+    checker: DesignStructureChecker
+    calibration_class: legacy_debt
+    applies_to: [function]
+    prerequisites: [Function Registry 可读取]
+    suppress_when: []
+    default_severity: Major
+    recommended_gate: fail
+    legacy_policy: baseline_only
+    owner: spec-eval
+
+  - rule_id: REG-FUNC-PATH-001
+    checker: RegistryChecker
+    calibration_class: stable_hard
+    applies_to: [registry]
+    prerequisites: [Function Registry 可读取]
+    suppress_when: []
+    default_severity: Major
+    recommended_gate: fail
+    legacy_policy: enforce_new
+    owner: spec-eval
+
+  - rule_id: DESIGN-STRUCT-TARGET-FEAT-001
+    checker: DesignStructureChecker
+    calibration_class: stable_hard
+    applies_to: [design]
+    prerequisites: [design 元数据可解析, Feature Registry 可读取]
+    suppress_when: [DESIGN-STRUCT-MISSING-001]
+    default_severity: Major
+    recommended_gate: fail
+    legacy_policy: baseline_only
+    owner: spec-eval
+
+  - rule_id: REF-ABSOLUTE-PATH-001
+    checker: ReferenceChecker
+    calibration_class: stable_hard
+    applies_to: [spec, design]
+    prerequisites: [引用被 CitationParser 识别为精确路径]
+    suppress_when: []
+    default_severity: Major
+    recommended_gate: fail
+    legacy_policy: baseline_only
+    owner: spec-eval
+
+  - rule_id: REF-DISALLOWED-SOURCE-001
+    checker: ReferenceChecker
+    calibration_class: stable_hard
+    applies_to: [spec, design]
+    prerequisites: [引用文件唯一解析成功]
+    suppress_when: [REF-NOT-FOUND-001, REF-AMBIGUOUS-001]
+    default_severity: Major
+    recommended_gate: fail
+    legacy_policy: baseline_only
+    owner: spec-eval
+
+  - rule_id: HYGIENE-UNCHECKED-AUDIT-001
+    checker: HygieneChecker
+    calibration_class: conditional
+    applies_to: [spec, design]
+    prerequisites: [文档状态为 Baselined]
+    suppress_when: []
+    default_severity: Minor
+    recommended_gate: warn
+    legacy_policy: warn_existing
+    owner: spec-eval
+
+  - rule_id: SPEC-STRUCT-AC-TYPE-001
+    checker: SpecStructureChecker
+    calibration_class: legacy_debt
+    applies_to: [spec]
+    prerequisites: [用户故事表包含 AC编号 和 类型字段]
+    suppress_when: [SPEC-STRUCT-TABLE-FIELD-001 命中用户故事]
+    default_severity: Major
+    recommended_gate: fail
+    legacy_policy: baseline_only
+    owner: spec-eval
+
+  - rule_id: SPEC-STRUCT-RULE-TYPE-001
+    checker: SpecStructureChecker
+    calibration_class: legacy_debt
+    applies_to: [spec]
+    prerequisites: [规则定义表包含 规则ID 和 类型字段]
+    suppress_when: [SPEC-STRUCT-TABLE-FIELD-001 命中规则定义]
+    default_severity: Major
+    recommended_gate: fail
+    legacy_policy: baseline_only
+    owner: spec-eval
+
+  - rule_id: HYGIENE-PLACEHOLDER-001
+    checker: HygieneChecker
+    calibration_class: conditional
+    applies_to: [spec, design]
+    prerequisites: [文档状态为 Baselined]
+    suppress_when: [否定性占位审计声明]
+    default_severity: Major
+    recommended_gate: fail
+    legacy_policy: baseline_only
+    owner: spec-eval
+
+  - rule_id: SPEC-STRUCT-TABLE-001
+    checker: SpecStructureChecker
+    calibration_class: legacy_debt
+    applies_to: [spec]
+    prerequisites: [目标章节存在]
+    suppress_when: [目标章节存在任意可解析表格]
+    default_severity: Major
+    recommended_gate: fail
+    legacy_policy: baseline_only
+    owner: spec-eval
+
+  - rule_id: REG-SPEC-PATH-EMPTY-001
+    checker: RegistryChecker
+    calibration_class: stable_hard
+    applies_to: [registry]
+    prerequisites: [Feature 状态不是 Draft]
+    suppress_when: []
+    default_severity: Major
+    recommended_gate: fail
+    legacy_policy: enforce_new
+    owner: spec-eval
+
+  - rule_id: HYGIENE-ABSOLUTE-PATH-001
+    checker: HygieneChecker
+    calibration_class: stable_hard
+    applies_to: [spec, design]
+    prerequisites: [文档可解析]
+    suppress_when: []
+    default_severity: Minor
+    recommended_gate: warn
+    legacy_policy: warn_existing
+    owner: spec-eval
+
+  - rule_id: DESIGN-STRUCT-ID-001
+    checker: DesignStructureChecker
+    calibration_class: stable_hard
+    applies_to: [design]
+    prerequisites: [design 元数据表可解析]
+    suppress_when: [DESIGN-STRUCT-MISSING-001]
+    default_severity: Major
+    recommended_gate: fail
+    legacy_policy: baseline_only
+    owner: spec-eval
+
+  - rule_id: REG-DESIGN-METADATA-ID-001
+    checker: RegistryChecker
+    calibration_class: stable_hard
+    applies_to: [design, registry]
+    prerequisites: [design 元数据表可解析]
+    suppress_when: [DESIGN-STRUCT-MISSING-001]
+    default_severity: Major
+    recommended_gate: fail
+    legacy_policy: baseline_only
+    owner: spec-eval
+
+  - rule_id: DESIGN-STRUCT-ADR-ID-001
+    checker: DesignStructureChecker
+    calibration_class: legacy_debt
+    applies_to: [design]
+    prerequisites: [关键设计决策表可解析]
+    suppress_when: [DESIGN-STRUCT-MISSING-001]
+    default_severity: Major
+    recommended_gate: fail
+    legacy_policy: baseline_only
+    owner: spec-eval
+
+  - rule_id: LINK-DEAD-001
+    checker: HygieneChecker
+    calibration_class: conditional
+    applies_to: [spec, design]
+    prerequisites: [Markdown 本地链接可解析, ace_engine 与 specs 工作区完整]
+    suppress_when: [HTTP 链接, mailto 链接, 当前文档锚点]
+    default_severity: Minor
+    recommended_gate: warn
+    legacy_policy: warn_existing
+    owner: spec-eval
+
+  - rule_id: DESIGN-STRUCT-H1-001
+    checker: DesignStructureChecker
+    calibration_class: legacy_debt
+    applies_to: [design]
+    prerequisites: [design.md 存在且可解析]
+    suppress_when: [DESIGN-STRUCT-MISSING-001]
+    default_severity: Major
+    recommended_gate: fail
+    legacy_policy: baseline_only
+    owner: spec-eval
+
+  - rule_id: DIAGRAM-ASCII-001
+    checker: HygieneChecker
+    calibration_class: conditional
+    applies_to: [spec, design]
+    prerequisites: [文档可解析]
+    suppress_when: [内容不是框线图]
+    default_severity: Minor
+    recommended_gate: warn
+    legacy_policy: warn_existing
+    owner: spec-eval
+
+  - rule_id: SPEC-STRUCT-H2-ORDER-001
+    checker: SpecStructureChecker
+    calibration_class: legacy_debt
+    applies_to: [spec]
+    prerequisites: [至少两个标准 H2 已存在]
+    suppress_when: []
+    default_severity: Major
+    recommended_gate: fail
+    legacy_policy: baseline_only
+    owner: spec-eval
+
+  - rule_id: SPEC-STRUCT-H1-001
+    checker: SpecStructureChecker
+    calibration_class: legacy_debt
+    applies_to: [spec]
+    prerequisites: [文档可解析]
+    suppress_when: []
+    default_severity: Major
+    recommended_gate: fail
+    legacy_policy: baseline_only
+    owner: spec-eval
+
+  - rule_id: DESIGN-STRUCT-ADR-FEAT-001
+    checker: DesignStructureChecker
+    calibration_class: stable_hard
+    applies_to: [design]
+    prerequisites: [增量 ADR ID 可解析, Feature Registry 可读取]
+    suppress_when: [DESIGN-STRUCT-ADR-ID-001]
+    default_severity: Major
+    recommended_gate: fail
+    legacy_policy: baseline_only
+    owner: spec-eval
+
+  - rule_id: DESIGN-STRUCT-H2-ORDER-001
+    checker: DesignStructureChecker
+    calibration_class: legacy_debt
+    applies_to: [design]
+    prerequisites: [至少两个标准 H2 已存在]
+    suppress_when: [DESIGN-STRUCT-MISSING-001]
+    default_severity: Major
+    recommended_gate: fail
+    legacy_policy: baseline_only
+    owner: spec-eval

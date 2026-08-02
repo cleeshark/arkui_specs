@@ -226,6 +226,13 @@ Design结构规则只验证固定结构、ID和显式Feature覆盖，不判断�
 | `TRACE-AC-NO-VM-001` | AC没有任何 `verified_by` VM边 | Major/fail | 在验证映射表中逐项关联AC |
 | `TRACE-RULE-ORPHAN-001` | Rule没有被任何AC关联 | Major/fail | 关联真实AC，或删除不属于本Feature的规则 |
 
+三个断链规则只在依赖的标准表结构解析成功后执行：
+
+- `TRACE-AC-NO-VM-001` 要求“用户故事”和“验证映射”使用标准表头。
+- `TRACE-AC-NO-RULE-001`、`TRACE-RULE-ORPHAN-001` 要求“用户故事”、“验收追溯”和“规则定义”使用标准表头。
+- 表缺失或字段不一致时，由 `SPEC-STRUCT-TABLE-001` / `SPEC-STRUCT-TABLE-FIELD-001` 报主错误，不再批量产生 NO-VM、NO-RULE、ORPHAN 连锁 Finding。
+- 表结构有效后，真实缺少关联仍按 Major/fail 报错；该抑制不降低追溯闭环要求。
+
 追溯节点使用Feature命名空间，例如：
 
 ```text
@@ -248,6 +255,10 @@ Feat-02/AC-1.1
 | `REF-AMBIGUOUS-001` | 仅使用文件名等不完整引用，导致可以解析到多个候选文件；`*.d.ts`、`*.d.ets`、`*.static.d.ets` 会同时搜索ace_engine和OpenHarmony `interface/sdk-js`，但排除文档副本目录 `interface/sdk-js/zh-cn` | Major/fail | 使用完整仓内相对路径，例如 `frameworks/.../animator.cpp` 或 `interface/sdk-js/.../common.d.ts`；Finding会直接提示该写法 |
 | `REF-LINE-RANGE-001` | 引用行号或范围超出文件边界 | Major/fail | 更新为当前revision下的有效行号 |
 | `REF-DISALLOWED-SOURCE-001` | 引用生成文件或site副本作为权威证据 | Major/fail | 改为真实实现或canonical声明来源 |
+
+不带仓库固定前缀的部分相对路径（例如 `sdk/local_storage.ts`）会先按仓内路径后缀搜索：唯一候选可解析，多个候选报 `REF-AMBIGUOUS-001`，没有候选才报 `REF-NOT-FOUND-001`。已经写成 `frameworks/`、`interfaces/`、`adapter/`、`test/` 或 `specs/` 开头的完整路径不会做后缀纠错，路径写错时继续报 `REF-NOT-FOUND-001`。
+
+裸文件名搜索包含被 Git ignore 的 generated 候选。因此生成文件 basename 不会被误报为不存在；多副本时要求使用完整仓内路径，明确引用 generated 文件后再由 `REF-DISALLOWED-SOURCE-001` 拒绝其作为权威证据。
 
 SDK声明文件名中的 `@` 属于路径本身，例如 `@ohos.arkui.UIContext.d.ts` 和
 `@internal/component/ets/enums.d.ts`；解析器会保留该字符。完整的
@@ -287,6 +298,8 @@ api/@internal/component/ets/common.d.ts
 SDK检查只处理API表格中开放范围包含Public或System的行。开放范围明确为InnerApi等内部类型时不会执行canonical SDK要求。
 API表不能用“已有实现补录”、“具体签名见 Feature spec”或单纯`@ohos...`模块名代替具体API列表；此类写法会继续触发`SDK-API-NOT-FOUND-001`，并提示逐项列出API名称或签名。
 
+NDK表格允许在同一行使用“完整首项 + 唯一后缀”的复合写法，例如 `OH_ArkUI_CreateThing / DestroyThing`。后缀只能唯一匹配一个canonical声明时视为定位成功；匹配多个声明、`*ByIndex`、`...WithInstance`、`Native XXX getter`等非具体写法仍触发`SDK-API-NOT-FOUND-001`，Finding会要求列出完整API名称。
+
 当前脚本执行机械声明定位，不直接裁决以下内容：
 
 - 参数和返回值语义是否完全一致。
@@ -306,6 +319,8 @@ SDK搜索依赖 `rg` 和UTF-8可解码的搜索结果。遇到非UTF-8文件或�
 | `citation_rules.yaml` | 允许的仓库前缀、SDK前缀和禁用路径片段 |
 | `sdk_rules.yaml` | canonical SDK根目录、扩展名和渠道声明 |
 | `exemptions.yaml` | Function级临时规则豁免 |
+| `rule_applicability.yaml` | 34类活跃规则的适用文档、前置条件、抑制条件、推荐Gate和Owner |
+| `golden/static_expectations.yaml` | Top 10 Rule的30个跨一级域真实Function校准预期 |
 
 ### 10.1 门禁覆盖
 
@@ -417,3 +432,17 @@ python3 specs/tools/spec_eval/cli.py \
 - Script Finding不能被后续评价Skill改写为通过；Skill只能增加语义判断和证据。
 
 完整工具使用方式参见 [`spec_eval/README.md`](../README.md)。
+
+## 14. 静态规则校准基线
+
+`rule_applicability.yaml` 是规则是否可以执行的协议，不直接替代检查器实现。检查器行为、矩阵前置条件和Golden预期必须同步修改。
+
+当前校准集固定包含Top 10 Rule，每条3个不同一级功能域的Function，共30个Function/Rule组合。样本分类使用：
+
+- `TRUE_POSITIVE`：规则准确命中真实问题。
+- `FALSE_POSITIVE`：规则解析或搜索逻辑误报。
+- `CASCADE`：前置结构错误引起的批量连锁。
+- `LEGACY_DEBT`：规则有效，但问题来自旧模板或旧生成模型存量。
+- `ENVIRONMENT_GAP`：源码或SDK根不完整导致无法可靠判定。
+
+修改Top 10规则时必须更新 `golden/static_expectations.yaml`，并运行 `test_rule_calibration.py` 的30个真实Function计数回归。
