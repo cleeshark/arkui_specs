@@ -6,9 +6,6 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
-from spec_eval import __version__
-
-
 @dataclass(frozen=True)
 class EvaluationConfig:
     repo_root: Path
@@ -19,7 +16,7 @@ class EvaluationConfig:
     rules_root: Path
     schemas_root: Path
     output_root: Path
-    tool_version: str = __version__
+    tool_version: str = "0.3.0"
     rule_version: str = "0.2.16"
 
     @classmethod

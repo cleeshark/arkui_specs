@@ -32,8 +32,20 @@
 | `claim_id` | 否 | 问题关联证据Claim时填写 |
 | `recommendation` | 否 | 可机械给出时提供整改建议 |
 | `details` | 否 | 规则专有结构化信息，例如缺失章节、无效范围或目标路径 |
+| `identity_version` | 是 | Finding身份算法版本；跨版本不得直接比较 |
+| `problem_key` | 是 | 由规则稳定语义字段生成的问题键，不包含定位行号 |
+| `finding_id` | 是 | `FND-`前缀的稳定身份，用于存量基线和增量比较 |
 
 Finding必须能够归属到FuncID。Feature内部使用的AC、Rule和VM局部ID不能作为正式门禁单元。
+
+稳定身份由以下字段共同计算：
+
+```text
+identity_version + rule_id + func_id + feat_id/claim_id
++ normalized_path + problem_key
+```
+
+`problem_key`优先使用`node_id`、`section`、引用原文/API、期望路径等规则结构化信息；没有稳定结构化字段时才使用规范化消息。Markdown定位行号、严重度、候选搜索目录、候选数量和源码引用尾部行范围不参与主身份。相同身份下严重度或规范化消息变化由`compare`标记为`reclassified`。
 
 ## 2. 严重度与Function门禁
 

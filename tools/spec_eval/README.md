@@ -158,15 +158,41 @@ python3 specs/tools/spec_eval/cli.py \
 - 完整站点快照固定写入 `<output>/site-report.json`，并更新 `<output>/latest.json` 指针；快照内部和指针都记录 source revision。
 - 使用 `--output specs/.evaluator` 时，只需将 `site-report.json`、`latest.json` 和可选 README 随 specs 仓入库。revision 原始报告和 `.cache/` 保留本地；站点生成器不在 GitHub Pages 发布任务中重新扫描源码仓和 SDK 仓。
 
-### 3.6 对比两个基线
+### 3.6 冻结稳定 Finding 基线
+
+全量无错误扫描完成后，将 revision 原始结果和同一次扫描产生的 `site-report.json` 冻结为小型 manifest：
+
+```bash
+python3 specs/tools/spec_eval/cli.py baseline \
+  --results specs/.evaluator/<source-revision> \
+  --site-report specs/.evaluator/site-report.json \
+  --write specs/evaluation/baselines/current.json
+```
+
+只有以下条件同时成立时才允许生成正式基线：
+
+- `site-report.json` 和原始结果的 source revision、rule version 一致。
+- 注册 Function 数、完成 Function 数和原始结果数相同。
+- 工具错误数为 0。
+
+基线按稳定 Finding 身份压缩重复问题，只保存比较所需摘要，不复制证据包和完整 Function 报告。
+
+### 3.7 对比当前结果和基线
 
 ```bash
 python3 specs/tools/spec_eval/cli.py --json compare \
   --current /tmp/spec-evaluation/current \
-  --baseline /tmp/spec-evaluation/baseline
+  --baseline specs/evaluation/baselines/current.json
 ```
 
-对比结果按 FuncID 给出新增、解决和未变化的确定性问题。
+`--current` 可以是一个或多个 Function 的结果目录，也可以是 manifest。对比结果按 FuncID 给出：
+
+- `added`：新增问题。
+- `resolved`：已解决的存量问题。
+- `unchanged`：身份和分类均未变化的问题。
+- `reclassified`：同一问题的严重度或规范化消息发生变化。
+
+Finding 身份不包含 Markdown 定位行号和严重度，因此只移动文档内容不会产生伪新增/伪解决。当前结果只扫描部分 Function 时，仅在该 Function 范围内比较，不会把未扫描 Function 误判为 resolved。identity version 或 rule version 不一致时命令明确失败，禁止跨版本静默混算。
 
 ## 4. 通用命令参数
 
@@ -273,6 +299,7 @@ python3 specs/tools/spec_eval/ci_runner.py \
 | `report.md` | 面向人工阅读的 Function 静态评价报告 |
 | `ci-summary.json` | 变更影响Function的CI摘要 |
 | `baseline-summary.json` | 全仓Function门禁和规则命中分布 |
+| `evaluation/baselines/current.json` | 完整扫描冻结的稳定Finding身份与分类摘要 |
 
 ## 7. 门禁和退出码
 
@@ -310,7 +337,8 @@ CI脚本中，执行不完整的优先级高于质量门禁失败，不会因为
 | `sdk_rules.yaml` | SDK声明定位配置 |
 | `exemptions.yaml` | 带Owner、原因和到期时间的临时豁免 |
 | `rule_applicability.yaml` | 活跃静态规则的适用性、前置条件、抑制条件和推荐Gate |
-| `schemas/` | Function Context、静态结果、证据和报告JSON Schema |
+| `schemas/` | Function Context、静态结果、证据、报告和Baseline JSON Schema |
+| `baselines/current.json` | 当前可比较的完整Finding存量基线 |
 | `golden/manifest.yaml` | 真实Function Golden样本及确定性预期 |
 | `golden/static_expectations.yaml` | Top 10 Rule的30个跨域校准样本和精确Finding计数 |
 

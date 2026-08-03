@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "baseline.schema.json",
+  "title": "ArkUI Function Finding Baseline Manifest",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "identity_version",
+    "source_revision",
+    "tool_version",
+    "rule_version",
+    "complete",
+    "scope",
+    "finding_count",
+    "unique_finding_count",
+    "findings"
+  ],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "identity_version": { "type": "integer", "const": 1 },
+    "generated_at": { "type": "string" },
+    "source_revision": { "type": "string", "minLength": 1 },
+    "tool_version": { "type": "string", "minLength": 1 },
+    "rule_version": { "type": "string", "minLength": 1 },
+    "complete": { "type": "boolean" },
+    "scope": {
+      "type": "object",
+      "required": ["function_count", "func_ids"],
+      "properties": {
+        "function_count": { "type": "integer", "minimum": 1 },
+        "func_ids": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[0-9]{2}-[0-9]{2}-[0-9]{2}$" },
+          "uniqueItems": true
+        }
+      }
+    },
+    "finding_count": { "type": "integer", "minimum": 0 },
+    "unique_finding_count": { "type": "integer", "minimum": 0 },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "finding_id",
+          "rule_id",
+          "func_id",
+          "path",
+          "severity",
+          "normalized_message",
+          "count"
+        ],
+        "properties": {
+          "finding_id": { "type": "string", "pattern": "^FND-[0-9a-f]{24}$" },
+          "rule_id": { "type": "string" },
+          "func_id": { "type": "string", "pattern": "^[0-9]{2}-[0-9]{2}-[0-9]{2}$" },
+          "feat_id": { "type": "string" },
+          "claim_id": { "type": "string" },
+          "path": { "type": "string" },
+          "severity": { "type": "string", "enum": ["Info", "Minor", "Major", "Critical"] },
+          "normalized_message": { "type": "string" },
+          "count": { "type": "integer", "minimum": 1 }
+        }
+      }
+    }
+  }
+}

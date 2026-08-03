@@ -14,8 +14,11 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["rule_id", "severity", "message", "path"],
+        "required": ["finding_id", "identity_version", "problem_key", "rule_id", "severity", "message", "path"],
         "properties": {
+          "finding_id": { "type": "string", "pattern": "^FND-[0-9a-f]{24}$" },
+          "identity_version": { "type": "integer", "const": 1 },
+          "problem_key": { "type": "string" },
           "rule_id": { "type": "string" },
           "severity": { "type": "string", "enum": ["Info", "Minor", "Major", "Critical"] },
           "message": { "type": "string" },
@@ -33,4 +36,3 @@
     "traceability": { "type": "object" }
   }
 }
-

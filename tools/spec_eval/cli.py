@@ -49,6 +49,11 @@ def build_parser() -> argparse.ArgumentParser:
     compare = sub.add_parser("compare", help="Compare current and baseline result roots")
     compare.add_argument("--current", type=Path, required=True)
     compare.add_argument("--baseline", type=Path, required=True)
+
+    baseline = sub.add_parser("baseline", help="Freeze a complete scan as a stable Finding manifest")
+    baseline.add_argument("--results", type=Path, required=True, help="Revision result root")
+    baseline.add_argument("--site-report", type=Path, required=True, help="Complete scan site-report.json")
+    baseline.add_argument("--write", type=Path, required=True, help="Destination baseline manifest")
     return parser
 
 
@@ -62,6 +67,24 @@ def main(argv: list[str] | None = None) -> int:
             return emit(context.to_dict(config.repo_root), args, gate="pass")
         if args.command == "compare":
             return emit(BaselineReporter().compare(args.current, args.baseline), args, gate="pass")
+        if args.command == "baseline":
+            reporter = BaselineReporter()
+            manifest = reporter.build_manifest(args.results, args.site_report)
+            if not manifest["complete"]:
+                raise ValueError("baseline is incomplete; results and site report must cover the same error-free full scan")
+            reporter.write_manifest(manifest, args.write)
+            return emit(
+                {
+                    "gate": "pass",
+                    "output_path": args.write.as_posix(),
+                    "source_revision": manifest["source_revision"],
+                    "function_count": manifest["scope"]["function_count"],
+                    "finding_count": manifest["finding_count"],
+                    "unique_finding_count": manifest["unique_finding_count"],
+                },
+                args,
+                gate="pass",
+            )
 
         orchestrator = EvaluationOrchestrator(config)
         if args.command in ("check", "evidence"):
@@ -158,7 +181,7 @@ def emit(value: dict, args, gate: str) -> int:
     elif not args.quiet:
         if "func_id" in value:
             print(f"Function {value['func_id']}: {gate}")
-        elif "functions" in value:
+        elif "functions" in value and isinstance(value["functions"], list):
             for item in value["functions"]:
                 print(f"{item.get('func_id', '-')}: {item.get('gate', '-')}")
         else:
