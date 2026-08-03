@@ -171,7 +171,7 @@ python3 specs/tools/spec_eval/cli.py baseline \
 
 只有以下条件同时成立时才允许生成正式基线：
 
-- `site-report.json` 和原始结果的 source revision、rule version 一致。
+- `site-report.json` 和原始结果的 source revision、tool version、rule version 一致。
 - 注册 Function 数、完成 Function 数和原始结果数相同。
 - 工具错误数为 0。
 
@@ -227,7 +227,9 @@ python3 specs/tools/spec_eval/ci_runner.py \
 
 在 report-only 模式下，Function 门禁失败仍返回 `0`；工具或Function执行错误不会被隐藏。
 
-### 5.2 Enforce 模式
+提供 `--baseline` 时，report-only模式还会计算绝对Gate和增量Gate，但质量问题仍不改变退出码。
+
+### 5.2 绝对 Enforce 模式
 
 规则和历史基线完成校准后，可以启用阻塞：
 
@@ -240,7 +242,32 @@ python3 specs/tools/spec_eval/ci_runner.py \
 
 只要任一受影响 Function 的门禁为 `fail`，命令返回 `1`。
 
-### 5.3 直接使用 Git revision
+### 5.3 增量 Enforce 模式
+
+历史Function推荐使用“不新增、不恶化”门禁：
+
+```bash
+python3 specs/tools/spec_eval/ci_runner.py \
+  --files-from changed-files.txt \
+  --output out/spec-evaluation \
+  --baseline specs/evaluation/baselines/current.json \
+  --delta-enforce --json
+```
+
+增量策略：
+
+- baseline中已有的Function只阻塞新增Critical/Major和严重度升级问题。
+- 新增Minor或同严重度消息重分类产生warn，不阻塞退出码。
+- resolved、unchanged和严重度降低不阻塞。
+- baseline中没有的新增Function继续使用绝对Gate。
+- 相同Finding数量增加时，增加部分按added处理。
+- 有效的Function/Rule豁免同时适用于增量Gate。
+- baseline缺失、不完整、identity version或rule version不一致时返回工具错误`2`。
+- Function执行不完整时返回`3`，不会伪装成增量通过。
+
+`--enforce`和`--delta-enforce`互斥。CI只读取baseline，不会自动改写`current.json`。
+
+### 5.4 直接使用 Git revision
 
 ```bash
 python3 specs/tools/spec_eval/ci_runner.py \
@@ -252,19 +279,23 @@ python3 specs/tools/spec_eval/ci_runner.py \
 
 工具内部执行 `git diff --name-only <base> <head> --` 获取变更文件。
 
-### 5.4 CI 摘要
+### 5.5 CI 摘要
 
 `ci-summary.json` 包含：
 
-- report-only 或 enforce 运行模式。
+- report-only、enforce或delta-enforce运行模式。
 - source revision 和变更文件列表。
 - 受影响 Function 数量。
-- 每个 Function 的门禁、Feature 数、文档数和 Finding 数。
+- 每个Function的绝对Gate、增量Gate、baseline状态、Feature数、文档数和Finding数。
+- added、resolved、reclassified和unchanged数量。
+- Top新增、解决和重分类Finding，以及机器可读reason code。
 - 严重度统计和 Top Findings。
 - Function 完整报告路径。
 - 门禁失败数和工具错误数。
 
 使用 `--top <N>` 控制每个 Function 在摘要中展示的问题数量。
+
+全局Registry、规则配置或核心检查代码发生变化时，工具会评价全部已注册Function；最终仍根据所选绝对或增量模式决定是否阻塞。
 
 ## 6. 输出目录
 

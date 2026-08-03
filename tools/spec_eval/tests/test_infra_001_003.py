@@ -103,6 +103,7 @@ class Infra001ContractTest(unittest.TestCase):
             "evidence.schema.json",
             "evaluation-report.schema.json",
             "baseline.schema.json",
+            "ci-summary.schema.json",
         }
         self.assertEqual({path.name for path in schemas.glob("*.json")}, expected)
         for path in schemas.glob("*.json"):
@@ -134,6 +135,16 @@ class Infra002DiscoveryTest(unittest.TestCase):
         locator = FunctionLocator(self.fixture.config)
         changed = ChangedFunctionResolver(locator).resolve([self.fixture.config.features_registry])
         self.assertEqual([item.func_id for item in changed], ["05-01-01"])
+
+    def test_rule_configuration_and_checker_changes_resolve_all_functions(self) -> None:
+        locator = FunctionLocator(self.fixture.config)
+        resolver = ChangedFunctionResolver(locator)
+        rule_change = resolver.resolve([self.fixture.config.rules_root / "gate_rules.yaml"])
+        checker_change = resolver.resolve(
+            [self.fixture.config.specs_root / "tools" / "spec_eval" / "checks" / "traceability_checks.py"]
+        )
+        self.assertEqual([item.func_id for item in rule_change], ["05-01-01"])
+        self.assertEqual([item.func_id for item in checker_change], ["05-01-01"])
 
 
 class Infra003ParserTest(unittest.TestCase):

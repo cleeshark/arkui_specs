@@ -89,6 +89,34 @@ pass < warn < fail < error
 
 其他规则使用检查器严重度和默认门禁。目前除上述Minor规则外，已实现规则主要按Major/fail处理。
 
+### 2.1 增量门禁
+
+增量门禁在绝对Gate之外运行，不修改任何Finding和历史baseline。已有Function按变化类型判定：
+
+| 变化 | 增量Gate |
+|---|---|
+| 新增Critical/Major | fail |
+| 新增Minor | warn |
+| 新增Info | pass |
+| 相同Finding数量增加 | 增加部分按added判定 |
+| 严重度增加 | 按变化后严重度和规则策略判定 |
+| 严重度降低 | pass |
+| 同严重度消息变化 | warn |
+| resolved/unchanged | pass |
+| baseline中不存在的新增Function | 使用绝对Gate |
+
+增量Gate复用`gate_rules.yaml`的severity、gate和`exemptions.yaml`有效豁免。机器可读原因码包括：
+
+- `DELTA_CRITICAL_ADDED`
+- `DELTA_MAJOR_ADDED`
+- `DELTA_MINOR_ADDED`
+- `DELTA_SEVERITY_INCREASED`
+- `DELTA_MESSAGE_RECLASSIFIED`
+- `NEW_FUNCTION_ABSOLUTE_GATE_FAILED`
+- `NEW_FUNCTION_ABSOLUTE_GATE_WARN`
+
+Baseline必须完整，且identity version和rule version与当前运行一致；跨版本不得静默执行增量门禁。
+
 ## 3. Registry规则
 
 实现位置：[`checks/registry_checks.py`](../checks/registry_checks.py)

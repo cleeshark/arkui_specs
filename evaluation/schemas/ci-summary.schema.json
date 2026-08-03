@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "ci-summary.schema.json",
+  "title": "ArkUI Function Spec Evaluation CI Summary",
+  "type": "object",
+  "required": [
+    "mode",
+    "source_revision",
+    "changed_files",
+    "affected_function_count",
+    "gate_failed_count",
+    "absolute_gate_failed_count",
+    "delta_gate_failed_count",
+    "delta_warn_count",
+    "new_function_count",
+    "error_count",
+    "exit_reasons",
+    "functions",
+    "summary_path"
+  ],
+  "properties": {
+    "mode": { "type": "string", "enum": ["report-only", "enforce", "delta-enforce"] },
+    "source_revision": { "type": "string" },
+    "changed_files": { "type": "array", "items": { "type": "string" } },
+    "affected_function_count": { "type": "integer", "minimum": 0 },
+    "gate_failed_count": { "type": "integer", "minimum": 0 },
+    "absolute_gate_failed_count": { "type": "integer", "minimum": 0 },
+    "delta_gate_failed_count": { "type": "integer", "minimum": 0 },
+    "delta_warn_count": { "type": "integer", "minimum": 0 },
+    "new_function_count": { "type": "integer", "minimum": 0 },
+    "error_count": { "type": "integer", "minimum": 0 },
+    "baseline": {
+      "type": "object",
+      "required": ["path", "source_revision", "identity_version", "rule_version"],
+      "properties": {
+        "path": { "type": "string" },
+        "source_revision": { "type": "string" },
+        "identity_version": { "type": "integer" },
+        "rule_version": { "type": "string" }
+      }
+    },
+    "delta": {
+      "type": "object",
+      "required": ["added", "resolved", "reclassified", "unchanged"],
+      "properties": {
+        "added": { "type": "integer", "minimum": 0 },
+        "resolved": { "type": "integer", "minimum": 0 },
+        "reclassified": { "type": "integer", "minimum": 0 },
+        "unchanged": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "delta_reasons": { "type": "array", "items": { "$ref": "#/$defs/reason" } },
+    "exit_reasons": { "type": "array", "items": { "$ref": "#/$defs/reason" } },
+    "functions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["func_id", "gate"],
+        "properties": {
+          "func_id": { "type": "string", "pattern": "^[0-9]{2}-[0-9]{2}-[0-9]{2}$" },
+          "gate": { "type": "string", "enum": ["pass", "warn", "fail", "error"] },
+          "absolute_gate": { "type": "string", "enum": ["pass", "warn", "fail", "error"] },
+          "delta_gate": { "type": "string", "enum": ["pass", "warn", "fail", "error"] },
+          "baseline_status": { "type": "string", "enum": ["existing", "new"] },
+          "delta": { "type": "object" },
+          "top_added_findings": { "type": "array" },
+          "top_resolved_findings": { "type": "array" },
+          "top_reclassified_findings": { "type": "array" },
+          "delta_reasons": { "type": "array", "items": { "$ref": "#/$defs/reason" } }
+        }
+      }
+    },
+    "summary_path": { "type": "string" }
+  },
+  "$defs": {
+    "reason": {
+      "type": "object",
+      "required": ["code", "func_id", "count", "gate"],
+      "properties": {
+        "code": { "type": "string" },
+        "func_id": { "type": "string" },
+        "finding_id": { "type": "string" },
+        "rule_id": { "type": "string" },
+        "severity": { "type": "string" },
+        "count": { "type": "integer", "minimum": 1 },
+        "gate": { "type": "string", "enum": ["pass", "warn", "fail", "error"] },
+        "path": { "type": "string" }
+      }
+    }
+  }
+}

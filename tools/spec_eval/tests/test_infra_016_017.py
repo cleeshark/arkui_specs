@@ -155,7 +155,13 @@ class Infra017CiRunnerTest(unittest.TestCase):
         cls.changed_multi_spec = config.repo_relative(locator.locate("02-01-04").feature_specs[0])
 
     def _run_ci(
-        self, directory: Path, enforce: bool = False, changed_file: str | None = None
+        self,
+        directory: Path,
+        enforce: bool = False,
+        changed_file: str | None = None,
+        *,
+        delta_enforce: bool = False,
+        baseline: Path | None = None,
     ) -> subprocess.CompletedProcess[str]:
         files = directory / "changed-files.txt"
         files.write_text((changed_file or self.changed_spec) + "\n", encoding="utf-8")
@@ -172,6 +178,10 @@ class Infra017CiRunnerTest(unittest.TestCase):
         ]
         if enforce:
             command.append("--enforce")
+        if delta_enforce:
+            command.append("--delta-enforce")
+        if baseline is not None:
+            command.extend(["--baseline", str(baseline)])
         return subprocess.run(command, cwd=self.repo_root, check=False, capture_output=True, text=True)
 
     def test_report_only_writes_summary_and_does_not_block_gate_failure(self) -> None:
@@ -184,6 +194,7 @@ class Infra017CiRunnerTest(unittest.TestCase):
             self.assertEqual(summary["functions"][0]["func_id"], "04-06-01")
             self.assertEqual(summary["functions"][0]["gate"], "fail")
             self.assertEqual(summary["functions"][0]["feature_count"], 1)
+            self.assertEqual(summary["exit_reasons"], [])
             self.assertTrue(Path(summary["summary_path"]).is_file())
 
     def test_changed_feature_evaluates_its_complete_multi_feature_function(self) -> None:
@@ -202,6 +213,105 @@ class Infra017CiRunnerTest(unittest.TestCase):
             summary = json.loads(result.stdout)
             self.assertEqual(summary["mode"], "enforce")
             self.assertEqual(summary["gate_failed_count"], 1)
+            self.assertEqual(summary["exit_reasons"][0]["code"], "ABSOLUTE_GATE_FAILED")
+
+    def test_delta_enforce_allows_unchanged_historical_gate_failure(self) -> None:
+        baseline = self.repo_root / "specs" / "evaluation" / "baselines" / "current.json"
+        with tempfile.TemporaryDirectory() as directory:
+            result = self._run_ci(Path(directory), delta_enforce=True, baseline=baseline)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            summary = json.loads(result.stdout)
+            function = summary["functions"][0]
+            self.assertEqual(summary["mode"], "delta-enforce")
+            self.assertEqual(function["absolute_gate"], "fail")
+            self.assertEqual(function["delta_gate"], "pass")
+            self.assertEqual(function["baseline_status"], "existing")
+            self.assertEqual(function["delta"]["added"], 0)
+            self.assertGreater(function["delta"]["unchanged"], 0)
+
+    def test_delta_enforce_blocks_injected_added_major(self) -> None:
+        config = EvaluationConfig.discover()
+        real_orchestrator = EvaluationOrchestrator(config)
+        finding = Finding(
+            "TRACE-AC-NO-VM-001",
+            Severity.MAJOR,
+            "injected gap",
+            self.changed_spec,
+            func_id="04-06-01",
+            feat_id="Feat-01",
+            details={"node_id": "Feat-01/AC-injected"},
+        ).to_dict()
+
+        class AddedMajorOrchestrator:
+            def __init__(self, _config: EvaluationConfig) -> None:
+                self.locator = real_orchestrator.locator
+                self.rule_configuration = real_orchestrator.rule_configuration
+
+            @staticmethod
+            def evaluate_and_write(func_id, output_root, use_cache=True):
+                target = Path(output_root) / config.git_revision() / func_id
+                return (
+                    {
+                        "static": {
+                            "func_id": func_id,
+                            "source_revision": config.git_revision(),
+                            "tool_version": config.tool_version,
+                            "rule_version": real_orchestrator.rule_configuration.version,
+                            "gate": "fail",
+                            "findings": [finding],
+                            "metrics": {"feature_count": 1, "document_count": 2, "severity_counts": {"Major": 1}},
+                        }
+                    },
+                    False,
+                    target,
+                )
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            files = root / "changed-files.txt"
+            files.write_text(self.changed_spec + "\n", encoding="utf-8")
+            baseline = root / "baseline.json"
+            baseline.write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "identity_version": 1,
+                        "source_revision": "baseline-revision",
+                        "tool_version": config.tool_version,
+                        "rule_version": real_orchestrator.rule_configuration.version,
+                        "complete": True,
+                        "scope": {"function_count": 1, "func_ids": ["04-06-01"]},
+                        "finding_count": 0,
+                        "unique_finding_count": 0,
+                        "findings": [],
+                    }
+                ),
+                encoding="utf-8",
+            )
+            args = ci_runner.build_parser().parse_args(
+                [
+                    "--files-from",
+                    str(files),
+                    "--output",
+                    str(root / "output"),
+                    "--baseline",
+                    str(baseline),
+                    "--delta-enforce",
+                ]
+            )
+            with mock.patch("spec_eval.ci_runner.EvaluationOrchestrator", AddedMajorOrchestrator):
+                summary, exit_code = ci_runner.run(args)
+            self.assertEqual(exit_code, 1)
+            self.assertEqual(summary["delta_gate_failed_count"], 1)
+            self.assertEqual(summary["functions"][0]["delta_gate"], "fail")
+            self.assertEqual(summary["functions"][0]["delta"]["added"], 1)
+            self.assertEqual(summary["exit_reasons"][0]["code"], "DELTA_MAJOR_ADDED")
+
+    def test_delta_enforce_requires_baseline(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            result = self._run_ci(Path(directory), delta_enforce=True)
+            self.assertEqual(result.returncode, 2)
+            self.assertIn("requires --baseline", json.loads(result.stdout)["error"])
 
     def test_missing_change_list_is_a_tool_error(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -266,6 +376,7 @@ class Infra017CiRunnerTest(unittest.TestCase):
             self.assertEqual(exit_code, 3)
             self.assertEqual(summary["error_count"], 1)
             self.assertEqual(summary["functions"][0]["gate"], "error")
+            self.assertEqual(summary["exit_reasons"][0]["code"], "FUNCTION_EVALUATION_INCOMPLETE")
 
 
 if __name__ == "__main__":

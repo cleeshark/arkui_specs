@@ -52,6 +52,24 @@ class BaselineReporter:
         metadata = self._result_metadata(results)
         site_value = self._load_site_report(site_report)
         complete = self._is_complete_site_report(site_value, metadata, len(results))
+        return self._build_manifest_value(results, metadata, complete=complete)
+
+    def build_partial_manifest(self, result_values: Iterable[dict[str, Any]]) -> dict[str, Any]:
+        """Build an in-memory manifest for the Functions evaluated by one CI run."""
+
+        results = self._results_from_values(result_values)
+        if not results:
+            raise ValueError("no current Function results were provided")
+        metadata = self._result_metadata(results)
+        return self._build_manifest_value(results, metadata, complete=False)
+
+    def _build_manifest_value(
+        self,
+        results: dict[str, dict[str, Any]],
+        metadata: dict[str, str],
+        *,
+        complete: bool,
+    ) -> dict[str, Any]:
 
         compacted: dict[tuple[str, str, str], dict[str, Any]] = {}
         finding_count = 0
@@ -105,10 +123,39 @@ class BaselineReporter:
         """Compare a current result/manifest against a complete frozen baseline."""
 
         current = self._load_manifest_or_results(current_root, require_complete=False)
-        baseline = self._load_manifest_or_results(baseline_root, require_complete=True)
+        baseline = self.load_baseline(baseline_root)
+        return self._compare_manifests(current, baseline)
+
+    def compare_results(
+        self,
+        current_results: Iterable[dict[str, Any]],
+        baseline: dict[str, Any] | Path,
+    ) -> dict[str, Any]:
+        """Compare in-memory CI results without repeatedly loading the baseline."""
+
+        current = self.build_partial_manifest(current_results)
+        baseline_value = self.load_baseline(baseline) if isinstance(baseline, Path) else baseline
+        return self._compare_manifests(current, baseline_value)
+
+    def load_baseline(self, path: Path, *, expected_rule_version: str | None = None) -> dict[str, Any]:
+        value = self._load_manifest_or_results(path, require_complete=True)
+        if value.get("identity_version") != FINDING_IDENTITY_VERSION:
+            raise ValueError(
+                "identity version mismatch: "
+                f"current={FINDING_IDENTITY_VERSION} baseline={value.get('identity_version')}"
+            )
+        if expected_rule_version is not None and value.get("rule_version") != expected_rule_version:
+            raise ValueError(
+                "rule version mismatch: "
+                f"current={expected_rule_version} baseline={value.get('rule_version')}"
+            )
+        return value
+
+    def _compare_manifests(self, current: dict[str, Any], baseline: dict[str, Any]) -> dict[str, Any]:
         self._validate_compatibility(current, baseline)
 
         current_scope = set(current.get("scope", {}).get("func_ids", []))
+        baseline_scope = set(baseline.get("scope", {}).get("func_ids", []))
         current_groups = self._group_records(current.get("findings", []))
         baseline_groups = self._group_records(baseline.get("findings", []))
         current_records = self._record_index(current.get("findings", []))
@@ -129,6 +176,7 @@ class BaselineReporter:
                 current_records,
                 baseline_records,
             )
+            function_delta["baseline_status"] = "existing" if func_id in baseline_scope else "new"
             functions[func_id] = function_delta
             summary["added"] += sum(item["count"] for item in function_delta["added"])
             summary["reclassified"] += sum(item["count"] for item in function_delta["reclassified"])
@@ -166,6 +214,19 @@ class BaselineReporter:
         if require_complete and not value.get("complete"):
             raise ValueError("baseline is incomplete; freeze it from a complete site report before comparison")
         return value
+
+    @staticmethod
+    def _results_from_values(values: Iterable[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+        results: dict[str, dict[str, Any]] = {}
+        for value in values:
+            static = value.get("static") if isinstance(value.get("static"), dict) else value
+            func_id = str(static.get("func_id", ""))
+            if not func_id:
+                raise ValueError("current Function result is missing func_id")
+            if func_id in results:
+                raise ValueError(f"duplicate static result for Function {func_id}")
+            results[func_id] = static
+        return results
 
     @staticmethod
     def _validate_compatibility(current: dict[str, Any], baseline: dict[str, Any]) -> None:
@@ -377,6 +438,7 @@ class BaselineReporter:
         errors = int(summary.get("errorCount", -1))
         return (
             str(site.get("sourceRevision", "")) == metadata["source_revision"]
+            and str(site.get("toolVersion", "")) == metadata["tool_version"]
             and str(site.get("ruleVersion", "")) == metadata["rule_version"]
             and registered == completed == result_count
             and errors == 0

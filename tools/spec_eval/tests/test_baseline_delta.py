@@ -161,6 +161,7 @@ class BaselineDeltaTest(unittest.TestCase):
         delta = self.reporter.compare(current_root, baseline_path)
         function = delta["functions"]["05-01-01"]
         self.assertEqual(delta["summary"], {"added": 1, "reclassified": 1, "resolved": 1, "unchanged": 1})
+        self.assertEqual(function["baseline_status"], "existing")
         self.assertEqual(function["unchanged"], 1)
         self.assertEqual(function["added"][0]["finding_id"], added["finding_id"])
         self.assertEqual(function["resolved"][0]["finding_id"], resolved["finding_id"])
@@ -170,6 +171,11 @@ class BaselineDeltaTest(unittest.TestCase):
 
         directory_delta = self.reporter.compare(current_root, baseline_root.parent)
         self.assertEqual(directory_delta["summary"], delta["summary"])
+
+        baseline_document = self.reporter.load_baseline(baseline_path, expected_rule_version="1.0.0")
+        current_document = json.loads((current_root / "05-01-01" / "static-result.json").read_text(encoding="utf-8"))
+        memory_delta = self.reporter.compare_results([current_document], baseline_document)
+        self.assertEqual(memory_delta["summary"], delta["summary"])
 
     def test_compare_rejects_rule_or_identity_version_mismatch(self) -> None:
         finding = self._finding("TRACE-AC-NO-VM-001", "AC is not linked", line=20, node_id="Feat-01/AC-1.1")
@@ -197,6 +203,15 @@ class BaselineDeltaTest(unittest.TestCase):
         current_root, _ = self._write_results("current", [finding])
         with self.assertRaisesRegex(ValueError, "baseline is incomplete"):
             self.reporter.compare(current_root, baseline_path)
+
+    def test_formal_baseline_rejects_site_report_from_another_tool_version(self) -> None:
+        finding = self._finding("TRACE-AC-NO-VM-001", "AC is not linked", line=20, node_id="Feat-01/AC-1.1")
+        baseline_root, site_report = self._write_results("baseline-tool-version", [finding], complete=True)
+        site = json.loads(site_report.read_text(encoding="utf-8"))
+        site["toolVersion"] = "9.9.9"
+        site_report.write_text(json.dumps(site), encoding="utf-8")
+        manifest = self.reporter.build_manifest(baseline_root, site_report)
+        self.assertFalse(manifest["complete"])
 
     def test_baseline_cli_writes_complete_manifest(self) -> None:
         finding = self._finding("TRACE-AC-NO-VM-001", "AC is not linked", line=20, node_id="Feat-01/AC-1.1")
@@ -259,6 +274,7 @@ class BaselineDeltaTest(unittest.TestCase):
         delta = self.reporter.compare(empty_other.parent, baseline_path)
         self.assertEqual(delta["scope"]["func_ids"], ["06-01-01"])
         self.assertEqual(delta["summary"]["resolved"], 0)
+        self.assertEqual(delta["functions"]["06-01-01"]["baseline_status"], "new")
 
     def test_16000_finding_compare_completes_within_30_seconds(self) -> None:
         findings = [

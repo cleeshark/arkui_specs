@@ -16,7 +16,7 @@ class EvaluationConfig:
     rules_root: Path
     schemas_root: Path
     output_root: Path
-    tool_version: str = "0.3.0"
+    tool_version: str = "0.4.0"
     rule_version: str = "0.2.16"
 
     @classmethod
