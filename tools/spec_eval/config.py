@@ -4,7 +4,23 @@ from __future__ import annotations
 
 import subprocess
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
+
+
+@lru_cache(maxsize=8)
+def _git_revision(repo_root: Path) -> str:
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=repo_root,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return "unknown"
+    return result.stdout.strip() or "unknown"
 
 @dataclass(frozen=True)
 class EvaluationConfig:
@@ -16,7 +32,7 @@ class EvaluationConfig:
     rules_root: Path
     schemas_root: Path
     output_root: Path
-    tool_version: str = "0.4.0"
+    tool_version: str = "0.5.0"
     rule_version: str = "0.2.16"
 
     @classmethod
@@ -37,17 +53,7 @@ class EvaluationConfig:
         )
 
     def git_revision(self) -> str:
-        try:
-            result = subprocess.run(
-                ["git", "rev-parse", "HEAD"],
-                cwd=self.repo_root,
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-        except (OSError, subprocess.CalledProcessError):
-            return "unknown"
-        return result.stdout.strip() or "unknown"
+        return _git_revision(self.repo_root.resolve())
 
     def repo_relative(self, path: Path) -> str:
         resolved = path.resolve()

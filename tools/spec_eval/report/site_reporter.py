@@ -25,6 +25,7 @@ class SiteReporter:
         rule_version: str,
         generated_at: str | None = None,
         report_only: bool = False,
+        performance: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         functions = [self._function(item) for item in sorted(scan_results, key=lambda value: value["func_id"])]
         gate_counts = Counter(item["gate"] for item in functions)
@@ -36,7 +37,7 @@ class SiteReporter:
 
         claim_count = sum(item["evidence"]["claimCount"] for item in functions)
         resolved_claim_count = sum(item["evidence"]["resolvedClaimCount"] for item in functions)
-        return {
+        result = {
             "schemaVersion": 1,
             "available": True,
             "mode": "report-only" if report_only else "enforce",
@@ -60,6 +61,11 @@ class SiteReporter:
             },
             "functions": functions,
         }
+        if performance:
+            result["performance"] = {
+                key: value for key, value in performance.items() if key != "functions"
+            }
+        return result
 
     def write(self, path: Path, value: dict[str, Any]) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)

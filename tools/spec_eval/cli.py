@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 from pathlib import Path
 
 if __package__ in (None, ""):
@@ -15,7 +16,7 @@ from spec_eval.config import EvaluationConfig
 from spec_eval.discovery import ChangedFunctionResolver, FunctionLocator
 from spec_eval.errors import SpecEvalError
 from spec_eval.orchestrator import EvaluationOrchestrator
-from spec_eval.report import BaselineReporter, SiteReporter
+from spec_eval.report import BaselineReporter, PerformanceReporter, SiteReporter
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -97,10 +98,28 @@ def main(argv: list[str] | None = None) -> int:
             value["cached"] = cached
             return emit(value, args, gate=result["static"]["gate"])
         if args.command == "scan":
+            scan_started = time.perf_counter()
             results = []
             report_results = []
             exit_gate = "pass"
-            for func_id in orchestrator.locator.all_func_ids():
+            func_ids = orchestrator.locator.all_func_ids()
+            prepare = getattr(orchestrator, "prepare", None)
+            fully_cached = False
+            cache_probe = getattr(orchestrator, "batch_is_fully_cached", None)
+            if not args.no_cache and callable(cache_probe):
+                fully_cached = cache_probe(func_ids, config.output_root)
+            preparation = (
+                {
+                    "total_ms": 0.0,
+                    "function_count": len(func_ids),
+                    "skipped": "all_results_cached",
+                    "source_index": {},
+                    "sdk_index": {},
+                }
+                if fully_cached
+                else prepare(func_ids) if callable(prepare) else {}
+            )
+            for func_id in func_ids:
                 context_value = {}
                 locate = getattr(orchestrator.locator, "locate", None)
                 if callable(locate):
@@ -114,7 +133,13 @@ def main(argv: list[str] | None = None) -> int:
                     )
                     result_gate = result["static"]["gate"]
                     results.append(
-                        {"func_id": func_id, "gate": result_gate, "cached": cached, "output_path": target.as_posix()}
+                        {
+                            "func_id": func_id,
+                            "gate": result_gate,
+                            "cached": cached,
+                            "output_path": target.as_posix(),
+                            "performance": _performance_for(orchestrator, func_id),
+                        }
                     )
                     report_results.append(
                         {
@@ -123,6 +148,7 @@ def main(argv: list[str] | None = None) -> int:
                             "result": result,
                             "cached": cached,
                             "output_path": target.as_posix(),
+                            "performance": _performance_for(orchestrator, func_id),
                         }
                     )
                     if result_gate == "fail":
@@ -133,26 +159,50 @@ def main(argv: list[str] | None = None) -> int:
                         {"func_id": func_id, "context": context_value, "error": str(error)}
                     )
                     exit_gate = "error"
-            revision_root = config.output_root / config.git_revision()
+            source_revision = config.git_revision()
+            revision_root = config.output_root / source_revision
             static_paths = list(revision_root.glob("*/static-result.json")) if revision_root.is_dir() else []
             summary = BaselineReporter().aggregate(static_paths)
             revision_root.mkdir(parents=True, exist_ok=True)
             (revision_root / "baseline-summary.json").write_text(
                 json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8"
             )
+            current_preparation = getattr(orchestrator, "preparation_metrics", None)
+            if not fully_cached and callable(current_preparation):
+                preparation = current_preparation()
+            performance_reporter = PerformanceReporter()
+            performance = performance_reporter.build(
+                (_performance_for(orchestrator, func_id) for func_id in func_ids),
+                source_revision=source_revision,
+                total_ms=(time.perf_counter() - scan_started) * 1000,
+                preparation=preparation,
+            )
             site_reporter = SiteReporter()
             site_report = site_reporter.build(
                 report_results,
-                source_revision=config.git_revision(),
+                source_revision=source_revision,
                 tool_version=config.tool_version,
                 rule_version=getattr(getattr(orchestrator, "rule_configuration", None), "version", config.rule_version),
                 report_only=args.report_only,
+                performance=performance,
             )
-            site_reporter.write_archive(config.output_root, config.git_revision(), site_report)
-            return emit({"functions": results}, args, gate="pass" if args.report_only else exit_gate)
+            site_reporter.write_archive(config.output_root, source_revision, site_report)
+            performance_reporter.write(revision_root / "performance-summary.json", performance)
+            return emit(
+                {"functions": results, "performance": performance},
+                args,
+                gate="pass" if args.report_only else exit_gate,
+            )
         if args.command == "changed":
             paths = [line.strip() for line in args.files_from.read_text(encoding="utf-8").splitlines() if line.strip()]
             contexts = ChangedFunctionResolver(orchestrator.locator).resolve(paths)
+            prepare_contexts = getattr(orchestrator, "prepare_contexts", None)
+            cached_contexts = False
+            cache_probe = getattr(orchestrator, "contexts_are_fully_cached", None)
+            if not args.no_cache and callable(cache_probe):
+                cached_contexts = cache_probe(contexts, config.output_root)
+            if not cached_contexts and callable(prepare_contexts):
+                prepare_contexts(contexts)
             results = []
             exit_gate = "pass"
             for context in contexts:
@@ -161,7 +211,13 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 result_gate = result["static"]["gate"]
                 results.append(
-                    {"func_id": context.func_id, "gate": result_gate, "cached": cached, "output_path": target.as_posix()}
+                    {
+                        "func_id": context.func_id,
+                        "gate": result_gate,
+                        "cached": cached,
+                        "output_path": target.as_posix(),
+                        "performance": _performance_for(orchestrator, context.func_id),
+                    }
                 )
                 if result_gate == "fail":
                     exit_gate = "fail"
@@ -191,6 +247,11 @@ def emit(value: dict, args, gate: str) -> int:
     if gate == "fail":
         return 1
     return 0
+
+
+def _performance_for(orchestrator, func_id: str) -> dict:
+    performance_for = getattr(orchestrator, "performance_for", None)
+    return performance_for(func_id) if callable(performance_for) else {}
 
 
 if __name__ == "__main__":

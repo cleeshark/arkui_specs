@@ -37,11 +37,21 @@ class Infra012To015Test(unittest.TestCase):
             self.assertTrue(second_cached)
             self.assertEqual(first["static"]["func_id"], "04-06-01")
             self.assertEqual(target, second_target)
-            for name in ("function-context.json", "static-result.json", "evidence-manifest.json", "report.md"):
+            for name in (
+                "function-context.json",
+                "static-result.json",
+                "evidence-manifest.json",
+                "performance.json",
+                "report.md",
+            ):
                 self.assertTrue((target / name).is_file(), name)
             static = json.loads((target / "static-result.json").read_text(encoding="utf-8"))
             self.assertIn(static["gate"], {"pass", "warn", "fail"})
             self.assertEqual(static["func_id"], "04-06-01")
+            performance = json.loads((target / "performance.json").read_text(encoding="utf-8"))
+            self.assertTrue(performance["cached"])
+            manifest = json.loads((target / "evidence-manifest.json").read_text(encoding="utf-8"))
+            self.assertIn("budget", manifest["archive"])
 
     def test_direct_cli_discover_is_runnable(self) -> None:
         result = subprocess.run(

@@ -7,6 +7,7 @@ import argparse
 import json
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -17,7 +18,7 @@ from spec_eval.config import EvaluationConfig
 from spec_eval.discovery import ChangedFunctionResolver
 from spec_eval.errors import SpecEvalError
 from spec_eval.orchestrator import EvaluationOrchestrator
-from spec_eval.report import BaselineReporter
+from spec_eval.report import BaselineReporter, PerformanceReporter
 from spec_eval.rules.delta_gate_engine import DeltaGateEngine
 
 
@@ -141,6 +142,7 @@ def _attach_delta(
 
 
 def run(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
+    run_started = time.perf_counter()
     if args.delta_enforce and args.baseline is None:
         raise ValueError("--delta-enforce requires --baseline")
     config = EvaluationConfig.discover(output_root=args.output)
@@ -156,6 +158,20 @@ def run(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         else None
     )
     contexts = ChangedFunctionResolver(orchestrator.locator).resolve(changed_files)
+    prepare_contexts = getattr(orchestrator, "prepare_contexts", None)
+    cache_probe = getattr(orchestrator, "contexts_are_fully_cached", None)
+    fully_cached = not args.no_cache and callable(cache_probe) and cache_probe(contexts, config.output_root)
+    preparation = (
+        {
+            "total_ms": 0.0,
+            "function_count": len(contexts),
+            "skipped": "all_results_cached",
+            "source_index": {},
+            "sdk_index": {},
+        }
+        if fully_cached
+        else prepare_contexts(contexts) if callable(prepare_contexts) else {}
+    )
     functions: list[dict[str, Any]] = []
     evaluated_results: dict[str, dict[str, Any]] = {}
     has_gate_failure = False
@@ -169,6 +185,7 @@ def run(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
                 use_cache=not args.no_cache,
             )
             item = _function_summary(context.func_id, result, cached, target, args.top)
+            item["performance"] = _performance_for(orchestrator, context.func_id)
             functions.append(item)
             evaluated_results[context.func_id] = result
             has_gate_failure = has_gate_failure or item["gate"] == "fail"
@@ -214,6 +231,17 @@ def run(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         "error_count": sum(1 for item in functions if item.get("gate") == "error"),
         "functions": functions,
     }
+    current_preparation = getattr(orchestrator, "preparation_metrics", None)
+    if not fully_cached and callable(current_preparation):
+        preparation = current_preparation()
+    performance_reporter = PerformanceReporter()
+    performance = performance_reporter.build(
+        (_performance_for(orchestrator, context.func_id) for context in contexts),
+        source_revision=config.git_revision(),
+        total_ms=(time.perf_counter() - run_started) * 1000,
+        preparation=preparation,
+    )
+    summary["performance"] = {key: value for key, value in performance.items() if key != "functions"}
     if baseline is not None:
         summary["baseline"] = {
             "path": args.baseline.as_posix(),
@@ -253,6 +281,9 @@ def run(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
     revision_root.mkdir(parents=True, exist_ok=True)
     summary_path = revision_root / "ci-summary.json"
     summary["summary_path"] = summary_path.as_posix()
+    performance["total_ms"] = round((time.perf_counter() - run_started) * 1000, 3)
+    summary["performance"]["total_ms"] = performance["total_ms"]
+    performance_reporter.write(revision_root / "performance-summary.json", performance)
     summary_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
     if has_evaluation_error:
@@ -282,6 +313,11 @@ def _emit(summary: dict[str, Any], args: argparse.Namespace) -> None:
         delta_text = f", delta={delta_gate}" if delta_gate else ""
         print(f"{item['func_id']}: absolute={item['gate']}{delta_text} ({item.get('finding_count', 0)} findings)")
     print(f"summary: {summary['summary_path']}")
+
+
+def _performance_for(orchestrator, func_id: str) -> dict[str, Any]:
+    performance_for = getattr(orchestrator, "performance_for", None)
+    return performance_for(func_id) if callable(performance_for) else {}
 
 
 def main(argv: list[str] | None = None) -> int:

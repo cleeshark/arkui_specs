@@ -35,7 +35,7 @@
 - Python 3.10 或兼容版本。
 - PyYAML。
 - Git，用于记录源码 revision 和计算变更文件。
-- ripgrep（`rg`），用于源码和 SDK 声明定位。
+- ripgrep（`rg`），用于一次性枚举源码和 SDK 声明文件并建立进程级索引。
 
 快速检查：
 
@@ -139,6 +139,15 @@ python3 specs/tools/spec_eval/cli.py \
 ```
 
 单个 Function 发生异常时，扫描会继续处理其他 Function，并在最终结果中将该 Function 标记为 `error`。全仓模式还会生成 `baseline-summary.json`。
+
+全仓扫描会先为源码 basename/suffix 和本批次涉及的 SDK API 建立只读进程级索引，随后由全部 Function 共享，不再为每条引用或每个 API 单独启动 `rg`。扫描结束后可在 `<output>/<revision>/performance-summary.json` 查看：
+
+- 全仓总耗时，以及 Function P50/P95/最大耗时。
+- parser、各 checker、证据构建和写盘等阶段累计耗时。
+- 源码与 SDK 索引的文件数、查询数、扫描字节数和建索引耗时。
+- 每个 Function 的阶段耗时和缓存命中状态。
+
+当 299 个 Function 全部命中精确输入缓存时，工具会跳过 Markdown 解析和 SDK/源码索引构建。
 
 生成可入库的全量报告归档：
 
@@ -308,10 +317,12 @@ python3 specs/tools/spec_eval/ci_runner.py \
 └── <git-revision>/
     ├── ci-summary.json
     ├── baseline-summary.json
+    ├── performance-summary.json
     └── <FuncID>/
         ├── function-context.json
         ├── static-result.json
         ├── evidence-manifest.json
+        ├── performance.json
         ├── report.md
         └── evidence/
             ├── Feat-01.json
@@ -327,10 +338,21 @@ python3 specs/tools/spec_eval/ci_runner.py \
 | `static-result.json` | Function 门禁、Findings、指标和追溯图 |
 | `evidence-manifest.json` | 证据分片清单和证据覆盖指标 |
 | `evidence/*.json` | 按 Feature/Design 切分的 Claim、源码和 SDK 证据 |
+| `performance.json` | 单 Function 的 parser/checker/证据/写盘阶段耗时 |
 | `report.md` | 面向人工阅读的 Function 静态评价报告 |
 | `ci-summary.json` | 变更影响Function的CI摘要 |
 | `baseline-summary.json` | 全仓Function门禁和规则命中分布 |
+| `performance-summary.json` | 全仓或CI批次的总耗时、P50/P95、阶段累计和索引指标 |
 | `evaluation/baselines/current.json` | 完整扫描冻结的稳定Finding身份与分类摘要 |
+
+### 6.1 证据归档预算
+
+为防止高频通用 SDK 标识符导致证据重复膨胀，工具执行以下限制：
+
+- 每个具体 API 最多归档 20 条代表性 canonical 声明；API 是否存在的判定不依赖归档条数。
+- 单条源码证据片段最多 12,000 个字符，文件哈希仍基于完整原文件。
+- 单个 evidence shard 预算为 2 MiB，单 Function 全部 shard 预算为 8 MiB。
+- 超限不会改变质量 Gate，但会在 `evidence-manifest.json.archive.warnings` 中输出明确告警。
 
 ## 7. 门禁和退出码
 
@@ -454,7 +476,7 @@ PYTHONPATH=specs/tools python3 -m compileall -q \
 - 引用是否使用仓库相对路径；如果提供行号，范围是否有效。
 - 被搜索文件是否包含非UTF-8内容。
 
-目前SDK搜索遇到非UTF-8输出时可能返回工具错误；超大Function也可能出现较长运行时间。CI应保留 `ci-summary.json`，并通过退出码 `2/3` 区分工具错误和普通质量问题。
+SDK索引和源码读取统一使用UTF-8替换模式处理不可解码字节。超大Function仍可能出现较长运行时间；CI应保留 `ci-summary.json` 和 `performance-summary.json`，并通过退出码 `2/3` 区分工具错误和普通质量问题。
 
 ### 历史Function全部或大量失败
 

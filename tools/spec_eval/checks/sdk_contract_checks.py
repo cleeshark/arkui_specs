@@ -29,9 +29,25 @@ class SdkContractChecker:
         "undefined", "null", "true", "false", "get", "set", "static", "const", "interface", "class",
     }
 
-    def __init__(self, config: EvaluationConfig) -> None:
+    def __init__(self, config: EvaluationConfig, reader: SdkReader | None = None) -> None:
         self.config = config
-        self.reader = SdkReader(config)
+        self.reader = reader or SdkReader(config)
+
+    def queries(self, documents: list[DocumentModel]) -> tuple[set[str], set[str]]:
+        """Return exact and suffix API queries needed by one document batch."""
+
+        exact: set[str] = set()
+        suffixes: set[str] = set()
+        for _, _, _, raw_api in self._api_rows(documents):
+            modules = self._non_concrete_modules(raw_api)
+            shorthand_markers = self.NON_CONCRETE_SHORTHAND_RE.findall(raw_api)
+            if modules or shorthand_markers or self.NON_CONCRETE_NATIVE_GROUP_RE.search(raw_api):
+                continue
+            names = self._api_names(raw_api)
+            exact.update(names)
+            if "/" in raw_api or "..." in raw_api:
+                suffixes.update(names)
+        return exact, suffixes
 
     def run(self, context: FunctionContext, documents: list[DocumentModel]) -> SdkContractResult:
         findings: list[Finding] = []

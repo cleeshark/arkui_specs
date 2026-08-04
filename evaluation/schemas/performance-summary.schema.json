@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "performance-summary.schema.json",
+  "title": "ArkUI Function Spec Evaluation Performance Summary",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "source_revision",
+    "total_ms",
+    "function_count",
+    "cached_function_count",
+    "function_duration_ms",
+    "phase_totals_ms",
+    "preparation",
+    "functions"
+  ],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "source_revision": { "type": "string" },
+    "total_ms": { "type": "number", "minimum": 0 },
+    "function_count": { "type": "integer", "minimum": 0 },
+    "cached_function_count": { "type": "integer", "minimum": 0 },
+    "function_duration_ms": {
+      "type": "object",
+      "required": ["p50", "p95", "max"],
+      "properties": {
+        "p50": { "type": "number", "minimum": 0 },
+        "p95": { "type": "number", "minimum": 0 },
+        "max": { "type": "number", "minimum": 0 }
+      }
+    },
+    "phase_totals_ms": { "type": "object", "additionalProperties": { "type": "number" } },
+    "preparation": { "type": "object" },
+    "functions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["schema_version", "func_id", "cached", "total_ms", "phases_ms"],
+        "properties": {
+          "schema_version": { "type": "integer", "const": 1 },
+          "func_id": { "type": "string" },
+          "cached": { "type": "boolean" },
+          "total_ms": { "type": "number", "minimum": 0 },
+          "phases_ms": { "type": "object", "additionalProperties": { "type": "number" } }
+        }
+      }
+    }
+  }
+}

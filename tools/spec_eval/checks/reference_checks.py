@@ -22,10 +22,10 @@ class ReferenceResult:
 
 
 class ReferenceChecker:
-    def __init__(self, config: EvaluationConfig) -> None:
+    def __init__(self, config: EvaluationConfig, reader: SourceReader | None = None) -> None:
         self.config = config
         self.parser = CitationParser()
-        self.reader = SourceReader(config)
+        self.reader = reader or SourceReader(config)
 
     def run(self, context: FunctionContext, documents: list[DocumentModel]) -> ReferenceResult:
         findings: list[Finding] = []

@@ -29,6 +29,7 @@
     "delta_warn_count": { "type": "integer", "minimum": 0 },
     "new_function_count": { "type": "integer", "minimum": 0 },
     "error_count": { "type": "integer", "minimum": 0 },
+    "performance": { "type": "object" },
     "baseline": {
       "type": "object",
       "required": ["path", "source_revision", "identity_version", "rule_version"],
@@ -66,7 +67,8 @@
           "top_added_findings": { "type": "array" },
           "top_resolved_findings": { "type": "array" },
           "top_reclassified_findings": { "type": "array" },
-          "delta_reasons": { "type": "array", "items": { "$ref": "#/$defs/reason" } }
+          "delta_reasons": { "type": "array", "items": { "$ref": "#/$defs/reason" } },
+          "performance": { "type": "object" }
         }
       }
     },

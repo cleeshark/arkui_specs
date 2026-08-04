@@ -3,19 +3,47 @@
 from __future__ import annotations
 
 import hashlib
-import subprocess
+from collections import OrderedDict
 from pathlib import Path
 
 from spec_eval.config import EvaluationConfig
+from spec_eval.evidence.repository_index import RepositoryFileIndex
 
 
 class SourceReader:
     SDK_DECLARATION_SUFFIXES = (".static.d.ets", ".d.ets", ".d.ts")
+    DEFAULT_CONTENT_CACHE_BYTES = 64 * 1024 * 1024
+    MAX_SNIPPET_CHARS = 12_000
 
-    def __init__(self, config: EvaluationConfig) -> None:
+    def __init__(
+        self,
+        config: EvaluationConfig,
+        file_index: RepositoryFileIndex | None = None,
+        content_cache_bytes: int = DEFAULT_CONTENT_CACHE_BYTES,
+    ) -> None:
         self.config = config
+        self.file_index = file_index or RepositoryFileIndex(config)
         self._basename_cache: dict[str, tuple[Path | None, str]] = {}
         self._suffix_cache: dict[str, tuple[Path | None, str]] = {}
+        self._content_cache: OrderedDict[Path, tuple[tuple[str, ...], str, int]] = OrderedDict()
+        self._content_cache_bytes = 0
+        self._content_cache_limit = max(content_cache_bytes, 0)
+        self._cache_hits = 0
+        self._cache_misses = 0
+        self._snippet_truncations = 0
+
+    def prepare(self) -> dict[str, int | float]:
+        return self.file_index.prepare()
+
+    def stats(self) -> dict[str, int | float]:
+        return {
+            **self.file_index.stats(),
+            "content_cache_hits": self._cache_hits,
+            "content_cache_misses": self._cache_misses,
+            "content_cache_bytes": self._content_cache_bytes,
+            "content_cache_limit_bytes": self._content_cache_limit,
+            "snippet_truncation_count": self._snippet_truncations,
+        }
 
     def resolve(self, raw_path: str, document_directory: Path) -> tuple[Path | None, str]:
         normalized = raw_path.strip().strip("`'")
@@ -50,35 +78,12 @@ class SourceReader:
     def _resolve_basename(self, name: str) -> tuple[Path | None, str]:
         if name in self._basename_cache:
             return self._basename_cache[name]
-        search_roots = [self.config.repo_root]
-        sdk_root = self.config.oh_root / "interface" / "sdk-js"
-        if self.is_sdk_declaration_basename(name) and sdk_root.is_dir():
-            search_roots.append(sdk_root)
-        matches: set[Path] = set()
-        try:
-            for search_root in search_roots:
-                command = ["rg", "--files", "--hidden", "--no-ignore-vcs", "-g", name]
-                if search_root == sdk_root:
-                    command.extend(["-g", "!zh-cn/**"])
-                result = subprocess.run(
-                    command,
-                    cwd=search_root,
-                    check=False,
-                    capture_output=True,
-                    text=True,
-                )
-                matches.update(
-                    path.resolve()
-                    for line in result.stdout.splitlines()
-                    if line.strip()
-                    for path in (search_root / line,)
-                    if path.is_file()
-                )
-        except OSError:
-            self._basename_cache[name] = (None, "missing")
-            return self._basename_cache[name]
+        matches = self.file_index.basename_matches(
+            name,
+            include_sdk=self.is_sdk_declaration_basename(name),
+        )
         if len(matches) == 1:
-            value = (next(iter(matches)), "resolved")
+            value = (matches[0], "resolved")
         elif len(matches) > 1:
             value = (None, "ambiguous")
         else:
@@ -89,29 +94,9 @@ class SourceReader:
     def _resolve_suffix(self, suffix: str) -> tuple[Path | None, str]:
         if suffix in self._suffix_cache:
             return self._suffix_cache[suffix]
-        name = Path(suffix).name
-        matches: set[Path] = set()
-        try:
-            command = ["rg", "--files", "--hidden", "--no-ignore-vcs", "-g", name]
-            result = subprocess.run(
-                command,
-                cwd=self.config.repo_root,
-                check=False,
-                capture_output=True,
-                text=True,
-            )
-            matches.update(
-                path.resolve()
-                for line in result.stdout.splitlines()
-                if line.strip()
-                for path in (self.config.repo_root / line,)
-                if path.is_file() and path.as_posix().endswith(suffix)
-            )
-        except OSError:
-            self._suffix_cache[suffix] = (None, "missing")
-            return self._suffix_cache[suffix]
+        matches = self.file_index.suffix_matches(suffix)
         if len(matches) == 1:
-            value = (next(iter(matches)), "resolved")
+            value = (matches[0], "resolved")
         elif len(matches) > 1:
             value = (None, "ambiguous")
         else:
@@ -126,9 +111,7 @@ class SourceReader:
     def read_ranges(
         self, path: Path, ranges: tuple[tuple[int, int], ...]
     ) -> tuple[str, str, tuple[tuple[int, int], ...]]:
-        raw = path.read_bytes()
-        digest = hashlib.sha256(raw).hexdigest()
-        lines = raw.decode("utf-8", errors="replace").splitlines()
+        lines, digest = self._read_file(path)
         if not ranges:
             return "", digest, tuple()
         chunks: list[str] = []
@@ -138,7 +121,32 @@ class SourceReader:
                 invalid.append((start, end))
                 continue
             chunks.append("\n".join(f"{line_no}: {lines[line_no - 1]}" for line_no in range(start, end + 1)))
-        return "\n...\n".join(chunks), digest, tuple(invalid)
+        content = "\n...\n".join(chunks)
+        if len(content) > self.MAX_SNIPPET_CHARS:
+            self._snippet_truncations += 1
+            marker = "\n[truncated by spec_eval evidence budget]"
+            content = content[: self.MAX_SNIPPET_CHARS - len(marker)] + marker
+        return content, digest, tuple(invalid)
+
+    def _read_file(self, path: Path) -> tuple[tuple[str, ...], str]:
+        normalized = path.resolve()
+        cached = self._content_cache.get(normalized)
+        if cached is not None:
+            self._cache_hits += 1
+            self._content_cache.move_to_end(normalized)
+            return cached[0], cached[1]
+        self._cache_misses += 1
+        raw = normalized.read_bytes()
+        digest = hashlib.sha256(raw).hexdigest()
+        lines = tuple(raw.decode("utf-8", errors="replace").splitlines())
+        size = len(raw)
+        if self._content_cache_limit and size <= self._content_cache_limit:
+            while self._content_cache and self._content_cache_bytes + size > self._content_cache_limit:
+                _, (_, _, removed_size) = self._content_cache.popitem(last=False)
+                self._content_cache_bytes -= removed_size
+            self._content_cache[normalized] = (lines, digest, size)
+            self._content_cache_bytes += size
+        return lines, digest
 
     def is_disallowed(self, path: Path) -> bool:
         parts = set(path.parts)
