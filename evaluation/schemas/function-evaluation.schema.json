@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "function-evaluation.schema.json",
+  "title": "ArkUI Function Reference Evaluation",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "evaluation_version",
+    "evaluation_id",
+    "func_id",
+    "input_fingerprint",
+    "source_revision",
+    "status",
+    "evaluator",
+    "semantic_result",
+    "scores",
+    "confirmation",
+    "notes"
+  ],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "evaluation_version": { "type": "string", "const": "0.1.0" },
+    "evaluation_id": { "type": "string", "pattern": "^EVAL-[0-9]{2}-[0-9]{2}-[0-9]{2}$" },
+    "func_id": { "type": "string", "pattern": "^[0-9]{2}-[0-9]{2}-[0-9]{2}$" },
+    "input_fingerprint": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "source_revision": { "type": "string", "minLength": 7 },
+    "status": { "type": "string", "enum": ["draft", "confirmed", "superseded"] },
+    "evaluator": {
+      "type": "object",
+      "required": ["evaluator_id", "evaluated_at"],
+      "properties": {
+        "evaluator_id": { "type": "string", "minLength": 1 },
+        "evaluated_at": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "semantic_result": { "$ref": "semantic-result.schema.json" },
+    "scores": {
+      "type": "object",
+      "required": ["dimensions", "raw_score", "published_score", "confidence", "admission"],
+      "properties": {
+        "dimensions": {
+          "type": "object",
+          "required": [
+            "correctness",
+            "spec_executability",
+            "design_quality",
+            "compatibility_system_impact",
+            "maintainability"
+          ],
+          "properties": {
+            "correctness": { "type": ["number", "null"], "minimum": 0, "maximum": 30 },
+            "spec_executability": { "type": ["number", "null"], "minimum": 0, "maximum": 25 },
+            "design_quality": { "type": ["number", "null"], "minimum": 0, "maximum": 25 },
+            "compatibility_system_impact": { "type": ["number", "null"], "minimum": 0, "maximum": 10 },
+            "maintainability": { "type": ["number", "null"], "minimum": 0, "maximum": 10 }
+          },
+          "additionalProperties": false
+        },
+        "raw_score": { "type": ["number", "null"], "minimum": 0, "maximum": 100 },
+        "published_score": { "type": ["number", "null"], "minimum": 0, "maximum": 100 },
+        "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "admission": { "type": "string", "enum": ["NOT_READY", "BASELINED", "HIGH_QUALITY"] }
+      },
+      "additionalProperties": false
+    },
+    "confirmation": {
+      "type": "object",
+      "required": ["confirmed_by", "confirmed_at", "conclusion", "notes"],
+      "properties": {
+        "confirmed_by": { "type": ["string", "null"] },
+        "confirmed_at": { "type": ["string", "null"] },
+        "conclusion": { "type": "string", "enum": ["pending", "accepted", "rejected"] },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    },
+    "notes": { "type": "array", "items": { "type": "string" } }
+  },
+  "additionalProperties": false
+}

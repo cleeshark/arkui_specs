@@ -24,7 +24,7 @@
 - N/A、兼容性、设备差异和系统影响结论是否成立。
 - 完整五维语义质量评分。
 
-这些判断由后续评价 Skill 消费本工具生成的证据包完成。静态工具不会自动修改任何 spec、design 或 registry 文件。
+这些判断由后续评价 Skill 消费本工具生成的证据包完成。NEXT-005 已经冻结候选版机器协议，但尚未实现评价 Skill 和实际聚合器，因此当前 `check`、`evidence`、`scan` 仍不输出语义总分。静态工具不会自动修改任何 spec、design 或 registry 文件。
 
 ## 2. 环境要求
 
@@ -390,12 +390,75 @@ CI脚本中，执行不完整的优先级高于质量门禁失败，不会因为
 | `sdk_rules.yaml` | SDK声明定位配置 |
 | `exemptions.yaml` | 带Owner、原因和到期时间的临时豁免 |
 | `rule_applicability.yaml` | 活跃静态规则的适用性、前置条件、抑制条件和推荐Gate |
-| `schemas/` | Function Context、静态结果、证据、报告和Baseline JSON Schema |
+| `rubric.yaml` | Rubric v0.1候选版：五维权重、扣分、封顶、置信度和准入规则 |
+| `complexity_rules.yaml` | Feature复杂度归一和Function级聚合、评审深度及N/A资格 |
+| `schemas/` | Function Context、静态结果、证据、报告、Baseline和单Function评价JSON Schema |
 | `baselines/current.json` | 当前可比较的完整Finding存量基线 |
-| `golden/manifest.yaml` | 真实Function Golden样本及确定性预期 |
+| `golden/manifest.yaml` | 参考评价Pilot、冻结revision和Function输入指纹 |
 | `golden/static_expectations.yaml` | Top 10 Rule的30个跨域校准样本和精确Finding计数 |
+| `reviews/<func_id>.yaml` | 每个Function唯一的待评价或已确认参考评价 |
 
 临时方案和任务拆分位于 [`specs/.evaluator`](../../.evaluator/)；它们不属于正式 Feature/Design 基线。
+
+### 8.1 校验 Rubric v0.1 协议
+
+协议校验不依赖第三方 `jsonschema` 包。仓内校验器会同时检查：
+
+- 五个维度权重总和、维度内Criterion满分和稳定ID唯一性。
+- 六种语义结论、每种结论的扣分上限和Critical/Major证据要求。
+- N/A允许条件、最低可评价比例和`NOT_VERIFIABLE`保护。
+- Critical/Major/Minor发布分封顶与静态Gate优先级。
+- 四项置信度权重、工具完整性和准入阈值。
+- Rubric、复杂度规则、Evaluator/Aggregator协议和JSON Schema版本一致性。
+
+执行：
+
+```bash
+PYTHONPATH=specs/tools python3 -m spec_eval.protocol_validator \
+  --evaluation-root specs/evaluation
+```
+
+当前协议状态为`candidate`。工程字段已经版本化并由自动化测试保护；当前Pilot采用单次评价、一次确认的入库方式。修改权重、扣分、门禁封顶或结论语义时必须提升Rubric版本，不能在`0.1.0`下静默改变含义。
+
+五维固定权重：
+
+| 维度 | 满分 |
+|---|---:|
+| 事实正确性与证据 | 30 |
+| Spec可执行性 | 25 |
+| Design设计质量 | 25 |
+| 兼容性与系统影响 | 10 |
+| 可维护性 | 10 |
+
+发布分使用最严格未豁免问题封顶：Critical最高39分、Major最高59分、Minor最高79分、无Gate问题最高100分。语义评价只能增加问题，不能删除静态Finding或把静态Gate降级。
+
+### 8.2 单Function参考评价
+
+NEXT-006使用12个已确认Function作为Pilot。样本、输入revision和Function指纹位于`evaluation/golden/manifest.yaml`；每个Function只在`evaluation/reviews/`保留一份当前评价文件。
+
+校验Pilot覆盖和输入是否漂移：
+
+```bash
+PYTHONPATH=specs/tools python3 -m spec_eval.evaluation_validator
+```
+
+生成单个待评价草稿：
+
+```bash
+PYTHONPATH=specs/tools python3 -m spec_eval.evaluation_validator \
+  --template 03-07-01 \
+  --evaluator-id sunfei2021 \
+  > specs/evaluation/reviews/03-07-01.yaml
+```
+
+校验单份评价：
+
+```bash
+PYTHONPATH=specs/tools python3 -m spec_eval.evaluation_validator \
+  --evaluation specs/evaluation/reviews/03-07-01.yaml
+```
+
+草稿允许18项Criterion暂时为`NOT_VERIFIABLE`且分数为`null`。确认入库前必须完成真实结论、证据和精确分数，并记录一次`accepted`确认。静态信号分层仅用于选样，不能代替质量等级。
 
 规则修改后除普通单测外，还必须运行：
 
@@ -435,11 +498,25 @@ PYTHONPATH=specs/tools python3 -m unittest discover \
   -s specs/tools/spec_eval/tests -v
 ```
 
-运行新增的Golden、Mutation和CI测试：
+运行新增的参考评价、Mutation和CI测试：
 
 ```bash
 PYTHONPATH=specs/tools python3 -m unittest \
   specs.tools.spec_eval.tests.test_infra_016_017 -v
+```
+
+运行Rubric和语义协议边界测试：
+
+```bash
+PYTHONPATH=specs/tools python3 -m unittest \
+  specs.tools.spec_eval.tests.test_next_005_protocol -v
+```
+
+运行Function输入冻结和单次评价确认协议测试：
+
+```bash
+PYTHONPATH=specs/tools python3 -m unittest \
+  specs.tools.spec_eval.tests.test_next_006_evaluation -v
 ```
 
 执行语法检查：
@@ -498,7 +575,9 @@ spec_eval/
 ├── rules/         # 规则加载、严重度和门禁聚合
 ├── report/        # JSON、Markdown和基线报告
 ├── cache/         # Function输入指纹和结果缓存
-├── tests/         # 单元、Fixture、Golden、Mutation和CI测试
+├── tests/         # 单元、Fixture、参考评价、Mutation和CI测试
+├── protocol_validator.py  # Rubric、复杂度、Schema和结果跨字段校验
+├── evaluation_validator.py # Function输入指纹、评价模板和单次确认校验
 ├── cli.py         # 本地和全仓统一入口
 └── ci_runner.py   # 变更Function的CI入口
 ```
@@ -509,4 +588,4 @@ spec_eval/
 - Finding必须包含稳定规则ID、严重度、路径、行号和FuncID。
 - Feature内部ID必须以FeatID作为Function级命名空间。
 - 不直接修改spec、design、registry或生产源码。
-- 新规则必须补充正反例、Mutation或Golden测试。
+- 新规则必须补充正反例、Mutation或参考样本测试。

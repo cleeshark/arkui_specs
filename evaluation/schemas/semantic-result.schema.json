@@ -1,0 +1,228 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "semantic-result.schema.json",
+  "title": "ArkUI Function Semantic Evaluation Result",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "rubric_version",
+    "complexity_rules_version",
+    "evaluator_protocol_version",
+    "evaluator_version",
+    "func_id",
+    "source_revision",
+    "run_id",
+    "complexity",
+    "criterion_results",
+    "coverage",
+    "execution"
+  ],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "rubric_version": { "type": "string", "const": "0.1.0" },
+    "complexity_rules_version": { "type": "string", "const": "0.1.0" },
+    "evaluator_protocol_version": { "type": "string", "const": "0.1.0" },
+    "evaluator_version": { "type": "string", "minLength": 1 },
+    "func_id": { "type": "string", "pattern": "^[0-9]{2}-[0-9]{2}-[0-9]{2}$" },
+    "source_revision": { "type": "string", "minLength": 1 },
+    "run_id": { "type": "string", "minLength": 1 },
+    "complexity": {
+      "type": "object",
+      "required": ["function_level", "raw_feature_values", "normalized_feature_levels", "normalization_findings"],
+      "properties": {
+        "function_level": { "type": "string", "enum": ["simple", "standard", "complex", "critical"] },
+        "raw_feature_values": {
+          "type": "object",
+          "additionalProperties": { "type": ["string", "null"] }
+        },
+        "normalized_feature_levels": {
+          "type": "object",
+          "additionalProperties": { "type": "string", "enum": ["simple", "standard", "complex", "critical"] }
+        },
+        "normalization_findings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/semantic_finding" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "criterion_results": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/criterion_result" }
+    },
+    "coverage": {
+      "type": "object",
+      "required": [
+        "expected_criteria",
+        "evaluated_criteria",
+        "applicable_criteria",
+        "not_applicable_criteria",
+        "not_verifiable_criteria"
+      ],
+      "properties": {
+        "expected_criteria": { "type": "integer", "minimum": 1 },
+        "evaluated_criteria": { "type": "integer", "minimum": 0 },
+        "applicable_criteria": { "type": "integer", "minimum": 0 },
+        "not_applicable_criteria": { "type": "integer", "minimum": 0 },
+        "not_verifiable_criteria": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "execution": {
+      "type": "object",
+      "required": ["static_complete", "evidence_complete", "semantic_complete"],
+      "properties": {
+        "static_complete": { "type": "boolean" },
+        "evidence_complete": { "type": "boolean" },
+        "semantic_complete": { "type": "boolean" },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "evidence": {
+      "type": "object",
+      "required": ["evidence_id", "type", "path", "source_revision", "content_hash", "description"],
+      "properties": {
+        "evidence_id": { "type": "string", "pattern": "^EV-[A-Za-z0-9._-]+$" },
+        "type": {
+          "type": "string",
+          "enum": [
+            "source_citation",
+            "sdk_declaration",
+            "spec_location",
+            "design_location",
+            "static_finding",
+            "registry_entry",
+            "test_evidence",
+            "review_record"
+          ]
+        },
+        "path": { "type": "string", "minLength": 1 },
+        "line_start": { "type": "integer", "minimum": 1 },
+        "line_end": { "type": "integer", "minimum": 1 },
+        "source_revision": { "type": "string", "minLength": 1 },
+        "content_hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "claim_id": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "semantic_finding": {
+      "type": "object",
+      "required": [
+        "finding_id",
+        "criterion_id",
+        "severity",
+        "conclusion",
+        "message",
+        "recommendation",
+        "evidence_ids"
+      ],
+      "properties": {
+        "finding_id": { "type": "string", "pattern": "^SEM-[0-9a-f]{24}$" },
+        "criterion_id": { "type": "string", "pattern": "^[A-Z][A-Z0-9-]+$" },
+        "claim_id": { "type": "string", "minLength": 1 },
+        "severity": { "type": "string", "enum": ["Info", "Minor", "Major", "Critical"] },
+        "conclusion": {
+          "type": "string",
+          "enum": ["PARTIALLY_SUPPORTED", "CONTRADICTED", "MISSING", "NOT_VERIFIABLE"]
+        },
+        "message": { "type": "string", "minLength": 1 },
+        "recommendation": { "type": "string", "minLength": 1 },
+        "evidence_ids": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^EV-[A-Za-z0-9._-]+$" },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": { "severity": { "enum": ["Major", "Critical"] } },
+            "required": ["severity"]
+          },
+          "then": { "properties": { "evidence_ids": { "minItems": 1 } } }
+        }
+      ]
+    },
+    "criterion_result": {
+      "type": "object",
+      "required": [
+        "criterion_id",
+        "dimension_id",
+        "applicability",
+        "conclusion",
+        "reason",
+        "evidence",
+        "findings"
+      ],
+      "properties": {
+        "criterion_id": { "type": "string", "pattern": "^[A-Z][A-Z0-9-]+$" },
+        "dimension_id": { "type": "string", "pattern": "^[a-z][a-z0-9_]+$" },
+        "applicability": { "type": "string", "enum": ["APPLICABLE", "NOT_APPLICABLE"] },
+        "conclusion": {
+          "type": "string",
+          "enum": [
+            "SUPPORTED",
+            "PARTIALLY_SUPPORTED",
+            "CONTRADICTED",
+            "MISSING",
+            "NOT_APPLICABLE",
+            "NOT_VERIFIABLE"
+          ]
+        },
+        "reason": { "type": "string", "minLength": 1 },
+        "applicability_reason": { "type": "string", "minLength": 1 },
+        "missing_evidence": { "type": "string", "minLength": 1 },
+        "claim_ids": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "evidence": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidence" }
+        },
+        "findings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/semantic_finding" }
+        }
+      },
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": { "conclusion": { "const": "NOT_APPLICABLE" } },
+            "required": ["conclusion"]
+          },
+          "then": {
+            "required": ["applicability_reason"],
+            "properties": {
+              "applicability": { "const": "NOT_APPLICABLE" },
+              "evidence": { "minItems": 1 }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": { "conclusion": { "const": "NOT_VERIFIABLE" } },
+            "required": ["conclusion"]
+          },
+          "then": { "required": ["missing_evidence"] }
+        },
+        {
+          "if": {
+            "properties": { "applicability": { "const": "APPLICABLE" } },
+            "required": ["applicability"]
+          },
+          "then": { "properties": { "conclusion": { "not": { "const": "NOT_APPLICABLE" } } } }
+        }
+      ]
+    }
+  },
+  "additionalProperties": false
+}

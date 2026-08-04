@@ -1,9 +1,32 @@
-version: 1
-status: provisional
+schema_version: 1
+evaluation_set_version: 0.1.0
+status: ready
 description: >-
-  Function-level deterministic evaluator golden set. Expectations cover stable,
-  mechanically verifiable findings only; semantic quality remains outside this
-  manifest until expert calibration is complete.
+  Function-level reference evaluation Pilot. The existing functions section
+  remains the static regression subset. Each pilot Function has one pending
+  evaluation record; static signal strata are sampling proxies rather than
+  final quality labels.
+
+protocol:
+  rubric_version: 0.1.0
+  complexity_rules_version: 0.1.0
+
+revisions:
+  ace_engine: d91b4e4990a990da2bfe809514e573e35852193e
+  specs: ca45d1f90c271fa7e58f9eb3eebb04a595e8b9ae
+  sdk_js: 224c0c10fde3910a473455eac6841614a162ce39
+  sdk_c: 62b5e3d0e63c2edd7e9073fece7a162b172f4ee4
+  static_snapshot: specs/.evaluator/site-report.json
+
+confirmation:
+  confirmed_by: sunfei2021
+  confirmed_at: '2026-08-04'
+
+selection_requirements:
+  pilot_size: 12
+  minimum_l1_domains: 6
+  required_complexities: [simple, standard, complex, critical]
+  required_scenarios: [public_api, ndk, component, framework, cross_platform]
 
 functions:
   - func_id: 05-03-10
@@ -28,3 +51,148 @@ functions:
     expected_rule_ids:
       - REF-LINE-RANGE-001
       - TRACE-RANGE-ID-001
+
+pilot_functions:
+  - func_id: 01-01-01
+    title: 编译构建
+    l1: {id: '01', title: 架构通用设计}
+    path: specs/01-architecture/01-architecture-design/01-build-system
+    feature_count: 1
+    complexity: complex
+    selection_stratum: low_static_signal
+    scenario_tags: [architecture, build_system, framework]
+    static_snapshot: {finding_count: 21, evidence_coverage: 0.2826086956521739}
+    input_fingerprint: sha256:970313b314c55fd8392ec16980b6b9c5b7cef094a51db9a08f24e9a83108c24e
+    selection_rationale: 覆盖架构与BUILD.gn证据判断，单Feature且静态问题量较低。
+
+  - func_id: 02-01-04
+    title: 预览器平台适配
+    l1: {id: '02', title: 跨平台适配层}
+    path: specs/02-cross-platform/01-platform-adapter/04-previewer-platform-adapter
+    feature_count: 3
+    complexity: complex
+    selection_stratum: mixed_static_signal
+    scenario_tags: [cross_platform, previewer, sdk_packaging, build_system]
+    static_snapshot: {finding_count: 24, evidence_coverage: 0.05555555555555555}
+    input_fingerprint: sha256:de5fd7ca5acdf60dada61f770388aafb2164c1869955acfb18ab916cc3e5300c
+    selection_rationale: 覆盖跨平台运行入口、服务替身与SDK资源打包的多Feature设计。
+
+  - func_id: 02-02-01
+    title: Rosen渲染后端对接
+    l1: {id: '02', title: 跨平台适配层}
+    path: specs/02-cross-platform/02-render-backend-adapter/01-rosen-render-backend-adapter
+    feature_count: 3
+    complexity: critical
+    selection_stratum: high_static_signal
+    scenario_tags: [cross_platform, rendering_backend, framework, external_dependency]
+    static_snapshot: {finding_count: 68, evidence_coverage: 0.0}
+    input_fingerprint: sha256:ba69e74956a53164e12d81a41c8bd8e73d38bec3b153f7f81b967676c38ddda8
+    selection_rationale: 覆盖critical复杂度、外部渲染依赖和零证据覆盖的高风险样本。
+
+  - func_id: 03-02-08
+    title: 路径动画
+    l1: {id: '03', title: 引擎框架层}
+    path: specs/03-engine-framework/02-animation-capability/08-motion-path
+    feature_count: 1
+    complexity: standard
+    selection_stratum: mixed_static_signal
+    scenario_tags: [framework, public_api, animation]
+    static_snapshot: {finding_count: 29, evidence_coverage: 0.4166666666666667}
+    input_fingerprint: sha256:4b7df0c4b1b92ce8bf9d7376eb1d564cb77dfc9e0b368928fae1c9dd39bea218
+    selection_rationale: 覆盖标准复杂度、动画公开能力和较高证据覆盖的单Feature样本。
+
+  - func_id: 03-07-01
+    title: 无障碍能力
+    l1: {id: '03', title: 引擎框架层}
+    path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability
+    feature_count: 7
+    complexity: complex
+    selection_stratum: high_static_signal
+    scenario_tags: [framework, public_api, ndk, accessibility, cross_process, multi_version]
+    static_snapshot: {finding_count: 82, evidence_coverage: 0.03389830508474576}
+    input_fingerprint: sha256:9fd175b89cc0dae9e750c56befa36fe761ed47aae72f6a0f7b07d999ce2913f8
+    selection_rationale: 覆盖NDK Provider、跨进程、API多版本和七Feature共享Design。
+
+  - func_id: 04-04-01
+    title: 触摸事件
+    l1: {id: '04', title: 通用能力层}
+    path: specs/04-common-capability/04-common-events/01-touch-events
+    feature_count: 3
+    complexity: complex
+    selection_stratum: high_static_signal
+    scenario_tags: [public_api, input_event, multi_touch, component]
+    static_snapshot: {finding_count: 242, evidence_coverage: 0.12195121951219512}
+    input_fingerprint: sha256:a61b5f16cc2b564c9a29e388923b68cc599084e3df82457beec921c0166331f2
+    selection_rationale: 覆盖公开触摸API、多点与历史采样，同时包含较高静态问题量。
+
+  - func_id: 04-20-01
+    title: MediaQuery
+    l1: {id: '04', title: 通用能力层}
+    path: specs/04-common-capability/20-media-query/01-media-query
+    feature_count: 1
+    complexity: standard
+    selection_stratum: low_static_signal
+    scenario_tags: [public_api, framework, lifecycle]
+    static_snapshot: {finding_count: 8, evidence_coverage: 0.3225806451612903}
+    input_fingerprint: sha256:76002577be45450ef73135224703ef8fa84a24f128e3cbd43f74248c149110e0
+    selection_rationale: 作为较低静态问题量的Public API与监听生命周期对照样本。
+
+  - func_id: 05-01-02
+    title: Divider
+    l1: {id: '05', title: 组件层}
+    path: specs/05-ui-components/01-layout-components/02-divider
+    feature_count: 1
+    complexity: simple
+    selection_stratum: low_static_signal
+    scenario_tags: [component, layout, public_api]
+    static_snapshot: {finding_count: 5, evidence_coverage: 0.203125}
+    input_fingerprint: sha256:45b792f873138bf2593726671986b1d9fe46aca55c239dfb4d6fc0dcf5865929
+    selection_rationale: 唯一simple样本，用于校准轻量组件是否被过度评价。
+
+  - func_id: 05-03-10
+    title: WaterFlow/FlowItem
+    l1: {id: '05', title: 组件层}
+    path: specs/05-ui-components/03-scroll-container-components/10-water-flow-flow-item
+    feature_count: 6
+    complexity: critical
+    selection_stratum: mixed_static_signal
+    scenario_tags: [component, scrolling, layout_algorithm, lazy_loading, performance]
+    static_snapshot: {finding_count: 68, evidence_coverage: 0.07174887892376682}
+    input_fingerprint: sha256:ba4c06d1495fb82422b9e61a30684393ce9eae63f60a8bc66e217c2e9b2c32a2
+    selection_rationale: 覆盖两套布局算法、缓存懒加载和六Feature的critical组件样本。
+
+  - func_id: 05-09-02
+    title: RichEditor
+    l1: {id: '05', title: 组件层}
+    path: specs/05-ui-components/09-text-components/02-rich-editor
+    feature_count: 9
+    complexity: complex
+    selection_stratum: high_static_signal
+    scenario_tags: [component, public_api, text_editing, ime, clipboard, multi_feature]
+    static_snapshot: {finding_count: 340, evidence_coverage: 0.6741293532338308}
+    input_fingerprint: sha256:1d32a9d9167b2d85a7ff85ac140a53a7f2c9596719177e7598fc2969846a2a8b
+    selection_rationale: 覆盖九Feature、双模式、输入法与剪贴板，且高证据覆盖和高静态问题量并存。
+
+  - func_id: 07-02-02
+    title: 状态管理V1数据对象内状态管理
+    l1: {id: '07', title: 前端层}
+    path: specs/07-frontend/02-state-management/02-v1-data-object-state
+    feature_count: 1
+    complexity: complex
+    selection_stratum: low_static_signal
+    scenario_tags: [frontend, state_management, decorator, framework]
+    static_snapshot: {finding_count: 10, evidence_coverage: 0.23076923076923078}
+    input_fingerprint: sha256:96287f313a58ad90c35987991348b80ac69587484495524d394058f360e8278d
+    selection_rationale: 覆盖前端状态管理和装饰器语义，作为低静态信号的复杂样本。
+
+  - func_id: 10-01-01
+    title: 弧形组件
+    l1: {id: '10', title: 产品化定制}
+    path: specs/10-product-customization/01-wearable/01-arc-component
+    feature_count: 2
+    complexity: standard
+    selection_stratum: mixed_static_signal
+    scenario_tags: [component, product_customization, wearable, multi_device]
+    static_snapshot: {finding_count: 59, evidence_coverage: 0.6079545454545454}
+    input_fingerprint: sha256:f7ead7127d92bae7e5d2026f35cb08ca528de719f207fb10dde0c9c83563110e
+    selection_rationale: 覆盖穿戴产品化与设备形态差异，校准兼容性和多设备维度。

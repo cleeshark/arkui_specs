@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "golden-manifest.schema.json",
+  "title": "ArkUI Function Evaluation Pilot Manifest",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "evaluation_set_version",
+    "status",
+    "protocol",
+    "revisions",
+    "confirmation",
+    "selection_requirements",
+    "functions",
+    "pilot_functions"
+  ],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "evaluation_set_version": { "type": "string", "const": "0.1.0" },
+    "status": { "type": "string", "enum": ["proposed", "ready", "in_progress", "complete"] },
+    "description": { "type": "string", "minLength": 1 },
+    "protocol": {
+      "type": "object",
+      "required": ["rubric_version", "complexity_rules_version"],
+      "properties": {
+        "rubric_version": { "type": "string", "const": "0.1.0" },
+        "complexity_rules_version": { "type": "string", "const": "0.1.0" }
+      },
+      "additionalProperties": false
+    },
+    "revisions": {
+      "type": "object",
+      "required": ["ace_engine", "specs", "sdk_js", "sdk_c", "static_snapshot"],
+      "properties": {
+        "ace_engine": { "type": "string", "minLength": 7 },
+        "specs": { "type": "string", "minLength": 7 },
+        "sdk_js": { "type": "string", "minLength": 7 },
+        "sdk_c": { "type": "string", "minLength": 7 },
+        "static_snapshot": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "confirmation": {
+      "type": "object",
+      "required": ["confirmed_by", "confirmed_at"],
+      "properties": {
+        "confirmed_by": { "type": ["string", "null"] },
+        "confirmed_at": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "selection_requirements": {
+      "type": "object",
+      "required": ["pilot_size", "minimum_l1_domains", "required_complexities", "required_scenarios"],
+      "properties": {
+        "pilot_size": { "type": "integer", "const": 12 },
+        "minimum_l1_domains": { "type": "integer", "minimum": 6 },
+        "required_complexities": { "type": "array", "items": { "type": "string", "enum": ["simple", "standard", "complex", "critical"] }, "uniqueItems": true },
+        "required_scenarios": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true }
+      },
+      "additionalProperties": false
+    },
+    "functions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["func_id", "profile", "expected_feature_count", "expected_rule_ids"],
+        "properties": {
+          "func_id": { "type": "string", "pattern": "^[0-9]{2}-[0-9]{2}-[0-9]{2}$" },
+          "profile": { "type": "string" },
+          "expected_feature_count": { "type": "integer", "minimum": 1 },
+          "expected_rule_ids": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "pilot_functions": {
+      "type": "array",
+      "minItems": 12,
+      "maxItems": 12,
+      "items": { "$ref": "#/$defs/pilot_function" }
+    }
+  },
+  "$defs": {
+    "pilot_function": {
+      "type": "object",
+      "required": [
+        "func_id",
+        "title",
+        "l1",
+        "path",
+        "feature_count",
+        "complexity",
+        "selection_stratum",
+        "scenario_tags",
+        "static_snapshot",
+        "input_fingerprint"
+      ],
+      "properties": {
+        "func_id": { "type": "string", "pattern": "^[0-9]{2}-[0-9]{2}-[0-9]{2}$" },
+        "title": { "type": "string", "minLength": 1 },
+        "l1": {
+          "type": "object",
+          "required": ["id", "title"],
+          "properties": {
+            "id": { "type": "string", "pattern": "^[0-9]{2}$" },
+            "title": { "type": "string", "minLength": 1 }
+          },
+          "additionalProperties": false
+        },
+        "path": { "type": "string", "pattern": "^specs/" },
+        "feature_count": { "type": "integer", "minimum": 1 },
+        "complexity": { "type": "string", "enum": ["simple", "standard", "complex", "critical"] },
+        "selection_stratum": { "type": "string", "enum": ["low_static_signal", "mixed_static_signal", "high_static_signal"] },
+        "scenario_tags": { "type": "array", "minItems": 1, "items": { "type": "string" }, "uniqueItems": true },
+        "static_snapshot": {
+          "type": "object",
+          "required": ["finding_count", "evidence_coverage"],
+          "properties": {
+            "finding_count": { "type": "integer", "minimum": 0 },
+            "evidence_coverage": { "type": "number", "minimum": 0, "maximum": 1 }
+          },
+          "additionalProperties": false
+        },
+        "input_fingerprint": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "selection_rationale": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

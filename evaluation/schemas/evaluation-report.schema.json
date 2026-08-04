@@ -3,22 +3,51 @@
   "$id": "evaluation-report.schema.json",
   "title": "ArkUI Function Evaluation Report",
   "type": "object",
-  "required": ["func_id", "source_revision", "static", "semantic", "summary"],
+  "required": [
+    "schema_version",
+    "func_id",
+    "source_revision",
+    "protocol",
+    "static",
+    "semantic",
+    "score",
+    "summary"
+  ],
   "properties": {
-    "func_id": { "type": "string" },
-    "source_revision": { "type": "string" },
+    "schema_version": { "type": "integer", "const": 1 },
+    "func_id": { "type": "string", "pattern": "^[0-9]{2}-[0-9]{2}-[0-9]{2}$" },
+    "source_revision": { "type": "string", "minLength": 1 },
+    "protocol": {
+      "type": "object",
+      "required": [
+        "rubric_version",
+        "complexity_rules_version",
+        "evaluator_protocol_version",
+        "aggregator_protocol_version"
+      ],
+      "properties": {
+        "rubric_version": { "type": "string", "const": "0.1.0" },
+        "complexity_rules_version": { "type": "string", "const": "0.1.0" },
+        "evaluator_protocol_version": { "type": "string", "const": "0.1.0" },
+        "aggregator_protocol_version": { "type": "string", "const": "0.1.0" }
+      },
+      "additionalProperties": false
+    },
     "static": { "$ref": "static-result.schema.json" },
-    "semantic": { "type": ["object", "null"] },
+    "semantic": { "$ref": "semantic-result.schema.json" },
+    "score": { "$ref": "score-result.schema.json" },
     "summary": {
       "type": "object",
-      "required": ["gate", "confidence"],
+      "required": ["gate", "raw_score", "published_score", "confidence", "admission_status"],
       "properties": {
-        "gate": { "type": "string" },
-        "raw_score": { "type": ["number", "null"] },
-        "published_score": { "type": ["number", "null"] },
-        "confidence": { "type": "number", "minimum": 0, "maximum": 1 }
-      }
+        "gate": { "type": "string", "enum": ["pass", "warn", "fail", "error"] },
+        "raw_score": { "type": "number", "minimum": 0, "maximum": 100 },
+        "published_score": { "type": "number", "minimum": 0, "maximum": 100 },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "admission_status": { "type": "string", "enum": ["NOT_READY", "BASELINED", "HIGH_QUALITY"] }
+      },
+      "additionalProperties": false
     }
-  }
+  },
+  "additionalProperties": false
 }
-

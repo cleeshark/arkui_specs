@@ -1,0 +1,220 @@
+schema_version: 1
+evaluation_version: 0.1.0
+evaluation_id: EVAL-03-02-08
+func_id: 03-02-08
+input_fingerprint: sha256:4b7df0c4b1b92ce8bf9d7376eb1d564cb77dfc9e0b368928fae1c9dd39bea218
+source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+status: draft
+evaluator:
+  evaluator_id: sunfei2021
+  evaluated_at: null
+semantic_result:
+  schema_version: 1
+  rubric_version: 0.1.0
+  complexity_rules_version: 0.1.0
+  evaluator_protocol_version: 0.1.0
+  evaluator_version: human:sunfei2021
+  func_id: 03-02-08
+  source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+  run_id: evaluation-03-02-08
+  complexity:
+    raw_feature_values:
+      Feat-01: 标准
+    normalized_feature_levels:
+      Feat-01: standard
+    function_level: standard
+    normalization_findings: []
+  criterion_results:
+  - criterion_id: CORRECTNESS-SOURCE-SUPPORT
+    dimension_id: correctness
+    applicability: APPLICABLE
+    conclusion: NOT_VERIFIABLE
+    reason: 待评价人根据冻结输入和证据填写
+    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
+    claim_ids: []
+    evidence: []
+    findings: []
+  - criterion_id: CORRECTNESS-SDK-CONTRACT
+    dimension_id: correctness
+    applicability: APPLICABLE
+    conclusion: NOT_VERIFIABLE
+    reason: 待评价人根据冻结输入和证据填写
+    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
+    claim_ids: []
+    evidence: []
+    findings: []
+  - criterion_id: CORRECTNESS-BOUNDARY-STATE
+    dimension_id: correctness
+    applicability: APPLICABLE
+    conclusion: NOT_VERIFIABLE
+    reason: 待评价人根据冻结输入和证据填写
+    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
+    claim_ids: []
+    evidence: []
+    findings: []
+  - criterion_id: CORRECTNESS-CROSS-DOC-CONSISTENCY
+    dimension_id: correctness
+    applicability: APPLICABLE
+    conclusion: NOT_VERIFIABLE
+    reason: 待评价人根据冻结输入和证据填写
+    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
+    claim_ids: []
+    evidence: []
+    findings: []
+  - criterion_id: SPEC-AC-TESTABILITY
+    dimension_id: spec_executability
+    applicability: APPLICABLE
+    conclusion: NOT_VERIFIABLE
+    reason: 待评价人根据冻结输入和证据填写
+    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
+    claim_ids: []
+    evidence: []
+    findings: []
+  - criterion_id: SPEC-RULE-COMPLETENESS
+    dimension_id: spec_executability
+    applicability: APPLICABLE
+    conclusion: NOT_VERIFIABLE
+    reason: 待评价人根据冻结输入和证据填写
+    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
+    claim_ids: []
+    evidence: []
+    findings: []
+  - criterion_id: SPEC-TRACEABILITY
+    dimension_id: spec_executability
+    applicability: APPLICABLE
+    conclusion: NOT_VERIFIABLE
+    reason: 待评价人根据冻结输入和证据填写
+    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
+    claim_ids: []
+    evidence: []
+    findings: []
+  - criterion_id: SPEC-SCOPE-BOUNDARY
+    dimension_id: spec_executability
+    applicability: APPLICABLE
+    conclusion: NOT_VERIFIABLE
+    reason: 待评价人根据冻结输入和证据填写
+    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
+    claim_ids: []
+    evidence: []
+    findings: []
+  - criterion_id: DESIGN-IMPLEMENTATION-PATH
+    dimension_id: design_quality
+    applicability: APPLICABLE
+    conclusion: NOT_VERIFIABLE
+    reason: 待评价人根据冻结输入和证据填写
+    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
+    claim_ids: []
+    evidence: []
+    findings: []
+  - criterion_id: DESIGN-DECISION-QUALITY
+    dimension_id: design_quality
+    applicability: APPLICABLE
+    conclusion: NOT_VERIFIABLE
+    reason: 待评价人根据冻结输入和证据填写
+    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
+    claim_ids: []
+    evidence: []
+    findings: []
+  - criterion_id: DESIGN-IMPACT-COVERAGE
+    dimension_id: design_quality
+    applicability: APPLICABLE
+    conclusion: NOT_VERIFIABLE
+    reason: 待评价人根据冻结输入和证据填写
+    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
+    claim_ids: []
+    evidence: []
+    findings: []
+  - criterion_id: DESIGN-VERIFICATION-PLAN
+    dimension_id: design_quality
+    applicability: APPLICABLE
+    conclusion: NOT_VERIFIABLE
+    reason: 待评价人根据冻结输入和证据填写
+    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
+    claim_ids: []
+    evidence: []
+    findings: []
+  - criterion_id: COMPATIBILITY-API-VERSION
+    dimension_id: compatibility_system_impact
+    applicability: APPLICABLE
+    conclusion: NOT_VERIFIABLE
+    reason: 待评价人根据冻结输入和证据填写
+    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
+    claim_ids: []
+    evidence: []
+    findings: []
+  - criterion_id: COMPATIBILITY-SYSTEM-IMPACT
+    dimension_id: compatibility_system_impact
+    applicability: APPLICABLE
+    conclusion: NOT_VERIFIABLE
+    reason: 待评价人根据冻结输入和证据填写
+    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
+    claim_ids: []
+    evidence: []
+    findings: []
+  - criterion_id: COMPATIBILITY-MULTI-DEVICE
+    dimension_id: compatibility_system_impact
+    applicability: APPLICABLE
+    conclusion: NOT_VERIFIABLE
+    reason: 待评价人根据冻结输入和证据填写
+    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
+    claim_ids: []
+    evidence: []
+    findings: []
+  - criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
+    dimension_id: maintainability
+    applicability: APPLICABLE
+    conclusion: NOT_VERIFIABLE
+    reason: 待评价人根据冻结输入和证据填写
+    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
+    claim_ids: []
+    evidence: []
+    findings: []
+  - criterion_id: MAINTAINABILITY-STRUCTURE
+    dimension_id: maintainability
+    applicability: APPLICABLE
+    conclusion: NOT_VERIFIABLE
+    reason: 待评价人根据冻结输入和证据填写
+    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
+    claim_ids: []
+    evidence: []
+    findings: []
+  - criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
+    dimension_id: maintainability
+    applicability: APPLICABLE
+    conclusion: NOT_VERIFIABLE
+    reason: 待评价人根据冻结输入和证据填写
+    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
+    claim_ids: []
+    evidence: []
+    findings: []
+  coverage:
+    expected_criteria: 18
+    evaluated_criteria: 18
+    applicable_criteria: 18
+    not_applicable_criteria: 0
+    not_verifiable_criteria: 18
+  execution:
+    static_complete: true
+    evidence_complete: true
+    semantic_complete: false
+    notes:
+    - 'Draft template: Criterion conclusions and scores are pending.'
+scores:
+  dimensions:
+    correctness: null
+    spec_executability: null
+    design_quality: null
+    compatibility_system_impact: null
+    maintainability: null
+  raw_score: null
+  published_score: null
+  confidence: null
+  admission: NOT_READY
+confirmation:
+  confirmed_by: null
+  confirmed_at: null
+  conclusion: pending
+  notes: []
+notes:
+- 完成18个Criterion后填写精确分数并进行一次确认。
+- Critical/Major Finding必须包含冻结revision下的可复现证据。

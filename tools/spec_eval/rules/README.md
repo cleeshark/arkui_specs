@@ -361,6 +361,8 @@ SDK检查会先收集本批次全部Public/System API查询，再一次扫描 `.
 | `exemptions.yaml` | Function级临时规则豁免 |
 | `rule_applicability.yaml` | 34类活跃规则的适用文档、前置条件、抑制条件、推荐Gate和Owner |
 | `golden/static_expectations.yaml` | Top 10 Rule的30个跨一级域真实Function校准预期 |
+| `rubric.yaml` | 五维语义Criterion、扣分、发布分封顶、置信度和准入协议 |
+| `complexity_rules.yaml` | 自由复杂度值归一、Function聚合、评审深度和N/A资格 |
 
 ### 10.1 门禁覆盖
 
@@ -472,6 +474,26 @@ python3 specs/tools/spec_eval/cli.py \
 - Script Finding不能被后续评价Skill改写为通过；Skill只能增加语义判断和证据。
 
 完整工具使用方式参见 [`spec_eval/README.md`](../README.md)。
+
+### 13.1 静态Rule与Rubric Criterion的边界
+
+`evaluation/rubric.yaml`中的Criterion不是新增静态Rule，也不计入本文开头的49条确定性规则：
+
+- 静态Rule以`REG-*`、`SPEC-STRUCT-*`、`TRACE-*`、`REF-*`等稳定ID产生机械Finding。
+- Rubric Criterion以`CORRECTNESS-*`、`SPEC-*`、`DESIGN-*`、`COMPATIBILITY-*`、`MAINTAINABILITY-*`稳定ID承载语义结论和扣分。
+- `evaluator: hybrid`表示Criterion必须消费静态结果，但不能覆盖或删除静态Finding。
+- Critical/Major语义Finding必须引用带`source_revision`和`content_hash`的可复现证据。
+- `NOT_APPLICABLE`不是免检：必须同时满足`complexity_rules.yaml`中的允许条件、明确理由和证据。
+- 某维度可评价Criterion比例低于50%时必须标为`NOT_VERIFIABLE`，不能通过大量N/A自动获得满分。
+
+协议自身通过以下命令校验：
+
+```bash
+PYTHONPATH=specs/tools python3 -m spec_eval.protocol_validator \
+  --evaluation-root specs/evaluation
+```
+
+Rubric v0.1禁止把文档长度、表格数、图数量、引用数量或已勾选自审项作为直接加分因素。
 
 ## 14. 静态规则校准基线
 

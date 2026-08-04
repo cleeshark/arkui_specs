@@ -1,0 +1,138 @@
+schema_version: 1
+complexity_rules_version: 0.1.0
+rubric_version: 0.1.0
+status: candidate
+description: >-
+  Normalize free-form Feature complexity metadata into a Function-level level.
+  Complexity controls review depth and N/A eligibility only; it never relaxes
+  factual correctness, evidence requirements, gate severity, or publishing caps.
+
+canonical_levels:
+  - id: simple
+    rank: 1
+    display_name: 简单
+    exact_aliases: [简单, 低, L1]
+    match_patterns:
+      - '^简单(?:[（(].*[）)])?$'
+      - '^低(?:[（(].*[）)])?$'
+      - '^L1(?:[（(].*[）)])?$'
+  - id: standard
+    rank: 2
+    display_name: 标准
+    exact_aliases: [标准, 中, 中等, 一般]
+    match_patterns:
+      - '^标准(?:[（(].*[）)])?$'
+      - '^中(?:等)?(?:[（(].*[）)])?$'
+      - '^一般(?:[（(].*[）)])?$'
+  - id: complex
+    rank: 3
+    display_name: 复杂
+    exact_aliases: [复杂, 高, 较高, L2, 标准-复杂]
+    match_patterns:
+      - '^复杂(?:[（(].*[）)])?$'
+      - '^(?:高|较高)(?:[（(].*[）)])?$'
+      - '^L2(?:[（(].*[）)])?$'
+      - '^标准-复杂(?:[（(].*[）)])?$'
+  - id: critical
+    rank: 4
+    display_name: 关键
+    exact_aliases: [关键, L3]
+    match_patterns:
+      - '^关键(?:[（(].*[）)])?$'
+      - '^L3(?:[（(].*[）)])?$'
+
+normalization:
+  trim_whitespace: true
+  case_sensitive: false
+  unicode_normalization: NFKC
+  match_order: [exact_alias, regex]
+  multiple_match_policy: highest_rank
+  unknown_value:
+    normalized_level: standard
+    preserve_raw_value: true
+    finding:
+      rule_id: SEM-COMPLEXITY-UNKNOWN-001
+      severity: Minor
+      message: 复杂度值无法识别，按standard执行并降低置信度
+    confidence_penalty:
+      component: evidence_verification_coverage
+      amount: 0.15
+  missing_value:
+    normalized_level: standard
+    finding:
+      rule_id: SEM-COMPLEXITY-MISSING-001
+      severity: Major
+      message: Feature缺少复杂度元数据，按standard执行但不得发布高质量等级
+
+function_aggregation:
+  strategy: highest_feature_rank
+  input_scope: all_registered_non_deprecated_features
+  tie_breaker: canonical_level_id
+  empty_function_policy: use_missing_value_policy
+  output_requires:
+    - raw_feature_values
+    - normalized_feature_levels
+    - function_level
+    - normalization_findings
+
+invariants:
+  correctness_criteria_always_applicable:
+    - CORRECTNESS-SOURCE-SUPPORT
+    - CORRECTNESS-SDK-CONTRACT
+    - CORRECTNESS-BOUNDARY-STATE
+    - CORRECTNESS-CROSS-DOC-CONSISTENCY
+  complexity_may_not_change:
+    - criterion_max_score
+    - conclusion_deduction
+    - severity
+    - publishing_cap
+    - static_gate
+
+review_depth:
+  simple:
+    minimum_independent_source_paths: 1
+    minimum_boundary_categories: 2
+    minimum_adr_candidates: 1
+  standard:
+    minimum_independent_source_paths: 2
+    minimum_boundary_categories: 3
+    minimum_adr_candidates: 2
+  complex:
+    minimum_independent_source_paths: 3
+    minimum_boundary_categories: 4
+    minimum_adr_candidates: 2
+    require_cross_module_impact_review: true
+  critical:
+    minimum_independent_source_paths: 4
+    minimum_boundary_categories: 5
+    minimum_adr_candidates: 2
+    require_cross_module_impact_review: true
+    require_failure_recovery_review: true
+    require_explicit_confirmation: true
+
+not_applicable_policy:
+  default: forbidden
+  allowed:
+    CORRECTNESS-SDK-CONTRACT:
+      levels: [simple, standard, complex, critical]
+      requires_statement: 无SDK、NDK或公开接口契约影响
+    DESIGN-DECISION-QUALITY:
+      levels: [simple]
+      requires_statement: 单一路径且不存在实质性备选方案
+    COMPATIBILITY-API-VERSION:
+      levels: [simple, standard, complex, critical]
+      requires_statement: 无API签名、开放范围、版本或废弃链影响
+    COMPATIBILITY-SYSTEM-IMPACT:
+      levels: [simple, standard, complex, critical]
+      requires_statement: 无系统能力、权限或外部模块依赖影响
+    COMPATIBILITY-MULTI-DEVICE:
+      levels: [simple, standard, complex, critical]
+      requires_statement: 无设备类型、窗口形态或输入形态差异
+  common_requirements:
+    - applicability_reason
+    - reproducible_evidence
+  invalid_na:
+    finding:
+      rule_id: SEM-INVALID-NA-001
+      severity: Major
+      message: N/A缺少允许条件、明确理由或可复现证据

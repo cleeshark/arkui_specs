@@ -1,0 +1,386 @@
+schema_version: 1
+rubric_version: 0.1.0
+status: candidate
+evaluation_unit: function
+description: >-
+  ArkUI Function-level semantic evaluation protocol. The score starts from 100
+  and only evidence-backed defects may deduct points. Static findings remain
+  authoritative and semantic evaluation cannot remove or downgrade them.
+
+approval:
+  freeze_state: pilot_single_confirmation
+  confirmation_mode: single
+  note: Engineering protocol is implemented; each reference evaluation is confirmed once before commit.
+
+protocol_compatibility:
+  complexity_rules_version: 0.1.0
+  semantic_result_schema_version: 1
+  score_result_schema_version: 1
+  evaluation_report_schema_version: 1
+  evaluator_protocol_versions: [0.1.0]
+  aggregator_protocol_versions: [0.1.0]
+
+score_model:
+  method: deduction
+  total_score: 100
+  dimension_floor: 0
+  rounding:
+    mode: half_up
+    precision: 2
+    apply_at: [criterion, dimension, total, confidence]
+  finding_accumulation:
+    identity_fields: [criterion_id, claim_id, normalized_problem]
+    duplicate_policy: keep_highest_deduction
+    criterion_policy: sum_unique_then_cap_at_criterion_max
+    dimension_policy: sum_criterion_scores_then_normalize
+  not_applicable:
+    requires: [applicability_reason, evidence]
+    denominator_policy: exclude_criterion_max_score
+    dimension_normalization: normalize_to_dimension_weight
+    minimum_applicable_criterion_ratio: 0.5
+    below_minimum_policy: mark_dimension_not_verifiable
+  not_verifiable:
+    deduction: 0
+    denominator_policy: include_criterion_max_score
+    confidence_component: evidence_verification_coverage
+  forbidden_positive_factors:
+    - document_length
+    - table_count
+    - diagram_count
+    - citation_count
+    - checked_self_audit_boxes
+
+semantic_conclusions:
+  - SUPPORTED
+  - PARTIALLY_SUPPORTED
+  - CONTRADICTED
+  - MISSING
+  - NOT_APPLICABLE
+  - NOT_VERIFIABLE
+
+evidence_policy:
+  evidence_types:
+    - source_citation
+    - sdk_declaration
+    - spec_location
+    - design_location
+    - static_finding
+    - registry_entry
+    - test_evidence
+    - review_record
+  reproducible_evidence_requires: [path, source_revision, content_hash]
+  critical_major_requires:
+    minimum_evidence_items: 1
+    content_hash_required: true
+    reason_required: true
+    recommendation_required: true
+
+publishing_caps:
+  selection: strictest_active_unexempted_severity
+  formula: published_score = min(raw_score, active_cap)
+  caps:
+    Critical: 39
+    Major: 59
+    Minor: 79
+    None: 100
+
+gate_authority:
+  order: [pass, warn, fail, error]
+  effective_gate: max(static_gate, semantic_gate)
+  static_findings_authoritative: true
+  semantic_may_remove_static_finding: false
+  semantic_may_downgrade_static_gate: false
+
+confidence:
+  formula: weighted_sum
+  range: [0, 1]
+  components:
+    evidence_verification_coverage:
+      weight: 0.4
+      calculation: verified_required_evidence_units / required_evidence_units
+      zero_denominator: 0
+    human_confirmation:
+      weight: 0.3
+      calculation: confirmed_evaluation / required_confirmation
+      unconfirmed_value: 0
+    source_revision_reproducibility:
+      weight: 0.2
+      calculation: reproducible_evidence_items / evidence_items
+      zero_denominator: 0
+    tool_execution_completeness:
+      weight: 0.1
+      calculation: completed_required_stages / required_stages
+      required_stages: [static, evidence, semantic, score]
+  publishable_requires:
+    all_required_stages_complete: true
+
+admission:
+  statuses: [NOT_READY, BASELINED, HIGH_QUALITY]
+  BASELINED:
+    all_gates_pass: true
+    minimum_published_score: 80
+    minimum_confidence: 0.8
+  HIGH_QUALITY:
+    all_gates_pass: true
+    minimum_published_score: 90
+    minimum_confidence: 0.85
+
+dimensions:
+  - id: correctness
+    name: 事实正确性与证据
+    weight: 30
+    criteria:
+      - id: CORRECTNESS-SOURCE-SUPPORT
+        name: 源码事实支持度
+        evaluator: semantic
+        max_score: 12
+        allow_not_applicable: false
+        required_evidence_types: [source_citation]
+        outcomes:
+          SUPPORTED: {deduction: 0}
+          PARTIALLY_SUPPORTED: {deduction: 5, severity: Major}
+          CONTRADICTED: {deduction: 12, severity: Critical}
+          MISSING: {deduction: 12, severity: Critical}
+          NOT_APPLICABLE: {deduction: 0, exclude_from_denominator: true}
+          NOT_VERIFIABLE: {deduction: 0, confidence_penalty: true}
+      - id: CORRECTNESS-SDK-CONTRACT
+        name: SDK与接口契约一致性
+        evaluator: hybrid
+        max_score: 6
+        allow_not_applicable: true
+        required_evidence_types: [sdk_declaration, source_citation]
+        outcomes:
+          SUPPORTED: {deduction: 0}
+          PARTIALLY_SUPPORTED: {deduction: 3, severity: Major}
+          CONTRADICTED: {deduction: 6, severity: Critical}
+          MISSING: {deduction: 6, severity: Major}
+          NOT_APPLICABLE: {deduction: 0, exclude_from_denominator: true}
+          NOT_VERIFIABLE: {deduction: 0, confidence_penalty: true}
+      - id: CORRECTNESS-BOUNDARY-STATE
+        name: 边界、状态与异常分支准确性
+        evaluator: semantic
+        max_score: 6
+        allow_not_applicable: false
+        required_evidence_types: [source_citation, test_evidence]
+        outcomes:
+          SUPPORTED: {deduction: 0}
+          PARTIALLY_SUPPORTED: {deduction: 3, severity: Major}
+          CONTRADICTED: {deduction: 6, severity: Major}
+          MISSING: {deduction: 6, severity: Major}
+          NOT_APPLICABLE: {deduction: 0, exclude_from_denominator: true}
+          NOT_VERIFIABLE: {deduction: 0, confidence_penalty: true}
+      - id: CORRECTNESS-CROSS-DOC-CONSISTENCY
+        name: Spec、Design与Registry一致性
+        evaluator: hybrid
+        max_score: 6
+        allow_not_applicable: false
+        required_evidence_types: [spec_location, design_location, registry_entry]
+        outcomes:
+          SUPPORTED: {deduction: 0}
+          PARTIALLY_SUPPORTED: {deduction: 3, severity: Major}
+          CONTRADICTED: {deduction: 6, severity: Major}
+          MISSING: {deduction: 6, severity: Major}
+          NOT_APPLICABLE: {deduction: 0, exclude_from_denominator: true}
+          NOT_VERIFIABLE: {deduction: 0, confidence_penalty: true}
+
+  - id: spec_executability
+    name: Spec可执行性
+    weight: 25
+    criteria:
+      - id: SPEC-AC-TESTABILITY
+        name: AC可测试与可观测性
+        evaluator: semantic
+        max_score: 8
+        allow_not_applicable: false
+        required_evidence_types: [spec_location, source_citation, test_evidence]
+        outcomes:
+          SUPPORTED: {deduction: 0}
+          PARTIALLY_SUPPORTED: {deduction: 4, severity: Major}
+          CONTRADICTED: {deduction: 8, severity: Major}
+          MISSING: {deduction: 8, severity: Major}
+          NOT_APPLICABLE: {deduction: 0, exclude_from_denominator: true}
+          NOT_VERIFIABLE: {deduction: 0, confidence_penalty: true}
+      - id: SPEC-RULE-COMPLETENESS
+        name: 规则与边界完整性
+        evaluator: semantic
+        max_score: 6
+        allow_not_applicable: false
+        required_evidence_types: [spec_location, source_citation]
+        outcomes:
+          SUPPORTED: {deduction: 0}
+          PARTIALLY_SUPPORTED: {deduction: 3, severity: Major}
+          CONTRADICTED: {deduction: 6, severity: Major}
+          MISSING: {deduction: 6, severity: Major}
+          NOT_APPLICABLE: {deduction: 0, exclude_from_denominator: true}
+          NOT_VERIFIABLE: {deduction: 0, confidence_penalty: true}
+      - id: SPEC-TRACEABILITY
+        name: AC、Rule、VM与证据闭环
+        evaluator: hybrid
+        max_score: 6
+        allow_not_applicable: false
+        required_evidence_types: [static_finding, spec_location]
+        outcomes:
+          SUPPORTED: {deduction: 0}
+          PARTIALLY_SUPPORTED: {deduction: 3, severity: Major}
+          CONTRADICTED: {deduction: 6, severity: Major}
+          MISSING: {deduction: 6, severity: Major}
+          NOT_APPLICABLE: {deduction: 0, exclude_from_denominator: true}
+          NOT_VERIFIABLE: {deduction: 0, confidence_penalty: true}
+      - id: SPEC-SCOPE-BOUNDARY
+        name: 范围与不涉及项清晰度
+        evaluator: semantic
+        max_score: 5
+        allow_not_applicable: false
+        required_evidence_types: [spec_location, design_location]
+        outcomes:
+          SUPPORTED: {deduction: 0}
+          PARTIALLY_SUPPORTED: {deduction: 2.5, severity: Major}
+          CONTRADICTED: {deduction: 5, severity: Major}
+          MISSING: {deduction: 5, severity: Major}
+          NOT_APPLICABLE: {deduction: 0, exclude_from_denominator: true}
+          NOT_VERIFIABLE: {deduction: 0, confidence_penalty: true}
+
+  - id: design_quality
+    name: Design设计质量
+    weight: 25
+    criteria:
+      - id: DESIGN-IMPLEMENTATION-PATH
+        name: 真实实现路径与调用链
+        evaluator: semantic
+        max_score: 8
+        allow_not_applicable: false
+        required_evidence_types: [design_location, source_citation]
+        outcomes:
+          SUPPORTED: {deduction: 0}
+          PARTIALLY_SUPPORTED: {deduction: 4, severity: Major}
+          CONTRADICTED: {deduction: 8, severity: Critical}
+          MISSING: {deduction: 8, severity: Major}
+          NOT_APPLICABLE: {deduction: 0, exclude_from_denominator: true}
+          NOT_VERIFIABLE: {deduction: 0, confidence_penalty: true}
+      - id: DESIGN-DECISION-QUALITY
+        name: ADR候选方案与取舍质量
+        evaluator: semantic
+        max_score: 6
+        allow_not_applicable: true
+        required_evidence_types: [design_location, source_citation, review_record]
+        outcomes:
+          SUPPORTED: {deduction: 0}
+          PARTIALLY_SUPPORTED: {deduction: 3, severity: Major}
+          CONTRADICTED: {deduction: 6, severity: Major}
+          MISSING: {deduction: 6, severity: Major}
+          NOT_APPLICABLE: {deduction: 0, exclude_from_denominator: true}
+          NOT_VERIFIABLE: {deduction: 0, confidence_penalty: true}
+      - id: DESIGN-IMPACT-COVERAGE
+        name: 模块、构建与依赖影响覆盖
+        evaluator: semantic
+        max_score: 6
+        allow_not_applicable: false
+        required_evidence_types: [design_location, source_citation, registry_entry]
+        outcomes:
+          SUPPORTED: {deduction: 0}
+          PARTIALLY_SUPPORTED: {deduction: 3, severity: Major}
+          CONTRADICTED: {deduction: 6, severity: Major}
+          MISSING: {deduction: 6, severity: Major}
+          NOT_APPLICABLE: {deduction: 0, exclude_from_denominator: true}
+          NOT_VERIFIABLE: {deduction: 0, confidence_penalty: true}
+      - id: DESIGN-VERIFICATION-PLAN
+        name: 验证方案与风险闭环
+        evaluator: semantic
+        max_score: 5
+        allow_not_applicable: false
+        required_evidence_types: [design_location, test_evidence]
+        outcomes:
+          SUPPORTED: {deduction: 0}
+          PARTIALLY_SUPPORTED: {deduction: 2.5, severity: Major}
+          CONTRADICTED: {deduction: 5, severity: Major}
+          MISSING: {deduction: 5, severity: Major}
+          NOT_APPLICABLE: {deduction: 0, exclude_from_denominator: true}
+          NOT_VERIFIABLE: {deduction: 0, confidence_penalty: true}
+
+  - id: compatibility_system_impact
+    name: 兼容性与系统影响
+    weight: 10
+    criteria:
+      - id: COMPATIBILITY-API-VERSION
+        name: API版本、开放范围与兼容性
+        evaluator: hybrid
+        max_score: 4
+        allow_not_applicable: true
+        required_evidence_types: [sdk_declaration, spec_location, design_location]
+        outcomes:
+          SUPPORTED: {deduction: 0}
+          PARTIALLY_SUPPORTED: {deduction: 2, severity: Major}
+          CONTRADICTED: {deduction: 4, severity: Major}
+          MISSING: {deduction: 4, severity: Major}
+          NOT_APPLICABLE: {deduction: 0, exclude_from_denominator: true}
+          NOT_VERIFIABLE: {deduction: 0, confidence_penalty: true}
+      - id: COMPATIBILITY-SYSTEM-IMPACT
+        name: 系统能力、权限与外部依赖影响
+        evaluator: semantic
+        max_score: 3
+        allow_not_applicable: true
+        required_evidence_types: [design_location, source_citation, registry_entry]
+        outcomes:
+          SUPPORTED: {deduction: 0}
+          PARTIALLY_SUPPORTED: {deduction: 1.5, severity: Major}
+          CONTRADICTED: {deduction: 3, severity: Major}
+          MISSING: {deduction: 3, severity: Major}
+          NOT_APPLICABLE: {deduction: 0, exclude_from_denominator: true}
+          NOT_VERIFIABLE: {deduction: 0, confidence_penalty: true}
+      - id: COMPATIBILITY-MULTI-DEVICE
+        name: 多设备与多形态差异
+        evaluator: semantic
+        max_score: 3
+        allow_not_applicable: true
+        required_evidence_types: [spec_location, design_location, source_citation]
+        outcomes:
+          SUPPORTED: {deduction: 0}
+          PARTIALLY_SUPPORTED: {deduction: 1.5, severity: Major}
+          CONTRADICTED: {deduction: 3, severity: Major}
+          MISSING: {deduction: 3, severity: Major}
+          NOT_APPLICABLE: {deduction: 0, exclude_from_denominator: true}
+          NOT_VERIFIABLE: {deduction: 0, confidence_penalty: true}
+
+  - id: maintainability
+    name: 可维护性
+    weight: 10
+    criteria:
+      - id: MAINTAINABILITY-EVIDENCE-STABILITY
+        name: 证据稳定性与可复现性
+        evaluator: hybrid
+        max_score: 4
+        allow_not_applicable: false
+        required_evidence_types: [source_citation, sdk_declaration, static_finding]
+        outcomes:
+          SUPPORTED: {deduction: 0}
+          PARTIALLY_SUPPORTED: {deduction: 2, severity: Major}
+          CONTRADICTED: {deduction: 4, severity: Major}
+          MISSING: {deduction: 4, severity: Major}
+          NOT_APPLICABLE: {deduction: 0, exclude_from_denominator: true}
+          NOT_VERIFIABLE: {deduction: 0, confidence_penalty: true}
+      - id: MAINTAINABILITY-STRUCTURE
+        name: 增量结构与重复信息控制
+        evaluator: hybrid
+        max_score: 3
+        allow_not_applicable: false
+        required_evidence_types: [spec_location, design_location, static_finding]
+        outcomes:
+          SUPPORTED: {deduction: 0}
+          PARTIALLY_SUPPORTED: {deduction: 1.5, severity: Minor}
+          CONTRADICTED: {deduction: 3, severity: Major}
+          MISSING: {deduction: 3, severity: Major}
+          NOT_APPLICABLE: {deduction: 0, exclude_from_denominator: true}
+          NOT_VERIFIABLE: {deduction: 0, confidence_penalty: true}
+      - id: MAINTAINABILITY-RISK-OWNERSHIP
+        name: 风险、开放问题与责任闭环
+        evaluator: semantic
+        max_score: 3
+        allow_not_applicable: false
+        required_evidence_types: [design_location, review_record]
+        outcomes:
+          SUPPORTED: {deduction: 0}
+          PARTIALLY_SUPPORTED: {deduction: 1.5, severity: Minor}
+          CONTRADICTED: {deduction: 3, severity: Major}
+          MISSING: {deduction: 3, severity: Major}
+          NOT_APPLICABLE: {deduction: 0, exclude_from_denominator: true}
+          NOT_VERIFIABLE: {deduction: 0, confidence_penalty: true}

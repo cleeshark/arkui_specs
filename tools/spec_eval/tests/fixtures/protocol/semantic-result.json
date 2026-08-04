@@ -1,0 +1,352 @@
+{
+  "schema_version": 1,
+  "rubric_version": "0.1.0",
+  "complexity_rules_version": "0.1.0",
+  "evaluator_protocol_version": "0.1.0",
+  "evaluator_version": "fixture-1.0.0",
+  "func_id": "05-01-01",
+  "source_revision": "abc123",
+  "run_id": "run-001",
+  "complexity": {
+    "function_level": "standard",
+    "raw_feature_values": { "Feat-01": "标准" },
+    "normalized_feature_levels": { "Feat-01": "standard" },
+    "normalization_findings": []
+  },
+  "criterion_results": [
+    {
+      "criterion_id": "CORRECTNESS-SOURCE-SUPPORT",
+      "dimension_id": "correctness",
+      "applicability": "APPLICABLE",
+      "conclusion": "SUPPORTED",
+      "reason": "All sampled claims are supported by implementation evidence.",
+      "evidence": [{
+        "evidence_id": "EV-correctness-source",
+        "type": "source_citation",
+        "path": "frameworks/core/sample.cpp",
+        "line_start": 10,
+        "line_end": 20,
+        "source_revision": "abc123",
+        "content_hash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "description": "Implementation path supporting the sampled claims."
+      }],
+      "findings": []
+    },
+    {
+      "criterion_id": "CORRECTNESS-SDK-CONTRACT",
+      "dimension_id": "correctness",
+      "applicability": "APPLICABLE",
+      "conclusion": "SUPPORTED",
+      "reason": "The documented API matches the canonical SDK declaration.",
+      "evidence": [{
+        "evidence_id": "EV-correctness-sdk",
+        "type": "sdk_declaration",
+        "path": "interface/sdk-js/api/sample.d.ts",
+        "line_start": 1,
+        "line_end": 8,
+        "source_revision": "abc123",
+        "content_hash": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "description": "Canonical SDK declaration."
+      }],
+      "findings": []
+    },
+    {
+      "criterion_id": "CORRECTNESS-BOUNDARY-STATE",
+      "dimension_id": "correctness",
+      "applicability": "APPLICABLE",
+      "conclusion": "SUPPORTED",
+      "reason": "Normal, boundary, invalid-input, and recovery states are covered.",
+      "evidence": [{
+        "evidence_id": "EV-correctness-boundary",
+        "type": "test_evidence",
+        "path": "test/unittest/sample_test.cpp",
+        "line_start": 30,
+        "line_end": 80,
+        "source_revision": "abc123",
+        "content_hash": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "description": "Boundary and recovery tests."
+      }],
+      "findings": []
+    },
+    {
+      "criterion_id": "CORRECTNESS-CROSS-DOC-CONSISTENCY",
+      "dimension_id": "correctness",
+      "applicability": "APPLICABLE",
+      "conclusion": "SUPPORTED",
+      "reason": "Spec, design, and registry identify the same Function and Feature scope.",
+      "evidence": [{
+        "evidence_id": "EV-correctness-cross-doc",
+        "type": "registry_entry",
+        "path": "specs/registry/features.yaml",
+        "line_start": 1,
+        "line_end": 10,
+        "source_revision": "abc123",
+        "content_hash": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "description": "Registry slice for the Function."
+      }],
+      "findings": []
+    },
+    {
+      "criterion_id": "SPEC-AC-TESTABILITY",
+      "dimension_id": "spec_executability",
+      "applicability": "APPLICABLE",
+      "conclusion": "SUPPORTED",
+      "reason": "Acceptance criteria have observable inputs and outcomes.",
+      "evidence": [{
+        "evidence_id": "EV-spec-ac",
+        "type": "spec_location",
+        "path": "specs/05-ui-components/01-test/01-sample/Feat-01-sample-spec.md",
+        "line_start": 30,
+        "line_end": 50,
+        "source_revision": "abc123",
+        "content_hash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "description": "Acceptance criteria table."
+      }],
+      "findings": []
+    },
+    {
+      "criterion_id": "SPEC-RULE-COMPLETENESS",
+      "dimension_id": "spec_executability",
+      "applicability": "APPLICABLE",
+      "conclusion": "SUPPORTED",
+      "reason": "Behavior, boundary, exception, and recovery rules are explicit.",
+      "evidence": [{
+        "evidence_id": "EV-spec-rules",
+        "type": "spec_location",
+        "path": "specs/05-ui-components/01-test/01-sample/Feat-01-sample-spec.md",
+        "line_start": 60,
+        "line_end": 90,
+        "source_revision": "abc123",
+        "content_hash": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "description": "Rule definition table."
+      }],
+      "findings": []
+    },
+    {
+      "criterion_id": "SPEC-TRACEABILITY",
+      "dimension_id": "spec_executability",
+      "applicability": "APPLICABLE",
+      "conclusion": "SUPPORTED",
+      "reason": "The static trace graph closes every AC through Rule and VM nodes.",
+      "evidence": [{
+        "evidence_id": "EV-spec-trace",
+        "type": "static_finding",
+        "path": "static-result.json",
+        "source_revision": "abc123",
+        "content_hash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+        "description": "Static traceability result with no broken edges."
+      }],
+      "findings": []
+    },
+    {
+      "criterion_id": "SPEC-SCOPE-BOUNDARY",
+      "dimension_id": "spec_executability",
+      "applicability": "APPLICABLE",
+      "conclusion": "SUPPORTED",
+      "reason": "In-scope and out-of-scope behavior is explicit.",
+      "evidence": [{
+        "evidence_id": "EV-spec-scope",
+        "type": "spec_location",
+        "path": "specs/05-ui-components/01-test/01-sample/Feat-01-sample-spec.md",
+        "line_start": 10,
+        "line_end": 25,
+        "source_revision": "abc123",
+        "content_hash": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+        "description": "Delta scope and exclusions."
+      }],
+      "findings": []
+    },
+    {
+      "criterion_id": "DESIGN-IMPLEMENTATION-PATH",
+      "dimension_id": "design_quality",
+      "applicability": "APPLICABLE",
+      "conclusion": "SUPPORTED",
+      "reason": "The design follows the implementation entry point and complete call chain.",
+      "evidence": [{
+        "evidence_id": "EV-design-path",
+        "type": "source_citation",
+        "path": "frameworks/core/sample.cpp",
+        "line_start": 10,
+        "line_end": 60,
+        "source_revision": "abc123",
+        "content_hash": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+        "description": "Implementation entry point and call chain."
+      }],
+      "findings": []
+    },
+    {
+      "criterion_id": "DESIGN-DECISION-QUALITY",
+      "dimension_id": "design_quality",
+      "applicability": "APPLICABLE",
+      "conclusion": "SUPPORTED",
+      "reason": "The ADR compares viable alternatives and records the trade-off.",
+      "evidence": [{
+        "evidence_id": "EV-design-adr",
+        "type": "design_location",
+        "path": "specs/05-ui-components/01-test/01-sample/design.md",
+        "line_start": 40,
+        "line_end": 70,
+        "source_revision": "abc123",
+        "content_hash": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+        "description": "ADR alternatives and decision."
+      }],
+      "findings": []
+    },
+    {
+      "criterion_id": "DESIGN-IMPACT-COVERAGE",
+      "dimension_id": "design_quality",
+      "applicability": "APPLICABLE",
+      "conclusion": "SUPPORTED",
+      "reason": "Module, build, and dependency impacts are explicitly covered.",
+      "evidence": [{
+        "evidence_id": "EV-design-impact",
+        "type": "design_location",
+        "path": "specs/05-ui-components/01-test/01-sample/design.md",
+        "line_start": 80,
+        "line_end": 110,
+        "source_revision": "abc123",
+        "content_hash": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+        "description": "Module and build impact sections."
+      }],
+      "findings": []
+    },
+    {
+      "criterion_id": "DESIGN-VERIFICATION-PLAN",
+      "dimension_id": "design_quality",
+      "applicability": "APPLICABLE",
+      "conclusion": "SUPPORTED",
+      "reason": "The verification plan covers risk-bearing paths.",
+      "evidence": [{
+        "evidence_id": "EV-design-verification",
+        "type": "test_evidence",
+        "path": "test/unittest/sample_test.cpp",
+        "line_start": 1,
+        "line_end": 100,
+        "source_revision": "abc123",
+        "content_hash": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+        "description": "Executable test evidence for the design plan."
+      }],
+      "findings": []
+    },
+    {
+      "criterion_id": "COMPATIBILITY-API-VERSION",
+      "dimension_id": "compatibility_system_impact",
+      "applicability": "APPLICABLE",
+      "conclusion": "SUPPORTED",
+      "reason": "API versions and compatibility behavior match the canonical contract.",
+      "evidence": [{
+        "evidence_id": "EV-compat-api",
+        "type": "sdk_declaration",
+        "path": "interface/sdk-js/api/sample.d.ts",
+        "line_start": 1,
+        "line_end": 8,
+        "source_revision": "abc123",
+        "content_hash": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+        "description": "Versioned SDK contract."
+      }],
+      "findings": []
+    },
+    {
+      "criterion_id": "COMPATIBILITY-SYSTEM-IMPACT",
+      "dimension_id": "compatibility_system_impact",
+      "applicability": "APPLICABLE",
+      "conclusion": "SUPPORTED",
+      "reason": "System capability and dependency impact is fully stated.",
+      "evidence": [{
+        "evidence_id": "EV-compat-system",
+        "type": "design_location",
+        "path": "specs/05-ui-components/01-test/01-sample/design.md",
+        "line_start": 100,
+        "line_end": 120,
+        "source_revision": "abc123",
+        "content_hash": "sha256:8888888888888888888888888888888888888888888888888888888888888888",
+        "description": "System impact declaration."
+      }],
+      "findings": []
+    },
+    {
+      "criterion_id": "COMPATIBILITY-MULTI-DEVICE",
+      "dimension_id": "compatibility_system_impact",
+      "applicability": "NOT_APPLICABLE",
+      "conclusion": "NOT_APPLICABLE",
+      "reason": "The implementation is independent of device, window, and input form.",
+      "applicability_reason": "No device type, window form, or input-form branch exists for this Function.",
+      "evidence": [{
+        "evidence_id": "EV-compat-multi-device-na",
+        "type": "design_location",
+        "path": "specs/05-ui-components/01-test/01-sample/design.md",
+        "line_start": 121,
+        "line_end": 130,
+        "source_revision": "abc123",
+        "content_hash": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+        "description": "Explicit multi-device non-impact statement."
+      }],
+      "findings": []
+    },
+    {
+      "criterion_id": "MAINTAINABILITY-EVIDENCE-STABILITY",
+      "dimension_id": "maintainability",
+      "applicability": "APPLICABLE",
+      "conclusion": "SUPPORTED",
+      "reason": "All evidence is repository-relative and revision-bound.",
+      "evidence": [{
+        "evidence_id": "EV-maintain-evidence",
+        "type": "static_finding",
+        "path": "static-result.json",
+        "source_revision": "abc123",
+        "content_hash": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+        "description": "Static reference validation result."
+      }],
+      "findings": []
+    },
+    {
+      "criterion_id": "MAINTAINABILITY-STRUCTURE",
+      "dimension_id": "maintainability",
+      "applicability": "APPLICABLE",
+      "conclusion": "SUPPORTED",
+      "reason": "The Function uses one shared design and incremental Feature specs.",
+      "evidence": [{
+        "evidence_id": "EV-maintain-structure",
+        "type": "design_location",
+        "path": "specs/05-ui-components/01-test/01-sample/design.md",
+        "line_start": 1,
+        "line_end": 20,
+        "source_revision": "abc123",
+        "content_hash": "sha256:abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
+        "description": "Shared design metadata and target Feature list."
+      }],
+      "findings": []
+    },
+    {
+      "criterion_id": "MAINTAINABILITY-RISK-OWNERSHIP",
+      "dimension_id": "maintainability",
+      "applicability": "APPLICABLE",
+      "conclusion": "SUPPORTED",
+      "reason": "Risks and open questions have owners and closure conditions.",
+      "evidence": [{
+        "evidence_id": "EV-maintain-risk",
+        "type": "design_location",
+        "path": "specs/05-ui-components/01-test/01-sample/design.md",
+        "line_start": 140,
+        "line_end": 160,
+        "source_revision": "abc123",
+        "content_hash": "sha256:fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
+        "description": "Risk register and owners."
+      }],
+      "findings": []
+    }
+  ],
+  "coverage": {
+    "expected_criteria": 18,
+    "evaluated_criteria": 18,
+    "applicable_criteria": 17,
+    "not_applicable_criteria": 1,
+    "not_verifiable_criteria": 0
+  },
+  "execution": {
+    "static_complete": true,
+    "evidence_complete": true,
+    "semantic_complete": true,
+    "notes": []
+  }
+}

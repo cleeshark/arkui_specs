@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "rubric_version": "0.1.0",
+  "complexity_rules_version": "0.1.0",
+  "aggregator_protocol_version": "0.1.0",
+  "aggregator_version": "fixture-1.0.0",
+  "func_id": "05-01-01",
+  "source_revision": "abc123",
+  "dimensions": [
+    {
+      "dimension_id": "correctness",
+      "max_score": 30,
+      "applicable_max_score": 30,
+      "earned_score": 30,
+      "score": 30,
+      "verifiability": "VERIFIABLE",
+      "criteria": [
+        {"criterion_id": "CORRECTNESS-SOURCE-SUPPORT", "conclusion": "SUPPORTED", "applicable": true, "max_score": 12, "deduction": 0, "score": 12},
+        {"criterion_id": "CORRECTNESS-SDK-CONTRACT", "conclusion": "SUPPORTED", "applicable": true, "max_score": 6, "deduction": 0, "score": 6},
+        {"criterion_id": "CORRECTNESS-BOUNDARY-STATE", "conclusion": "SUPPORTED", "applicable": true, "max_score": 6, "deduction": 0, "score": 6},
+        {"criterion_id": "CORRECTNESS-CROSS-DOC-CONSISTENCY", "conclusion": "SUPPORTED", "applicable": true, "max_score": 6, "deduction": 0, "score": 6}
+      ]
+    },
+    {
+      "dimension_id": "spec_executability",
+      "max_score": 25,
+      "applicable_max_score": 25,
+      "earned_score": 25,
+      "score": 25,
+      "verifiability": "VERIFIABLE",
+      "criteria": [
+        {"criterion_id": "SPEC-AC-TESTABILITY", "conclusion": "SUPPORTED", "applicable": true, "max_score": 8, "deduction": 0, "score": 8},
+        {"criterion_id": "SPEC-RULE-COMPLETENESS", "conclusion": "SUPPORTED", "applicable": true, "max_score": 6, "deduction": 0, "score": 6},
+        {"criterion_id": "SPEC-TRACEABILITY", "conclusion": "SUPPORTED", "applicable": true, "max_score": 6, "deduction": 0, "score": 6},
+        {"criterion_id": "SPEC-SCOPE-BOUNDARY", "conclusion": "SUPPORTED", "applicable": true, "max_score": 5, "deduction": 0, "score": 5}
+      ]
+    },
+    {
+      "dimension_id": "design_quality",
+      "max_score": 25,
+      "applicable_max_score": 25,
+      "earned_score": 25,
+      "score": 25,
+      "verifiability": "VERIFIABLE",
+      "criteria": [
+        {"criterion_id": "DESIGN-IMPLEMENTATION-PATH", "conclusion": "SUPPORTED", "applicable": true, "max_score": 8, "deduction": 0, "score": 8},
+        {"criterion_id": "DESIGN-DECISION-QUALITY", "conclusion": "SUPPORTED", "applicable": true, "max_score": 6, "deduction": 0, "score": 6},
+        {"criterion_id": "DESIGN-IMPACT-COVERAGE", "conclusion": "SUPPORTED", "applicable": true, "max_score": 6, "deduction": 0, "score": 6},
+        {"criterion_id": "DESIGN-VERIFICATION-PLAN", "conclusion": "SUPPORTED", "applicable": true, "max_score": 5, "deduction": 0, "score": 5}
+      ]
+    },
+    {
+      "dimension_id": "compatibility_system_impact",
+      "max_score": 10,
+      "applicable_max_score": 7,
+      "earned_score": 7,
+      "score": 10,
+      "verifiability": "VERIFIABLE",
+      "criteria": [
+        {"criterion_id": "COMPATIBILITY-API-VERSION", "conclusion": "SUPPORTED", "applicable": true, "max_score": 4, "deduction": 0, "score": 4},
+        {"criterion_id": "COMPATIBILITY-SYSTEM-IMPACT", "conclusion": "SUPPORTED", "applicable": true, "max_score": 3, "deduction": 0, "score": 3},
+        {"criterion_id": "COMPATIBILITY-MULTI-DEVICE", "conclusion": "NOT_APPLICABLE", "applicable": false, "max_score": 3, "deduction": 0, "score": null}
+      ]
+    },
+    {
+      "dimension_id": "maintainability",
+      "max_score": 10,
+      "applicable_max_score": 10,
+      "earned_score": 10,
+      "score": 10,
+      "verifiability": "VERIFIABLE",
+      "criteria": [
+        {"criterion_id": "MAINTAINABILITY-EVIDENCE-STABILITY", "conclusion": "SUPPORTED", "applicable": true, "max_score": 4, "deduction": 0, "score": 4},
+        {"criterion_id": "MAINTAINABILITY-STRUCTURE", "conclusion": "SUPPORTED", "applicable": true, "max_score": 3, "deduction": 0, "score": 3},
+        {"criterion_id": "MAINTAINABILITY-RISK-OWNERSHIP", "conclusion": "SUPPORTED", "applicable": true, "max_score": 3, "deduction": 0, "score": 3}
+      ]
+    }
+  ],
+  "raw_score": 100,
+  "caps": {
+    "active_severities": [],
+    "applied": {"severity": "None", "limit": 100}
+  },
+  "published_score": 100,
+  "gate": {"static": "pass", "semantic": "pass", "effective": "pass"},
+  "confidence": {
+    "components": {
+      "evidence_verification_coverage": 0.9,
+      "human_confirmation": 0.9,
+      "source_revision_reproducibility": 1,
+      "tool_execution_completeness": 1
+    },
+    "score": 0.93,
+    "publishable": true,
+    "reasons": []
+  },
+  "execution": {"static": true, "evidence": true, "semantic": true, "score": true},
+  "admission": {"status": "HIGH_QUALITY", "reasons": []}
+}
