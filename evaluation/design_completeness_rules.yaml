@@ -1,0 +1,155 @@
+schema_version: 1
+design_completeness_rules_version: 0.1.0
+rubric_version: 0.2.0
+status: candidate
+evaluation_unit: function
+description: >-
+  Required semantic coverage for Function-level design.md evaluation. Presence of
+  headings, tables, diagrams, or checked self-audit boxes is not positive evidence;
+  each applicable check must be verified against Registry, Spec, frozen source,
+  build files, tests, and related repositories.
+
+coverage_policy:
+  registered_feature_scope: all_non_deprecated_features
+  function_supported_requires: all_applicable_checks_covered
+  per_feature_supported_requires: every_registered_feature_all_applicable_checks_covered
+  partial_policy: at_least_one_applicable_check_partial_or_missing_with_main_design_present
+  missing_policy: core_design_absent_or_registered_feature_has_only_title_or_summary
+  contradicted_policy: design_claim_conflicts_with_frozen_implementation_or_contract
+  forbidden_positive_factors:
+    - heading_presence_only
+    - table_presence_only
+    - diagram_presence_only
+    - document_length
+    - checked_self_audit_boxes
+
+criteria:
+  DESIGN-IMPLEMENTATION-PATH:
+    coverage_scope: function
+    checks:
+      - check_id: DESIGN-CONTEXT-REPOSITORIES
+        evaluator: hybrid
+        script_signal: 涉及仓和模块章节及仓名可解析
+        semantic_requirement: 覆盖所有实际参与该Function的仓及其职责
+      - check_id: DESIGN-CONTEXT-MODULE-RESPONSIBILITIES
+        evaluator: semantic_skill
+        semantic_requirement: 模块职责、输入输出和所有权边界与冻结源码一致
+      - check_id: DESIGN-LAYER-END-TO-END
+        evaluator: semantic_skill
+        semantic_requirement: 从公开入口或内部触发点到最终输出覆盖全部适用层
+      - check_id: DESIGN-LAYER-BOUNDARIES
+        evaluator: semantic_skill
+        semantic_requirement: 调用方向、跨层约束及适配边界准确且无遗漏
+
+  DESIGN-FEAT-RUNTIME-COVERAGE:
+    coverage_scope: per_registered_feature
+    checks:
+      - check_id: DESIGN-FEAT-INPUT-ENTRY
+        evaluator: semantic_skill
+        semantic_requirement: 每个Feat明确外部输入、API或内部触发入口
+      - check_id: DESIGN-FEAT-STATE-UPDATE
+        evaluator: semantic_skill
+        semantic_requirement: 每个Feat明确解析、校验及状态或属性更新位置
+      - check_id: DESIGN-FEAT-CORE-PROCESS
+        evaluator: semantic_skill
+        semantic_requirement: 每个Feat明确核心处理、算法或委托路径
+      - check_id: DESIGN-FEAT-OUTPUT-EVENT
+        evaluator: semantic_skill
+        semantic_requirement: 每个Feat明确渲染、返回值、事件或其他可观测输出
+      - check_id: DESIGN-FEAT-EXCEPTION-RECOVERY
+        evaluator: semantic_skill
+        semantic_requirement: 每个Feat覆盖适用的异常、边界、降级和恢复路径
+      - check_id: DESIGN-FEAT-TEST-HANDOFF
+        evaluator: hybrid
+        script_signal: 后续Task或测试性设计中可解析Feat映射
+        semantic_requirement: 每个Feat可追溯到可执行验证入口
+
+  DESIGN-ALGORITHM-DATA-STATE:
+    coverage_scope: function_and_feature
+    checks:
+      - check_id: DESIGN-ALGORITHM-MAIN-BRANCHES
+        evaluator: semantic_skill
+        semantic_requirement: 关键算法、模式派发、优先级和主要分支完整准确
+      - check_id: DESIGN-DATA-MODEL-LIFECYCLE
+        evaluator: semantic_skill
+        semantic_requirement: 核心数据结构、存储位置、更新和失效条件完整
+      - check_id: DESIGN-STATE-TRANSITIONS
+        evaluator: semantic_skill
+        semantic_requirement: 状态转换、生命周期和跨帧行为完整
+      - check_id: DESIGN-RESOURCE-OWNERSHIP
+        evaluator: semantic_skill
+        semantic_requirement: 动态资源的创建、持有、释放和异常回收明确
+      - check_id: DESIGN-THREAD-CONCURRENCY
+        evaluator: semantic_skill
+        semantic_requirement: 适用的线程、任务、回调、重入和并发约束明确
+      - check_id: DESIGN-FAILURE-RECOVERY
+        evaluator: semantic_skill
+        semantic_requirement: 失败传播、超时、重试、回滚或降级路径完整
+
+  DESIGN-DECISION-QUALITY:
+    coverage_scope: function_and_feature
+    checks:
+      - check_id: DESIGN-ADR-KEY-DECISIONS
+        evaluator: semantic_skill
+        semantic_requirement: 识别影响架构、兼容性、性能或维护成本的实质决策
+      - check_id: DESIGN-ADR-REAL-ALTERNATIVES
+        evaluator: semantic_skill
+        semantic_requirement: 标准及以上复杂度记录真实可选方案而非同义改写
+      - check_id: DESIGN-ADR-TRADEOFF-CRITERIA
+        evaluator: semantic_skill
+        semantic_requirement: 取舍包含适用条件、收益、代价和限制
+      - check_id: DESIGN-ADR-COMPATIBILITY-COST
+        evaluator: semantic_skill
+        semantic_requirement: 兼容性、迁移和存量行为成本已评估
+      - check_id: DESIGN-ADR-VALIDATION
+        evaluator: semantic_skill
+        semantic_requirement: 推荐方案具有源码、测试或评审依据
+
+  DESIGN-IMPACT-COVERAGE:
+    coverage_scope: function
+    checks:
+      - check_id: DESIGN-BUILD-TARGETS
+        evaluator: hybrid
+        script_signal: BUILD.gn路径和target名称可解析
+        semantic_requirement: 覆盖实际构建目标及其职责
+      - check_id: DESIGN-BUILD-CONDITIONS
+        evaluator: semantic_skill
+        semantic_requirement: 平台、产品、特性开关和条件编译影响完整
+      - check_id: DESIGN-DEPENDENCIES
+        evaluator: semantic_skill
+        semantic_requirement: deps、external_deps、bundle依赖和跨部件影响准确
+      - check_id: DESIGN-OUTPUT-ARTIFACTS
+        evaluator: semantic_skill
+        semantic_requirement: 共享库、静态库、ABC、SDK或生成产物明确
+      - check_id: DESIGN-REGISTRATION-LOADING
+        evaluator: semantic_skill
+        semantic_requirement: 注册表、工厂、动态模块、dlopen或运行时发现入口明确
+      - check_id: DESIGN-DEPLOYMENT-PACKAGING
+        evaluator: semantic_skill
+        semantic_requirement: 安装、打包、部署位置及运行时可用条件明确
+
+  DESIGN-VERIFICATION-PLAN:
+    coverage_scope: function_and_feature
+    checks:
+      - check_id: DESIGN-VERIFY-FEAT-AC-MAPPING
+        evaluator: hybrid
+        script_signal: Feat、AC、测试映射可解析
+        semantic_requirement: 所有关键Feat和AC均有验证入口
+      - check_id: DESIGN-VERIFY-BUILD-TARGET
+        evaluator: semantic_skill
+        semantic_requirement: 给出真实GN或Ninja构建目标
+      - check_id: DESIGN-VERIFY-TEST-BINARY
+        evaluator: semantic_skill
+        semantic_requirement: 给出可执行测试二进制或明确测试资产
+      - check_id: DESIGN-VERIFY-CASE-OR-FILTER
+        evaluator: semantic_skill
+        semantic_requirement: 给出Suite.Case、filter或等价精确测试范围
+      - check_id: DESIGN-VERIFY-EXPECTED-RESULT
+        evaluator: semantic_skill
+        semantic_requirement: 给出可判定的预期结果和通过标准
+      - check_id: DESIGN-VERIFY-FAILURE-RECOVERY
+        evaluator: semantic_skill
+        semantic_requirement: 覆盖关键异常、边界、超时和恢复验证
+      - check_id: DESIGN-VERIFY-RISK-CLOSURE
+        evaluator: semantic_skill
+        semantic_requirement: 风险具有状态、Owner、关闭条件和验证证据

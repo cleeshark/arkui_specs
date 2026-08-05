@@ -119,6 +119,45 @@ def validate_rubric(rubric: dict[str, Any]) -> list[str]:
                 f"{dimension_id}: criterion maxima must sum to dimension weight {weight}, got {criterion_total}"
             )
 
+    if rubric.get("rubric_version") == "0.2.0":
+        expected_design_criteria = [
+            "DESIGN-IMPLEMENTATION-PATH",
+            "DESIGN-FEAT-RUNTIME-COVERAGE",
+            "DESIGN-ALGORITHM-DATA-STATE",
+            "DESIGN-DECISION-QUALITY",
+            "DESIGN-IMPACT-COVERAGE",
+            "DESIGN-VERIFICATION-PLAN",
+        ]
+        design_dimension = next(
+            (item for item in dimensions if item.get("id") == "design_quality"), None
+        )
+        actual_design_criteria = [
+            item.get("id") for item in (design_dimension or {}).get("criteria", [])
+        ]
+        if actual_design_criteria != expected_design_criteria:
+            errors.append(
+                "rubric 0.2 design criteria must cover architecture, per-Feat runtime, "
+                "algorithm/data/state, ADR, build/deployment, and verification in order"
+            )
+        for criterion in (design_dimension or {}).get("criteria", []):
+            criterion_id = criterion.get("id", "<missing>")
+            if criterion.get("coverage_scope") not in {
+                "function",
+                "per_registered_feature",
+                "function_and_feature",
+            }:
+                errors.append(f"{criterion_id}: rubric 0.2 requires a valid coverage_scope")
+            checks = criterion.get("required_checks", [])
+            if not checks or len(checks) != len(set(checks)):
+                errors.append(f"{criterion_id}: required_checks must be non-empty and unique")
+            outcome_policy = criterion.get("outcome_policy", {})
+            expected_policy = {"SUPPORTED", "PARTIALLY_SUPPORTED", "CONTRADICTED", "MISSING"}
+            if set(outcome_policy) != expected_policy:
+                errors.append(
+                    f"{criterion_id}: outcome_policy must define SUPPORTED, "
+                    "PARTIALLY_SUPPORTED, CONTRADICTED, and MISSING"
+                )
+
     caps = rubric.get("publishing_caps", {}).get("caps", {})
     if caps != {"Critical": 39, "Major": 59, "Minor": 79, "None": 100}:
         errors.append("publishing caps must be Critical=39, Major=59, Minor=79, None=100")
@@ -162,8 +201,8 @@ def validate_rubric(rubric: dict[str, Any]) -> list[str]:
             errors.append(f"{status}: all_gates_pass must be true")
 
     compatibility = rubric.get("protocol_compatibility", {})
-    if compatibility.get("complexity_rules_version") != "0.1.0":
-        errors.append("rubric must bind complexity_rules_version 0.1.0")
+    if compatibility.get("complexity_rules_version") != "0.2.0":
+        errors.append("rubric 0.2 must bind complexity_rules_version 0.2.0")
     return errors
 
 
@@ -183,6 +222,20 @@ def validate_complexity_rules(complexity: dict[str, Any], rubric: dict[str, Any]
     ranks = [item.get("rank") for item in levels]
     if ranks != [1, 2, 3, 4]:
         errors.append("canonical complexity ranks must be 1,2,3,4")
+
+    if complexity.get("function_aggregation", {}).get("input_scope") != (
+        "all_registered_non_deprecated_features"
+    ):
+        errors.append("complexity aggregation must cover all registered non-deprecated Features")
+    critical_depth = complexity.get("review_depth", {}).get("critical", {})
+    for requirement in (
+        "require_function_architecture_context",
+        "require_per_feature_runtime_coverage",
+        "require_algorithm_data_state_review",
+        "require_build_deployment_review",
+    ):
+        if critical_depth.get(requirement) is not True:
+            errors.append(f"critical review depth must enable {requirement}")
 
     aliases: dict[str, str] = {}
     for level in levels:
@@ -228,6 +281,71 @@ def validate_complexity_rules(complexity: dict[str, Any], rubric: dict[str, Any]
     for criterion_id, criterion in criteria.items():
         if criterion.get("allow_not_applicable") is True and criterion_id not in allowed_na:
             errors.append(f"rubric allows N/A but complexity policy is missing: {criterion_id}")
+    return errors
+
+
+def validate_design_completeness_rules(
+    rules: dict[str, Any], rubric: dict[str, Any]
+) -> list[str]:
+    errors: list[str] = []
+    if rules.get("rubric_version") != rubric.get("rubric_version"):
+        errors.append("design completeness rubric_version must match rubric.rubric_version")
+    expected_version = rubric.get("protocol_compatibility", {}).get(
+        "design_completeness_rules_version"
+    )
+    if rules.get("design_completeness_rules_version") != expected_version:
+        errors.append("design completeness rules version does not match rubric compatibility")
+    coverage_policy = rules.get("coverage_policy", {})
+    expected_coverage_policy = {
+        "registered_feature_scope": "all_non_deprecated_features",
+        "function_supported_requires": "all_applicable_checks_covered",
+        "per_feature_supported_requires": "every_registered_feature_all_applicable_checks_covered",
+        "partial_policy": "at_least_one_applicable_check_partial_or_missing_with_main_design_present",
+        "missing_policy": "core_design_absent_or_registered_feature_has_only_title_or_summary",
+        "contradicted_policy": "design_claim_conflicts_with_frozen_implementation_or_contract",
+    }
+    for field, expected in expected_coverage_policy.items():
+        if coverage_policy.get(field) != expected:
+            errors.append(f"design completeness coverage_policy.{field} must be {expected}")
+    expected_forbidden = {
+        "heading_presence_only",
+        "table_presence_only",
+        "diagram_presence_only",
+        "document_length",
+        "checked_self_audit_boxes",
+    }
+    if set(coverage_policy.get("forbidden_positive_factors", [])) != expected_forbidden:
+        errors.append("design completeness forbidden positive factors must remain complete and exact")
+    rubric_design = next(
+        (item for item in rubric.get("dimensions", []) if item.get("id") == "design_quality"),
+        {},
+    )
+    rubric_criteria = {item.get("id"): item for item in rubric_design.get("criteria", [])}
+    rule_criteria = rules.get("criteria", {})
+    if list(rule_criteria) != list(rubric_criteria):
+        errors.append("design completeness criteria must match rubric design criteria in order")
+    seen_checks: set[str] = set()
+    for criterion_id, criterion_rules in rule_criteria.items():
+        rubric_criterion = rubric_criteria.get(criterion_id, {})
+        if criterion_rules.get("coverage_scope") != rubric_criterion.get("coverage_scope"):
+            errors.append(f"{criterion_id}: coverage_scope does not match rubric")
+        checks = criterion_rules.get("checks", [])
+        check_ids = [item.get("check_id") for item in checks]
+        if check_ids != rubric_criterion.get("required_checks", []):
+            errors.append(f"{criterion_id}: check IDs do not match rubric required_checks")
+        for check in checks:
+            check_id = check.get("check_id")
+            if check_id in seen_checks:
+                errors.append(f"duplicate design completeness check ID: {check_id}")
+            seen_checks.add(check_id)
+            if check.get("evaluator") not in {"script", "semantic_skill", "hybrid"}:
+                errors.append(f"{check_id}: invalid evaluator")
+            if check.get("evaluator") in {"script", "hybrid"} and not str(
+                check.get("script_signal", "")
+            ).strip():
+                errors.append(f"{check_id}: script or hybrid check requires script_signal")
+            if not str(check.get("semantic_requirement", "")).strip():
+                errors.append(f"{check_id}: semantic_requirement is required")
     return errors
 
 
@@ -502,8 +620,10 @@ def validate_schema_contracts(schemas_root: Path, rubric: dict[str, Any]) -> lis
 def validate_protocol(evaluation_root: Path) -> tuple[dict[str, Any], dict[str, Any], list[str]]:
     rubric = _load_yaml(evaluation_root / "rubric.yaml")
     complexity = _load_yaml(evaluation_root / "complexity_rules.yaml")
+    design_completeness = _load_yaml(evaluation_root / "design_completeness_rules.yaml")
     errors = validate_rubric(rubric)
     errors.extend(validate_complexity_rules(complexity, rubric))
+    errors.extend(validate_design_completeness_rules(design_completeness, rubric))
     errors.extend(validate_schema_contracts(evaluation_root / "schemas", rubric))
     return rubric, complexity, errors
 
@@ -819,7 +939,7 @@ def raise_for_errors(errors: Iterable[str]) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Validate spec_eval semantic protocol v0.1")
+    parser = argparse.ArgumentParser(description="Validate spec_eval semantic protocol v0.2")
     parser.add_argument(
         "--evaluation-root",
         type=Path,

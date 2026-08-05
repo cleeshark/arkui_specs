@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "rubric_version": "0.1.0",
-  "complexity_rules_version": "0.1.0",
-  "evaluator_protocol_version": "0.1.0",
+  "rubric_version": "0.2.0",
+  "complexity_rules_version": "0.2.0",
+  "evaluator_protocol_version": "0.2.0",
   "evaluator_version": "fixture-1.0.0",
   "func_id": "05-01-01",
   "source_revision": "abc123",
@@ -175,6 +175,42 @@
       "findings": []
     },
     {
+      "criterion_id": "DESIGN-FEAT-RUNTIME-COVERAGE",
+      "dimension_id": "design_quality",
+      "applicability": "APPLICABLE",
+      "conclusion": "SUPPORTED",
+      "reason": "Every registered Feature has an evidence-backed end-to-end runtime design.",
+      "evidence": [{
+        "evidence_id": "EV-design-feat-runtime",
+        "type": "design_location",
+        "path": "specs/05-ui-components/01-test/01-sample/design.md",
+        "line_start": 71,
+        "line_end": 100,
+        "source_revision": "abc123",
+        "content_hash": "sha256:3434343434343434343434343434343434343434343434343434343434343434",
+        "description": "Per-Feature input, state, processing, output, recovery, and test handoff design."
+      }],
+      "findings": []
+    },
+    {
+      "criterion_id": "DESIGN-ALGORITHM-DATA-STATE",
+      "dimension_id": "design_quality",
+      "applicability": "APPLICABLE",
+      "conclusion": "SUPPORTED",
+      "reason": "Algorithms, data lifetime, state transitions, resources, concurrency, and recovery are covered.",
+      "evidence": [{
+        "evidence_id": "EV-design-algorithm-state",
+        "type": "source_citation",
+        "path": "frameworks/core/sample.cpp",
+        "line_start": 61,
+        "line_end": 100,
+        "source_revision": "abc123",
+        "content_hash": "sha256:3535353535353535353535353535353535353535353535353535353535353535",
+        "description": "Implementation evidence for algorithm branches and state lifecycle."
+      }],
+      "findings": []
+    },
+    {
       "criterion_id": "DESIGN-DECISION-QUALITY",
       "dimension_id": "design_quality",
       "applicability": "APPLICABLE",
@@ -337,9 +373,9 @@
     }
   ],
   "coverage": {
-    "expected_criteria": 18,
-    "evaluated_criteria": 18,
-    "applicable_criteria": 17,
+    "expected_criteria": 20,
+    "evaluated_criteria": 20,
+    "applicable_criteria": 19,
     "not_applicable_criteria": 1,
     "not_verifiable_criteria": 0
   },

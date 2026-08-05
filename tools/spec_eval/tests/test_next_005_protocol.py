@@ -5,9 +5,12 @@ import json
 import unittest
 from pathlib import Path
 
+import yaml
+
 from spec_eval.protocol_validator import (
     aggregate_function_complexity,
     validate_complexity_rules,
+    validate_design_completeness_rules,
     validate_evaluation_report,
     validate_protocol,
     validate_rubric,
@@ -24,6 +27,9 @@ class Next005ProtocolTest(unittest.TestCase):
         cls.schemas_root = cls.evaluation_root / "schemas"
         cls.fixtures_root = Path(__file__).resolve().parent / "fixtures" / "protocol"
         cls.rubric, cls.complexity, cls.protocol_errors = validate_protocol(cls.evaluation_root)
+        cls.design_completeness = yaml.safe_load(
+            (cls.evaluation_root / "design_completeness_rules.yaml").read_text(encoding="utf-8")
+        )
 
     def load_fixture(self, name: str) -> dict:
         return json.loads((self.fixtures_root / name).read_text(encoding="utf-8"))
@@ -36,9 +42,9 @@ class Next005ProtocolTest(unittest.TestCase):
             "func_id": "05-01-01",
             "source_revision": "abc123",
             "protocol": {
-                "rubric_version": "0.1.0",
-                "complexity_rules_version": "0.1.0",
-                "evaluator_protocol_version": "0.1.0",
+                "rubric_version": "0.2.0",
+                "complexity_rules_version": "0.2.0",
+                "evaluator_protocol_version": "0.2.0",
                 "aggregator_protocol_version": "0.1.0",
             },
             "static": {
@@ -85,11 +91,71 @@ class Next005ProtocolTest(unittest.TestCase):
         self.assertTrue(any("sum to 100" in item for item in errors))
         self.assertTrue(any("duplicate criterion ID" in item for item in errors))
 
+    def test_design_rubric_has_six_complete_criteria_and_twenty_total(self) -> None:
+        criteria = [
+            criterion
+            for dimension in self.rubric["dimensions"]
+            for criterion in dimension["criteria"]
+        ]
+        design = next(
+            dimension for dimension in self.rubric["dimensions"]
+            if dimension["id"] == "design_quality"
+        )
+        self.assertEqual(len(criteria), 20)
+        self.assertEqual(len(design["criteria"]), 6)
+        self.assertEqual(sum(item["max_score"] for item in design["criteria"]), 25)
+        self.assertEqual(
+            [item["id"] for item in design["criteria"]],
+            [
+                "DESIGN-IMPLEMENTATION-PATH",
+                "DESIGN-FEAT-RUNTIME-COVERAGE",
+                "DESIGN-ALGORITHM-DATA-STATE",
+                "DESIGN-DECISION-QUALITY",
+                "DESIGN-IMPACT-COVERAGE",
+                "DESIGN-VERIFICATION-PLAN",
+            ],
+        )
+
+    def test_design_completeness_rules_reject_missing_runtime_check(self) -> None:
+        invalid = copy.deepcopy(self.design_completeness)
+        invalid["criteria"]["DESIGN-FEAT-RUNTIME-COVERAGE"]["checks"].pop()
+        errors = validate_design_completeness_rules(invalid, self.rubric)
+        self.assertTrue(any("check IDs do not match" in item for item in errors))
+
+    def test_design_completeness_does_not_reward_document_shape(self) -> None:
+        forbidden = set(self.design_completeness["coverage_policy"]["forbidden_positive_factors"])
+        self.assertEqual(
+            forbidden,
+            {
+                "heading_presence_only",
+                "table_presence_only",
+                "diagram_presence_only",
+                "document_length",
+                "checked_self_audit_boxes",
+            },
+        )
+        invalid = copy.deepcopy(self.design_completeness)
+        invalid["coverage_policy"]["forbidden_positive_factors"].pop()
+        errors = validate_design_completeness_rules(invalid, self.rubric)
+        self.assertTrue(any("forbidden positive factors" in item for item in errors))
+
+    def test_hybrid_design_check_requires_a_script_signal(self) -> None:
+        invalid = copy.deepcopy(self.design_completeness)
+        invalid["criteria"]["DESIGN-IMPLEMENTATION-PATH"]["checks"][0].pop("script_signal")
+        errors = validate_design_completeness_rules(invalid, self.rubric)
+        self.assertTrue(any("requires script_signal" in item for item in errors))
+
     def test_protocol_rejects_version_mismatch(self) -> None:
         invalid = copy.deepcopy(self.complexity)
-        invalid["rubric_version"] = "0.2.0"
+        invalid["rubric_version"] = "0.3.0"
         errors = validate_complexity_rules(invalid, self.rubric)
         self.assertTrue(any("rubric_version" in item for item in errors))
+
+    def test_critical_complexity_cannot_skip_design_completeness(self) -> None:
+        invalid = copy.deepcopy(self.complexity)
+        invalid["review_depth"]["critical"]["require_per_feature_runtime_coverage"] = False
+        errors = validate_complexity_rules(invalid, self.rubric)
+        self.assertTrue(any("require_per_feature_runtime_coverage" in item for item in errors))
 
     def test_complexity_normalization_handles_existing_free_form_values(self) -> None:
         result = aggregate_function_complexity(
@@ -184,7 +250,7 @@ class Next005ProtocolTest(unittest.TestCase):
 
     def test_report_summary_and_versions_must_match_children(self) -> None:
         invalid = self.build_evaluation_report()
-        invalid["protocol"]["rubric_version"] = "0.2.0"
+        invalid["protocol"]["rubric_version"] = "0.3.0"
         invalid["summary"]["published_score"] = 99
         errors = validate_evaluation_report(invalid, self.rubric, self.complexity, self.schemas_root)
         self.assertTrue(any("rubric version mismatch" in item for item in errors))

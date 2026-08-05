@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "rubric_version": "0.1.0",
-  "complexity_rules_version": "0.1.0",
+  "rubric_version": "0.2.0",
+  "complexity_rules_version": "0.2.0",
   "aggregator_protocol_version": "0.1.0",
   "aggregator_version": "fixture-1.0.0",
   "func_id": "05-01-01",
@@ -43,9 +43,11 @@
       "score": 25,
       "verifiability": "VERIFIABLE",
       "criteria": [
-        {"criterion_id": "DESIGN-IMPLEMENTATION-PATH", "conclusion": "SUPPORTED", "applicable": true, "max_score": 8, "deduction": 0, "score": 8},
-        {"criterion_id": "DESIGN-DECISION-QUALITY", "conclusion": "SUPPORTED", "applicable": true, "max_score": 6, "deduction": 0, "score": 6},
-        {"criterion_id": "DESIGN-IMPACT-COVERAGE", "conclusion": "SUPPORTED", "applicable": true, "max_score": 6, "deduction": 0, "score": 6},
+        {"criterion_id": "DESIGN-IMPLEMENTATION-PATH", "conclusion": "SUPPORTED", "applicable": true, "max_score": 4, "deduction": 0, "score": 4},
+        {"criterion_id": "DESIGN-FEAT-RUNTIME-COVERAGE", "conclusion": "SUPPORTED", "applicable": true, "max_score": 5, "deduction": 0, "score": 5},
+        {"criterion_id": "DESIGN-ALGORITHM-DATA-STATE", "conclusion": "SUPPORTED", "applicable": true, "max_score": 4, "deduction": 0, "score": 4},
+        {"criterion_id": "DESIGN-DECISION-QUALITY", "conclusion": "SUPPORTED", "applicable": true, "max_score": 4, "deduction": 0, "score": 4},
+        {"criterion_id": "DESIGN-IMPACT-COVERAGE", "conclusion": "SUPPORTED", "applicable": true, "max_score": 3, "deduction": 0, "score": 3},
         {"criterion_id": "DESIGN-VERIFICATION-PLAN", "conclusion": "SUPPORTED", "applicable": true, "max_score": 5, "deduction": 0, "score": 5}
       ]
     },

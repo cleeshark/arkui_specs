@@ -390,8 +390,9 @@ CI脚本中，执行不完整的优先级高于质量门禁失败，不会因为
 | `sdk_rules.yaml` | SDK声明定位配置 |
 | `exemptions.yaml` | 带Owner、原因和到期时间的临时豁免 |
 | `rule_applicability.yaml` | 活跃静态规则的适用性、前置条件、抑制条件和推荐Gate |
-| `rubric.yaml` | Rubric v0.1候选版：五维权重、扣分、封顶、置信度和准入规则 |
+| `rubric.yaml` | Rubric v0.2候选版：五维权重、20项Criterion、扣分、封顶、置信度和准入规则 |
 | `complexity_rules.yaml` | Feature复杂度归一和Function级聚合、评审深度及N/A资格 |
+| `design_completeness_rules.yaml` | Design六项完整性Criterion的Function/Feat覆盖要求及脚本/Skill分工 |
 | `schemas/` | Function Context、静态结果、证据、报告、Baseline和单Function评价JSON Schema |
 | `baselines/current.json` | 当前可比较的完整Finding存量基线 |
 | `golden/manifest.yaml` | 参考评价Pilot、冻结revision和Function输入指纹 |
@@ -400,7 +401,7 @@ CI脚本中，执行不完整的优先级高于质量门禁失败，不会因为
 
 临时方案和任务拆分位于 [`specs/.evaluator`](../../.evaluator/)；它们不属于正式 Feature/Design 基线。
 
-### 8.1 校验 Rubric v0.1 协议
+### 8.1 校验 Rubric v0.2 协议
 
 协议校验不依赖第三方 `jsonschema` 包。仓内校验器会同时检查：
 
@@ -410,6 +411,7 @@ CI脚本中，执行不完整的优先级高于质量门禁失败，不会因为
 - Critical/Major/Minor发布分封顶与静态Gate优先级。
 - 四项置信度权重、工具完整性和准入阈值。
 - Rubric、复杂度规则、Evaluator/Aggregator协议和JSON Schema版本一致性。
+- Design六项Criterion、必检项顺序、Function/逐Feat覆盖范围和完整性规则版本一致性。
 
 执行：
 
@@ -418,7 +420,9 @@ PYTHONPATH=specs/tools python3 -m spec_eval.protocol_validator \
   --evaluation-root specs/evaluation
 ```
 
-当前协议状态为`candidate`。工程字段已经版本化并由自动化测试保护；当前Pilot采用单次评价、一次确认的入库方式。修改权重、扣分、门禁封顶或结论语义时必须提升Rubric版本，不能在`0.1.0`下静默改变含义。
+当前协议状态为`candidate`。工程字段已经版本化并由自动化测试保护；当前Pilot采用单次评价、一次确认的入库方式。Design完整性升级后的当前Rubric为`0.2.0`，包含20项Criterion。修改权重、扣分、门禁封顶或结论语义时必须继续提升Rubric版本，不能在同一版本下静默改变含义。
+
+Design维度仍为25分，但从原4项拆分为6项：架构上下文与分层调用链4分、逐Feat端到端运行设计5分、关键算法/数据/状态4分、ADR候选与取舍4分、构建/产物/注册/部署3分、验证与风险闭环5分。标题、表格、图数量、篇幅和自审勾选不能作为`SUPPORTED`证据。
 
 五维固定权重：
 
@@ -434,7 +438,7 @@ PYTHONPATH=specs/tools python3 -m spec_eval.protocol_validator \
 
 ### 8.2 单Function参考评价
 
-NEXT-006使用12个已确认Function作为Pilot。样本、输入revision和Function指纹位于`evaluation/golden/manifest.yaml`；每个Function只在`evaluation/reviews/`保留一份当前评价文件。
+NEXT-006使用12个Function作为Pilot。样本、输入revision和Function指纹位于`evaluation/golden/manifest.yaml`；每个Function只在`evaluation/reviews/`保留一份当前评价文件。Rubric升级后，旧版本Review必须按v0.2补齐新Criterion并重新确认，不能沿用旧Design分数。
 
 校验Pilot覆盖和输入是否漂移：
 
@@ -451,6 +455,12 @@ PYTHONPATH=specs/tools python3 -m spec_eval.evaluation_validator \
   > specs/evaluation/reviews/03-07-01.yaml
 ```
 
+Rubric升级后批量刷新已有草稿（不会修改`confirmed`或`superseded`记录）：
+
+```bash
+PYTHONPATH=specs/tools python3 -m spec_eval.evaluation_validator --refresh-drafts
+```
+
 校验单份评价：
 
 ```bash
@@ -458,7 +468,7 @@ PYTHONPATH=specs/tools python3 -m spec_eval.evaluation_validator \
   --evaluation specs/evaluation/reviews/03-07-01.yaml
 ```
 
-草稿允许18项Criterion暂时为`NOT_VERIFIABLE`且分数为`null`。确认入库前必须完成真实结论、证据和精确分数，并记录一次`accepted`确认。静态信号分层仅用于选样，不能代替质量等级。
+草稿允许20项Criterion暂时为`NOT_VERIFIABLE`且分数为`null`。确认入库前必须完成真实结论、证据和精确分数，并记录一次`accepted`确认。静态信号分层仅用于选样，不能代替质量等级。
 
 规则修改后除普通单测外，还必须运行：
 

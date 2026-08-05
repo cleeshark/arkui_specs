@@ -1,5 +1,5 @@
 schema_version: 1
-rubric_version: 0.1.0
+rubric_version: 0.2.0
 status: candidate
 evaluation_unit: function
 description: >-
@@ -13,11 +13,12 @@ approval:
   note: Engineering protocol is implemented; each reference evaluation is confirmed once before commit.
 
 protocol_compatibility:
-  complexity_rules_version: 0.1.0
+  complexity_rules_version: 0.2.0
+  design_completeness_rules_version: 0.1.0
   semantic_result_schema_version: 1
   score_result_schema_version: 1
   evaluation_report_schema_version: 1
-  evaluator_protocol_versions: [0.1.0]
+  evaluator_protocol_versions: [0.2.0]
   aggregator_protocol_versions: [0.1.0]
 
 score_model:
@@ -245,42 +246,130 @@ dimensions:
     weight: 25
     criteria:
       - id: DESIGN-IMPLEMENTATION-PATH
-        name: 真实实现路径与调用链
+        name: 架构上下文与分层调用链
         evaluator: semantic
-        max_score: 8
+        max_score: 4
         allow_not_applicable: false
-        required_evidence_types: [design_location, source_citation]
+        required_evidence_types: [design_location, source_citation, registry_entry]
+        coverage_scope: function
+        required_checks:
+          - DESIGN-CONTEXT-REPOSITORIES
+          - DESIGN-CONTEXT-MODULE-RESPONSIBILITIES
+          - DESIGN-LAYER-END-TO-END
+          - DESIGN-LAYER-BOUNDARIES
+        outcome_policy:
+          SUPPORTED: 所有适用仓、模块、分层和职责边界均由Design覆盖且与冻结源码一致
+          PARTIALLY_SUPPORTED: 主链存在但遗漏部分适用模块、加载入口、分层或职责边界
+          CONTRADICTED: Design中的主调用方向、模块职责或分层关系与冻结源码冲突
+          MISSING: 缺少可识别的架构上下文或端到端分层调用链
         outcomes:
           SUPPORTED: {deduction: 0}
-          PARTIALLY_SUPPORTED: {deduction: 4, severity: Major}
-          CONTRADICTED: {deduction: 8, severity: Critical}
-          MISSING: {deduction: 8, severity: Major}
+          PARTIALLY_SUPPORTED: {deduction: 2, severity: Major}
+          CONTRADICTED: {deduction: 4, severity: Critical}
+          MISSING: {deduction: 4, severity: Major}
+          NOT_APPLICABLE: {deduction: 0, exclude_from_denominator: true}
+          NOT_VERIFIABLE: {deduction: 0, confidence_penalty: true}
+      - id: DESIGN-FEAT-RUNTIME-COVERAGE
+        name: 逐Feat端到端运行设计覆盖
+        evaluator: semantic
+        max_score: 5
+        allow_not_applicable: false
+        required_evidence_types: [design_location, spec_location, source_citation, registry_entry]
+        coverage_scope: per_registered_feature
+        required_checks:
+          - DESIGN-FEAT-INPUT-ENTRY
+          - DESIGN-FEAT-STATE-UPDATE
+          - DESIGN-FEAT-CORE-PROCESS
+          - DESIGN-FEAT-OUTPUT-EVENT
+          - DESIGN-FEAT-EXCEPTION-RECOVERY
+          - DESIGN-FEAT-TEST-HANDOFF
+        outcome_policy:
+          SUPPORTED: 每个已注册非Deprecated Feat均覆盖输入、状态、核心处理、输出、异常恢复和测试衔接
+          PARTIALLY_SUPPORTED: 所有Feat均可定位但至少一个Feat缺少一个或多个关键运行环节
+          CONTRADICTED: Feat运行流程与Spec或冻结源码存在实质冲突
+          MISSING: 至少一个已注册Feat没有可识别的详细运行设计，或仅存在标题/摘要
+        outcomes:
+          SUPPORTED: {deduction: 0}
+          PARTIALLY_SUPPORTED: {deduction: 2.5, severity: Major}
+          CONTRADICTED: {deduction: 5, severity: Major}
+          MISSING: {deduction: 5, severity: Major}
+          NOT_APPLICABLE: {deduction: 0, exclude_from_denominator: true}
+          NOT_VERIFIABLE: {deduction: 0, confidence_penalty: true}
+      - id: DESIGN-ALGORITHM-DATA-STATE
+        name: 关键算法、数据与状态设计
+        evaluator: semantic
+        max_score: 4
+        allow_not_applicable: false
+        required_evidence_types: [design_location, source_citation]
+        coverage_scope: function_and_feature
+        required_checks:
+          - DESIGN-ALGORITHM-MAIN-BRANCHES
+          - DESIGN-DATA-MODEL-LIFECYCLE
+          - DESIGN-STATE-TRANSITIONS
+          - DESIGN-RESOURCE-OWNERSHIP
+          - DESIGN-THREAD-CONCURRENCY
+          - DESIGN-FAILURE-RECOVERY
+        outcome_policy:
+          SUPPORTED: 所有适用算法、数据生命周期、状态、资源、线程和恢复机制均有准确设计
+          PARTIALLY_SUPPORTED: 核心算法存在但至少一个适用的数据、状态、资源、并发或恢复设计不完整
+          CONTRADICTED: 关键算法、状态转换或资源生命周期与冻结源码冲突
+          MISSING: 对以算法或状态为核心的Function缺少关键算法、数据或状态设计
+        outcomes:
+          SUPPORTED: {deduction: 0}
+          PARTIALLY_SUPPORTED: {deduction: 2, severity: Major}
+          CONTRADICTED: {deduction: 4, severity: Critical}
+          MISSING: {deduction: 4, severity: Major}
           NOT_APPLICABLE: {deduction: 0, exclude_from_denominator: true}
           NOT_VERIFIABLE: {deduction: 0, confidence_penalty: true}
       - id: DESIGN-DECISION-QUALITY
         name: ADR候选方案与取舍质量
         evaluator: semantic
-        max_score: 6
+        max_score: 4
         allow_not_applicable: true
         required_evidence_types: [design_location, source_citation, review_record]
+        coverage_scope: function_and_feature
+        required_checks:
+          - DESIGN-ADR-KEY-DECISIONS
+          - DESIGN-ADR-REAL-ALTERNATIVES
+          - DESIGN-ADR-TRADEOFF-CRITERIA
+          - DESIGN-ADR-COMPATIBILITY-COST
+          - DESIGN-ADR-VALIDATION
+        outcome_policy:
+          SUPPORTED: 关键决策具有真实候选方案、适用条件、成本、兼容性、取舍理由和验证依据
+          PARTIALLY_SUPPORTED: ADR存在但候选、成本、适用条件或验证依据不完整
+          CONTRADICTED: 已选择方案或取舍依据与冻结实现事实冲突
+          MISSING: 适用复杂度要求ADR但没有实质性决策记录
         outcomes:
           SUPPORTED: {deduction: 0}
-          PARTIALLY_SUPPORTED: {deduction: 3, severity: Major}
-          CONTRADICTED: {deduction: 6, severity: Major}
-          MISSING: {deduction: 6, severity: Major}
+          PARTIALLY_SUPPORTED: {deduction: 2, severity: Major}
+          CONTRADICTED: {deduction: 4, severity: Major}
+          MISSING: {deduction: 4, severity: Major}
           NOT_APPLICABLE: {deduction: 0, exclude_from_denominator: true}
           NOT_VERIFIABLE: {deduction: 0, confidence_penalty: true}
       - id: DESIGN-IMPACT-COVERAGE
-        name: 模块、构建与依赖影响覆盖
+        name: 构建、产物、注册与部署影响
         evaluator: semantic
-        max_score: 6
+        max_score: 3
         allow_not_applicable: false
         required_evidence_types: [design_location, source_citation, registry_entry]
+        coverage_scope: function
+        required_checks:
+          - DESIGN-BUILD-TARGETS
+          - DESIGN-BUILD-CONDITIONS
+          - DESIGN-DEPENDENCIES
+          - DESIGN-OUTPUT-ARTIFACTS
+          - DESIGN-REGISTRATION-LOADING
+          - DESIGN-DEPLOYMENT-PACKAGING
+        outcome_policy:
+          SUPPORTED: 适用的构建目标、条件、依赖、产物、注册、加载和部署路径均完整准确
+          PARTIALLY_SUPPORTED: 说明了变更影响但遗漏一个或多个存量构建、产物、注册、加载或部署环节
+          CONTRADICTED: 构建、依赖、产物或加载结论与冻结源码冲突
+          MISSING: 适用Function没有可识别的构建部署设计，或仅写本次不修改BUILD文件
         outcomes:
           SUPPORTED: {deduction: 0}
-          PARTIALLY_SUPPORTED: {deduction: 3, severity: Major}
-          CONTRADICTED: {deduction: 6, severity: Major}
-          MISSING: {deduction: 6, severity: Major}
+          PARTIALLY_SUPPORTED: {deduction: 1.5, severity: Major}
+          CONTRADICTED: {deduction: 3, severity: Major}
+          MISSING: {deduction: 3, severity: Major}
           NOT_APPLICABLE: {deduction: 0, exclude_from_denominator: true}
           NOT_VERIFIABLE: {deduction: 0, confidence_penalty: true}
       - id: DESIGN-VERIFICATION-PLAN
@@ -289,6 +378,20 @@ dimensions:
         max_score: 5
         allow_not_applicable: false
         required_evidence_types: [design_location, test_evidence]
+        coverage_scope: function_and_feature
+        required_checks:
+          - DESIGN-VERIFY-FEAT-AC-MAPPING
+          - DESIGN-VERIFY-BUILD-TARGET
+          - DESIGN-VERIFY-TEST-BINARY
+          - DESIGN-VERIFY-CASE-OR-FILTER
+          - DESIGN-VERIFY-EXPECTED-RESULT
+          - DESIGN-VERIFY-FAILURE-RECOVERY
+          - DESIGN-VERIFY-RISK-CLOSURE
+        outcome_policy:
+          SUPPORTED: 验证方案可执行且覆盖Feat、AC、关键算法、异常恢复和风险关闭
+          PARTIALLY_SUPPORTED: 存在验证方向但缺少命令、target、用例、预期结果或覆盖映射
+          CONTRADICTED: 验证入口、目标或预期结果与实际构建测试资产冲突
+          MISSING: 缺少可执行验证方案或无法支撑关键设计结论
         outcomes:
           SUPPORTED: {deduction: 0}
           PARTIALLY_SUPPORTED: {deduction: 2.5, severity: Major}

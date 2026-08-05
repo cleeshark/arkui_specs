@@ -8,8 +8,8 @@ description: >-
   final quality labels.
 
 protocol:
-  rubric_version: 0.1.0
-  complexity_rules_version: 0.1.0
+  rubric_version: 0.2.0
+  complexity_rules_version: 0.2.0
 
 revisions:
   ace_engine: d91b4e4990a990da2bfe809514e573e35852193e

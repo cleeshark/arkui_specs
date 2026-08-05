@@ -10,9 +10,9 @@ evaluator:
   evaluated_at: null
 semantic_result:
   schema_version: 1
-  rubric_version: 0.1.0
-  complexity_rules_version: 0.1.0
-  evaluator_protocol_version: 0.1.0
+  rubric_version: 0.2.0
+  complexity_rules_version: 0.2.0
+  evaluator_protocol_version: 0.2.0
   evaluator_version: human:sunfei2021
   func_id: 02-01-04
   source_revision: d91b4e4990a990da2bfe809514e573e35852193e
@@ -110,6 +110,24 @@ semantic_result:
     claim_ids: []
     evidence: []
     findings: []
+  - criterion_id: DESIGN-FEAT-RUNTIME-COVERAGE
+    dimension_id: design_quality
+    applicability: APPLICABLE
+    conclusion: NOT_VERIFIABLE
+    reason: 待评价人根据冻结输入和证据填写
+    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
+    claim_ids: []
+    evidence: []
+    findings: []
+  - criterion_id: DESIGN-ALGORITHM-DATA-STATE
+    dimension_id: design_quality
+    applicability: APPLICABLE
+    conclusion: NOT_VERIFIABLE
+    reason: 待评价人根据冻结输入和证据填写
+    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
+    claim_ids: []
+    evidence: []
+    findings: []
   - criterion_id: DESIGN-DECISION-QUALITY
     dimension_id: design_quality
     applicability: APPLICABLE
@@ -192,11 +210,11 @@ semantic_result:
     evidence: []
     findings: []
   coverage:
-    expected_criteria: 18
-    evaluated_criteria: 18
-    applicable_criteria: 18
+    expected_criteria: 20
+    evaluated_criteria: 20
+    applicable_criteria: 20
     not_applicable_criteria: 0
-    not_verifiable_criteria: 18
+    not_verifiable_criteria: 20
   execution:
     static_complete: true
     evidence_complete: true
@@ -220,5 +238,5 @@ confirmation:
   conclusion: pending
   notes: []
 notes:
-- 完成18个Criterion后填写精确分数并进行一次确认。
+- 完成20个Criterion后填写精确分数并进行一次确认。
 - Critical/Major Finding必须包含冻结revision下的可复现证据。

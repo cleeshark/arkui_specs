@@ -23,8 +23,8 @@
       "type": "object",
       "required": ["rubric_version", "complexity_rules_version"],
       "properties": {
-        "rubric_version": { "type": "string", "const": "0.1.0" },
-        "complexity_rules_version": { "type": "string", "const": "0.1.0" }
+        "rubric_version": { "type": "string", "const": "0.2.0" },
+        "complexity_rules_version": { "type": "string", "const": "0.2.0" }
       },
       "additionalProperties": false
     },

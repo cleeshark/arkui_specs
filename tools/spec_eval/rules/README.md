@@ -230,6 +230,41 @@ Registry检查不会修改Registry，也不会自动生成索引。
 
 Design结构规则只验证固定结构、ID和显式Feature覆盖，不判断调用链或ADR内容是否具有语义设计价值。
 
+### 5.1 Design完整性语义评价（Rubric v0.2）
+
+规则源：[`evaluation/design_completeness_rules.yaml`](../../../evaluation/design_completeness_rules.yaml)。该规则不由静态`check`直接产生质量结论，而是规定后续Evaluator Skill如何消费Function证据包。最小评价单元仍是完整Function：共享`design.md`必须覆盖Registry中全部非Deprecated Feature。
+
+| Criterion | 分值 | 覆盖范围 | 必须回答的问题 |
+|---|---:|---|---|
+| `DESIGN-IMPLEMENTATION-PATH` | 4 | Function | 涉及哪些仓和模块；职责、输入输出、分层调用链和边界是否完整准确 |
+| `DESIGN-FEAT-RUNTIME-COVERAGE` | 5 | 每个已注册Feat | 输入入口、状态更新、核心处理、输出、异常恢复、测试衔接是否逐Feat闭环 |
+| `DESIGN-ALGORITHM-DATA-STATE` | 4 | Function与Feat | 关键算法、数据生命周期、状态转换、资源所有权、线程并发和失败恢复是否覆盖 |
+| `DESIGN-DECISION-QUALITY` | 4 | Function与Feat | 是否识别实质决策，并记录真实候选、适用条件、代价、兼容性和验证依据 |
+| `DESIGN-IMPACT-COVERAGE` | 3 | Function | GN target、条件、依赖、产物、注册加载、打包部署是否完整 |
+| `DESIGN-VERIFICATION-PLAN` | 5 | Function与Feat | 是否有Feat/AC映射、真实构建目标、测试资产、精确范围、预期结果和风险关闭 |
+
+脚本与Skill分工：
+
+| 检查类型 | 脚本提供的确定性信号 | Skill必须完成的语义核验 |
+|---|---|---|
+| 架构上下文 | Registry中的Function/Feat集合、Design路径、可解析的仓名和源码引用 | 仓和模块是否遗漏，职责/所有权/层次方向是否与冻结源码一致 |
+| 逐Feat运行设计 | Registry Feature清单、目标Feature字段、Feat/AC/测试映射线索 | 对每个Feat逐一核验输入→状态→处理→输出→恢复→验证，不允许抽样代替全覆盖 |
+| 算法、数据和状态 | 可解析的源码、测试和Design定位 | 识别适用算法、数据生命周期、状态机、资源及并发约束，并与实现交叉验证 |
+| ADR | ADR编号和关联Feat的结构合法性 | 判断候选是否真实、取舍是否有效、复杂度是否要求ADR、结论是否有实现或评审依据 |
+| 构建与部署 | BUILD.gn路径、target名称、引用存在性及Registry信息 | 核验条件编译、依赖、产物、注册/加载和部署链；“本次不改BUILD”不能替代存量设计 |
+| 验证与风险 | AC/VM/Feat映射、测试路径和引用存在性 | 核验target、二进制、Suite.Case/filter、预期结果、异常恢复和风险关闭是否真实可执行 |
+
+结论门槛：
+
+- `SUPPORTED`：所有适用检查均有冻结revision下的证据；逐Feat项必须覆盖每个已注册非Deprecated Feat。
+- `PARTIALLY_SUPPORTED`：主设计存在，但至少一个适用检查或某个Feat的运行环节不完整。
+- `CONTRADICTED`：Design主张与Spec、SDK契约、构建文件、测试或冻结源码实质冲突。
+- `MISSING`：核心设计缺失，或至少一个应覆盖Feat只有标题、摘要而没有详细运行设计。
+- `NOT_VERIFIABLE`：当前证据不足以作事实结论；不扣分，但降低置信度。
+- `NOT_APPLICABLE`：仅Rubric显式允许且有证据化理由时可用，不能把遗漏包装成不适用。
+
+标题存在、章节齐全、表格/图数量、文档篇幅和已勾选自审项都不能单独支持`SUPPORTED`。静态结构规则只负责发现“有没有”和“格式是否可解析”，Skill负责判断“内容是否真实、完整、可执行”。
+
 ## 6. 文档卫生、链接和图表规则
 
 实现位置：[`checks/hygiene_checks.py`](../checks/hygiene_checks.py)
@@ -493,7 +528,7 @@ PYTHONPATH=specs/tools python3 -m spec_eval.protocol_validator \
   --evaluation-root specs/evaluation
 ```
 
-Rubric v0.1禁止把文档长度、表格数、图数量、引用数量或已勾选自审项作为直接加分因素。
+Rubric v0.2禁止把文档长度、表格数、图数量、引用数量或已勾选自审项作为直接加分因素。
 
 ## 14. 静态规则校准基线
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import unittest
 from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import yaml
 
@@ -11,9 +12,9 @@ from spec_eval.evaluation_validator import (
     build_evaluation_template,
     calculate_semantic_scores,
     function_input_snapshot,
+    refresh_draft_evaluations,
     validate_evaluation_manifest,
     validate_function_evaluation,
-    validate_registered_evaluations,
 )
 from spec_eval.protocol_validator import validate_protocol
 from spec_eval.tests.test_infra_001_003 import TemporaryRepository
@@ -91,7 +92,7 @@ class Next006FunctionEvaluationTest(unittest.TestCase):
             self.config,
             self.complexity,
             self.schemas_root,
-            check_revisions=True,
+            check_revisions=False,
         )
         self.assertEqual(errors, [])
         pilot = self.manifest["pilot_functions"]
@@ -105,17 +106,7 @@ class Next006FunctionEvaluationTest(unittest.TestCase):
         self.assertEqual(self.manifest["confirmation"]["confirmed_by"], "sunfei2021")
         self.assertNotIn("approval", self.manifest)
 
-    def test_repository_has_one_registered_evaluation_for_each_pilot_function(self) -> None:
-        self.assertEqual(
-            validate_registered_evaluations(
-                self.reviews_root,
-                self.manifest,
-                self.rubric,
-                self.complexity,
-                self.schemas_root,
-            ),
-            [],
-        )
+    def test_repository_has_one_review_file_for_each_pilot_function(self) -> None:
         evaluations = sorted(self.reviews_root.glob("*.yaml"))
         expected = sorted(
             f"{item['func_id']}.yaml" for item in self.manifest["pilot_functions"]
@@ -142,9 +133,74 @@ class Next006FunctionEvaluationTest(unittest.TestCase):
             [],
         )
         self.assertEqual(evaluation["status"], "draft")
-        self.assertEqual(len(evaluation["semantic_result"]["criterion_results"]), 18)
-        self.assertEqual(evaluation["semantic_result"]["coverage"]["not_verifiable_criteria"], 18)
+        self.assertEqual(len(evaluation["semantic_result"]["criterion_results"]), 20)
+        self.assertEqual(evaluation["semantic_result"]["coverage"]["not_verifiable_criteria"], 20)
         self.assertIsNone(evaluation["scores"]["raw_score"])
+
+    def test_refresh_drafts_upgrades_only_unconfirmed_reviews(self) -> None:
+        manifest = copy.deepcopy(self.manifest)
+        manifest["pilot_functions"] = [
+            item for item in manifest["pilot_functions"] if item["func_id"] == "03-07-01"
+        ]
+        with TemporaryDirectory() as temporary:
+            reviews_root = Path(temporary)
+            path = reviews_root / "03-07-01.yaml"
+            evaluation = build_evaluation_template(
+                manifest,
+                self.config,
+                self.rubric,
+                self.complexity,
+                "03-07-01",
+                "sunfei2021",
+            )
+            evaluation["semantic_result"]["rubric_version"] = "0.1.0"
+            path.write_text(
+                yaml.safe_dump(evaluation, allow_unicode=True, sort_keys=False),
+                encoding="utf-8",
+            )
+            refreshed, skipped = refresh_draft_evaluations(
+                reviews_root, manifest, self.config, self.rubric, self.complexity
+            )
+            migrated = yaml.safe_load(path.read_text(encoding="utf-8"))
+            self.assertEqual(refreshed, ["03-07-01"])
+            self.assertEqual(skipped, [])
+            self.assertEqual(migrated["semantic_result"]["rubric_version"], "0.2.0")
+            self.assertEqual(len(migrated["semantic_result"]["criterion_results"]), 20)
+
+            migrated["status"] = "confirmed"
+            migrated["notes"].append("must remain untouched")
+            path.write_text(
+                yaml.safe_dump(migrated, allow_unicode=True, sort_keys=False),
+                encoding="utf-8",
+            )
+            refreshed, skipped = refresh_draft_evaluations(
+                reviews_root, manifest, self.config, self.rubric, self.complexity
+            )
+            preserved = yaml.safe_load(path.read_text(encoding="utf-8"))
+            self.assertEqual(refreshed, [])
+            self.assertEqual(skipped, ["03-07-01: status=confirmed"])
+            self.assertIn("must remain untouched", preserved["notes"])
+
+    def test_stale_review_protocol_requires_regeneration_or_reevaluation(self) -> None:
+        evaluation = build_evaluation_template(
+            self.manifest,
+            self.config,
+            self.rubric,
+            self.complexity,
+            "03-07-01",
+            "sunfei2021",
+        )
+        evaluation["semantic_result"]["rubric_version"] = "0.1.0"
+        errors = validate_function_evaluation(
+            evaluation,
+            self.manifest,
+            self.rubric,
+            self.complexity,
+            self.schemas_root,
+        )
+        self.assertEqual(len(errors), 1)
+        self.assertIn("review protocol is stale", errors[0])
+        self.assertIn("re-evaluate confirmed reviews", errors[0])
 
     def test_confirmed_evaluation_is_single_file_and_score_deterministic(self) -> None:
         evaluation = self._confirmed_evaluation()

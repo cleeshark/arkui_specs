@@ -222,7 +222,7 @@ def build_evaluation_template(
             "schema_version": 1,
             "rubric_version": rubric["rubric_version"],
             "complexity_rules_version": complexity_rules["complexity_rules_version"],
-            "evaluator_protocol_version": "0.1.0",
+            "evaluator_protocol_version": "0.2.0",
             "evaluator_version": f"human:{evaluator_id}",
             "func_id": func_id,
             "source_revision": manifest["revisions"]["ace_engine"],
@@ -257,7 +257,7 @@ def build_evaluation_template(
             "notes": [],
         },
         "notes": [
-            "完成18个Criterion后填写精确分数并进行一次确认。",
+            f"完成{len(criterion_results)}个Criterion后填写精确分数并进行一次确认。",
             "Critical/Major Finding必须包含冻结revision下的可复现证据。",
         ],
     }
@@ -303,6 +303,21 @@ def validate_function_evaluation(
     complexity_rules: dict[str, Any],
     schemas_root: Path,
 ) -> list[str]:
+    semantic = evaluation.get("semantic_result", {})
+    expected_versions = {
+        "rubric_version": rubric.get("rubric_version"),
+        "complexity_rules_version": complexity_rules.get("complexity_rules_version"),
+        "evaluator_protocol_version": rubric.get("protocol_compatibility", {}).get(
+            "evaluator_protocol_versions", [None]
+        )[0],
+    }
+    actual_versions = {field: semantic.get(field) for field in expected_versions}
+    if actual_versions != expected_versions:
+        return [
+            f"{evaluation.get('func_id')}: review protocol is stale "
+            f"(actual={actual_versions}, expected={expected_versions}); "
+            "regenerate drafts or re-evaluate confirmed reviews under the current Rubric"
+        ]
     errors = JsonSchemaSubsetValidator(schemas_root).validate_file(
         evaluation, schemas_root / "function-evaluation.schema.json"
     )
@@ -320,7 +335,6 @@ def validate_function_evaluation(
     if evaluation.get("source_revision") != manifest.get("revisions", {}).get("ace_engine"):
         errors.append("evaluation source revision does not match the Pilot manifest")
 
-    semantic = evaluation.get("semantic_result", {})
     errors.extend(validate_semantic_result(semantic, rubric, complexity_rules, schemas_root))
     if semantic.get("func_id") != func_id:
         errors.append("evaluation and semantic_result FuncIDs must match")
@@ -417,6 +431,48 @@ def validate_registered_evaluations(
     return errors
 
 
+def refresh_draft_evaluations(
+    reviews_root: Path,
+    manifest: dict[str, Any],
+    config: EvaluationConfig,
+    rubric: dict[str, Any],
+    complexity_rules: dict[str, Any],
+) -> tuple[list[str], list[str]]:
+    """Regenerate existing draft reviews with the current protocol.
+
+    Confirmed and superseded records are deliberately left untouched because a
+    protocol upgrade requires a fresh semantic judgment, not a mechanical score
+    conversion.
+    """
+
+    refreshed: list[str] = []
+    skipped: list[str] = []
+    for sample in manifest.get("pilot_functions", []):
+        func_id = sample.get("func_id")
+        path = reviews_root / f"{func_id}.yaml"
+        if not path.is_file():
+            skipped.append(f"{func_id}: missing review file")
+            continue
+        evaluation = yaml.safe_load(path.read_text(encoding="utf-8"))
+        status = evaluation.get("status") if isinstance(evaluation, dict) else None
+        if status != "draft":
+            skipped.append(f"{func_id}: status={status}")
+            continue
+        evaluator_id = evaluation.get("evaluator", {}).get("evaluator_id")
+        if not evaluator_id:
+            skipped.append(f"{func_id}: missing evaluator_id")
+            continue
+        template = build_evaluation_template(
+            manifest, config, rubric, complexity_rules, func_id, evaluator_id
+        )
+        path.write_text(
+            yaml.safe_dump(template, allow_unicode=True, sort_keys=False),
+            encoding="utf-8",
+        )
+        refreshed.append(func_id)
+    return refreshed, skipped
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Generate and validate single Function evaluations")
     parser.add_argument(
@@ -433,6 +489,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--template", metavar="FUNC_ID", help="Print one draft Function evaluation")
     parser.add_argument("--evaluator-id", help="Evaluator identifier used with --template")
     parser.add_argument("--evaluation", type=Path, help="Validate one Function evaluation file")
+    parser.add_argument(
+        "--refresh-drafts",
+        action="store_true",
+        help="Regenerate existing draft reviews with the current protocol; confirmed reviews are untouched",
+    )
     return parser
 
 
@@ -447,6 +508,18 @@ def main(argv: list[str] | None = None) -> int:
     evaluation_root = args.manifest.parents[1]
     rubric, complexity, errors = validate_protocol(evaluation_root)
     schemas_root = evaluation_root / "schemas"
+    if args.refresh_drafts:
+        if errors:
+            for error in errors:
+                print(f"ERROR: {error}")
+            return 1
+        refreshed, skipped = refresh_draft_evaluations(
+            evaluation_root / "reviews", manifest, config, rubric, complexity
+        )
+        print(f"draft reviews refreshed: {len(refreshed)}")
+        for item in skipped:
+            print(f"SKIP: {item}")
+        return 0
     if args.template:
         if not args.evaluator_id:
             parser.error("--template requires --evaluator-id")

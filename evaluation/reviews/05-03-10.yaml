@@ -4,15 +4,15 @@ evaluation_id: EVAL-05-03-10
 func_id: 05-03-10
 input_fingerprint: sha256:ba4c06d1495fb82422b9e61a30684393ce9eae63f60a8bc66e217c2e9b2c32a2
 source_revision: d91b4e4990a990da2bfe809514e573e35852193e
-status: draft
+status: confirmed
 evaluator:
   evaluator_id: sunfei2021
-  evaluated_at: null
+  evaluated_at: '2026-08-05T22:17:30+08:00'
 semantic_result:
   schema_version: 1
-  rubric_version: 0.1.0
-  complexity_rules_version: 0.1.0
-  evaluator_protocol_version: 0.1.0
+  rubric_version: 0.2.0
+  complexity_rules_version: 0.2.0
+  evaluator_protocol_version: 0.2.0
   evaluator_version: human:sunfei2021
   func_id: 05-03-10
   source_revision: d91b4e4990a990da2bfe809514e573e35852193e
@@ -38,193 +38,825 @@ semantic_result:
   - criterion_id: CORRECTNESS-SOURCE-SUPPORT
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      六个Feat的三路布局、Sections、滚动事件和缓存主路径总体可由冻结源码支撑，但两项明确语义与实现不符：
+      同一Scroller再次绑定时实现会清理旧观察关系并改绑新WaterFlow，而不是拒绝；cachedCount负数、动态reset
+      和静态undefined也不是统一恢复动态默认策略。其余已抽查主路径未发现新的实质冲突。
+    claim_ids: [Feat-01-AC-1.2, Feat-05-AC-1.4, Feat-06-AC-1.2]
+    evidence:
+    - evidence_id: EV-05-03-10-SRC-SCROLLER-BRIDGE
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/waterflow/bridge/waterflow/arkts_native_water_flow_bridge.cpp
+      line_start: 499
+      line_end: 521
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:b5f73ec91fff3080ed8f20a3da5da956459b1bee48895811c1fc12e9c4d1dce3
+      claim_id: Feat-01-AC-1.2
+      description: WaterFlow创建路径直接把新Controller写入同一个JSScroller。
+    - evidence_id: EV-05-03-10-SRC-SCROLLER-REBIND
+      type: source_citation
+      path: frameworks/bridge/declarative_frontend/jsview/js_scroller.h
+      line_start: 38
+      line_end: 50
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4ca114d20f4ef0e9926375f84cd5eff16fddee1180e0b77ff3fb9da13d7fefec
+      claim_id: Feat-05-AC-1.4
+      description: SetController清理旧Controller观察关系后改绑新Controller，没有拒绝分支。
+    - evidence_id: EV-05-03-10-SRC-CACHE-DYNAMIC
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/waterflow/bridge/waterflow/water_flow_dynamic_modifier.cpp
+      line_start: 441
+      line_end: 453
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:ac5d59c0500f435580a21cffea7f2b8a4fbe29bcf0c4bd6f97547173d14a214d
+      claim_id: Feat-06-AC-1.2
+      description: 动态reset写入显式cachedCount=1，而不是清除属性并恢复动态默认增长。
+    - evidence_id: EV-05-03-10-SRC-CACHE-STATIC
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/waterflow/water_flow_model_static.cpp
+      line_start: 102
+      line_end: 125
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:408fea6661706235ff2306ca44433a809a5891166eef2455b7b010cea0367766
+      claim_id: Feat-06-AC-1.2
+      description: 静态负数钳制为1，undefined才清除CachedCount属性。
+    findings:
+    - finding_id: SEM-a72088ae3f4b9a148d808de4
+      criterion_id: CORRECTNESS-SOURCE-SUPPORT
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: Spec把Scroller重复绑定写成拒绝，并把cachedCount负数、动态reset和静态undefined写成同一种恢复策略，均与冻结实现不一致。
+      recommendation: 将Scroller规则改为清理旧观察关系后重新绑定；分别描述cachedCount负数钳制为1、动态reset写1和静态undefined清属性。
+      evidence_ids: [EV-05-03-10-SRC-SCROLLER-BRIDGE, EV-05-03-10-SRC-SCROLLER-REBIND, EV-05-03-10-SRC-CACHE-DYNAMIC, EV-05-03-10-SRC-CACHE-STATIC]
+
   - criterion_id: CORRECTNESS-SDK-CONTRACT
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      WaterFlow、FlowItem、Sections、布局属性及事件的主要公开契约与SDK总体一致，但cachedCount的负数语义与
+      Spec不一致；Feat-05把版本、返回值和异常语义不同的Scroller控制及查询接口聚合为一行并标为错误码N/A，
+      遗漏fling的401和100004以及查询接口未绑定时的返回差异。
+    claim_ids: [API-cachedCount, API-Scroller]
+    evidence:
+    - evidence_id: EV-05-03-10-SDK-WATERFLOW
+      type: sdk_declaration
+      path: interface/sdk-js/api/@internal/component/ets/water_flow.d.ts
+      line_start: 706
+      line_end: 769
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:1a6876370981593c691de27232f77151aad30020d15072013645190582619792
+      claim_id: API-cachedCount
+      description: SDK声明cachedCount负数按1处理，并区分API11、API14重载和API20 syncLoad。
+    - evidence_id: EV-05-03-10-SDK-SCROLLER
+      type: sdk_declaration
+      path: interface/sdk-js/api/@internal/component/ets/scroll.d.ts
+      line_start: 413
+      line_end: 587
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c4fcae1b54ba56d522351beb5fb62d6bd7a1936740197a245aa75b78819ed195
+      claim_id: API-Scroller
+      description: Scroller各方法具有不同since、边界、返回值和BusinessError契约，fling包含401与100004。
+    - evidence_id: EV-05-03-10-SDK-SPEC-F5
+      type: spec_location
+      path: specs/05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-05-scroll-control-events-spec.md
+      line_start: 56
+      line_end: 71
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:fc73d24179029d96d3d798819b9bf8394b415c02963230c1ed2fd03a2e3c9cf1
+      description: Spec把多组Scroller控制和查询API聚合为一行并将错误码统一写为N/A。
+    findings:
+    - finding_id: SEM-38e77ee52a2a9ab50ac7cdf6
+      criterion_id: CORRECTNESS-SDK-CONTRACT
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: cachedCount负数契约写错，Scroller接口又被过度聚合，无法准确表达方法级版本、未绑定行为和fling错误码。
+      recommendation: 按具体API拆分签名、版本、返回值、错误码和边界，并将cachedCount负数明确为按1处理。
+      evidence_ids: [EV-05-03-10-SDK-WATERFLOW, EV-05-03-10-SDK-SCROLLER, EV-05-03-10-SDK-SPEC-F5]
+
   - criterion_id: CORRECTNESS-BOUNDARY-STATE
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design和Spec覆盖非法mode、Sections计数、远跳估算、deadline续作及lanes恢复等主要边界，但重复绑定状态转换和
+      cachedCount的动态/静态reset状态被写错；已有静态测试明确证明负数与undefined是不同状态转换。
+    claim_ids: [Feat-01-AC-1.2, Feat-06-AC-1.2]
+    evidence:
+    - evidence_id: EV-05-03-10-BOUNDARY-CACHE-TEST
+      type: test_evidence
+      path: test/unittest/core/pattern/waterflow/water_flow_static_test.cpp
+      line_start: 676
+      line_end: 706
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:77a3d5938b683e69996b1d14df07581c52391d55717bfecfd615323be7b96e8e
+      claim_id: Feat-06-AC-1.2
+      description: 测试分别断言负数钳制为1和nullopt清除属性。
+    - evidence_id: EV-05-03-10-BOUNDARY-SCROLLER
+      type: source_citation
+      path: frameworks/bridge/declarative_frontend/jsview/js_scroller.h
+      line_start: 38
+      line_end: 50
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4ca114d20f4ef0e9926375f84cd5eff16fddee1180e0b77ff3fb9da13d7fefec
+      claim_id: Feat-01-AC-1.2
+      description: 重复绑定执行观察关系迁移，没有拒绝状态。
+    findings:
+    - finding_id: SEM-e257e84d716fa636b59a54dd
+      criterion_id: CORRECTNESS-BOUNDARY-STATE
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 两个关键状态边界被合并或反向描述，导致重复绑定和cachedCount reset无法按Spec构造正确断言。
+      recommendation: 用独立AC描述旧Controller解绑、新Controller绑定、负数钳制、动态reset和静态属性清除。
+      evidence_ids: [EV-05-03-10-BOUNDARY-CACHE-TEST, EV-05-03-10-BOUNDARY-SCROLLER]
+
   - criterion_id: CORRECTNESS-CROSS-DOC-CONSISTENCY
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      六个Feat与Design的功能拆分、三路算法和缓存范围总体一致，但Spec中的Scroller拒绝语义和cachedCount默认策略偏差
+      未进入Design风险，Design仍以“实现即规格”和自审全部通过收口，形成Spec、Design与冻结实现不一致。
+    claim_ids: [WF-01, WF-02]
+    evidence:
+    - evidence_id: EV-05-03-10-CROSS-DESIGN
+      type: design_location
+      path: specs/05-ui-components/03-scroll-container-components/10-water-flow-flow-item/design.md
+      line_start: 16
+      line_end: 22
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c71e3a91bedc834a29953b00c51b3dab24d9e3fe372059464d162e2dc317172a
+      description: Design声明实现即规格，偏差仅记录风险。
+    - evidence_id: EV-05-03-10-CROSS-RISKS
+      type: design_location
+      path: specs/05-ui-components/03-scroll-container-components/10-water-flow-flow-item/design.md
+      line_start: 287
+      line_end: 306
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c71e3a91bedc834a29953b00c51b3dab24d9e3fe372059464d162e2dc317172a
+      description: 风险表未记录已发现的Scroller与cachedCount偏差，自审仍声明完整通过。
+    - evidence_id: EV-05-03-10-CROSS-REGISTRY
+      type: registry_entry
+      path: specs/evaluation/golden/manifest.yaml
+      line_start: 152
+      line_end: 162
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:879e75b5e184284c7ccae4050589ed15b7f0b0bd06a1fc99152531c1af32981a
+      description: Pilot登记WaterFlow为六Feat critical Function。
+    findings:
+    - finding_id: SEM-5ad1aae23134b84922895912
+      criterion_id: CORRECTNESS-CROSS-DOC-CONSISTENCY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 两项已证实的实现偏差没有回流Design风险与自审结论，跨文档一致性未闭环。
+      recommendation: 在Design风险和详细设计中同步记录Scroller重新绑定与cachedCount分路径语义，并更新自审状态。
+      evidence_ids: [EV-05-03-10-CROSS-DESIGN, EV-05-03-10-CROSS-RISKS, EV-05-03-10-CROSS-REGISTRY]
+
   - criterion_id: SPEC-AC-TESTABILITY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      多数AC使用WHEN/THEN并能定位状态或输出，但事件“按公共生命周期顺序”未列出顺序，范围外节点“可释放”缺少
+      必然条件和观测时点，远跳totalOffset“允许估算”缺少校准条件或误差判定，无法直接形成稳定断言。
+    claim_ids: [Feat-04-AC-2.2, Feat-05-AC-2.3, Feat-06-AC-1.3]
+    evidence:
+    - evidence_id: EV-05-03-10-AC-F4
+      type: spec_location
+      path: specs/05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-04-sliding-window-layout-spec.md
+      line_start: 30
+      line_end: 36
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:5d3019d3eeb3508974059d5250ffe467e53cf5ee28ede8a98a4bb03221db3b0d
+      claim_id: Feat-04-AC-2.2
+      description: totalOffset只声明允许估算和回顶校准，未给出可判定精度或完成条件。
+    - evidence_id: EV-05-03-10-AC-F5
+      type: spec_location
+      path: specs/05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-05-scroll-control-events-spec.md
+      line_start: 29
+      line_end: 35
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:fc73d24179029d96d3d798819b9bf8394b415c02963230c1ed2fd03a2e3c9cf1
+      claim_id: Feat-05-AC-2.3
+      description: 事件AC未列出所谓公共生命周期的确定顺序。
+    - evidence_id: EV-05-03-10-AC-F6
+      type: spec_location
+      path: specs/05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-06-cache-lazy-loading-spec.md
+      line_start: 22
+      line_end: 35
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:e1450d27e7235af5094218c950334a0d1e1456c1354ec544ad514f9f847b8762
+      claim_id: Feat-06-AC-1.3
+      description: 范围外节点“可释放”没有规定触发、时点和节点计数断言。
+    findings:
+    - finding_id: SEM-e0299a8ff96b5d1de6a7b490
+      criterion_id: SPEC-AC-TESTABILITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 部分关键AC只有方向性结果，缺少顺序、时点、精度或节点状态等可直接断言条件。
+      recommendation: 为事件顺序、估算校准和节点释放分别补充确定的前置条件、观测时点和期望结果。
+      evidence_ids: [EV-05-03-10-AC-F4, EV-05-03-10-AC-F5, EV-05-03-10-AC-F6]
+
   - criterion_id: SPEC-RULE-COMPLETENESS
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      各Feat均有规则表并覆盖主路径，但Feat-05的Delta宣称覆盖scrollToIndex、edge、by、fling、page和查询，AC/Rule
+      实际只覆盖其中一部分；未绑定Scroller、非法index、fling(0)、Section itemsCount负数更新失败等边界也未形成规则。
+    claim_ids: [Feat-05-Scope, Feat-06-AC-2.5]
+    evidence:
+    - evidence_id: EV-05-03-10-RULE-F5
+      type: spec_location
+      path: specs/05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-05-scroll-control-events-spec.md
+      line_start: 13
+      line_end: 71
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:fc73d24179029d96d3d798819b9bf8394b415c02963230c1ed2fd03a2e3c9cf1
+      description: 声明覆盖多组Scroller控制与查询，但规则表未逐项覆盖主要边界。
+    - evidence_id: EV-05-03-10-RULE-SDK-SCROLLER
+      type: source_citation
+      path: interface/sdk-js/api/@internal/component/ets/scroll.d.ts
+      line_start: 430
+      line_end: 587
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c4fcae1b54ba56d522351beb5fb62d6bd7a1936740197a245aa75b78819ed195
+      description: SDK定义fling零值、未绑定、非法index和查询返回等独立边界。
+    findings:
+    - finding_id: SEM-921fa65e0b1f631a14869d14
+      criterion_id: SPEC-RULE-COMPLETENESS
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 规则表覆盖了主路径，但没有覆盖自身声明范围内多组Scroller API和Sections更新的关键异常边界。
+      recommendation: 按API和状态拆分规则，补齐未绑定、非法参数、零速度、查询返回及Section更新失败场景。
+      evidence_ids: [EV-05-03-10-RULE-F5, EV-05-03-10-RULE-SDK-SCROLLER]
+
   - criterion_id: SPEC-TRACEABILITY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      文档具备AC、Rule、VM和证据栏目，人工可理解映射意图，但42处范围ID没有显式展开，六个验收追溯表头字段错误，
+      静态证据覆盖率仅7.18%，机器无法建立稳定的一对一闭环。
+    claim_ids: [TRACE-RANGE-ID-001, SPEC-STRUCT-TABLE-FIELD-001]
+    evidence:
+    - evidence_id: EV-05-03-10-TRACE-STATIC
+      type: static_finding
+      path: specs/.evaluator/d91b4e4990a990da2bfe809514e573e35852193e/05-03-10/report.md
+      line_start: 1
+      line_end: 120
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7001ce4cb8445b181038f8597236859f70dbb571883a849a93bd73904ac33c72
+      description: 静态报告记录68项Finding、7.18%证据覆盖、表头错误及范围ID问题。
+    findings:
+    - finding_id: SEM-8e24f9bd71473a065a1981b6
+      criterion_id: SPEC-TRACEABILITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 范围ID和非标准表头阻断机器追溯，现有证据覆盖不足以证明195个Claim闭环。
+      recommendation: 显式展开全部AC/Rule范围，统一使用AC编号表头，并为每个VM绑定具体测试或源码证据。
+      evidence_ids: [EV-05-03-10-TRACE-STATIC]
+
   - criterion_id: SPEC-SCOPE-BOUNDARY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Function按创建、配置、TOP_DOWN、SW、控制事件和缓存拆分，宏观边界清楚；但Feat-05声明的Scroller控制/查询范围
+      大于实际AC覆盖范围，且未明确通用Scrollable能力与WaterFlow专属行为的承接边界。
+    claim_ids: [Feat-05-Scope]
+    evidence:
+    - evidence_id: EV-05-03-10-SCOPE-F5
+      type: spec_location
+      path: specs/05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-05-scroll-control-events-spec.md
+      line_start: 13
+      line_end: 20
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:fc73d24179029d96d3d798819b9bf8394b415c02963230c1ed2fd03a2e3c9cf1
+      description: Delta列出scrollToIndex、edge、by、fling、page和查询的广泛范围。
+    - evidence_id: EV-05-03-10-SCOPE-DESIGN
+      type: design_location
+      path: specs/05-ui-components/03-scroll-container-components/10-water-flow-flow-item/design.md
+      line_start: 85
+      line_end: 112
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c71e3a91bedc834a29953b00c51b3dab24d9e3fe372059464d162e2dc317172a
+      description: Design按六Feat拆分任务，但控制/事件边界仍以概括性描述承接。
+    findings:
+    - finding_id: SEM-cd40784fd4e96600bdb2540c
+      criterion_id: SPEC-SCOPE-BOUNDARY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: Feat-05范围声明大于AC与Rule覆盖，WaterFlow专属控制行为和通用Scrollable契约边界不够清晰。
+      recommendation: 收窄Delta到已规格化接口，或补齐全部声明接口，并明确通用滚动能力的引用与本Feat专属差异。
+      evidence_ids: [EV-05-03-10-SCOPE-F5, EV-05-03-10-SCOPE-DESIGN]
+
   - criterion_id: DESIGN-IMPLEMENTATION-PATH
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design已覆盖SDK、Bridge、Model、Property、Pattern、三路算法、缓存和事件等主链，但缺少当前组件化运行入口：
+      node modifier通过DynamicModuleHelper把WaterFlow和FlowItem映射到libarkui_waterflow.z.so，再由DynamicModule
+      分发Dynamic、Static、ANI和CJ modifier。缺口使上游加载和跨层边界不完整。
+    claim_ids: [DESIGN-CONTEXT-REPOSITORIES, DESIGN-LAYER-END-TO-END]
+    evidence:
+    - evidence_id: EV-05-03-10-DESIGN-PATH
+      type: design_location
+      path: specs/05-ui-components/03-scroll-container-components/10-water-flow-flow-item/design.md
+      line_start: 24
+      line_end: 48
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c71e3a91bedc834a29953b00c51b3dab24d9e3fe372059464d162e2dc317172a
+      description: Design列出主调用层级，但没有DynamicModuleHelper、共享库和多Modifier分发。
+    - evidence_id: EV-05-03-10-DESIGN-NODE-MODIFIER
+      type: source_citation
+      path: frameworks/core/interfaces/native/node/water_flow_modifier.cpp
+      line_start: 21
+      line_end: 40
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7bd7728d37da63bb2d0e57434424b30fb1dac11066b1f84640805862d4fd7503
+      description: Node modifier通过DynamicModuleHelper获取WaterFlow动态模块与Modifier。
+    - evidence_id: EV-05-03-10-DESIGN-LOADER
+      type: source_citation
+      path: adapter/ohos/osal/dynamic_module_helper.cpp
+      line_start: 55
+      line_end: 169
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:1858595b240db98e7a7ff01fa6dee9a7c05f39868d2df976622270d65f7339c2
+      description: WaterFlow和FlowItem映射到waterflow共享库并通过dlopen/dlsym创建模块。
+    findings:
+    - finding_id: SEM-8d4af8a59c663dd45088c271
+      criterion_id: DESIGN-IMPLEMENTATION-PATH
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 主算法链存在，但组件化共享库加载、模块工厂和Dynamic/Static/ANI/CJ分发链缺失。
+      recommendation: 补充公开入口到DynamicModuleHelper、libarkui_waterflow.z.so、WaterFlow/FlowItem DynamicModule及各Modifier的完整链路。
+      evidence_ids: [EV-05-03-10-DESIGN-PATH, EV-05-03-10-DESIGN-NODE-MODIFIER, EV-05-03-10-DESIGN-LOADER]
+
+  - criterion_id: DESIGN-FEAT-RUNTIME-COVERAGE
+    dimension_id: design_quality
+    applicability: APPLICABLE
+    conclusion: MISSING
+    reason: >-
+      Design能够定位Feat-01至Feat-06，但“详细设计”对每个Feat只有一段行为摘要。没有逐Feat完整给出输入入口、解析校验、
+      状态更新、核心处理、可观测输出、异常恢复和真实测试衔接；按v0.2完整性规则，至少一个注册Feat仅有标题或摘要即为MISSING，
+      本Function六个Feat均未达到逐Feat运行设计要求。
+    claim_ids: [Feat-01, Feat-02, Feat-03, Feat-04, Feat-05, Feat-06]
+    evidence:
+    - evidence_id: EV-05-03-10-RUNTIME-DESIGN
+      type: design_location
+      path: specs/05-ui-components/03-scroll-container-components/10-water-flow-flow-item/design.md
+      line_start: 268
+      line_end: 285
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c71e3a91bedc834a29953b00c51b3dab24d9e3fe372059464d162e2dc317172a
+      description: 六个Feat各只有一段摘要级详细设计。
+    - evidence_id: EV-05-03-10-RUNTIME-REGISTRY
+      type: registry_entry
+      path: specs/evaluation/golden/manifest.yaml
+      line_start: 152
+      line_end: 162
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:879e75b5e184284c7ccae4050589ed15b7f0b0bd06a1fc99152531c1af32981a
+      description: Function登记为六Feat critical评价单元。
+    - evidence_id: EV-05-03-10-RUNTIME-F1
+      type: spec_location
+      path: specs/05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-01-creation-footer-flowitem-spec.md
+      line_start: 1
+      line_end: 100
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:5e8bb547be67622c7cf298b57cd09209ff593906cb6d35df9a0c209a4c042e65
+      description: Feat-01规格输入，用于核对运行设计应覆盖的创建、Footer和FlowItem场景。
+    - evidence_id: EV-05-03-10-RUNTIME-F2
+      type: spec_location
+      path: specs/05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-02-layout-config-item-constraint-spec.md
+      line_start: 1
+      line_end: 100
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:d215f245bdd34e1d29497b456b1dd6b17d81bbbaa45c5b6cf21e0d85f4a8203c
+      description: Feat-02规格输入。
+    - evidence_id: EV-05-03-10-RUNTIME-F3
+      type: spec_location
+      path: specs/05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-03-always-top-down-layout-spec.md
+      line_start: 1
+      line_end: 100
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:cc9d666043293362117beaafc7f55b0f22159907df8e5da82c981cbf5de3e5a2
+      description: Feat-03规格输入。
+    - evidence_id: EV-05-03-10-RUNTIME-F4
+      type: spec_location
+      path: specs/05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-04-sliding-window-layout-spec.md
+      line_start: 1
+      line_end: 116
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:5d3019d3eeb3508974059d5250ffe467e53cf5ee28ede8a98a4bb03221db3b0d
+      description: Feat-04规格输入。
+    - evidence_id: EV-05-03-10-RUNTIME-F5
+      type: spec_location
+      path: specs/05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-05-scroll-control-events-spec.md
+      line_start: 1
+      line_end: 117
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:fc73d24179029d96d3d798819b9bf8394b415c02963230c1ed2fd03a2e3c9cf1
+      description: Feat-05规格输入。
+    - evidence_id: EV-05-03-10-RUNTIME-F6
+      type: spec_location
+      path: specs/05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-06-cache-lazy-loading-spec.md
+      line_start: 1
+      line_end: 117
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:e1450d27e7235af5094218c950334a0d1e1456c1354ec544ad514f9f847b8762
+      description: Feat-06规格输入。
+    findings:
+    - finding_id: SEM-57ad3b3c0e2ea74a40bbbf49
+      criterion_id: DESIGN-FEAT-RUNTIME-COVERAGE
+      severity: Major
+      conclusion: MISSING
+      message: 六个注册Feat都只有摘要级详细设计，没有形成逐Feat输入、状态、处理、输出、恢复和测试的端到端闭环。
+      recommendation: 为Feat-01至Feat-06分别补充六段式运行设计，并将每段映射到真实源码入口和可执行测试。
+      evidence_ids: [EV-05-03-10-RUNTIME-DESIGN, EV-05-03-10-RUNTIME-REGISTRY, EV-05-03-10-RUNTIME-F1, EV-05-03-10-RUNTIME-F2, EV-05-03-10-RUNTIME-F3, EV-05-03-10-RUNTIME-F4, EV-05-03-10-RUNTIME-F5, EV-05-03-10-RUNTIME-F6]
+
+  - criterion_id: DESIGN-ALGORITHM-DATA-STATE
+    dimension_id: design_quality
+    applicability: APPLICABLE
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design较好描述三路算法、LayoutInfo数据、资源所有权、UI线程和idle preload，但状态生命周期仍不完整：
+      Scroller重新绑定、cachedCount显式值与动态默认切换、Sections更新失效、事件次序和跨帧恢复没有形成统一状态转换；
+      cachedCount参数规约还把负数/reset错误概括为默认策略。
+    claim_ids: [DESIGN-STATE-TRANSITIONS, DESIGN-FAILURE-RECOVERY]
+    evidence:
+    - evidence_id: EV-05-03-10-ALGO-DESIGN
+      type: design_location
+      path: specs/05-ui-components/03-scroll-container-components/10-water-flow-flow-item/design.md
+      line_start: 194
+      line_end: 266
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c71e3a91bedc834a29953b00c51b3dab24d9e3fe372059464d162e2dc317172a
+      description: Design包含算法、数据、资源和线程内容，但状态转换颗粒度不足。
+    - evidence_id: EV-05-03-10-ALGO-CACHE
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/waterflow/water_flow_model_static.cpp
+      line_start: 102
+      line_end: 125
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:408fea6661706235ff2306ca44433a809a5891166eef2455b7b010cea0367766
+      description: 冻结实现区分显式负数钳制和属性清除状态。
+    findings:
+    - finding_id: SEM-3d9f5f98a6eb24318dff23c0
+      criterion_id: DESIGN-ALGORITHM-DATA-STATE
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 核心算法和数据结构较完整，但多个跨调用、跨帧和动态/静态状态转换未建模，cachedCount状态还存在错误描述。
+      recommendation: 增加模式、Sections、Scroller、cachedCount、事件与预载任务的状态转换及失效/恢复条件。
+      evidence_ids: [EV-05-03-10-ALGO-DESIGN, EV-05-03-10-ALGO-CACHE]
+
   - criterion_id: DESIGN-DECISION-QUALITY
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      13项ADR提供推荐方案和替代方向，能够解释现有算法取舍；但多数取舍理由只是实现现状的短句，缺少适用条件、
+      迁移与兼容成本和测试依据，也没有处理已证实的Scroller和cachedCount偏差。
+    claim_ids: [ADR-1, ADR-F5-1, ADR-F6-1]
+    evidence:
+    - evidence_id: EV-05-03-10-ADR-DESIGN
+      type: design_location
+      path: specs/05-ui-components/03-scroll-container-components/10-water-flow-flow-item/design.md
+      line_start: 68
+      line_end: 83
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c71e3a91bedc834a29953b00c51b3dab24d9e3fe372059464d162e2dc317172a
+      description: ADR表包含推荐和替代方案，但成本、条件和验证依据较弱。
+    - evidence_id: EV-05-03-10-ADR-SCROLLER
+      type: source_citation
+      path: frameworks/bridge/declarative_frontend/jsview/js_scroller.h
+      line_start: 38
+      line_end: 50
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4ca114d20f4ef0e9926375f84cd5eff16fddee1180e0b77ff3fb9da13d7fefec
+      description: ADR未纳入Scroller真实重新绑定行为及兼容成本。
+    findings:
+    - finding_id: SEM-407cbd15a09cc0060c91c731
+      criterion_id: DESIGN-DECISION-QUALITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: ADR形式完整但取舍证据不足，且没有吸收已确认的接口与状态偏差。
+      recommendation: 为关键ADR补充适用条件、量化或可验证代价、兼容迁移成本和测试/评审依据，并纳入真实偏差。
+      evidence_ids: [EV-05-03-10-ADR-DESIGN, EV-05-03-10-ADR-SCROLLER]
+
   - criterion_id: DESIGN-IMPACT-COVERAGE
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: MISSING
+    reason: >-
+      构建章节只有“本次不修改BUILD.gn、bundle.json”，没有描述Function的存量构建和部署。实际存在waterflow_pattern_ng、
+      ArkUI-X/wearable/static条件、ui_session与api_metrics依赖、libarkui_waterflow.z.so产物、component_modules注册和
+      DynamicModuleHelper运行时加载。按v0.2规则，仅写不修改BUILD属于MISSING。
+    claim_ids: [DESIGN-BUILD-TARGETS, DESIGN-OUTPUT-ARTIFACTS, DESIGN-REGISTRATION-LOADING]
+    evidence:
+    - evidence_id: EV-05-03-10-IMPACT-DESIGN
+      type: design_location
+      path: specs/05-ui-components/03-scroll-container-components/10-water-flow-flow-item/design.md
+      line_start: 131
+      line_end: 138
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c71e3a91bedc834a29953b00c51b3dab24d9e3fe372059464d162e2dc317172a
+      description: 构建章节只记录无变更，没有存量构建部署设计。
+    - evidence_id: EV-05-03-10-IMPACT-COMPONENT-BUILD
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/waterflow/BUILD.gn
+      line_start: 17
+      line_end: 77
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:f9b27d407589b765f8fb10c7ce155b06c517115724d951d91673d5496ee0108f
+      description: 定义waterflow_pattern_ng、平台条件、静态源、ui_session和api_metrics依赖。
+    - evidence_id: EV-05-03-10-IMPACT-PACKAGE
+      type: registry_entry
+      path: adapter/ohos/build/BUILD.gn
+      line_start: 18
+      line_end: 123
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:8c6c3b0a601d1135939ee3a18c82af7b7b7d5fd491ae2e7e298c14e27ba9cbba
+      description: waterflow注册为组件模块并生成arkui_waterflow共享库目标。
+    - evidence_id: EV-05-03-10-IMPACT-LOADER
+      type: source_citation
+      path: adapter/ohos/osal/dynamic_module_helper.cpp
+      line_start: 82
+      line_end: 169
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:1858595b240db98e7a7ff01fa6dee9a7c05f39868d2df976622270d65f7339c2
+      description: WaterFlow与FlowItem通过共享库映射和dlopen/dlsym运行时加载。
+    findings:
+    - finding_id: SEM-b6b841a63de0f660d4cc63c1
+      criterion_id: DESIGN-IMPACT-COVERAGE
+      severity: Major
+      conclusion: MISSING
+      message: Design没有可识别的存量构建、条件、依赖、产物、注册、加载和部署设计，仅声明本次不改BUILD。
+      recommendation: 补充waterflow_pattern_ng、条件源、ui_session/api_metrics、libarkui_waterflow.z.so、模块注册、加载和打包路径。
+      evidence_ids: [EV-05-03-10-IMPACT-DESIGN, EV-05-03-10-IMPACT-COMPONENT-BUILD, EV-05-03-10-IMPACT-PACKAGE, EV-05-03-10-IMPACT-LOADER]
+
   - criterion_id: DESIGN-VERIFICATION-PLAN
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design给出SDK/Bridge、Host Layout、Controller/Event和Cache/Lazy四类验证方向，也映射六个Task；但没有真实GN/Ninja
+      target、测试二进制、Suite.Case/filter、逐AC预期结果和风险关闭条件。仓内已有四个Host target及water_flow_test_all，
+      文档未将其转化为可直接执行的验证方案。
+    claim_ids: [DESIGN-VERIFY-BUILD-TARGET, DESIGN-VERIFY-CASE-OR-FILTER, DESIGN-VERIFY-RISK-CLOSURE]
+    evidence:
+    - evidence_id: EV-05-03-10-VERIFY-DESIGN
+      type: design_location
+      path: specs/05-ui-components/03-scroll-container-components/10-water-flow-flow-item/design.md
+      line_start: 221
+      line_end: 227
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c71e3a91bedc834a29953b00c51b3dab24d9e3fe372059464d162e2dc317172a
+      description: 验证设计只有targeted gtest、Pattern tests和preload tests等泛化入口。
+    - evidence_id: EV-05-03-10-VERIFY-TEST-BUILD
+      type: test_evidence
+      path: test/unittest/core/pattern/waterflow/BUILD.gn
+      line_start: 30
+      line_end: 199
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:672f60af5ea4904e573209ae67bcd63d1d498d709a9d38d03339a2d57a9cdd10
+      description: 仓内实际定义original、segmented、sw、generated四个Host测试目标和water_flow_test_all组。
+    findings:
+    - finding_id: SEM-41af3a9a533de78704095867
+      criterion_id: DESIGN-VERIFICATION-PLAN
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 已有验证方向但无法按Design直接构建、执行、判断结果或关闭风险。
+      recommendation: 建立Feat/AC/ADR/风险到真实target、binary、filter、预期结果和关闭证据的一对一映射。
+      evidence_ids: [EV-05-03-10-VERIFY-DESIGN, EV-05-03-10-VERIFY-TEST-BUILD]
+
   - criterion_id: COMPATIBILITY-API-VERSION
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      文档识别API9至26及部分方法级演进，但Scroller接口被聚合，未完整列出不同方法和重载的版本、crossplatform、
+      atomicservice、废弃和异常差异；cachedCount负数语义也与SDK不一致。
+    claim_ids: [API-Version-Matrix]
+    evidence:
+    - evidence_id: EV-05-03-10-COMPAT-SDK-SCROLLER
+      type: sdk_declaration
+      path: interface/sdk-js/api/@internal/component/ets/scroll.d.ts
+      line_start: 390
+      line_end: 587
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c4fcae1b54ba56d522351beb5fb62d6bd7a1936740197a245aa75b78819ed195
+      description: Scroller接口具有API7至23的细粒度版本、废弃、开放范围和异常差异。
+    - evidence_id: EV-05-03-10-COMPAT-DESIGN
+      type: design_location
+      path: specs/05-ui-components/03-scroll-container-components/10-water-flow-flow-item/design.md
+      line_start: 114
+      line_end: 129
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c71e3a91bedc834a29953b00c51b3dab24d9e3fe372059464d162e2dc317172a
+      description: Design只用聚合行描述Scroller与WaterFlow事件版本。
+    findings:
+    - finding_id: SEM-d93b57428a097f95b546fdd3
+      criterion_id: COMPATIBILITY-API-VERSION
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: API版本和开放范围矩阵未达到方法级完整性，难以判断不同API Level下的真实兼容行为。
+      recommendation: 按具体API/重载记录since、deprecated、crossplatform、atomicservice、错误码和未绑定行为。
+      evidence_ids: [EV-05-03-10-COMPAT-SDK-SCROLLER, EV-05-03-10-COMPAT-DESIGN]
+
   - criterion_id: COMPATIBILITY-SYSTEM-IMPACT
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      文档正确说明不涉及权限、IPC和持久化变更，但把系统影响收敛为无BUILD/bundle变更，没有承接存量ui_session依赖、
+      条件api_metrics部件依赖、组件共享库及运行时加载边界。
+    claim_ids: [System-Dependency-Impact]
+    evidence:
+    - evidence_id: EV-05-03-10-SYSTEM-DESIGN
+      type: design_location
+      path: specs/05-ui-components/03-scroll-container-components/10-water-flow-flow-item/design.md
+      line_start: 50
+      line_end: 66
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c71e3a91bedc834a29953b00c51b3dab24d9e3fe372059464d162e2dc317172a
+      description: Design仅以不新增依赖和不修改BUILD承接系统影响。
+    - evidence_id: EV-05-03-10-SYSTEM-BUILD
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/waterflow/BUILD.gn
+      line_start: 54
+      line_end: 77
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:f9b27d407589b765f8fb10c7ce155b06c517115724d951d91673d5496ee0108f
+      description: 存在平台条件、ui_session和api_metrics依赖影响。
+    - evidence_id: EV-05-03-10-SYSTEM-BUNDLE
+      type: registry_entry
+      path: bundle.json
+      line_start: 55
+      line_end: 64
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:8841a844460bf7f1f2c81077f35a9d46377752fabc1fbd4d524f01bd2ce3026c
+      description: bundle登记api_metrics等部件依赖。
+    findings:
+    - finding_id: SEM-40a9acf0fbc533b0d24de38b
+      criterion_id: COMPATIBILITY-SYSTEM-IMPACT
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 权限和IPC结论明确，但外部部件、内部服务依赖及动态组件加载影响没有完整评估。
+      recommendation: 在系统影响中列出ui_session、api_metrics、组件共享库、条件编译和加载失败边界。
+      evidence_ids: [EV-05-03-10-SYSTEM-DESIGN, EV-05-03-10-SYSTEM-BUILD, EV-05-03-10-SYSTEM-BUNDLE]
+
   - criterion_id: COMPATIBILITY-MULTI-DEVICE
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
+    conclusion: SUPPORTED
+    reason: >-
+      六个Feat均声明手机、平板和折叠屏下的视口、方向、窗口容量或可见数量差异，并把核心语义保持为设备无关；
+      按用户确认口径，本轮不评价ArkUI-X和wearable对static的支持差异，未发现所声明设备范围内的专用语义冲突。
+    claim_ids: [Phone, Tablet, Foldable]
+    evidence:
+    - evidence_id: EV-05-03-10-DEVICE-F4
+      type: spec_location
+      path: specs/05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-04-sliding-window-layout-spec.md
+      line_start: 88
+      line_end: 97
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:5d3019d3eeb3508974059d5250ffe467e53cf5ee28ede8a98a4bb03221db3b0d
+      description: SW按视口变化重建和填充窗口，核心语义不按设备分叉。
+    - evidence_id: EV-05-03-10-DEVICE-F6
+      type: spec_location
+      path: specs/05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-06-cache-lazy-loading-spec.md
+      line_start: 89
+      line_end: 98
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:e1450d27e7235af5094218c950334a0d1e1456c1354ec544ad514f9f847b8762
+      description: cachedCount随可见数量变化且上限保持一致。
     findings: []
+
   - criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      多数源码引用可定位，但四个Feat仍使用个人绝对SDK路径，SDK revision未写入正式文档，Design和Spec大量使用
+      单文件名加行号或范围行号，随着源码变化容易漂移；静态报告已将绝对路径判为Major。
+    claim_ids: [REF-ABSOLUTE-PATH-001, HYGIENE-ABSOLUTE-PATH-001]
+    evidence:
+    - evidence_id: EV-05-03-10-STABILITY-STATIC
+      type: static_finding
+      path: specs/.evaluator/d91b4e4990a990da2bfe809514e573e35852193e/05-03-10/report.md
+      line_start: 31
+      line_end: 51
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7001ce4cb8445b181038f8597236859f70dbb571883a849a93bd73904ac33c72
+      description: Feat-01、02、05、06包含不可复现的个人绝对路径。
+    - evidence_id: EV-05-03-10-STABILITY-DESIGN
+      type: source_citation
+      path: specs/05-ui-components/03-scroll-container-components/10-water-flow-flow-item/design.md
+      line_start: 114
+      line_end: 129
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c71e3a91bedc834a29953b00c51b3dab24d9e3fe372059464d162e2dc317172a
+      description: SDK证据使用单文件名和行号，未冻结关联仓revision。
+    findings:
+    - finding_id: SEM-632964247a3338595bb2f484
+      criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 个人绝对路径、缺少SDK revision和大量脆弱行号引用降低了证据复现与长期稳定性。
+      recommendation: 使用仓内完整路径与符号/测试名锚点，并记录ace_engine、sdk-js、sdk_c的冻结revision。
+      evidence_ids: [EV-05-03-10-STABILITY-STATIC, EV-05-03-10-STABILITY-DESIGN]
+
   - criterion_id: MAINTAINABILITY-STRUCTURE
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      六Feat拆分和章节结构便于导航，但12个用户故事缺少标准三段式，六个追溯表头不标准，42个范围ID需要人工解释；
+      各Feat重复兼容性、自审和公共模板内容，Design又重复多段Spec行为，增加后续漂移成本。
+    claim_ids: [SPEC-STRUCT-USER-STORY-001, SPEC-STRUCT-TABLE-FIELD-001]
+    evidence:
+    - evidence_id: EV-05-03-10-STRUCTURE-STATIC
+      type: static_finding
+      path: specs/.evaluator/d91b4e4990a990da2bfe809514e573e35852193e/05-03-10/report.md
+      line_start: 53
+      line_end: 120
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7001ce4cb8445b181038f8597236859f70dbb571883a849a93bd73904ac33c72
+      description: 静态报告记录表头和用户故事结构问题。
+    - evidence_id: EV-05-03-10-STRUCTURE-SPEC
+      type: spec_location
+      path: specs/05-ui-components/03-scroll-container-components/10-water-flow-flow-item/Feat-01-creation-footer-flowitem-spec.md
+      line_start: 23
+      line_end: 40
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:5e8bb547be67622c7cf298b57cd09209ff593906cb6d35df9a0c209a4c042e65
+      description: 用户故事直接进入AC表，追溯表头使用AC而不是AC编号。
+    findings:
+    - finding_id: SEM-af8369bdd20568be478a81cf
+      criterion_id: MAINTAINABILITY-STRUCTURE
+      severity: Minor
+      conclusion: PARTIALLY_SUPPORTED
+      message: 功能拆分清晰，但模板格式错误、范围写法和重复内容增加阅读及同步维护成本。
+      recommendation: 统一用户故事和追溯表模板，展开范围ID，并把公共兼容性内容抽到Function级只保留Feat差异。
+      evidence_ids: [EV-05-03-10-STRUCTURE-STATIC, EV-05-03-10-STRUCTURE-SPEC]
+
   - criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
+    conclusion: SUPPORTED
+    reason: >-
+      Design列出八项存量风险、类型、影响、处理方式和Owner。用户已统一确认这些存量风险为Accepted，
+      本Review在confirmation中记录该单次确认；因此风险可追踪且当前责任状态已闭环，但具体自动化关闭仍由验证方案项扣分。
+    claim_ids: [Risk-01, Risk-02, Risk-03, Risk-04, Risk-05, Risk-06, Risk-07, Risk-08]
+    evidence:
+    - evidence_id: EV-05-03-10-RISK-DESIGN
+      type: design_location
+      path: specs/05-ui-components/03-scroll-container-components/10-water-flow-flow-item/design.md
+      line_start: 287
+      line_end: 297
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c71e3a91bedc834a29953b00c51b3dab24d9e3fe372059464d162e2dc317172a
+      description: Design列出八项风险、影响、处理方式和ArkUI SIG Owner。
     findings: []
+
   coverage:
-    expected_criteria: 18
-    evaluated_criteria: 18
-    applicable_criteria: 18
+    expected_criteria: 20
+    evaluated_criteria: 20
+    applicable_criteria: 20
     not_applicable_criteria: 0
-    not_verifiable_criteria: 18
+    not_verifiable_criteria: 0
   execution:
     static_complete: true
     evidence_complete: true
-    semantic_complete: false
+    semantic_complete: true
     notes:
-    - 'Draft template: Criterion conclusions and scores are pending.'
+    - 已核验六个Feat、共享Design、冻结源码、sdk-js契约、构建注册和Host测试入口。
+    - 静态Gate保持FAIL，语义评价未删除或降级任何静态Finding。
 scores:
   dimensions:
-    correctness: null
-    spec_executability: null
-    design_quality: null
-    compatibility_system_impact: null
-    maintainability: null
-  raw_score: null
-  published_score: null
-  confidence: null
+    correctness: 16.0
+    spec_executability: 12.5
+    design_quality: 8.5
+    compatibility_system_impact: 6.5
+    maintainability: 6.5
+  raw_score: 50.0
+  published_score: 50.0
+  confidence: 1.0
   admission: NOT_READY
 confirmation:
-  confirmed_by: null
-  confirmed_at: null
-  conclusion: pending
-  notes: []
+  confirmed_by: sunfei2021
+  confirmed_at: '2026-08-05T22:17:30+08:00'
+  conclusion: accepted
+  notes:
+  - 用户统一确认WF-01至WF-13问题与推荐结论，无异议。
+  - Design按Rubric v0.2重新评价完整性，固定结论扣分，不使用人工自定义分值。
+  - 八项存量风险均记录为Accepted。
+  - 本轮不评价ArkUI-X和wearable对static的支持差异。
+  - SDK冻结revision为224c0c10fde3910a473455eac6841614a162ce39。
 notes:
-- 完成18个Criterion后填写精确分数并进行一次确认。
-- Critical/Major Finding必须包含冻结revision下的可复现证据。
+- WaterFlow/FlowItem在Rubric v0.2下完成20个Criterion的单次确认评价。
+- 逐Feat运行设计和构建部署设计为主要新增提升项。

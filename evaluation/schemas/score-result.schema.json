@@ -22,8 +22,8 @@
   ],
   "properties": {
     "schema_version": { "type": "integer", "const": 1 },
-    "rubric_version": { "type": "string", "const": "0.1.0" },
-    "complexity_rules_version": { "type": "string", "const": "0.1.0" },
+    "rubric_version": { "type": "string", "const": "0.2.0" },
+    "complexity_rules_version": { "type": "string", "const": "0.2.0" },
     "aggregator_protocol_version": { "type": "string", "const": "0.1.0" },
     "aggregator_version": { "type": "string", "minLength": 1 },
     "func_id": { "type": "string", "pattern": "^[0-9]{2}-[0-9]{2}-[0-9]{2}$" },

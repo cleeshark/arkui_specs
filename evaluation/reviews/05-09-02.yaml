@@ -4,15 +4,15 @@ evaluation_id: EVAL-05-09-02
 func_id: 05-09-02
 input_fingerprint: sha256:1d32a9d9167b2d85a7ff85ac140a53a7f2c9596719177e7598fc2969846a2a8b
 source_revision: d91b4e4990a990da2bfe809514e573e35852193e
-status: draft
+status: confirmed
 evaluator:
   evaluator_id: sunfei2021
-  evaluated_at: null
+  evaluated_at: '2026-08-05T22:57:15+08:00'
 semantic_result:
   schema_version: 1
-  rubric_version: 0.1.0
-  complexity_rules_version: 0.1.0
-  evaluator_protocol_version: 0.1.0
+  rubric_version: 0.2.0
+  complexity_rules_version: 0.2.0
+  evaluator_protocol_version: 0.2.0
   evaluator_version: human:sunfei2021
   func_id: 05-09-02
   source_revision: d91b4e4990a990da2bfe809514e573e35852193e
@@ -44,193 +44,762 @@ semantic_result:
   - criterion_id: CORRECTNESS-SOURCE-SUPPORT
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      九个Feat的双模式、Span管理、排版、IME、事件、光标和剪贴板主路径总体可由冻结源码支撑，
+      但horizontalScrolling、stopBackPress和EditMenuOptions reset三项明确语义与实现不一致。
+    claim_ids: [RE-01, RE-02, RE-03]
+    evidence:
+    - evidence_id: EV-05-09-02-SRC-HORIZONTAL
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/rich_editor/rich_editor_pattern.cpp
+      line_start: 10962
+      line_end: 10972
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:854ba0477e378c3aca5476e1814d9ae7d7f8a16d1e5bc7918e1a676f85643515
+      claim_id: RE-01
+      description: SetHorizontalScrolling更新状态、重置滚动条标志、标脏测量并清理段落缓存。
+    - evidence_id: EV-05-09-02-SRC-BACK-PRESS
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/rich_editor/rich_editor_pattern.cpp
+      line_start: 7481
+      line_end: 7508
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:854ba0477e378c3aca5476e1814d9ae7d7f8a16d1e5bc7918e1a676f85643515
+      claim_id: RE-02
+      description: 通用OnBackPressed路径跨平台读取isStopBackPress_并决定返回值。
+    - evidence_id: EV-05-09-02-SRC-MENU-RESET
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/rich_editor/bridge/rich_editor_dynamic_modifier.cpp
+      line_start: 788
+      line_end: 796
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:882832c4903a5d44650e4fcf50c79b1ef6f096f6d7eaaadcf9172c5a4be72395
+      claim_id: RE-03
+      description: reset以三个空回调重新设置SelectionMenuOptions，会覆盖已有配置。
+    findings:
+    - finding_id: SEM-652dffabf8fe2e5f63242590
+      criterion_id: CORRECTNESS-SOURCE-SUPPORT
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: Spec或Design对horizontalScrolling标脏、stopBackPress平台范围和EditMenuOptions reset保留旧值的描述与冻结实现冲突。
+      recommendation: 按真实状态更新、通用返回键路径和空回调覆盖语义修订对应Spec及Design。
+      evidence_ids: [EV-05-09-02-SRC-HORIZONTAL, EV-05-09-02-SRC-BACK-PRESS, EV-05-09-02-SRC-MENU-RESET]
+
   - criterion_id: CORRECTNESS-SDK-CONTRACT
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      API主体能够在动态和静态SDK中定位，但多个since版本被统一写成API 10，且getCaretRect、getSelection、
+      getStyledString、editMenuOptions等接口的返回值或undefined接收能力未按两套SDK准确区分。
+    claim_ids: [RE-04, RE-05]
+    evidence:
+    - evidence_id: EV-05-09-02-SDK-DYNAMIC
+      type: sdk_declaration
+      path: interface/sdk-js/api/@internal/component/ets/rich_editor.d.ts
+      line_start: 2430
+      line_end: 3722
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:10530349e691fa3eb83250a53b3981473870137789863afbbf87186cf0ea2102
+      claim_id: RE-04
+      description: 动态SDK记录Controller方法、属性签名及各接口真实since版本。
+    - evidence_id: EV-05-09-02-SDK-STATIC
+      type: sdk_declaration
+      path: interface/sdk-js/api/arkui/component/richEditor.static.d.ets
+      line_start: 1700
+      line_end: 2454
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:0686ed197b2f9f3fb91507437b431ab397ea4762587894a4d7e4e84087b73df4
+      claim_id: RE-05
+      description: 静态SDK显式记录可能undefined的返回值及可接收undefined的属性参数。
+    findings:
+    - finding_id: SEM-ac91b99ab8b131a2d0cee8af
+      criterion_id: CORRECTNESS-SDK-CONTRACT
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: API版本、返回类型和动态/静态undefined契约存在多处偏差，无法作为精确SDK基线。
+      recommendation: 以冻结sdk-js声明逐API校正since、签名、返回值和动态/静态差异。
+      evidence_ids: [EV-05-09-02-SDK-DYNAMIC, EV-05-09-02-SDK-STATIC]
+
   - criterion_id: CORRECTNESS-BOUNDARY-STATE
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      多数空指针、模式、预输入和回调守卫已记录，但菜单解析失败后的reset状态、横向滚动缓存失效、
+      返回键跨平台状态转换被错误描述，异步IME、AI和剪贴板失败恢复也未形成完整状态闭环。
+    claim_ids: [RE-01, RE-02, RE-03, RE-10]
+    evidence:
+    - evidence_id: EV-05-09-02-BOUNDARY-MENU-PARSE
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/rich_editor/bridge/arkts_native_rich_editor_bridge.cpp
+      line_start: 2456
+      line_end: 2476
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:83295973040329c69427b211068312ea9ffc49cd8a8e27ff3d9d0edeebf13216
+      description: 菜单参数解析失败立即调用reset，成功才下发三个解析后的回调。
+    - evidence_id: EV-05-09-02-BOUNDARY-BACK-PRESS
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/rich_editor/rich_editor_pattern.cpp
+      line_start: 7481
+      line_end: 8055
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:854ba0477e378c3aca5476e1814d9ae7d7f8a16d1e5bc7918e1a676f85643515
+      description: 通用OnBackPressed与Android条件路径HandleOnKeyBack是两个不同层级的状态分支。
+    findings:
+    - finding_id: SEM-4a07117791176ea93d8a738a
+      criterion_id: CORRECTNESS-BOUNDARY-STATE
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 若干关键reset、平台和异步状态被合并或反向描述，无法据此构造稳定边界断言。
+      recommendation: 分别补齐输入解析失败、状态覆盖、缓存失效、异步取消和平台分支的前后状态。
+      evidence_ids: [EV-05-09-02-BOUNDARY-MENU-PARSE, EV-05-09-02-BOUNDARY-BACK-PRESS]
+
   - criterion_id: CORRECTNESS-CROSS-DOC-CONSISTENCY
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Registry的九Feat拆分与Design摘要总体一致，但Design把horizontalScrolling写成不标脏、把stopBackPress写成
+      仅Android生效、把菜单reset写成不修改旧配置，三项均与Spec或冻结源码形成跨文档冲突。
+    claim_ids: [RE-01, RE-02, RE-03]
+    evidence:
+    - evidence_id: EV-05-09-02-CROSS-DESIGN
+      type: design_location
+      path: specs/05-ui-components/09-text-components/02-rich-editor/design.md
+      line_start: 88
+      line_end: 99
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:b1cd972de2349218cd48fbb6555d3fda484870885316696568a2fa18befbd601
+      description: ADR中包含horizontalScrolling、stopBackPress等设计结论。
+    - evidence_id: EV-05-09-02-CROSS-DETAIL
+      type: design_location
+      path: specs/05-ui-components/09-text-components/02-rich-editor/design.md
+      line_start: 388
+      line_end: 410
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:b1cd972de2349218cd48fbb6555d3fda484870885316696568a2fa18befbd601
+      description: Feat摘要重复了三项与实现不一致的语义。
+    - evidence_id: EV-05-09-02-CROSS-SPEC-BACK
+      type: spec_location
+      path: specs/05-ui-components/09-text-components/02-rich-editor/Feat-05-visual-style-interaction-feedback-spec.md
+      line_start: 378
+      line_end: 405
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9568d7fdf3588588ae329b37b9663a9f5311b079f9a13d8b499bd4968872ce95
+      description: Spec明确声称stopBackPress仅Android平台生效。
+    findings:
+    - finding_id: SEM-5a473bdd134156fd92be0e14
+      criterion_id: CORRECTNESS-CROSS-DOC-CONSISTENCY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 三项已证实的事实冲突同时存在于Spec与Design，且Design自审仍声明完整通过。
+      recommendation: 统一按冻结实现修订Spec、Design、风险表和自审结论。
+      evidence_ids: [EV-05-09-02-CROSS-DESIGN, EV-05-09-02-CROSS-DETAIL, EV-05-09-02-CROSS-SPEC-BACK]
+
   - criterion_id: SPEC-AC-TESTABILITY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      AC普遍采用WHEN/THEN并给出源码位置，但大量范围ID把多个AC折叠为一次代码审查，验证映射缺少真实测试入口、
+      操作步骤和预期断言；部分错误事实也会直接生成错误测试结论。
+    claim_ids: [RE-12, TRACE-RANGE-ID-001]
+    evidence:
+    - evidence_id: EV-05-09-02-AC-F9
+      type: spec_location
+      path: specs/05-ui-components/09-text-components/02-rich-editor/Feat-09-clipboard-data-detection-menu-spec.md
+      line_start: 137
+      line_end: 188
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4f347fb40d9f1be95df333373cde3120bd828b5bb462ba43794674f5b97409be
+      description: 追溯与验证表按AC范围聚合，并主要以代码审查作为验证方式。
+    - evidence_id: EV-05-09-02-AC-STATIC
+      type: static_finding
+      path: specs/.evaluator/d91b4e4990a990da2bfe809514e573e35852193e/05-09-02/report.md
+      line_start: 277
+      line_end: 337
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:456dec424d5f37aa2f4fe52d6a2d0414bcc1b302b83f1a688fa5f9431005f6cb
+      description: 静态报告显示范围ID无法作为原子追溯和测试映射。
+    findings:
+    - finding_id: SEM-52ecdcb0baa8f47c10a7ec82
+      criterion_id: SPEC-AC-TESTABILITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 范围AC和泛化代码审查不能直接形成逐AC可执行、可观测的稳定断言。
+      recommendation: 展开每个AC，并补充测试target、用例或filter、步骤、观测点和明确预期结果。
+      evidence_ids: [EV-05-09-02-AC-F9, EV-05-09-02-AC-STATIC]
+
   - criterion_id: SPEC-RULE-COMPLETENESS
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      九Feat均有规则表并覆盖多数正常路径，但关键reset、动态/静态差异、平台边界、异步失败恢复和部分API版本边界
+      不完整；R-20还将菜单reset的覆盖行为错误写成保留旧配置。
+    claim_ids: [RE-03, RE-05, RE-10]
+    evidence:
+    - evidence_id: EV-05-09-02-RULE-F9
+      type: spec_location
+      path: specs/05-ui-components/09-text-components/02-rich-editor/Feat-09-clipboard-data-detection-menu-spec.md
+      line_start: 150
+      line_end: 175
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4f347fb40d9f1be95df333373cde3120bd828b5bb462ba43794674f5b97409be
+      description: R-20声明解析失败reset不修改现有配置。
+    - evidence_id: EV-05-09-02-RULE-RESET
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/rich_editor/bridge/rich_editor_dynamic_modifier.cpp
+      line_start: 788
+      line_end: 796
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:882832c4903a5d44650e4fcf50c79b1ef6f096f6d7eaaadcf9172c5a4be72395
+      description: reset实际以空回调覆盖配置。
+    findings:
+    - finding_id: SEM-f67c6413da7283bc73ccb5a4
+      criterion_id: SPEC-RULE-COMPLETENESS
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 规则表存在错误reset事实，并遗漏多个适用的状态、前端、平台和异步恢复边界。
+      recommendation: 修正R-20并按动态/静态、平台、同步/异步和失败恢复拆分完整规则。
+      evidence_ids: [EV-05-09-02-RULE-F9, EV-05-09-02-RULE-RESET]
+
   - criterion_id: SPEC-TRACEABILITY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      文档包含AC、Rule和VM三类表，但静态扫描发现292处范围ID未展开，范围写法不能建立原子AC到Rule、VM和证据的
+      唯一闭环，另有字段、类型和引用问题削弱可追溯性。
+    claim_ids: [RE-12, TRACE-RANGE-ID-001]
+    evidence:
+    - evidence_id: EV-05-09-02-TRACE-STATIC
+      type: static_finding
+      path: specs/.evaluator/d91b4e4990a990da2bfe809514e573e35852193e/05-09-02/report.md
+      line_start: 277
+      line_end: 1735
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:456dec424d5f37aa2f4fe52d6a2d0414bcc1b302b83f1a688fa5f9431005f6cb
+      description: 报告记录292处TRACE-RANGE-ID-001以及相关结构问题。
+    - evidence_id: EV-05-09-02-TRACE-F3
+      type: spec_location
+      path: specs/05-ui-components/09-text-components/02-rich-editor/Feat-03-styled-string-mode-management-spec.md
+      line_start: 83
+      line_end: 116
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:d26b7104729df8b1bab9241cdc3786a973821bc01f8e30d17c607a91b4fda220
+      description: Feat-03追溯、规则和验证映射采用聚合范围写法且表字段不标准。
+    findings:
+    - finding_id: SEM-c7f4ef28526ea5762a35bebe
+      criterion_id: SPEC-TRACEABILITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 292处范围ID导致原子AC无法唯一关联Rule、VM和证据，追溯闭环仅在人工解释后成立。
+      recommendation: 将全部范围展开为具体ID，并逐项校验AC、Rule、VM和证据的双向引用。
+      evidence_ids: [EV-05-09-02-TRACE-STATIC, EV-05-09-02-TRACE-F3]
+
   - criterion_id: SPEC-SCOPE-BOUNDARY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      功能和Feat边界已明确，但“不涉及项”错误排除了独立NODE C API，并只从本次补录无变更角度描述构建依赖，
+      没有纳入实际动态模块、共享库和外部系统边界。
+    claim_ids: [RE-06, RE-07, RE-08]
+    evidence:
+    - evidence_id: EV-05-09-02-SCOPE-DESIGN
+      type: design_location
+      path: specs/05-ui-components/09-text-components/02-rich-editor/design.md
+      line_start: 69
+      line_end: 77
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:b1cd972de2349218cd48fbb6555d3fda484870885316696568a2fa18befbd601
+      description: 不涉及项称无独立NODE C API且不新增外部依赖。
+    - evidence_id: EV-05-09-02-SCOPE-NATIVE
+      type: source_citation
+      path: interfaces/native/node/rich_editor_native_impl.cpp
+      line_start: 162
+      line_end: 217
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:76ec30194ef86b5e206f1782989da6487236c031699211221164dbdf1a69259a
+      description: NODE C API实现了StyledString Controller创建、光标、选区和编辑状态操作。
+    findings:
+    - finding_id: SEM-366434b0a068207a952d0856
+      criterion_id: SPEC-SCOPE-BOUNDARY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: Function实际边界包含NODE C API、动态组件库和外部依赖，但Design不涉及项将其排除或省略。
+      recommendation: 以存量真实影响定义范围，列出C API、组件化加载、外部依赖及明确不评价项。
+      evidence_ids: [EV-05-09-02-SCOPE-DESIGN, EV-05-09-02-SCOPE-NATIVE]
+
   - criterion_id: DESIGN-IMPLEMENTATION-PATH
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design给出Application到Render的主链和核心模块职责，但遗漏DynamicModuleHelper加载libarkui_richeditor.z.so、
+      RichEditorDynamicModule分发四类Modifier，以及NODE C API入口，端到端架构上下文不完整。
+    claim_ids: [RE-06, RE-07]
+    evidence:
+    - evidence_id: EV-05-09-02-PATH-DESIGN
+      type: design_location
+      path: specs/05-ui-components/09-text-components/02-rich-editor/design.md
+      line_start: 28
+      line_end: 52
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:b1cd972de2349218cd48fbb6555d3fda484870885316696568a2fa18befbd601
+      description: Design主链覆盖Bridge、Model、Pattern、Layout、Render，但没有动态加载和C API入口。
+    - evidence_id: EV-05-09-02-PATH-LOADER
+      type: source_citation
+      path: adapter/ohos/osal/dynamic_module_helper.cpp
+      line_start: 95
+      line_end: 112
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:1858595b240db98e7a7ff01fa6dee9a7c05f39868d2df976622270d65f7339c2
+      description: DynamicModuleHelper登记Richeditor到richeditor动态组件模块。
+    - evidence_id: EV-05-09-02-PATH-MODULE
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/rich_editor/bridge/rich_editor_dynamic_module.cpp
+      line_start: 28
+      line_end: 82
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:eae8d423fad233288d41d168be298e216cc29240c4792c79726aadcd36ae764b
+      description: RichEditorDynamicModule提供Dynamic、Static、CJ和Custom Modifier及Model入口。
+    findings:
+    - finding_id: SEM-1b3409edac178da84d5c87a5
+      criterion_id: DESIGN-IMPLEMENTATION-PATH
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 主业务链存在，但组件化加载链、Modifier分发和NODE C API入口缺失，模块边界不完整。
+      recommendation: 增补公开入口、动态加载、共享库、各Modifier、Model/Pattern和C API的端到端调用图及职责。
+      evidence_ids: [EV-05-09-02-PATH-DESIGN, EV-05-09-02-PATH-LOADER, EV-05-09-02-PATH-MODULE]
+
+  - criterion_id: DESIGN-FEAT-RUNTIME-COVERAGE
+    dimension_id: design_quality
+    applicability: APPLICABLE
+    conclusion: MISSING
+    reason: >-
+      Feat-02至Feat-09在详细设计中各只有一个摘要段落；至少一个且实际多数已注册Feat没有输入入口、状态更新、
+      核心处理、输出事件、异常恢复和测试衔接六环节的可识别详细运行设计。
+    claim_ids: [RE-09]
+    evidence:
+    - evidence_id: EV-05-09-02-FEAT-DESIGN
+      type: design_location
+      path: specs/05-ui-components/09-text-components/02-rich-editor/design.md
+      line_start: 380
+      line_end: 410
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:b1cd972de2349218cd48fbb6555d3fda484870885316696568a2fa18befbd601
+      description: Feat-02至Feat-09仅以单段摘要列举事实，没有逐Feat运行闭环。
+    - evidence_id: EV-05-09-02-FEAT-REGISTRY
+      type: registry_entry
+      path: specs/evaluation/golden/manifest.yaml
+      line_start: 1
+      line_end: 220
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:879e75b5e184284c7ccae4050589ed15b7f0b0bd06a1fc99152531c1af32981a
+      description: Pilot将05-09-02登记为九Feat的complex Function。
+    findings:
+    - finding_id: SEM-ae1da6c9690916e6bf68a1cd
+      criterion_id: DESIGN-FEAT-RUNTIME-COVERAGE
+      severity: Major
+      conclusion: MISSING
+      message: 九个Feat没有逐项形成六环节端到端运行设计，摘要不能满足复杂Function的逐Feat覆盖要求。
+      recommendation: 为每个Feat补齐输入、状态、处理、输出、异常恢复和测试衔接，并与AC双向映射。
+      evidence_ids: [EV-05-09-02-FEAT-DESIGN, EV-05-09-02-FEAT-REGISTRY]
+
+  - criterion_id: DESIGN-ALGORITHM-DATA-STATE
+    dimension_id: design_quality
+    applicability: APPLICABLE
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design记录双模式、Span长度、模式标志、弱引用和部分线程模型，但缺少UndoManager模式转换与恢复、旧Controller处置、
+      AI任务取消、IME与剪贴板异步失败恢复、缓存失效和选择事件状态等关键生命周期。
+    claim_ids: [RE-01, RE-10]
+    evidence:
+    - evidence_id: EV-05-09-02-STATE-DESIGN
+      type: design_location
+      path: specs/05-ui-components/09-text-components/02-rich-editor/design.md
+      line_start: 270
+      line_end: 300
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:b1cd972de2349218cd48fbb6555d3fda484870885316696568a2fa18befbd601
+      description: 数据、资源和线程章节仅覆盖基础模式数据与弱引用生命周期。
+    - evidence_id: EV-05-09-02-STATE-HORIZONTAL
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/rich_editor/rich_editor_pattern.cpp
+      line_start: 10962
+      line_end: 10972
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:854ba0477e378c3aca5476e1814d9ae7d7f8a16d1e5bc7918e1a676f85643515
+      description: 实际horizontalScrolling状态变化包含测量标脏与缓存失效，Design未准确记录。
+    findings:
+    - finding_id: SEM-1ad0cbf7af3b9818c585616f
+      criterion_id: DESIGN-ALGORITHM-DATA-STATE
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 核心算法摘要存在，但多项适用的数据生命周期、异步状态、资源处置和失败恢复设计缺失或错误。
+      recommendation: 补齐Undo、Controller、AI、IME、剪贴板、缓存与选择事件的状态机、资源所有权和恢复路径。
+      evidence_ids: [EV-05-09-02-STATE-DESIGN, EV-05-09-02-STATE-HORIZONTAL]
+
   - criterion_id: DESIGN-DECISION-QUALITY
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design列出多项ADR及替代方案，但部分决策依据与真实实现冲突，候选方案的适用条件、兼容成本、验证证据和
+      风险关闭方式不完整，尚不足以支撑复杂Function的可复核取舍。
+    claim_ids: [RE-01, RE-02, RE-03, RE-10]
+    evidence:
+    - evidence_id: EV-05-09-02-ADR-DESIGN
+      type: design_location
+      path: specs/05-ui-components/09-text-components/02-rich-editor/design.md
+      line_start: 78
+      line_end: 99
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:b1cd972de2349218cd48fbb6555d3fda484870885316696568a2fa18befbd601
+      description: ADR表列出方案与理由，但含horizontalScrolling等错误实现判断。
+    - evidence_id: EV-05-09-02-ADR-SOURCE
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/rich_editor/rich_editor_pattern.cpp
+      line_start: 10962
+      line_end: 10972
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:854ba0477e378c3aca5476e1814d9ae7d7f8a16d1e5bc7918e1a676f85643515
+      description: 源码反证ADR-F4-1关于不触发MarkDirtyNode的判断。
+    findings:
+    - finding_id: SEM-da57e9eacdd11ba838e7c6a7
+      criterion_id: DESIGN-DECISION-QUALITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: ADR数量充足但存在事实错误，且真实候选、成本、适用条件和验证依据未完整闭环。
+      recommendation: 先校正实现事实，再为关键ADR补充选择标准、兼容成本、反例和可执行验证证据。
+      evidence_ids: [EV-05-09-02-ADR-DESIGN, EV-05-09-02-ADR-SOURCE]
+
   - criterion_id: DESIGN-IMPACT-COVERAGE
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: MISSING
+    reason: >-
+      构建章节仅说明本次补录不修改BUILD.gn和bundle.json，没有描述存量构建目标、条件编译、外部依赖、
+      libarkui_richeditor.z.so产物、动态模块注册加载和部署可用条件，符合MISSING判定。
+    claim_ids: [RE-08]
+    evidence:
+    - evidence_id: EV-05-09-02-IMPACT-DESIGN
+      type: design_location
+      path: specs/05-ui-components/09-text-components/02-rich-editor/design.md
+      line_start: 150
+      line_end: 162
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:b1cd972de2349218cd48fbb6555d3fda484870885316696568a2fa18befbd601
+      description: 构建章节只写无变更及现有BUILD包含全部源文件。
+    - evidence_id: EV-05-09-02-IMPACT-BUILD
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/rich_editor/BUILD.gn
+      line_start: 16
+      line_end: 85
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9059f241363859c3953b45442c698f7aeba97766eb8f8118af728f81f1283360
+      description: 实际构建包含rich_editor_pattern_ng、IME与Rosen依赖及Static Modifier条件。
+    - evidence_id: EV-05-09-02-IMPACT-PACKAGE
+      type: registry_entry
+      path: adapter/ohos/build/BUILD.gn
+      line_start: 89
+      line_end: 123
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:8c6c3b0a601d1135939ee3a18c82af7b7b7d5fd491ae2e7e298c14e27ba9cbba
+      description: 组件模块按arkui_名称生成共享库并进入安装分组，RichEditor产物为libarkui_richeditor.z.so。
+    findings:
+    - finding_id: SEM-d67f815635eb554a81d635ce
+      criterion_id: DESIGN-IMPACT-COVERAGE
+      severity: Major
+      conclusion: MISSING
+      message: Design没有可识别的存量构建、产物、注册加载和部署设计，只声明本次无BUILD变更。
+      recommendation: 增加target、条件、依赖、共享库产物、注册、加载、打包和运行时失败边界。
+      evidence_ids: [EV-05-09-02-IMPACT-DESIGN, EV-05-09-02-IMPACT-BUILD, EV-05-09-02-IMPACT-PACKAGE]
+
   - criterion_id: DESIGN-VERIFICATION-PLAN
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design只有三行泛化Host单元测试方向，未给出真实GN/Ninja target、测试二进制、gtest filter、逐Feat/AC映射、
+      可判定预期结果、异常恢复验证和风险关闭条件。
+    claim_ids: [RE-11]
+    evidence:
+    - evidence_id: EV-05-09-02-VERIFY-DESIGN
+      type: design_location
+      path: specs/05-ui-components/09-text-components/02-rich-editor/design.md
+      line_start: 278
+      line_end: 284
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:b1cd972de2349218cd48fbb6555d3fda484870885316696568a2fa18befbd601
+      description: 测试性设计只有目标、Mock策略和概括性验证方式。
+    - evidence_id: EV-05-09-02-VERIFY-TARGET
+      type: test_evidence
+      path: test/unittest/core/pattern/rich_editor/BUILD.gn
+      line_start: 14
+      line_end: 35
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:a52d9e89992d3c6b873474c6dec76d343324d18b4af23faba46bfbfec910fb33
+      description: 实际Host测试target为rich_editor_test_ng，并包含多类RichEditor测试源。
+    findings:
+    - finding_id: SEM-47d82a3c20d9498b43cda284
+      criterion_id: DESIGN-VERIFICATION-PLAN
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 有验证方向但缺少可执行target、binary、filter、逐AC结果和风险关闭证据。
+      recommendation: 以rich_editor_test_ng为入口补齐构建运行命令、用例过滤、预期计数、AC映射和风险关闭条件。
+      evidence_ids: [EV-05-09-02-VERIFY-DESIGN, EV-05-09-02-VERIFY-TARGET]
+
   - criterion_id: COMPATIBILITY-API-VERSION
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Spec普遍声明Public与since版本，但addBuilderSpan、getParagraphs、updateParagraphStyle、deleteBackward、maxLength、
+      maxLines、enableKeyboardOnFocus、isEditing、stopEditing和selectedDragPreviewStyle等版本存在偏差，签名差异也未完整记录。
+    claim_ids: [RE-04, RE-05]
+    evidence:
+    - evidence_id: EV-05-09-02-COMPAT-SDK
+      type: sdk_declaration
+      path: interface/sdk-js/api/@internal/component/ets/rich_editor.d.ts
+      line_start: 2430
+      line_end: 3722
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:10530349e691fa3eb83250a53b3981473870137789863afbbf87186cf0ea2102
+      description: 动态SDK提供各接口实际since、参数和返回值基线。
+    - evidence_id: EV-05-09-02-COMPAT-SPEC
+      type: spec_location
+      path: specs/05-ui-components/09-text-components/02-rich-editor/Feat-05-visual-style-interaction-feedback-spec.md
+      line_start: 210
+      line_end: 230
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9568d7fdf3588588ae329b37b9663a9f5311b079f9a13d8b499bd4968872ce95
+      description: Spec API表记录部分属性版本，但与冻结SDK存在版本偏差。
+    findings:
+    - finding_id: SEM-03e55aaa9792afc2836edbf6
+      criterion_id: COMPATIBILITY-API-VERSION
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 多个公开API的since、返回值和动态/静态可选性记录不准确，版本兼容结论不可直接使用。
+      recommendation: 根据冻结SDK逐接口重建版本矩阵，并单列动态与静态签名差异及迁移影响。
+      evidence_ids: [EV-05-09-02-COMPAT-SDK, EV-05-09-02-COMPAT-SPEC]
+
   - criterion_id: COMPATIBILITY-SYSTEM-IMPACT
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design提到IME、剪贴板和无障碍，但未完整列出graphic_2d、pasteboard、UDMF、image_framework、vibrator、AI检测、
+      accessibility等外部系统依赖及权限、条件编译、服务不可用时的影响。
+    claim_ids: [RE-08, RE-15]
+    evidence:
+    - evidence_id: EV-05-09-02-SYSTEM-DESIGN
+      type: design_location
+      path: specs/05-ui-components/09-text-components/02-rich-editor/design.md
+      line_start: 59
+      line_end: 67
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:b1cd972de2349218cd48fbb6555d3fda484870885316696568a2fa18befbd601
+      description: 架构规则只概括IME、剪贴板和无障碍子系统。
+    - evidence_id: EV-05-09-02-SYSTEM-BUILD
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/rich_editor/BUILD.gn
+      line_start: 47
+      line_end: 85
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9059f241363859c3953b45442c698f7aeba97766eb8f8118af728f81f1283360
+      description: 构建文件显示IME、graphic_2d、窗口、IPC、ui_session和accessibility等依赖及条件。
+    - evidence_id: EV-05-09-02-SYSTEM-BUNDLE
+      type: registry_entry
+      path: bundle.json
+      line_start: 55
+      line_end: 103
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:8841a844460bf7f1f2c81077f35a9d46377752fabc1fbd4d524f01bd2ce3026c
+      description: bundle记录ace_engine涉及的系统部件依赖范围。
+    findings:
+    - finding_id: SEM-51360babad7dc7d3551fc754
+      criterion_id: COMPATIBILITY-SYSTEM-IMPACT
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 系统依赖、权限、条件编译和外部服务失败影响没有完整评估。
+      recommendation: 列出每个外部部件、调用用途、权限或SysCap、平台条件以及不可用时的降级和验证方式。
+      evidence_ids: [EV-05-09-02-SYSTEM-DESIGN, EV-05-09-02-SYSTEM-BUILD, EV-05-09-02-SYSTEM-BUNDLE]
+
   - criterion_id: COMPATIBILITY-MULTI-DEVICE
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      各Feat包含多设备声明，但多数直接写手机、平板、折叠屏无差异且缺少验证证据；同时没有承接OHOS、Android、
+      Preview等实际平台分支及输入法、触觉、剪贴板能力差异。
+    claim_ids: [RE-02, RE-15]
+    evidence:
+    - evidence_id: EV-05-09-02-DEVICE-SPEC
+      type: spec_location
+      path: specs/05-ui-components/09-text-components/02-rich-editor/Feat-05-visual-style-interaction-feedback-spec.md
+      line_start: 394
+      line_end: 424
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9568d7fdf3588588ae329b37b9663a9f5311b079f9a13d8b499bd4968872ce95
+      description: Spec将stopBackPress平台差异与多设备声明合并为不准确结论。
+    - evidence_id: EV-05-09-02-DEVICE-SOURCE
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/rich_editor/rich_editor_pattern.cpp
+      line_start: 7481
+      line_end: 8055
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:854ba0477e378c3aca5476e1814d9ae7d7f8a16d1e5bc7918e1a676f85643515
+      description: 源码同时存在通用OnBackPressed和Android专用HandleOnKeyBack分支。
+    findings:
+    - finding_id: SEM-40e64e0d3ede5dae89d13dd9
+      criterion_id: COMPATIBILITY-MULTI-DEVICE
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 多设备结论多为无证据的“无差异”，并遗漏真实平台分支和系统能力差异。
+      recommendation: 按设备形态与OHOS/Android/Preview平台分别列出适用入口、差异、证据和验证场景。
+      evidence_ids: [EV-05-09-02-DEVICE-SPEC, EV-05-09-02-DEVICE-SOURCE]
+
   - criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      多数引用可定位，但静态报告仍有21处歧义路径、10处generated/site副本、1处不存在路径，且SDK静态文件名写成
+      rich_editor.static.d.ets而非richEditor.static.d.ets；文档本身也未记录关联仓冻结revision。
+    claim_ids: [RE-12, RE-13, REF-AMBIGUOUS-001, REF-DISALLOWED-SOURCE-001]
+    evidence:
+    - evidence_id: EV-05-09-02-STABILITY-STATIC
+      type: static_finding
+      path: specs/.evaluator/d91b4e4990a990da2bfe809514e573e35852193e/05-09-02/report.md
+      line_start: 37
+      line_end: 196
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:456dec424d5f37aa2f4fe52d6a2d0414bcc1b302b83f1a688fa5f9431005f6cb
+      description: 静态报告记录歧义路径、非权威副本和不存在路径。
+    - evidence_id: EV-05-09-02-STABILITY-DESIGN
+      type: source_citation
+      path: specs/05-ui-components/09-text-components/02-rich-editor/design.md
+      line_start: 131
+      line_end: 143
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:b1cd972de2349218cd48fbb6555d3fda484870885316696568a2fa18befbd601
+      description: Design的SDK表使用错误静态文件名且未冻结sdk-js revision。
+    findings:
+    - finding_id: SEM-9bc5e1285a88f09e624d0d93
+      criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 歧义短路径、生成副本、错误SDK文件名和缺少关联仓revision降低了证据复现稳定性。
+      recommendation: 使用仓内完整路径和权威源，修正SDK文件名，并记录ace_engine、sdk-js与sdk_c冻结revision。
+      evidence_ids: [EV-05-09-02-STABILITY-STATIC, EV-05-09-02-STABILITY-DESIGN]
+
   - criterion_id: MAINTAINABILITY-STRUCTURE
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      九Feat拆分和章节导航清晰，但11个用户故事不符合三行结构、4个AC类型使用非标准“行为”、1个追溯表字段错误，
+      再加292处范围ID和大量重复模板内容，后续同步维护成本较高。
+    claim_ids: [RE-12, SPEC-STRUCT-USER-STORY-001, SPEC-STRUCT-AC-TYPE-001, SPEC-STRUCT-TABLE-FIELD-001]
+    evidence:
+    - evidence_id: EV-05-09-02-STRUCTURE-STATIC
+      type: static_finding
+      path: specs/.evaluator/d91b4e4990a990da2bfe809514e573e35852193e/05-09-02/report.md
+      line_start: 197
+      line_end: 276
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:456dec424d5f37aa2f4fe52d6a2d0414bcc1b302b83f1a688fa5f9431005f6cb
+      description: 报告记录AC类型、追溯表字段和用户故事结构问题。
+    - evidence_id: EV-05-09-02-STRUCTURE-SPEC
+      type: spec_location
+      path: specs/05-ui-components/09-text-components/02-rich-editor/Feat-03-styled-string-mode-management-spec.md
+      line_start: 35
+      line_end: 116
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:d26b7104729df8b1bab9241cdc3786a973821bc01f8e30d17c607a91b4fda220
+      description: Feat-03集中呈现用户故事、AC类型和追溯表格式偏差。
+    findings:
+    - finding_id: SEM-13fe75ad9ce1997d5f46ffb2
+      criterion_id: MAINTAINABILITY-STRUCTURE
+      severity: Minor
+      conclusion: PARTIALLY_SUPPORTED
+      message: 功能拆分清晰，但模板字段不统一、范围写法和重复内容增加阅读及增量同步成本。
+      recommendation: 统一三行用户故事、AC类型和“AC编号”表头，展开范围ID并减少跨Feat重复模板内容。
+      evidence_ids: [EV-05-09-02-STRUCTURE-STATIC, EV-05-09-02-STRUCTURE-SPEC]
+
   - criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
+    conclusion: SUPPORTED
+    reason: >-
+      Design列出15项存量风险、类型、影响、处理方式和ArkUI SIG Owner。用户已在本次单次确认中将全部15项记录为
+      Accepted，风险与责任状态可追踪；具体自动化关闭能力已在验证方案Criterion中扣分。
+    claim_ids:
+    - Risk-01
+    - Risk-02
+    - Risk-03
+    - Risk-04
+    - Risk-05
+    - Risk-06
+    - Risk-07
+    - Risk-08
+    - Risk-09
+    - Risk-10
+    - Risk-11
+    - Risk-12
+    - Risk-13
+    - Risk-14
+    - Risk-15
+    evidence:
+    - evidence_id: EV-05-09-02-RISK-DESIGN
+      type: design_location
+      path: specs/05-ui-components/09-text-components/02-rich-editor/design.md
+      line_start: 412
+      line_end: 430
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:b1cd972de2349218cd48fbb6555d3fda484870885316696568a2fa18befbd601
+      description: Design列出15项风险及其影响、处理方式和Owner。
     findings: []
+
   coverage:
-    expected_criteria: 18
-    evaluated_criteria: 18
-    applicable_criteria: 18
+    expected_criteria: 20
+    evaluated_criteria: 20
+    applicable_criteria: 20
     not_applicable_criteria: 0
-    not_verifiable_criteria: 18
+    not_verifiable_criteria: 0
   execution:
     static_complete: true
     evidence_complete: true
-    semantic_complete: false
+    semantic_complete: true
     notes:
-    - 'Draft template: Criterion conclusions and scores are pending.'
+    - 已核验九个Feat、共享Design、冻结源码、sdk-js动态/静态契约、构建注册、NODE C API和Host测试入口。
+    - 静态Gate保持FAIL，340条静态Finding继续权威生效，语义评价未删除或降级任何静态Finding。
 scores:
   dimensions:
-    correctness: null
-    spec_executability: null
-    design_quality: null
-    compatibility_system_impact: null
-    maintainability: null
-  raw_score: null
-  published_score: null
-  confidence: null
+    correctness: 16.0
+    spec_executability: 12.5
+    design_quality: 8.5
+    compatibility_system_impact: 5.0
+    maintainability: 6.5
+  raw_score: 48.5
+  published_score: 48.5
+  confidence: 1.0
   admission: NOT_READY
 confirmation:
-  confirmed_by: null
-  confirmed_at: null
-  conclusion: pending
-  notes: []
+  confirmed_by: sunfei2021
+  confirmed_at: '2026-08-05T22:57:15+08:00'
+  conclusion: accepted
+  notes:
+  - 用户统一确认RE-01至RE-15问题与20项Criterion推荐结论，无异议。
+  - Design按Rubric v0.2评价，逐Feat运行设计和构建部署设计判定为MISSING。
+  - Design中的15项存量风险全部记录为Accepted。
+  - SDK冻结revision为224c0c10fde3910a473455eac6841614a162ce39。
+  - 本次没有额外不记录项。
 notes:
-- 完成18个Criterion后填写精确分数并进行一次确认。
-- Critical/Major Finding必须包含冻结revision下的可复现证据。
+- RichEditor在Rubric v0.2下完成20个Criterion的单次确认评价。
+- 主要提升方向为SDK契约校正、逐Feat运行设计、构建部署设计、可执行验证方案和原子追溯闭环。

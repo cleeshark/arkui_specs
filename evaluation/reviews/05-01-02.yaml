@@ -4,15 +4,15 @@ evaluation_id: EVAL-05-01-02
 func_id: 05-01-02
 input_fingerprint: sha256:45b792f873138bf2593726671986b1d9fe46aca55c239dfb4d6fc0dcf5865929
 source_revision: d91b4e4990a990da2bfe809514e573e35852193e
-status: draft
+status: confirmed
 evaluator:
   evaluator_id: sunfei2021
-  evaluated_at: null
+  evaluated_at: '2026-08-05T21:49:51+08:00'
 semantic_result:
   schema_version: 1
-  rubric_version: 0.1.0
-  complexity_rules_version: 0.1.0
-  evaluator_protocol_version: 0.1.0
+  rubric_version: 0.2.0
+  complexity_rules_version: 0.2.0
+  evaluator_protocol_version: 0.2.0
   evaluator_version: human:sunfei2021
   func_id: 05-01-02
   source_revision: d91b4e4990a990da2bfe809514e573e35852193e
@@ -28,193 +28,1563 @@ semantic_result:
   - criterion_id: CORRECTNESS-SOURCE-SUPPORT
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      已逐项核验AC-1.1至AC-1.8及AC-2.1至AC-2.5。lineCap属性默认值为BUTT，但默认开启
+      strokeWidthLimitation时，最终绘制阶段会将BUTT转换为SQUARE；垂直Divider的实际尺寸为
+      宽度等于strokeWidth、高度等于dividerLength，但Spec将对应的主轴和交叉轴名称写反；
+      AC-2.1的颜色重置在动态ArkTS路径成立，但静态ArkTS路径不会清除已有颜色及用户设置标志；
+      动态ArkTS路径在参数解析失败时无条件回退为1px，与AC-2.2声明的API 10以下回退主题线宽不一致。
+      除上述四处偏差外，其余AC均可由冻结revision下的实现路径支撑。
+    claim_ids:
+    - AC-1.1
+    - AC-1.2
+    - AC-1.3
+    - AC-1.4
+    - AC-1.5
+    - AC-1.6
+    - AC-1.7
+    - AC-1.8
+    - AC-2.1
+    - AC-2.2
+    - AC-2.3
+    - AC-2.4
+    - AC-2.5
+    evidence:
+    - evidence_id: EV-05-01-02-CSS-AC11-LAYOUT
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/divider_layout_algorithm.cpp
+      line_start: 36
+      line_end: 43
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:abd9c43f13ff978acbcfae35e40d5af8391859d61401ef430ba85e00ed7ff8a7
+      claim_id: AC-1.1
+      description: 默认线宽按API版本选择，vertical默认为false且strokeWidthLimitation默认为true。
+    - evidence_id: EV-05-01-02-CSS-AC11-PAINT
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/divider_paint_method.cpp
+      line_start: 39
+      line_end: 42
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:f1827b937093f49e6caa007682ef373fa7e92f4a0bf2ae591a725de78d6d2190
+      claim_id: AC-1.1
+      description: 未设置lineCap时，进入绘制链路的属性默认值为BUTT。
+    - evidence_id: EV-05-01-02-CSS-AC11-DRAW
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/divider_modifier.cpp
+      line_start: 40
+      line_end: 48
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:427eba96848d6bde50c98cb3f2c1a6526317781af3a1a78dba382b5d7aeb5977
+      claim_id: AC-1.1
+      description: strokeWidthLimitation开启时，onDraw在实际绘制前将BUTT转换为SQUARE。
+    - evidence_id: EV-05-01-02-CSS-AC12-LAYOUT
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/divider_layout_algorithm.cpp
+      line_start: 41
+      line_end: 67
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:abd9c43f13ff978acbcfae35e40d5af8391859d61401ef430ba85e00ed7ff8a7
+      claim_id: AC-1.2
+      description: vertical为true时返回SizeF(constrainStrokeWidth, dividerLength)，宽度为交叉轴、长度方向高度为主轴。
+    - evidence_id: EV-05-01-02-CSS-AC22-BRIDGE
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/bridge/arkts_native_divider_bridge.cpp
+      line_start: 54
+      line_end: 90
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:12a8cbf445cab570e423c7e816c1066acb20115135b576c0521ed52618437084
+      claim_id: AC-2.2
+      description: 动态ArkTS路径按目标API初始化默认值，但解析失败分支无条件将strokeWidth设置为1px。
+    - evidence_id: EV-05-01-02-CSS-AC22-LAYOUT
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/divider_layout_algorithm.cpp
+      line_start: 32
+      line_end: 40
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:abd9c43f13ff978acbcfae35e40d5af8391859d61401ef430ba85e00ed7ff8a7
+      claim_id: AC-2.2
+      description: 已进入布局层的非正线宽按运行API版本回退，但桥接层解析失败后写入的正值1px不会触发该兜底。
+    - evidence_id: EV-05-01-02-CSS-AC21-STATIC-BRIDGE
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/bridge/divider_static_modifier.cpp
+      line_start: 56
+      line_end: 62
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:ccecdf8ace281f54b630b7a69e9cfb9042ddfe4037176fadf913a0fbf623637f
+      claim_id: AC-2.1
+      description: 静态ArkTS的color(undefined)被转换为空optional并交给DividerModelNGStatic处理。
+    - evidence_id: EV-05-01-02-CSS-AC21-STATIC-MODEL
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/divider_model_ng_static.cpp
+      line_start: 39
+      line_end: 52
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:dd20d5bca33cb9e6d60c2c51b97181505501b52266a805c0697aeb94a8d85d1c
+      claim_id: AC-2.1
+      description: 空颜色只调用UpdateDividerColorByTheme，没有重置已有DividerColor或DividerColorSetByUser。
+    - evidence_id: EV-05-01-02-CSS-AC21-RENDER-PROPERTY
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/divider_render_property.h
+      line_start: 105
+      line_end: 137
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:689bf942235f4eae2381931d3264c9beb12c21efb604952b0780dbd4025ed547
+      claim_id: AC-2.1
+      description: ConfigChangePerform开启时UpdateDividerColorByTheme不会覆盖已有颜色，也不会清除用户设置标志。
+    - evidence_id: EV-05-01-02-CSS-LAYOUT-SUPPORT
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/divider_layout_algorithm.cpp
+      line_start: 36
+      line_end: 67
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:abd9c43f13ff978acbcfae35e40d5af8391859d61401ef430ba85e00ed7ff8a7
+      description: 支撑水平与垂直布局、合法线宽、dividerLength限制以及交叉轴和最终尺寸约束。
+    - evidence_id: EV-05-01-02-CSS-MODEL-SUPPORT
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/divider_model_ng.cpp
+      line_start: 23
+      line_end: 113
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:97149671c1c7553b91ea548905513f2c7ed3bc454f56824483d4dde7448852d6
+      description: 支撑Divider节点创建以及vertical、color、strokeWidth和lineCap属性写入。
+    - evidence_id: EV-05-01-02-CSS-THEME-SUPPORT
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/divider_pattern.cpp
+      line_start: 36
+      line_end: 85
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:0b954322090c162832dfefcd2a63187a07298735d11710e1a2b6094a5f46d403
+      description: 支撑未显式设色时的主题跟随，以及用户显式设色后跳过主题覆盖。
+    - evidence_id: EV-05-01-02-CSS-PAINT-SUPPORT
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/divider_paint_method.cpp
+      line_start: 39
+      line_end: 67
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:f1827b937093f49e6caa007682ef373fa7e92f4a0bf2ae591a725de78d6d2190
+      description: 支撑Round和Square端点的线长增加、半线宽偏移及绘制参数传递。
+    - evidence_id: EV-05-01-02-CSS-PAINTER-SUPPORT
+      type: source_citation
+      path: frameworks/core/components_ng/render/divider_painter.cpp
+      line_start: 21
+      line_end: 49
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:6701aa6105f162337ef76d9ba6cb81146d6187c4482f6e7dca217d6f3c115618
+      description: 支撑笔宽、颜色、端点样式以及不同端点类型的起止点补偿。
+    - evidence_id: EV-05-01-02-CSS-DYNAMIC-MODIFIER-SUPPORT
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/bridge/divider_dynamic_modifier.cpp
+      line_start: 34
+      line_end: 128
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:1aac5834c0081be454071fc05732805a85b5a55f5f54c156f98f11f4af253f62
+      description: 支撑动态路径的默认方向、默认线宽、无效lineCap回退、颜色重置和方向重置行为。
+    findings:
+    - finding_id: SEM-538b9d0c81e28a38e66b849e
+      criterion_id: CORRECTNESS-SOURCE-SUPPORT
+      claim_id: AC-1.1
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: AC-1.1将默认最终渲染端点描述为Butt，但实现会在默认限制开启时使用Square笔帽绘制。
+      recommendation: 将规格改为“lineCap属性默认值为Butt；默认限制开启时绘制阶段内部使用Square笔帽完成边界补偿”。
+      evidence_ids:
+      - EV-05-01-02-CSS-AC11-LAYOUT
+      - EV-05-01-02-CSS-AC11-PAINT
+      - EV-05-01-02-CSS-AC11-DRAW
+    - finding_id: SEM-4901ebd88f044afc4d77ce20
+      criterion_id: CORRECTNESS-SOURCE-SUPPORT
+      claim_id: AC-1.2
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: AC-1.2的尺寸关系与实现一致，但将垂直Divider的宽度标为主轴、高度标为交叉轴，轴名称与实际方向相反。
+      recommendation: 将描述改为“宽度（交叉轴）由strokeWidth决定，高度（主轴）填充可用高度”。
+      evidence_ids:
+      - EV-05-01-02-CSS-AC12-LAYOUT
+    - finding_id: SEM-ee4580a611f74ac02d79ceb6
+      criterion_id: CORRECTNESS-SOURCE-SUPPORT
+      claim_id: AC-2.2
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: AC-2.2声明全部无效线宽在API 10以下回退主题线宽，但动态ArkTS参数解析失败分支会直接写入1px。
+      recommendation: 区分非正数的布局兜底与百分比等解析失败场景，明确动态ArkTS解析失败时回退为1px。
+      evidence_ids:
+      - EV-05-01-02-CSS-AC22-BRIDGE
+      - EV-05-01-02-CSS-AC22-LAYOUT
+    - finding_id: SEM-7ba2ab050e961390ddc4ee26
+      criterion_id: CORRECTNESS-SOURCE-SUPPORT
+      claim_id: AC-2.1
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: AC-2.1在动态ArkTS路径成立，但静态ArkTS的color(undefined)路径不会清除已有颜色和用户设置标志。
+      recommendation: 明确AC-2.1的适用前端，或使静态路径重置DividerColor并清除DividerColorSetByUser后再表述为全路径行为。
+      evidence_ids:
+      - EV-05-01-02-CSS-AC21-STATIC-BRIDGE
+      - EV-05-01-02-CSS-AC21-STATIC-MODEL
+      - EV-05-01-02-CSS-AC21-RENDER-PROPERTY
   - criterion_id: CORRECTNESS-SDK-CONTRACT
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      动态Divider构造函数及vertical、color、strokeWidth、lineCap的类型、返回值、公开版本和
+      crossplatform/form/atomicservice元数据与Spec基本一致。静态属性接口标注为since 23 static，
+      但静态Divider()组件构造函数标注为since 26.0.0 static，Spec将静态版本整体概括为
+      since 23不够准确。
+    claim_ids:
+    - API-Divider
+    - API-vertical
+    - API-color
+    - API-strokeWidth
+    - API-lineCap
+    - API-static-version
+    evidence:
+    - evidence_id: EV-05-01-02-SDK-DYNAMIC
+      type: sdk_declaration
+      path: interface/sdk-js/api/@internal/component/ets/divider.d.ts
+      line_start: 21
+      line_end: 144
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:75eb1d5e075696a943679d994bf6399fb709db9068bebce8788b225366e3b305
+      description: 动态Divider构造函数、四个专属属性及其since/crossplatform/form/atomicservice声明。
+    - evidence_id: EV-05-01-02-SDK-STATIC
+      type: sdk_declaration
+      path: interface/sdk-js/api/arkui/component/divider.static.d.ets
+      line_start: 24
+      line_end: 109
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c643fc553760c15f737e4801d157fff88668e18a62cbce2a26107e10e76d3a48
+      claim_id: API-static-version
+      description: 静态属性接口自API 23声明，但静态Divider()构造函数标注为API 26.0.0。
+    - evidence_id: EV-05-01-02-SDK-STATIC-SOURCE
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/bridge/divider_static_modifier.cpp
+      line_start: 25
+      line_end: 100
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:ccecdf8ace281f54b630b7a69e9cfb9042ddfe4037176fadf913a0fbf623637f
+      claim_id: API-static-version
+      description: 静态Divider构造和属性modifier在冻结源码中均有对应实现入口。
+    findings:
+    - finding_id: SEM-d1d7b5fb7571296d596f1995
+      criterion_id: CORRECTNESS-SDK-CONTRACT
+      claim_id: API-static-version
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: Spec称静态版本自API 23可用，但SDK仅将四个静态属性标为since 23，静态Divider()构造函数为since 26.0.0。
+      recommendation: 分别声明“静态属性接口自API 23”和“静态Divider()构造函数自API 26.0.0”，避免概括为统一版本。
+      evidence_ids:
+      - EV-05-01-02-SDK-STATIC
+      - EV-05-01-02-SDK-STATIC-SOURCE
   - criterion_id: CORRECTNESS-BOUNDARY-STATE
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      已核验AC-2.1的静态颜色重置边界。实现路径未完整清除已有颜色和用户设置标志，且现有
+      C API颜色测试被DISABLED、未覆盖先设色后传入undefined的状态转换，不能作为有效通过证据。
+      AC-2.2已有百分比回退断言，但负数测试未断言最终回退线宽，且缺少NaN及API Target 9/10
+      解析失败回退差异测试。AC-2.3的无效lineCap回退具有源码和有效测试支撑。AC-2.4的大线宽
+      测试没有断言裁剪结果，AC-2.5现有用例未让strokeWidth超过交叉轴约束，均不足以验证所声明边界。
+    claim_ids:
+    - AC-2.1
+    - AC-2.2
+    - AC-2.3
+    - AC-2.4
+    - AC-2.5
+    evidence:
+    - evidence_id: EV-05-01-02-BOUNDARY-AC21-SOURCE
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/divider_model_ng_static.cpp
+      line_start: 39
+      line_end: 52
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:dd20d5bca33cb9e6d60c2c51b97181505501b52266a805c0697aeb94a8d85d1c
+      claim_id: AC-2.1
+      description: 静态undefined颜色路径只调用主题更新，没有执行完整颜色和用户状态重置。
+    - evidence_id: EV-05-01-02-BOUNDARY-AC21-TEST
+      type: test_evidence
+      path: test/unittest/capi/modifiers/divider_modifier_test.cpp
+      line_start: 59
+      line_end: 91
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:3a047f103bd717225cab38e71634f10184010a50bd297de61463036f88f66ed9
+      claim_id: AC-2.1
+      description: 静态颜色测试使用DISABLED_前缀，且未覆盖先设色后传入undefined并检查用户状态清除。
+    - evidence_id: EV-05-01-02-BOUNDARY-AC22-SOURCE
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/bridge/arkts_native_divider_bridge.cpp
+      line_start: 54
+      line_end: 90
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:12a8cbf445cab570e423c7e816c1066acb20115135b576c0521ed52618437084
+      claim_id: AC-2.2
+      description: 动态路径包含API Target分支及解析失败回退，需要版本化测试验证。
+    - evidence_id: EV-05-01-02-BOUNDARY-AC22-PERCENT-TEST
+      type: test_evidence
+      path: test/unittest/capi/modifiers/divider_modifier_test.cpp
+      line_start: 167
+      line_end: 208
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:3a047f103bd717225cab38e71634f10184010a50bd297de61463036f88f66ed9
+      claim_id: AC-2.2
+      description: 静态C API测试对百分比输入回退为1px提供明确断言。
+    - evidence_id: EV-05-01-02-BOUNDARY-AC22-NEGATIVE-TEST
+      type: test_evidence
+      path: test/unittest/core/pattern/divider/divider_branch_coverage_test_ng.cpp
+      line_start: 2287
+      line_end: 2312
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:02540a38a397f8129f844266270f1e017b1b06ec0f956497c57e28c37ea5c3bb
+      claim_id: AC-2.2
+      description: 负数线宽测试只确认MeasureContent返回值存在，没有断言最终线宽回退值。
+    - evidence_id: EV-05-01-02-BOUNDARY-AC23-SOURCE
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/bridge/divider_dynamic_modifier.cpp
+      line_start: 34
+      line_end: 47
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:1aac5834c0081be454071fc05732805a85b5a55f5f54c156f98f11f4af253f62
+      claim_id: AC-2.3
+      description: 仅识别SQUARE和ROUND，其余整数统一映射为默认BUTT。
+    - evidence_id: EV-05-01-02-BOUNDARY-AC23-TEST
+      type: test_evidence
+      path: test/unittest/capi/modifiers/divider_modifier_test.cpp
+      line_start: 132
+      line_end: 164
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:3a047f103bd717225cab38e71634f10184010a50bd297de61463036f88f66ed9
+      claim_id: AC-2.3
+      description: C API测试传入无效枚举-25并明确断言回退为BUTT。
+    - evidence_id: EV-05-01-02-BOUNDARY-AC24-25-SOURCE
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/divider_layout_algorithm.cpp
+      line_start: 43
+      line_end: 67
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:abd9c43f13ff978acbcfae35e40d5af8391859d61401ef430ba85e00ed7ff8a7
+      description: 源码包含dividerLength取最小值、交叉轴selfIdealSize取最小值和最终Constrain逻辑。
+    - evidence_id: EV-05-01-02-BOUNDARY-AC24-TEST
+      type: test_evidence
+      path: test/unittest/core/pattern/divider/divider_branch_coverage_test_ng.cpp
+      line_start: 1420
+      line_end: 1455
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:02540a38a397f8129f844266270f1e017b1b06ec0f956497c57e28c37ea5c3bb
+      claim_id: AC-2.4
+      description: 用例触发strokeWidth大于dividerLength，但只断言dirty swap成功，没有断言constrainStrokeWidth等于dividerLength。
+    - evidence_id: EV-05-01-02-BOUNDARY-AC25-TEST
+      type: test_evidence
+      path: test/unittest/core/pattern/divider/divider_branch_coverage_test_ng.cpp
+      line_start: 1153
+      line_end: 1210
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:02540a38a397f8129f844266270f1e017b1b06ec0f956497c57e28c37ea5c3bb
+      claim_id: AC-2.5
+      description: 用例设置strokeWidth为20而交叉轴selfIdealSize为25，未触发strokeWidth超过约束的裁剪边界。
+    findings:
+    - finding_id: SEM-f21610f31df19a00218413b0
+      criterion_id: CORRECTNESS-BOUNDARY-STATE
+      claim_id: AC-2.1
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 静态color(undefined)状态转换不完整，且唯一相关C API颜色测试被禁用并缺少该场景断言。
+      recommendation: 修正或明确静态重置语义，并新增默认执行的测试覆盖“显式设色→undefined→主题色及用户标志恢复”。
+      evidence_ids:
+      - EV-05-01-02-BOUNDARY-AC21-SOURCE
+      - EV-05-01-02-BOUNDARY-AC21-TEST
+    - finding_id: SEM-a3567c4d95ebd57105c39bdc
+      criterion_id: CORRECTNESS-BOUNDARY-STATE
+      claim_id: AC-2.2
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: AC-2.2仅有百分比回退的明确测试，负数测试缺少结果断言，NaN和API Target版本差异未覆盖。
+      recommendation: 补充负数与NaN的最终线宽断言，并分别验证API Target 9和10下解析失败的回退结果。
+      evidence_ids:
+      - EV-05-01-02-BOUNDARY-AC22-SOURCE
+      - EV-05-01-02-BOUNDARY-AC22-PERCENT-TEST
+      - EV-05-01-02-BOUNDARY-AC22-NEGATIVE-TEST
+    - finding_id: SEM-6c63e520a79427e384c7a52c
+      criterion_id: CORRECTNESS-BOUNDARY-STATE
+      claim_id: AC-2.4/AC-2.5
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: AC-2.4和AC-2.5虽有实现逻辑，但现有测试没有对真正触发的裁剪边界给出精确结果断言。
+      recommendation: 分别补充strokeWidth大于dividerLength和大于交叉轴约束的用例，并断言最终constrainStrokeWidth或返回尺寸等于约束值。
+      evidence_ids:
+      - EV-05-01-02-BOUNDARY-AC24-25-SOURCE
+      - EV-05-01-02-BOUNDARY-AC24-TEST
+      - EV-05-01-02-BOUNDARY-AC25-TEST
   - criterion_id: CORRECTNESS-CROSS-DOC-CONSISTENCY
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Function Registry、Feature Registry、Spec和Design的FuncID、FeatID、标题及文档路径一致。
+      但Design仍将已不存在的declarative_frontend/jsview/js_divider.cpp作为动态JS Bridge入口，
+      Mermaid调用链也沿用组件化前结构，与当前pattern/divider/bridge实现不一致。Spec AC-1.1的
+      默认Butt渲染描述与同文档R-3及Design ADR-2的实际Square绘制描述冲突；Spec AC-2.1的统一
+      颜色重置语义也未体现Design所声明的legacy/generated双路径差异。
+    claim_ids:
+    - FUNC-05-01-02
+    - FEAT-05-01-02-01
+    - CALLCHAIN-DYNAMIC-BRIDGE
+    - AC-1.1
+    - AC-2.1
+    evidence:
+    - evidence_id: EV-05-01-02-CROSS-SPEC
+      type: spec_location
+      path: specs/05-ui-components/01-layout-components/02-divider/Feat-01-divider-spec.md
+      line_start: 3
+      line_end: 16
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:eb4a92f091fdd608980a6112100eb6eddbda5eeb3c5bdd80a1b3a37faadc5a0d
+      claim_id: FEAT-05-01-02-01
+      description: Spec声明Function Feature标识、标题、状态和复杂度。
+    - evidence_id: EV-05-01-02-CROSS-DESIGN
+      type: design_location
+      path: specs/05-ui-components/01-layout-components/02-divider/design.md
+      line_start: 5
+      line_end: 52
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4c53a876edf94c57d7933481c9b38c440ab83f1c9848e2f033a10a1057b3a2ee
+      claim_id: CALLCHAIN-DYNAMIC-BRIDGE
+      description: Design元数据与Spec一致，但调用链表将不存在的js_divider.cpp列为动态Bridge入口。
+    - evidence_id: EV-05-01-02-CROSS-DESIGN-DIAGRAM
+      type: design_location
+      path: specs/05-ui-components/01-layout-components/02-divider/design.md
+      line_start: 141
+      line_end: 178
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4c53a876edf94c57d7933481c9b38c440ab83f1c9848e2f033a10a1057b3a2ee
+      claim_id: CALLCHAIN-DYNAMIC-BRIDGE
+      description: Mermaid架构图继续使用JSDivider和js_divider.cpp作为动态入口。
+    - evidence_id: EV-05-01-02-CROSS-FUNCTION-REGISTRY
+      type: registry_entry
+      path: specs/registry/functions.yaml
+      line_start: 1577
+      line_end: 1589
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7e4afd02833c5d35cf434267941b5dad7fbf433fcd0308262236e75fb580a535
+      claim_id: FUNC-05-01-02
+      description: Function Registry中的Divider名称、层级、路径和design路径均与实际文档一致。
+    - evidence_id: EV-05-01-02-CROSS-FEATURE-REGISTRY
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 882
+      line_end: 886
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9a81e2cff4a6a9810fc28c1841f5eb70748a23117a569cc8a69c78c30453fdfe
+      claim_id: FEAT-05-01-02-01
+      description: Feature Registry中的Feat-01标题、Spec路径和Baselined状态与文档一致。
+    - evidence_id: EV-05-01-02-CROSS-CURRENT-BRIDGE
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/bridge/divider_dynamic_modifier.cpp
+      line_start: 16
+      line_end: 54
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:1aac5834c0081be454071fc05732805a85b5a55f5f54c156f98f11f4af253f62
+      claim_id: CALLCHAIN-DYNAMIC-BRIDGE
+      description: 当前动态Divider实现位于组件化的pattern/divider/bridge目录。
+    - evidence_id: EV-05-01-02-CROSS-AC11-SPEC
+      type: spec_location
+      path: specs/05-ui-components/01-layout-components/02-divider/Feat-01-divider-spec.md
+      line_start: 43
+      line_end: 52
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:eb4a92f091fdd608980a6112100eb6eddbda5eeb3c5bdd80a1b3a37faadc5a0d
+      claim_id: AC-1.1
+      description: AC-1.1将默认最终渲染端点描述为Butt。
+    - evidence_id: EV-05-01-02-CROSS-AC11-RULE
+      type: spec_location
+      path: specs/05-ui-components/01-layout-components/02-divider/Feat-01-divider-spec.md
+      line_start: 88
+      line_end: 96
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:eb4a92f091fdd608980a6112100eb6eddbda5eeb3c5bdd80a1b3a37faadc5a0d
+      claim_id: AC-1.1
+      description: R-3明确默认限制开启时BUTT会在绘制阶段转换为SQUARE。
+    - evidence_id: EV-05-01-02-CROSS-ADR
+      type: design_location
+      path: specs/05-ui-components/01-layout-components/02-divider/design.md
+      line_start: 79
+      line_end: 87
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4c53a876edf94c57d7933481c9b38c440ab83f1c9848e2f033a10a1057b3a2ee
+      description: ADR-2确认BUTT到SQUARE转换，ADR-4确认legacy/generated颜色Reset语义不同。
+    - evidence_id: EV-05-01-02-CROSS-AC21-SPEC
+      type: spec_location
+      path: specs/05-ui-components/01-layout-components/02-divider/Feat-01-divider-spec.md
+      line_start: 54
+      line_end: 66
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:eb4a92f091fdd608980a6112100eb6eddbda5eeb3c5bdd80a1b3a37faadc5a0d
+      claim_id: AC-2.1
+      description: AC-2.1统一声明无效颜色重置主题色，没有区分动态和静态路径。
+    - evidence_id: EV-05-01-02-CROSS-AC21-DESIGN
+      type: design_location
+      path: specs/05-ui-components/01-layout-components/02-divider/design.md
+      line_start: 274
+      line_end: 296
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4c53a876edf94c57d7933481c9b38c440ab83f1c9848e2f033a10a1057b3a2ee
+      claim_id: AC-2.1
+      description: Design分别描述动态ResetDividerColor和静态UpdateDividerColorByTheme路径。
+    findings:
+    - finding_id: SEM-f614c4a6d16a5c0de1e988cf
+      criterion_id: CORRECTNESS-CROSS-DOC-CONSISTENCY
+      claim_id: CALLCHAIN-DYNAMIC-BRIDGE
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: Design调用链表和架构图仍引用已不存在的js_divider.cpp，未同步当前组件化Bridge路径。
+      recommendation: 将动态入口更新为pattern/divider/bridge下的arkts_native_divider_bridge.cpp和divider_dynamic_modifier.cpp，并同步Mermaid调用链。
+      evidence_ids:
+      - EV-05-01-02-CROSS-DESIGN
+      - EV-05-01-02-CROSS-DESIGN-DIAGRAM
+      - EV-05-01-02-CROSS-CURRENT-BRIDGE
+    - finding_id: SEM-75af4c1c99d6f5125bc8b30b
+      criterion_id: CORRECTNESS-CROSS-DOC-CONSISTENCY
+      claim_id: AC-1.1
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: Spec AC-1.1称默认最终渲染为Butt，但Spec R-3和Design ADR-2均称默认绘制阶段转换为Square。
+      recommendation: 区分“属性默认值为Butt”和“默认限制开启时实际使用Square笔帽绘制”，统一AC、Rule和Design表述。
+      evidence_ids:
+      - EV-05-01-02-CROSS-AC11-SPEC
+      - EV-05-01-02-CROSS-AC11-RULE
+      - EV-05-01-02-CROSS-ADR
+    - finding_id: SEM-63e81ce024558ef4b64671f0
+      criterion_id: CORRECTNESS-CROSS-DOC-CONSISTENCY
+      claim_id: AC-2.1
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: Spec AC-2.1使用统一颜色重置语义，但Design明确记录legacy/generated路径Reset处理不同。
+      recommendation: 在Spec中按动态与静态前端拆分颜色重置场景，并与Design的双路径说明保持一致。
+      evidence_ids:
+      - EV-05-01-02-CROSS-AC21-SPEC
+      - EV-05-01-02-CROSS-ADR
+      - EV-05-01-02-CROSS-AC21-DESIGN
   - criterion_id: SPEC-AC-TESTABILITY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      13条AC均使用WHEN/THEN结构，输入、预期状态或可观测布局/绘制结果总体明确，可以设计自动化测试。
+      但验收追溯表中的divider_pattern_test、divider_layout_algorithm_test、divider_paint_method_test和
+      js_divider_test均无法解析到当前仓内真实测试文件或用例，评价人不能沿AC直接复现所声称证据。
+    claim_ids:
+    - AC-1.1
+    - AC-1.2
+    - AC-1.3
+    - AC-1.4
+    - AC-1.5
+    - AC-1.6
+    - AC-1.7
+    - AC-1.8
+    - AC-2.1
+    - AC-2.2
+    - AC-2.3
+    - AC-2.4
+    - AC-2.5
+    evidence:
+    - evidence_id: EV-05-01-02-TESTABILITY-SPEC
+      type: spec_location
+      path: specs/05-ui-components/01-layout-components/02-divider/Feat-01-divider-spec.md
+      line_start: 35
+      line_end: 84
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:eb4a92f091fdd608980a6112100eb6eddbda5eeb3c5bdd80a1b3a37faadc5a0d
+      description: 用户故事AC采用WHEN/THEN结构，但追溯表证据列只填写无法定位的概括性测试名称。
+    - evidence_id: EV-05-01-02-TESTABILITY-SOURCE
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/divider_layout_algorithm.cpp
+      line_start: 36
+      line_end: 67
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:abd9c43f13ff978acbcfae35e40d5af8391859d61401ef430ba85e00ed7ff8a7
+      description: 关键布局状态和边界值可通过算法输出与getter形成明确自动化断言。
+    - evidence_id: EV-05-01-02-TESTABILITY-ACTUAL-TEST
+      type: test_evidence
+      path: test/unittest/core/pattern/divider/divider_branch_coverage_test_ng.cpp
+      line_start: 1153
+      line_end: 1210
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:02540a38a397f8129f844266270f1e017b1b06ec0f956497c57e28c37ea5c3bb
+      description: 实际布局测试位于divider_branch_coverage_test_ng.cpp并以具体HWTEST_F用例组织。
+    - evidence_id: EV-05-01-02-TESTABILITY-CAPI-TEST
+      type: test_evidence
+      path: test/unittest/capi/modifiers/divider_modifier_test.cpp
+      line_start: 132
+      line_end: 208
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:3a047f103bd717225cab38e71634f10184010a50bd297de61463036f88f66ed9
+      description: 实际静态C API测试以DividerModifierTest具体用例覆盖lineCap和strokeWidth。
+    findings:
+    - finding_id: SEM-c279bccf8bc596edbe96f606
+      criterion_id: SPEC-AC-TESTABILITY
+      claim_id: AC-1.1..AC-2.5
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: AC本身总体可测试，但验收追溯中的四个测试证据名称均不能定位到真实测试文件或具体用例。
+      recommendation: 将每条AC的证据改为仓内完整测试路径、测试套件与用例名，必要时附执行过滤条件。
+      evidence_ids:
+      - EV-05-01-02-TESTABILITY-SPEC
+      - EV-05-01-02-TESTABILITY-ACTUAL-TEST
+      - EV-05-01-02-TESTABILITY-CAPI-TEST
   - criterion_id: SPEC-RULE-COMPLETENESS
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      R-1至R-15覆盖全部13条AC，包含正常行为、异常输入、布局边界、主题状态和API版本分支。
+      但R-3所述BUTT到SQUARE实际绘制与AC-1.1冲突；R-11未区分静态颜色重置路径；
+      R-12也未区分动态ArkTS解析失败后固定回退1px的分支，关键规则尚未完整表达多前端实际语义。
+    claim_ids:
+    - R-3
+    - R-11
+    - R-12
+    evidence:
+    - evidence_id: EV-05-01-02-RULES-SPEC
+      type: spec_location
+      path: specs/05-ui-components/01-layout-components/02-divider/Feat-01-divider-spec.md
+      line_start: 86
+      line_end: 104
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:eb4a92f091fdd608980a6112100eb6eddbda5eeb3c5bdd80a1b3a37faadc5a0d
+      description: R-1至R-15覆盖全部AC，但R-3、R-11和R-12存在已确认的冲突或路径遗漏。
+    - evidence_id: EV-05-01-02-RULES-LINECAP-SOURCE
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/divider_modifier.cpp
+      line_start: 40
+      line_end: 48
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:427eba96848d6bde50c98cb3f2c1a6526317781af3a1a78dba382b5d7aeb5977
+      claim_id: R-3
+      description: 默认限制开启时实际绘制使用SQUARE，要求AC和规则区分属性值与绘制值。
+    - evidence_id: EV-05-01-02-RULES-STATIC-COLOR-SOURCE
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/divider_model_ng_static.cpp
+      line_start: 39
+      line_end: 52
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:dd20d5bca33cb9e6d60c2c51b97181505501b52266a805c0697aeb94a8d85d1c
+      claim_id: R-11
+      description: 静态空颜色路径不同于R-11所概括的动态ResetDividerColor路径。
+    - evidence_id: EV-05-01-02-RULES-STROKE-SOURCE
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/bridge/arkts_native_divider_bridge.cpp
+      line_start: 64
+      line_end: 90
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:12a8cbf445cab570e423c7e816c1066acb20115135b576c0521ed52618437084
+      claim_id: R-12
+      description: 动态ArkTS解析失败分支固定写入1px，未遵循R-12统一声明的API版本默认值。
+    findings:
+    - finding_id: SEM-cf2fd12a229c6df340631cca
+      criterion_id: SPEC-RULE-COMPLETENESS
+      claim_id: R-3/R-11/R-12
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 规则表覆盖全部AC，但R-3与AC冲突，R-11和R-12未完整表达动态/静态及解析失败路径差异。
+      recommendation: 统一R-3与AC-1.1的属性值/绘制值表述，并按动态、静态和解析失败分支拆分R-11、R-12。
+      evidence_ids:
+      - EV-05-01-02-RULES-SPEC
+      - EV-05-01-02-RULES-LINECAP-SOURCE
+      - EV-05-01-02-RULES-STATIC-COLOR-SOURCE
+      - EV-05-01-02-RULES-STROKE-SOURCE
   - criterion_id: SPEC-TRACEABILITY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      人工阅读时13条AC均能在验收追溯、规则定义和验证映射中找到对应关系，但验收追溯表将
+      标准字段AC编号写为AC，验证映射表将标准字段编号写为VM编号，且可靠性证据使用
+      AC-2.1~2.5范围写法。静态Gate已将三处判为Major，机器无法稳定建立完整追溯链。
+    claim_ids:
+    - SPEC-STRUCT-TABLE-FIELD-001-AC
+    - SPEC-STRUCT-TABLE-FIELD-001-VM
+    - TRACE-RANGE-ID-001
+    evidence:
+    - evidence_id: EV-05-01-02-TRACE-SPEC
+      type: spec_location
+      path: specs/05-ui-components/01-layout-components/02-divider/Feat-01-divider-spec.md
+      line_start: 68
+      line_end: 115
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:eb4a92f091fdd608980a6112100eb6eddbda5eeb3c5bdd80a1b3a37faadc5a0d
+      description: 验收追溯和验证映射内容可人工理解，但表头不符合标准字段契约。
+    - evidence_id: EV-05-01-02-TRACE-STATIC-TABLES
+      type: static_finding
+      path: specs/.evaluator/d91b4e4990a990da2bfe809514e573e35852193e/05-01-02/report.md
+      line_start: 39
+      line_end: 47
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:12a57c3524937cca8b6f7d979fa94dde5cd932b21706da380513734e82e6b03b
+      description: 静态报告对AC编号和编号两个标准字段缺失分别给出Major Finding。
+    - evidence_id: EV-05-01-02-TRACE-STATIC-RANGE
+      type: static_finding
+      path: specs/.evaluator/d91b4e4990a990da2bfe809514e573e35852193e/05-01-02/report.md
+      line_start: 49
+      line_end: 52
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:12a57c3524937cca8b6f7d979fa94dde5cd932b21706da380513734e82e6b03b
+      claim_id: TRACE-RANGE-ID-001
+      description: 静态报告要求将AC-2.1~2.5范围显式展开。
+    findings:
+    - finding_id: SEM-cb02938804d92b1475ef8397
+      criterion_id: SPEC-TRACEABILITY
+      claim_id: TRACE-TABLES-AND-RANGE
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 追溯内容可人工理解，但两个标准表头错误和一个范围ID导致机器追溯链不完整，静态Gate为FAIL。
+      recommendation: 将表头分别改为AC编号和编号，并将AC-2.1~2.5展开为五个显式AC标识。
+      evidence_ids:
+      - EV-05-01-02-TRACE-SPEC
+      - EV-05-01-02-TRACE-STATIC-TABLES
+      - EV-05-01-02-TRACE-STATIC-RANGE
   - criterion_id: SPEC-SCOPE-BOUNDARY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Divider四个专属属性、子组件限制、通用属性排除项及非功能范围总体清晰。但Spec在Delta中将
+      C-API双通道规格明确列入范围，后续却没有对应的C-API接口定义、AC或对外/内部边界。
+      Design仅将legacy和generated modifier列为两条实现路径，因此无法从文档判定该项是
+      待验收的对外C-API契约，还是ArkTS动静态前端的内部modifier实现证据。
+    claim_ids:
+    - SCOPE-CAPI-DUAL-CHANNEL
+    evidence:
+    - evidence_id: EV-05-01-02-SCOPE-SPEC
+      type: spec_location
+      path: specs/05-ui-components/01-layout-components/02-divider/Feat-01-divider-spec.md
+      line_start: 18
+      line_end: 26
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:eb4a92f091fdd608980a6112100eb6eddbda5eeb3c5bdd80a1b3a37faadc5a0d
+      claim_id: SCOPE-CAPI-DUAL-CHANNEL
+      description: Delta将C-API双通道明确列入本次规格范围，但未在后续AC和接口规格中继续定义契约边界。
+    - evidence_id: EV-05-01-02-SCOPE-DESIGN
+      type: design_location
+      path: specs/05-ui-components/01-layout-components/02-divider/design.md
+      line_start: 36
+      line_end: 52
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4c53a876edf94c57d7933481c9b38c440ab83f1c9848e2f033a10a1057b3a2ee
+      claim_id: SCOPE-CAPI-DUAL-CHANNEL
+      description: Design将legacy和generated modifier列为实现层，但未说明它们是内部实现还是对外C-API契约。
+    findings:
+    - finding_id: SEM-e8a22adf1c0217d1226fa261
+      criterion_id: SPEC-SCOPE-BOUNDARY
+      claim_id: SCOPE-CAPI-DUAL-CHANNEL
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: Spec将C-API双通道纳入范围，但未给出对应的接口契约、AC或内外部边界，范围声明与实际规格内容不闭环。
+      recommendation: 将该项改为内部Dynamic/Static modifier实现路径，或补充可验收的C-API契约、开放范围和对应AC。
+      evidence_ids:
+      - EV-05-01-02-SCOPE-SPEC
+      - EV-05-01-02-SCOPE-DESIGN
   - criterion_id: DESIGN-IMPLEMENTATION-PATH
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Model、Property、Pattern、Layout、Paint和Theme等下游实现层路径总体可与冻结源码对应。
+      但Design仍使用组件化前的js_divider.cpp作为JS Bridge入口，并将legacy和generated
+      modifier记载为直接调用DividerModelNG/DividerModelNGStatic。当前两个入口实际均先通过
+      DynamicModuleHelper加载DividerDynamicModule，再分别获取Dynamic或Static Modifier。上游调用链和
+      Mermaid架构图因此未反映当前组件化实现。
+    claim_ids:
+    - CALLCHAIN-COMPONENTIZED-ENTRY
+    - CALLCHAIN-DYNAMIC-MODIFIER
+    - CALLCHAIN-STATIC-MODIFIER
+    evidence:
+    - evidence_id: EV-05-01-02-IMPL-DESIGN
+      type: design_location
+      path: specs/05-ui-components/01-layout-components/02-divider/design.md
+      line_start: 36
+      line_end: 52
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4c53a876edf94c57d7933481c9b38c440ab83f1c9848e2f033a10a1057b3a2ee
+      description: 调用链表仍引用不存在的js_divider.cpp，并将两个modifier入口简化为直接调用Model。
+    - evidence_id: EV-05-01-02-IMPL-LEGACY-ENTRY
+      type: source_citation
+      path: frameworks/core/interfaces/native/node/divider_modifier.cpp
+      line_start: 21
+      line_end: 29
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:e4f00d8fbdd9fd4bdde3b98664db54e36e54f0f569aec4b6806bea147a77839a
+      claim_id: CALLCHAIN-DYNAMIC-MODIFIER
+      description: Legacy入口通过DynamicModuleHelper加载Divider模块并取得Dynamic Modifier。
+    - evidence_id: EV-05-01-02-IMPL-GENERATED-ENTRY
+      type: source_citation
+      path: frameworks/core/interfaces/native/implementation/divider_modifier.cpp
+      line_start: 27
+      line_end: 41
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:f5b44a302e25e41d85faa79855336cefea6cc1f64a67bed76a5bde98674667a6
+      claim_id: CALLCHAIN-STATIC-MODIFIER
+      description: Generated入口在非测试路径中加载Divider模块并取得Static Modifier。
+    - evidence_id: EV-05-01-02-IMPL-DYNAMIC-MODULE
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/bridge/divider_dynamic_module.cpp
+      line_start: 40
+      line_end: 67
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c04fed986c8cf6fc39f28d6534493db1f64bb9f55bf85f37ac5504ac32b664a6
+      claim_id: CALLCHAIN-COMPONENTIZED-ENTRY
+      description: DividerDynamicModule注册Bridge并分别对外提供Dynamic、Static和CJ modifier及Model。
+    findings:
+    - finding_id: SEM-f3dff2bece365ff475b3f8ac
+      criterion_id: DESIGN-IMPLEMENTATION-PATH
+      claim_id: CALLCHAIN-COMPONENTIZED-ENTRY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: Design的上游入口和架构图仍停留在组件化前路径，未呈现DynamicModuleHelper到DividerDynamicModule再到Dynamic/Static Modifier的真实调用链。
+      recommendation: 删除js_divider.cpp入口，将调用链和Mermaid图更新为DynamicModuleHelper→DividerDynamicModule→Dynamic/Static Modifier→Model的当前组件化路径。
+      evidence_ids:
+      - EV-05-01-02-IMPL-DESIGN
+      - EV-05-01-02-IMPL-LEGACY-ENTRY
+      - EV-05-01-02-IMPL-GENERATED-ENTRY
+      - EV-05-01-02-IMPL-DYNAMIC-MODULE
+  - criterion_id: DESIGN-FEAT-RUNTIME-COVERAGE
+    dimension_id: design_quality
+    applicability: APPLICABLE
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      唯一注册的Feat-01可在Design中定位，布局、绘制、主题更新和四个公开属性的主要下游处理
+      均有详细说明。但Design没有按当前实现给出完整的“前端组件→统一Bridge→动态模块→
+      Dynamic/Static Modifier→Model→Property→Layout/Paint→可观测输出”运行链，仍以失效的
+      js_divider.cpp和直接Model调用作为入口。无效color/strokeWidth等异常输入在Dynamic与Static
+      路径上的不同重置行为也没有逐路径闭环，测试衔接仅写UT和手动验证，未落到真实target与用例。
+    claim_ids:
+    - Feat-01/RUNTIME-END-TO-END
+    - Feat-01/EXCEPTION-RECOVERY
+    - Feat-01/TEST-HANDOFF
+    evidence:
+    - evidence_id: EV-05-01-02-RUNTIME-DESIGN-SCOPE
+      type: design_location
+      path: specs/05-ui-components/01-layout-components/02-divider/design.md
+      line_start: 91
+      line_end: 107
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4c53a876edf94c57d7933481c9b38c440ab83f1c9848e2f033a10a1057b3a2ee
+      claim_id: Feat-01/TEST-HANDOFF
+      description: Feat-01具有骨架和Task条目，但验证方式只有泛化的UT加手动验证，受影响文件仍包含失效入口。
+    - evidence_id: EV-05-01-02-RUNTIME-DESIGN-DETAIL
+      type: design_location
+      path: specs/05-ui-components/01-layout-components/02-divider/design.md
+      line_start: 224
+      line_end: 296
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4c53a876edf94c57d7933481c9b38c440ab83f1c9848e2f033a10a1057b3a2ee
+      claim_id: Feat-01/RUNTIME-END-TO-END
+      description: Design详细覆盖布局、绘制和主题颜色下游处理，但未覆盖当前组件化输入和模块加载链。
+    - evidence_id: EV-05-01-02-RUNTIME-FRONTEND
+      type: source_citation
+      path: frameworks/bridge/declarative_frontend/ark_direct_component/src/arkdivider.ts
+      line_start: 19
+      line_end: 165
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:a750c297caa699ad23937fad0d815ba4af5e9ea7acf9aca94d72969dd69a86ff
+      claim_id: Feat-01/RUNTIME-END-TO-END
+      description: 当前前端组件通过getUINativeModule().divider调用create和四个属性的set/reset入口。
+    - evidence_id: EV-05-01-02-RUNTIME-BRIDGE
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/bridge/arkts_native_divider_bridge.cpp
+      line_start: 25
+      line_end: 178
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:12a8cbf445cab570e423c7e816c1066acb20115135b576c0521ed52618437084
+      claim_id: Feat-01/EXCEPTION-RECOVERY
+      description: 统一Bridge注册创建及属性入口，并对JSView和非JSView执行不同的解析、回退和重置逻辑。
+    - evidence_id: EV-05-01-02-RUNTIME-DYNAMIC-MODULE
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/bridge/divider_dynamic_module.cpp
+      line_start: 40
+      line_end: 67
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c04fed986c8cf6fc39f28d6534493db1f64bb9f55bf85f37ac5504ac32b664a6
+      claim_id: Feat-01/RUNTIME-END-TO-END
+      description: DividerDynamicModule是Bridge属性注册和Dynamic、Static、CJ modifier及Model的统一分发节点。
+    - evidence_id: EV-05-01-02-RUNTIME-TEST-TARGET
+      type: test_evidence
+      path: test/unittest/core/pattern/divider/BUILD.gn
+      line_start: 14
+      line_end: 32
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:8d468fceec65a0acceb40ba0fdbac58c589e4fa2a900efa1bbef1fdb30c99933
+      claim_id: Feat-01/TEST-HANDOFF
+      description: 仓内存在真实divider_test_ng目标，但Design没有将Feat-01运行环节映射到该target及具体用例。
+    findings:
+    - finding_id: SEM-b9a59d062c03f88569edb67f
+      criterion_id: DESIGN-FEAT-RUNTIME-COVERAGE
+      claim_id: Feat-01/RUNTIME-END-TO-END
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: Feat-01只有下游布局、绘制和主题处理较完整，组件化输入、模块加载、分路径异常恢复及真实测试衔接未形成端到端运行设计。
+      recommendation: 按Feat-01补齐前端输入→Bridge→DividerDynamicModule→Dynamic/Static Modifier→Model/Property→Layout/Paint→输出的运行链，并逐项记录异常恢复和具体测试入口。
+      evidence_ids:
+      - EV-05-01-02-RUNTIME-DESIGN-SCOPE
+      - EV-05-01-02-RUNTIME-DESIGN-DETAIL
+      - EV-05-01-02-RUNTIME-FRONTEND
+      - EV-05-01-02-RUNTIME-BRIDGE
+      - EV-05-01-02-RUNTIME-DYNAMIC-MODULE
+      - EV-05-01-02-RUNTIME-TEST-TARGET
+  - criterion_id: DESIGN-ALGORITHM-DATA-STATE
+    dimension_id: design_quality
+    applicability: APPLICABLE
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design较完整地描述了LayoutProperty、RenderProperty、Modifier动画属性、MeasureContent布局算法、
+      Paint绘制流程和主题颜色状态，核心算法和数据位置可由源码复核。主要缺口是静态颜色重置
+      状态被描述为“SetDividerColor(nullopt)回退到theme color”，但实际仅调用
+      UpdateDividerColorByTheme；ConfigChangePerform开启且已有颜色时，该方法不会清除旧颜色，
+      也不会清除DividerColorSetByUser标志。该状态转换与冻结实现不一致，且Design没有区分
+      Dynamic与Static路径的颜色状态生命周期。
+    claim_ids:
+    - ALGORITHM-LAYOUT-PAINT
+    - DATA-PROPERTY-LIFECYCLE
+    - STATE-COLOR-RESET
+    evidence:
+    - evidence_id: EV-05-01-02-STATE-DESIGN-DATA
+      type: design_location
+      path: specs/05-ui-components/01-layout-components/02-divider/design.md
+      line_start: 192
+      line_end: 222
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4c53a876edf94c57d7933481c9b38c440ab83f1c9848e2f033a10a1057b3a2ee
+      claim_id: DATA-PROPERTY-LIFECYCLE
+      description: Design列出布局、绘制属性及Modifier动画状态的数据模型。
+    - evidence_id: EV-05-01-02-STATE-DESIGN-ALGORITHM
+      type: design_location
+      path: specs/05-ui-components/01-layout-components/02-divider/design.md
+      line_start: 224
+      line_end: 296
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4c53a876edf94c57d7933481c9b38c440ab83f1c9848e2f033a10a1057b3a2ee
+      claim_id: ALGORITHM-LAYOUT-PAINT
+      description: Design记录MeasureContent、绘制和颜色状态转换，其中静态颜色重置结论不准确。
+    - evidence_id: EV-05-01-02-STATE-LAYOUT-SOURCE
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/divider_layout_algorithm.cpp
+      line_start: 26
+      line_end: 73
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:abd9c43f13ff978acbcfae35e40d5af8391859d61401ef430ba85e00ed7ff8a7
+      claim_id: ALGORITHM-LAYOUT-PAINT
+      description: MeasureContent实现方向、默认线宽和双重裁剪算法，可支撑Design的主要布局流程。
+    - evidence_id: EV-05-01-02-STATE-STATIC-MODEL
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/divider_model_ng_static.cpp
+      line_start: 39
+      line_end: 52
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:dd20d5bca33cb9e6d60c2c51b97181505501b52266a805c0697aeb94a8d85d1c
+      claim_id: STATE-COLOR-RESET
+      description: 静态空颜色路径只取得主题色并调用UpdateDividerColorByTheme，没有显式清除颜色和用户设置标志。
+    - evidence_id: EV-05-01-02-STATE-RENDER-PROPERTY
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/divider_render_property.h
+      line_start: 105
+      line_end: 137
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:689bf942235f4eae2381931d3264c9beb12c21efb604952b0780dbd4025ed547
+      claim_id: STATE-COLOR-RESET
+      description: ConfigChangePerform开启时UpdateDividerColorByTheme不会写入新颜色，且该函数不清除DividerColorSetByUser。
+    findings:
+    - finding_id: SEM-d3d8735b557e5d3063942079
+      criterion_id: DESIGN-ALGORITHM-DATA-STATE
+      claim_id: STATE-COLOR-RESET
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: Design的布局和绘制算法总体完整，但静态color(undefined)的颜色及用户设置标志状态转换与冻结实现不一致。
+      recommendation: 分开描述Dynamic与Static颜色重置状态机，明确Static空值只调用UpdateDividerColorByTheme，以及ConfigChangePerform开启时旧颜色和用户标志不会被清除。
+      evidence_ids:
+      - EV-05-01-02-STATE-DESIGN-DATA
+      - EV-05-01-02-STATE-DESIGN-ALGORITHM
+      - EV-05-01-02-STATE-STATIC-MODEL
+      - EV-05-01-02-STATE-RENDER-PROPERTY
   - criterion_id: DESIGN-DECISION-QUALITY
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      ADR-1、ADR-2、ADR-3和ADR-5均给出了推荐方案、替代方案、取舍理由和影响，可用于理解
+      存量行为背后的决策。但ADR-4将legacy和generated路径简化为分别直接调用
+      DividerModelNG和DividerModelNGStatic，没有体现当前统一由DividerDynamicModule装载并分发
+      Dynamic/Static Modifier的组件化架构。其替代方案“统一为一套”也未定义统一目标、
+      迁移方式和兼容代价，不能作为可执行的候选方案。评价人已对该判断完成单次人工确认。
+    claim_ids:
+    - ADR-1
+    - ADR-2
+    - ADR-3
+    - ADR-4
+    - ADR-5
+    evidence:
+    - evidence_id: EV-05-01-02-ADR-DESIGN
+      type: design_location
+      path: specs/05-ui-components/01-layout-components/02-divider/design.md
+      line_start: 79
+      line_end: 87
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4c53a876edf94c57d7933481c9b38c440ab83f1c9848e2f033a10a1057b3a2ee
+      description: ADR-1至ADR-5的推荐方案、替代方案、理由和影响；ADR-4的路径和候选方案存在质量问题。
+    - evidence_id: EV-05-01-02-ADR-LEGACY-SOURCE
+      type: source_citation
+      path: frameworks/core/interfaces/native/node/divider_modifier.cpp
+      line_start: 21
+      line_end: 29
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:e4f00d8fbdd9fd4bdde3b98664db54e36e54f0f569aec4b6806bea147a77839a
+      claim_id: ADR-4
+      description: Legacy入口通过DynamicModuleHelper取得Divider的Dynamic Modifier，并非ADR-4所述的直接Model调用。
+    - evidence_id: EV-05-01-02-ADR-GENERATED-SOURCE
+      type: source_citation
+      path: frameworks/core/interfaces/native/implementation/divider_modifier.cpp
+      line_start: 27
+      line_end: 41
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:f5b44a302e25e41d85faa79855336cefea6cc1f64a67bed76a5bde98674667a6
+      claim_id: ADR-4
+      description: Generated入口通过同一动态模块取得Static Modifier，并非独立的直接Model调用入口。
+    - evidence_id: EV-05-01-02-ADR-MODULE-SOURCE
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/bridge/divider_dynamic_module.cpp
+      line_start: 40
+      line_end: 67
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c04fed986c8cf6fc39f28d6534493db1f64bb9f55bf85f37ac5504ac32b664a6
+      claim_id: ADR-4
+      description: DividerDynamicModule是Bridge、Dynamic Modifier、Static Modifier和Model的统一装载与分发节点。
+    findings:
+    - finding_id: SEM-bf2fbde90fe29c08b8c6de90
+      criterion_id: DESIGN-DECISION-QUALITY
+      claim_id: ADR-4
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: ADR-4与当前组件化动态模块架构不一致，且“统一为一套”没有形成可比较、可执行的候选方案。
+      recommendation: 围绕“保留Dynamic/Static两套modifier契约，统一由DividerDynamicModule装载”重写ADR-4，补充不合并接口的兼容性与迁移成本。
+      evidence_ids:
+      - EV-05-01-02-ADR-DESIGN
+      - EV-05-01-02-ADR-LEGACY-SOURCE
+      - EV-05-01-02-ADR-GENERATED-SOURCE
+      - EV-05-01-02-ADR-MODULE-SOURCE
   - criterion_id: DESIGN-IMPACT-COVERAGE
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: MISSING
+    reason: >-
+      Design已列出Divider的Model、Property、Pattern、Layout、Paint、Theme及modifier等主要实现模块，
+      但v0.2要求的构建、产物、注册、加载和部署设计实际缺失：构建章节只有“无变更”和
+      “已在现有BUILD.gn中注册”，未给出divider_pattern_ng、spacing_pattern_ng、OHOS spacing组件、
+      libarkui_spacing.z.so产物及DynamicModuleHelper运行时加载关系，也未记录Static Modifier的
+      构建条件。Design还将graphic_2d存量绘制依赖错误概括为无外部子系统依赖。
+    claim_ids:
+    - IMPACT-SPACING-BUILD
+    - IMPACT-GRAPHIC-2D-DEPENDENCY
+    evidence:
+    - evidence_id: EV-05-01-02-IMPACT-DESIGN
+      type: design_location
+      path: specs/05-ui-components/01-layout-components/02-divider/design.md
+      line_start: 28
+      line_end: 52
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4c53a876edf94c57d7933481c9b38c440ab83f1c9848e2f033a10a1057b3a2ee
+      description: 模块表覆盖主要实现层，但将依赖边界概括为不依赖外部子系统。
+    - evidence_id: EV-05-01-02-IMPACT-DESIGN-BUILD
+      type: design_location
+      path: specs/05-ui-components/01-layout-components/02-divider/design.md
+      line_start: 129
+      line_end: 137
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4c53a876edf94c57d7933481c9b38c440ab83f1c9848e2f033a10a1057b3a2ee
+      claim_id: IMPACT-SPACING-BUILD
+      description: 构建章节只说明无变更和已注册，没有标明实际聚合目标、注册点和产物。
+    - evidence_id: EV-05-01-02-IMPACT-SPACING-BUILD
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/spacing/BUILD.gn
+      line_start: 17
+      line_end: 27
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:8a9ef87d152c3d7ef22ab4fcff82a2d679c2ebf32965f13b536ca69fd3940698
+      claim_id: IMPACT-SPACING-BUILD
+      description: spacing_pattern_ng通过component_ng_deps聚合Blank和Divider。
+    - evidence_id: EV-05-01-02-IMPACT-OHOS-BUILD
+      type: source_citation
+      path: adapter/ohos/build/BUILD.gn
+      line_start: 35
+      line_end: 43
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:8c6c3b0a601d1135939ee3a18c82af7b7b7d5fd491ae2e7e298c14e27ba9cbba
+      claim_id: IMPACT-SPACING-BUILD
+      description: spacing被列入OHOS组件构建清单。
+    - evidence_id: EV-05-01-02-IMPACT-DRAWING-SOURCE
+      type: source_citation
+      path: frameworks/core/components_ng/render/divider_painter.cpp
+      line_start: 21
+      line_end: 49
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:6701aa6105f162337ef76d9ba6cb81146d6187c4482f6e7dca217d6f3c115618
+      claim_id: IMPACT-GRAPHIC-2D-DEPENDENCY
+      description: DividerPainter使用RSCanvas、RSPen及Rosen Drawing类型完成绘制。
+    - evidence_id: EV-05-01-02-IMPACT-GRAPHIC-BUILD
+      type: source_citation
+      path: frameworks/core/components_ng/components.gni
+      line_start: 117
+      line_end: 184
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:b7303517f83e38adfd541d7c3d3c47b592d2438121cc880cad0fed6daf729b19
+      claim_id: IMPACT-GRAPHIC-2D-DEPENDENCY
+      description: 组件构建模板引入graphic_2d头文件路径和2d_graphics外部依赖。
+    - evidence_id: EV-05-01-02-IMPACT-REGISTRY
+      type: registry_entry
+      path: docs/context_registry.json
+      line_start: 319
+      line_end: 345
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:ac9a9a44f0a715406ee7289da7fcce71d9a6f10890abb3472966c76448ccb244
+      claim_id: IMPACT-SPACING-BUILD
+      description: Divider上下文注册表将spacing/BUILD.gn登记为稳定构建入口。
+    findings:
+    - finding_id: SEM-2c673e94b82cfc24e79789cc
+      criterion_id: DESIGN-IMPACT-COVERAGE
+      claim_id: IMPACT-SPACING-BUILD
+      severity: Major
+      conclusion: MISSING
+      message: Design的构建章节只有“无变更”，未形成Divider构建目标、条件、依赖、spacing产物、动态模块加载和部署设计，并误记graphic_2d依赖边界。
+      recommendation: 补充divider_pattern_ng→spacing_pattern_ng→arkui_spacing/libarkui_spacing.z.so的构建与安装链、Static Modifier条件、DynamicModuleHelper注册加载关系，并将graphic_2d标记为存量绘制依赖。
+      evidence_ids:
+      - EV-05-01-02-IMPACT-DESIGN
+      - EV-05-01-02-IMPACT-DESIGN-BUILD
+      - EV-05-01-02-IMPACT-SPACING-BUILD
+      - EV-05-01-02-IMPACT-OHOS-BUILD
+      - EV-05-01-02-IMPACT-DRAWING-SOURCE
+      - EV-05-01-02-IMPACT-GRAPHIC-BUILD
+      - EV-05-01-02-IMPACT-REGISTRY
   - criterion_id: DESIGN-VERIFICATION-PLAN
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design对主要规格范围给出了UT、手动验证和构建验证等概括性方式，也列出了5项风险和
+      处理方式。但没有形成AC/ADR/风险到测试目标、测试套件、具体用例、执行命令、
+      预期结果和关闭条件的映射。仓内已有divider_test_ng目标及颜色标志、颜色重置、
+      ToJsonValue和strokeWidthLimitation等具体用例，但Design未引用它们，也未说明哪些
+      风险尚无自动化覆盖，因此无法按文档直接执行并关闭风险。
+    claim_ids:
+    - VERIFICATION-AC-RISK-MAPPING
+    - VERIFICATION-EXECUTABLE-TESTS
+    evidence:
+    - evidence_id: EV-05-01-02-VERIFY-DESIGN-SCOPE
+      type: design_location
+      path: specs/05-ui-components/01-layout-components/02-divider/design.md
+      line_start: 91
+      line_end: 107
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4c53a876edf94c57d7933481c9b38c440ab83f1c9848e2f033a10a1057b3a2ee
+      description: 设计骨架仅给出UT加手动验证的概括性方式，没有可执行测试映射。
+    - evidence_id: EV-05-01-02-VERIFY-DESIGN-RISKS
+      type: design_location
+      path: specs/05-ui-components/01-layout-components/02-divider/design.md
+      line_start: 298
+      line_end: 306
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4c53a876edf94c57d7933481c9b38c440ab83f1c9848e2f033a10a1057b3a2ee
+      claim_id: VERIFICATION-AC-RISK-MAPPING
+      description: 风险表给出处理方式和Owner，但未给出验证用例、预期结果和关闭条件。
+    - evidence_id: EV-05-01-02-VERIFY-TEST-TARGET
+      type: test_evidence
+      path: test/unittest/core/pattern/divider/BUILD.gn
+      line_start: 14
+      line_end: 32
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:8d468fceec65a0acceb40ba0fdbac58c589e4fa2a900efa1bbef1fdb30c99933
+      claim_id: VERIFICATION-EXECUTABLE-TESTS
+      description: 仓内实际存在divider_test_ng目标，并纳入Divider多个测试源文件。
+    - evidence_id: EV-05-01-02-VERIFY-COLOR-TESTS
+      type: test_evidence
+      path: test/unittest/core/pattern/divider/divider_new_test_ng.cpp
+      line_start: 388
+      line_end: 407
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:926e7938cc4372086b7706d6724fcde6e91d84b5efe4955a02c2a15da3b669a2
+      claim_id: VERIFICATION-EXECUTABLE-TESTS
+      description: DividerColorSetByUserTest001可作为用户设色风险和ADR-3的具体验证入口。
+    - evidence_id: EV-05-01-02-VERIFY-JSON-TESTS
+      type: test_evidence
+      path: test/unittest/core/pattern/divider/divider_branch_coverage_test_ng.cpp
+      line_start: 820
+      line_end: 950
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:02540a38a397f8129f844266270f1e017b1b06ec0f956497c57e28c37ea5c3bb
+      claim_id: VERIFICATION-EXECUTABLE-TESTS
+      description: 仓内已有RenderProperty和LayoutProperty ToJsonValue具体用例，但未被Design的风险项引用。
+    findings:
+    - finding_id: SEM-4dd43db274360e3031fe05fc
+      criterion_id: DESIGN-VERIFICATION-PLAN
+      claim_id: VERIFICATION-AC-RISK-MAPPING
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: Design仅给出泛化的UT和手动验证，风险项也没有具体测试、执行方式、预期结果和关闭条件，无法直接执行验证闭环。
+      recommendation: 增加AC/ADR/风险→测试目标→套件与用例→执行命令→预期结果→关闭条件的验证矩阵，并对尚无自动化用例的风险显式列出待补测试。
+      evidence_ids:
+      - EV-05-01-02-VERIFY-DESIGN-SCOPE
+      - EV-05-01-02-VERIFY-DESIGN-RISKS
+      - EV-05-01-02-VERIFY-TEST-TARGET
+      - EV-05-01-02-VERIFY-COLOR-TESTS
+      - EV-05-01-02-VERIFY-JSON-TESTS
   - criterion_id: COMPATIBILITY-API-VERSION
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      动态Divider()及vertical、color、strokeWidth、lineCap四个属性的API 7、crossplatform 10、
+      form 9和atomicservice 11声明与Spec基本一致。但Spec将“静态版本”统一概括为API 23，
+      而实际静态四属性及attributeModifier为API 23，无参Divider()构造函数为API 26.0.0，
+      带Builder的Divider(style)重载为API 26.1.0且标注unpublished/staticonly。Design的已有API表仅引用
+      动态d.ts，未区分这些静态版本和开放范围，因此静态API兼容性声明不完整。
+    claim_ids:
+    - API-DYNAMIC-VERSION
+    - API-STATIC-ATTRIBUTE-VERSION
+    - API-STATIC-CONSTRUCTOR-VERSION
+    - API-STATIC-BUILDER-VERSION
+    evidence:
+    - evidence_id: EV-05-01-02-COMPAT-API-DYNAMIC
+      type: sdk_declaration
+      path: interface/sdk-js/api/@internal/component/ets/divider.d.ts
+      line_start: 21
+      line_end: 144
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:75eb1d5e075696a943679d994bf6399fb709db9068bebce8788b225366e3b305
+      claim_id: API-DYNAMIC-VERSION
+      description: 动态Divider构造函数和四个属性的since、crossplatform、form及tomicservice声明。
+    - evidence_id: EV-05-01-02-COMPAT-API-STATIC
+      type: sdk_declaration
+      path: interface/sdk-js/api/arkui/component/divider.static.d.ets
+      line_start: 24
+      line_end: 124
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c643fc553760c15f737e4801d157fff88668e18a62cbce2a26107e10e76d3a48
+      description: 静态属性、无参构造函数和Builder重载分别具有API 23、26.0.0和26.1.0版本及不同开放范围。
+    - evidence_id: EV-05-01-02-COMPAT-API-SPEC
+      type: spec_location
+      path: specs/05-ui-components/01-layout-components/02-divider/Feat-01-divider-spec.md
+      line_start: 257
+      line_end: 263
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:eb4a92f091fdd608980a6112100eb6eddbda5eeb3c5bdd80a1b3a37faadc5a0d
+      claim_id: API-STATIC-CONSTRUCTOR-VERSION
+      description: Spec将所有静态版本统一概括为API 23 static。
+    - evidence_id: EV-05-01-02-COMPAT-API-DESIGN
+      type: design_location
+      path: specs/05-ui-components/01-layout-components/02-divider/design.md
+      line_start: 109
+      line_end: 127
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4c53a876edf94c57d7933481c9b38c440ab83f1c9848e2f033a10a1057b3a2ee
+      claim_id: API-STATIC-ATTRIBUTE-VERSION
+      description: Design的已有API表仅引用动态d.ts，未记录静态API的版本和开放范围。
+    findings:
+    - finding_id: SEM-2d595490a4f7d18ce2294026
+      criterion_id: COMPATIBILITY-API-VERSION
+      claim_id: API-STATIC-CONSTRUCTOR-VERSION
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: Spec和Design将静态Divider API统一概括为API 23或未单独记录，与属性、无参构造函数和unpublished Builder重载的实际分版本契约不一致。
+      recommendation: 分别声明动态API、API 23静态属性、API 26.0.0无参静态构造函数及API 26.1.0 unpublished/staticonly Builder重载的版本和开放范围。
+      evidence_ids:
+      - EV-05-01-02-COMPAT-API-DYNAMIC
+      - EV-05-01-02-COMPAT-API-STATIC
+      - EV-05-01-02-COMPAT-API-SPEC
+      - EV-05-01-02-COMPAT-API-DESIGN
   - criterion_id: COMPATIBILITY-SYSTEM-IMPACT
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design对公开Divider API的SystemCapability.ArkUI.ArkUI.Full、无额外权限、无IPC及本次不新增
+      bundle.json依赖的结论基本正确。但其将系统影响概括为Divider不依赖外部子系统，
+      与实际绘制链不符。DividerPainter使用Rosen Drawing的RSCanvas和RSPen，组件构建模板引入
+      graphic_2d的render service和2d_graphics依赖，bundle.json也将graphic_2d登记为ace_engine组件依赖。
+      这是存量依赖而非本次新增依赖，但仍应在系统影响中明确记录。
+    claim_ids:
+    - SYSTEM-SYSCAP-PERMISSION
+    - SYSTEM-GRAPHIC-2D-DEPENDENCY
+    evidence:
+    - evidence_id: EV-05-01-02-SYSTEM-DESIGN-RULES
+      type: design_location
+      path: specs/05-ui-components/01-layout-components/02-divider/design.md
+      line_start: 58
+      line_end: 67
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4c53a876edf94c57d7933481c9b38c440ab83f1c9848e2f033a10a1057b3a2ee
+      description: Design声明无外部子系统依赖，同时记录SysCap、权限和无IPC结论。
+    - evidence_id: EV-05-01-02-SYSTEM-DESIGN-API
+      type: design_location
+      path: specs/05-ui-components/01-layout-components/02-divider/design.md
+      line_start: 119
+      line_end: 137
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4c53a876edf94c57d7933481c9b38c440ab83f1c9848e2f033a10a1057b3a2ee
+      claim_id: SYSTEM-SYSCAP-PERMISSION
+      description: 已有API表记录ArkUI Full SysCap、无权限，构建章节声明本次无bundle.json变更。
+    - evidence_id: EV-05-01-02-SYSTEM-DRAWING-SOURCE
+      type: source_citation
+      path: frameworks/core/components_ng/render/divider_painter.cpp
+      line_start: 21
+      line_end: 49
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:6701aa6105f162337ef76d9ba6cb81146d6187c4482f6e7dca217d6f3c115618
+      claim_id: SYSTEM-GRAPHIC-2D-DEPENDENCY
+      description: Divider绘制直接使用Rosen Drawing抽象完成画布和画笔操作。
+    - evidence_id: EV-05-01-02-SYSTEM-BUILD-DEPS
+      type: source_citation
+      path: frameworks/core/components_ng/components.gni
+      line_start: 167
+      line_end: 184
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:b7303517f83e38adfd541d7c3d3c47b592d2438121cc880cad0fed6daf729b19
+      claim_id: SYSTEM-GRAPHIC-2D-DEPENDENCY
+      description: 组件构建模板引入graphic_2d的render service和2d_graphics外部依赖。
+    - evidence_id: EV-05-01-02-SYSTEM-BUNDLE-REGISTRY
+      type: registry_entry
+      path: bundle.json
+      line_start: 55
+      line_end: 84
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:8841a844460bf7f1f2c81077f35a9d46377752fabc1fbd4d524f01bd2ce3026c
+      claim_id: SYSTEM-GRAPHIC-2D-DEPENDENCY
+      description: ace_engine组件依赖注册表明确包含graphic_2d。
+    findings:
+    - finding_id: SEM-8e494ac769a042b907258b7c
+      criterion_id: COMPATIBILITY-SYSTEM-IMPACT
+      claim_id: SYSTEM-GRAPHIC-2D-DEPENDENCY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: SysCap、权限和无新增依赖结论基本正确，但Design将Divider的存量graphic_2d/Rosen Drawing依赖误记为无外部子系统依赖。
+      recommendation: 将结论改为“本次补录不新增外部依赖；Divider存量绘制链依赖graphic_2d/Rosen Drawing”，并列出依赖用途及构建条件。
+      evidence_ids:
+      - EV-05-01-02-SYSTEM-DESIGN-RULES
+      - EV-05-01-02-SYSTEM-DESIGN-API
+      - EV-05-01-02-SYSTEM-DRAWING-SOURCE
+      - EV-05-01-02-SYSTEM-BUILD-DEPS
+      - EV-05-01-02-SYSTEM-BUNDLE-REGISTRY
   - criterion_id: COMPATIBILITY-MULTI-DEVICE
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
+    conclusion: SUPPORTED
+    reason: >-
+      按本次评价人确认的范围，仅评价手机、平板和折叠屏三类设备，不纳入ArkUI-X、wearable
+      对Static Modifier的构建支持差异，也不将缺少具体验证场景的1px硬件取整提示记为问题。
+      Spec对三类设备均声明为标准行为；Divider布局与绘制依据通用布局约束、API版本和属性值计算，
+      未发现手机、平板或折叠屏专用行为分支，在本次限定范围内支持“无差异”结论。
+    claim_ids:
+    - DEVICE-PHONE
+    - DEVICE-TABLET
+    - DEVICE-FOLDABLE
+    evidence:
+    - evidence_id: EV-05-01-02-DEVICE-SPEC
+      type: spec_location
+      path: specs/05-ui-components/01-layout-components/02-divider/Feat-01-divider-spec.md
+      line_start: 287
+      line_end: 295
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:eb4a92f091fdd608980a6112100eb6eddbda5eeb3c5bdd80a1b3a37faadc5a0d
+      description: Spec对手机、平板和折叠屏均声明为标准行为无差异。
+    - evidence_id: EV-05-01-02-DEVICE-DESIGN
+      type: design_location
+      path: specs/05-ui-components/01-layout-components/02-divider/design.md
+      line_start: 22
+      line_end: 26
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4c53a876edf94c57d7933481c9b38c440ab83f1c9848e2f033a10a1057b3a2ee
+      description: Design将Divider定位为仅涉及通用布局和绘制阶段的纯视觉组件。
+    - evidence_id: EV-05-01-02-DEVICE-LAYOUT-SOURCE
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/divider_layout_algorithm.cpp
+      line_start: 34
+      line_end: 67
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:abd9c43f13ff978acbcfae35e40d5af8391859d61401ef430ba85e00ed7ff8a7
+      description: 布局算法仅依据API版本、方向、线宽和通用布局约束计算，无手机、平板或折叠屏分支。
     findings: []
   - criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Spec的SDK输入路径和Design调用链表中的大部分仓内完整路径可在冻结输入下复现，
+      且divider_pattern.cpp:59-67当前仍能定位到DumpInfo。但Spec的AC证据仅写
+      divider_pattern_test、divider_layout_algorithm_test、divider_paint_method_test和js_divider_test，
+      无法定位到真实测试文件、测试目标或Suite.Case。Design的详细源码说明又使用
+      divider_modifier.cpp:40-49等单文件名，仓内同名文件导致静态检查报REF-AMBIGUOUS-001；
+      同时还引用了不存在的js_divider.cpp完整路径。部分证据仅依赖易漂移行号，未同时
+      提供函数或测试用例等稳定锚点，整体证据可复现性不完整。
+    claim_ids:
+    - EVIDENCE-SOURCE-PATH-STABILITY
+    - EVIDENCE-TEST-CASE-STABILITY
+    - EVIDENCE-SDK-PATH-STABILITY
+    evidence:
+    - evidence_id: EV-05-01-02-STABILITY-SPEC-TESTS
+      type: source_citation
+      path: specs/05-ui-components/01-layout-components/02-divider/Feat-01-divider-spec.md
+      line_start: 68
+      line_end: 84
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:eb4a92f091fdd608980a6112100eb6eddbda5eeb3c5bdd80a1b3a37faadc5a0d
+      claim_id: EVIDENCE-TEST-CASE-STABILITY
+      description: AC证据仅使用泛化测试名称，没有完整路径、目标或具体用例锚点。
+    - evidence_id: EV-05-01-02-STABILITY-SOURCE
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/divider_modifier.cpp
+      line_start: 40
+      line_end: 48
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:427eba96848d6bde50c98cb3f2c1a6526317781af3a1a78dba382b5d7aeb5977
+      claim_id: EVIDENCE-SOURCE-PATH-STABILITY
+      description: Design中的divider_modifier.cpp:40-49实际需要此仓内完整路径才能稳定定位到onDraw。
+    - evidence_id: EV-05-01-02-STABILITY-SDK
+      type: sdk_declaration
+      path: interface/sdk-js/api/@internal/component/ets/divider.d.ts
+      line_start: 21
+      line_end: 144
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:75eb1d5e075696a943679d994bf6399fb709db9068bebce8788b225366e3b305
+      claim_id: EVIDENCE-SDK-PATH-STABILITY
+      description: Spec中的动态SDK输入路径可在冻结的sdk-js输入中定位，作为稳定证据的正向样例。
+    - evidence_id: EV-05-01-02-STABILITY-STATIC-AMBIGUOUS
+      type: static_finding
+      path: specs/.evaluator/d91b4e4990a990da2bfe809514e573e35852193e/05-01-02/report.md
+      line_start: 29
+      line_end: 37
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:12a57c3524937cca8b6f7d979fa94dde5cd932b21706da380513734e82e6b03b
+      claim_id: EVIDENCE-SOURCE-PATH-STABILITY
+      description: 静态报告确认单文件名divider_modifier.cpp存在歧义，且js_divider.cpp完整路径已无法解析。
+    findings:
+    - finding_id: SEM-04e614581365899495367cab
+      criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
+      claim_id: EVIDENCE-SOURCE-PATH-STABILITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: Spec的测试证据不能定位真实用例，Design同时存在单文件名歧义、失效路径和缺少符号锚点的行号引用，证据不能稳定复现。
+      recommendation: 统一使用“仓内完整路径+类/函数符号”和“测试目标+完整测试文件+Suite.Case”，行号仅作为辅助信息。
+      evidence_ids:
+      - EV-05-01-02-STABILITY-SPEC-TESTS
+      - EV-05-01-02-STABILITY-SOURCE
+      - EV-05-01-02-STABILITY-SDK
+      - EV-05-01-02-STABILITY-STATIC-AMBIGUOUS
   - criterion_id: MAINTAINABILITY-STRUCTURE
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Spec具有Delta、输入文档、用户故事、AC、规则、接口与兼容性等明确分区，Design也按
+      调用链、ADR、构建影响、详细设计和风险组织，章节层面的职责基本可辨识。但Design在
+      数据模型和详细设计中大量重复Spec的默认值、异常回退、API版本及行为规则，未优先通过
+      AC/R/ADR标识建立引用。这些重复已产生维护漂移：组件化后的Bridge路径未同步、默认
+      LineCap的属性值与最终绘制表现混用、动态/静态颜色重置语义以及静态API版本记录不一致。
+      整体结构可用，但重复信息控制仍需改进。
+    claim_ids:
+    - STRUCTURE-DELTA-SEPARATION
+    - STRUCTURE-SPEC-DESIGN-DUPLICATION
+    evidence:
+    - evidence_id: EV-05-01-02-STRUCTURE-SPEC
+      type: spec_location
+      path: specs/05-ui-components/01-layout-components/02-divider/Feat-01-divider-spec.md
+      line_start: 18
+      line_end: 33
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:eb4a92f091fdd608980a6112100eb6eddbda5eeb3c5bdd80a1b3a37faadc5a0d
+      claim_id: STRUCTURE-DELTA-SEPARATION
+      description: Spec通过Delta和输入文档明确标识存量特性补录范围，结构基本清晰。
+    - evidence_id: EV-05-01-02-STRUCTURE-DESIGN-DETAIL
+      type: design_location
+      path: specs/05-ui-components/01-layout-components/02-divider/design.md
+      line_start: 192
+      line_end: 296
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4c53a876edf94c57d7933481c9b38c440ab83f1c9848e2f033a10a1057b3a2ee
+      claim_id: STRUCTURE-SPEC-DESIGN-DUPLICATION
+      description: Design数据模型和详细流程重复描述Spec已有的默认值、布局、绘制及颜色规则。
+    - evidence_id: EV-05-01-02-STRUCTURE-STATIC-DRIFT
+      type: static_finding
+      path: specs/.evaluator/d91b4e4990a990da2bfe809514e573e35852193e/05-01-02/report.md
+      line_start: 29
+      line_end: 37
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:12a57c3524937cca8b6f7d979fa94dde5cd932b21706da380513734e82e6b03b
+      claim_id: STRUCTURE-SPEC-DESIGN-DUPLICATION
+      description: 静态报告中的歧义单文件名和失效js_divider.cpp路径是Design详细实现信息未及时同步的直接症状。
+    findings:
+    - finding_id: SEM-4ff4022168282e2d76ac57d1
+      criterion_id: MAINTAINABILITY-STRUCTURE
+      claim_id: STRUCTURE-SPEC-DESIGN-DUPLICATION
+      severity: Minor
+      conclusion: PARTIALLY_SUPPORTED
+      message: Spec和Design章节结构基本完整，但Design重复复制了大量对外行为和版本信息，且已产生路径、默认行为、重置语义和API版本漂移。
+      recommendation: 由Spec唯一承载对外行为、约束和验收标准，Design通过AC/R/ADR标识引用Spec，仅保留实现路径、决策和模块影响所必需的差异说明。
+      evidence_ids:
+      - EV-05-01-02-STRUCTURE-SPEC
+      - EV-05-01-02-STRUCTURE-DESIGN-DETAIL
+      - EV-05-01-02-STRUCTURE-STATIC-DRIFT
   - criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
+    conclusion: SUPPORTED
+    reason: >-
+      Design已列出vertical ToJsonValue默认值差异、BUTT到SQUARE隐式转换、legacy/generated颜色Reset
+      语义差异、DividerTheme字段命名typo以及Token Theme仅覆盖color五项存量风险，并对每项
+      记录类型、影响、处理方式和ArkUI SIG Owner。评价人本次已明确确认全部五项为存量
+      Accepted风险，不要求在本次评价中整改；Design中的已知差异、兼容成本和后续触发条件
+      可作为接受理由。在当前简化的单次评价确认流程下，责任与风险处置已完成闭环。
+    claim_ids:
+    - RISK-TOJSON-DEFAULT
+    - RISK-LINECAP-UPGRADE
+    - RISK-CAPI-RESET-DIFFERENCE
+    - RISK-THEME-TYPO
+    - RISK-TOKEN-STROKE-WIDTH
+    evidence:
+    - evidence_id: EV-05-01-02-RISK-DESIGN
+      type: design_location
+      path: specs/05-ui-components/01-layout-components/02-divider/design.md
+      line_start: 298
+      line_end: 306
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4c53a876edf94c57d7933481c9b38c440ab83f1c9848e2f033a10a1057b3a2ee
+      description: Design风险表列出五项存量风险的类型、影响、处理方式和ArkUI SIG Owner，本次由评价人统一确认为Accepted。
     findings: []
   coverage:
-    expected_criteria: 18
-    evaluated_criteria: 18
-    applicable_criteria: 18
+    expected_criteria: 20
+    evaluated_criteria: 20
+    applicable_criteria: 20
     not_applicable_criteria: 0
-    not_verifiable_criteria: 18
+    not_verifiable_criteria: 0
   execution:
     static_complete: true
     evidence_complete: true
-    semantic_complete: false
+    semantic_complete: true
     notes:
-    - 'Draft template: Criterion conclusions and scores are pending.'
+    - 20个Criterion语义评价已按Rubric v0.2完成，并重新核验Design完整性。
 scores:
   dimensions:
-    correctness: null
-    spec_executability: null
-    design_quality: null
-    compatibility_system_impact: null
-    maintainability: null
-  raw_score: null
-  published_score: null
-  confidence: null
+    correctness: 16.0
+    spec_executability: 12.5
+    design_quality: 11.0
+    compatibility_system_impact: 6.5
+    maintainability: 6.5
+  raw_score: 52.5
+  published_score: 52.5
+  confidence: 1.0
   admission: NOT_READY
 confirmation:
-  confirmed_by: null
-  confirmed_at: null
-  conclusion: pending
-  notes: []
+  confirmed_by: sunfei2021
+  confirmed_at: '2026-08-05T21:49:51+08:00'
+  conclusion: accepted
+  notes:
+  - 按Rubric v0.2重新评价并确认20个Criterion、published_score=52.5及NOT_READY结论。
+  - Design已列出的五项存量风险统一确认为Accepted，不要求在本次评价中整改。
+  - 多设备项本次仅评价手机、平板和折叠屏；不记录ArkUI-X/wearable Static Modifier构建差异及无具体验证场景的1px硬件提示。
 notes:
-- 完成18个Criterion后填写精确分数并进行一次确认。
+- 20个Criterion、精确分数和单次accepted确认已按Rubric v0.2完成。
 - Critical/Major Finding必须包含冻结revision下的可复现证据。

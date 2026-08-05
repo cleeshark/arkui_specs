@@ -4,15 +4,15 @@ evaluation_id: EVAL-07-02-02
 func_id: 07-02-02
 input_fingerprint: sha256:96287f313a58ad90c35987991348b80ac69587484495524d394058f360e8278d
 source_revision: d91b4e4990a990da2bfe809514e573e35852193e
-status: draft
+status: confirmed
 evaluator:
   evaluator_id: sunfei2021
-  evaluated_at: null
+  evaluated_at: '2026-08-05T23:33:35+08:00'
 semantic_result:
   schema_version: 1
-  rubric_version: 0.1.0
-  complexity_rules_version: 0.1.0
-  evaluator_protocol_version: 0.1.0
+  rubric_version: 0.2.0
+  complexity_rules_version: 0.2.0
+  evaluator_protocol_version: 0.2.0
   evaluator_version: human:sunfei2021
   func_id: 07-02-02
   source_revision: d91b4e4990a990da2bfe809514e573e35852193e
@@ -28,193 +28,567 @@ semantic_result:
   - criterion_id: CORRECTNESS-SOURCE-SUPPORT
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      @Observed代理、属性读取依赖收集和属性变化通知的主体机制有冻结源码支撑，但文档将
+      @Track限定为必须位于@Observed class、把整对象赋值概括为无条件按属性比较，并把
+      Object/Array/Map/Set/Date描述为五个handler类，均与实现不完全一致。
+    claim_ids: [AC-1.1, AC-1.2, AC-1.3, AC-1.4, AC-1.5, AC-2.1, AC-2.4]
+    evidence:
+    - &ev_tracked
+      evidence_id: EV-07-02-02-TRACKED
+      type: source_citation
+      path: frameworks/bridge/declarative_frontend/state_mgmt/src/lib/partial_update/pu_tracked_object.ts
+      line_start: 16
+      line_end: 88
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:15692dae3dfbf67f41c30288c966388ae3cc6cc1aa059c8ff6feb96cf85e2730
+      description: Track装饰器独立写入追踪标记；整对象优化具有对象类型、constructor和兼容模式前提，并区分fake Prop与fake ObjectLink通知。
+    - &ev_observed
+      evidence_id: EV-07-02-02-OBSERVED
+      type: source_citation
+      path: frameworks/bridge/declarative_frontend/state_mgmt/src/lib/common/observed_object.ts
+      line_start: 62
+      line_end: 935
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7db0a3b56c96eee587c9d0ea44a682a713053b22a71e4dbcce86af89c8a14422
+      description: '@Observed构造代理、读写拦截、V2兼容分支及四个handler类对五类数据的分派实现。'
+    findings:
+    - finding_id: SEM-8ef61fa7e16a8547270e0818
+      criterion_id: CORRECTNESS-SOURCE-SUPPORT
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: '@Track适用范围、整对象赋值前提及handler类数量三处核心行为描述与冻结实现不完全一致。'
+      recommendation: 按源码补充Track独立使用场景、优化失败时整对象通知、fake属性差异，并改为四个handler类覆盖五类数据。
+      evidence_ids: [EV-07-02-02-TRACKED, EV-07-02-02-OBSERVED]
+
   - criterion_id: CORRECTNESS-SDK-CONTRACT
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      SDK明确声明Observed为ClassDecorator、Dynamic API 7，Track为PropertyDecorator、
+      Dynamic API 11，并给出模型及开放范围；Design的API表未逐项列出这些具体API和契约，
+      仅使用占位说明，无法完成文档到SDK的逐项核验。
+    claim_ids: [API-Observed, API-Track]
+    evidence:
+    - &ev_sdk
+      evidence_id: EV-07-02-02-SDK
+      type: sdk_declaration
+      path: interface/sdk-js/api/@internal/component/ets/common.d.ts
+      line_start: 394
+      line_end: 535
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:0d26086699c95397773ae8ce8d5068060112a573a953cf085c560ad978d3af81
+      description: Observed和Track的装饰器类型、since、模型、crossplatform、form、atomicservice及noninterop声明。
+    - &ev_design
+      evidence_id: EV-07-02-02-DESIGN
+      type: design_location
+      path: specs/07-frontend/02-state-management/02-v1-data-object-state/design.md
+      line_start: 1
+      line_end: 200
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:90b06ed80190a793537e0525511e9e986874ae545984122db1c47ace1219207a
+      description: Function级Design，包括API表、架构、构建、运行流程、验证入口和风险。
+    findings:
+    - finding_id: SEM-b35d0dd88fa16eec4c00e2b7
+      criterion_id: CORRECTNESS-SDK-CONTRACT
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: Design新增API表没有列出Observed和Track的具体名称、类型、版本及开放范围。
+      recommendation: 逐行列出Observed ClassDecorator和Track PropertyDecorator，并完整记录SDK元数据。
+      evidence_ids: [EV-07-02-02-SDK, EV-07-02-02-DESIGN]
+
   - criterion_id: CORRECTNESS-BOUNDARY-STATE
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Spec覆盖未追踪属性、Function属性、深层对象及ComponentV2部分边界，但没有完整描述
+      null/undefined、已代理对象复用、V1 Observed与V2 Trace非法混用、订阅生命周期、
+      整对象优化回退、集合原地操作以及enableV2Compatible状态分支。
+    claim_ids: [AC-1.6, AC-2.3, AC-2.4, AC-2.5, AC-2.6, AC-3.1, AC-3.4]
+    evidence:
+    - *ev_tracked
+    - *ev_observed
+    - &ev_property
+      evidence_id: EV-07-02-02-PROPERTY
+      type: source_citation
+      path: frameworks/bridge/declarative_frontend/state_mgmt/src/lib/partial_update/pu_observed_property.ts
+      line_start: 90
+      line_end: 192
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:92731cc9f1e2cfe869e690c22e7b35da70c400a462565f878f1e2a4661390c1c
+      description: 值赋入、Interop、代理复用、读取回调、整对象赋值和未Track属性异常的状态分支。
+    findings:
+    - finding_id: SEM-ec27aa0fdaa6fdcef69013e7
+      criterion_id: CORRECTNESS-BOUNDARY-STATE
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 关键输入、生命周期、兼容模式和异常状态未被规格完整建模。
+      recommendation: 增加状态转换表，覆盖空值、代理复用、订阅增删、优化回退、集合操作、V1/V2非法混用及兼容模式。
+      evidence_ids: [EV-07-02-02-TRACKED, EV-07-02-02-OBSERVED, EV-07-02-02-PROPERTY]
+
   - criterion_id: CORRECTNESS-CROSS-DOC-CONSISTENCY
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Spec输入文档指向07-02-01的Design而非本Function Design；Spec和Design共同把Track
+      写成Observed class内使用，并共同使用五类handler的表述，但实现实际为四个handler类。
+    claim_ids: [INPUT-DESIGN, AC-2.1, ADR-1]
+    evidence:
+    - &ev_spec
+      evidence_id: EV-07-02-02-SPEC
+      type: spec_location
+      path: specs/07-frontend/02-state-management/02-v1-data-object-state/Feat-01-observed-track-spec.md
+      line_start: 1
+      line_end: 238
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:190442d41d83f51f729ee92e631424f69fa42747d68f6b71b41fef053f6f8c99
+      description: Feat-01规格全文，含错误Design链接、AC、规则、验证映射和兼容性声明。
+    - *ev_design
+    findings:
+    - finding_id: SEM-574e49f133aab3cad5d3f168
+      criterion_id: CORRECTNESS-CROSS-DOC-CONSISTENCY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: Spec引用了错误的Design路径，且Spec与Design对Track范围和handler数量的描述同步偏离实现。
+      recommendation: 修正为02-v1-data-object-state/design.md，并以冻结源码统一两份文档的术语和边界。
+      evidence_ids: [EV-07-02-02-SPEC, EV-07-02-02-DESIGN]
+
   - criterion_id: SPEC-AC-TESTABILITY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      AC使用WHEN/THEN描述且覆盖主要正常和边界场景，但VM仅给出v1_tests/common_tests目录和
+      自然语言名称，没有具体文件、测试方法、构建target、执行命令和可判定预期结果。
+    claim_ids: [VM-1, VM-2, VM-3, VM-4, VM-5, VM-8, VM-14]
+    evidence:
+    - *ev_spec
+    - &ev_test_build
+      evidence_id: EV-07-02-02-TEST-BUILD
+      type: test_evidence
+      path: frameworks/bridge/declarative_frontend/state_mgmt/test/unittest/BUILD.gn
+      line_start: 15
+      line_end: 34
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:d112800443b4e5f9f3979fc45a9ae6128259b251cce5aa9218d05c98f05fad2b
+      description: 状态管理测试实际注册为statemgmt_ut_hap的OHOS HAP target。
+    - &ev_test
+      evidence_id: EV-07-02-02-TEST
+      type: test_evidence
+      path: frameworks/bridge/declarative_frontend/state_mgmt/test/unittest/entry/src/main/v1_tests/pu_observed_property_tests_v1.ts
+      line_start: 230
+      line_end: 521
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:0618375fc955d3a0b12a4d1689cf66e4da7e916fe6909c9ab6888e93c5a11b77
+      description: 已存在的V1对象状态测试文件和方法，可用于形成可执行映射。
+    findings:
+    - finding_id: SEM-88199b0f25b64a9a23e7591a
+      criterion_id: SPEC-AC-TESTABILITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 十八项VM无法由文档直接定位并执行，且实际测试入口是HAP而非直接运行的Host gtest。
+      recommendation: 为每项AC填写具体测试文件、方法名、statemgmt_ut_hap target、执行步骤和断言结果。
+      evidence_ids: [EV-07-02-02-SPEC, EV-07-02-02-TEST-BUILD, EV-07-02-02-TEST]
+
   - criterion_id: SPEC-RULE-COMPLETENESS
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      R-1至R-13覆盖主要机制，但R-5写窄Track适用范围，R-7遗漏整对象优化前提和fake通知差异，
+      R-2未区分数据类别数量与handler类数量，且范围ID写法不能精确追溯。
+    claim_ids: [R-2, R-5, R-7]
+    evidence:
+    - *ev_spec
+    - *ev_tracked
+    - *ev_observed
+    findings:
+    - finding_id: SEM-93487090f5074bbd90eea99b
+      criterion_id: SPEC-RULE-COMPLETENESS
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 规则主体存在，但三项核心规则缺少必要前提或使用了不准确的实现抽象。
+      recommendation: 修订R-2/R-5/R-7并将所有范围AC显式展开。
+      evidence_ids: [EV-07-02-02-SPEC, EV-07-02-02-TRACKED, EV-07-02-02-OBSERVED]
+
   - criterion_id: SPEC-TRACEABILITY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      AC、规则和VM形成了基础编号关系，但静态扫描确认存在范围ID和两个非标准追溯表头；
+      VM位置又不能落到具体测试资产，追溯链无法机器稳定解析或人工直接复现。
+    claim_ids: [TRACE-RANGE-ID-001, SPEC-STRUCT-TABLE-FIELD-001]
+    evidence:
+    - &ev_static
+      evidence_id: EV-07-02-02-STATIC
+      type: static_finding
+      path: specs/.evaluator/d91b4e4990a990da2bfe809514e573e35852193e/07-02-02/report.md
+      line_start: 1
+      line_end: 61
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:217fe2d425ec09d01023adfa81e936aa647287b16597af526d1121e250aea519
+      description: 静态Gate FAIL，记录五个缺失章节、两个表头错误、错误引用、API表占位和范围ID问题。
+    - *ev_spec
+    findings:
+    - finding_id: SEM-32996fbecd6df8ccbaf5f2cf
+      criterion_id: SPEC-TRACEABILITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 范围ID、非标准表头和目录级VM使AC到规则到验证证据的链路不完整。
+      recommendation: 展开范围ID，采用标准追溯表头，并绑定到具体测试方法及结果证据。
+      evidence_ids: [EV-07-02-02-STATIC, EV-07-02-02-SPEC]
+
   - criterion_id: SPEC-SCOPE-BOUNDARY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      文档承接组件级状态、应用存储和V2数据对象，但未明确静态V1数据对象归07-02-09、
+      V1/V2互操作归07-02-14；Design还未完整覆盖已在实现存在的enableV2Compatible路径。
+    claim_ids: [SCOPE-STATIC-V1, SCOPE-INTEROP]
+    evidence:
+    - *ev_spec
+    - *ev_design
+    - &ev_static_domain
+      evidence_id: EV-07-02-02-STATIC-DOMAIN
+      type: design_location
+      path: specs/07-frontend/02-state-management/09-static-v1-data-object-state/design.md
+      line_start: 1
+      line_end: 35
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:442b153de2504c649b682926039152bac493ddeac1ddeb7bb0409e0769ae83e1
+      description: 07-02-09明确承接静态V1 Observed和Track数据对象能力。
+    - &ev_interop_domain
+      evidence_id: EV-07-02-02-INTEROP-DOMAIN
+      type: design_location
+      path: specs/07-frontend/02-state-management/14-state-management-interop/design.md
+      line_start: 1
+      line_end: 37
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:061b03e067b0be9a82a3e585079768dd9eb9e1117180c363ac24fb54c0404291
+      description: 07-02-14明确承接动态静态前端状态管理互操作和Track兼容双路径。
+    findings:
+    - finding_id: SEM-971c49389ace80286d342917
+      criterion_id: SPEC-SCOPE-BOUNDARY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 动态Function与静态V1、V1/V2 Interop的归属边界未完整声明。
+      recommendation: 在Spec和Design显式承接07-02-09与07-02-14，并说明本域仅评价动态V1主体路径。
+      evidence_ids: [EV-07-02-02-SPEC, EV-07-02-02-DESIGN, EV-07-02-02-STATIC-DOMAIN, EV-07-02-02-INTEROP-DOMAIN]
+
   - criterion_id: DESIGN-IMPLEMENTATION-PATH
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design给出SDK、编译期、Proxy、Track和依赖收集五层骨架，但未完整连接ObservedPropertyPU、
+      SynchedProperty各分支、读取回调、elmtId依赖、ViewPU.viewPropertyHasChanged和最终重渲染，
+      也未覆盖FU及Interop分支。
+    claim_ids: [DESIGN-CALL-CHAIN]
+    evidence:
+    - *ev_design
+    - *ev_property
+    - &ev_abstract
+      evidence_id: EV-07-02-02-ABSTRACT
+      type: source_citation
+      path: frameworks/bridge/declarative_frontend/state_mgmt/src/lib/partial_update/pu_observed_property_abstract.ts
+      line_start: 376
+      line_end: 626
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:1c3cbd85b774ae2a179326ccf1dd3b8a44c9ecf39fed00bc0beb00417904d168
+      description: Track变更通知、属性级elmtId依赖、ViewPU更新和订阅者同步的下游链路。
+    findings:
+    - finding_id: SEM-adda4d519505c481d5885afe
+      criterion_id: DESIGN-IMPLEMENTATION-PATH
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 分层骨架存在，但从装饰器到最终重渲染的端到端实现路径没有闭环。
+      recommendation: 补全动态PU主链、FU兼容链、Interop链以及每层关键类、方法、输入输出和所有权。
+      evidence_ids: [EV-07-02-02-DESIGN, EV-07-02-02-PROPERTY, EV-07-02-02-ABSTRACT]
+
+  - criterion_id: DESIGN-FEAT-RUNTIME-COVERAGE
+    dimension_id: design_quality
+    applicability: APPLICABLE
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      单一Feat已有Proxy流程图和Observed与ObjectLink七步数据流，达到部分运行设计；
+      但缺少异常恢复、整对象兼容回退、ComponentV2兼容、Interop、测试衔接及最终渲染输出。
+    claim_ids: [Feat-01]
+    evidence:
+    - *ev_design
+    - *ev_observed
+    - *ev_property
+    findings:
+    - finding_id: SEM-873aad153eb4f17f80062c73
+      criterion_id: DESIGN-FEAT-RUNTIME-COVERAGE
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: Feat-01运行主流程已描述，但关键分支、失败路径和最终输出未覆盖。
+      recommendation: 在逐Feat运行设计中补全正常、边界、异常、兼容与Interop分支，并连接验证资产。
+      evidence_ids: [EV-07-02-02-DESIGN, EV-07-02-02-OBSERVED, EV-07-02-02-PROPERTY]
+
+  - criterion_id: DESIGN-ALGORITHM-DATA-STATE
+    dimension_id: design_quality
+    applicability: APPLICABLE
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      ADR描述Proxy分派和Track属性比较，但没有形成数据模型、订阅生命周期和状态机；
+      null/undefined、代理复用、constructor不一致、集合原地变化、V2兼容及异常状态未系统覆盖。
+    claim_ids: [ADR-1, ADR-2, ADR-3]
+    evidence:
+    - *ev_design
+    - *ev_tracked
+    - *ev_observed
+    findings:
+    - finding_id: SEM-d0fe7d46c55aaebab7128b17
+      criterion_id: DESIGN-ALGORITHM-DATA-STATE
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 核心算法有概述，但数据结构、生命周期、状态转换和失败回退设计不完整。
+      recommendation: 增加handler分派表、订阅关系模型、Track/compat/V2-compatible状态机及整对象赋值伪代码。
+      evidence_ids: [EV-07-02-02-DESIGN, EV-07-02-02-TRACKED, EV-07-02-02-OBSERVED]
+
   - criterion_id: DESIGN-DECISION-QUALITY
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      三个ADR说明了Proxy相对手工通知、Track精确追踪及不做深度观测的基本权衡；
+      但决策依据未覆盖四个handler类的真实复用、整对象优化适用条件、Interop与V2兼容策略，
+      部分决策结论因实现事实错误而不可直接复用。
+    claim_ids: [ADR-1, ADR-2, ADR-3]
+    evidence:
+    - *ev_design
+    - *ev_tracked
+    - *ev_observed
+    findings:
+    - finding_id: SEM-39e09f03782fa3b414c39d0c
+      criterion_id: DESIGN-DECISION-QUALITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: ADR具备基础问题与权衡，但关键约束和跨范式决策未纳入，且包含handler数量错误。
+      recommendation: 修正事实后补充优化适用条件、失败回退、Interop和V2兼容的候选方案与取舍。
+      evidence_ids: [EV-07-02-02-DESIGN, EV-07-02-02-TRACKED, EV-07-02-02-OBSERVED]
+
   - criterion_id: DESIGN-IMPACT-COVERAGE
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: CONTRADICTED
+    reason: >-
+      Design称state_mgmt/BUILD.gn存在并直接产生debug/release/profile三个stateMgmt.abc；
+      实际构建由declarative_frontend/BUILD.gn的run_state_mgmt_build生成stateMgmt.js，
+      再由engine/jsi/BUILD.gn生成stateMgmt.abc并由引擎预加载，生产GN仅体现release构建。
+    claim_ids: [BUILD-STATE-MGMT]
+    evidence:
+    - *ev_design
+    - &ev_build
+      evidence_id: EV-07-02-02-BUILD
+      type: source_citation
+      path: frameworks/bridge/declarative_frontend/BUILD.gn
+      line_start: 111
+      line_end: 131
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:92e82b3df94913785c64289b44dd7e88f99f4efe6602df19120a539e99249161
+      description: run_state_mgmt_build生成stateMgmt.js并作为后续snapshot输入。
+    - &ev_jsi_build
+      evidence_id: EV-07-02-02-JSI-BUILD
+      type: source_citation
+      path: frameworks/bridge/declarative_frontend/engine/jsi/BUILD.gn
+      line_start: 31
+      line_end: 39
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7ea502dff19cd2b2da93be36e3df27d59b6443569f259fc7b6c672f6d2db69b6
+      description: gen_stateMgmt_abc从stateMgmt.js生成stateMgmt.abc并依赖run_state_mgmt_build。
+    - &ev_engine
+      evidence_id: EV-07-02-02-ENGINE
+      type: source_citation
+      path: frameworks/bridge/declarative_frontend/engine/jsi/jsi_declarative_engine.cpp
+      line_start: 258
+      line_end: 264
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:2d72b4dcea66874eaceaeacfa0c4b3b1fe386deef331b09fc056a847f9f8103b
+      description: 引擎从系统路径或内嵌二进制预加载stateMgmt.abc。
+    findings:
+    - finding_id: SEM-1615d70323b49cbed79ff363
+      criterion_id: DESIGN-IMPACT-COVERAGE
+      severity: Major
+      conclusion: CONTRADICTED
+      message: 构建文件路径、构建链和生产产物变体描述与仓内BUILD.gn及加载代码矛盾。
+      recommendation: 改写为run_state_mgmt_build到gen_stateMgmt_abc再到引擎预加载的真实链路，并区分生产release与手工npm变体。
+      evidence_ids: [EV-07-02-02-DESIGN, EV-07-02-02-BUILD, EV-07-02-02-JSI-BUILD, EV-07-02-02-ENGINE]
+
   - criterion_id: DESIGN-VERIFICATION-PLAN
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design列出了v1_tests和common_tests目录，但没有按AC给出具体用例、target、命令、环境和
+      预期结果；真实BUILD.gn注册的是statemgmt_ut_hap，不能按普通Host gtest直接执行。
+    claim_ids: [VERIFY-PLAN]
+    evidence:
+    - *ev_design
+    - *ev_test_build
+    - *ev_test
+    findings:
+    - finding_id: SEM-f14c4708c11726a899a4443a
+      criterion_id: DESIGN-VERIFICATION-PLAN
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 验证资产方向存在，但验证计划不可直接执行和判定。
+      recommendation: 补充HAP构建部署运行步骤、具体测试类与方法、环境前提、断言和AC覆盖矩阵。
+      evidence_ids: [EV-07-02-02-DESIGN, EV-07-02-02-TEST-BUILD, EV-07-02-02-TEST]
+
   - criterion_id: COMPATIBILITY-API-VERSION
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Spec正确记录Observed API 7、Track API 11、ComponentV2 API 19和错误码API 23，
+      但未按SDK具体列出Observed的FA/Stage与分版本开放范围、Track的Stage限定及开放范围，
+      也未把静态和Interop能力明确承接到对应Function。
+    claim_ids: [API-Observed, API-Track, AC-2.6, AC-3.1]
+    evidence:
+    - *ev_sdk
+    - *ev_spec
+    - *ev_design
+    findings:
+    - finding_id: SEM-b1112b717475aed6d1a87fcd
+      criterion_id: COMPATIBILITY-API-VERSION
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 主版本节点存在，但API类型、模型、开放范围及跨前端版本边界未完整固化。
+      recommendation: 以SDK声明逐项补齐Observed和Track的since、模型、crossplatform、form、atomicservice与noninterop信息。
+      evidence_ids: [EV-07-02-02-SDK, EV-07-02-02-SPEC, EV-07-02-02-DESIGN]
+
   - criterion_id: COMPATIBILITY-SYSTEM-IMPACT
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
+    conclusion: SUPPORTED
+    reason: >-
+      本Function明确为已有实现补录，不提出产品源码、公共ABI、bundle依赖、权限或系统服务变更；
+      现有风险均属于已实现语义和使用约束，系统级变更范围声明充分。
+    claim_ids: [DELTA-EXISTING, SYSTEM-IMPACT]
+    evidence:
+    - *ev_spec
+    - *ev_design
     findings: []
+
   - criterion_id: COMPATIBILITY-MULTI-DEVICE
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      SDK提供crossplatform、form和atomicservice元数据，说明能力存在设备形态开放范围；
+      Spec缺少标准多设备适配声明章节，也没有说明各形态行为一致性、限制和验证方式。
+    claim_ids: [MULTI-DEVICE, SPEC-STRUCT-H2-MISSING-001]
+    evidence:
+    - *ev_sdk
+    - *ev_spec
+    - *ev_static
+    findings:
+    - finding_id: SEM-1a7c53a0ea0c7138aa79e6df
+      criterion_id: COMPATIBILITY-MULTI-DEVICE
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: SDK开放范围可查，但规格没有形成多设备适配结论和验证边界。
+      recommendation: 新增多设备适配声明，逐项说明crossplatform、form、atomicservice适用性及无需差异处理的依据。
+      evidence_ids: [EV-07-02-02-SDK, EV-07-02-02-SPEC, EV-07-02-02-STATIC]
+
   - criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      文档大量使用单文件名和易漂移行号，Spec引用错误Design路径，Design引用不存在的BUILD.gn，
+      且SDK关联仓revision未写入正文；虽然Review冻结了ace_engine与sdk-js revision，
+      原文证据仍不具备稳定复现性。
+    claim_ids: [REF-NOT-FOUND-001, EVIDENCE-STABILITY]
+    evidence:
+    - *ev_static
+    - *ev_observed
+    - *ev_sdk
+    findings:
+    - finding_id: SEM-437ec73c0ff7a73ab20c3808
+      criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 错误路径、单文件名、脆弱行号和缺少关联仓revision降低了证据长期稳定性。
+      recommendation: 统一使用仓内完整路径与符号或测试名锚点，并在评价输入中冻结ace_engine和sdk-js revision。
+      evidence_ids: [EV-07-02-02-STATIC, EV-07-02-02-OBSERVED, EV-07-02-02-SDK]
+
   - criterion_id: MAINTAINABILITY-STRUCTURE
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      单Feat结构和章节导航清晰，但静态扫描确认缺少五个必需H2章节、两个标准表格字段不匹配，
+      并存在范围ID；这些问题阻碍统一解析和跨Function横向比较。
+    claim_ids: [SPEC-STRUCT-H2-MISSING-001, SPEC-STRUCT-TABLE-FIELD-001, TRACE-RANGE-ID-001]
+    evidence:
+    - *ev_static
+    - *ev_spec
+    findings:
+    - finding_id: SEM-ee9add097d988624745c4129
+      criterion_id: MAINTAINABILITY-STRUCTURE
+      severity: Minor
+      conclusion: PARTIALLY_SUPPORTED
+      message: 文档可阅读，但模板章节、表头和ID格式未符合统一结构协议。
+      recommendation: 补齐五个必需章节，改用标准验收追溯和验证映射表头，并展开范围ID。
+      evidence_ids: [EV-07-02-02-STATIC, EV-07-02-02-SPEC]
+
   - criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
+    conclusion: SUPPORTED
+    reason: >-
+      Design列出Observed原型链变化、非Track属性UI误用和Track不支持深度观测三项风险，
+      均包含类型、影响、处理方式和ArkUI SIG Owner；用户已在本次单次确认中将三项存量风险
+      统一记录为Accepted。
+    claim_ids: [RISK-OBSERVED-PROTOTYPE, RISK-NON-TRACK-UI, RISK-NO-DEEP-OBSERVE]
+    evidence:
+    - *ev_design
     findings: []
+
   coverage:
-    expected_criteria: 18
-    evaluated_criteria: 18
-    applicable_criteria: 18
+    expected_criteria: 20
+    evaluated_criteria: 20
+    applicable_criteria: 20
     not_applicable_criteria: 0
-    not_verifiable_criteria: 18
+    not_verifiable_criteria: 0
   execution:
     static_complete: true
     evidence_complete: true
-    semantic_complete: false
+    semantic_complete: true
     notes:
-    - 'Draft template: Criterion conclusions and scores are pending.'
+    - 已核验单一Feat、Function Design、冻结源码、sdk-js契约、构建加载链和测试资产。
+    - 静态Gate保持FAIL，10项Major Finding未被语义评价删除或降级。
+    - 逐Feat运行设计评价为PARTIALLY_SUPPORTED，因为已有流程图和七步主流程。
 scores:
   dimensions:
-    correctness: null
-    spec_executability: null
-    design_quality: null
-    compatibility_system_impact: null
-    maintainability: null
-  raw_score: null
-  published_score: null
-  confidence: null
+    correctness: 16.0
+    spec_executability: 12.5
+    design_quality: 11.0
+    compatibility_system_impact: 6.5
+    maintainability: 6.5
+  raw_score: 52.5
+  published_score: 52.5
+  confidence: 1.0
   admission: NOT_READY
 confirmation:
-  confirmed_by: null
-  confirmed_at: null
-  conclusion: pending
-  notes: []
+  confirmed_by: sunfei2021
+  confirmed_at: '2026-08-05T23:33:35+08:00'
+  conclusion: accepted
+  notes:
+  - 用户统一确认本轮列出的12组问题和20项Criterion推荐结论，无异议。
+  - 三项存量风险均记录为Accepted。
+  - 静态扫描10项Major继续保持，语义评价不修改正式Spec、Design或产品源码。
+  - SDK冻结revision为224c0c10fde3910a473455eac6841614a162ce39。
+  - specs冻结revision为b512b9cd1e9926f8328df4aadf6bb926b0af553a。
 notes:
-- 完成18个Criterion后填写精确分数并进行一次确认。
-- Critical/Major Finding必须包含冻结revision下的可复现证据。
+- 状态管理V1数据对象内状态管理在Rubric v0.2下完成单次确认评价。
+- 主要提升项为源码语义修正、端到端运行设计、真实构建链、可执行验证映射及静态结构修复。
