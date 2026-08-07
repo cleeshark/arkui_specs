@@ -1,0 +1,52 @@
+{
+  "skill_name": "ohos-design-arkui-spec-evaluator",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "对 FuncID 05-01-02 Divider 做一次完整 Function 语义评价。读取静态报告和证据包，按 Rubric v0.3 输出 semantic-result.json；不要修改 Spec、Design 或已确认 Review。",
+      "expected_output": "生成包含20项Criterion的协议合法语义结果，逐项覆盖Divider全部13项AC，并在已确认范围内识别源码、SDK契约、AC可测试性和Design完整性问题。",
+      "files": [],
+      "expectations": [
+        "输出包含Rubric顺序下全部20项Criterion且每项仅出现一次",
+        "先形成逐AC结论再聚合Criterion，局部冲突不自动升级为Criterion级CONTRADICTED或Critical",
+        "覆盖Divider全部13项AC，并核验VM引用的测试target、二进制和Suite.Case或filter能否真实定位",
+        "逐AC拆分核验术语、方向和轴关系，能够识别垂直Divider主轴/交叉轴名称与实现语义不一致",
+        "对无效输入、版本回退和裁剪边界核验真实触发值及精确结果断言，而不是仅确认存在相邻测试",
+        "对reset/default/theme update建立前端、配置门控、已有状态、输入和结果状态矩阵，不用单一路径代替全部状态组合",
+        "DESIGN-IMPACT-COVERAGE遵循Criterion专属outcome_policy：只有无BUILD变更或已注册占位说明时判定MISSING",
+        "DESIGN-VERIFICATION-PLAN存在Function级UT、手工、Feat/AC或风险验证方向时判定主体存在，缺执行细节为PARTIALLY_SUPPORTED而非MISSING",
+        "遵循Pilot评价范围：只评价OHOS phone、tablet、foldable，不评价已排除的ArkUI-X或wearable Static Modifier支持，也不记录无可复现场景的1px观察",
+        "纳入范围的设备形态使多设备Criterion适用；源码证明共用通用路径且无设备分支时，不因缺少专项设备测试制造Partial",
+        "按独立可验收能力判断Feat所有权，不把内部Bridge、加载模块、共享SO或legacy实现机制重复报为Feat未覆盖",
+        "不同AC、前端、版本、状态或构建问题分别形成可独立整改的Finding，不压缩成单个复合Finding",
+        "Public API判断同时使用canonical SDK声明和冻结源码证据",
+        "Critical或Major Finding具有可复核证据、原因和整改建议",
+        "不修改specs/evaluation/reviews/05-01-02.yaml或正式Spec/Design"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "评价 FuncID 03-07-01 无障碍能力。该功能域以内部机制和NDK开放能力为主，SDK接口仅可作为调用链上下文。请区分适用和不适用项，并输出semantic-result.json。",
+      "expected_output": "正确处理内部机制、NDK开放范围、SDK上下文和N/A证据，不因缺少无关Public SDK接口制造误报。",
+      "files": [],
+      "expectations": [
+        "评价范围覆盖完整Function和全部非Deprecated Feat",
+        "SDK接口仅在实际契约相关时参与CORRECTNESS-SDK-CONTRACT判断",
+        "NOT_APPLICABLE具有协议允许性、理由和可复现证据",
+        "缺少关联仓或证据时使用NOT_VERIFIABLE而不是推测"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "对 FuncID 05-03-10 WaterFlow/FlowItem 做一次完整评价，重点检查多Feat运行设计、关键算法状态、验证方案以及Feat拆分、覆盖和边界。输出协议合法的semantic-result.json。",
+      "expected_output": "对critical多Feat组件执行逐Feat完整性评价，发现算法、运行链路、验证和Function建模问题，并保持静态Finding权威。",
+      "files": [],
+      "expectations": [
+        "DESIGN-FEAT-RUNTIME-COVERAGE逐个检查所有注册非Deprecated Feat",
+        "算法、数据状态、资源和异常恢复按适用范围核验",
+        "Function建模只使用现有Registry、Spec、Design、源码和测试证据",
+        "不以Feat数量、文档长度、表格数或图数量直接评价质量"
+      ]
+    }
+  ]
+}

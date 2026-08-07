@@ -148,6 +148,14 @@ pilot_functions:
     static_snapshot: {finding_count: 5, evidence_coverage: 0.203125}
     input_fingerprint: sha256:45b792f873138bf2593726671986b1d9fe46aca55c239dfb4d6fc0dcf5865929
     selection_rationale: 唯一simple样本，用于校准轻量组件是否被过度评价。
+    evaluation_scope:
+      include:
+        - OHOS phone、tablet、foldable设备形态
+      exclude:
+        - ArkUI-X Android/iOS Static Modifier支持
+        - wearable Static Modifier支持
+      non_findings:
+        - 无可复现验证场景的1px硬件取整观察
 
   - func_id: 05-03-10
     title: WaterFlow/FlowItem
