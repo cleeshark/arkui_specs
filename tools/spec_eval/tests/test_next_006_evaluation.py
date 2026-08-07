@@ -102,7 +102,7 @@ class Next006FunctionEvaluationTest(unittest.TestCase):
             {item["complexity"] for item in pilot},
             {"simple", "standard", "complex", "critical"},
         )
-        self.assertEqual(self.manifest["status"], "ready")
+        self.assertEqual(self.manifest["status"], "complete")
         self.assertEqual(self.manifest["confirmation"]["confirmed_by"], "sunfei2021")
         self.assertNotIn("approval", self.manifest)
 
@@ -271,6 +271,18 @@ class Next006FunctionEvaluationTest(unittest.TestCase):
         )
         self.assertTrue(any("input fingerprint changed" in item for item in errors))
         self.assertTrue(any("revision mismatch for ace_engine" in item for item in errors))
+
+    def test_specs_repository_revision_does_not_invalidate_frozen_inputs(self) -> None:
+        manifest = copy.deepcopy(self.manifest)
+        manifest["revisions"]["specs"] = "0000000"
+        errors = validate_evaluation_manifest(
+            manifest,
+            self.config,
+            self.complexity,
+            self.schemas_root,
+            check_revisions=True,
+        )
+        self.assertFalse(any("revision mismatch for specs" in item for item in errors))
 
 
 if __name__ == "__main__":

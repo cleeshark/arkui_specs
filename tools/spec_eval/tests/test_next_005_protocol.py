@@ -69,6 +69,9 @@ class Next005ProtocolTest(unittest.TestCase):
 
     def test_protocol_and_valid_examples_close_the_contract(self) -> None:
         self.assertEqual(self.protocol_errors, [])
+        self.assertEqual(self.rubric["status"], "frozen")
+        self.assertEqual(self.rubric["approval"]["freeze_state"], "frozen")
+        self.assertEqual(self.rubric["approval"]["confirmed_by"], "sunfei2021")
         semantic = self.load_fixture("semantic-result.json")
         score = self.load_fixture("score-result.json")
         self.assertEqual(
@@ -82,6 +85,15 @@ class Next005ProtocolTest(unittest.TestCase):
             ),
             [],
         )
+
+    def test_rubric_freeze_requires_a_single_confirmation(self) -> None:
+        invalid = copy.deepcopy(self.rubric)
+        invalid["status"] = "candidate"
+        invalid["approval"]["freeze_state"] = "pilot_single_confirmation"
+        invalid["approval"]["confirmed_by"] = None
+        errors = validate_rubric(invalid)
+        self.assertTrue(any("must be frozen" in item for item in errors))
+        self.assertTrue(any("requires confirmed_by" in item for item in errors))
 
     def test_rubric_rejects_weight_drift_and_duplicate_criterion_ids(self) -> None:
         invalid = copy.deepcopy(self.rubric)

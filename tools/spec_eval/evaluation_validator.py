@@ -164,10 +164,14 @@ def validate_evaluation_manifest(
         revisions = manifest.get("revisions", {})
         actual_revisions = {
             "ace_engine": config.git_revision(),
-            "specs": _git_revision(config.specs_root),
             "sdk_js": _git_revision(config.oh_root / "interface" / "sdk-js"),
             "sdk_c": _git_revision(config.oh_root / "interface" / "sdk_c"),
         }
+        # ``revisions.specs`` records the repository revision used to select the
+        # Pilot inputs. The evaluation protocol and confirmed reviews live in
+        # the same repository, so every protocol/review commit would otherwise
+        # invalidate that frozen value. Registry, Spec and Design drift is
+        # guarded by the per-Function input fingerprint above.
         for key, actual in actual_revisions.items():
             expected = revisions.get(key)
             if expected != actual:

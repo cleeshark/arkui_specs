@@ -2,7 +2,7 @@
 
 本目录保存全部已注册Pilot Function的单份参考评价。每个Pilot Function必须且只能保留一个当前评价文件，文件名固定为`<func_id>.yaml`。
 
-当前评价协议为Rubric v0.3，共20个Criterion。v0.3以三个纯Skill Criterion替换原可维护性Criterion，评价Function下Feat覆盖完整性、拆分颗粒度和职责边界。旧版Review必须补做Function建模评价并重新确认，不能只机械换版本号或沿用原可维护性分数。
+当前评价协议为已冻结的Rubric v0.3，共20个Criterion。12个Pilot Function均已完成一次评价确认。v0.3以三个纯Skill Criterion替换原可维护性Criterion，评价Function下Feat覆盖完整性、拆分颗粒度和职责边界。旧版Review必须补做Function建模评价并重新确认，不能只机械换版本号或沿用原可维护性分数。
 
 ## 工作流
 

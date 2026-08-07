@@ -1,6 +1,6 @@
 schema_version: 1
 rubric_version: 0.3.0
-status: candidate
+status: frozen
 evaluation_unit: function
 description: >-
   ArkUI Function-level semantic evaluation protocol. The score starts from 100
@@ -8,9 +8,11 @@ description: >-
   authoritative and semantic evaluation cannot remove or downgrade them.
 
 approval:
-  freeze_state: pilot_single_confirmation
+  freeze_state: frozen
   confirmation_mode: single
-  note: Engineering protocol is implemented; each reference evaluation is confirmed once before commit.
+  confirmed_by: sunfei2021
+  confirmed_at: '2026-08-07'
+  note: Rubric v0.3 is frozen after all 12 Pilot Function evaluations were confirmed once.
 
 protocol_compatibility:
   complexity_rules_version: 0.2.0

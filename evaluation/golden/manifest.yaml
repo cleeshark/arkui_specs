@@ -1,11 +1,11 @@
 schema_version: 1
 evaluation_set_version: 0.1.0
-status: ready
+status: complete
 description: >-
-  Function-level reference evaluation Pilot. The existing functions section
-  remains the static regression subset. Each pilot Function has one pending
-  evaluation record; static signal strata are sampling proxies rather than
-  final quality labels.
+  Completed Function-level reference evaluation Pilot. The existing functions
+  section remains the static regression subset. Each Pilot Function has one
+  confirmed Rubric v0.3 evaluation record; static signal strata are sampling
+  proxies rather than final quality labels.
 
 protocol:
   rubric_version: 0.3.0
@@ -20,7 +20,7 @@ revisions:
 
 confirmation:
   confirmed_by: sunfei2021
-  confirmed_at: '2026-08-04'
+  confirmed_at: '2026-08-07'
 
 selection_requirements:
   pilot_size: 12

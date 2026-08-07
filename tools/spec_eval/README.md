@@ -420,7 +420,7 @@ PYTHONPATH=specs/tools python3 -m spec_eval.protocol_validator \
   --evaluation-root specs/evaluation
 ```
 
-当前协议状态为`candidate`。工程字段已经版本化并由自动化测试保护；当前Pilot采用单次评价、一次确认的入库方式。当前Rubric为`0.3.0`，包含20项Criterion。修改权重、扣分、门禁封顶或结论语义时必须继续提升Rubric版本，不能在同一版本下静默改变含义。
+当前协议状态为`frozen`，已由`sunfei2021`于`2026-08-07`完成单次确认。工程字段已经版本化并由自动化测试保护；当前Pilot采用单次评价、一次确认的入库方式。当前Rubric为`0.3.0`，包含20项Criterion。修改权重、扣分、门禁封顶或结论语义时必须继续提升Rubric版本，不能在同一版本下静默改变含义。
 
 Design维度仍为25分，但从原4项拆分为6项：架构上下文与分层调用链4分、逐Feat端到端运行设计5分、关键算法/数据/状态4分、ADR候选与取舍4分、构建/产物/注册/部署3分、验证与风险闭环5分。标题、表格、图数量、篇幅和自审勾选不能作为`SUPPORTED`证据。
 
@@ -440,7 +440,9 @@ Function功能建模质量完全由Skill评价：Feat覆盖完整性4分、Feat�
 
 ### 8.2 单Function参考评价
 
-NEXT-006使用12个Function作为Pilot。样本、输入revision和Function指纹位于`evaluation/golden/manifest.yaml`；每个Function只在`evaluation/reviews/`保留一份当前评价文件。Rubric升级后，旧版本Review必须按v0.3补齐Function建模Criterion并重新确认，不能沿用旧可维护性分数。
+NEXT-006使用12个Function作为Pilot，当前已全部完成一次评价确认。样本、冻结输入revision和Function指纹位于`evaluation/golden/manifest.yaml`；每个Function只在`evaluation/reviews/`保留一份当前评价文件。Rubric升级后，旧版本Review必须按v0.3补齐Function建模Criterion并重新确认，不能沿用旧可维护性分数。
+
+`revisions.specs`记录选择Pilot输入时的仓库revision，不与当前`specs`仓HEAD强制相等；评价协议和Review也位于同一仓库，正常提交不应使冻结输入失效。Registry、Spec和Design内容漂移由每个Function的`input_fingerprint`检查，ace_engine、sdk-js和sdk_c仍执行严格revision核验。
 
 校验Pilot覆盖和输入是否漂移：
 

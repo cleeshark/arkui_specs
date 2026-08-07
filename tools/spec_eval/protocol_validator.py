@@ -159,6 +159,15 @@ def validate_rubric(rubric: dict[str, Any]) -> list[str]:
                 )
 
     if rubric.get("rubric_version") == "0.3.0":
+        if rubric.get("status") != "frozen":
+            errors.append("rubric 0.3 must be frozen after the reference Pilot is confirmed")
+        approval = rubric.get("approval", {})
+        if approval.get("freeze_state") != "frozen":
+            errors.append("rubric 0.3 approval.freeze_state must be frozen")
+        if approval.get("confirmation_mode") != "single":
+            errors.append("rubric 0.3 uses the single-confirmation workflow")
+        if not approval.get("confirmed_by") or not approval.get("confirmed_at"):
+            errors.append("rubric 0.3 freeze requires confirmed_by and confirmed_at")
         function_dimension = next(
             (item for item in dimensions if item.get("id") == "function_modeling"), None
         )
