@@ -7,12 +7,12 @@ source_revision: d91b4e4990a990da2bfe809514e573e35852193e
 status: confirmed
 evaluator:
   evaluator_id: sunfei2021
-  evaluated_at: '2026-08-06T11:22:01+08:00'
+  evaluated_at: '2026-08-07T15:44:25+08:00'
 semantic_result:
   schema_version: 1
-  rubric_version: 0.2.0
+  rubric_version: 0.3.0
   complexity_rules_version: 0.2.0
-  evaluator_protocol_version: 0.2.0
+  evaluator_protocol_version: 0.3.0
   evaluator_version: human:sunfei2021
   func_id: 01-01-01
   source_revision: d91b4e4990a990da2bfe809514e573e35852193e
@@ -489,60 +489,188 @@ semantic_result:
       recommendation: 将运行时UI语义无差异与产品构建差异分开，明确wearable及其他产品条件对defines、target和产物的影响。
       evidence_ids: [EV-01-01-01-SPEC, EV-01-01-01-ROOT-BUILD, EV-01-01-01-OHOS-PACKAGE, EV-01-01-01-ADVANCED-BUILD]
 
-  - criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
-    dimension_id: maintainability
+  - criterion_id: FUNCTION-FEAT-COVERAGE
+    dimension_id: function_modeling
+    applicability: APPLICABLE
+    conclusion: SUPPORTED
+    reason: Registry中的Feat集合与各Feat Spec、Function Design及冻结源码能够对应；当前可发现的主要功能入口、关键行为和生命周期均有Feat承载。已有Spec、API或Design完整性问题由其他Criterion评价，本项不重复扣分。
+    claim_ids:
+    - FUNCTION-FEAT-COVERAGE
+    - FUNCTION-01-01-01
+    evidence:
+    - evidence_id: EV-01-01-01-REGISTRY-FEATURE
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 1
+      line_end: 6
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9a81e2cff4a6a9810fc28c1841f5eb70748a23117a569cc8a69c78c30453fdfe
+      description: Feat-01 BUILD.gn结构的Spec路径和Baselined状态注册。
+    - evidence_id: EV-01-01-01-SPEC
+      type: spec_location
+      path: specs/01-architecture/01-architecture-design/01-build-system/Feat-01-build-gn-structure-spec.md
+      line_start: 1
+      line_end: 348
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:cf1746ec15af6bd00b6a34388ad56ff2fb1014788eaf2563b1a798104352de09
+      description: Feat-01全文，包含AC、规则、VM、兼容性、多设备声明和源码引用。
+    - evidence_id: EV-01-01-01-DESIGN
+      type: design_location
+      path: specs/01-architecture/01-architecture-design/01-build-system/design.md
+      line_start: 1
+      line_end: 403
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:ad53910d2e6bbecdc8b6bd1827be56c38fc6148752a1dfa5c256713cbac6f4d5
+      description: Function级Design全文，包含架构链、ADR、构建影响、验证方案和风险表。
+    - evidence_id: EV-01-01-01-ACE-CONFIG
+      type: source_citation
+      path: ace_config.gni
+      line_start: 192
+      line_end: 373
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:daabd5d5f75b692f01a1c91d7cde6084ea8eafe9b91b64089917d4ab8eaa7c16
+      description: part/subsystem实际定义和adapter扫描、平台过滤、current_platform选择实现。
+    findings: []
+  - criterion_id: FUNCTION-FEAT-DECOMPOSITION
+    dimension_id: function_modeling
     applicability: APPLICABLE
     conclusion: PARTIALLY_SUPPORTED
-    reason: >-
-      多数证据使用完整仓内路径，但静态扫描已确认两条越界引用，人工核验又发现多组区间与内容不对应；
-      Android/iOS关联仓未冻结revision，旧KB路径失效，重复行号引用使长期维护和复现成本较高。
-    claim_ids: [REF-LINE-RANGE-001, EVIDENCE-COVERAGE, EXTERNAL-REVISION]
-    evidence: [*ev_static, *ev_spec, *ev_design, *ev_android, *ev_ios, *ev_kb]
+    reason: Feat-01同时承载平台发现、主库聚合、前端生成、接口与测试入口以及ArkUI-X构建；这些构建子域具有可独立验收和演进的目标，当前单Feat颗粒度偏粗。
+    claim_ids:
+    - FEAT-01
+    - FUNCTION-DECOMPOSITION-BUILD-SUBDOMAINS
+    evidence:
+    - evidence_id: EV-01-01-01-REGISTRY-FEATURE
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 1
+      line_end: 6
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9a81e2cff4a6a9810fc28c1841f5eb70748a23117a569cc8a69c78c30453fdfe
+      description: Feat-01 BUILD.gn结构的Spec路径和Baselined状态注册。
+    - evidence_id: EV-01-01-01-SPEC
+      type: spec_location
+      path: specs/01-architecture/01-architecture-design/01-build-system/Feat-01-build-gn-structure-spec.md
+      line_start: 1
+      line_end: 348
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:cf1746ec15af6bd00b6a34388ad56ff2fb1014788eaf2563b1a798104352de09
+      description: Feat-01全文，包含AC、规则、VM、兼容性、多设备声明和源码引用。
+    - evidence_id: EV-01-01-01-DESIGN
+      type: design_location
+      path: specs/01-architecture/01-architecture-design/01-build-system/design.md
+      line_start: 1
+      line_end: 403
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:ad53910d2e6bbecdc8b6bd1827be56c38fc6148752a1dfa5c256713cbac6f4d5
+      description: Function级Design全文，包含架构链、ADR、构建影响、验证方案和风险表。
+    - evidence_id: EV-01-01-01-ACE-CONFIG
+      type: source_citation
+      path: ace_config.gni
+      line_start: 192
+      line_end: 373
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:daabd5d5f75b692f01a1c91d7cde6084ea8eafe9b91b64089917d4ab8eaa7c16
+      description: part/subsystem实际定义和adapter扫描、平台过滤、current_platform选择实现。
+    - evidence_id: EV-01-01-01-BUILD-MAIN
+      type: source_citation
+      path: build/BUILD.gn
+      line_start: 20
+      line_end: 233
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:bd4b450a591a8110ec519ad90b29ea7cc44834a173b7e3de8c0403954f1faae9
+      description: libace_static遍历、分离engine、libace_compatible、libace_compatible_components和libace目标。
+    - evidence_id: EV-01-01-01-CORE-BUILD
+      type: source_citation
+      path: frameworks/core/BUILD.gn
+      line_start: 70
+      line_end: 1285
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4645eb56e1694ed5e5798d49c9777ddea769a384eccb38a3cc1f785530e4886d
+      description: 旧core模板、其native interface依赖、NG core模板及平台实例化的真实位置。
+    - evidence_id: EV-01-01-01-NATIVE-BUILD
+      type: source_citation
+      path: interfaces/native/BUILD.gn
+      line_start: 18
+      line_end: 161
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:e86bdbdc7a6586215d3960833e3fb6bc0ac8003e7f602cd53bb3d2cf415c9df3
+      description: 当前NDK headers、ace_ndk共享库和ace_packages_ndk；不存在ace_static_ndk目标。
+    - evidence_id: EV-01-01-01-ANDROID-BUILD
+      type: source_citation
+      path: adapter/android/build/BUILD.gn
+      line_start: 25
+      line_end: 354
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:45e710b1c87d6bd2d3b2219a439f44577e8be901c61fdd8e9b3d7a21a8bdfe4d
+      description: 当前Android主库、独立ace_ndk、组件共享库和ace_packages实际构建结构；关联仓实际commit为f18378dc2e07707d58a56ca48e3144e245785b98。
+    - evidence_id: EV-01-01-01-IOS-BUILD
+      type: source_citation
+      path: adapter/ios/build/BUILD.gn
+      line_start: 27
+      line_end: 984
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9829844872992f5b847a23482fb4e334db4e121460354723cb85426993554218
+      description: 当前iOS主framework、arkui_ios依赖、独立libace_ndk和组件framework打包结构；关联仓实际commit为1e68ba48e938b5ec6a63644a9f34c191888f4d1e。
     findings:
-    - finding_id: SEM-00000000000000000000000f
-      criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
-      severity: Major
-      conclusion: PARTIALLY_SUPPORTED
-      message: 路径主体可定位，但错误行号、旧KB和未冻结关联仓使证据基线不稳定。
-      recommendation: 固定关联仓commit，修正全部引用，优先引用稳定target或符号并减少相同file:line在多章节重复维护。
-      evidence_ids: [EV-01-01-01-STATIC, EV-01-01-01-SPEC, EV-01-01-01-DESIGN, EV-01-01-01-ANDROID-BUILD, EV-01-01-01-IOS-BUILD, EV-01-01-01-KB]
-
-  - criterion_id: MAINTAINABILITY-STRUCTURE
-    dimension_id: maintainability
-    applicability: APPLICABLE
-    conclusion: PARTIALLY_SUPPORTED
-    reason: >-
-      文档章节、编号和表格总体清晰，但同一构建事实在AC、追溯表、规则、架构约束、ADR、骨架和详细设计中多次复制，
-      造成行号同步漂移；五个用户故事又未采用统一结构化格式。
-    claim_ids: [DOCUMENT-STRUCTURE, SPEC-STRUCT-USER-STORY-001]
-    evidence: [*ev_spec, *ev_design, *ev_static]
-    findings:
-    - finding_id: SEM-000000000000000000000010
-      criterion_id: MAINTAINABILITY-STRUCTURE
+    - finding_id: SEM-8b4bd68ce3d0f96fb23f9252
+      criterion_id: FUNCTION-FEAT-DECOMPOSITION
       severity: Minor
       conclusion: PARTIALLY_SUPPORTED
-      message: 主体结构可读，但大量重复证据和非标准用户故事增加同步维护成本。
-      recommendation: 将稳定事实集中到单一设计章节或证据表，其他章节用ID引用，并按三行结构统一用户故事。
-      evidence_ids: [EV-01-01-01-SPEC, EV-01-01-01-DESIGN, EV-01-01-01-STATIC]
-
-  - criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
-    dimension_id: maintainability
+      message: 单个Feat聚合了多个可独立验收和演进的构建子域，功能拆分颗粒度偏粗。
+      recommendation: 按平台发现与公共配置、主库及接口产物、前端生成、测试入口、ArkUI-X打包等稳定验收边界拆分Feat，并在Function Design中说明子域依赖关系。
+      evidence_ids:
+      - EV-01-01-01-REGISTRY-FEATURE
+      - EV-01-01-01-SPEC
+      - EV-01-01-01-DESIGN
+      - EV-01-01-01-ACE-CONFIG
+      - EV-01-01-01-BUILD-MAIN
+      - EV-01-01-01-CORE-BUILD
+      - EV-01-01-01-NATIVE-BUILD
+      - EV-01-01-01-ANDROID-BUILD
+      - EV-01-01-01-IOS-BUILD
+  - criterion_id: FUNCTION-FEAT-BOUNDARY
+    dimension_id: function_modeling
     applicability: APPLICABLE
-    conclusion: PARTIALLY_SUPPORTED
-    reason: >-
-      Design列出六项存量架构和兼容性风险并给出处理方向，但Owner统一为ArkUI SIG，没有状态、责任人、
-      关闭条件、目标时间和验证证据；本次识别的关联仓revision漂移、独立NDK和验证缺口也尚未进入风险表。
-    claim_ids: [RISK-PLATFORM, RISK-GENERATION, RISK-BUNDLE, RISK-ARKUIX]
-    evidence: [*ev_design, *ev_android, *ev_ios]
-    findings:
-    - finding_id: SEM-000000000000000000000011
-      criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
-      severity: Minor
-      conclusion: PARTIALLY_SUPPORTED
-      message: 风险已识别但缺少个人Owner、状态、关闭条件和验证证据，新增风险也未纳入。
-      recommendation: 为每项风险填写责任人、处置状态、关闭标准和验证链接，并加入关联仓冻结、NDK演进和验证覆盖风险。
-      evidence_ids: [EV-01-01-01-DESIGN, EV-01-01-01-ANDROID-BUILD, EV-01-01-01-IOS-BUILD]
-
+    conclusion: SUPPORTED
+    reason: 现有Feat之间职责归属、输入输出和依赖关系可辨识，未发现多个Feat重复拥有同一能力或给出冲突行为；共享底层机制保持为合理依赖。
+    claim_ids:
+    - FUNCTION-FEAT-BOUNDARY
+    - FUNCTION-01-01-01
+    evidence:
+    - evidence_id: EV-01-01-01-REGISTRY-FEATURE
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 1
+      line_end: 6
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9a81e2cff4a6a9810fc28c1841f5eb70748a23117a569cc8a69c78c30453fdfe
+      description: Feat-01 BUILD.gn结构的Spec路径和Baselined状态注册。
+    - evidence_id: EV-01-01-01-SPEC
+      type: spec_location
+      path: specs/01-architecture/01-architecture-design/01-build-system/Feat-01-build-gn-structure-spec.md
+      line_start: 1
+      line_end: 348
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:cf1746ec15af6bd00b6a34388ad56ff2fb1014788eaf2563b1a798104352de09
+      description: Feat-01全文，包含AC、规则、VM、兼容性、多设备声明和源码引用。
+    - evidence_id: EV-01-01-01-DESIGN
+      type: design_location
+      path: specs/01-architecture/01-architecture-design/01-build-system/design.md
+      line_start: 1
+      line_end: 403
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:ad53910d2e6bbecdc8b6bd1827be56c38fc6148752a1dfa5c256713cbac6f4d5
+      description: Function级Design全文，包含架构链、ADR、构建影响、验证方案和风险表。
+    - evidence_id: EV-01-01-01-ACE-CONFIG
+      type: source_citation
+      path: ace_config.gni
+      line_start: 192
+      line_end: 373
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:daabd5d5f75b692f01a1c91d7cde6084ea8eafe9b91b64089917d4ab8eaa7c16
+      description: part/subsystem实际定义和adapter扫描、平台过滤、current_platform选择实现。
+    findings: []
   coverage:
     expected_criteria: 20
     evaluated_criteria: 20
@@ -557,24 +685,26 @@ semantic_result:
     - 静态报告21条Major Finding保持权威，语义评价未删除或降级静态问题。
     - Android证据固定到f18378dc2e07707d58a56ca48e3144e245785b98，iOS证据固定到1e68ba48e938b5ec6a63644a9f34c191888f4d1e。
     - 评价人已统一确认BUILD-01至BUILD-13的问题、Remediate处置和精确评分。
+    - Rubric v0.3新增的Function建模三个Criterion已完成证据核验，并按用户统一确认结论写入。
 scores:
   dimensions:
     correctness: 16.25
     spec_executability: 15.0
     design_quality: 12.5
     compatibility_system_impact: 2.5
-    maintainability: 5.0
-  raw_score: 51.25
-  published_score: 51.25
+    function_modeling: 9.0
+  raw_score: 55.25
+  published_score: 55.25
   confidence: 1.0
   admission: NOT_READY
 confirmation:
   confirmed_by: sunfei2021
-  confirmed_at: '2026-08-06T11:22:01+08:00'
+  confirmed_at: '2026-08-07T15:44:25+08:00'
   conclusion: accepted
   notes:
   - 确认BUILD-01至BUILD-13全部问题及Remediate建议。
-  - 用户确认20项Criterion结论；评价器按既定扣分规则计算精确分数51.25，准入结论为NOT_READY。
+  - 用户确认20项Criterion结论；Rubric v0.3原始分及发布分为55.25，准入结论为NOT_READY。
+  - 用户于2026-08-07统一确认Function建模维度新增的全部Finding及推荐结论。
 notes:
 - 本Review只记录评价结论，不修改Spec、Design、KB或产品源码。
 - 后续提升应优先修复事实错误和证据基线，再补齐构建部署及可执行验证设计。

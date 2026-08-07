@@ -7,12 +7,12 @@ source_revision: d91b4e4990a990da2bfe809514e573e35852193e
 status: confirmed
 evaluator:
   evaluator_id: sunfei2021
-  evaluated_at: '2026-08-06T16:27:24+08:00'
+  evaluated_at: '2026-08-07T15:44:25+08:00'
 semantic_result:
   schema_version: 1
-  rubric_version: 0.2.0
+  rubric_version: 0.3.0
   complexity_rules_version: 0.2.0
-  evaluator_protocol_version: 0.2.0
+  evaluator_protocol_version: 0.3.0
   evaluator_version: human:sunfei2021
   func_id: 03-02-08
   source_revision: d91b4e4990a990da2bfe809514e573e35852193e
@@ -512,60 +512,132 @@ semantic_result:
     evidence: [*ev_spec, *ev_design, *ev_option, *ev_rosen]
     findings: []
 
-  - criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
-    dimension_id: maintainability
+  - criterion_id: FUNCTION-FEAT-COVERAGE
+    dimension_id: function_modeling
     applicability: APPLICABLE
-    conclusion: PARTIALLY_SUPPORTED
-    reason: >-
-      核心Option和Evaluator文件仍能定位，但静态报告包含11条路径歧义、2条引用不存在，Design有一条真实错误路径，SDK行号已经漂移；
-      29条Major Finding和41.67%的Evidence coverage表明证据尚不能稳定复现全部60个Claim。
-    claim_ids: [MOTION-01, MOTION-02]
-    evidence: [*ev_static, *ev_spec, *ev_design, *ev_sdk_dynamic, *ev_option, *ev_evaluator]
-    findings:
-    - finding_id: SEM-030208000000000000000017
-      criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
-      severity: Major
-      conclusion: PARTIALLY_SUPPORTED
-      message: 核心源码可定位，但大量basename、错误路径和漂移行号使证据稳定性不足。
-      recommendation: 全部改为仓内完整路径，行号仅作辅助，并优先引用稳定符号、接口签名和真实测试入口。
-      evidence_ids: [EV-03-02-08-STATIC, EV-03-02-08-SPEC, EV-03-02-08-DESIGN, EV-03-02-08-SDK-DYNAMIC, EV-03-02-08-SRC-OPTION, EV-03-02-08-SRC-EVALUATOR]
-
-  - criterion_id: MAINTAINABILITY-STRUCTURE
-    dimension_id: maintainability
+    conclusion: SUPPORTED
+    reason: Registry中的Feat集合与各Feat Spec、Function Design及冻结源码能够对应；当前可发现的主要功能入口、关键行为和生命周期均有Feat承载。已有Spec、API或Design完整性问题由其他Criterion评价，本项不重复扣分。
+    claim_ids:
+    - FUNCTION-FEAT-COVERAGE
+    - FUNCTION-03-02-08
+    evidence:
+    - evidence_id: EV-03-02-08-REGISTRY-FEATURE
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 1647
+      line_end: 1651
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9a81e2cff4a6a9810fc28c1841f5eb70748a23117a569cc8a69c78c30453fdfe
+      description: 单个Feat标题、Spec路径和Baselined状态注册。
+    - evidence_id: EV-03-02-08-SPEC
+      type: spec_location
+      path: specs/03-engine-framework/02-animation-capability/08-motion-path/Feat-01-motion-path-spec.md
+      line_start: 1
+      line_end: 325
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c83dae35dd7767da662670bf2940f87a8a82cdd2771544a830f160f728e6408d
+      description: Feat-01全文，包含公开API、Option、Evaluator、SharedTransition、规则、VM、NFR和全局影响声明。
+    - evidence_id: EV-03-02-08-DESIGN
+      type: design_location
+      path: specs/03-engine-framework/02-animation-capability/08-motion-path/design.md
+      line_start: 1
+      line_end: 379
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:0c90793b33b44d603579ef7e50775f5d589b47af216780c89a0cbc24d2650539
+      description: Function级Design全文，包含调用链、架构图、时序、算法、构建、验证和风险表。
+    - evidence_id: EV-03-02-08-SRC-OPTION
+      type: source_citation
+      path: frameworks/core/components/common/properties/motion_path_option.h
+      line_start: 24
+      line_end: 88
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:1fdade64a0042043c36fc66ae8ba309421f7ec43bef9e6e86f656f8c0e69eb6b
+      description: MotionPathOption四字段、默认值、IsValid和相等比较真实实现。
+    findings: []
+  - criterion_id: FUNCTION-FEAT-DECOMPOSITION
+    dimension_id: function_modeling
     applicability: APPLICABLE
-    conclusion: PARTIALLY_SUPPORTED
-    reason: >-
-      单Feat与Function级Design结构清晰，算法表和详细设计便于定位；但Spec和Design重复维护API行号、调用链和算法事实，
-      用户故事格式不合规、AC范围写法重复产生11条静态Finding，架构图、数据流和时序之间也出现同步漂移。
-    claim_ids: [MOTION-01, MOTION-02, MOTION-03]
-    evidence: [*ev_spec, *ev_design, *ev_static]
-    findings:
-    - finding_id: SEM-030208000000000000000018
-      criterion_id: MAINTAINABILITY-STRUCTURE
-      severity: Minor
-      conclusion: PARTIALLY_SUPPORTED
-      message: 文档结构可读，但重复事实、范围缩写和多图不同步增加后续维护漂移风险。
-      recommendation: 收敛单一接口与调用链真相源，展开追溯ID并让图表引用同一套两链模型。
-      evidence_ids: [EV-03-02-08-SPEC, EV-03-02-08-DESIGN, EV-03-02-08-STATIC]
-
-  - criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
-    dimension_id: maintainability
+    conclusion: SUPPORTED
+    reason: 现有Feat围绕稳定功能职责组织，能够形成独立描述、验收和演进单元；未发现因按文件碎片化拆分或无差别聚合而破坏主体验收边界。
+    claim_ids:
+    - FUNCTION-FEAT-DECOMPOSITION
+    - FUNCTION-03-02-08
+    evidence:
+    - evidence_id: EV-03-02-08-REGISTRY-FEATURE
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 1647
+      line_end: 1651
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9a81e2cff4a6a9810fc28c1841f5eb70748a23117a569cc8a69c78c30453fdfe
+      description: 单个Feat标题、Spec路径和Baselined状态注册。
+    - evidence_id: EV-03-02-08-SPEC
+      type: spec_location
+      path: specs/03-engine-framework/02-animation-capability/08-motion-path/Feat-01-motion-path-spec.md
+      line_start: 1
+      line_end: 325
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c83dae35dd7767da662670bf2940f87a8a82cdd2771544a830f160f728e6408d
+      description: Feat-01全文，包含公开API、Option、Evaluator、SharedTransition、规则、VM、NFR和全局影响声明。
+    - evidence_id: EV-03-02-08-DESIGN
+      type: design_location
+      path: specs/03-engine-framework/02-animation-capability/08-motion-path/design.md
+      line_start: 1
+      line_end: 379
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:0c90793b33b44d603579ef7e50775f5d589b47af216780c89a0cbc24d2650539
+      description: Function级Design全文，包含调用链、架构图、时序、算法、构建、验证和风险表。
+    - evidence_id: EV-03-02-08-SRC-OPTION
+      type: source_citation
+      path: frameworks/core/components/common/properties/motion_path_option.h
+      line_start: 24
+      line_end: 88
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:1fdade64a0042043c36fc66ae8ba309421f7ec43bef9e6e86f656f8c0e69eb6b
+      description: MotionPathOption四字段、默认值、IsValid和相等比较真实实现。
+    findings: []
+  - criterion_id: FUNCTION-FEAT-BOUNDARY
+    dimension_id: function_modeling
     applicability: APPLICABLE
-    conclusion: PARTIALLY_SUPPORTED
-    reason: >-
-      Design三项风险均有ArkUI SIG Owner并按用户确认记录为Accepted，但接受不代表认可“归一化逻辑在SDK层”等不准确前提；
-      风险表也遗漏Static/C API、graphic_2d外部责任、测试缺口、60fps和生命周期无证据等主要风险。
-    claim_ids: [MOTION-09, MOTION-10, MOTION-11]
-    evidence: [*ev_design, *ev_spec, *ev_sdk_static, *ev_native_type, *ev_test_capi]
-    findings:
-    - finding_id: SEM-030208000000000000000019
-      criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
-      severity: Minor
-      conclusion: PARTIALLY_SUPPORTED
-      message: 三项存量风险已有Owner并Accepted，但部分前提不准确且主要API、外部依赖、测试和NFR风险未登记。
-      recommendation: 保留Accepted处置，同时校正风险前提并新增Static/C API、graphic_2d、测试及NFR风险和关闭条件。
-      evidence_ids: [EV-03-02-08-DESIGN, EV-03-02-08-SPEC, EV-03-02-08-SDK-STATIC, EV-03-02-08-SRC-CAPI, EV-03-02-08-TEST-CAPI]
-
+    conclusion: SUPPORTED
+    reason: 现有Feat之间职责归属、输入输出和依赖关系可辨识，未发现多个Feat重复拥有同一能力或给出冲突行为；共享底层机制保持为合理依赖。
+    claim_ids:
+    - FUNCTION-FEAT-BOUNDARY
+    - FUNCTION-03-02-08
+    evidence:
+    - evidence_id: EV-03-02-08-REGISTRY-FEATURE
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 1647
+      line_end: 1651
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9a81e2cff4a6a9810fc28c1841f5eb70748a23117a569cc8a69c78c30453fdfe
+      description: 单个Feat标题、Spec路径和Baselined状态注册。
+    - evidence_id: EV-03-02-08-SPEC
+      type: spec_location
+      path: specs/03-engine-framework/02-animation-capability/08-motion-path/Feat-01-motion-path-spec.md
+      line_start: 1
+      line_end: 325
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c83dae35dd7767da662670bf2940f87a8a82cdd2771544a830f160f728e6408d
+      description: Feat-01全文，包含公开API、Option、Evaluator、SharedTransition、规则、VM、NFR和全局影响声明。
+    - evidence_id: EV-03-02-08-DESIGN
+      type: design_location
+      path: specs/03-engine-framework/02-animation-capability/08-motion-path/design.md
+      line_start: 1
+      line_end: 379
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:0c90793b33b44d603579ef7e50775f5d589b47af216780c89a0cbc24d2650539
+      description: Function级Design全文，包含调用链、架构图、时序、算法、构建、验证和风险表。
+    - evidence_id: EV-03-02-08-SRC-OPTION
+      type: source_citation
+      path: frameworks/core/components/common/properties/motion_path_option.h
+      line_start: 24
+      line_end: 88
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:1fdade64a0042043c36fc66ae8ba309421f7ec43bef9e6e86f656f8c0e69eb6b
+      description: MotionPathOption四字段、默认值、IsValid和相等比较真实实现。
+    findings: []
   coverage:
     expected_criteria: 20
     evaluated_criteria: 20
@@ -581,27 +653,29 @@ semantic_result:
     - 用户确认MOTION-01至MOTION-11、20项Criterion和发布分39.0。
     - 普通NG motionPath由RSPathAnimation处理；SharedTransition在ACE内使用MotionPathEvaluator，两条链必须独立建模。
     - Design中的三项存量风险统一记录为Accepted；接受处置不代表认可其中不准确的事实前提。
+    - Rubric v0.3新增的Function建模三个Criterion已完成证据核验，并按用户统一确认结论写入。
 scores:
   dimensions:
     correctness: 13.0
     spec_executability: 12.5
     design_quality: 8.0
     compatibility_system_impact: 6.5
-    maintainability: 5.0
-  raw_score: 45.0
+    function_modeling: 10.0
+  raw_score: 50.0
   published_score: 39.0
   confidence: 1.0
   admission: NOT_READY
 confirmation:
   confirmed_by: sunfei2021
-  confirmed_at: '2026-08-06T16:27:24+08:00'
+  confirmed_at: '2026-08-07T15:44:25+08:00'
   conclusion: accepted
   notes:
   - 用户确认MOTION-01至MOTION-11、三项存量风险Accepted及20项Criterion，无其他异议。
   - DESIGN-FEAT-RUNTIME-COVERAGE维持CONTRADICTED：普通RS直达链与SharedTransition ACE Evaluator链被错误串联。
   - 多设备仅指OHOS内部设备形态，手机、平板和折叠屏无差异，判定SUPPORTED。
-  - 原始分45.0；DESIGN-IMPLEMENTATION-PATH存在Critical冲突，按Rubric v0.2封顶后发布分39.0。
+  - 原始分50；DESIGN-IMPLEMENTATION-PATH存在Critical冲突，按Rubric v0.3封顶后发布分39。
   - 静态Gate为FAIL，准入结论为NOT_READY。
+  - 用户于2026-08-07统一确认Function建模维度新增的全部Finding及推荐结论。
 notes:
 - 本Review只记录评价结论，不修改Spec、Design、KB或产品源码。
 - 后续提升应先拆分普通RS链和SharedTransition Evaluator链，再补齐Static/C API、证据路径、构建测试和NFR闭环。

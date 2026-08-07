@@ -7,12 +7,12 @@ source_revision: d91b4e4990a990da2bfe809514e573e35852193e
 status: confirmed
 evaluator:
   evaluator_id: sunfei2021
-  evaluated_at: '2026-08-07T00:04:03+08:00'
+  evaluated_at: '2026-08-07T15:44:25+08:00'
 semantic_result:
   schema_version: 1
-  rubric_version: 0.2.0
+  rubric_version: 0.3.0
   complexity_rules_version: 0.2.0
-  evaluator_protocol_version: 0.2.0
+  evaluator_protocol_version: 0.3.0
   evaluator_version: human:sunfei2021
   func_id: 04-04-01
   source_revision: d91b4e4990a990da2bfe809514e573e35852193e
@@ -518,60 +518,180 @@ semantic_result:
     evidence: [*ev_feat1, *ev_feat2, *ev_feat3, *ev_design]
     findings: []
 
-  - criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
-    dimension_id: maintainability
+  - criterion_id: FUNCTION-FEAT-COVERAGE
+    dimension_id: function_modeling
     applicability: APPLICABLE
-    conclusion: PARTIALLY_SUPPORTED
-    reason: >-
-      关键实现和SDK文件能够定位，但静态报告包含85条REF-AMBIGUOUS、3条REF-NOT-FOUND和1条REF-LINE-RANGE，
-      大量文档使用basename和已漂移SDK行号；242条Major Finding及12.24%的Evidence coverage表明证据尚不能稳定复现全部Claim。
-    claim_ids: [TOUCH-09]
-    evidence: [*ev_static, *ev_feat1, *ev_feat2, *ev_feat3, *ev_design, *ev_sdk_dynamic, *ev_sdk_native]
-    findings:
-    - finding_id: SEM-040401000000000000000014
-      criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
-      severity: Major
-      conclusion: PARTIALLY_SUPPORTED
-      message: 大量basename、失效引用和漂移行号使证据在同名源码与SDK演进后难以稳定复现。
-      recommendation: 使用仓内完整路径和稳定符号作为主定位，行号仅作辅助，并在关联仓证据中记录明确revision。
-      evidence_ids: [EV-04-04-01-STATIC, EV-04-04-01-SPEC-FEAT-01, EV-04-04-01-SPEC-FEAT-02, EV-04-04-01-SPEC-FEAT-03, EV-04-04-01-DESIGN]
-
-  - criterion_id: MAINTAINABILITY-STRUCTURE
-    dimension_id: maintainability
+    conclusion: SUPPORTED
+    reason: Registry中的Feat集合与各Feat Spec、Function Design及冻结源码能够对应；当前可发现的主要功能入口、关键行为和生命周期均有Feat承载。已有Spec、API或Design完整性问题由其他Criterion评价，本项不重复扣分。
+    claim_ids:
+    - FUNCTION-FEAT-COVERAGE
+    - FUNCTION-04-04-01
+    evidence:
+    - evidence_id: EV-04-04-01-REGISTRY-FEATURE
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 422
+      line_end: 436
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9a81e2cff4a6a9810fc28c1841f5eb70748a23117a569cc8a69c78c30453fdfe
+      description: 三个Feat标题、Spec路径和Baselined状态注册。
+    - evidence_id: EV-04-04-01-SPEC-FEAT-01
+      type: spec_location
+      path: specs/04-common-capability/04-common-events/01-touch-events/Feat-01-touch-callback-propagation-spec.md
+      line_start: 1
+      line_end: 415
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:8e7f62e6425d7ec28a11159651d7026610ca05ae5c754d5d1afefe45aad84b54
+      description: Feat-01全文，包含onTouch注册、传播控制、鼠标转换、默认行为、Native注册、规则、VM和设备声明。
+    - evidence_id: EV-04-04-01-SPEC-FEAT-02
+      type: spec_location
+      path: specs/04-common-capability/04-common-events/01-touch-events/Feat-02-touch-event-multipoint-data-model-spec.md
+      line_start: 1
+      line_end: 408
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:37add955bd59b23b4414a56f8ababfe84c45287685aba4c4fd07ad92b59201c8
+      description: Feat-02全文，包含TouchType、元数据、多点列表、坐标系统、Native getter、规则和VM。
+    - evidence_id: EV-04-04-01-SPEC-FEAT-03
+      type: spec_location
+      path: specs/04-common-capability/04-common-events/01-touch-events/Feat-03-history-sampling-advanced-touch-info-spec.md
+      line_start: 1
+      line_end: 471
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7fb7a712cbd68717501f148c298e4cc123bc4aaa0dc4d13f401699546fdfbb0e
+      description: Feat-03全文，包含历史采样、pressure、姿态、Native高级getter、历史多点、兼容风险和VM。
+    - evidence_id: EV-04-04-01-DESIGN
+      type: design_location
+      path: specs/04-common-capability/04-common-events/01-touch-events/design.md
+      line_start: 1
+      line_end: 673
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4b3925e2725c48ca045d46fbf28dd3fd47863bff14f8ccbeffd21f38c2ca7588
+      description: Function级Design全文，包含仓模块、分层调用链、ADR、算法、测试设计、构建声明和19项风险。
+    - evidence_id: EV-04-04-01-SRC-TOUCH-ACTUATOR
+      type: source_citation
+      path: frameworks/core/components_ng/event/touch_event.cpp
+      line_start: 88
+      line_end: 359
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:eb789347db91ce5050fb528bc762c69b7df064a662df045bcb1ddbe45e040bb4
+      description: lastPoint选择、changedTouches/touches、完整history转换和节点内回调顺序实现。
+    findings: []
+  - criterion_id: FUNCTION-FEAT-DECOMPOSITION
+    dimension_id: function_modeling
     applicability: APPLICABLE
-    conclusion: PARTIALLY_SUPPORTED
-    reason: >-
-      三Feat和Function Design章节齐全，规则、VM、API矩阵、设备声明和详细设计便于人工定位；但142条范围ID、三处非标准表头以及
-      Spec与Design重复维护SDK行号、算法和当前偏差事实，已经产生AC边界冲突和重采样同步错误，结构维护成本较高。
-    claim_ids: [TOUCH-01, TOUCH-05, TOUCH-09]
-    evidence: [*ev_feat1, *ev_feat2, *ev_feat3, *ev_design, *ev_static]
-    findings:
-    - finding_id: SEM-040401000000000000000015
-      criterion_id: MAINTAINABILITY-STRUCTURE
-      severity: Minor
-      conclusion: PARTIALLY_SUPPORTED
-      message: 文档可读性较好，但范围缩写和多处重复事实源已造成边界与算法描述漂移。
-      recommendation: 展开原子ID，统一标准表头，并让Spec、ADR、算法和风险表引用同一套getter分类及两路径重采样模型。
-      evidence_ids: [EV-04-04-01-SPEC-FEAT-01, EV-04-04-01-SPEC-FEAT-02, EV-04-04-01-SPEC-FEAT-03, EV-04-04-01-DESIGN, EV-04-04-01-STATIC]
-
-  - criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
-    dimension_id: maintainability
+    conclusion: SUPPORTED
+    reason: 现有Feat围绕稳定功能职责组织，能够形成独立描述、验收和演进单元；未发现因按文件碎片化拆分或无差别聚合而破坏主体验收边界。
+    claim_ids:
+    - FUNCTION-FEAT-DECOMPOSITION
+    - FUNCTION-04-04-01
+    evidence:
+    - evidence_id: EV-04-04-01-REGISTRY-FEATURE
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 422
+      line_end: 436
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9a81e2cff4a6a9810fc28c1841f5eb70748a23117a569cc8a69c78c30453fdfe
+      description: 三个Feat标题、Spec路径和Baselined状态注册。
+    - evidence_id: EV-04-04-01-SPEC-FEAT-01
+      type: spec_location
+      path: specs/04-common-capability/04-common-events/01-touch-events/Feat-01-touch-callback-propagation-spec.md
+      line_start: 1
+      line_end: 415
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:8e7f62e6425d7ec28a11159651d7026610ca05ae5c754d5d1afefe45aad84b54
+      description: Feat-01全文，包含onTouch注册、传播控制、鼠标转换、默认行为、Native注册、规则、VM和设备声明。
+    - evidence_id: EV-04-04-01-SPEC-FEAT-02
+      type: spec_location
+      path: specs/04-common-capability/04-common-events/01-touch-events/Feat-02-touch-event-multipoint-data-model-spec.md
+      line_start: 1
+      line_end: 408
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:37add955bd59b23b4414a56f8ababfe84c45287685aba4c4fd07ad92b59201c8
+      description: Feat-02全文，包含TouchType、元数据、多点列表、坐标系统、Native getter、规则和VM。
+    - evidence_id: EV-04-04-01-SPEC-FEAT-03
+      type: spec_location
+      path: specs/04-common-capability/04-common-events/01-touch-events/Feat-03-history-sampling-advanced-touch-info-spec.md
+      line_start: 1
+      line_end: 471
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7fb7a712cbd68717501f148c298e4cc123bc4aaa0dc4d13f401699546fdfbb0e
+      description: Feat-03全文，包含历史采样、pressure、姿态、Native高级getter、历史多点、兼容风险和VM。
+    - evidence_id: EV-04-04-01-DESIGN
+      type: design_location
+      path: specs/04-common-capability/04-common-events/01-touch-events/design.md
+      line_start: 1
+      line_end: 673
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4b3925e2725c48ca045d46fbf28dd3fd47863bff14f8ccbeffd21f38c2ca7588
+      description: Function级Design全文，包含仓模块、分层调用链、ADR、算法、测试设计、构建声明和19项风险。
+    - evidence_id: EV-04-04-01-SRC-TOUCH-ACTUATOR
+      type: source_citation
+      path: frameworks/core/components_ng/event/touch_event.cpp
+      line_start: 88
+      line_end: 359
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:eb789347db91ce5050fb528bc762c69b7df064a662df045bcb1ddbe45e040bb4
+      description: lastPoint选择、changedTouches/touches、完整history转换和节点内回调顺序实现。
+    findings: []
+  - criterion_id: FUNCTION-FEAT-BOUNDARY
+    dimension_id: function_modeling
     applicability: APPLICABLE
-    conclusion: PARTIALLY_SUPPORTED
-    reason: >-
-      Design列出19项风险并提供ArkUI SIG Owner，用户确认全部存量风险按Accepted处置，且TOUCH-01至TOUCH-04允许当前行为固化；
-      但风险表缺少状态字段、关闭条件、目标版本、验证证据和到具体AC或实现问题的责任闭环，接受处置也不代表消除SDK兼容偏差。
-    claim_ids: [TOUCH-01, TOUCH-02, TOUCH-03, TOUCH-04, TOUCH-08]
-    evidence: [*ev_design, *ev_feat3, *ev_sdk_dynamic, *ev_sdk_native, *ev_test_pressure, *ev_test_area]
-    findings:
-    - finding_id: SEM-040401000000000000000016
-      criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
-      severity: Minor
-      conclusion: PARTIALLY_SUPPORTED
-      message: 风险已有Owner并Accepted，但没有状态、关闭条件、目标版本和验证证据，无法判断后续是否真正闭环。
-      recommendation: 为每项风险补充Accepted状态、适用版本、影响入口、关闭或长期接受条件、验证证据和复审触发条件。
-      evidence_ids: [EV-04-04-01-DESIGN, EV-04-04-01-SPEC-FEAT-03, EV-04-04-01-SDK-DYNAMIC, EV-04-04-01-SDK-NATIVE, EV-04-04-01-TEST-PRESSURE, EV-04-04-01-TEST-AREA]
-
+    conclusion: SUPPORTED
+    reason: 现有Feat之间职责归属、输入输出和依赖关系可辨识，未发现多个Feat重复拥有同一能力或给出冲突行为；共享底层机制保持为合理依赖。
+    claim_ids:
+    - FUNCTION-FEAT-BOUNDARY
+    - FUNCTION-04-04-01
+    evidence:
+    - evidence_id: EV-04-04-01-REGISTRY-FEATURE
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 422
+      line_end: 436
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9a81e2cff4a6a9810fc28c1841f5eb70748a23117a569cc8a69c78c30453fdfe
+      description: 三个Feat标题、Spec路径和Baselined状态注册。
+    - evidence_id: EV-04-04-01-SPEC-FEAT-01
+      type: spec_location
+      path: specs/04-common-capability/04-common-events/01-touch-events/Feat-01-touch-callback-propagation-spec.md
+      line_start: 1
+      line_end: 415
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:8e7f62e6425d7ec28a11159651d7026610ca05ae5c754d5d1afefe45aad84b54
+      description: Feat-01全文，包含onTouch注册、传播控制、鼠标转换、默认行为、Native注册、规则、VM和设备声明。
+    - evidence_id: EV-04-04-01-SPEC-FEAT-02
+      type: spec_location
+      path: specs/04-common-capability/04-common-events/01-touch-events/Feat-02-touch-event-multipoint-data-model-spec.md
+      line_start: 1
+      line_end: 408
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:37add955bd59b23b4414a56f8ababfe84c45287685aba4c4fd07ad92b59201c8
+      description: Feat-02全文，包含TouchType、元数据、多点列表、坐标系统、Native getter、规则和VM。
+    - evidence_id: EV-04-04-01-SPEC-FEAT-03
+      type: spec_location
+      path: specs/04-common-capability/04-common-events/01-touch-events/Feat-03-history-sampling-advanced-touch-info-spec.md
+      line_start: 1
+      line_end: 471
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7fb7a712cbd68717501f148c298e4cc123bc4aaa0dc4d13f401699546fdfbb0e
+      description: Feat-03全文，包含历史采样、pressure、姿态、Native高级getter、历史多点、兼容风险和VM。
+    - evidence_id: EV-04-04-01-DESIGN
+      type: design_location
+      path: specs/04-common-capability/04-common-events/01-touch-events/design.md
+      line_start: 1
+      line_end: 673
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4b3925e2725c48ca045d46fbf28dd3fd47863bff14f8ccbeffd21f38c2ca7588
+      description: Function级Design全文，包含仓模块、分层调用链、ADR、算法、测试设计、构建声明和19项风险。
+    - evidence_id: EV-04-04-01-SRC-TOUCH-ACTUATOR
+      type: source_citation
+      path: frameworks/core/components_ng/event/touch_event.cpp
+      line_start: 88
+      line_end: 359
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:eb789347db91ce5050fb528bc762c69b7df064a662df045bcb1ddbe45e040bb4
+      description: lastPoint选择、changedTouches/touches、完整history转换和节点内回调顺序实现。
+    findings: []
   coverage:
     expected_criteria: 20
     evaluated_criteria: 20
@@ -588,28 +708,30 @@ semantic_result:
     - TOUCH-01要求修正AC-4.4，区分忽略pointerIndex的getter与真正ByIndex getter的越界行为。
     - TOUCH-05必须拆分GetResampleCoord常规路径和GetResamplePointerEvent加速路径，不能保留统一拒绝条件。
     - 多设备只评价OHOS内部设备形态，ArkUI-X和Preview不作为本轮扣分项。
+    - Rubric v0.3新增的Function建模三个Criterion已完成证据核验，并按用户统一确认结论写入。
 scores:
   dimensions:
     correctness: 10.0
     spec_executability: 15.0
     design_quality: 8.5
     compatibility_system_impact: 6.0
-    maintainability: 5.0
-  raw_score: 44.5
+    function_modeling: 10.0
+  raw_score: 49.5
   published_score: 39.0
   confidence: 1.0
   admission: NOT_READY
 confirmation:
   confirmed_by: sunfei2021
-  confirmed_at: '2026-08-07T00:04:03+08:00'
+  confirmed_at: '2026-08-07T15:44:25+08:00'
   conclusion: accepted
   notes:
   - 用户确认TOUCH-01当前getter行为可以固化，但AC-4.4不得与AC-4.1冲突，需按是否真正使用索引拆分错误规则。
   - 用户确认TOUCH-02历史多点共享坐标和面积退化、TOUCH-03非插值历史末项重复均允许固化为规格。
   - 用户确认TOUCH-04不同入口pressure输出允许固化，TOUCH-05按两套实际重采样算法分别描述。
   - 其余问题、20项Criterion和评分无异议；19项存量风险统一记录为Accepted。
-  - 原始分44.5；CORRECTNESS-SDK-CONTRACT和DESIGN-ALGORITHM-DATA-STATE存在Critical冲突，按Rubric v0.2封顶后发布分39.0。
+  - 原始分49.5；CORRECTNESS-SDK-CONTRACT和DESIGN-ALGORITHM-DATA-STATE存在Critical冲突，按Rubric v0.3封顶后发布分39。
   - 静态Gate为FAIL，准入结论为NOT_READY。
+  - 用户于2026-08-07统一确认Function建模维度新增的全部Finding及推荐结论。
 notes:
 - 本Review只记录评价结论，不修改Spec、Design、KB或产品源码。
 - 后续提升优先修正AC-4.4索引边界和两套重采样路径，再补齐构建产物、可执行测试、证据路径及风险关闭条件。

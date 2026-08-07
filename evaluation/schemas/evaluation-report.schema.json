@@ -26,9 +26,9 @@
         "aggregator_protocol_version"
       ],
       "properties": {
-        "rubric_version": { "type": "string", "const": "0.2.0" },
+        "rubric_version": { "type": "string", "const": "0.3.0" },
         "complexity_rules_version": { "type": "string", "const": "0.2.0" },
-        "evaluator_protocol_version": { "type": "string", "const": "0.2.0" },
+        "evaluator_protocol_version": { "type": "string", "const": "0.3.0" },
         "aggregator_protocol_version": { "type": "string", "const": "0.1.0" }
       },
       "additionalProperties": false

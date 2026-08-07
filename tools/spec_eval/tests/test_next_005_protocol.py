@@ -42,9 +42,9 @@ class Next005ProtocolTest(unittest.TestCase):
             "func_id": "05-01-01",
             "source_revision": "abc123",
             "protocol": {
-                "rubric_version": "0.2.0",
+                "rubric_version": "0.3.0",
                 "complexity_rules_version": "0.2.0",
-                "evaluator_protocol_version": "0.2.0",
+                "evaluator_protocol_version": "0.3.0",
                 "aggregator_protocol_version": "0.1.0",
             },
             "static": {
@@ -147,7 +147,7 @@ class Next005ProtocolTest(unittest.TestCase):
 
     def test_protocol_rejects_version_mismatch(self) -> None:
         invalid = copy.deepcopy(self.complexity)
-        invalid["rubric_version"] = "0.3.0"
+        invalid["rubric_version"] = "9.9.0"
         errors = validate_complexity_rules(invalid, self.rubric)
         self.assertTrue(any("rubric_version" in item for item in errors))
 
@@ -250,7 +250,7 @@ class Next005ProtocolTest(unittest.TestCase):
 
     def test_report_summary_and_versions_must_match_children(self) -> None:
         invalid = self.build_evaluation_report()
-        invalid["protocol"]["rubric_version"] = "0.3.0"
+        invalid["protocol"]["rubric_version"] = "9.9.0"
         invalid["summary"]["published_score"] = 99
         errors = validate_evaluation_report(invalid, self.rubric, self.complexity, self.schemas_root)
         self.assertTrue(any("rubric version mismatch" in item for item in errors))

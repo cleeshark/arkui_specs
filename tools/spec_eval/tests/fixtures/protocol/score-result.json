@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "rubric_version": "0.2.0",
+  "rubric_version": "0.3.0",
   "complexity_rules_version": "0.2.0",
   "aggregator_protocol_version": "0.1.0",
   "aggregator_version": "fixture-1.0.0",
@@ -65,16 +65,16 @@
       ]
     },
     {
-      "dimension_id": "maintainability",
+      "dimension_id": "function_modeling",
       "max_score": 10,
       "applicable_max_score": 10,
       "earned_score": 10,
       "score": 10,
       "verifiability": "VERIFIABLE",
       "criteria": [
-        {"criterion_id": "MAINTAINABILITY-EVIDENCE-STABILITY", "conclusion": "SUPPORTED", "applicable": true, "max_score": 4, "deduction": 0, "score": 4},
-        {"criterion_id": "MAINTAINABILITY-STRUCTURE", "conclusion": "SUPPORTED", "applicable": true, "max_score": 3, "deduction": 0, "score": 3},
-        {"criterion_id": "MAINTAINABILITY-RISK-OWNERSHIP", "conclusion": "SUPPORTED", "applicable": true, "max_score": 3, "deduction": 0, "score": 3}
+        {"criterion_id": "FUNCTION-FEAT-COVERAGE", "conclusion": "SUPPORTED", "applicable": true, "max_score": 4, "deduction": 0, "score": 4},
+        {"criterion_id": "FUNCTION-FEAT-DECOMPOSITION", "conclusion": "SUPPORTED", "applicable": true, "max_score": 3, "deduction": 0, "score": 3},
+        {"criterion_id": "FUNCTION-FEAT-BOUNDARY", "conclusion": "SUPPORTED", "applicable": true, "max_score": 3, "deduction": 0, "score": 3}
       ]
     }
   ],

@@ -515,7 +515,7 @@ python3 specs/tools/spec_eval/cli.py \
 `evaluation/rubric.yaml`中的Criterion不是新增静态Rule，也不计入本文开头的49条确定性规则：
 
 - 静态Rule以`REG-*`、`SPEC-STRUCT-*`、`TRACE-*`、`REF-*`等稳定ID产生机械Finding。
-- Rubric Criterion以`CORRECTNESS-*`、`SPEC-*`、`DESIGN-*`、`COMPATIBILITY-*`、`MAINTAINABILITY-*`稳定ID承载语义结论和扣分。
+- Rubric Criterion以`CORRECTNESS-*`、`SPEC-*`、`DESIGN-*`、`COMPATIBILITY-*`、`FUNCTION-FEAT-*`稳定ID承载语义结论和扣分。
 - `evaluator: hybrid`表示Criterion必须消费静态结果，但不能覆盖或删除静态Finding。
 - Critical/Major语义Finding必须引用带`source_revision`和`content_hash`的可复现证据。
 - `NOT_APPLICABLE`不是免检：必须同时满足`complexity_rules.yaml`中的允许条件、明确理由和证据。
@@ -528,7 +528,7 @@ PYTHONPATH=specs/tools python3 -m spec_eval.protocol_validator \
   --evaluation-root specs/evaluation
 ```
 
-Rubric v0.2禁止把文档长度、表格数、图数量、引用数量或已勾选自审项作为直接加分因素。
+Rubric v0.3禁止把文档长度、表格数、图数量、引用数量或已勾选自审项作为直接加分因素。
 
 ## 14. 静态规则校准基线
 

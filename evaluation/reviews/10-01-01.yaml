@@ -7,12 +7,12 @@ source_revision: d91b4e4990a990da2bfe809514e573e35852193e
 status: confirmed
 evaluator:
   evaluator_id: sunfei2021
-  evaluated_at: '2026-08-06T10:57:32+08:00'
+  evaluated_at: '2026-08-07T15:44:25+08:00'
 semantic_result:
   schema_version: 1
-  rubric_version: 0.2.0
+  rubric_version: 0.3.0
   complexity_rules_version: 0.2.0
-  evaluator_protocol_version: 0.2.0
+  evaluator_protocol_version: 0.3.0
   evaluator_version: human:sunfei2021
   func_id: 10-01-01
   source_revision: d91b4e4990a990da2bfe809514e573e35852193e
@@ -524,63 +524,156 @@ semantic_result:
       recommendation: 将ArcSlider和ArcButton分开声明，记录ArcButton各设备可运行及API 22以前编译告警行为。
       evidence_ids: [EV-10-01-01-SPEC-BUTTON, EV-10-01-01-DESIGN, EV-10-01-01-SDK-BUTTON]
 
-  - criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
-    dimension_id: maintainability
-    applicability: APPLICABLE
-    conclusion: PARTIALLY_SUPPORTED
-    reason: >-
-      文档多数证据可以通过仓内路径定位，但大量引用使用单文件名和易漂移行号，SDK关联仓revision未写入正式文档，
-      构建文件路径又写成不存在的arcslider/BUILD.gn和arcbutton/BUILD.gn；Review虽冻结revision，原文长期复现性仍不足。
-    claim_ids: [ARC-07, ARC-11]
-    evidence:
-    - *ev_spec_slider
-    - *ev_spec_button
-    - *ev_design
-    - *ev_slider_build
-    - *ev_button_sdk
-    findings:
-    - finding_id: SEM-3ec2c3993cae3b8caab0c36e
-      criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
-      severity: Major
-      conclusion: PARTIALLY_SUPPORTED
-      message: 脆弱行号、错误BUILD路径和缺少sdk-js revision降低了证据的稳定复现能力。
-      recommendation: 使用仓内完整路径与符号或target锚点，并在正式评价输入中冻结ace_engine、specs和sdk-js revision。
-      evidence_ids: [EV-10-01-01-SPEC-SLIDER, EV-10-01-01-SPEC-BUTTON, EV-10-01-01-DESIGN, EV-10-01-01-BUILD-SLIDER, EV-10-01-01-SDK-BUTTON]
-
-  - criterion_id: MAINTAINABILITY-STRUCTURE
-    dimension_id: maintainability
-    applicability: APPLICABLE
-    conclusion: PARTIALLY_SUPPORTED
-    reason: >-
-      两Feat和Function级Design结构便于导航，但15个用户故事未采用标准三段式，44个范围ID需要人工展开，
-      API版本、多设备、静态前端和行为细节又在Spec与Design重复维护，已经产生多处同步漂移。
-    claim_ids: [ARC-01, ARC-11]
-    evidence:
-    - *ev_static
-    - *ev_spec_slider
-    - *ev_spec_button
-    - *ev_design
-    findings:
-    - finding_id: SEM-0caa9689184a3f05b72eca0e
-      criterion_id: MAINTAINABILITY-STRUCTURE
-      severity: Minor
-      conclusion: PARTIALLY_SUPPORTED
-      message: 功能拆分清晰，但用户故事格式、范围ID和跨文档重复信息增加解析及同步维护成本。
-      recommendation: 统一三行用户故事和原子ID，把公共版本、设备和构建信息集中在Function级并保留Feat差异。
-      evidence_ids: [EV-10-01-01-STATIC, EV-10-01-01-SPEC-SLIDER, EV-10-01-01-SPEC-BUTTON, EV-10-01-01-DESIGN]
-
-  - criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
-    dimension_id: maintainability
+  - criterion_id: FUNCTION-FEAT-COVERAGE
+    dimension_id: function_modeling
     applicability: APPLICABLE
     conclusion: SUPPORTED
-    reason: >-
-      Design列出display异常回退、measure依赖、振动权限和sys.float资源四项适用存量风险，并包含类型、影响、处理方式和
-      ArkUI SIG Owner；用户已在本次单次确认中将四项记录为Accepted。静态前端风险按既定评价范围排除，不作为有效事实或扣分项。
-    claim_ids: [RISK-DISPLAY-FALLBACK, RISK-MEASURE-DEPENDENCY, RISK-VIBRATE-PERMISSION, RISK-SYS-FLOAT]
+    reason: Registry中的Feat集合与各Feat Spec、Function Design及冻结源码能够对应；当前可发现的主要功能入口、关键行为和生命周期均有Feat承载。已有Spec、API或Design完整性问题由其他Criterion评价，本项不重复扣分。
+    claim_ids:
+    - FUNCTION-FEAT-COVERAGE
+    - FUNCTION-10-01-01
     evidence:
-    - *ev_design
+    - evidence_id: EV-10-01-01-REGISTRY
+      type: registry_entry
+      path: specs/registry/functions.yaml
+      line_start: 3917
+      line_end: 3929
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7e4afd02833c5d35cf434267941b5dad7fbf433fcd0308262236e75fb580a535
+      description: 10-01-01弧形组件Function注册项、路径、Design和active状态。
+    - evidence_id: EV-10-01-01-SPEC-SLIDER
+      type: spec_location
+      path: specs/10-product-customization/01-wearable/01-arc-component/Feat-01-arc-slider-full-spec.md
+      line_start: 1
+      line_end: 355
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:f11c774d8f32bcfeacf04214a3e3150e6a0d7a7a68c41ad14555658ad35e797a
+      description: ArcSlider全量规格，包含AC、规则、验证映射、API版本、兼容性和NFR声明。
+    - evidence_id: EV-10-01-01-SPEC-BUTTON
+      type: spec_location
+      path: specs/10-product-customization/01-wearable/01-arc-component/Feat-02-arc-button-full-spec.md
+      line_start: 1
+      line_end: 395
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:bf59034efbbfebf8b07debf6f69fe801aa60d7f87c088d0be36124f29e4bca1e
+      description: ArcButton全量规格，包含AC、规则、验证映射、API版本、兼容性和NFR声明。
+    - evidence_id: EV-10-01-01-DESIGN
+      type: design_location
+      path: specs/10-product-customization/01-wearable/01-arc-component/design.md
+      line_start: 1
+      line_end: 593
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:3a6f5175453a234f1482deef5bfee9b3a1dcb24ea5d9ebb4aa7147bdc3e04323
+      description: Function共享Design，包含上下文、ADR、构建、运行设计、测试性设计和风险表。
+    - evidence_id: EV-10-01-01-SRC-SLIDER
+      type: source_citation
+      path: advanced_ui_component/arcslider/source/arcslider.ets
+      line_start: 113
+      line_end: 1157
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4d352665a7954e5acab932c1f655a9bb38840d972c742df96c5983cf57b908f3
+      description: ArcSlider选项、校验、绘制、动画、热区、触摸、表冠和振动的冻结实现。
     findings: []
-
+  - criterion_id: FUNCTION-FEAT-DECOMPOSITION
+    dimension_id: function_modeling
+    applicability: APPLICABLE
+    conclusion: SUPPORTED
+    reason: 现有Feat围绕稳定功能职责组织，能够形成独立描述、验收和演进单元；未发现因按文件碎片化拆分或无差别聚合而破坏主体验收边界。
+    claim_ids:
+    - FUNCTION-FEAT-DECOMPOSITION
+    - FUNCTION-10-01-01
+    evidence:
+    - evidence_id: EV-10-01-01-REGISTRY
+      type: registry_entry
+      path: specs/registry/functions.yaml
+      line_start: 3917
+      line_end: 3929
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7e4afd02833c5d35cf434267941b5dad7fbf433fcd0308262236e75fb580a535
+      description: 10-01-01弧形组件Function注册项、路径、Design和active状态。
+    - evidence_id: EV-10-01-01-SPEC-SLIDER
+      type: spec_location
+      path: specs/10-product-customization/01-wearable/01-arc-component/Feat-01-arc-slider-full-spec.md
+      line_start: 1
+      line_end: 355
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:f11c774d8f32bcfeacf04214a3e3150e6a0d7a7a68c41ad14555658ad35e797a
+      description: ArcSlider全量规格，包含AC、规则、验证映射、API版本、兼容性和NFR声明。
+    - evidence_id: EV-10-01-01-SPEC-BUTTON
+      type: spec_location
+      path: specs/10-product-customization/01-wearable/01-arc-component/Feat-02-arc-button-full-spec.md
+      line_start: 1
+      line_end: 395
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:bf59034efbbfebf8b07debf6f69fe801aa60d7f87c088d0be36124f29e4bca1e
+      description: ArcButton全量规格，包含AC、规则、验证映射、API版本、兼容性和NFR声明。
+    - evidence_id: EV-10-01-01-DESIGN
+      type: design_location
+      path: specs/10-product-customization/01-wearable/01-arc-component/design.md
+      line_start: 1
+      line_end: 593
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:3a6f5175453a234f1482deef5bfee9b3a1dcb24ea5d9ebb4aa7147bdc3e04323
+      description: Function共享Design，包含上下文、ADR、构建、运行设计、测试性设计和风险表。
+    - evidence_id: EV-10-01-01-SRC-SLIDER
+      type: source_citation
+      path: advanced_ui_component/arcslider/source/arcslider.ets
+      line_start: 113
+      line_end: 1157
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4d352665a7954e5acab932c1f655a9bb38840d972c742df96c5983cf57b908f3
+      description: ArcSlider选项、校验、绘制、动画、热区、触摸、表冠和振动的冻结实现。
+    findings: []
+  - criterion_id: FUNCTION-FEAT-BOUNDARY
+    dimension_id: function_modeling
+    applicability: APPLICABLE
+    conclusion: SUPPORTED
+    reason: 现有Feat之间职责归属、输入输出和依赖关系可辨识，未发现多个Feat重复拥有同一能力或给出冲突行为；共享底层机制保持为合理依赖。
+    claim_ids:
+    - FUNCTION-FEAT-BOUNDARY
+    - FUNCTION-10-01-01
+    evidence:
+    - evidence_id: EV-10-01-01-REGISTRY
+      type: registry_entry
+      path: specs/registry/functions.yaml
+      line_start: 3917
+      line_end: 3929
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7e4afd02833c5d35cf434267941b5dad7fbf433fcd0308262236e75fb580a535
+      description: 10-01-01弧形组件Function注册项、路径、Design和active状态。
+    - evidence_id: EV-10-01-01-SPEC-SLIDER
+      type: spec_location
+      path: specs/10-product-customization/01-wearable/01-arc-component/Feat-01-arc-slider-full-spec.md
+      line_start: 1
+      line_end: 355
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:f11c774d8f32bcfeacf04214a3e3150e6a0d7a7a68c41ad14555658ad35e797a
+      description: ArcSlider全量规格，包含AC、规则、验证映射、API版本、兼容性和NFR声明。
+    - evidence_id: EV-10-01-01-SPEC-BUTTON
+      type: spec_location
+      path: specs/10-product-customization/01-wearable/01-arc-component/Feat-02-arc-button-full-spec.md
+      line_start: 1
+      line_end: 395
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:bf59034efbbfebf8b07debf6f69fe801aa60d7f87c088d0be36124f29e4bca1e
+      description: ArcButton全量规格，包含AC、规则、验证映射、API版本、兼容性和NFR声明。
+    - evidence_id: EV-10-01-01-DESIGN
+      type: design_location
+      path: specs/10-product-customization/01-wearable/01-arc-component/design.md
+      line_start: 1
+      line_end: 593
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:3a6f5175453a234f1482deef5bfee9b3a1dcb24ea5d9ebb4aa7147bdc3e04323
+      description: Function共享Design，包含上下文、ADR、构建、运行设计、测试性设计和风险表。
+    - evidence_id: EV-10-01-01-SRC-SLIDER
+      type: source_citation
+      path: advanced_ui_component/arcslider/source/arcslider.ets
+      line_start: 113
+      line_end: 1157
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4d352665a7954e5acab932c1f655a9bb38840d972c742df96c5983cf57b908f3
+      description: ArcSlider选项、校验、绘制、动画、热区、触摸、表冠和振动的冻结实现。
+    findings: []
   coverage:
     expected_criteria: 20
     evaluated_criteria: 20
@@ -596,20 +689,21 @@ semantic_result:
     - 静态Gate保持FAIL，59项Major Finding未被语义评价删除或降级。
     - wearable static支持按用户既定范围排除，不因聚合源码现状扣分。
     - ArcSlider和ArcButton专用UT代码及target在ace_engine中未找到。
+    - Rubric v0.3新增的Function建模三个Criterion已完成证据核验，并按用户统一确认结论写入。
 scores:
   dimensions:
     correctness: 16.0
     spec_executability: 12.5
     design_quality: 11.0
     compatibility_system_impact: 3.5
-    maintainability: 6.5
-  raw_score: 49.5
-  published_score: 49.5
+    function_modeling: 10.0
+  raw_score: 53.0
+  published_score: 53.0
   confidence: 1.0
   admission: NOT_READY
 confirmation:
   confirmed_by: sunfei2021
-  confirmed_at: '2026-08-06T10:57:32+08:00'
+  confirmed_at: '2026-08-07T15:44:25+08:00'
   conclusion: accepted
   notes:
   - 用户统一确认ARC-01至ARC-12问题与20项Criterion推荐结论，无异议。
@@ -618,6 +712,7 @@ confirmation:
   - 静态扫描59项Major继续保持，语义评价不修改正式Spec、Design或产品源码。
   - SDK冻结revision为224c0c10fde3910a473455eac6841614a162ce39。
   - specs评价输入冻结revision为40ddf7e53da9da1e1dec8b3eb7e3ef26d8d6054e。
+  - 用户于2026-08-07统一确认Function建模维度新增的全部Finding及推荐结论。
 notes:
-- 弧形组件在Rubric v0.2下完成20个Criterion的单次确认评价。
+- 弧形组件在Rubric v0.3下完成20个Criterion的单次确认评价。
 - 主要提升项为API版本和边界修正、多设备声明、真实共享库加载链、ArcButton状态恢复设计及可执行验证资产。

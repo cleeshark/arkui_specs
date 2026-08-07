@@ -7,12 +7,12 @@ source_revision: d91b4e4990a990da2bfe809514e573e35852193e
 status: confirmed
 evaluator:
   evaluator_id: sunfei2021
-  evaluated_at: '2026-08-05T22:57:15+08:00'
+  evaluated_at: '2026-08-07T15:44:25+08:00'
 semantic_result:
   schema_version: 1
-  rubric_version: 0.2.0
+  rubric_version: 0.3.0
   complexity_rules_version: 0.2.0
-  evaluator_protocol_version: 0.2.0
+  evaluator_protocol_version: 0.3.0
   evaluator_version: human:sunfei2021
   func_id: 05-09-02
   source_revision: d91b4e4990a990da2bfe809514e573e35852193e
@@ -664,108 +664,196 @@ semantic_result:
       recommendation: 按设备形态与OHOS/Android/Preview平台分别列出适用入口、差异、证据和验证场景。
       evidence_ids: [EV-05-09-02-DEVICE-SPEC, EV-05-09-02-DEVICE-SOURCE]
 
-  - criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
-    dimension_id: maintainability
+  - criterion_id: FUNCTION-FEAT-COVERAGE
+    dimension_id: function_modeling
     applicability: APPLICABLE
-    conclusion: PARTIALLY_SUPPORTED
-    reason: >-
-      多数引用可定位，但静态报告仍有21处歧义路径、10处generated/site副本、1处不存在路径，且SDK静态文件名写成
-      rich_editor.static.d.ets而非richEditor.static.d.ets；文档本身也未记录关联仓冻结revision。
-    claim_ids: [RE-12, RE-13, REF-AMBIGUOUS-001, REF-DISALLOWED-SOURCE-001]
+    conclusion: SUPPORTED
+    reason: Registry中的Feat集合与各Feat Spec、Function Design及冻结源码能够对应；当前可发现的主要功能入口、关键行为和生命周期均有Feat承载。已有Spec、API或Design完整性问题由其他Criterion评价，本项不重复扣分。
+    claim_ids:
+    - FUNCTION-FEAT-COVERAGE
+    - FUNCTION-05-09-02
     evidence:
-    - evidence_id: EV-05-09-02-STABILITY-STATIC
-      type: static_finding
-      path: specs/.evaluator/d91b4e4990a990da2bfe809514e573e35852193e/05-09-02/report.md
-      line_start: 37
-      line_end: 196
+    - evidence_id: EV-05-09-02-FEATURE-REGISTRY-V03
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 717
+      line_end: 761
+      content_hash: sha256:9a81e2cff4a6a9810fc28c1841f5eb70748a23117a569cc8a69c78c30453fdfe
+      description: Registry登记RichEditor的九个Feat及其Spec路径。
       source_revision: d91b4e4990a990da2bfe809514e573e35852193e
-      content_hash: sha256:456dec424d5f37aa2f4fe52d6a2d0414bcc1b302b83f1a688fa5f9431005f6cb
-      description: 静态报告记录歧义路径、非权威副本和不存在路径。
-    - evidence_id: EV-05-09-02-STABILITY-DESIGN
-      type: source_citation
-      path: specs/05-ui-components/09-text-components/02-rich-editor/design.md
-      line_start: 131
-      line_end: 143
+    - evidence_id: EV-05-09-02-CROSS-SPEC-BACK
+      type: spec_location
+      path: specs/05-ui-components/09-text-components/02-rich-editor/Feat-05-visual-style-interaction-feedback-spec.md
+      line_start: 378
+      line_end: 405
       source_revision: d91b4e4990a990da2bfe809514e573e35852193e
-      content_hash: sha256:b1cd972de2349218cd48fbb6555d3fda484870885316696568a2fa18befbd601
-      description: Design的SDK表使用错误静态文件名且未冻结sdk-js revision。
-    findings:
-    - finding_id: SEM-9bc5e1285a88f09e624d0d93
-      criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
-      severity: Major
-      conclusion: PARTIALLY_SUPPORTED
-      message: 歧义短路径、生成副本、错误SDK文件名和缺少关联仓revision降低了证据复现稳定性。
-      recommendation: 使用仓内完整路径和权威源，修正SDK文件名，并记录ace_engine、sdk-js与sdk_c冻结revision。
-      evidence_ids: [EV-05-09-02-STABILITY-STATIC, EV-05-09-02-STABILITY-DESIGN]
-
-  - criterion_id: MAINTAINABILITY-STRUCTURE
-    dimension_id: maintainability
-    applicability: APPLICABLE
-    conclusion: PARTIALLY_SUPPORTED
-    reason: >-
-      九Feat拆分和章节导航清晰，但11个用户故事不符合三行结构、4个AC类型使用非标准“行为”、1个追溯表字段错误，
-      再加292处范围ID和大量重复模板内容，后续同步维护成本较高。
-    claim_ids: [RE-12, SPEC-STRUCT-USER-STORY-001, SPEC-STRUCT-AC-TYPE-001, SPEC-STRUCT-TABLE-FIELD-001]
-    evidence:
-    - evidence_id: EV-05-09-02-STRUCTURE-STATIC
-      type: static_finding
-      path: specs/.evaluator/d91b4e4990a990da2bfe809514e573e35852193e/05-09-02/report.md
-      line_start: 197
-      line_end: 276
+      content_hash: sha256:9568d7fdf3588588ae329b37b9663a9f5311b079f9a13d8b499bd4968872ce95
+      description: Spec明确声称stopBackPress仅Android平台生效。
+    - evidence_id: EV-05-09-02-AC-F9
+      type: spec_location
+      path: specs/05-ui-components/09-text-components/02-rich-editor/Feat-09-clipboard-data-detection-menu-spec.md
+      line_start: 137
+      line_end: 188
       source_revision: d91b4e4990a990da2bfe809514e573e35852193e
-      content_hash: sha256:456dec424d5f37aa2f4fe52d6a2d0414bcc1b302b83f1a688fa5f9431005f6cb
-      description: 报告记录AC类型、追溯表字段和用户故事结构问题。
-    - evidence_id: EV-05-09-02-STRUCTURE-SPEC
+      content_hash: sha256:4f347fb40d9f1be95df333373cde3120bd828b5bb462ba43794674f5b97409be
+      description: 追溯与验证表按AC范围聚合，并主要以代码审查作为验证方式。
+    - evidence_id: EV-05-09-02-TRACE-F3
       type: spec_location
       path: specs/05-ui-components/09-text-components/02-rich-editor/Feat-03-styled-string-mode-management-spec.md
-      line_start: 35
+      line_start: 83
       line_end: 116
       source_revision: d91b4e4990a990da2bfe809514e573e35852193e
       content_hash: sha256:d26b7104729df8b1bab9241cdc3786a973821bc01f8e30d17c607a91b4fda220
-      description: Feat-03集中呈现用户故事、AC类型和追溯表格式偏差。
-    findings:
-    - finding_id: SEM-13fe75ad9ce1997d5f46ffb2
-      criterion_id: MAINTAINABILITY-STRUCTURE
-      severity: Minor
-      conclusion: PARTIALLY_SUPPORTED
-      message: 功能拆分清晰，但模板字段不统一、范围写法和重复内容增加阅读及增量同步成本。
-      recommendation: 统一三行用户故事、AC类型和“AC编号”表头，展开范围ID并减少跨Feat重复模板内容。
-      evidence_ids: [EV-05-09-02-STRUCTURE-STATIC, EV-05-09-02-STRUCTURE-SPEC]
-
-  - criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
-    dimension_id: maintainability
-    applicability: APPLICABLE
-    conclusion: SUPPORTED
-    reason: >-
-      Design列出15项存量风险、类型、影响、处理方式和ArkUI SIG Owner。用户已在本次单次确认中将全部15项记录为
-      Accepted，风险与责任状态可追踪；具体自动化关闭能力已在验证方案Criterion中扣分。
-    claim_ids:
-    - Risk-01
-    - Risk-02
-    - Risk-03
-    - Risk-04
-    - Risk-05
-    - Risk-06
-    - Risk-07
-    - Risk-08
-    - Risk-09
-    - Risk-10
-    - Risk-11
-    - Risk-12
-    - Risk-13
-    - Risk-14
-    - Risk-15
-    evidence:
-    - evidence_id: EV-05-09-02-RISK-DESIGN
+      description: Feat-03追溯、规则和验证映射采用聚合范围写法且表字段不标准。
+    - evidence_id: EV-05-09-02-CROSS-DESIGN
       type: design_location
       path: specs/05-ui-components/09-text-components/02-rich-editor/design.md
-      line_start: 412
-      line_end: 430
+      line_start: 88
+      line_end: 99
       source_revision: d91b4e4990a990da2bfe809514e573e35852193e
       content_hash: sha256:b1cd972de2349218cd48fbb6555d3fda484870885316696568a2fa18befbd601
-      description: Design列出15项风险及其影响、处理方式和Owner。
+      description: ADR中包含horizontalScrolling、stopBackPress等设计结论。
+    - evidence_id: EV-05-09-02-SRC-HORIZONTAL
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/rich_editor/rich_editor_pattern.cpp
+      line_start: 10962
+      line_end: 10972
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:854ba0477e378c3aca5476e1814d9ae7d7f8a16d1e5bc7918e1a676f85643515
+      claim_id: RE-01
+      description: SetHorizontalScrolling更新状态、重置滚动条标志、标脏测量并清理段落缓存。
     findings: []
-
+  - criterion_id: FUNCTION-FEAT-DECOMPOSITION
+    dimension_id: function_modeling
+    applicability: APPLICABLE
+    conclusion: PARTIALLY_SUPPORTED
+    reason: Feat-09同时包含剪贴板、AI数据检测、选择菜单和编辑菜单定制；这些能力的依赖、状态及演进方向独立，当前颗粒度偏粗。Undo/Redo和拖拽等横切机制证据不足以判定职责冲突，本项不追加Boundary扣分。
+    claim_ids:
+    - FEAT-09
+    - FUNCTION-DECOMPOSITION-RICHEDITOR-CLIPBOARD-AI-MENU
+    evidence:
+    - evidence_id: EV-05-09-02-FEATURE-REGISTRY-V03
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 717
+      line_end: 761
+      content_hash: sha256:9a81e2cff4a6a9810fc28c1841f5eb70748a23117a569cc8a69c78c30453fdfe
+      description: Registry登记RichEditor的九个Feat及其Spec路径。
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+    - evidence_id: EV-05-09-02-FEAT-REGISTRY
+      type: registry_entry
+      path: specs/evaluation/golden/manifest.yaml
+      line_start: 1
+      line_end: 220
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:879e75b5e184284c7ccae4050589ed15b7f0b0bd06a1fc99152531c1af32981a
+      description: Pilot将05-09-02登记为九Feat的complex Function。
+    - evidence_id: EV-05-09-02-AC-F9
+      type: spec_location
+      path: specs/05-ui-components/09-text-components/02-rich-editor/Feat-09-clipboard-data-detection-menu-spec.md
+      line_start: 137
+      line_end: 188
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4f347fb40d9f1be95df333373cde3120bd828b5bb462ba43794674f5b97409be
+      description: 追溯与验证表按AC范围聚合，并主要以代码审查作为验证方式。
+    - evidence_id: EV-05-09-02-CROSS-DESIGN
+      type: design_location
+      path: specs/05-ui-components/09-text-components/02-rich-editor/design.md
+      line_start: 88
+      line_end: 99
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:b1cd972de2349218cd48fbb6555d3fda484870885316696568a2fa18befbd601
+      description: ADR中包含horizontalScrolling、stopBackPress等设计结论。
+    - evidence_id: EV-05-09-02-BOUNDARY-MENU-PARSE
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/rich_editor/bridge/arkts_native_rich_editor_bridge.cpp
+      line_start: 2456
+      line_end: 2476
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:83295973040329c69427b211068312ea9ffc49cd8a8e27ff3d9d0edeebf13216
+      description: 菜单参数解析失败立即调用reset，成功才下发三个解析后的回调。
+    - evidence_id: EV-05-09-02-SRC-MENU-RESET
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/rich_editor/bridge/rich_editor_dynamic_modifier.cpp
+      line_start: 788
+      line_end: 796
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:882832c4903a5d44650e4fcf50c79b1ef6f096f6d7eaaadcf9172c5a4be72395
+      claim_id: RE-03
+      description: reset以三个空回调重新设置SelectionMenuOptions，会覆盖已有配置。
+    findings:
+    - finding_id: SEM-e4f64a37a703ba0c99d8b00e
+      criterion_id: FUNCTION-FEAT-DECOMPOSITION
+      severity: Minor
+      conclusion: PARTIALLY_SUPPORTED
+      message: Feat-09聚合剪贴板、AI数据检测和两类菜单定制，多个独立能力缺少各自验收单元。
+      recommendation: 按剪贴板与粘贴策略、AI数据检测、选择菜单、编辑菜单定制等稳定能力拆分Feat，共享的选择状态和编辑上下文通过依赖关系表达。
+      evidence_ids:
+      - EV-05-09-02-FEATURE-REGISTRY-V03
+      - EV-05-09-02-FEAT-REGISTRY
+      - EV-05-09-02-AC-F9
+      - EV-05-09-02-CROSS-DESIGN
+      - EV-05-09-02-BOUNDARY-MENU-PARSE
+      - EV-05-09-02-SRC-MENU-RESET
+  - criterion_id: FUNCTION-FEAT-BOUNDARY
+    dimension_id: function_modeling
+    applicability: APPLICABLE
+    conclusion: SUPPORTED
+    reason: 现有Feat之间职责归属、输入输出和依赖关系可辨识，未发现多个Feat重复拥有同一能力或给出冲突行为；共享底层机制保持为合理依赖。
+    claim_ids:
+    - FUNCTION-FEAT-BOUNDARY
+    - FUNCTION-05-09-02
+    evidence:
+    - evidence_id: EV-05-09-02-FEATURE-REGISTRY-V03
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 717
+      line_end: 761
+      content_hash: sha256:9a81e2cff4a6a9810fc28c1841f5eb70748a23117a569cc8a69c78c30453fdfe
+      description: Registry登记RichEditor的九个Feat及其Spec路径。
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+    - evidence_id: EV-05-09-02-CROSS-SPEC-BACK
+      type: spec_location
+      path: specs/05-ui-components/09-text-components/02-rich-editor/Feat-05-visual-style-interaction-feedback-spec.md
+      line_start: 378
+      line_end: 405
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9568d7fdf3588588ae329b37b9663a9f5311b079f9a13d8b499bd4968872ce95
+      description: Spec明确声称stopBackPress仅Android平台生效。
+    - evidence_id: EV-05-09-02-AC-F9
+      type: spec_location
+      path: specs/05-ui-components/09-text-components/02-rich-editor/Feat-09-clipboard-data-detection-menu-spec.md
+      line_start: 137
+      line_end: 188
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4f347fb40d9f1be95df333373cde3120bd828b5bb462ba43794674f5b97409be
+      description: 追溯与验证表按AC范围聚合，并主要以代码审查作为验证方式。
+    - evidence_id: EV-05-09-02-TRACE-F3
+      type: spec_location
+      path: specs/05-ui-components/09-text-components/02-rich-editor/Feat-03-styled-string-mode-management-spec.md
+      line_start: 83
+      line_end: 116
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:d26b7104729df8b1bab9241cdc3786a973821bc01f8e30d17c607a91b4fda220
+      description: Feat-03追溯、规则和验证映射采用聚合范围写法且表字段不标准。
+    - evidence_id: EV-05-09-02-CROSS-DESIGN
+      type: design_location
+      path: specs/05-ui-components/09-text-components/02-rich-editor/design.md
+      line_start: 88
+      line_end: 99
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:b1cd972de2349218cd48fbb6555d3fda484870885316696568a2fa18befbd601
+      description: ADR中包含horizontalScrolling、stopBackPress等设计结论。
+    - evidence_id: EV-05-09-02-SRC-HORIZONTAL
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/rich_editor/rich_editor_pattern.cpp
+      line_start: 10962
+      line_end: 10972
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:854ba0477e378c3aca5476e1814d9ae7d7f8a16d1e5bc7918e1a676f85643515
+      claim_id: RE-01
+      description: SetHorizontalScrolling更新状态、重置滚动条标志、标脏测量并清理段落缓存。
+    findings: []
   coverage:
     expected_criteria: 20
     evaluated_criteria: 20
@@ -779,27 +867,29 @@ semantic_result:
     notes:
     - 已核验九个Feat、共享Design、冻结源码、sdk-js动态/静态契约、构建注册、NODE C API和Host测试入口。
     - 静态Gate保持FAIL，340条静态Finding继续权威生效，语义评价未删除或降级任何静态Finding。
+    - Rubric v0.3新增的Function建模三个Criterion已完成证据核验，并按用户统一确认结论写入。
 scores:
   dimensions:
     correctness: 16.0
     spec_executability: 12.5
     design_quality: 8.5
     compatibility_system_impact: 5.0
-    maintainability: 6.5
-  raw_score: 48.5
-  published_score: 48.5
+    function_modeling: 9.0
+  raw_score: 51.0
+  published_score: 51.0
   confidence: 1.0
   admission: NOT_READY
 confirmation:
   confirmed_by: sunfei2021
-  confirmed_at: '2026-08-05T22:57:15+08:00'
+  confirmed_at: '2026-08-07T15:44:25+08:00'
   conclusion: accepted
   notes:
   - 用户统一确认RE-01至RE-15问题与20项Criterion推荐结论，无异议。
-  - Design按Rubric v0.2评价，逐Feat运行设计和构建部署设计判定为MISSING。
+  - Design按Rubric v0.3评价，逐Feat运行设计和构建部署设计判定为MISSING。
   - Design中的15项存量风险全部记录为Accepted。
   - SDK冻结revision为224c0c10fde3910a473455eac6841614a162ce39。
   - 本次没有额外不记录项。
+  - 用户于2026-08-07统一确认Function建模维度新增的全部Finding及推荐结论。
 notes:
-- RichEditor在Rubric v0.2下完成20个Criterion的单次确认评价。
+- RichEditor在Rubric v0.3下完成20个Criterion的单次确认评价。
 - 主要提升方向为SDK契约校正、逐Feat运行设计、构建部署设计、可执行验证方案和原子追溯闭环。

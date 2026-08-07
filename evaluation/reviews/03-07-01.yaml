@@ -7,12 +7,12 @@ source_revision: d91b4e4990a990da2bfe809514e573e35852193e
 status: confirmed
 evaluator:
   evaluator_id: sunfei2021
-  evaluated_at: '2026-08-06T23:00:45+08:00'
+  evaluated_at: '2026-08-07T15:44:25+08:00'
 semantic_result:
   schema_version: 1
-  rubric_version: 0.2.0
+  rubric_version: 0.3.0
   complexity_rules_version: 0.2.0
-  evaluator_protocol_version: 0.2.0
+  evaluator_protocol_version: 0.3.0
   evaluator_version: human:sunfei2021
   func_id: 03-07-01
   source_revision: d91b4e4990a990da2bfe809514e573e35852193e
@@ -544,60 +544,276 @@ semantic_result:
       recommendation: 保持OHOS设备形态范围，补充窗口坐标、折叠变化和不同设备配置下的无差异验证记录。
       evidence_ids: [EV-03-07-01-SPEC-01, EV-03-07-01-SPEC-03, EV-03-07-01-SPEC-04, EV-03-07-01-DESIGN]
 
-  - criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
-    dimension_id: maintainability
+  - criterion_id: FUNCTION-FEAT-COVERAGE
+    dimension_id: function_modeling
     applicability: APPLICABLE
-    conclusion: CONTRADICTED
-    reason: >-
-      静态报告包含61条basename歧义、6条不存在路径及NDK API泛写问题，XComponent和Custom引用仍使用旧目录，
-      Design多处只写impl.h或单文件名；证据无法在冻结revision下稳定唯一复现。
-    claim_ids: [A11Y-09, A11Y-10]
-    evidence: [*ev_static, *ev_spec_06, *ev_design, *ev_ndk_header]
-    findings:
-    - finding_id: SEM-5cee3f2878353a9ba4313631
-      criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
-      severity: Major
-      conclusion: CONTRADICTED
-      message: 大量basename、旧路径和泛写API导致证据不可唯一解析或不可复现。
-      recommendation: 全部改用ace_engine仓内完整路径，修正迁移目录，删除无法定位的impl.h写法并展开NDK回调。
-      evidence_ids: [EV-03-07-01-STATIC, EV-03-07-01-SPEC-06, EV-03-07-01-DESIGN]
-
-  - criterion_id: MAINTAINABILITY-STRUCTURE
-    dimension_id: maintainability
+    conclusion: SUPPORTED
+    reason: Registry中的Feat集合与各Feat Spec、Function Design及冻结源码能够对应；当前可发现的主要功能入口、关键行为和生命周期均有Feat承载。已有Spec、API或Design完整性问题由其他Criterion评价，本项不重复扣分。
+    claim_ids:
+    - FUNCTION-FEAT-COVERAGE
+    - FUNCTION-03-07-01
+    evidence:
+    - evidence_id: EV-03-07-01-REGISTRY-FEATURE
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 67
+      line_end: 101
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:64e21a7c8cb5fefcf6ffd6e91240fc2bbf1527fb9b3c46c074998ba2e5557b61
+      description: 七个Feat的标题、Spec路径及Draft状态注册。
+    - evidence_id: EV-03-07-01-SPEC-01
+      type: spec_location
+      path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-01-accessibility-element-info-query-spec.md
+      line_start: 1
+      line_end: 304
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:40728fb9f5a01d80a39957d2c32e14d9491f6ac409456292901c69abf09e5fc9
+      description: Feat-01元素信息查询规格，包含查询、字段组装、level、NDK字段、AC和规则。
+    - evidence_id: EV-03-07-01-SPEC-02
+      type: spec_location
+      path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-02-accessibility-action-execution-spec.md
+      line_start: 1
+      line_end: 225
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:065c0ef5b431346dc9b3258d9a005425e63868c6cd91e99d8f712d5e16bde0f7
+      description: Feat-02动作执行规格，包含动作门控、直接处理、fallback和事件阻塞规则。
+    - evidence_id: EV-03-07-01-SPEC-03
+      type: spec_location
+      path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-03-accessibility-focus-move-spec.md
+      line_start: 1
+      line_end: 205
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:1578b2bff1405ab0e75175001c3ee861040e6008a3e980d768a1af9442c832fc
+      description: Feat-03焦点移动规格，包含方向、滚动祖先、ChildTree、虚拟节点和边界规则。
+    - evidence_id: EV-03-07-01-SPEC-04
+      type: spec_location
+      path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-04-accessibility-hover-exploration-spec.md
+      line_start: 1
+      line_end: 228
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:514b11aa18c013f4ab420ca800b8335f02f02555c85865d64fc0adcb14a0ba76
+      description: Feat-04悬停探测规格，包含命中、level策略、节流、状态和跨会话转发。
+    - evidence_id: EV-03-07-01-SPEC-05
+      type: spec_location
+      path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-05-accessibility-childtree-cross-process-spec.md
+      line_start: 1
+      line_end: 159
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:2b90b55ed7e2e281cd7818bc7ec196d3806d337ed61e35e37a0454e6e06dab50
+      description: Feat-05 ChildTree注册与跨进程接入规格，包含SessionAdapter、注册和去重。
+    - evidence_id: EV-03-07-01-SPEC-06
+      type: spec_location
+      path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-06-accessibility-native-provider-spec.md
+      line_start: 1
+      line_end: 179
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:92e5b6c113953ebcbb148aef3ab0d1a755699a1ef3d03829b640e23c09f4fc31
+      description: Feat-06 NDK Provider开放能力规格，包含两套回调结构、注册、查询、动作和事件边界。
+    - evidence_id: EV-03-07-01-SPEC-07
+      type: spec_location
+      path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-07-accessibility-event-notification-spec.md
+      line_start: 1
+      line_end: 235
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c37d6e2ca557c50bb3667b2ebae2814258a080452b6dfa7b647aafeb9936e5ed
+      description: Feat-07事件通知规格，包含属性触发、转换、门控、blocker和NDK异步上报。
+    - evidence_id: EV-03-07-01-DESIGN
+      type: design_location
+      path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/design.md
+      line_start: 1
+      line_end: 407
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:e34c177804201d99596bc73411d6b3ffc8cd17aaeb55374f528548c265196bdd
+      description: Function级Design全文，包含架构、七个Feat运行设计、构建、ADR、验证和风险表。
+    - evidence_id: EV-03-07-01-SRC-QUERY
+      type: source_citation
+      path: adapter/ohos/osal/js_accessibility_manager.cpp
+      line_start: 943
+      line_end: 1085
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4eb54703fec306eda84dfca531f197cec4ded81b8a9bbe583e17e8b0725c104f
+      description: 查询阶段level检查当前恒true及FrameNode子节点遍历的真实实现。
+    findings: []
+  - criterion_id: FUNCTION-FEAT-DECOMPOSITION
+    dimension_id: function_modeling
     applicability: APPLICABLE
-    conclusion: PARTIALLY_SUPPORTED
-    reason: >-
-      Function按七个Feat拆分且章节结构统一，便于增量维护；但大量重复自审信息、七份AC表头字段不符合AC编号标准、
-      追溯表字段不统一，并存在重复或互相矛盾的语义说明。
-    claim_ids: [A11Y-10, A11Y-11]
-    evidence: [*ev_spec_01, *ev_spec_02, *ev_spec_03, *ev_spec_04, *ev_spec_05, *ev_spec_06, *ev_spec_07, *ev_design, *ev_static]
-    findings:
-    - finding_id: SEM-d8891f7e2dafb1c9d094a594
-      criterion_id: MAINTAINABILITY-STRUCTURE
-      severity: Minor
-      conclusion: PARTIALLY_SUPPORTED
-      message: Feat拆分清晰，但表头不统一、重复内容和Design内部矛盾降低增量维护质量。
-      recommendation: 统一AC编号和追溯字段，去除重复自审文本，并消除Design内部相反结论。
-      evidence_ids: [EV-03-07-01-DESIGN, EV-03-07-01-STATIC]
-
-  - criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
-    dimension_id: maintainability
+    conclusion: SUPPORTED
+    reason: 现有Feat围绕稳定功能职责组织，能够形成独立描述、验收和演进单元；未发现因按文件碎片化拆分或无差别聚合而破坏主体验收边界。
+    claim_ids:
+    - FUNCTION-FEAT-DECOMPOSITION
+    - FUNCTION-03-07-01
+    evidence:
+    - evidence_id: EV-03-07-01-REGISTRY-FEATURE
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 67
+      line_end: 101
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:64e21a7c8cb5fefcf6ffd6e91240fc2bbf1527fb9b3c46c074998ba2e5557b61
+      description: 七个Feat的标题、Spec路径及Draft状态注册。
+    - evidence_id: EV-03-07-01-SPEC-01
+      type: spec_location
+      path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-01-accessibility-element-info-query-spec.md
+      line_start: 1
+      line_end: 304
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:40728fb9f5a01d80a39957d2c32e14d9491f6ac409456292901c69abf09e5fc9
+      description: Feat-01元素信息查询规格，包含查询、字段组装、level、NDK字段、AC和规则。
+    - evidence_id: EV-03-07-01-SPEC-02
+      type: spec_location
+      path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-02-accessibility-action-execution-spec.md
+      line_start: 1
+      line_end: 225
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:065c0ef5b431346dc9b3258d9a005425e63868c6cd91e99d8f712d5e16bde0f7
+      description: Feat-02动作执行规格，包含动作门控、直接处理、fallback和事件阻塞规则。
+    - evidence_id: EV-03-07-01-SPEC-03
+      type: spec_location
+      path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-03-accessibility-focus-move-spec.md
+      line_start: 1
+      line_end: 205
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:1578b2bff1405ab0e75175001c3ee861040e6008a3e980d768a1af9442c832fc
+      description: Feat-03焦点移动规格，包含方向、滚动祖先、ChildTree、虚拟节点和边界规则。
+    - evidence_id: EV-03-07-01-SPEC-04
+      type: spec_location
+      path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-04-accessibility-hover-exploration-spec.md
+      line_start: 1
+      line_end: 228
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:514b11aa18c013f4ab420ca800b8335f02f02555c85865d64fc0adcb14a0ba76
+      description: Feat-04悬停探测规格，包含命中、level策略、节流、状态和跨会话转发。
+    - evidence_id: EV-03-07-01-SPEC-05
+      type: spec_location
+      path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-05-accessibility-childtree-cross-process-spec.md
+      line_start: 1
+      line_end: 159
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:2b90b55ed7e2e281cd7818bc7ec196d3806d337ed61e35e37a0454e6e06dab50
+      description: Feat-05 ChildTree注册与跨进程接入规格，包含SessionAdapter、注册和去重。
+    - evidence_id: EV-03-07-01-SPEC-06
+      type: spec_location
+      path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-06-accessibility-native-provider-spec.md
+      line_start: 1
+      line_end: 179
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:92e5b6c113953ebcbb148aef3ab0d1a755699a1ef3d03829b640e23c09f4fc31
+      description: Feat-06 NDK Provider开放能力规格，包含两套回调结构、注册、查询、动作和事件边界。
+    - evidence_id: EV-03-07-01-SPEC-07
+      type: spec_location
+      path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-07-accessibility-event-notification-spec.md
+      line_start: 1
+      line_end: 235
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c37d6e2ca557c50bb3667b2ebae2814258a080452b6dfa7b647aafeb9936e5ed
+      description: Feat-07事件通知规格，包含属性触发、转换、门控、blocker和NDK异步上报。
+    - evidence_id: EV-03-07-01-DESIGN
+      type: design_location
+      path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/design.md
+      line_start: 1
+      line_end: 407
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:e34c177804201d99596bc73411d6b3ffc8cd17aaeb55374f528548c265196bdd
+      description: Function级Design全文，包含架构、七个Feat运行设计、构建、ADR、验证和风险表。
+    - evidence_id: EV-03-07-01-SRC-QUERY
+      type: source_citation
+      path: adapter/ohos/osal/js_accessibility_manager.cpp
+      line_start: 943
+      line_end: 1085
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4eb54703fec306eda84dfca531f197cec4ded81b8a9bbe583e17e8b0725c104f
+      description: 查询阶段level检查当前恒true及FrameNode子节点遍历的真实实现。
+    findings: []
+  - criterion_id: FUNCTION-FEAT-BOUNDARY
+    dimension_id: function_modeling
     applicability: APPLICABLE
-    conclusion: PARTIALLY_SUPPORTED
-    reason: >-
-      Design记录22项存量风险并统一给出无障碍SIG Owner，本次确认按既定流程将这些存量风险记录为Accepted；但风险表缺少状态、
-      关闭条件、截止版本和验证证据，也未登记本轮发现的查询、事件、回调和构建依赖事实冲突。
-    claim_ids: [A11Y-13]
-    evidence: [*ev_design, *ev_static, *ev_query, *ev_action, *ev_property_event, *ev_ndk_event, *ev_build_osal]
-    findings:
-    - finding_id: SEM-0f9428b66dbb5e48e711f6b3
-      criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
-      severity: Minor
-      conclusion: PARTIALLY_SUPPORTED
-      message: 22项风险有Owner并Accepted，但没有状态闭环字段，且遗漏本轮确认的核心事实风险。
-      recommendation: 保留Accepted处置，同时补充状态、关闭条件、版本和验证证据，并登记新增事实冲突；Accepted不代表认可错误前提。
-      evidence_ids: [EV-03-07-01-DESIGN, EV-03-07-01-SRC-QUERY, EV-03-07-01-SRC-ACTION, EV-03-07-01-SRC-PROPERTY-EVENT, EV-03-07-01-SRC-NDK-EVENT, EV-03-07-01-BUILD-OSAL]
-
+    conclusion: SUPPORTED
+    reason: 现有Feat之间职责归属、输入输出和依赖关系可辨识，未发现多个Feat重复拥有同一能力或给出冲突行为；共享底层机制保持为合理依赖。
+    claim_ids:
+    - FUNCTION-FEAT-BOUNDARY
+    - FUNCTION-03-07-01
+    evidence:
+    - evidence_id: EV-03-07-01-REGISTRY-FEATURE
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 67
+      line_end: 101
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:64e21a7c8cb5fefcf6ffd6e91240fc2bbf1527fb9b3c46c074998ba2e5557b61
+      description: 七个Feat的标题、Spec路径及Draft状态注册。
+    - evidence_id: EV-03-07-01-SPEC-01
+      type: spec_location
+      path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-01-accessibility-element-info-query-spec.md
+      line_start: 1
+      line_end: 304
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:40728fb9f5a01d80a39957d2c32e14d9491f6ac409456292901c69abf09e5fc9
+      description: Feat-01元素信息查询规格，包含查询、字段组装、level、NDK字段、AC和规则。
+    - evidence_id: EV-03-07-01-SPEC-02
+      type: spec_location
+      path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-02-accessibility-action-execution-spec.md
+      line_start: 1
+      line_end: 225
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:065c0ef5b431346dc9b3258d9a005425e63868c6cd91e99d8f712d5e16bde0f7
+      description: Feat-02动作执行规格，包含动作门控、直接处理、fallback和事件阻塞规则。
+    - evidence_id: EV-03-07-01-SPEC-03
+      type: spec_location
+      path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-03-accessibility-focus-move-spec.md
+      line_start: 1
+      line_end: 205
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:1578b2bff1405ab0e75175001c3ee861040e6008a3e980d768a1af9442c832fc
+      description: Feat-03焦点移动规格，包含方向、滚动祖先、ChildTree、虚拟节点和边界规则。
+    - evidence_id: EV-03-07-01-SPEC-04
+      type: spec_location
+      path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-04-accessibility-hover-exploration-spec.md
+      line_start: 1
+      line_end: 228
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:514b11aa18c013f4ab420ca800b8335f02f02555c85865d64fc0adcb14a0ba76
+      description: Feat-04悬停探测规格，包含命中、level策略、节流、状态和跨会话转发。
+    - evidence_id: EV-03-07-01-SPEC-05
+      type: spec_location
+      path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-05-accessibility-childtree-cross-process-spec.md
+      line_start: 1
+      line_end: 159
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:2b90b55ed7e2e281cd7818bc7ec196d3806d337ed61e35e37a0454e6e06dab50
+      description: Feat-05 ChildTree注册与跨进程接入规格，包含SessionAdapter、注册和去重。
+    - evidence_id: EV-03-07-01-SPEC-06
+      type: spec_location
+      path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-06-accessibility-native-provider-spec.md
+      line_start: 1
+      line_end: 179
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:92e5b6c113953ebcbb148aef3ab0d1a755699a1ef3d03829b640e23c09f4fc31
+      description: Feat-06 NDK Provider开放能力规格，包含两套回调结构、注册、查询、动作和事件边界。
+    - evidence_id: EV-03-07-01-SPEC-07
+      type: spec_location
+      path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-07-accessibility-event-notification-spec.md
+      line_start: 1
+      line_end: 235
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c37d6e2ca557c50bb3667b2ebae2814258a080452b6dfa7b647aafeb9936e5ed
+      description: Feat-07事件通知规格，包含属性触发、转换、门控、blocker和NDK异步上报。
+    - evidence_id: EV-03-07-01-DESIGN
+      type: design_location
+      path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/design.md
+      line_start: 1
+      line_end: 407
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:e34c177804201d99596bc73411d6b3ffc8cd17aaeb55374f528548c265196bdd
+      description: Function级Design全文，包含架构、七个Feat运行设计、构建、ADR、验证和风险表。
+    - evidence_id: EV-03-07-01-SRC-QUERY
+      type: source_citation
+      path: adapter/ohos/osal/js_accessibility_manager.cpp
+      line_start: 943
+      line_end: 1085
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4eb54703fec306eda84dfca531f197cec4ded81b8a9bbe583e17e8b0725c104f
+      description: 查询阶段level检查当前恒true及FrameNode子节点遍历的真实实现。
+    findings: []
   coverage:
     expected_criteria: 20
     evaluated_criteria: 20
@@ -613,28 +829,30 @@ semantic_result:
     - 用户确认A11Y-01至A11Y-07、A11Y-09至A11Y-13及20项Criterion；A11Y-08按范围澄清撤销。
     - NDK开放能力属于本Function评价范围，sdk-js只作为无障碍服务调用链上下文，不作为关键API核验对象。
     - Design中的22项存量风险统一记录为Accepted；接受处置不代表认可其中不准确的事实前提。
+    - Rubric v0.3新增的Function建模三个Criterion已完成证据核验，并按用户统一确认结论写入。
 scores:
   dimensions:
     correctness: 3.0
     spec_executability: 12.0
     design_quality: 4.5
     compatibility_system_impact: 3.5
-    maintainability: 3.0
-  raw_score: 26.0
-  published_score: 26.0
+    function_modeling: 10.0
+  raw_score: 33.0
+  published_score: 33.0
   confidence: 1.0
   admission: NOT_READY
 confirmation:
   confirmed_by: sunfei2021
-  confirmed_at: '2026-08-06T23:00:45+08:00'
+  confirmed_at: '2026-08-07T15:44:25+08:00'
   conclusion: accepted
   notes:
   - 用户确认除A11Y-08外的全部问题、22项存量风险Accepted及20项Criterion，无其他异议。
   - A11Y-08撤销：sdk-js只作为调用链上下文，不将仓检出状态、JS API完整性或文件归属作为本Function关键核验项。
   - A11Y-09保留：NDK开放能力在范围内，...WithInstance写法必须展开两套结构和七个具体回调字段。
   - 多设备仅指OHOS手机、平板和折叠屏设备形态，不包含ArkUI-X多平台。
-  - 原始分26.0，Critical语义封顶为39但原始分已更低，因此发布分为26.0。
+  - Rubric v0.3原始分33，Critical语义封顶为39但原始分已更低，因此发布分为33。
   - 静态Gate为FAIL，准入结论为NOT_READY。
+  - 用户于2026-08-07统一确认Function建模维度新增的全部Finding及推荐结论。
 notes:
 - 本Review只记录评价结论，不修改Spec、Design、KB或产品源码。
 - 优先整改查询level语义、动作blocker、属性事件类型、NDK异步回调、编译依赖和证据路径，再补齐构建测试与风险闭环。

@@ -222,7 +222,7 @@ def build_evaluation_template(
             "schema_version": 1,
             "rubric_version": rubric["rubric_version"],
             "complexity_rules_version": complexity_rules["complexity_rules_version"],
-            "evaluator_protocol_version": "0.2.0",
+            "evaluator_protocol_version": "0.3.0",
             "evaluator_version": f"human:{evaluator_id}",
             "func_id": func_id,
             "source_revision": manifest["revisions"]["ace_engine"],

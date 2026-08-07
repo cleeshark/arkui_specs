@@ -7,12 +7,12 @@ source_revision: d91b4e4990a990da2bfe809514e573e35852193e
 status: confirmed
 evaluator:
   evaluator_id: sunfei2021
-  evaluated_at: '2026-08-05T23:33:35+08:00'
+  evaluated_at: '2026-08-07T15:44:25+08:00'
 semantic_result:
   schema_version: 1
-  rubric_version: 0.2.0
+  rubric_version: 0.3.0
   complexity_rules_version: 0.2.0
-  evaluator_protocol_version: 0.2.0
+  evaluator_protocol_version: 0.3.0
   evaluator_version: human:sunfei2021
   func_id: 07-02-02
   source_revision: d91b4e4990a990da2bfe809514e573e35852193e
@@ -499,61 +499,132 @@ semantic_result:
       recommendation: 新增多设备适配声明，逐项说明crossplatform、form、atomicservice适用性及无需差异处理的依据。
       evidence_ids: [EV-07-02-02-SDK, EV-07-02-02-SPEC, EV-07-02-02-STATIC]
 
-  - criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
-    dimension_id: maintainability
-    applicability: APPLICABLE
-    conclusion: PARTIALLY_SUPPORTED
-    reason: >-
-      文档大量使用单文件名和易漂移行号，Spec引用错误Design路径，Design引用不存在的BUILD.gn，
-      且SDK关联仓revision未写入正文；虽然Review冻结了ace_engine与sdk-js revision，
-      原文证据仍不具备稳定复现性。
-    claim_ids: [REF-NOT-FOUND-001, EVIDENCE-STABILITY]
-    evidence:
-    - *ev_static
-    - *ev_observed
-    - *ev_sdk
-    findings:
-    - finding_id: SEM-437ec73c0ff7a73ab20c3808
-      criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
-      severity: Major
-      conclusion: PARTIALLY_SUPPORTED
-      message: 错误路径、单文件名、脆弱行号和缺少关联仓revision降低了证据长期稳定性。
-      recommendation: 统一使用仓内完整路径与符号或测试名锚点，并在评价输入中冻结ace_engine和sdk-js revision。
-      evidence_ids: [EV-07-02-02-STATIC, EV-07-02-02-OBSERVED, EV-07-02-02-SDK]
-
-  - criterion_id: MAINTAINABILITY-STRUCTURE
-    dimension_id: maintainability
-    applicability: APPLICABLE
-    conclusion: PARTIALLY_SUPPORTED
-    reason: >-
-      单Feat结构和章节导航清晰，但静态扫描确认缺少五个必需H2章节、两个标准表格字段不匹配，
-      并存在范围ID；这些问题阻碍统一解析和跨Function横向比较。
-    claim_ids: [SPEC-STRUCT-H2-MISSING-001, SPEC-STRUCT-TABLE-FIELD-001, TRACE-RANGE-ID-001]
-    evidence:
-    - *ev_static
-    - *ev_spec
-    findings:
-    - finding_id: SEM-ee9add097d988624745c4129
-      criterion_id: MAINTAINABILITY-STRUCTURE
-      severity: Minor
-      conclusion: PARTIALLY_SUPPORTED
-      message: 文档可阅读，但模板章节、表头和ID格式未符合统一结构协议。
-      recommendation: 补齐五个必需章节，改用标准验收追溯和验证映射表头，并展开范围ID。
-      evidence_ids: [EV-07-02-02-STATIC, EV-07-02-02-SPEC]
-
-  - criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
-    dimension_id: maintainability
+  - criterion_id: FUNCTION-FEAT-COVERAGE
+    dimension_id: function_modeling
     applicability: APPLICABLE
     conclusion: SUPPORTED
-    reason: >-
-      Design列出Observed原型链变化、非Track属性UI误用和Track不支持深度观测三项风险，
-      均包含类型、影响、处理方式和ArkUI SIG Owner；用户已在本次单次确认中将三项存量风险
-      统一记录为Accepted。
-    claim_ids: [RISK-OBSERVED-PROTOTYPE, RISK-NON-TRACK-UI, RISK-NO-DEEP-OBSERVE]
+    reason: Registry中的Feat集合与各Feat Spec、Function Design及冻结源码能够对应；当前可发现的主要功能入口、关键行为和生命周期均有Feat承载。已有Spec、API或Design完整性问题由其他Criterion评价，本项不重复扣分。
+    claim_ids:
+    - FUNCTION-FEAT-COVERAGE
+    - FUNCTION-07-02-02
     evidence:
-    - *ev_design
+    - evidence_id: EV-07-02-02-FEATURE-REGISTRY-V03
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 1822
+      line_end: 1826
+      content_hash: sha256:9a81e2cff4a6a9810fc28c1841f5eb70748a23117a569cc8a69c78c30453fdfe
+      description: Registry登记V1数据对象内状态管理的Feat-01及其Spec路径。
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+    - evidence_id: EV-07-02-02-SPEC
+      type: spec_location
+      path: specs/07-frontend/02-state-management/02-v1-data-object-state/Feat-01-observed-track-spec.md
+      line_start: 1
+      line_end: 238
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:190442d41d83f51f729ee92e631424f69fa42747d68f6b71b41fef053f6f8c99
+      description: Feat-01规格全文，含错误Design链接、AC、规则、验证映射和兼容性声明。
+    - evidence_id: EV-07-02-02-DESIGN
+      type: design_location
+      path: specs/07-frontend/02-state-management/02-v1-data-object-state/design.md
+      line_start: 1
+      line_end: 200
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:90b06ed80190a793537e0525511e9e986874ae545984122db1c47ace1219207a
+      description: Function级Design，包括API表、架构、构建、运行流程、验证入口和风险。
+    - evidence_id: EV-07-02-02-TRACKED
+      type: source_citation
+      path: frameworks/bridge/declarative_frontend/state_mgmt/src/lib/partial_update/pu_tracked_object.ts
+      line_start: 16
+      line_end: 88
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:15692dae3dfbf67f41c30288c966388ae3cc6cc1aa059c8ff6feb96cf85e2730
+      description: Track装饰器独立写入追踪标记；整对象优化具有对象类型、constructor和兼容模式前提，并区分fake Prop与fake ObjectLink通知。
     findings: []
-
+  - criterion_id: FUNCTION-FEAT-DECOMPOSITION
+    dimension_id: function_modeling
+    applicability: APPLICABLE
+    conclusion: SUPPORTED
+    reason: 现有Feat围绕稳定功能职责组织，能够形成独立描述、验收和演进单元；未发现因按文件碎片化拆分或无差别聚合而破坏主体验收边界。
+    claim_ids:
+    - FUNCTION-FEAT-DECOMPOSITION
+    - FUNCTION-07-02-02
+    evidence:
+    - evidence_id: EV-07-02-02-FEATURE-REGISTRY-V03
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 1822
+      line_end: 1826
+      content_hash: sha256:9a81e2cff4a6a9810fc28c1841f5eb70748a23117a569cc8a69c78c30453fdfe
+      description: Registry登记V1数据对象内状态管理的Feat-01及其Spec路径。
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+    - evidence_id: EV-07-02-02-SPEC
+      type: spec_location
+      path: specs/07-frontend/02-state-management/02-v1-data-object-state/Feat-01-observed-track-spec.md
+      line_start: 1
+      line_end: 238
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:190442d41d83f51f729ee92e631424f69fa42747d68f6b71b41fef053f6f8c99
+      description: Feat-01规格全文，含错误Design链接、AC、规则、验证映射和兼容性声明。
+    - evidence_id: EV-07-02-02-DESIGN
+      type: design_location
+      path: specs/07-frontend/02-state-management/02-v1-data-object-state/design.md
+      line_start: 1
+      line_end: 200
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:90b06ed80190a793537e0525511e9e986874ae545984122db1c47ace1219207a
+      description: Function级Design，包括API表、架构、构建、运行流程、验证入口和风险。
+    - evidence_id: EV-07-02-02-TRACKED
+      type: source_citation
+      path: frameworks/bridge/declarative_frontend/state_mgmt/src/lib/partial_update/pu_tracked_object.ts
+      line_start: 16
+      line_end: 88
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:15692dae3dfbf67f41c30288c966388ae3cc6cc1aa059c8ff6feb96cf85e2730
+      description: Track装饰器独立写入追踪标记；整对象优化具有对象类型、constructor和兼容模式前提，并区分fake Prop与fake ObjectLink通知。
+    findings: []
+  - criterion_id: FUNCTION-FEAT-BOUNDARY
+    dimension_id: function_modeling
+    applicability: APPLICABLE
+    conclusion: SUPPORTED
+    reason: 现有Feat之间职责归属、输入输出和依赖关系可辨识，未发现多个Feat重复拥有同一能力或给出冲突行为；共享底层机制保持为合理依赖。
+    claim_ids:
+    - FUNCTION-FEAT-BOUNDARY
+    - FUNCTION-07-02-02
+    evidence:
+    - evidence_id: EV-07-02-02-FEATURE-REGISTRY-V03
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 1822
+      line_end: 1826
+      content_hash: sha256:9a81e2cff4a6a9810fc28c1841f5eb70748a23117a569cc8a69c78c30453fdfe
+      description: Registry登记V1数据对象内状态管理的Feat-01及其Spec路径。
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+    - evidence_id: EV-07-02-02-SPEC
+      type: spec_location
+      path: specs/07-frontend/02-state-management/02-v1-data-object-state/Feat-01-observed-track-spec.md
+      line_start: 1
+      line_end: 238
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:190442d41d83f51f729ee92e631424f69fa42747d68f6b71b41fef053f6f8c99
+      description: Feat-01规格全文，含错误Design链接、AC、规则、验证映射和兼容性声明。
+    - evidence_id: EV-07-02-02-DESIGN
+      type: design_location
+      path: specs/07-frontend/02-state-management/02-v1-data-object-state/design.md
+      line_start: 1
+      line_end: 200
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:90b06ed80190a793537e0525511e9e986874ae545984122db1c47ace1219207a
+      description: Function级Design，包括API表、架构、构建、运行流程、验证入口和风险。
+    - evidence_id: EV-07-02-02-TRACKED
+      type: source_citation
+      path: frameworks/bridge/declarative_frontend/state_mgmt/src/lib/partial_update/pu_tracked_object.ts
+      line_start: 16
+      line_end: 88
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:15692dae3dfbf67f41c30288c966388ae3cc6cc1aa059c8ff6feb96cf85e2730
+      description: Track装饰器独立写入追踪标记；整对象优化具有对象类型、constructor和兼容模式前提，并区分fake Prop与fake ObjectLink通知。
+    findings: []
   coverage:
     expected_criteria: 20
     evaluated_criteria: 20
@@ -568,20 +639,21 @@ semantic_result:
     - 已核验单一Feat、Function Design、冻结源码、sdk-js契约、构建加载链和测试资产。
     - 静态Gate保持FAIL，10项Major Finding未被语义评价删除或降级。
     - 逐Feat运行设计评价为PARTIALLY_SUPPORTED，因为已有流程图和七步主流程。
+    - Rubric v0.3新增的Function建模三个Criterion已完成证据核验，并按用户统一确认结论写入。
 scores:
   dimensions:
     correctness: 16.0
     spec_executability: 12.5
     design_quality: 11.0
     compatibility_system_impact: 6.5
-    maintainability: 6.5
-  raw_score: 52.5
-  published_score: 52.5
+    function_modeling: 10.0
+  raw_score: 56.0
+  published_score: 56.0
   confidence: 1.0
   admission: NOT_READY
 confirmation:
   confirmed_by: sunfei2021
-  confirmed_at: '2026-08-05T23:33:35+08:00'
+  confirmed_at: '2026-08-07T15:44:25+08:00'
   conclusion: accepted
   notes:
   - 用户统一确认本轮列出的12组问题和20项Criterion推荐结论，无异议。
@@ -589,6 +661,7 @@ confirmation:
   - 静态扫描10项Major继续保持，语义评价不修改正式Spec、Design或产品源码。
   - SDK冻结revision为224c0c10fde3910a473455eac6841614a162ce39。
   - specs冻结revision为b512b9cd1e9926f8328df4aadf6bb926b0af553a。
+  - 用户于2026-08-07统一确认Function建模维度新增的全部Finding及推荐结论。
 notes:
-- 状态管理V1数据对象内状态管理在Rubric v0.2下完成单次确认评价。
+- 状态管理V1数据对象内状态管理在Rubric v0.3下完成单次确认评价。
 - 主要提升项为源码语义修正、端到端运行设计、真实构建链、可执行验证映射及静态结构修复。

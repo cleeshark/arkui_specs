@@ -7,12 +7,12 @@ source_revision: d91b4e4990a990da2bfe809514e573e35852193e
 status: confirmed
 evaluator:
   evaluator_id: sunfei2021
-  evaluated_at: '2026-08-05T21:49:51+08:00'
+  evaluated_at: '2026-08-07T15:44:25+08:00'
 semantic_result:
   schema_version: 1
-  rubric_version: 0.2.0
+  rubric_version: 0.3.0
   complexity_rules_version: 0.2.0
-  evaluator_protocol_version: 0.2.0
+  evaluator_protocol_version: 0.3.0
   evaluator_version: human:sunfei2021
   func_id: 05-01-02
   source_revision: d91b4e4990a990da2bfe809514e573e35852193e
@@ -1408,151 +1408,143 @@ semantic_result:
       content_hash: sha256:abd9c43f13ff978acbcfae35e40d5af8391859d61401ef430ba85e00ed7ff8a7
       description: 布局算法仅依据API版本、方向、线宽和通用布局约束计算，无手机、平板或折叠屏分支。
     findings: []
-  - criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
-    dimension_id: maintainability
-    applicability: APPLICABLE
-    conclusion: PARTIALLY_SUPPORTED
-    reason: >-
-      Spec的SDK输入路径和Design调用链表中的大部分仓内完整路径可在冻结输入下复现，
-      且divider_pattern.cpp:59-67当前仍能定位到DumpInfo。但Spec的AC证据仅写
-      divider_pattern_test、divider_layout_algorithm_test、divider_paint_method_test和js_divider_test，
-      无法定位到真实测试文件、测试目标或Suite.Case。Design的详细源码说明又使用
-      divider_modifier.cpp:40-49等单文件名，仓内同名文件导致静态检查报REF-AMBIGUOUS-001；
-      同时还引用了不存在的js_divider.cpp完整路径。部分证据仅依赖易漂移行号，未同时
-      提供函数或测试用例等稳定锚点，整体证据可复现性不完整。
-    claim_ids:
-    - EVIDENCE-SOURCE-PATH-STABILITY
-    - EVIDENCE-TEST-CASE-STABILITY
-    - EVIDENCE-SDK-PATH-STABILITY
-    evidence:
-    - evidence_id: EV-05-01-02-STABILITY-SPEC-TESTS
-      type: source_citation
-      path: specs/05-ui-components/01-layout-components/02-divider/Feat-01-divider-spec.md
-      line_start: 68
-      line_end: 84
-      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
-      content_hash: sha256:eb4a92f091fdd608980a6112100eb6eddbda5eeb3c5bdd80a1b3a37faadc5a0d
-      claim_id: EVIDENCE-TEST-CASE-STABILITY
-      description: AC证据仅使用泛化测试名称，没有完整路径、目标或具体用例锚点。
-    - evidence_id: EV-05-01-02-STABILITY-SOURCE
-      type: source_citation
-      path: frameworks/core/components_ng/pattern/divider/divider_modifier.cpp
-      line_start: 40
-      line_end: 48
-      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
-      content_hash: sha256:427eba96848d6bde50c98cb3f2c1a6526317781af3a1a78dba382b5d7aeb5977
-      claim_id: EVIDENCE-SOURCE-PATH-STABILITY
-      description: Design中的divider_modifier.cpp:40-49实际需要此仓内完整路径才能稳定定位到onDraw。
-    - evidence_id: EV-05-01-02-STABILITY-SDK
-      type: sdk_declaration
-      path: interface/sdk-js/api/@internal/component/ets/divider.d.ts
-      line_start: 21
-      line_end: 144
-      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
-      content_hash: sha256:75eb1d5e075696a943679d994bf6399fb709db9068bebce8788b225366e3b305
-      claim_id: EVIDENCE-SDK-PATH-STABILITY
-      description: Spec中的动态SDK输入路径可在冻结的sdk-js输入中定位，作为稳定证据的正向样例。
-    - evidence_id: EV-05-01-02-STABILITY-STATIC-AMBIGUOUS
-      type: static_finding
-      path: specs/.evaluator/d91b4e4990a990da2bfe809514e573e35852193e/05-01-02/report.md
-      line_start: 29
-      line_end: 37
-      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
-      content_hash: sha256:12a57c3524937cca8b6f7d979fa94dde5cd932b21706da380513734e82e6b03b
-      claim_id: EVIDENCE-SOURCE-PATH-STABILITY
-      description: 静态报告确认单文件名divider_modifier.cpp存在歧义，且js_divider.cpp完整路径已无法解析。
-    findings:
-    - finding_id: SEM-04e614581365899495367cab
-      criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
-      claim_id: EVIDENCE-SOURCE-PATH-STABILITY
-      severity: Major
-      conclusion: PARTIALLY_SUPPORTED
-      message: Spec的测试证据不能定位真实用例，Design同时存在单文件名歧义、失效路径和缺少符号锚点的行号引用，证据不能稳定复现。
-      recommendation: 统一使用“仓内完整路径+类/函数符号”和“测试目标+完整测试文件+Suite.Case”，行号仅作为辅助信息。
-      evidence_ids:
-      - EV-05-01-02-STABILITY-SPEC-TESTS
-      - EV-05-01-02-STABILITY-SOURCE
-      - EV-05-01-02-STABILITY-SDK
-      - EV-05-01-02-STABILITY-STATIC-AMBIGUOUS
-  - criterion_id: MAINTAINABILITY-STRUCTURE
-    dimension_id: maintainability
-    applicability: APPLICABLE
-    conclusion: PARTIALLY_SUPPORTED
-    reason: >-
-      Spec具有Delta、输入文档、用户故事、AC、规则、接口与兼容性等明确分区，Design也按
-      调用链、ADR、构建影响、详细设计和风险组织，章节层面的职责基本可辨识。但Design在
-      数据模型和详细设计中大量重复Spec的默认值、异常回退、API版本及行为规则，未优先通过
-      AC/R/ADR标识建立引用。这些重复已产生维护漂移：组件化后的Bridge路径未同步、默认
-      LineCap的属性值与最终绘制表现混用、动态/静态颜色重置语义以及静态API版本记录不一致。
-      整体结构可用，但重复信息控制仍需改进。
-    claim_ids:
-    - STRUCTURE-DELTA-SEPARATION
-    - STRUCTURE-SPEC-DESIGN-DUPLICATION
-    evidence:
-    - evidence_id: EV-05-01-02-STRUCTURE-SPEC
-      type: spec_location
-      path: specs/05-ui-components/01-layout-components/02-divider/Feat-01-divider-spec.md
-      line_start: 18
-      line_end: 33
-      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
-      content_hash: sha256:eb4a92f091fdd608980a6112100eb6eddbda5eeb3c5bdd80a1b3a37faadc5a0d
-      claim_id: STRUCTURE-DELTA-SEPARATION
-      description: Spec通过Delta和输入文档明确标识存量特性补录范围，结构基本清晰。
-    - evidence_id: EV-05-01-02-STRUCTURE-DESIGN-DETAIL
-      type: design_location
-      path: specs/05-ui-components/01-layout-components/02-divider/design.md
-      line_start: 192
-      line_end: 296
-      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
-      content_hash: sha256:4c53a876edf94c57d7933481c9b38c440ab83f1c9848e2f033a10a1057b3a2ee
-      claim_id: STRUCTURE-SPEC-DESIGN-DUPLICATION
-      description: Design数据模型和详细流程重复描述Spec已有的默认值、布局、绘制及颜色规则。
-    - evidence_id: EV-05-01-02-STRUCTURE-STATIC-DRIFT
-      type: static_finding
-      path: specs/.evaluator/d91b4e4990a990da2bfe809514e573e35852193e/05-01-02/report.md
-      line_start: 29
-      line_end: 37
-      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
-      content_hash: sha256:12a57c3524937cca8b6f7d979fa94dde5cd932b21706da380513734e82e6b03b
-      claim_id: STRUCTURE-SPEC-DESIGN-DUPLICATION
-      description: 静态报告中的歧义单文件名和失效js_divider.cpp路径是Design详细实现信息未及时同步的直接症状。
-    findings:
-    - finding_id: SEM-4ff4022168282e2d76ac57d1
-      criterion_id: MAINTAINABILITY-STRUCTURE
-      claim_id: STRUCTURE-SPEC-DESIGN-DUPLICATION
-      severity: Minor
-      conclusion: PARTIALLY_SUPPORTED
-      message: Spec和Design章节结构基本完整，但Design重复复制了大量对外行为和版本信息，且已产生路径、默认行为、重置语义和API版本漂移。
-      recommendation: 由Spec唯一承载对外行为、约束和验收标准，Design通过AC/R/ADR标识引用Spec，仅保留实现路径、决策和模块影响所必需的差异说明。
-      evidence_ids:
-      - EV-05-01-02-STRUCTURE-SPEC
-      - EV-05-01-02-STRUCTURE-DESIGN-DETAIL
-      - EV-05-01-02-STRUCTURE-STATIC-DRIFT
-  - criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
-    dimension_id: maintainability
+  - criterion_id: FUNCTION-FEAT-COVERAGE
+    dimension_id: function_modeling
     applicability: APPLICABLE
     conclusion: SUPPORTED
-    reason: >-
-      Design已列出vertical ToJsonValue默认值差异、BUTT到SQUARE隐式转换、legacy/generated颜色Reset
-      语义差异、DividerTheme字段命名typo以及Token Theme仅覆盖color五项存量风险，并对每项
-      记录类型、影响、处理方式和ArkUI SIG Owner。评价人本次已明确确认全部五项为存量
-      Accepted风险，不要求在本次评价中整改；Design中的已知差异、兼容成本和后续触发条件
-      可作为接受理由。在当前简化的单次评价确认流程下，责任与风险处置已完成闭环。
+    reason: Registry中的Feat集合与各Feat Spec、Function Design及冻结源码能够对应；当前可发现的主要功能入口、关键行为和生命周期均有Feat承载。已有Spec、API或Design完整性问题由其他Criterion评价，本项不重复扣分。
     claim_ids:
-    - RISK-TOJSON-DEFAULT
-    - RISK-LINECAP-UPGRADE
-    - RISK-CAPI-RESET-DIFFERENCE
-    - RISK-THEME-TYPO
-    - RISK-TOKEN-STROKE-WIDTH
+    - FUNCTION-FEAT-COVERAGE
+    - FUNCTION-05-01-02
     evidence:
-    - evidence_id: EV-05-01-02-RISK-DESIGN
+    - evidence_id: EV-05-01-02-CROSS-FEATURE-REGISTRY
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 882
+      line_end: 886
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9a81e2cff4a6a9810fc28c1841f5eb70748a23117a569cc8a69c78c30453fdfe
+      claim_id: FEAT-05-01-02-01
+      description: Feature Registry中的Feat-01标题、Spec路径和Baselined状态与文档一致。
+    - evidence_id: EV-05-01-02-CROSS-SPEC
+      type: spec_location
+      path: specs/05-ui-components/01-layout-components/02-divider/Feat-01-divider-spec.md
+      line_start: 3
+      line_end: 16
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:eb4a92f091fdd608980a6112100eb6eddbda5eeb3c5bdd80a1b3a37faadc5a0d
+      claim_id: FEAT-05-01-02-01
+      description: Spec声明Function Feature标识、标题、状态和复杂度。
+    - evidence_id: EV-05-01-02-CROSS-DESIGN
       type: design_location
       path: specs/05-ui-components/01-layout-components/02-divider/design.md
-      line_start: 298
-      line_end: 306
+      line_start: 5
+      line_end: 52
       source_revision: d91b4e4990a990da2bfe809514e573e35852193e
       content_hash: sha256:4c53a876edf94c57d7933481c9b38c440ab83f1c9848e2f033a10a1057b3a2ee
-      description: Design风险表列出五项存量风险的类型、影响、处理方式和ArkUI SIG Owner，本次由评价人统一确认为Accepted。
+      claim_id: CALLCHAIN-DYNAMIC-BRIDGE
+      description: Design元数据与Spec一致，但调用链表将不存在的js_divider.cpp列为动态Bridge入口。
+    - evidence_id: EV-05-01-02-CSS-AC11-LAYOUT
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/divider_layout_algorithm.cpp
+      line_start: 36
+      line_end: 43
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:abd9c43f13ff978acbcfae35e40d5af8391859d61401ef430ba85e00ed7ff8a7
+      claim_id: AC-1.1
+      description: 默认线宽按API版本选择，vertical默认为false且strokeWidthLimitation默认为true。
+    findings: []
+  - criterion_id: FUNCTION-FEAT-DECOMPOSITION
+    dimension_id: function_modeling
+    applicability: APPLICABLE
+    conclusion: SUPPORTED
+    reason: 现有Feat围绕稳定功能职责组织，能够形成独立描述、验收和演进单元；未发现因按文件碎片化拆分或无差别聚合而破坏主体验收边界。
+    claim_ids:
+    - FUNCTION-FEAT-DECOMPOSITION
+    - FUNCTION-05-01-02
+    evidence:
+    - evidence_id: EV-05-01-02-CROSS-FEATURE-REGISTRY
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 882
+      line_end: 886
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9a81e2cff4a6a9810fc28c1841f5eb70748a23117a569cc8a69c78c30453fdfe
+      claim_id: FEAT-05-01-02-01
+      description: Feature Registry中的Feat-01标题、Spec路径和Baselined状态与文档一致。
+    - evidence_id: EV-05-01-02-CROSS-SPEC
+      type: spec_location
+      path: specs/05-ui-components/01-layout-components/02-divider/Feat-01-divider-spec.md
+      line_start: 3
+      line_end: 16
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:eb4a92f091fdd608980a6112100eb6eddbda5eeb3c5bdd80a1b3a37faadc5a0d
+      claim_id: FEAT-05-01-02-01
+      description: Spec声明Function Feature标识、标题、状态和复杂度。
+    - evidence_id: EV-05-01-02-CROSS-DESIGN
+      type: design_location
+      path: specs/05-ui-components/01-layout-components/02-divider/design.md
+      line_start: 5
+      line_end: 52
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4c53a876edf94c57d7933481c9b38c440ab83f1c9848e2f033a10a1057b3a2ee
+      claim_id: CALLCHAIN-DYNAMIC-BRIDGE
+      description: Design元数据与Spec一致，但调用链表将不存在的js_divider.cpp列为动态Bridge入口。
+    - evidence_id: EV-05-01-02-CSS-AC11-LAYOUT
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/divider_layout_algorithm.cpp
+      line_start: 36
+      line_end: 43
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:abd9c43f13ff978acbcfae35e40d5af8391859d61401ef430ba85e00ed7ff8a7
+      claim_id: AC-1.1
+      description: 默认线宽按API版本选择，vertical默认为false且strokeWidthLimitation默认为true。
+    findings: []
+  - criterion_id: FUNCTION-FEAT-BOUNDARY
+    dimension_id: function_modeling
+    applicability: APPLICABLE
+    conclusion: SUPPORTED
+    reason: 现有Feat之间职责归属、输入输出和依赖关系可辨识，未发现多个Feat重复拥有同一能力或给出冲突行为；共享底层机制保持为合理依赖。
+    claim_ids:
+    - FUNCTION-FEAT-BOUNDARY
+    - FUNCTION-05-01-02
+    evidence:
+    - evidence_id: EV-05-01-02-CROSS-FEATURE-REGISTRY
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 882
+      line_end: 886
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9a81e2cff4a6a9810fc28c1841f5eb70748a23117a569cc8a69c78c30453fdfe
+      claim_id: FEAT-05-01-02-01
+      description: Feature Registry中的Feat-01标题、Spec路径和Baselined状态与文档一致。
+    - evidence_id: EV-05-01-02-CROSS-SPEC
+      type: spec_location
+      path: specs/05-ui-components/01-layout-components/02-divider/Feat-01-divider-spec.md
+      line_start: 3
+      line_end: 16
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:eb4a92f091fdd608980a6112100eb6eddbda5eeb3c5bdd80a1b3a37faadc5a0d
+      claim_id: FEAT-05-01-02-01
+      description: Spec声明Function Feature标识、标题、状态和复杂度。
+    - evidence_id: EV-05-01-02-CROSS-DESIGN
+      type: design_location
+      path: specs/05-ui-components/01-layout-components/02-divider/design.md
+      line_start: 5
+      line_end: 52
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4c53a876edf94c57d7933481c9b38c440ab83f1c9848e2f033a10a1057b3a2ee
+      claim_id: CALLCHAIN-DYNAMIC-BRIDGE
+      description: Design元数据与Spec一致，但调用链表将不存在的js_divider.cpp列为动态Bridge入口。
+    - evidence_id: EV-05-01-02-CSS-AC11-LAYOUT
+      type: source_citation
+      path: frameworks/core/components_ng/pattern/divider/divider_layout_algorithm.cpp
+      line_start: 36
+      line_end: 43
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:abd9c43f13ff978acbcfae35e40d5af8391859d61401ef430ba85e00ed7ff8a7
+      claim_id: AC-1.1
+      description: 默认线宽按API版本选择，vertical默认为false且strokeWidthLimitation默认为true。
     findings: []
   coverage:
     expected_criteria: 20
@@ -1565,26 +1557,28 @@ semantic_result:
     evidence_complete: true
     semantic_complete: true
     notes:
-    - 20个Criterion语义评价已按Rubric v0.2完成，并重新核验Design完整性。
+    - 20个Criterion语义评价已按Rubric v0.3完成，并重新核验Design完整性。
+    - Rubric v0.3新增的Function建模三个Criterion已完成证据核验，并按用户统一确认结论写入。
 scores:
   dimensions:
     correctness: 16.0
     spec_executability: 12.5
     design_quality: 11.0
     compatibility_system_impact: 6.5
-    maintainability: 6.5
-  raw_score: 52.5
-  published_score: 52.5
+    function_modeling: 10.0
+  raw_score: 56.0
+  published_score: 56.0
   confidence: 1.0
   admission: NOT_READY
 confirmation:
   confirmed_by: sunfei2021
-  confirmed_at: '2026-08-05T21:49:51+08:00'
+  confirmed_at: '2026-08-07T15:44:25+08:00'
   conclusion: accepted
   notes:
-  - 按Rubric v0.2重新评价并确认20个Criterion、published_score=52.5及NOT_READY结论。
+  - 按Rubric v0.3重新评价并确认20个Criterion、published_score=56及NOT_READY结论。
   - Design已列出的五项存量风险统一确认为Accepted，不要求在本次评价中整改。
   - 多设备项本次仅评价手机、平板和折叠屏；不记录ArkUI-X/wearable Static Modifier构建差异及无具体验证场景的1px硬件提示。
+  - 用户于2026-08-07统一确认Function建模维度新增的全部Finding及推荐结论。
 notes:
-- 20个Criterion、精确分数和单次accepted确认已按Rubric v0.2完成。
+- 20个Criterion、精确分数和单次accepted确认已按Rubric v0.3完成。
 - Critical/Major Finding必须包含冻结revision下的可复现证据。

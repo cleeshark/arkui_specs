@@ -7,12 +7,12 @@ source_revision: d91b4e4990a990da2bfe809514e573e35852193e
 status: confirmed
 evaluator:
   evaluator_id: sunfei2021
-  evaluated_at: '2026-08-06T15:47:19+08:00'
+  evaluated_at: '2026-08-07T15:44:25+08:00'
 semantic_result:
   schema_version: 1
-  rubric_version: 0.2.0
+  rubric_version: 0.3.0
   complexity_rules_version: 0.2.0
-  evaluator_protocol_version: 0.2.0
+  evaluator_protocol_version: 0.3.0
   evaluator_version: human:sunfei2021
   func_id: 02-02-01
   source_revision: d91b4e4990a990da2bfe809514e573e35852193e
@@ -600,60 +600,254 @@ semantic_result:
     evidence: [*ev_spec_1, *ev_spec_2, *ev_spec_3, *ev_design]
     findings: []
 
-  - criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
-    dimension_id: maintainability
+  - criterion_id: FUNCTION-FEAT-COVERAGE
+    dimension_id: function_modeling
     applicability: APPLICABLE
-    conclusion: MISSING
-    reason: >-
-      静态报告确认10个引用目标不存在，Evidence coverage为0%；人工核验又发现多个路径已迁移、接口签名和类型模型
-      大幅漂移。现有证据不能稳定复现Spec和Design中的核心结论，且相同错误事实在多个章节重复。
-    claim_ids: [ROSEN-01, ROSEN-02, REF-NOT-FOUND-001, EVIDENCE-COVERAGE]
-    evidence: [*ev_static, *ev_spec_1, *ev_spec_2, *ev_spec_3, *ev_design, *ev_canvas, *ev_modifier_base, *ev_transition, *ev_animation_header]
-    findings:
-    - finding_id: SEM-cc3ae26a6df1cd80d801128b
-      criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
-      severity: Major
-      conclusion: MISSING
-      message: 无效路径、0%覆盖和大规模接口漂移使核心证据基线不可稳定复现。
-      recommendation: 替换为仓内完整路径和稳定符号，记录冻结revision及哈希，并为全部核心Claim补充可执行证据。
-      evidence_ids: [EV-02-02-01-STATIC, EV-02-02-01-SPEC-01, EV-02-02-01-SPEC-02, EV-02-02-01-SPEC-03, EV-02-02-01-DESIGN, EV-02-02-01-CANVAS, EV-02-02-01-MODIFIER-BASE, EV-02-02-01-TRANSITION, EV-02-02-01-ANIMATION-HEADER]
-
-  - criterion_id: MAINTAINABILITY-STRUCTURE
-    dimension_id: maintainability
+    conclusion: SUPPORTED
+    reason: Registry中的Feat集合与各Feat Spec、Function Design及冻结源码能够对应；当前可发现的主要功能入口、关键行为和生命周期均有Feat承载。已有Spec、API或Design完整性问题由其他Criterion评价，本项不重复扣分。
+    claim_ids:
+    - FUNCTION-FEAT-COVERAGE
+    - FUNCTION-02-02-01
+    evidence:
+    - evidence_id: EV-02-02-01-REGISTRY-FEATURES
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 27
+      line_end: 41
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9a81e2cff4a6a9810fc28c1841f5eb70748a23117a569cc8a69c78c30453fdfe
+      description: 三个Feat标题、Spec路径和Baselined状态注册。
+    - evidence_id: EV-02-02-01-SPEC-01
+      type: spec_location
+      path: specs/02-cross-platform/02-render-backend-adapter/01-rosen-render-backend-adapter/Feat-01-render-backend-core-architecture-spec.md
+      line_start: 1
+      line_end: 296
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:05dae9ec9988072a04d8ab5cbb352182677f1a254a0ba6202fdff266d5736a8c
+      description: Feat-01全文，包含RenderContext、Drawing、Mixed Child、Detached、Surface和Stub规格。
+    - evidence_id: EV-02-02-01-SPEC-02
+      type: spec_location
+      path: specs/02-cross-platform/02-render-backend-adapter/01-rosen-render-backend-adapter/Feat-02-drawing-visual-effect-adapter-spec.md
+      line_start: 1
+      line_end: 212
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:28fe13c4eeba5e41d51eaa06e18aed23aec27d7b19d7202ca7a7dcaa8ad642d0
+      description: Feat-02全文，包含CanvasImage、Modifier、Transition和Effect规格。
+    - evidence_id: EV-02-02-01-SPEC-03
+      type: spec_location
+      path: specs/02-cross-platform/02-render-backend-adapter/01-rosen-render-backend-adapter/Feat-03-animation-bridge-adapter-spec.md
+      line_start: 1
+      line_end: 151
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7dde41cbeb10b82779b4055976284ed39a0c4adb3d5bd5b6616d59072cb00e50
+      description: Feat-03全文，包含AnimationUtils Rosen/Fake接口、规则、VM和NFR。
+    - evidence_id: EV-02-02-01-DESIGN
+      type: design_location
+      path: specs/02-cross-platform/02-render-backend-adapter/01-rosen-render-backend-adapter/design.md
+      line_start: 1
+      line_end: 487
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:dde51e98c5949ae639747866093e08b6282f325a35b662985a6a730b7dda9e05
+      description: Function级Design全文，包含架构图、ADR、逐层设计、构建验证和风险表。
+    - evidence_id: EV-02-02-01-CONTEXT-CREATOR
+      type: source_citation
+      path: frameworks/core/components_ng/render/render_context_creator.cpp
+      line_start: 16
+      line_end: 31
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:38f8f822160f64b09050aaa8976f456404455c1d5f7dad1f56123e26b63d4563
+      description: RenderContext编译宏和运行时Rosen开关双层工厂。
+    findings: []
+  - criterion_id: FUNCTION-FEAT-DECOMPOSITION
+    dimension_id: function_modeling
     applicability: APPLICABLE
     conclusion: PARTIALLY_SUPPORTED
-    reason: >-
-      三个Spec和Design章节、表格及分Feat结构清晰，但12个用户故事未使用标准三段式，3个追溯表头错误，43处范围ID
-      无法逐项解析；同一事实还在AC、Rule、VM、ADR、架构图和详细设计中重复并同步漂移。
-    claim_ids: [ROSEN-01, SPEC-STRUCT-USER-STORY-001, SPEC-STRUCT-TABLE-FIELD-001, TRACE-RANGE-ID-001]
-    evidence: [*ev_spec_1, *ev_spec_2, *ev_spec_3, *ev_design, *ev_static]
+    reason: Feat-01混合RenderContext、RSNode、Drawing别名、Detached生命周期、RenderSurface及Stub；Feat-02又混合CanvasImage、Modifier、Transition和Effect。多个实现与验收子域被聚合，主体仍可理解但颗粒度偏粗。
+    claim_ids:
+    - FEAT-01
+    - FEAT-02
+    - FUNCTION-DECOMPOSITION-ROSEN-SUBDOMAINS
+    evidence:
+    - evidence_id: EV-02-02-01-REGISTRY-FEATURES
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 27
+      line_end: 41
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9a81e2cff4a6a9810fc28c1841f5eb70748a23117a569cc8a69c78c30453fdfe
+      description: 三个Feat标题、Spec路径和Baselined状态注册。
+    - evidence_id: EV-02-02-01-SPEC-01
+      type: spec_location
+      path: specs/02-cross-platform/02-render-backend-adapter/01-rosen-render-backend-adapter/Feat-01-render-backend-core-architecture-spec.md
+      line_start: 1
+      line_end: 296
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:05dae9ec9988072a04d8ab5cbb352182677f1a254a0ba6202fdff266d5736a8c
+      description: Feat-01全文，包含RenderContext、Drawing、Mixed Child、Detached、Surface和Stub规格。
+    - evidence_id: EV-02-02-01-SPEC-02
+      type: spec_location
+      path: specs/02-cross-platform/02-render-backend-adapter/01-rosen-render-backend-adapter/Feat-02-drawing-visual-effect-adapter-spec.md
+      line_start: 1
+      line_end: 212
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:28fe13c4eeba5e41d51eaa06e18aed23aec27d7b19d7202ca7a7dcaa8ad642d0
+      description: Feat-02全文，包含CanvasImage、Modifier、Transition和Effect规格。
+    - evidence_id: EV-02-02-01-DESIGN
+      type: design_location
+      path: specs/02-cross-platform/02-render-backend-adapter/01-rosen-render-backend-adapter/design.md
+      line_start: 1
+      line_end: 487
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:dde51e98c5949ae639747866093e08b6282f325a35b662985a6a730b7dda9e05
+      description: Function级Design全文，包含架构图、ADR、逐层设计、构建验证和风险表。
+    - evidence_id: EV-02-02-01-CONTEXT-CREATOR
+      type: source_citation
+      path: frameworks/core/components_ng/render/render_context_creator.cpp
+      line_start: 16
+      line_end: 31
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:38f8f822160f64b09050aaa8976f456404455c1d5f7dad1f56123e26b63d4563
+      description: RenderContext编译宏和运行时Rosen开关双层工厂。
+    - evidence_id: EV-02-02-01-SURFACE
+      type: source_citation
+      path: frameworks/core/components_ng/render/render_surface_creator.cpp
+      line_start: 16
+      line_end: 52
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:94c7022b8c4d37a8f38d94c129b54f40d4412099d397af22e91b41770790541d
+      description: Render Extract、OHOS Rosen和no-op基类三类Surface工厂分支。
+    - evidence_id: EV-02-02-01-CANVAS
+      type: source_citation
+      path: frameworks/core/components_ng/render/canvas_image.h
+      line_start: 77
+      line_end: 105
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:32ef5a02ef0d750cd85862bfffc788e8802ba1e3768ef9941354b0ee506fe683
+      description: CanvasImage当前四参数纯虚DrawToRSCanvas接口。
+    - evidence_id: EV-02-02-01-TRANSITION
+      type: source_citation
+      path: frameworks/core/components_ng/render/adapter/rosen_transition_effect.cpp
+      line_start: 35
+      line_end: 178
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:1fe2f11b156afba9be75116f5e963118e7e9a1e8c689bbb8afb01eb596996a5d
+      description: RosenTransitionEffect转换、Attach和Detach真实实现。
+    - evidence_id: EV-02-02-01-EFFECT
+      type: source_citation
+      path: frameworks/core/components_ng/render/adapter/rosen_effect_converter.cpp
+      line_start: 34
+      line_end: 145
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:55a02f326161d75ea169b0198f3a9e2035d9caba479787e9b33a8e2b0b97afed
+      description: FrostedGlassParam向Rosen Filter转换及平台条件分支。
     findings:
-    - finding_id: SEM-de2bc15436f59c4de6dc316f
-      criterion_id: MAINTAINABILITY-STRUCTURE
+    - finding_id: SEM-5228be7c6ed93e15574e25ee
+      criterion_id: FUNCTION-FEAT-DECOMPOSITION
       severity: Minor
       conclusion: PARTIALLY_SUPPORTED
-      message: 主体结构可读，但用户故事、表头、范围ID和重复事实增加解析及同步维护成本。
-      recommendation: 使用标准三段式用户故事和AC编号表头，展开范围ID，并集中维护接口和运行事实。
-      evidence_ids: [EV-02-02-01-SPEC-01, EV-02-02-01-SPEC-02, EV-02-02-01-SPEC-03, EV-02-02-01-DESIGN, EV-02-02-01-STATIC]
-
-  - criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
-    dimension_id: maintainability
+      message: Feat-01和Feat-02分别聚合多个可独立验收的渲染、表面、图像、动效及效果适配子域。
+      recommendation: 按渲染上下文与节点、RenderSurface生命周期、Drawing/CanvasImage、Modifier与视觉效果等稳定能力边界重新组织Feat。
+      evidence_ids:
+      - EV-02-02-01-REGISTRY-FEATURES
+      - EV-02-02-01-SPEC-01
+      - EV-02-02-01-SPEC-02
+      - EV-02-02-01-DESIGN
+      - EV-02-02-01-CONTEXT-CREATOR
+      - EV-02-02-01-SURFACE
+      - EV-02-02-01-CANVAS
+      - EV-02-02-01-TRANSITION
+      - EV-02-02-01-EFFECT
+  - criterion_id: FUNCTION-FEAT-BOUNDARY
+    dimension_id: function_modeling
     applicability: APPLICABLE
     conclusion: PARTIALLY_SUPPORTED
-    reason: >-
-      Design列出五项存量风险并包含类型、影响、处理方式和ArkUI SIG Owner，用户已统一记录为Accepted；但风险表没有
-      覆盖核心接口漂移、错误调用链、平台条件、构建依赖和验证缺口，且PreFreeze及材质来源风险的事实前提本身不准确。
-    claim_ids: [ROSEN-14, RISK-CANVAS-NAMING, RISK-SINGLE-BACKEND, RISK-DRAWING-ALIAS, RISK-PREFREEZE, RISK-MATERIAL]
-    evidence: [*ev_design, *ev_detached, *ev_material]
+    reason: Feat-01中的Animation fake/真实实现及返回值，与Feat-03的AnimationUtils完整规格重复拥有同一能力；Transition又位于Feat-02，与Feat-03动画桥接职责存在局部交叉。主体能力仍可验收，但能力归属不够清晰。
+    claim_ids:
+    - FEAT-01
+    - FEAT-02
+    - FEAT-03
+    - FUNCTION-BOUNDARY-ROSEN-ANIMATION
+    evidence:
+    - evidence_id: EV-02-02-01-REGISTRY-FEATURES
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 27
+      line_end: 41
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9a81e2cff4a6a9810fc28c1841f5eb70748a23117a569cc8a69c78c30453fdfe
+      description: 三个Feat标题、Spec路径和Baselined状态注册。
+    - evidence_id: EV-02-02-01-SPEC-01
+      type: spec_location
+      path: specs/02-cross-platform/02-render-backend-adapter/01-rosen-render-backend-adapter/Feat-01-render-backend-core-architecture-spec.md
+      line_start: 1
+      line_end: 296
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:05dae9ec9988072a04d8ab5cbb352182677f1a254a0ba6202fdff266d5736a8c
+      description: Feat-01全文，包含RenderContext、Drawing、Mixed Child、Detached、Surface和Stub规格。
+    - evidence_id: EV-02-02-01-SPEC-02
+      type: spec_location
+      path: specs/02-cross-platform/02-render-backend-adapter/01-rosen-render-backend-adapter/Feat-02-drawing-visual-effect-adapter-spec.md
+      line_start: 1
+      line_end: 212
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:28fe13c4eeba5e41d51eaa06e18aed23aec27d7b19d7202ca7a7dcaa8ad642d0
+      description: Feat-02全文，包含CanvasImage、Modifier、Transition和Effect规格。
+    - evidence_id: EV-02-02-01-SPEC-03
+      type: spec_location
+      path: specs/02-cross-platform/02-render-backend-adapter/01-rosen-render-backend-adapter/Feat-03-animation-bridge-adapter-spec.md
+      line_start: 1
+      line_end: 151
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7dde41cbeb10b82779b4055976284ed39a0c4adb3d5bd5b6616d59072cb00e50
+      description: Feat-03全文，包含AnimationUtils Rosen/Fake接口、规则、VM和NFR。
+    - evidence_id: EV-02-02-01-DESIGN
+      type: design_location
+      path: specs/02-cross-platform/02-render-backend-adapter/01-rosen-render-backend-adapter/design.md
+      line_start: 1
+      line_end: 487
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:dde51e98c5949ae639747866093e08b6282f325a35b662985a6a730b7dda9e05
+      description: Function级Design全文，包含架构图、ADR、逐层设计、构建验证和风险表。
+    - evidence_id: EV-02-02-01-ANIMATION-FAKE
+      type: source_citation
+      path: frameworks/core/components_ng/render/adapter/fake_animation_utils.cpp
+      line_start: 23
+      line_end: 145
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7cd6dc0f7230445a7654cb403c37b3ccae9e713a9d746a6b5fde1a59496c59e5
+      description: Fake方法的空操作、false、true、SUCCESS和nullptr边界返回契约。
+    - evidence_id: EV-02-02-01-ANIMATION-ROSEN
+      type: source_citation
+      path: frameworks/core/components_ng/render/adapter/rosen_animation_utils.cpp
+      line_start: 117
+      line_end: 307
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:e912105373048379af07543c4cd07cf339628da86b8986fcb8413ea64e90ef34
+      description: Open/Close、Current方法和StartAnimation的RSNode真实调用链。
+    - evidence_id: EV-02-02-01-TRANSITION
+      type: source_citation
+      path: frameworks/core/components_ng/render/adapter/rosen_transition_effect.cpp
+      line_start: 35
+      line_end: 178
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:1fe2f11b156afba9be75116f5e963118e7e9a1e8c689bbb8afb01eb596996a5d
+      description: RosenTransitionEffect转换、Attach和Detach真实实现。
     findings:
-    - finding_id: SEM-acfef1b7ff57f09a9eb7fc28
-      criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
+    - finding_id: SEM-bbcaa99f829f2f70132ae18f
+      criterion_id: FUNCTION-FEAT-BOUNDARY
       severity: Minor
       conclusion: PARTIALLY_SUPPORTED
-      message: 五项风险具备Owner并已Accepted，但重大源码漂移和验证缺口未进入风险表，部分风险前提不准确。
-      recommendation: 保留Accepted处置记录，同时补充接口、平台、构建、验证风险并校正PreFreeze和材质来源事实。
-      evidence_ids: [EV-02-02-01-DESIGN, EV-02-02-01-DETACHED, EV-02-02-01-MATERIAL]
-
+      message: Animation能力在Feat-01与Feat-03重复归属，Transition在Feat-02与Feat-03之间也存在职责交叉。
+      recommendation: 将动画实现选择、fake行为、AnimationUtils及Transition的责任统一归入明确的动画适配Feat，其他Feat只通过依赖关系引用。
+      evidence_ids:
+      - EV-02-02-01-REGISTRY-FEATURES
+      - EV-02-02-01-SPEC-01
+      - EV-02-02-01-SPEC-02
+      - EV-02-02-01-SPEC-03
+      - EV-02-02-01-DESIGN
+      - EV-02-02-01-ANIMATION-FAKE
+      - EV-02-02-01-ANIMATION-ROSEN
+      - EV-02-02-01-TRANSITION
   coverage:
     expected_criteria: 20
     evaluated_criteria: 20
@@ -669,27 +863,29 @@ semantic_result:
     - 用户确认ROSEN-01至ROSEN-12、ROSEN-14及20项Criterion；ROSEN-13按OHOS多设备范围定义撤销。
     - ArkUI-X Android/iOS使能RENDER_EXTRACT_SUPPORTED，Preview未使能并回落RenderSurface基类。
     - Design中的五项存量风险统一记录为Accepted；接受处置不代表认可其中错误的事实前提。
+    - Rubric v0.3新增的Function建模三个Criterion已完成证据核验，并按用户统一确认结论写入。
 scores:
   dimensions:
     correctness: 3.75
     spec_executability: 12.5
     design_quality: 2.5
     compatibility_system_impact: 7.5
-    maintainability: 3.0
-  raw_score: 29.25
-  published_score: 29.25
+    function_modeling: 8.0
+  raw_score: 34.25
+  published_score: 34.25
   confidence: 1.0
   admission: NOT_READY
 confirmation:
   confirmed_by: sunfei2021
-  confirmed_at: '2026-08-06T15:47:19+08:00'
+  confirmed_at: '2026-08-07T15:44:25+08:00'
   conclusion: accepted
   notes:
   - 用户确认ROSEN-01至ROSEN-12、ROSEN-14和推荐评分，无其他异议。
   - ROSEN-05按用户确认收敛为ArkUI-X Android/iOS走Render Extract路径、Preview回落no-op基类。
   - ROSEN-13撤销，多设备仅指OHOS内部设备形态，不包含多平台差异。
   - Design中的五项存量风险统一记录为Accepted，事实错误仍保留相应扣分。
-  - 静态Gate为FAIL；Rubric v0.2发布分为29.25，准入结论为NOT_READY。
+  - 静态Gate为FAIL；Rubric v0.3原始分及发布分为34.25，准入结论为NOT_READY。
+  - 用户于2026-08-07统一确认Function建模维度新增的全部Finding及推荐结论。
 notes:
 - 本Review只记录评价结论，不修改Spec、Design、KB或产品源码。
 - 后续提升应先修复源码事实和静态追溯，再重建逐Feat运行设计、构建部署链和可执行验证计划。

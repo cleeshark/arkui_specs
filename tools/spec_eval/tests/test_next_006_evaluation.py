@@ -164,7 +164,7 @@ class Next006FunctionEvaluationTest(unittest.TestCase):
             migrated = yaml.safe_load(path.read_text(encoding="utf-8"))
             self.assertEqual(refreshed, ["03-07-01"])
             self.assertEqual(skipped, [])
-            self.assertEqual(migrated["semantic_result"]["rubric_version"], "0.2.0")
+            self.assertEqual(migrated["semantic_result"]["rubric_version"], "0.3.0")
             self.assertEqual(len(migrated["semantic_result"]["criterion_results"]), 20)
 
             migrated["status"] = "confirmed"

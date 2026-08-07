@@ -1,6 +1,6 @@
 schema_version: 1
 design_completeness_rules_version: 0.1.0
-rubric_version: 0.2.0
+rubric_version: 0.3.0
 status: candidate
 evaluation_unit: function
 description: >-

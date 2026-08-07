@@ -119,7 +119,7 @@ def validate_rubric(rubric: dict[str, Any]) -> list[str]:
                 f"{dimension_id}: criterion maxima must sum to dimension weight {weight}, got {criterion_total}"
             )
 
-    if rubric.get("rubric_version") == "0.2.0":
+    if rubric.get("rubric_version") in {"0.2.0", "0.3.0"}:
         expected_design_criteria = [
             "DESIGN-IMPLEMENTATION-PATH",
             "DESIGN-FEAT-RUNTIME-COVERAGE",
@@ -136,7 +136,7 @@ def validate_rubric(rubric: dict[str, Any]) -> list[str]:
         ]
         if actual_design_criteria != expected_design_criteria:
             errors.append(
-                "rubric 0.2 design criteria must cover architecture, per-Feat runtime, "
+                "rubric 0.2+ design criteria must cover architecture, per-Feat runtime, "
                 "algorithm/data/state, ADR, build/deployment, and verification in order"
             )
         for criterion in (design_dimension or {}).get("criteria", []):
@@ -146,10 +146,41 @@ def validate_rubric(rubric: dict[str, Any]) -> list[str]:
                 "per_registered_feature",
                 "function_and_feature",
             }:
-                errors.append(f"{criterion_id}: rubric 0.2 requires a valid coverage_scope")
+                errors.append(f"{criterion_id}: rubric 0.2+ requires a valid coverage_scope")
             checks = criterion.get("required_checks", [])
             if not checks or len(checks) != len(set(checks)):
                 errors.append(f"{criterion_id}: required_checks must be non-empty and unique")
+            outcome_policy = criterion.get("outcome_policy", {})
+            expected_policy = {"SUPPORTED", "PARTIALLY_SUPPORTED", "CONTRADICTED", "MISSING"}
+            if set(outcome_policy) != expected_policy:
+                errors.append(
+                    f"{criterion_id}: outcome_policy must define SUPPORTED, "
+                    "PARTIALLY_SUPPORTED, CONTRADICTED, and MISSING"
+                )
+
+    if rubric.get("rubric_version") == "0.3.0":
+        function_dimension = next(
+            (item for item in dimensions if item.get("id") == "function_modeling"), None
+        )
+        expected_function_criteria = [
+            "FUNCTION-FEAT-COVERAGE",
+            "FUNCTION-FEAT-DECOMPOSITION",
+            "FUNCTION-FEAT-BOUNDARY",
+        ]
+        actual_function_criteria = [
+            item.get("id") for item in (function_dimension or {}).get("criteria", [])
+        ]
+        if actual_function_criteria != expected_function_criteria:
+            errors.append(
+                "rubric 0.3 function modeling criteria must cover Feat coverage, "
+                "decomposition, and boundary in order"
+            )
+        for criterion in (function_dimension or {}).get("criteria", []):
+            criterion_id = criterion.get("id", "<missing>")
+            if criterion.get("evaluator") != "semantic":
+                errors.append(f"{criterion_id}: function modeling must be evaluated by Skill")
+            if criterion.get("coverage_scope") != "function":
+                errors.append(f"{criterion_id}: function modeling must use Function scope")
             outcome_policy = criterion.get("outcome_policy", {})
             expected_policy = {"SUPPORTED", "PARTIALLY_SUPPORTED", "CONTRADICTED", "MISSING"}
             if set(outcome_policy) != expected_policy:
@@ -202,7 +233,7 @@ def validate_rubric(rubric: dict[str, Any]) -> list[str]:
 
     compatibility = rubric.get("protocol_compatibility", {})
     if compatibility.get("complexity_rules_version") != "0.2.0":
-        errors.append("rubric 0.2 must bind complexity_rules_version 0.2.0")
+        errors.append("rubric 0.2+ must bind complexity_rules_version 0.2.0")
     return errors
 
 

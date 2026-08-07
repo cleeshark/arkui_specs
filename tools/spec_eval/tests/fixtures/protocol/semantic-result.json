@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "rubric_version": "0.2.0",
+  "rubric_version": "0.3.0",
   "complexity_rules_version": "0.2.0",
-  "evaluator_protocol_version": "0.2.0",
+  "evaluator_protocol_version": "0.3.0",
   "evaluator_version": "fixture-1.0.0",
   "func_id": "05-01-01",
   "source_revision": "abc123",
@@ -320,54 +320,54 @@
       "findings": []
     },
     {
-      "criterion_id": "MAINTAINABILITY-EVIDENCE-STABILITY",
-      "dimension_id": "maintainability",
+      "criterion_id": "FUNCTION-FEAT-COVERAGE",
+      "dimension_id": "function_modeling",
       "applicability": "APPLICABLE",
       "conclusion": "SUPPORTED",
-      "reason": "All evidence is repository-relative and revision-bound.",
+      "reason": "All discovered Function capabilities are carried by registered Features.",
       "evidence": [{
-        "evidence_id": "EV-maintain-evidence",
-        "type": "static_finding",
-        "path": "static-result.json",
+        "evidence_id": "EV-function-coverage",
+        "type": "registry_entry",
+        "path": "specs/registry/features.yaml",
         "source_revision": "abc123",
         "content_hash": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
-        "description": "Static reference validation result."
+        "description": "Registered Features cover the discovered Function capabilities."
       }],
       "findings": []
     },
     {
-      "criterion_id": "MAINTAINABILITY-STRUCTURE",
-      "dimension_id": "maintainability",
+      "criterion_id": "FUNCTION-FEAT-DECOMPOSITION",
+      "dimension_id": "function_modeling",
       "applicability": "APPLICABLE",
       "conclusion": "SUPPORTED",
-      "reason": "The Function uses one shared design and incremental Feature specs.",
+      "reason": "Each Feature has one cohesive responsibility and can be accepted independently.",
       "evidence": [{
-        "evidence_id": "EV-maintain-structure",
+        "evidence_id": "EV-function-decomposition",
         "type": "design_location",
         "path": "specs/05-ui-components/01-test/01-sample/design.md",
         "line_start": 1,
         "line_end": 20,
         "source_revision": "abc123",
         "content_hash": "sha256:abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789",
-        "description": "Shared design metadata and target Feature list."
+        "description": "Feature responsibilities and independent acceptance boundaries."
       }],
       "findings": []
     },
     {
-      "criterion_id": "MAINTAINABILITY-RISK-OWNERSHIP",
-      "dimension_id": "maintainability",
+      "criterion_id": "FUNCTION-FEAT-BOUNDARY",
+      "dimension_id": "function_modeling",
       "applicability": "APPLICABLE",
       "conclusion": "SUPPORTED",
-      "reason": "Risks and open questions have owners and closure conditions.",
+      "reason": "Feature responsibilities and dependencies are explicit and non-overlapping.",
       "evidence": [{
-        "evidence_id": "EV-maintain-risk",
+        "evidence_id": "EV-function-boundary",
         "type": "design_location",
         "path": "specs/05-ui-components/01-test/01-sample/design.md",
         "line_start": 140,
         "line_end": 160,
         "source_revision": "abc123",
         "content_hash": "sha256:fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210",
-        "description": "Risk register and owners."
+        "description": "Feature ownership, inputs, outputs, and dependency boundaries."
       }],
       "findings": []
     }

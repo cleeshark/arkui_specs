@@ -46,14 +46,14 @@
             "spec_executability",
             "design_quality",
             "compatibility_system_impact",
-            "maintainability"
+            "function_modeling"
           ],
           "properties": {
             "correctness": { "type": ["number", "null"], "minimum": 0, "maximum": 30 },
             "spec_executability": { "type": ["number", "null"], "minimum": 0, "maximum": 25 },
             "design_quality": { "type": ["number", "null"], "minimum": 0, "maximum": 25 },
             "compatibility_system_impact": { "type": ["number", "null"], "minimum": 0, "maximum": 10 },
-            "maintainability": { "type": ["number", "null"], "minimum": 0, "maximum": 10 }
+            "function_modeling": { "type": ["number", "null"], "minimum": 0, "maximum": 10 }
           },
           "additionalProperties": false
         },

@@ -390,7 +390,7 @@ CI脚本中，执行不完整的优先级高于质量门禁失败，不会因为
 | `sdk_rules.yaml` | SDK声明定位配置 |
 | `exemptions.yaml` | 带Owner、原因和到期时间的临时豁免 |
 | `rule_applicability.yaml` | 活跃静态规则的适用性、前置条件、抑制条件和推荐Gate |
-| `rubric.yaml` | Rubric v0.2候选版：五维权重、20项Criterion、扣分、封顶、置信度和准入规则 |
+| `rubric.yaml` | Rubric v0.3候选版：五维权重、20项Criterion、扣分、封顶、置信度和准入规则 |
 | `complexity_rules.yaml` | Feature复杂度归一和Function级聚合、评审深度及N/A资格 |
 | `design_completeness_rules.yaml` | Design六项完整性Criterion的Function/Feat覆盖要求及脚本/Skill分工 |
 | `schemas/` | Function Context、静态结果、证据、报告、Baseline和单Function评价JSON Schema |
@@ -401,7 +401,7 @@ CI脚本中，执行不完整的优先级高于质量门禁失败，不会因为
 
 临时方案和任务拆分位于 [`specs/.evaluator`](../../.evaluator/)；它们不属于正式 Feature/Design 基线。
 
-### 8.1 校验 Rubric v0.2 协议
+### 8.1 校验 Rubric v0.3 协议
 
 协议校验不依赖第三方 `jsonschema` 包。仓内校验器会同时检查：
 
@@ -420,7 +420,7 @@ PYTHONPATH=specs/tools python3 -m spec_eval.protocol_validator \
   --evaluation-root specs/evaluation
 ```
 
-当前协议状态为`candidate`。工程字段已经版本化并由自动化测试保护；当前Pilot采用单次评价、一次确认的入库方式。Design完整性升级后的当前Rubric为`0.2.0`，包含20项Criterion。修改权重、扣分、门禁封顶或结论语义时必须继续提升Rubric版本，不能在同一版本下静默改变含义。
+当前协议状态为`candidate`。工程字段已经版本化并由自动化测试保护；当前Pilot采用单次评价、一次确认的入库方式。当前Rubric为`0.3.0`，包含20项Criterion。修改权重、扣分、门禁封顶或结论语义时必须继续提升Rubric版本，不能在同一版本下静默改变含义。
 
 Design维度仍为25分，但从原4项拆分为6项：架构上下文与分层调用链4分、逐Feat端到端运行设计5分、关键算法/数据/状态4分、ADR候选与取舍4分、构建/产物/注册/部署3分、验证与风险闭环5分。标题、表格、图数量、篇幅和自审勾选不能作为`SUPPORTED`证据。
 
@@ -432,13 +432,15 @@ Design维度仍为25分，但从原4项拆分为6项：架构上下文与分层�
 | Spec可执行性 | 25 |
 | Design设计质量 | 25 |
 | 兼容性与系统影响 | 10 |
-| 可维护性 | 10 |
+| Function功能建模质量 | 10 |
+
+Function功能建模质量完全由Skill评价：Feat覆盖完整性4分、Feat拆分与颗粒度3分、Feat职责边界3分。该维度直接复用Registry、Spec、Design、源码和测试证据，不要求维护独立能力基线清单，也不以Feat数量、文档篇幅或AC数量作为质量信号。
 
 发布分使用最严格未豁免问题封顶：Critical最高39分、Major最高59分、Minor最高79分、无Gate问题最高100分。语义评价只能增加问题，不能删除静态Finding或把静态Gate降级。
 
 ### 8.2 单Function参考评价
 
-NEXT-006使用12个Function作为Pilot。样本、输入revision和Function指纹位于`evaluation/golden/manifest.yaml`；每个Function只在`evaluation/reviews/`保留一份当前评价文件。Rubric升级后，旧版本Review必须按v0.2补齐新Criterion并重新确认，不能沿用旧Design分数。
+NEXT-006使用12个Function作为Pilot。样本、输入revision和Function指纹位于`evaluation/golden/manifest.yaml`；每个Function只在`evaluation/reviews/`保留一份当前评价文件。Rubric升级后，旧版本Review必须按v0.3补齐Function建模Criterion并重新确认，不能沿用旧可维护性分数。
 
 校验Pilot覆盖和输入是否漂移：
 

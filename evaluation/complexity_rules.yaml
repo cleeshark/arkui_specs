@@ -1,6 +1,6 @@
 schema_version: 1
 complexity_rules_version: 0.2.0
-rubric_version: 0.2.0
+rubric_version: 0.3.0
 status: candidate
 description: >-
   Normalize free-form Feature complexity metadata into a Function-level level.

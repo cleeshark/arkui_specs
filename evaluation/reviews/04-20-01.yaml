@@ -7,12 +7,12 @@ source_revision: d91b4e4990a990da2bfe809514e573e35852193e
 status: confirmed
 evaluator:
   evaluator_id: sunfei2021
-  evaluated_at: '2026-08-07T11:16:05+08:00'
+  evaluated_at: '2026-08-07T15:44:25+08:00'
 semantic_result:
   schema_version: 1
-  rubric_version: 0.2.0
+  rubric_version: 0.3.0
   complexity_rules_version: 0.2.0
-  evaluator_protocol_version: 0.2.0
+  evaluator_protocol_version: 0.3.0
   evaluator_version: human:sunfei2021
   func_id: 04-20-01
   source_revision: d91b4e4990a990da2bfe809514e573e35852193e
@@ -561,59 +561,161 @@ semantic_result:
       recommendation: 在不扩展到ArkUI-X和Static wearable承诺的前提下，补齐OHOS内部设备类型的匹配值、差异和验证方式。
       evidence_ids: [EV-04-20-01-SPEC, EV-04-20-01-SRC-INFO, EV-04-20-01-TEST-QUERY]
 
-  - criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
-    dimension_id: maintainability
+  - criterion_id: FUNCTION-FEAT-COVERAGE
+    dimension_id: function_modeling
+    applicability: APPLICABLE
+    conclusion: SUPPORTED
+    reason: Registry中的Feat集合与各Feat Spec、Function Design及冻结源码能够对应；当前可发现的主要功能入口、关键行为和生命周期均有Feat承载。已有Spec、API或Design完整性问题由其他Criterion评价，本项不重复扣分。
+    claim_ids:
+    - FUNCTION-FEAT-COVERAGE
+    - FUNCTION-04-20-01
+    evidence:
+    - evidence_id: EV-04-20-01-REGISTRY-FEATURE
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 387
+      line_end: 391
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9a81e2cff4a6a9810fc28c1841f5eb70748a23117a569cc8a69c78c30453fdfe
+      description: Feat-01标题、Spec路径和Baselined状态注册。
+    - evidence_id: EV-04-20-01-SPEC
+      type: spec_location
+      path: specs/04-common-capability/20-media-query/01-media-query/Feat-01-media-query-listener-spec.md
+      line_start: 1
+      line_end: 190
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9d041bd6d89b35a0ed769a4804922ca8bfb5d57b00968cd9eebd4f10344009e8
+      description: MediaQuery单Feat规格全文，包含查询、监听生命周期、规则、VM、API、兼容性和设备声明。
+    - evidence_id: EV-04-20-01-DESIGN
+      type: design_location
+      path: specs/04-common-capability/20-media-query/01-media-query/design.md
+      line_start: 1
+      line_end: 201
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:cc112fbb0fec02a149af236508d09e74c2593c4d73d95acae291f39e2a35e3d7
+      description: Function级Design全文，包含NAPI/ANI、查询核心、UIContext、ADR、测试方向和风险声明。
+    - evidence_id: EV-04-20-01-SRC-NAPI
+      type: source_citation
+      path: interfaces/napi/kits/mediaquery/js_media_query.cpp
+      line_start: 40
+      line_end: 443
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:a54825354a49d4e0dc1a42c0da6f72c796ab276a8f4844b7c236f743565bf7aa
+      description: Dynamic结果序列化、Listener更新、回调去重、注销、实例绑定和参数校验实现。
+    findings: []
+  - criterion_id: FUNCTION-FEAT-DECOMPOSITION
+    dimension_id: function_modeling
     applicability: APPLICABLE
     conclusion: PARTIALLY_SUPPORTED
-    reason: >-
-      Spec和Design引用了SDK、NAPI、ANI、Queryer及测试目录，主体文件能够在冻结revision下复现；但静态Evidence coverage仅32.26%，
-      AC、Rule和VM使用范围ID，Listener生命周期证据以源码代替测试，UIContext和Static承接证据没有逐项进入追溯表，维护时仍依赖人工重新搜索。
-    claim_ids: [MEDIA-08, MEDIA-10]
-    evidence: [*ev_static, *ev_spec, *ev_design, *ev_napi, *ev_queryer, *ev_ani, *ev_test_build]
+    reason: Feat-01同时承载媒体条件语言的解析求值与Listener注册、通知及生命周期；两部分具有独立算法、状态、接口和测试边界，当前单Feat颗粒度偏粗。语法规则内容不完整已由Spec/Design Criterion评价，本项只评价拆分。
+    claim_ids:
+    - FEAT-01
+    - FUNCTION-DECOMPOSITION-MEDIAQUERY
+    evidence:
+    - evidence_id: EV-04-20-01-REGISTRY-FEATURE
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 387
+      line_end: 391
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9a81e2cff4a6a9810fc28c1841f5eb70748a23117a569cc8a69c78c30453fdfe
+      description: Feat-01标题、Spec路径和Baselined状态注册。
+    - evidence_id: EV-04-20-01-SPEC
+      type: spec_location
+      path: specs/04-common-capability/20-media-query/01-media-query/Feat-01-media-query-listener-spec.md
+      line_start: 1
+      line_end: 190
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9d041bd6d89b35a0ed769a4804922ca8bfb5d57b00968cd9eebd4f10344009e8
+      description: MediaQuery单Feat规格全文，包含查询、监听生命周期、规则、VM、API、兼容性和设备声明。
+    - evidence_id: EV-04-20-01-DESIGN
+      type: design_location
+      path: specs/04-common-capability/20-media-query/01-media-query/design.md
+      line_start: 1
+      line_end: 201
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:cc112fbb0fec02a149af236508d09e74c2593c4d73d95acae291f39e2a35e3d7
+      description: Function级Design全文，包含NAPI/ANI、查询核心、UIContext、ADR、测试方向和风险声明。
+    - evidence_id: EV-04-20-01-SRC-NAPI
+      type: source_citation
+      path: interfaces/napi/kits/mediaquery/js_media_query.cpp
+      line_start: 40
+      line_end: 443
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:a54825354a49d4e0dc1a42c0da6f72c796ab276a8f4844b7c236f743565bf7aa
+      description: Dynamic结果序列化、Listener更新、回调去重、注销、实例绑定和参数校验实现。
+    - evidence_id: EV-04-20-01-SRC-QUERYER
+      type: source_citation
+      path: frameworks/bridge/common/media_query/media_queryer.cpp
+      line_start: 75
+      line_end: 358
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:e7f3f5f583e7f8c4aeddecfe2968fde1a69c4a2a2903e02865e6ceb21dec2a3c
+      description: 单位换算、CSS Level 3/4、枚举规则、组合条件、非法语法、初始化边界和查询缓存实现。
+    - evidence_id: EV-04-20-01-SRC-INFO
+      type: source_citation
+      path: frameworks/bridge/common/media_query/media_query_info.cpp
+      line_start: 24
+      line_end: 123
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:e0c97427dec771954f36b8d0d0b6db2080faa67244e61e18a37a861060c6c386
+      description: OHOS设备类型、方向、窗口尺寸、密度、圆屏和深色模式媒体信息来源。
     findings:
-    - finding_id: SEM-042001000000000000000011
-      criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
-      severity: Major
-      conclusion: PARTIALLY_SUPPORTED
-      message: 核心文件可复现，但覆盖率低、范围ID和以源码冒充测试证据使变更后的复核不稳定。
-      recommendation: 使用仓内完整路径和原子ID，将每个关键声明关联到真实SDK、源码、构建target和测试用例。
-      evidence_ids: [EV-04-20-01-STATIC, EV-04-20-01-SPEC, EV-04-20-01-DESIGN, EV-04-20-01-TEST-BUILD]
-
-  - criterion_id: MAINTAINABILITY-STRUCTURE
-    dimension_id: maintainability
-    applicability: APPLICABLE
-    conclusion: PARTIALLY_SUPPORTED
-    reason: >-
-      单Feat结构简洁，用户故事、AC、Rule、VM、API、兼容性和Design分层章节均可定位；但验收追溯表头不符合标准，7处范围ID重复压缩原子关系，
-      API入口和语法规则又分散在概述、兼容性、架构约束及Design多个位置，后续修改容易产生漂移。静态8条Major保持权威，本语义Criterion不降低其严重度。
-    claim_ids: [MEDIA-08]
-    evidence: [*ev_spec, *ev_design, *ev_static]
-    findings:
-    - finding_id: SEM-042001000000000000000012
-      criterion_id: MAINTAINABILITY-STRUCTURE
+    - finding_id: SEM-0253fd7e3c99c330e9a2ce0f
+      criterion_id: FUNCTION-FEAT-DECOMPOSITION
       severity: Minor
       conclusion: PARTIALLY_SUPPORTED
-      message: 文档整体可读，但表头、范围ID及分散的API和语法信息增加了重复维护成本。
-      recommendation: 修正规范表头和原子追溯，并集中维护API版本矩阵及MediaQuery语法支持矩阵。
-      evidence_ids: [EV-04-20-01-SPEC, EV-04-20-01-DESIGN, EV-04-20-01-STATIC]
-
-  - criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
-    dimension_id: maintainability
+      message: 媒体条件解析求值与Listener生命周期被聚合在单个Feat中，缺少独立验收边界。
+      recommendation: 将媒体条件语言、解析与求值规则作为一个Feat，将Listener创建、匹配更新、通知及销毁作为另一个Feat，并在Design中描述两者的数据接口。
+      evidence_ids:
+      - EV-04-20-01-REGISTRY-FEATURE
+      - EV-04-20-01-SPEC
+      - EV-04-20-01-DESIGN
+      - EV-04-20-01-SRC-NAPI
+      - EV-04-20-01-SRC-QUERYER
+      - EV-04-20-01-SRC-INFO
+  - criterion_id: FUNCTION-FEAT-BOUNDARY
+    dimension_id: function_modeling
     applicability: APPLICABLE
-    conclusion: PARTIALLY_SUPPORTED
-    reason: >-
-      Design列出语法非完整CSS和Dynamic/Static方法名差异两项风险并指定ArkUI SIG；但未记录API 18废弃迁移、Static内部结构与运行验证、
-      原生对象所有权、UIContext限制、详细语法解析、Legacy范围、构建部署、默认占位测试和Listener测试缺失，也没有状态、期限和关闭条件。
-    claim_ids: [MEDIA-01, MEDIA-03, MEDIA-04, MEDIA-05, MEDIA-06, MEDIA-07, MEDIA-09, MEDIA-10, MEDIA-12]
-    evidence: [*ev_design, *ev_spec, *ev_sdk_dynamic, *ev_ani, *ev_test_build]
-    findings:
-    - finding_id: SEM-042001000000000000000013
-      criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
-      severity: Minor
-      conclusion: PARTIALLY_SUPPORTED
-      message: 风险表有Owner但覆盖不足，且没有状态、关闭证据和完成条件，无法牵引后续质量提升。
-      recommendation: 将已确认问题登记为Accepted存量风险，并为语法、API迁移、Static验证、资源回收、构建和测试分别定义Owner、关闭条件和证据。
-      evidence_ids: [EV-04-20-01-DESIGN, EV-04-20-01-SDK-DYNAMIC, EV-04-20-01-SRC-ANI, EV-04-20-01-TEST-BUILD]
+    conclusion: SUPPORTED
+    reason: 现有Feat之间职责归属、输入输出和依赖关系可辨识，未发现多个Feat重复拥有同一能力或给出冲突行为；共享底层机制保持为合理依赖。
+    claim_ids:
+    - FUNCTION-FEAT-BOUNDARY
+    - FUNCTION-04-20-01
+    evidence:
+    - evidence_id: EV-04-20-01-REGISTRY-FEATURE
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 387
+      line_end: 391
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9a81e2cff4a6a9810fc28c1841f5eb70748a23117a569cc8a69c78c30453fdfe
+      description: Feat-01标题、Spec路径和Baselined状态注册。
+    - evidence_id: EV-04-20-01-SPEC
+      type: spec_location
+      path: specs/04-common-capability/20-media-query/01-media-query/Feat-01-media-query-listener-spec.md
+      line_start: 1
+      line_end: 190
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9d041bd6d89b35a0ed769a4804922ca8bfb5d57b00968cd9eebd4f10344009e8
+      description: MediaQuery单Feat规格全文，包含查询、监听生命周期、规则、VM、API、兼容性和设备声明。
+    - evidence_id: EV-04-20-01-DESIGN
+      type: design_location
+      path: specs/04-common-capability/20-media-query/01-media-query/design.md
+      line_start: 1
+      line_end: 201
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:cc112fbb0fec02a149af236508d09e74c2593c4d73d95acae291f39e2a35e3d7
+      description: Function级Design全文，包含NAPI/ANI、查询核心、UIContext、ADR、测试方向和风险声明。
+    - evidence_id: EV-04-20-01-SRC-NAPI
+      type: source_citation
+      path: interfaces/napi/kits/mediaquery/js_media_query.cpp
+      line_start: 40
+      line_end: 443
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:a54825354a49d4e0dc1a42c0da6f72c796ab276a8f4844b7c236f743565bf7aa
+      description: Dynamic结果序列化、Listener更新、回调去重、注销、实例绑定和参数校验实现。
+    findings: []
   coverage:
     expected_criteria: 20
     evaluated_criteria: 20
@@ -631,20 +733,21 @@ semantic_result:
     - 用户确认MEDIA-06同时属于Spec规则和Design解析算法完整性问题，MediaQuery语法与解析应作为最高优先级补齐。
     - 多设备只评价OHOS内部设备形态，不评价ArkUI-X，也不要求Static对wearable的支持。
     - 其余问题及评分由用户确认写入，存量风险按Accepted记录。
+    - Rubric v0.3新增的Function建模三个Criterion已完成证据核验，并按用户统一确认结论写入。
 scores:
   dimensions:
     correctness: 16.0
     spec_executability: 12.5
     design_quality: 11.0
     compatibility_system_impact: 3.0
-    maintainability: 5.0
-  raw_score: 47.5
+    function_modeling: 9.0
+  raw_score: 51.5
   published_score: 39.0
   confidence: 1.0
   admission: NOT_READY
 confirmation:
   confirmed_by: sunfei2021
-  confirmed_at: '2026-08-07T11:16:05+08:00'
+  confirmed_at: '2026-08-07T15:44:25+08:00'
   conclusion: accepted
   notes:
   - 撤销原MEDIA-02“Static不存在Public matchMediaSync”的判断；Static Public入口由UIContext.MediaQuery提供，仅保留API矩阵清晰度改进项。
@@ -652,8 +755,9 @@ confirmation:
   - MEDIA-06确认Spec和Design均未完整描述MediaQuery语法规则及解析算法，后续应优先补齐。
   - Dynamic模块级matchMediaSync自API 18废弃的SDK事实与文档“无废弃API”冲突，MEDIA-01保持成立。
   - 其余静态、源码、构建、验证、设备和风险问题无异议，存量风险统一按Accepted记录。
-  - 原始分47.5；CORRECTNESS-SDK-CONTRACT存在Critical冲突，按Rubric v0.2封顶后发布分39.0。
+  - 原始分51.5；CORRECTNESS-SDK-CONTRACT存在Critical冲突，按Rubric v0.3封顶后发布分39。
   - 静态Gate为FAIL，准入结论为NOT_READY。
+  - 用户于2026-08-07统一确认Function建模维度新增的全部Finding及推荐结论。
 notes:
 - 本Review只记录评价结论，不修改Spec、Design、KB或产品源码。
 - 后续提升优先补齐MediaQuery语法与解析、API版本迁移、Static运行验证、资源所有权、构建部署及可执行测试闭环。
