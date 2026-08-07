@@ -4,10 +4,10 @@ evaluation_id: EVAL-03-02-08
 func_id: 03-02-08
 input_fingerprint: sha256:4b7df0c4b1b92ce8bf9d7376eb1d564cb77dfc9e0b368928fae1c9dd39bea218
 source_revision: d91b4e4990a990da2bfe809514e573e35852193e
-status: draft
+status: confirmed
 evaluator:
   evaluator_id: sunfei2021
-  evaluated_at: null
+  evaluated_at: '2026-08-06T16:27:24+08:00'
 semantic_result:
   schema_version: 1
   rubric_version: 0.2.0
@@ -28,211 +28,580 @@ semantic_result:
   - criterion_id: CORRECTNESS-SOURCE-SUPPORT
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      MotionPathOption、MotionPathEvaluator算法、Dynamic Bridge归一化、Rosen属性下发及SharedTransition复用主体均可由源码支持；
+      但文档把普通NG属性的RS直达链与SharedTransition的ACE Evaluator链串联，并明确错误声明无C API，源码事实只能判定部分支持。
+    claim_ids: [MOTION-03, MOTION-05, MOTION-10]
+    evidence:
+    - &ev_spec
+      evidence_id: EV-03-02-08-SPEC
+      type: spec_location
+      path: specs/03-engine-framework/02-animation-capability/08-motion-path/Feat-01-motion-path-spec.md
+      line_start: 1
+      line_end: 325
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c83dae35dd7767da662670bf2940f87a8a82cdd2771544a830f160f728e6408d
+      description: Feat-01全文，包含公开API、Option、Evaluator、SharedTransition、规则、VM、NFR和全局影响声明。
+    - &ev_design
+      evidence_id: EV-03-02-08-DESIGN
+      type: design_location
+      path: specs/03-engine-framework/02-animation-capability/08-motion-path/design.md
+      line_start: 1
+      line_end: 379
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:0c90793b33b44d603579ef7e50775f5d589b47af216780c89a0cbc24d2650539
+      description: Function级Design全文，包含调用链、架构图、时序、算法、构建、验证和风险表。
+    - &ev_static
+      evidence_id: EV-03-02-08-STATIC
+      type: static_finding
+      path: specs/.evaluator/d91b4e4990a990da2bfe809514e573e35852193e/03-02-08/report.md
+      line_start: 1
+      line_end: 172
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:b393a60884c9e56cb41de7fab9376345725b852e32503a7acd757b785a276a06
+      description: 静态Gate FAIL，29条Major Finding，Evidence coverage为41.67%。
+    - &ev_registry_function
+      evidence_id: EV-03-02-08-REGISTRY-FUNCTION
+      type: registry_entry
+      path: specs/registry/functions.yaml
+      line_start: 277
+      line_end: 289
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7e4afd02833c5d35cf434267941b5dad7fbf433fcd0308262236e75fb580a535
+      description: 路径动画Function路径、Design和active状态注册。
+    - &ev_registry_feature
+      evidence_id: EV-03-02-08-REGISTRY-FEATURE
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 1647
+      line_end: 1651
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9a81e2cff4a6a9810fc28c1841f5eb70748a23117a569cc8a69c78c30453fdfe
+      description: 单个Feat标题、Spec路径和Baselined状态注册。
+    - &ev_option
+      evidence_id: EV-03-02-08-SRC-OPTION
+      type: source_citation
+      path: frameworks/core/components/common/properties/motion_path_option.h
+      line_start: 24
+      line_end: 88
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:1fdade64a0042043c36fc66ae8ba309421f7ec43bef9e6e86f656f8c0e69eb6b
+      description: MotionPathOption四字段、默认值、IsValid和相等比较真实实现。
+    - &ev_evaluator
+      evidence_id: EV-03-02-08-SRC-EVALUATOR
+      type: source_citation
+      path: frameworks/core/components/common/properties/motion_path_evaluator.cpp
+      line_start: 40
+      line_end: 126
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:f557d7aa44743eb0c76841576fe677023d22ee187dd543c17727eedd65993907
+      description: Preprocess、Evaluate、SVG失败降级和四类适配Evaluator实现。
+    - &ev_js_bridge
+      evidence_id: EV-03-02-08-SRC-JS-BRIDGE
+      type: source_citation
+      path: frameworks/bridge/declarative_frontend/jsview/js_view_abstract.cpp
+      line_start: 474
+      line_end: 502
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:d73ac878ff6a1e2b83eb0deba0e42610b63e49c2327baaa07be7fffd9120834e
+      description: Dynamic ArkTS的path校验、from/to归一化和rotatable默认值解析。
+    - &ev_rosen
+      evidence_id: EV-03-02-08-SRC-ROSEN
+      type: source_citation
+      path: frameworks/core/components_ng/render/adapter/rosen_render_context.cpp
+      line_start: 6527
+      line_end: 6542
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:769a543fbac01b492e1600d5cf26e81fe6a99eee9462469efe307ae68f4f3ed2
+      description: 普通NG motionPath直接构造RSMotionPathOption并下发RSNode的实现。
+    - &ev_shared
+      evidence_id: EV-03-02-08-SRC-SHARED
+      type: source_citation
+      path: frameworks/core/components_ng/manager/shared_overlay/shared_transition_effect.cpp
+      line_start: 121
+      line_end: 169
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:05573fabb1e555a5f80c88934bcdb453ac8351bb701ac323e4e9cf363aaffd25
+      description: SharedTransition Exchange创建MotionPathEvaluator、平移和旋转动画的真实链路。
+    - &ev_static_impl
+      evidence_id: EV-03-02-08-SRC-STATIC-IMPL
+      type: source_citation
+      path: frameworks/core/interfaces/native/implementation/common_method_modifier.cpp
+      line_start: 1187
+      line_end: 1202
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:5f35499f72daad0fbb74caaa4b1acdfd86726bbedfc687ac76255af3c6d61b3f
+      description: Static ArkTS MotionPathOptions到MotionPathOption的转换实现。
+    - &ev_native_type
+      evidence_id: EV-03-02-08-SRC-CAPI
+      type: source_citation
+      path: interfaces/native/native_type.h
+      line_start: 4506
+      line_end: 4646
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:d76d456c585abee5d3ee9bf028067d7e049455e656f943c93698cc3aa57d5eed
+      description: API 23 ArkUI_MotionPathOptions及Create、Dispose、Set、Get公开C API声明。
+    - &ev_native_node
+      evidence_id: EV-03-02-08-SRC-NODE-ATTR
+      type: source_citation
+      path: interfaces/native/native_node.h
+      line_start: 2201
+      line_end: 2213
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:2b25d901cedaf50f74a5d347ce8726beadff6c5c289a585c41e034de9609039f
+      description: API 23 NODE_MOTION_PATH Native Node属性声明。
+    - &ev_node_animate
+      evidence_id: EV-03-02-08-SRC-CAPI-IMPL
+      type: source_citation
+      path: interfaces/native/node/node_animate.cpp
+      line_start: 780
+      line_end: 920
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:a27a2ef764bb96b619ace6114a87c9ccfc9f4cc4195115df2188185fed1eee16
+      description: C API默认值、空指针、范围、buffer和错误码处理实现。
+    - &ev_build
+      evidence_id: EV-03-02-08-BUILD
+      type: source_citation
+      path: frameworks/core/components/common/BUILD.gn
+      line_start: 17
+      line_end: 66
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:def9d159f83439ed85b43681696b7fa07dba9126c462ee57c5d7c64ddcbc4475
+      description: motion_path_evaluator.cpp与rosen_svg_painter.cpp的真实组件构建入口。
+    - &ev_test_capi
+      evidence_id: EV-03-02-08-TEST-CAPI
+      type: test_evidence
+      path: test/unittest/interfaces/node_animate_test.cpp
+      line_start: 385
+      line_end: 611
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7c7dd9cc077c0114fcb7ffac2126efdf06eeb478b087c7927a274e2ef4d2f190
+      description: C API MotionPathOptions默认值、空指针、范围和buffer错误码测试。
+    - &ev_test_shared
+      evidence_id: EV-03-02-08-TEST-SHARED
+      type: test_evidence
+      path: test/unittest/core/manager/shared_overlay_manager_test_ng.cpp
+      line_start: 460
+      line_end: 510
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:525971650881e4d93259aef424479e9e43b85d3d11656c0bd7343d7fbdece9a9
+      description: SharedTransition rotatable true和false分支的现有基础测试。
+    - &ev_test_rosen
+      evidence_id: EV-03-02-08-TEST-ROSEN
+      type: test_evidence
+      path: test/unittest/core/rosen/rosen_render_context_test_new.cpp
+      line_start: 520
+      line_end: 542
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:df1286994d1583a695c93f246d30ec20f2e09bcaf906c1984a66533aec98eb7a
+      description: RosenRenderContext测试仅调用OnMotionPathUpdate，缺少MotionPath结果断言。
+    - &ev_sdk_dynamic
+      evidence_id: EV-03-02-08-SDK-DYNAMIC
+      type: sdk_declaration
+      path: interface/sdk-js/api/@internal/component/ets/common.d.ts
+      line_start: 3805
+      line_end: 3877
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:0d26086699c95397773ae8ce8d5068060112a573a953cf085c560ad978d3af81
+      description: Dynamic MotionPathOptions字段、默认值、范围以及since 7/10/11声明。
+    - &ev_sdk_static
+      evidence_id: EV-03-02-08-SDK-STATIC
+      type: sdk_declaration
+      path: interface/sdk-js/api/arkui/component/common.static.d.ets
+      line_start: 1688
+      line_end: 1745
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:18845fc2e119f1b8614a118e7fc36421f7c80fcadebffdb033d446670ab39c3e
+      description: Static ArkTS API 23 MotionPathOptions声明及字段契约。
+    - &ev_graphic
+      evidence_id: EV-03-02-08-SRC-GRAPHIC-PATH
+      type: source_citation
+      path: foundation/graphic/graphic_2d/rosen/modules/render_service_client/core/animation/rs_path_animation.cpp
+      line_start: 73
+      line_end: 105
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:8fb377c5c7e04c4897834256ffd29d3154c18cbba37226564d7ea7158e4a4531
+      description: RSPathAnimation对begin/end范围的处理；同文件304至313行负责start/end占位符替换。
+    findings:
+    - finding_id: SEM-030208000000000000000001
+      criterion_id: CORRECTNESS-SOURCE-SUPPORT
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: Option和Evaluator算法主体准确，但普通属性主链、C API存在性和外部RS职责没有按真实源码建模。
+      recommendation: 按普通RS直达链和SharedTransition Evaluator链分别修订Spec与Design，并补齐Static和C API事实。
+      evidence_ids: [EV-03-02-08-SPEC, EV-03-02-08-DESIGN, EV-03-02-08-SRC-ROSEN, EV-03-02-08-SRC-SHARED, EV-03-02-08-SRC-CAPI]
+
   - criterion_id: CORRECTNESS-SDK-CONTRACT
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: CONTRADICTED
+    reason: >-
+      Dynamic ArkTS 7/10/11的主体声明正确，但Spec明确写“无C API”，与API 23的ArkUI_MotionPathOptions和NODE_MOTION_PATH直接冲突；
+      同时遗漏Static ArkTS API 23以及Dynamic、Static、C API之间不同的非法参数契约。
+    claim_ids: [MOTION-04, MOTION-05, MOTION-06]
+    evidence: [*ev_spec, *ev_sdk_dynamic, *ev_sdk_static, *ev_native_type, *ev_native_node, *ev_node_animate, *ev_static_impl]
+    findings:
+    - finding_id: SEM-030208000000000000000002
+      criterion_id: CORRECTNESS-SDK-CONTRACT
+      severity: Critical
+      conclusion: CONTRADICTED
+      message: “无C API”与冻结接口直接冲突，Static API 23和C API错误码契约均未纳入公开接口矩阵。
+      recommendation: 重建Dynamic、Static和C API三类接口矩阵，分别记录since、默认值、归一化、错误码和Node Attribute入口。
+      evidence_ids: [EV-03-02-08-SPEC, EV-03-02-08-SDK-DYNAMIC, EV-03-02-08-SDK-STATIC, EV-03-02-08-SRC-CAPI, EV-03-02-08-SRC-NODE-ATTR, EV-03-02-08-SRC-CAPI-IMPL]
+
   - criterion_id: CORRECTNESS-BOUNDARY-STATE
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      空path、from/to越界、to小于from、SVG失败、PTOFFSET和rotatable等多数ACE边界有实现依据；但文档把Dynamic归一化泛化为全部入口，
+      未覆盖非对象或空path重置、C API空指针/范围/buffer错误码，以及普通RS链与Evaluator链不同的失败位置。
+    claim_ids: [MOTION-06, MOTION-10]
+    evidence: [*ev_spec, *ev_js_bridge, *ev_evaluator, *ev_node_animate, *ev_graphic, *ev_test_capi]
+    findings:
+    - finding_id: SEM-030208000000000000000003
+      criterion_id: CORRECTNESS-BOUNDARY-STATE
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: Dynamic ArkTS边界基本准确，但Static、C API、RS下发和重置分支未区分，异常契约不完整。
+      recommendation: 以开放入口为维度建立path、from、to、rotatable、空对象、buffer和SVG失败决策表。
+      evidence_ids: [EV-03-02-08-SPEC, EV-03-02-08-SRC-JS-BRIDGE, EV-03-02-08-SRC-CAPI-IMPL, EV-03-02-08-SRC-GRAPHIC-PATH, EV-03-02-08-TEST-CAPI]
+
   - criterion_id: CORRECTNESS-CROSS-DOC-CONSISTENCY
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Registry、单Feat和Design主题关系一致，Spec与Design也共同描述Option、Evaluator和SharedTransition；但二者共同遗漏Static/C API，
+      Design架构图将SharedTransition单独连接Evaluator，后续数据流和时序却又把Evaluator接到普通RS下发链之后，跨章节不一致。
+    claim_ids: [MOTION-02, MOTION-03, MOTION-04, MOTION-05]
+    evidence: [*ev_spec, *ev_design, *ev_static, *ev_registry_function, *ev_registry_feature]
+    findings:
+    - finding_id: SEM-030208000000000000000004
+      criterion_id: CORRECTNESS-CROSS-DOC-CONSISTENCY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 注册关系一致，但API范围和两类运行链在Spec、Design及Design内部没有保持统一。
+      recommendation: 以三类公开入口和两条运行链为共同真相源，统一更新Spec接口矩阵、Design架构图、数据流和时序。
+      evidence_ids: [EV-03-02-08-SPEC, EV-03-02-08-DESIGN, EV-03-02-08-STATIC, EV-03-02-08-REGISTRY-FUNCTION, EV-03-02-08-REGISTRY-FEATURE]
+
   - criterion_id: SPEC-AC-TESTABILITY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      AC多数使用WHEN/THEN并包含可观察结果，Option和Evaluator算法也可形成UT；但普通属性AC错误绑定ACE Evaluator，
+      Dynamic、Static、C API差异未拆分，文档声称的Option、Evaluator、Preprocess和子Evaluator专用UT没有对应现有测试资产。
+    claim_ids: [MOTION-03, MOTION-06, MOTION-08]
+    evidence: [*ev_spec, *ev_evaluator, *ev_rosen, *ev_shared, *ev_test_capi, *ev_test_shared, *ev_test_rosen]
+    findings:
+    - finding_id: SEM-030208000000000000000005
+      criterion_id: SPEC-AC-TESTABILITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: AC形式可测试，但部分预期运行主体错误，且关键算法和普通属性链缺少可执行测试用例。
+      recommendation: 分别为普通RS链、SharedTransition Evaluator链、Static入口和C API建立精确AC及真实test target/filter。
+      evidence_ids: [EV-03-02-08-SPEC, EV-03-02-08-SRC-EVALUATOR, EV-03-02-08-SRC-ROSEN, EV-03-02-08-TEST-CAPI, EV-03-02-08-TEST-SHARED, EV-03-02-08-TEST-ROSEN]
+
   - criterion_id: SPEC-RULE-COMPLETENESS
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      R-1至R-10覆盖基础path、范围、降级、旋转和Evaluator适配，但遗漏to小于from的精确Dynamic结果、非对象和空path重置、
+      Static与C API边界、NODE_MOTION_PATH、RS层范围处理、生命周期和外部依赖失败。
+    claim_ids: [MOTION-04, MOTION-05, MOTION-06, MOTION-10]
+    evidence: [*ev_spec, *ev_js_bridge, *ev_node_animate, *ev_static_impl, *ev_graphic]
+    findings:
+    - finding_id: SEM-030208000000000000000006
+      criterion_id: SPEC-RULE-COMPLETENESS
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 已有规则覆盖Evaluator主体，但未覆盖完整开放入口、重置、错误码及普通RS运行链边界。
+      recommendation: 按Dynamic、Static、C API和SharedTransition四类场景补齐行为、边界、异常与恢复规则。
+      evidence_ids: [EV-03-02-08-SPEC, EV-03-02-08-SRC-JS-BRIDGE, EV-03-02-08-SRC-CAPI-IMPL, EV-03-02-08-SRC-STATIC-IMPL, EV-03-02-08-SRC-GRAPHIC-PATH]
+
   - criterion_id: SPEC-TRACEABILITY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      AC、Rule、VM和Task表均存在，但11处AC范围写法未展开，用户故事结构不合规，多个源码引用仅写basename或已经漂移，
+      静态报告保留29条Major Finding，现有测试也无法支撑文档声明的全部VM。
+    claim_ids: [MOTION-01, MOTION-02, MOTION-08]
+    evidence: [*ev_static, *ev_spec]
+    findings:
+    - finding_id: SEM-030208000000000000000007
+      criterion_id: SPEC-TRACEABILITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 追溯结构存在，但范围ID、用户故事、证据路径和真实测试资产尚未形成可复现闭环。
+      recommendation: 展开全部AC范围，修正用户故事和仓内完整路径，并将每个VM映射到真实target、二进制和用例。
+      evidence_ids: [EV-03-02-08-STATIC, EV-03-02-08-SPEC]
+
   - criterion_id: SPEC-SCOPE-BOUNDARY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Spec明确声明已有能力补录并覆盖Option、Evaluator、SharedTransition和Dynamic API，但“无C API”错误划定生态范围，
+      未把Static API 23、Native Node、C API及普通NG委托graphic_2d的责任边界纳入Function范围。
+    claim_ids: [MOTION-04, MOTION-05, MOTION-10]
+    evidence: [*ev_spec, *ev_design, *ev_sdk_static, *ev_native_type, *ev_graphic]
+    findings:
+    - finding_id: SEM-030208000000000000000008
+      criterion_id: SPEC-SCOPE-BOUNDARY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: Feature主题清楚，但公开API范围和ACE与graphic_2d职责边界存在明显缺口。
+      recommendation: 将Static、C API、Native Node和graphic_2d运行责任纳入范围，并明确普通属性与SharedTransition的分界。
+      evidence_ids: [EV-03-02-08-SPEC, EV-03-02-08-DESIGN, EV-03-02-08-SDK-STATIC, EV-03-02-08-SRC-CAPI, EV-03-02-08-SRC-GRAPHIC-PATH]
+
   - criterion_id: DESIGN-IMPLEMENTATION-PATH
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: CONTRADICTED
+    reason: >-
+      Design识别了API、Bridge、View、RenderContext、RS和SharedTransition等模块，但第197至237行把普通NG属性下发RS之后继续串联Animator与
+      MotionPathEvaluator；冻结源码显示普通NG链由RSPathAnimation处理，只有SharedTransition和旧管线在ACE内使用MotionPathEvaluator，主调用方向存在实质冲突。
+    claim_ids: [MOTION-03, MOTION-10]
+    evidence: [*ev_design, *ev_registry_function, *ev_rosen, *ev_shared, *ev_graphic]
+    findings:
+    - finding_id: SEM-030208000000000000000009
+      criterion_id: DESIGN-IMPLEMENTATION-PATH
+      severity: Critical
+      conclusion: CONTRADICTED
+      message: Design将普通RS直达链和SharedTransition ACE Evaluator链错误串成同一端到端调用链。
+      recommendation: 重画两条独立链路，分别标明ACE、graphic_2d、属性更新、逐帧求值和失败处理责任。
+      evidence_ids: [EV-03-02-08-DESIGN, EV-03-02-08-SRC-ROSEN, EV-03-02-08-SRC-SHARED, EV-03-02-08-SRC-GRAPHIC-PATH]
+
   - criterion_id: DESIGN-FEAT-RUNTIME-COVERAGE
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: CONTRADICTED
+    reason: >-
+      单Feat具有输入、属性更新、算法、输出、异常和测试章节，但其数据流、时序与状态机把公开motionPath的核心处理描述为ACE
+      MotionPathEvaluator逐帧求值；真实普通NG运行时由RSMotionPathOption创建RSPathAnimation并在graphic_2d内预处理和求值，属于核心运行流程冲突而非单纯遗漏。
+    claim_ids: [MOTION-03, MOTION-10]
+    evidence: [*ev_design, *ev_spec, *ev_registry_feature, *ev_rosen, *ev_shared, *ev_graphic]
+    findings:
+    - finding_id: SEM-030208000000000000000010
+      criterion_id: DESIGN-FEAT-RUNTIME-COVERAGE
+      severity: Major
+      conclusion: CONTRADICTED
+      message: Feat的普通motionPath核心运行主体和逐帧处理位置与冻结实现不一致。
+      recommendation: 将Feat运行设计拆为普通NG→RSPathAnimation链和SharedTransition→MotionPathEvaluator链，并分别补齐输入、状态、输出、恢复和测试。
+      evidence_ids: [EV-03-02-08-DESIGN, EV-03-02-08-SPEC, EV-03-02-08-SRC-ROSEN, EV-03-02-08-SRC-SHARED, EV-03-02-08-SRC-GRAPHIC-PATH]
+
   - criterion_id: DESIGN-ALGORITHM-DATA-STATE
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      MotionPathOption、Preprocess、progress公式、SVG失败、PTOFFSET和子Evaluator算法描述准确，SharedTransition旋转分支也可定位；
+      但普通RS链的数据模型和状态、Static/C API不同输入语义、RSMotionPathOption生命周期、跨仓资源所有权及动画结束释放没有设计闭环。
+    claim_ids: [MOTION-03, MOTION-06, MOTION-09, MOTION-10]
+    evidence: [*ev_design, *ev_option, *ev_evaluator, *ev_rosen, *ev_node_animate, *ev_graphic]
+    findings:
+    - finding_id: SEM-030208000000000000000011
+      criterion_id: DESIGN-ALGORITHM-DATA-STATE
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: ACE Evaluator算法较完整，但普通RS链的数据、状态、资源生命周期和多入口差异未覆盖。
+      recommendation: 补充RSMotionPathOption到RSPathAnimation的数据转换、状态校验、资源释放及不同入口的非法参数状态表。
+      evidence_ids: [EV-03-02-08-DESIGN, EV-03-02-08-SRC-EVALUATOR, EV-03-02-08-SRC-ROSEN, EV-03-02-08-SRC-CAPI-IMPL, EV-03-02-08-SRC-GRAPHIC-PATH]
+
   - criterion_id: DESIGN-DECISION-QUALITY
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      五个ADR覆盖占位符预处理、范围映射、空path降级、旋转和多Evaluator适配，均能找到ACE实现依据；
+      但候选方案、适用条件、兼容性成本和验证依据较简略，也没有记录普通链委托RS、Static/C API契约差异及跨仓责任边界这一关键决策。
+    claim_ids: [MOTION-04, MOTION-05, MOTION-10]
+    evidence: [*ev_design, *ev_evaluator, *ev_rosen, *ev_graphic]
+    findings:
+    - finding_id: SEM-030208000000000000000012
+      criterion_id: DESIGN-DECISION-QUALITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: ADR有真实算法依据，但未覆盖普通RS委托、多开放入口和跨仓兼容成本等关键决策。
+      recommendation: 增补ACE与RS分工、Dynamic/Static/C API统一或差异化校验、验证责任及演进成本ADR。
+      evidence_ids: [EV-03-02-08-DESIGN, EV-03-02-08-SRC-EVALUATOR, EV-03-02-08-SRC-ROSEN, EV-03-02-08-SRC-GRAPHIC-PATH]
+
   - criterion_id: DESIGN-IMPACT-COVERAGE
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design说明能力进入ace_engine核心且无独立SO，但引用的frameworks/core/components/common/properties/BUILD.gn不存在；
+      真实入口为components/common/BUILD.gn及frameworks/core/BUILD.gn，且遗漏Dynamic Bridge、Static Frontend、C API、Native Node、graphic_2d依赖、测试target和最终产物影响。
+    claim_ids: [MOTION-07]
+    evidence: [*ev_design, *ev_build, *ev_registry_function]
+    findings:
+    - finding_id: SEM-030208000000000000000013
+      criterion_id: DESIGN-IMPACT-COVERAGE
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 核心库结论基本成立，但BUILD路径错误，构建条件、依赖、入口、测试和产物覆盖不足。
+      recommendation: 以真实GN target为基线补齐Dynamic、Static、Native、graphic_2d依赖及构建产物和部署路径。
+      evidence_ids: [EV-03-02-08-DESIGN, EV-03-02-08-BUILD, EV-03-02-08-REGISTRY-FUNCTION]
+
   - criterion_id: DESIGN-VERIFICATION-PLAN
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design列出了Option、Evaluator、Preprocess、子Evaluator、RenderContext和手工视觉验证方向，但没有真实命令、target、二进制、Suite.Case或预期结果；
+      现有资产以C API测试和SharedTransition基础分支为主，未找到文档声称的Evaluator专用UT，60fps和生命周期风险也没有关闭证据。
+    claim_ids: [MOTION-08, MOTION-09]
+    evidence: [*ev_design, *ev_test_capi, *ev_test_shared, *ev_test_rosen]
+    findings:
+    - finding_id: SEM-030208000000000000000014
+      criterion_id: DESIGN-VERIFICATION-PLAN
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 验证方向存在，但缺少可执行测试入口，计划中的关键算法UT和NFR证据均未落地。
+      recommendation: 给出Host或对应产品构建命令、真实target和filter，补充Evaluator、普通RS链、Static、C API、Trace及生命周期验证。
+      evidence_ids: [EV-03-02-08-DESIGN, EV-03-02-08-TEST-CAPI, EV-03-02-08-TEST-SHARED, EV-03-02-08-TEST-ROSEN]
+
   - criterion_id: COMPATIBILITY-API-VERSION
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Dynamic ArkTS since 7、crossplatform since 10、atomicservice since 11记录正确，也未发现deprecated；
+      但API演进链遗漏Static ArkTS API 23、C API 23和NODE_MOTION_PATH 23，旧SDK行号已经漂移，开放范围矩阵不完整。
+    claim_ids: [MOTION-02, MOTION-04, MOTION-05]
+    evidence: [*ev_spec, *ev_design, *ev_sdk_dynamic, *ev_sdk_static, *ev_native_type, *ev_native_node]
+    findings:
+    - finding_id: SEM-030208000000000000000015
+      criterion_id: COMPATIBILITY-API-VERSION
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: Dynamic版本链正确，但Static和C API 23完全缺失，公开范围与兼容演进不完整。
+      recommendation: 补齐Dynamic 7/10/11、Static 23、C API 23及Node Attribute 23的统一版本矩阵。
+      evidence_ids: [EV-03-02-08-SPEC, EV-03-02-08-DESIGN, EV-03-02-08-SDK-DYNAMIC, EV-03-02-08-SDK-STATIC, EV-03-02-08-SRC-CAPI, EV-03-02-08-SRC-NODE-ATTR]
+
   - criterion_id: COMPATIBILITY-SYSTEM-IMPACT
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      SysCap、无权限要求和RosenSvgPainter依赖已有记录，但普通NG运行依赖graphic_2d的RSMotionPathOption、RSPathAnimation和渲染侧路径计算，
+      Design没有说明跨部件版本、失败传播、日志、构建依赖及ACE与RS责任边界。
+    claim_ids: [MOTION-07, MOTION-10]
+    evidence: [*ev_design, *ev_registry_function, *ev_rosen, *ev_graphic]
+    findings:
+    - finding_id: SEM-030208000000000000000016
+      criterion_id: COMPATIBILITY-SYSTEM-IMPACT
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 基础SysCap和Rosen依赖已识别，但graphic_2d跨部件运行、构建和失败影响未形成完整设计。
+      recommendation: 补充graphic_2d依赖、版本耦合、异常日志、降级责任和构建部署影响。
+      evidence_ids: [EV-03-02-08-DESIGN, EV-03-02-08-SRC-ROSEN, EV-03-02-08-SRC-GRAPHIC-PATH]
+
   - criterion_id: COMPATIBILITY-MULTI-DEVICE
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
+    conclusion: SUPPORTED
+    reason: >-
+      本评价按已确认口径仅审查OHOS内部设备形态。Spec明确手机、平板、折叠屏无差异，MotionPathOption、Evaluator及Rosen下发代码未发现按上述设备形态分支的行为差异。
+    claim_ids: [MOTION-MULTI-DEVICE]
+    evidence: [*ev_spec, *ev_design, *ev_option, *ev_rosen]
     findings: []
+
   - criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      核心Option和Evaluator文件仍能定位，但静态报告包含11条路径歧义、2条引用不存在，Design有一条真实错误路径，SDK行号已经漂移；
+      29条Major Finding和41.67%的Evidence coverage表明证据尚不能稳定复现全部60个Claim。
+    claim_ids: [MOTION-01, MOTION-02]
+    evidence: [*ev_static, *ev_spec, *ev_design, *ev_sdk_dynamic, *ev_option, *ev_evaluator]
+    findings:
+    - finding_id: SEM-030208000000000000000017
+      criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 核心源码可定位，但大量basename、错误路径和漂移行号使证据稳定性不足。
+      recommendation: 全部改为仓内完整路径，行号仅作辅助，并优先引用稳定符号、接口签名和真实测试入口。
+      evidence_ids: [EV-03-02-08-STATIC, EV-03-02-08-SPEC, EV-03-02-08-DESIGN, EV-03-02-08-SDK-DYNAMIC, EV-03-02-08-SRC-OPTION, EV-03-02-08-SRC-EVALUATOR]
+
   - criterion_id: MAINTAINABILITY-STRUCTURE
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      单Feat与Function级Design结构清晰，算法表和详细设计便于定位；但Spec和Design重复维护API行号、调用链和算法事实，
+      用户故事格式不合规、AC范围写法重复产生11条静态Finding，架构图、数据流和时序之间也出现同步漂移。
+    claim_ids: [MOTION-01, MOTION-02, MOTION-03]
+    evidence: [*ev_spec, *ev_design, *ev_static]
+    findings:
+    - finding_id: SEM-030208000000000000000018
+      criterion_id: MAINTAINABILITY-STRUCTURE
+      severity: Minor
+      conclusion: PARTIALLY_SUPPORTED
+      message: 文档结构可读，但重复事实、范围缩写和多图不同步增加后续维护漂移风险。
+      recommendation: 收敛单一接口与调用链真相源，展开追溯ID并让图表引用同一套两链模型。
+      evidence_ids: [EV-03-02-08-SPEC, EV-03-02-08-DESIGN, EV-03-02-08-STATIC]
+
   - criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design三项风险均有ArkUI SIG Owner并按用户确认记录为Accepted，但接受不代表认可“归一化逻辑在SDK层”等不准确前提；
+      风险表也遗漏Static/C API、graphic_2d外部责任、测试缺口、60fps和生命周期无证据等主要风险。
+    claim_ids: [MOTION-09, MOTION-10, MOTION-11]
+    evidence: [*ev_design, *ev_spec, *ev_sdk_static, *ev_native_type, *ev_test_capi]
+    findings:
+    - finding_id: SEM-030208000000000000000019
+      criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
+      severity: Minor
+      conclusion: PARTIALLY_SUPPORTED
+      message: 三项存量风险已有Owner并Accepted，但部分前提不准确且主要API、外部依赖、测试和NFR风险未登记。
+      recommendation: 保留Accepted处置，同时校正风险前提并新增Static/C API、graphic_2d、测试及NFR风险和关闭条件。
+      evidence_ids: [EV-03-02-08-DESIGN, EV-03-02-08-SPEC, EV-03-02-08-SDK-STATIC, EV-03-02-08-SRC-CAPI, EV-03-02-08-TEST-CAPI]
+
   coverage:
     expected_criteria: 20
     evaluated_criteria: 20
     applicable_criteria: 20
     not_applicable_criteria: 0
-    not_verifiable_criteria: 20
+    not_verifiable_criteria: 0
   execution:
     static_complete: true
     evidence_complete: true
-    semantic_complete: false
+    semantic_complete: true
     notes:
-    - 'Draft template: Criterion conclusions and scores are pending.'
+    - 静态报告29条Major Finding保持权威，语义评价未删除或降级静态问题。
+    - 用户确认MOTION-01至MOTION-11、20项Criterion和发布分39.0。
+    - 普通NG motionPath由RSPathAnimation处理；SharedTransition在ACE内使用MotionPathEvaluator，两条链必须独立建模。
+    - Design中的三项存量风险统一记录为Accepted；接受处置不代表认可其中不准确的事实前提。
 scores:
   dimensions:
-    correctness: null
-    spec_executability: null
-    design_quality: null
-    compatibility_system_impact: null
-    maintainability: null
-  raw_score: null
-  published_score: null
-  confidence: null
+    correctness: 13.0
+    spec_executability: 12.5
+    design_quality: 8.0
+    compatibility_system_impact: 6.5
+    maintainability: 5.0
+  raw_score: 45.0
+  published_score: 39.0
+  confidence: 1.0
   admission: NOT_READY
 confirmation:
-  confirmed_by: null
-  confirmed_at: null
-  conclusion: pending
-  notes: []
+  confirmed_by: sunfei2021
+  confirmed_at: '2026-08-06T16:27:24+08:00'
+  conclusion: accepted
+  notes:
+  - 用户确认MOTION-01至MOTION-11、三项存量风险Accepted及20项Criterion，无其他异议。
+  - DESIGN-FEAT-RUNTIME-COVERAGE维持CONTRADICTED：普通RS直达链与SharedTransition ACE Evaluator链被错误串联。
+  - 多设备仅指OHOS内部设备形态，手机、平板和折叠屏无差异，判定SUPPORTED。
+  - 原始分45.0；DESIGN-IMPLEMENTATION-PATH存在Critical冲突，按Rubric v0.2封顶后发布分39.0。
+  - 静态Gate为FAIL，准入结论为NOT_READY。
 notes:
-- 完成20个Criterion后填写精确分数并进行一次确认。
-- Critical/Major Finding必须包含冻结revision下的可复现证据。
+- 本Review只记录评价结论，不修改Spec、Design、KB或产品源码。
+- 后续提升应先拆分普通RS链和SharedTransition Evaluator链，再补齐Static/C API、证据路径、构建测试和NFR闭环。

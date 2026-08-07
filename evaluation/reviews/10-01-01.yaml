@@ -4,10 +4,10 @@ evaluation_id: EVAL-10-01-01
 func_id: 10-01-01
 input_fingerprint: sha256:f7ead7127d92bae7e5d2026f35cb08ca528de719f207fb10dde0c9c83563110e
 source_revision: d91b4e4990a990da2bfe809514e573e35852193e
-status: draft
+status: confirmed
 evaluator:
   evaluator_id: sunfei2021
-  evaluated_at: null
+  evaluated_at: '2026-08-06T10:57:32+08:00'
 semantic_result:
   schema_version: 1
   rubric_version: 0.2.0
@@ -30,211 +30,594 @@ semantic_result:
   - criterion_id: CORRECTNESS-SOURCE-SUPPORT
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      ArcSlider值校验、绘制、触摸、表冠以及ArcButton路径、文字、颜色和进度主体机制均可由冻结源码支撑，
+      但ArcSlider热区边界被写成开区间，ArcButton弹簧缩放实际为1到1的无位移变化，CUSTOM禁用色与Design不一致，
+      且options.type并不是ArcButtonOptions或SDK中的有效字段。
+    claim_ids: [ARC-02, ARC-04, ARC-05]
+    evidence:
+    - &ev_spec_slider
+      evidence_id: EV-10-01-01-SPEC-SLIDER
+      type: spec_location
+      path: specs/10-product-customization/01-wearable/01-arc-component/Feat-01-arc-slider-full-spec.md
+      line_start: 1
+      line_end: 355
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:f11c774d8f32bcfeacf04214a3e3150e6a0d7a7a68c41ad14555658ad35e797a
+      description: ArcSlider全量规格，包含AC、规则、验证映射、API版本、兼容性和NFR声明。
+    - &ev_spec_button
+      evidence_id: EV-10-01-01-SPEC-BUTTON
+      type: spec_location
+      path: specs/10-product-customization/01-wearable/01-arc-component/Feat-02-arc-button-full-spec.md
+      line_start: 1
+      line_end: 395
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:bf59034efbbfebf8b07debf6f69fe801aa60d7f87c088d0be36124f29e4bca1e
+      description: ArcButton全量规格，包含AC、规则、验证映射、API版本、兼容性和NFR声明。
+    - &ev_slider_src
+      evidence_id: EV-10-01-01-SRC-SLIDER
+      type: source_citation
+      path: advanced_ui_component/arcslider/source/arcslider.ets
+      line_start: 113
+      line_end: 1157
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4d352665a7954e5acab932c1f655a9bb38840d972c742df96c5983cf57b908f3
+      description: ArcSlider选项、校验、绘制、动画、热区、触摸、表冠和振动的冻结实现。
+    - &ev_button_src
+      evidence_id: EV-10-01-01-SRC-BUTTON
+      type: source_citation
+      path: advanced_ui_component/arcbutton/source/arcbutton.ets
+      line_start: 39
+      line_end: 783
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:303e6491a60c31a07e36b5203e09fa1f6b6a8b4fe5f911eaa9e68c19973d42c1
+      description: ArcButton选项、状态、路径、文字、进度、按压和异常分支的冻结实现。
+    findings:
+    - finding_id: SEM-c50aeaaeb361b8edb61df660
+      criterion_id: CORRECTNESS-SOURCE-SUPPORT
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 热区边界、ArcButton缩放反馈、CUSTOM禁用色和options.type四项描述与冻结实现不完全一致。
+      recommendation: 按实际闭区间、无缩放位移、CUSTOM状态赋值和有效Options字段修订Spec与Design。
+      evidence_ids: [EV-10-01-01-SPEC-SLIDER, EV-10-01-01-SPEC-BUTTON, EV-10-01-01-SRC-SLIDER, EV-10-01-01-SRC-BUTTON]
+
   - criterion_id: CORRECTNESS-SDK-CONTRACT
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      ArcSlider和ArcButton主体API可以在sdk-js中定位，但ArcButtonProgressConfig及progressConfig实际从API 23开始，
+      文档统一写为API 18；ArcButton进度value/total边界没有完整承接，ArcSlider progress默认等于min的SDK语义
+      也没有区分Options构造瞬间与组件checkParam后的有效状态。
+    claim_ids: [ARC-02, ARC-03]
+    evidence:
+    - &ev_slider_sdk
+      evidence_id: EV-10-01-01-SDK-SLIDER
+      type: sdk_declaration
+      path: interface/sdk-js/api/@ohos.arkui.advanced.ArcSlider.d.ets
+      line_start: 54
+      line_end: 759
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c14178120c557b9e0c246d7f7699950b6a475d6ca958efb9e1a9a0d43d938015
+      description: ArcSlider动态SDK的默认值、范围、回调、开放范围和since声明。
+    - &ev_button_sdk
+      evidence_id: EV-10-01-01-SDK-BUTTON
+      type: sdk_declaration
+      path: interface/sdk-js/api/@ohos.arkui.advanced.ArcButton.d.ets
+      line_start: 147
+      line_end: 659
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c7696cae0eb8be2fd005fc92f36e91a33c49df8b2d3095207f7b5949f075a56c
+      description: ArcButton进度API 23、value和total边界、多设备说明及主体API 18声明。
+    - *ev_spec_slider
+    - *ev_spec_button
+    - *ev_slider_src
+    - *ev_button_src
+    findings:
+    - finding_id: SEM-d4bdfdd410ee0207de86373a
+      criterion_id: CORRECTNESS-SDK-CONTRACT
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: ArcButton进度API版本提前、进度边界缺失，ArcSlider默认progress的对象与渲染语义未准确区分。
+      recommendation: 将ArcButton基础能力与API 23进度能力拆分，并逐项承接value、total和progress默认规则。
+      evidence_ids: [EV-10-01-01-SDK-SLIDER, EV-10-01-01-SDK-BUTTON, EV-10-01-01-SPEC-SLIDER, EV-10-01-01-SPEC-BUTTON]
+
   - criterion_id: CORRECTNESS-BOUNDARY-STATE
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      两个Feat覆盖多数正常和部分异常分支，但ArcSlider热区临界点、ArcButton进度非法值、CUSTOM禁用态、
+      sys.float非BUTTON_HEIGHT资源失败、两圆无交点以及振动权限和异步错误后的状态没有形成完整准确的边界模型。
+    claim_ids: [ARC-02, ARC-03, ARC-05, ARC-10]
+    evidence:
+    - *ev_spec_slider
+    - *ev_spec_button
+    - *ev_slider_src
+    - *ev_button_src
+    - *ev_button_sdk
+    findings:
+    - finding_id: SEM-c1a179fc3f86d2819b45d5c0
+      criterion_id: CORRECTNESS-BOUNDARY-STATE
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 多个临界输入、资源失败和恢复状态未被规格完整建模，部分边界还与实现或SDK不一致。
+      recommendation: 增加边界与状态表，覆盖闭区间、进度非法值、主题资源、几何失败、权限拒绝和异步回调失败。
+      evidence_ids: [EV-10-01-01-SRC-SLIDER, EV-10-01-01-SRC-BUTTON, EV-10-01-01-SDK-BUTTON]
+
   - criterion_id: CORRECTNESS-CROSS-DOC-CONSISTENCY
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Registry、两个Feat和共享Design的Function拆分一致，但Spec与Design共同重复了热区开区间、ArcButton进度API 18、
+      穿戴设备专用和弹性缩放等错误；Design还声明无独立SO，与真实BUILD和模块注册链冲突。
+    claim_ids: [ARC-02, ARC-03, ARC-04, ARC-06, ARC-07]
+    evidence:
+    - &ev_design
+      evidence_id: EV-10-01-01-DESIGN
+      type: design_location
+      path: specs/10-product-customization/01-wearable/01-arc-component/design.md
+      line_start: 1
+      line_end: 593
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:3a6f5175453a234f1482deef5bfee9b3a1dcb24ea5d9ebb4aa7147bdc3e04323
+      description: Function共享Design，包含上下文、ADR、构建、运行设计、测试性设计和风险表。
+    - &ev_registry
+      evidence_id: EV-10-01-01-REGISTRY
+      type: registry_entry
+      path: specs/registry/functions.yaml
+      line_start: 3917
+      line_end: 3929
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7e4afd02833c5d35cf434267941b5dad7fbf433fcd0308262236e75fb580a535
+      description: 10-01-01弧形组件Function注册项、路径、Design和active状态。
+    - *ev_spec_slider
+    - *ev_spec_button
+    - *ev_slider_src
+    - *ev_button_src
+    findings:
+    - finding_id: SEM-3d092f89de4ac8dbbcc13163
+      criterion_id: CORRECTNESS-CROSS-DOC-CONSISTENCY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: Spec和Design同步复制了多项事实偏差，且构建结论与冻结构建文件直接冲突。
+      recommendation: 以SDK、源码和BUILD为统一真相源修订两个Feat及Design，避免重复维护错误结论。
+      evidence_ids: [EV-10-01-01-SPEC-SLIDER, EV-10-01-01-SPEC-BUTTON, EV-10-01-01-DESIGN]
+
   - criterion_id: SPEC-AC-TESTABILITY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      AC普遍采用WHEN/THEN并给出源码位置，但验证映射只写UT、手工或Trace方向，没有真实测试文件、构建target、
+      测试二进制、Suite.Case、操作步骤和可判定预期结果；ace_engine中未找到ArcSlider或ArcButton专用UT资产。
+    claim_ids: [ARC-09]
+    evidence:
+    - *ev_spec_slider
+    - *ev_spec_button
+    - &ev_test_build
+      evidence_id: EV-10-01-01-TEST-BUILD
+      type: test_evidence
+      path: advanced_ui_component/BUILD.gn
+      line_start: 70
+      line_end: 110
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:ef2c988e1562674d2723628fec93b18e53f58b45917f836e1ad27cc73dd78767
+      description: advanced_ui_component仅聚合产品构建目标；未提供文档所称ArcSlider或ArcButton组件UT target。
+    findings:
+    - finding_id: SEM-d88b732c2ddcd85698a00e08
+      criterion_id: SPEC-AC-TESTABILITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: AC具有自然语言可观察结果，但无法由文档直接定位、构建并执行验证。
+      recommendation: 为每类AC补充真实target、测试文件或手工步骤、精确用例范围、观测点和通过标准。
+      evidence_ids: [EV-10-01-01-SPEC-SLIDER, EV-10-01-01-SPEC-BUTTON, EV-10-01-01-TEST-BUILD]
+
   - criterion_id: SPEC-RULE-COMPLETENESS
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      两个Feat均有规则表并覆盖主要功能，但缺少ArcButton进度完整边界、CUSTOM禁用态、全部主题资源失败、
+      几何无交点、振动权限和回调错误恢复；已有热区规则还把闭区间写成开区间。
+    claim_ids: [ARC-02, ARC-03, ARC-05, ARC-10]
+    evidence:
+    - *ev_spec_slider
+    - *ev_spec_button
+    - *ev_slider_src
+    - *ev_button_src
+    - *ev_button_sdk
+    findings:
+    - finding_id: SEM-fbd4c0403ef35e9ee2dbde35
+      criterion_id: SPEC-RULE-COMPLETENESS
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 规则主体存在，但关键临界值、资源失败、权限和恢复规则缺失或不准确。
+      recommendation: 按SDK契约和源码分支补齐输入、状态、资源、权限、异步失败与恢复规则。
+      evidence_ids: [EV-10-01-01-SPEC-SLIDER, EV-10-01-01-SPEC-BUTTON, EV-10-01-01-SRC-SLIDER, EV-10-01-01-SRC-BUTTON]
+
   - criterion_id: SPEC-TRACEABILITY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      AC、Rule和VM编号体系已经建立，但静态扫描确认44处范围ID未展开，范围聚合导致原子AC不能稳定唯一映射到Rule、
+      VM和证据；15个用户故事的结构问题进一步使统一解析Gate失败。
+    claim_ids: [ARC-01, TRACE-RANGE-ID-001, SPEC-STRUCT-USER-STORY-001]
+    evidence:
+    - &ev_static
+      evidence_id: EV-10-01-01-STATIC
+      type: static_finding
+      path: specs/.evaluator/d91b4e4990a990da2bfe809514e573e35852193e/10-01-01/report.md
+      line_start: 1
+      line_end: 322
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:5dca3ff04e99027b442463005e478980545aa4ae9ef62629e643d2273cfa0f00
+      description: 静态Gate FAIL，包含15个用户故事结构问题和44个范围ID问题。
+    - *ev_spec_slider
+    - *ev_spec_button
+    findings:
+    - finding_id: SEM-6a62e29b42240de49c6e081b
+      criterion_id: SPEC-TRACEABILITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 44处范围ID使AC到Rule、VM和证据的原子追溯只能依赖人工解释。
+      recommendation: 展开所有范围ID并逐项校验AC、Rule、VM和证据的双向关系。
+      evidence_ids: [EV-10-01-01-STATIC, EV-10-01-01-SPEC-SLIDER, EV-10-01-01-SPEC-BUTTON]
+
   - criterion_id: SPEC-SCOPE-BOUNDARY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Function和两个Feat边界基本清楚，也明确无Pattern和C API；但文档将ArcSlider与ArcButton统一限定为穿戴设备专用，
+      未拆分ArcButton可在手机、PC、二合一、平板和TV运行的SDK范围，也没有把真实动态模块及部署边界纳入范围。
+    claim_ids: [ARC-06, ARC-07, ARC-12]
+    evidence:
+    - *ev_spec_slider
+    - *ev_spec_button
+    - *ev_design
+    - *ev_button_sdk
+    findings:
+    - finding_id: SEM-feedc2d9af057e26fbc13a06
+      criterion_id: SPEC-SCOPE-BOUNDARY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: ArcButton多设备开放范围和两个动态模块的构建部署边界未被准确纳入Function范围。
+      recommendation: 分别声明ArcSlider与ArcButton设备范围，并列出动态库、ABC、注册、加载和明确排除的static评价范围。
+      evidence_ids: [EV-10-01-01-SPEC-BUTTON, EV-10-01-01-DESIGN, EV-10-01-01-SDK-BUTTON]
+
   - criterion_id: DESIGN-IMPLEMENTATION-PATH
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design给出SDK、Interface Bridge、Advanced Component和基础组件的层次骨架，但没有准确描述JS生成ABC、ABC嵌入对象、
+      独立共享库安装、NAPI构造注册、GetABCCode导出和运行时模块发现的完整链路，架构图的SDK到CPP到ETS方向过度简化。
+    claim_ids: [ARC-07, ARC-08]
+    evidence:
+    - *ev_design
+    - &ev_slider_build
+      evidence_id: EV-10-01-01-BUILD-SLIDER
+      type: source_citation
+      path: advanced_ui_component/arcslider/interfaces/BUILD.gn
+      line_start: 20
+      line_end: 58
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:a371dfcfbf9ac50a8c8f165cfba7785c9a0ac5fcac7d272f2bf01523d732ca89
+      description: ArcSlider从interfaces JS生成ABC和对象，并构建独立共享库及安装目录。
+    - &ev_button_build
+      evidence_id: EV-10-01-01-BUILD-BUTTON
+      type: source_citation
+      path: advanced_ui_component/arcbutton/interfaces/BUILD.gn
+      line_start: 20
+      line_end: 58
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:ee95931f4fec50ca5201459753ec43c0363b2d8e40427e7b0cf393e22fb818c0
+      description: ArcButton从interfaces JS生成ABC和对象，并构建独立共享库及安装目录。
+    - &ev_slider_cpp
+      evidence_id: EV-10-01-01-CPP-SLIDER
+      type: source_citation
+      path: advanced_ui_component/arcslider/interfaces/arcslider.cpp
+      line_start: 21
+      line_end: 54
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:54626a65f03d08bbc7c26092def2531a6ffdae866b06c5447724dabc1a3d3e47
+      description: ArcSlider ABC导出、arkui.advanced.ArcSlider模块名和NAPI构造注册入口。
+    findings:
+    - finding_id: SEM-fa8b97a0ef9a7287e511861a
+      criterion_id: DESIGN-IMPLEMENTATION-PATH
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 分层骨架存在，但从应用模块导入到ABC执行和最终基础组件渲染的端到端链路未闭环。
+      recommendation: 补充JS、ABC、对象文件、共享库、NAPI注册、模块加载和ArkTS组件执行的真实调用方向及职责。
+      evidence_ids: [EV-10-01-01-DESIGN, EV-10-01-01-BUILD-SLIDER, EV-10-01-01-BUILD-BUTTON, EV-10-01-01-CPP-SLIDER]
+
   - criterion_id: DESIGN-FEAT-RUNTIME-COVERAGE
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Feat-01已有初始化、触摸、表冠、动画和绘制流程，Feat-02已有路径、颜色、文字和进度详细设计；但ArcButton没有完整
+      生命周期与状态转换，Feat-02的阴影、模糊、响应式更新和失败恢复没有形成逐Feat运行闭环，两个Feat均缺少真实测试衔接。
+    claim_ids: [Feat-01, Feat-02, ARC-08, ARC-09]
+    evidence:
+    - *ev_design
+    - *ev_spec_slider
+    - *ev_spec_button
+    - *ev_slider_src
+    - *ev_button_src
+    findings:
+    - finding_id: SEM-c4352b03a9fab6f258a72f52
+      criterion_id: DESIGN-FEAT-RUNTIME-COVERAGE
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 两个Feat均可定位主流程，但ArcButton部分运行环节、异常恢复和测试交接不完整。
+      recommendation: 按Feat补齐输入、校验、状态、核心处理、输出、异常恢复和可执行验证入口。
+      evidence_ids: [EV-10-01-01-DESIGN, EV-10-01-01-SPEC-SLIDER, EV-10-01-01-SPEC-BUTTON]
+
   - criterion_id: DESIGN-ALGORITHM-DATA-STATE
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design详细记录ArcSlider绘制、值映射、布局、动画和ArcButton两圆相交算法，但没有完整覆盖ArcButton状态机、
+      CUSTOM颜色状态、无交点几何失败、主题资源生命周期、振动异步回调以及timeout和animator的恢复约束。
+    claim_ids: [ARC-05, ARC-08, ARC-10]
+    evidence:
+    - *ev_design
+    - *ev_slider_src
+    - *ev_button_src
+    findings:
+    - finding_id: SEM-ad6a32767efc63fec17f9ee2
+      criterion_id: DESIGN-ALGORITHM-DATA-STATE
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 核心算法已描述，但适用的数据、状态、资源、异步回调和失败恢复设计不完整。
+      recommendation: 增加ArcButton状态表、资源和几何异常分支，以及ArcSlider定时器、动画器和振动回调生命周期。
+      evidence_ids: [EV-10-01-01-DESIGN, EV-10-01-01-SRC-SLIDER, EV-10-01-01-SRC-BUTTON]
+
   - criterion_id: DESIGN-DECISION-QUALITY
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      八项ADR给出了真实候选和主要取舍，但缺少成本、适用条件、兼容影响和验证依据；ADR-6将无位移的scaleValue=1描述为
+      弹性缩放方案，ADR-8又错误关联到ArcButton AC-5而不是进度AC-6，导致部分决策依据和追溯不可靠。
+    claim_ids: [ADR-1, ADR-2, ADR-3, ADR-4, ADR-5, ADR-6, ADR-7, ADR-8]
+    evidence:
+    - *ev_design
+    - *ev_button_src
+    - *ev_spec_button
+    findings:
+    - finding_id: SEM-c03998dae819535197c9d15b
+      criterion_id: DESIGN-DECISION-QUALITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: ADR主体存在，但缩放决策与实现不一致、进度决策追溯错误且缺少可复现验证依据。
+      recommendation: 修正ADR-6和ADR-8，并为各关键决策补充适用条件、成本、兼容性和测试或源码依据。
+      evidence_ids: [EV-10-01-01-DESIGN, EV-10-01-01-SRC-BUTTON, EV-10-01-01-SPEC-BUTTON]
+
   - criterion_id: DESIGN-IMPACT-COVERAGE
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: CONTRADICTED
+    reason: >-
+      Design明确声明ArcSlider和ArcButton作为统一advanced_ui_component库构建且无独立SO，实际二者各自具有
+      ohos_shared_library target、ABC和对象产物、NAPI模块注册以及module/arkui/advanced安装位置，Preview也分别登记共享库。
+    claim_ids: [ARC-07]
+    evidence:
+    - *ev_design
+    - *ev_slider_build
+    - *ev_button_build
+    - *ev_slider_cpp
+    - &ev_preview
+      evidence_id: EV-10-01-01-PREVIEW
+      type: source_citation
+      path: adapter/preview/sdk/sharedlib_config.gni
+      line_start: 723
+      line_end: 730
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:5cb05cbefbba411dac1c03eb769c7acabd851504b37d8d7e58090c59327c4d52
+      description: Preview sharedlib配置单独登记arcslider；同文件913至916行单独登记arcbutton。
+    findings:
+    - finding_id: SEM-6c5252b94ff6e7e2c11ffbe4
+      criterion_id: DESIGN-IMPACT-COVERAGE
+      severity: Major
+      conclusion: CONTRADICTED
+      message: “无独立SO”的构建部署结论与两个独立共享库、ABC、注册和安装事实直接冲突。
+      recommendation: 按真实BUILD目标补齐产物名称、条件、依赖、注册、模块加载、安装路径和Preview配置。
+      evidence_ids: [EV-10-01-01-DESIGN, EV-10-01-01-BUILD-SLIDER, EV-10-01-01-BUILD-BUTTON, EV-10-01-01-CPP-SLIDER, EV-10-01-01-PREVIEW]
+
   - criterion_id: DESIGN-VERIFICATION-PLAN
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      测试性设计列出参数、布局、热区、路径、颜色、文字和真机方向，但没有真实GN或Ninja target、测试资产、可执行二进制、
+      Suite.Case或filter、逐AC期望结果和风险关闭证据；60fps、内存、功耗及异常恢复指标也没有实际结果。
+    claim_ids: [ARC-09]
+    evidence:
+    - *ev_design
+    - *ev_test_build
+    - *ev_spec_slider
+    - *ev_spec_button
+    findings:
+    - finding_id: SEM-794a263ada2328420cbb05f0
+      criterion_id: DESIGN-VERIFICATION-PLAN
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 存在验证方向，但无法直接构建、运行并判定两个Feat及NFR是否通过。
+      recommendation: 提供真实target、测试文件或手工脚本、精确用例范围、预期结果和每项风险的关闭条件与证据。
+      evidence_ids: [EV-10-01-01-DESIGN, EV-10-01-01-TEST-BUILD, EV-10-01-01-SPEC-SLIDER, EV-10-01-01-SPEC-BUTTON]
+
   - criterion_id: COMPATIBILITY-API-VERSION
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      ArcSlider与ArcButton主体最低版本API 18的判断成立，但ArcButtonProgressConfig和progressConfig实际为API 23，
+      Spec、Design和API表均将其提前归入API 18；本轮按用户约定不评价wearable static实现差异。
+    claim_ids: [ARC-03, ARC-12]
+    evidence:
+    - *ev_button_sdk
+    - *ev_spec_button
+    - *ev_design
+    findings:
+    - finding_id: SEM-6a1a5de7a00bf1635c3d7f5c
+      criterion_id: COMPATIBILITY-API-VERSION
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: ArcButton进度API的since版本被提前5个API级别，无法作为准确版本兼容基线。
+      recommendation: 将基础Options的API 18与progressConfig的API 23分别记录，并同步所有兼容性和API表。
+      evidence_ids: [EV-10-01-01-SDK-BUTTON, EV-10-01-01-SPEC-BUTTON, EV-10-01-01-DESIGN]
+
   - criterion_id: COMPATIBILITY-SYSTEM-IMPACT
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design识别了Graphics、Sensor、measure、display和sys资源依赖，也记录振动权限风险；但API权限表仍写“无”，
+      没有明确应用侧module.json5的ohos.permission.VIBRATE配置、Sensors.MiscDevice能力以及201、801和设备失败后的降级结果。
+    claim_ids: [ARC-10]
+    evidence:
+    - *ev_design
+    - *ev_slider_src
+    - &ev_vibrator_sdk
+      evidence_id: EV-10-01-01-SDK-VIBRATOR
+      type: sdk_declaration
+      path: interface/sdk-js/api/@ohos.vibrator.d.ts
+      line_start: 99
+      line_end: 170
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7b520a80ff820edb83b0f26dbc3ac3739a098291a3843b639b46864f7c057df6
+      description: startVibration的VIBRATE权限、Sensors.MiscDevice SysCap和权限、不支持、设备失败错误契约。
+    findings:
+    - finding_id: SEM-b572becc9a769268fd2bcc33
+      criterion_id: COMPATIBILITY-SYSTEM-IMPACT
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 系统依赖已识别，但振动权限、SysCap、错误码和应用侧配置没有形成完整影响与降级说明。
+      recommendation: 在接口和部署设计中补充VIBRATE权限、Sensors.MiscDevice、module.json5示例及失败后的功能降级。
+      evidence_ids: [EV-10-01-01-DESIGN, EV-10-01-01-SRC-SLIDER, EV-10-01-01-SDK-VIBRATOR]
+
   - criterion_id: COMPATIBILITY-MULTI-DEVICE
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: CONTRADICTED
+    reason: >-
+      ArcSlider面向穿戴圆形屏幕的结论与SDK一致，但Spec和Design将ArcButton也声明为手机和平板不适用；SDK明确允许ArcButton
+      在手机、PC、二合一、平板、TV和穿戴设备运行，API 22及以前非穿戴设备只产生编译告警。
+    claim_ids: [ARC-06]
+    evidence:
+    - *ev_spec_button
+    - *ev_design
+    - *ev_button_sdk
+    findings:
+    - finding_id: SEM-247d937538cee7dcf2fc9601
+      criterion_id: COMPATIBILITY-MULTI-DEVICE
+      severity: Major
+      conclusion: CONTRADICTED
+      message: ArcButton“仅穿戴设备可用”的多设备结论与公开SDK的可运行设备范围直接冲突。
+      recommendation: 将ArcSlider和ArcButton分开声明，记录ArcButton各设备可运行及API 22以前编译告警行为。
+      evidence_ids: [EV-10-01-01-SPEC-BUTTON, EV-10-01-01-DESIGN, EV-10-01-01-SDK-BUTTON]
+
   - criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      文档多数证据可以通过仓内路径定位，但大量引用使用单文件名和易漂移行号，SDK关联仓revision未写入正式文档，
+      构建文件路径又写成不存在的arcslider/BUILD.gn和arcbutton/BUILD.gn；Review虽冻结revision，原文长期复现性仍不足。
+    claim_ids: [ARC-07, ARC-11]
+    evidence:
+    - *ev_spec_slider
+    - *ev_spec_button
+    - *ev_design
+    - *ev_slider_build
+    - *ev_button_sdk
+    findings:
+    - finding_id: SEM-3ec2c3993cae3b8caab0c36e
+      criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 脆弱行号、错误BUILD路径和缺少sdk-js revision降低了证据的稳定复现能力。
+      recommendation: 使用仓内完整路径与符号或target锚点，并在正式评价输入中冻结ace_engine、specs和sdk-js revision。
+      evidence_ids: [EV-10-01-01-SPEC-SLIDER, EV-10-01-01-SPEC-BUTTON, EV-10-01-01-DESIGN, EV-10-01-01-BUILD-SLIDER, EV-10-01-01-SDK-BUTTON]
+
   - criterion_id: MAINTAINABILITY-STRUCTURE
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      两Feat和Function级Design结构便于导航，但15个用户故事未采用标准三段式，44个范围ID需要人工展开，
+      API版本、多设备、静态前端和行为细节又在Spec与Design重复维护，已经产生多处同步漂移。
+    claim_ids: [ARC-01, ARC-11]
+    evidence:
+    - *ev_static
+    - *ev_spec_slider
+    - *ev_spec_button
+    - *ev_design
+    findings:
+    - finding_id: SEM-0caa9689184a3f05b72eca0e
+      criterion_id: MAINTAINABILITY-STRUCTURE
+      severity: Minor
+      conclusion: PARTIALLY_SUPPORTED
+      message: 功能拆分清晰，但用户故事格式、范围ID和跨文档重复信息增加解析及同步维护成本。
+      recommendation: 统一三行用户故事和原子ID，把公共版本、设备和构建信息集中在Function级并保留Feat差异。
+      evidence_ids: [EV-10-01-01-STATIC, EV-10-01-01-SPEC-SLIDER, EV-10-01-01-SPEC-BUTTON, EV-10-01-01-DESIGN]
+
   - criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
+    conclusion: SUPPORTED
+    reason: >-
+      Design列出display异常回退、measure依赖、振动权限和sys.float资源四项适用存量风险，并包含类型、影响、处理方式和
+      ArkUI SIG Owner；用户已在本次单次确认中将四项记录为Accepted。静态前端风险按既定评价范围排除，不作为有效事实或扣分项。
+    claim_ids: [RISK-DISPLAY-FALLBACK, RISK-MEASURE-DEPENDENCY, RISK-VIBRATE-PERMISSION, RISK-SYS-FLOAT]
+    evidence:
+    - *ev_design
     findings: []
+
   coverage:
     expected_criteria: 20
     evaluated_criteria: 20
     applicable_criteria: 20
     not_applicable_criteria: 0
-    not_verifiable_criteria: 20
+    not_verifiable_criteria: 0
   execution:
     static_complete: true
     evidence_complete: true
-    semantic_complete: false
+    semantic_complete: true
     notes:
-    - 'Draft template: Criterion conclusions and scores are pending.'
+    - 已核验两个Feat、共享Design、冻结源码、sdk-js契约、独立共享库构建注册链和测试资产。
+    - 静态Gate保持FAIL，59项Major Finding未被语义评价删除或降级。
+    - wearable static支持按用户既定范围排除，不因聚合源码现状扣分。
+    - ArcSlider和ArcButton专用UT代码及target在ace_engine中未找到。
 scores:
   dimensions:
-    correctness: null
-    spec_executability: null
-    design_quality: null
-    compatibility_system_impact: null
-    maintainability: null
-  raw_score: null
-  published_score: null
-  confidence: null
+    correctness: 16.0
+    spec_executability: 12.5
+    design_quality: 11.0
+    compatibility_system_impact: 3.5
+    maintainability: 6.5
+  raw_score: 49.5
+  published_score: 49.5
+  confidence: 1.0
   admission: NOT_READY
 confirmation:
-  confirmed_by: null
-  confirmed_at: null
-  conclusion: pending
-  notes: []
+  confirmed_by: sunfei2021
+  confirmed_at: '2026-08-06T10:57:32+08:00'
+  conclusion: accepted
+  notes:
+  - 用户统一确认ARC-01至ARC-12问题与20项Criterion推荐结论，无异议。
+  - display异常回退、measure依赖、振动权限和sys.float资源四项适用存量风险记录为Accepted。
+  - wearable static支持不纳入本轮评分，Design中的静态聚合结论不作为有效评价事实。
+  - 静态扫描59项Major继续保持，语义评价不修改正式Spec、Design或产品源码。
+  - SDK冻结revision为224c0c10fde3910a473455eac6841614a162ce39。
+  - specs评价输入冻结revision为40ddf7e53da9da1e1dec8b3eb7e3ef26d8d6054e。
 notes:
-- 完成20个Criterion后填写精确分数并进行一次确认。
-- Critical/Major Finding必须包含冻结revision下的可复现证据。
+- 弧形组件在Rubric v0.2下完成20个Criterion的单次确认评价。
+- 主要提升项为API版本和边界修正、多设备声明、真实共享库加载链、ArcButton状态恢复设计及可执行验证资产。

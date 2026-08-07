@@ -4,10 +4,10 @@ evaluation_id: EVAL-04-20-01
 func_id: 04-20-01
 input_fingerprint: sha256:76002577be45450ef73135224703ef8fa84a24f128e3cbd43f74248c149110e0
 source_revision: d91b4e4990a990da2bfe809514e573e35852193e
-status: draft
+status: confirmed
 evaluator:
   evaluator_id: sunfei2021
-  evaluated_at: null
+  evaluated_at: '2026-08-07T11:16:05+08:00'
 semantic_result:
   schema_version: 1
   rubric_version: 0.2.0
@@ -28,211 +28,632 @@ semantic_result:
   - criterion_id: CORRECTNESS-SOURCE-SUPPORT
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Dynamic查询、结果序列化、回调去重、单个或全部注销，以及MediaQueryer的数值比较、方向、设备类型、圆屏和深色模式主体均由冻结源码支持；
+      Static也存在UIContext到ANI的承接链，但内部MediaQueryListener没有按SDK结果接口声明matches/media，而是依赖ANI按字段名写入，且缺少运行用例确认最终对象形态；
+      同时Static原生Listener只保存裸指针，冻结代码中未找到与ArkTS对象生命周期绑定的finalizer/delete路径，源码支持度只能判定部分支持。
+    claim_ids: [MEDIA-03, MEDIA-04]
+    evidence:
+    - &ev_spec
+      evidence_id: EV-04-20-01-SPEC
+      type: spec_location
+      path: specs/04-common-capability/20-media-query/01-media-query/Feat-01-media-query-listener-spec.md
+      line_start: 1
+      line_end: 190
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9d041bd6d89b35a0ed769a4804922ca8bfb5d57b00968cd9eebd4f10344009e8
+      description: MediaQuery单Feat规格全文，包含查询、监听生命周期、规则、VM、API、兼容性和设备声明。
+    - &ev_design
+      evidence_id: EV-04-20-01-DESIGN
+      type: design_location
+      path: specs/04-common-capability/20-media-query/01-media-query/design.md
+      line_start: 1
+      line_end: 201
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:cc112fbb0fec02a149af236508d09e74c2593c4d73d95acae291f39e2a35e3d7
+      description: Function级Design全文，包含NAPI/ANI、查询核心、UIContext、ADR、测试方向和风险声明。
+    - &ev_static
+      evidence_id: EV-04-20-01-STATIC
+      type: static_finding
+      path: specs/.evaluator/d91b4e4990a990da2bfe809514e573e35852193e/04-20-01/report.md
+      line_start: 1
+      line_end: 66
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:b4040a5f6617cc6a04199d6eca070eba3710cc1a1ea0c2cf1a607962510e3697
+      description: 静态Gate FAIL，8条Major Finding，31个Claim，Evidence coverage为32.26%。
+    - &ev_registry_function
+      evidence_id: EV-04-20-01-REGISTRY-FUNCTION
+      type: registry_entry
+      path: specs/registry/functions.yaml
+      line_start: 1473
+      line_end: 1485
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7e4afd02833c5d35cf434267941b5dad7fbf433fcd0308262236e75fb580a535
+      description: MediaQuery Function路径、Design和active状态注册。
+    - &ev_registry_feature
+      evidence_id: EV-04-20-01-REGISTRY-FEATURE
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 387
+      line_end: 391
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9a81e2cff4a6a9810fc28c1841f5eb70748a23117a569cc8a69c78c30453fdfe
+      description: Feat-01标题、Spec路径和Baselined状态注册。
+    - &ev_sdk_dynamic
+      evidence_id: EV-04-20-01-SDK-DYNAMIC
+      type: sdk_declaration
+      path: interface/sdk-js/api/@ohos.mediaquery.d.ts
+      line_start: 29
+      line_end: 159
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:6aaa26411506d7a3408cbd94c9f5a10ccfbafeee23160b42be2d32611747ce25
+      description: Dynamic模块的UIContext限制、Listener契约及模块级API 18废弃声明。
+    - &ev_sdk_static
+      evidence_id: EV-04-20-01-SDK-STATIC
+      type: sdk_declaration
+      path: interface/sdk-js/api/@ohos.mediaquery.static.d.ets
+      line_start: 23
+      line_end: 99
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:f14f09373b84266a2735bb3e1d9828dcc27dc03cd5f57fa233e75e59591aaf8b
+      description: Static MediaQueryResult及MediaQueryListener继承、onChange和offChange公开契约。
+    - &ev_sdk_ui_dynamic
+      evidence_id: EV-04-20-01-SDK-UI-DYNAMIC
+      type: sdk_declaration
+      path: interface/sdk-js/api/@ohos.arkui.UIContext.d.ts
+      line_start: 124
+      line_end: 5061
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:e4675839e8ee58404698091e907f255d29756e97e958137c89308bfb92c21e5e
+      description: Dynamic UIContext.MediaQuery和getMediaQuery公开入口，均自API 10提供。
+    - &ev_sdk_ui_static
+      evidence_id: EV-04-20-01-SDK-UI-STATIC
+      type: sdk_declaration
+      path: interface/sdk-js/api/@ohos.arkui.UIContext.static.d.ets
+      line_start: 138
+      line_end: 3712
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:de5f85c12059d75af811178a26af22a05875622a9fb69a8c6de821ce3855582c
+      description: Static UIContext.MediaQuery.matchMediaSync及getMediaQuery公开入口，均自API 23提供。
+    - &ev_sdk_system_dynamic
+      evidence_id: EV-04-20-01-SDK-SYSTEM-DYNAMIC
+      type: sdk_declaration
+      path: interface/sdk-js/api/@system.mediaquery.d.ts
+      line_start: 21
+      line_end: 194
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:67710a63b834ffe272895fab7f5c9b224fce35f275b6b773ac88ec2d0f0dd6a3
+      description: Legacy System模块自API 3的matchMedia、addListener和removeListener契约。
+    - &ev_sdk_system_static
+      evidence_id: EV-04-20-01-SDK-SYSTEM-STATIC
+      type: sdk_declaration
+      path: interface/sdk-js/api/@system.mediaquery.static.d.ets
+      line_start: 21
+      line_end: 121
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:79fc8926ddf91f8b5b217f4396792faf7c3a9a40b6992a15918429e95763649f
+      description: Legacy System模块Static API 23声明。
+    - &ev_napi
+      evidence_id: EV-04-20-01-SRC-NAPI
+      type: source_citation
+      path: interfaces/napi/kits/mediaquery/js_media_query.cpp
+      line_start: 40
+      line_end: 443
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:a54825354a49d4e0dc1a42c0da6f72c796ab276a8f4844b7c236f743565bf7aa
+      description: Dynamic结果序列化、Listener更新、回调去重、注销、实例绑定和参数校验实现。
+    - &ev_queryer
+      evidence_id: EV-04-20-01-SRC-QUERYER
+      type: source_citation
+      path: frameworks/bridge/common/media_query/media_queryer.cpp
+      line_start: 75
+      line_end: 358
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:e7f3f5f583e7f8c4aeddecfe2968fde1a69c4a2a2903e02865e6ceb21dec2a3c
+      description: 单位换算、CSS Level 3/4、枚举规则、组合条件、非法语法、初始化边界和查询缓存实现。
+    - &ev_info
+      evidence_id: EV-04-20-01-SRC-INFO
+      type: source_citation
+      path: frameworks/bridge/common/media_query/media_query_info.cpp
+      line_start: 24
+      line_end: 123
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:e0c97427dec771954f36b8d0d0b6db2080faa67244e61e18a37a861060c6c386
+      description: OHOS设备类型、方向、窗口尺寸、密度、圆屏和深色模式媒体信息来源。
+    - &ev_static_ets
+      evidence_id: EV-04-20-01-SRC-STATIC-ETS
+      type: source_citation
+      path: interfaces/ets/ani/mediaquery/ets/@ohos.mediaquery.ets
+      line_start: 18
+      line_end: 42
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:49cd1b3a3701173515ba25cea8f7108acf060c16e1ca562ba232197cb0674e26
+      description: Static内部Result、MediaQueryListener、native pointer和ANI模块函数声明。
+    - &ev_ani
+      evidence_id: EV-04-20-01-SRC-ANI
+      type: source_citation
+      path: interfaces/ets/ani/mediaquery/src/mediaquery.cpp
+      line_start: 42
+      line_end: 489
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:235616fc1ce759c4f0f68334e875974e53362cf6f60effc2ffcd2fbe9279b0c9
+      description: Static ANI结果序列化、Listener回调管理、裸指针保存、查询和native绑定实现。
+    - &ev_ui_dynamic_impl
+      evidence_id: EV-04-20-01-SRC-UI-DYNAMIC
+      type: source_citation
+      path: frameworks/bridge/declarative_frontend/engine/jsUIContext.js
+      line_start: 85
+      line_end: 527
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:d07126832cd8adc09cc30103ade92ceef91c4598ac96008e908e8ba4da961235
+      description: Dynamic UIContext按instanceId调用mediaquery NAPI并返回MediaQuery对象。
+    - &ev_ui_static_impl
+      evidence_id: EV-04-20-01-SRC-UI-STATIC
+      type: source_citation
+      path: frameworks/bridge/arkts_frontend/koala_projects/arkoala-arkts/arkui-ohos/src/base/UIContextImpl.ets
+      line_start: 127
+      line_end: 136
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:707b3cf0db7bc8a49a80ff7518b372f8e9c7702d4f3cfa65ec400bb534306525
+      description: Static UIContext同步instanceId后调用内部mediaquery.matchMediaSync承接函数。
+    - &ev_build_napi
+      evidence_id: EV-04-20-01-BUILD-NAPI
+      type: source_citation
+      path: interfaces/napi/kits/mediaquery/BUILD.gn
+      line_start: 17
+      line_end: 69
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:8232a80eaa2e13582e53084dd4590b629b5b1ea351f7b54a11b844ca06a22389
+      description: Dynamic各平台mediaquery source set及NAPI、ContainerScope依赖条件。
+    - &ev_build_ani
+      evidence_id: EV-04-20-01-BUILD-ANI
+      type: source_citation
+      path: interfaces/ets/ani/mediaquery/BUILD.gn
+      line_start: 19
+      line_end: 48
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:8e95feae3eef55594a231c3a21046273b04ddb217079aef10a00eedd1a65b798
+      description: mediaquery_ani共享库、Static ABC生成、system/framework安装和mediaquery_etc部署目标。
+    - &ev_test_build
+      evidence_id: EV-04-20-01-TEST-BUILD
+      type: test_evidence
+      path: test/unittest/bridge/common/media_query/BUILD.gn
+      line_start: 17
+      line_end: 37
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:d640b91ce009946227bb272387334d810da7616a635416746048f88bcec751f9
+      description: media_query_test_ng真实target及full suite开关下的源文件切换。
+    - &ev_test_query
+      evidence_id: EV-04-20-01-TEST-QUERY
+      type: test_evidence
+      path: test/unittest/bridge/common/media_query/media_query_test.cpp
+      line_start: 38
+      line_end: 1160
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:addd2b03b38653d2c0aeb3ed6649065751b19b3a5e209f6d054642893effc07d
+      description: MediaQueryInfo和MediaQueryer的方向、设备、语法、单位、组合、非法条件和缓存测试。
+    - &ev_test_core
+      evidence_id: EV-04-20-01-TEST-CORE
+      type: test_evidence
+      path: test/unittest/bridge/common/media_query/media_query_test_core.cpp
+      line_start: 21
+      line_end: 30
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7467175784c016b06358b3be123562051e80a02349fc49ac87e91137f97e9513
+      description: 非full suite配置下当前只有保证编译的占位测试。
+    - &ev_ani_runtime
+      evidence_id: EV-04-20-01-ANI-RUNTIME
+      type: source_citation
+      path: arkcompiler/runtime_core/static_core/plugins/ets/runtime/ani/ani_interaction_api.cpp
+      line_start: 2748
+      line_end: 2772
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:f01259135f714d128f3c7a34f6f447a08c7258112b57320446be73a72bdbdc83
+      description: ANI按字段名写入时先从对象Class查找真实字段，未找到返回ANI_NOT_FOUND。
+    - &ev_ani_test
+      evidence_id: EV-04-20-01-ANI-TEST
+      type: test_evidence
+      path: arkcompiler/runtime_core/static_core/plugins/ets/tests/ani/tests/object_ops/object_set_field_by_name_boolean_test.cpp
+      line_start: 63
+      line_end: 74
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:25ae631cf875f3d509ca95eab4240d2935908bbc39e6be654449b47fc4c44ad4
+      description: ANI测试确认不存在的字段名返回ANI_NOT_FOUND，类型不一致返回ANI_INVALID_TYPE。
+    findings:
+    - finding_id: SEM-042001000000000000000001
+      criterion_id: CORRECTNESS-SOURCE-SUPPORT
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: Dynamic和查询核心主体受源码支持，但Static Listener的字段承接和原生对象回收没有运行证据形成完整闭环。
+      recommendation: 保留内部承接结构的事实描述，增加Static运行测试验证matches/media，并为原生Listener建立可复现的所有权和回收证据。
+      evidence_ids: [EV-04-20-01-SRC-STATIC-ETS, EV-04-20-01-SRC-ANI, EV-04-20-01-ANI-RUNTIME, EV-04-20-01-ANI-TEST]
+
   - criterion_id: CORRECTNESS-SDK-CONTRACT
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: CONTRADICTED
+    reason: >-
+      Dynamic模块级matchMediaSync在SDK中明确自API 18废弃，并要求迁移到UIContext.getMediaQuery().matchMediaSync；
+      Spec和Design却均声明“变更/废弃API：无”，且没有形成API 7至17、API 18起及UIContext API 10起的迁移矩阵。
+      用户确认Static的Public入口确实由UIContext.static.d.ets中的MediaQuery类提供，撤销“Static不存在Public matchMediaSync”的原判断；
+      Static内部继承结构差异只作为未验证实现风险，不作为本Criterion的确定冲突依据。
+    claim_ids: [MEDIA-01]
+    evidence: [*ev_spec, *ev_design, *ev_sdk_dynamic, *ev_sdk_ui_dynamic, *ev_sdk_static, *ev_sdk_ui_static]
+    findings:
+    - finding_id: SEM-042001000000000000000002
+      criterion_id: CORRECTNESS-SDK-CONTRACT
+      severity: Critical
+      conclusion: CONTRADICTED
+      message: 文档将Dynamic模块级matchMediaSync记录为无废弃API，与SDK自API 18废弃并迁移至UIContext的公开契约直接冲突。
+      recommendation: 明确Dynamic API 7至17的模块入口、API 10起UIContext入口及API 18起的废弃迁移关系；Static API 23继续定位到UIContext.MediaQuery。
+      evidence_ids: [EV-04-20-01-SPEC, EV-04-20-01-DESIGN, EV-04-20-01-SDK-DYNAMIC, EV-04-20-01-SDK-UI-DYNAMIC, EV-04-20-01-SDK-UI-STATIC]
+
   - criterion_id: CORRECTNESS-BOUNDARY-STATE
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      参数数、字符串类型和长度、重复callback、指定或全部注销等主体边界受NAPI/ANI源码支持；
+      但Spec没有明确空条件、非法语法、未知Feature、width或height未初始化均返回false，也遗漏Dynamic不能在UIAbility声明或生命周期使用、
+      UIContext歧义限制以及注册回调内不能调用on/off等SDK边界，Static对象字段和资源生命周期也缺少可执行验证。
+    claim_ids: [MEDIA-03, MEDIA-04, MEDIA-05, MEDIA-06]
+    evidence: [*ev_spec, *ev_sdk_dynamic, *ev_napi, *ev_queryer, *ev_static_ets, *ev_ani, *ev_test_query]
+    findings:
+    - finding_id: SEM-042001000000000000000003
+      criterion_id: CORRECTNESS-BOUNDARY-STATE
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 查询失败语义、UIContext使用限制、回调内on/off限制及Static对象生命周期没有形成完整准确的边界规则。
+      recommendation: 将查询返回false的各类条件、Dynamic上下文限制和Static资源生命周期分别补成AC、Rule和VM。
+      evidence_ids: [EV-04-20-01-SPEC, EV-04-20-01-SDK-DYNAMIC, EV-04-20-01-SRC-QUERYER, EV-04-20-01-SRC-ANI]
+
   - criterion_id: CORRECTNESS-CROSS-DOC-CONSISTENCY
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
+    conclusion: SUPPORTED
+    reason: >-
+      Function与单Feat的ID、标题、路径和Baselined状态在Registry、Spec和Design中一致；Spec与Design也采用同一Dynamic、Static、UIContext和查询核心分层口径。
+      两份文档共同遗漏废弃迁移和详细语法属于事实及完整性问题，不构成彼此之间的文档冲突。
     claim_ids: []
-    evidence: []
+    evidence: [*ev_spec, *ev_design, *ev_registry_function, *ev_registry_feature]
     findings: []
+
   - criterion_id: SPEC-AC-TESTABILITY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      6个AC均使用WHEN/THEN并具有可观察的matches、media、回调、去重和注销结果；但AC-1.2只写“实现支持的数值比较和媒体特征”，
+      未展开合法语法、单位、组合、优先关系和非法条件结果，AC-1.3又只描述Dynamic NAPI边界。
+      VM没有真实target、二进制、Suite.Case或精确断言，现有测试也不覆盖NAPI/ANI Listener生命周期。
+    claim_ids: [MEDIA-06, MEDIA-08, MEDIA-10]
+    evidence: [*ev_spec, *ev_queryer, *ev_test_build, *ev_test_query, *ev_test_core]
+    findings:
+    - finding_id: SEM-042001000000000000000004
+      criterion_id: SPEC-AC-TESTABILITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: AC可观察但查询语法过于概括，Listener生命周期又没有可执行测试资产，不能直接转化为稳定自动化断言。
+      recommendation: 按语法类别拆分AC，列出每类输入与精确结果，并映射到真实target、测试二进制和具体用例。
+      evidence_ids: [EV-04-20-01-SPEC, EV-04-20-01-SRC-QUERYER, EV-04-20-01-TEST-BUILD, EV-04-20-01-TEST-QUERY, EV-04-20-01-TEST-CORE]
+
   - criterion_id: SPEC-RULE-COMPLETENESS
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      R-1至R-6覆盖结果快照、媒体特征、NAPI异常、注册、去重和注销主体；用户确认MediaQuery语法与解析是本Function的重点，
+      当前R-2没有展开CSS Level 3/4形式、比较运算符、单位差异、screen/only/not/and/or/逗号组合、大小写、default映射、
+      空条件、非法语法、未知Feature、未初始化宽高和缓存语义，Design中的解析算法同样不完整。
+    claim_ids: [MEDIA-05, MEDIA-06]
+    evidence: [*ev_spec, *ev_design, *ev_queryer, *ev_test_query]
+    findings:
+    - finding_id: SEM-042001000000000000000005
+      criterion_id: SPEC-RULE-COMPLETENESS
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: MediaQuery核心语法和解析边界被压缩为“实现支持的条件”，未形成可独立执行的规则基线。
+      recommendation: 建立语法支持矩阵，逐项说明表达式、运算符、单位、组合、大小写、失败返回、初始化边界和缓存，并补齐对应Rule与AC。
+      evidence_ids: [EV-04-20-01-SPEC, EV-04-20-01-DESIGN, EV-04-20-01-SRC-QUERYER, EV-04-20-01-TEST-QUERY]
+
   - criterion_id: SPEC-TRACEABILITY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Spec包含AC、Rule和VM三类结构，但静态报告确认验收追溯表头使用AC而非AC编号，并存在7处AC或Rule范围ID未展开；
+      “Listener生命周期UT”的证据实际引用js_media_query.cpp源码，仓内也没有NAPI/ANI Listener专用测试，原子追溯只能依赖人工解释。
+    claim_ids: [MEDIA-08, MEDIA-10, SPEC-STRUCT-TABLE-FIELD-001, TRACE-RANGE-ID-001]
+    evidence: [*ev_static, *ev_spec, *ev_test_build, *ev_test_query]
+    findings:
+    - finding_id: SEM-042001000000000000000006
+      criterion_id: SPEC-TRACEABILITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 追溯表头和7处范围ID违反静态规则，且Listener生命周期UT声明没有真实测试证据支撑。
+      recommendation: 将表头修正为AC编号，展开全部AC和Rule范围，并将每个VM映射到真实测试target、二进制及用例。
+      evidence_ids: [EV-04-20-01-STATIC, EV-04-20-01-SPEC, EV-04-20-01-TEST-BUILD, EV-04-20-01-TEST-QUERY]
+
   - criterion_id: SPEC-SCOPE-BOUNDARY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Function、单Feat、Dynamic、Static、UIContext和无Native Node C API的主体边界可识别；用户确认Static Public matchMediaSync位于UIContext.static.d.ets，
+      原“Static不存在Public入口”的判断已撤销。但API矩阵没有将Dynamic模块入口、Dynamic UIContext和Static UIContext分别列明，
+      “保留System模块兼容声明”也未说明@system.mediaquery是本Feat验收范围还是遗留上下文承接范围。
+    claim_ids: [MEDIA-07]
+    evidence: [*ev_spec, *ev_design, *ev_sdk_dynamic, *ev_sdk_static, *ev_sdk_ui_dynamic, *ev_sdk_ui_static, *ev_sdk_system_dynamic, *ev_sdk_system_static]
+    findings:
+    - finding_id: SEM-042001000000000000000007
+      criterion_id: SPEC-SCOPE-BOUNDARY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 当前API矩阵未分别标明Dynamic模块、Dynamic UIContext和Static UIContext入口，Legacy System模块也只有一句兼容声明。
+      recommendation: 将三类当前入口按所有者、版本和开放范围分开列出，并明确@system.mediaquery是排除项、兼容上下文还是完整验收范围。
+      evidence_ids: [EV-04-20-01-SPEC, EV-04-20-01-DESIGN, EV-04-20-01-SDK-DYNAMIC, EV-04-20-01-SDK-UI-STATIC, EV-04-20-01-SDK-SYSTEM-DYNAMIC]
+
   - criterion_id: DESIGN-IMPLEMENTATION-PATH
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design列出SDK、Dynamic NAPI、Static ANI、MediaQueryer、MediaQueryInfo和Frontend更新层，并给出主调用图；
+      但没有准确展开Dynamic与Static UIContext的实例同步承接、Static内部模块函数与Public类的所有者关系、Legacy System模块承接边界，
+      也没有把ABC加载和共享库加载纳入端到端分层路径。
+    claim_ids: [MEDIA-03, MEDIA-07, MEDIA-09]
+    evidence: [*ev_design, *ev_registry_function, *ev_napi, *ev_ani, *ev_ui_dynamic_impl, *ev_ui_static_impl, *ev_build_ani]
+    findings:
+    - finding_id: SEM-042001000000000000000008
+      criterion_id: DESIGN-IMPLEMENTATION-PATH
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 主链存在，但UIContext实例承接、Static内部与Public类型边界以及模块加载部署路径没有完整进入架构上下文。
+      recommendation: 按Public API、UIContext实现、NAPI/ANI绑定、查询核心、更新调度、共享库和ABC加载逐层补齐端到端调用链。
+      evidence_ids: [EV-04-20-01-DESIGN, EV-04-20-01-SRC-UI-DYNAMIC, EV-04-20-01-SRC-UI-STATIC, EV-04-20-01-SRC-NAPI, EV-04-20-01-SRC-ANI, EV-04-20-01-BUILD-ANI]
+
   - criterion_id: DESIGN-FEAT-RUNTIME-COVERAGE
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      单Feat能够从condition输入定位到查询核心、初始结果、媒体更新和off释放方向；但详细运行设计只用一段文字描述Dynamic路径，
+      未分别覆盖Static对象构造和字段承接、UIContext实例同步、非法语法返回、回调内注销限制、资源所有权、失败恢复及可执行测试交接。
+    claim_ids: [MEDIA-03, MEDIA-04, MEDIA-05, MEDIA-06, MEDIA-10]
+    evidence: [*ev_design, *ev_spec, *ev_napi, *ev_queryer, *ev_ani, *ev_ui_static_impl]
+    findings:
+    - finding_id: SEM-042001000000000000000009
+      criterion_id: DESIGN-FEAT-RUNTIME-COVERAGE
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: Feat主流程可定位，但Static、异常恢复、资源生命周期和测试交接没有形成逐环节运行设计。
+      recommendation: 以Dynamic和Static两条运行链分别补齐输入、实例状态、解析、结果、更新、注销、失败处理和测试衔接。
+      evidence_ids: [EV-04-20-01-DESIGN, EV-04-20-01-SPEC, EV-04-20-01-SRC-NAPI, EV-04-20-01-SRC-QUERYER, EV-04-20-01-SRC-ANI]
+
   - criterion_id: DESIGN-ALGORITHM-DATA-STATE
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design识别了condition、MediaFeature、Listener、callback及初始查询到更新分发的基本数据流；用户确认语法规则和解析算法需要重点补充，
+      当前未说明规则匹配顺序、单位换算、and/or/not处理、失败原因、width或height初始化门槛、缓存键和值、Listener集合、延迟删除、锁和线程局部状态，
+      也没有形成Static原生对象所有权和回收设计。
+    claim_ids: [MEDIA-03, MEDIA-04, MEDIA-06]
+    evidence: [*ev_design, *ev_queryer, *ev_napi, *ev_ani]
+    findings:
+    - finding_id: SEM-04200100000000000000000a
+      criterion_id: DESIGN-ALGORITHM-DATA-STATE
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: MediaQuery核心解析算法、缓存、Listener状态、并发删除和Static资源所有权均只有概括性描述。
+      recommendation: 展开解析状态机和规则顺序，并记录查询缓存、Listener集合、callback引用、锁、延迟删除和原生对象回收的生命周期。
+      evidence_ids: [EV-04-20-01-DESIGN, EV-04-20-01-SRC-QUERYER, EV-04-20-01-SRC-NAPI, EV-04-20-01-SRC-ANI]
+
   - criterion_id: DESIGN-DECISION-QUALITY
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      ADR-1至ADR-3包含Listener承载更新、按实现归档语法和多入口分开记录三个真实方向，也列出替代方案；
+      但没有说明Dynamic废弃迁移、Static Public与内部入口边界、Legacy System模块取舍、语法支持矩阵的兼容成本、资源所有权方案和验证依据，
+      候选、成本、适用条件与验证闭环不完整。
+    claim_ids: [MEDIA-01, MEDIA-03, MEDIA-04, MEDIA-06, MEDIA-07]
+    evidence: [*ev_design, *ev_sdk_dynamic, *ev_sdk_ui_static, *ev_queryer, *ev_ani]
+    findings:
+    - finding_id: SEM-04200100000000000000000b
+      criterion_id: DESIGN-DECISION-QUALITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: ADR存在真实方向，但没有覆盖废弃迁移、Static承接、Legacy范围、语法兼容和资源所有权等关键取舍。
+      recommendation: 为关键入口、解析兼容和资源生命周期补充候选方案、适用条件、兼容成本、选择理由及验证证据。
+      evidence_ids: [EV-04-20-01-DESIGN, EV-04-20-01-SDK-DYNAMIC, EV-04-20-01-SDK-UI-STATIC, EV-04-20-01-SRC-QUERYER, EV-04-20-01-SRC-ANI]
+
   - criterion_id: DESIGN-IMPACT-COVERAGE
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: MISSING
+    reason: >-
+      Design的构建结论仅为“沿用NAPI/ANI既有BUILD.gn，不新增target”，没有列出真实Dynamic各平台source set、NAPI条件依赖、mediaquery_ani共享库、
+      mediaquery.abc、system/framework安装路径、mediaquery_etc部署目标、ANI加载关系及media_query_test_ng测试target。
+      按Rubric定义，仅说明本次不修改BUILD文件不能视为存量构建部署设计。
+    claim_ids: [MEDIA-09]
+    evidence: [*ev_design, *ev_build_napi, *ev_build_ani, *ev_test_build, *ev_registry_function]
+    findings:
+    - finding_id: SEM-04200100000000000000000c
+      criterion_id: DESIGN-IMPACT-COVERAGE
+      severity: Major
+      conclusion: MISSING
+      message: Design没有描述MediaQuery实际构建目标、条件、产物、加载、安装和测试target，仅声明本次无BUILD变更。
+      recommendation: 补充各平台NAPI source set、ANI共享库、ABC、安装目录、etc部署、加载入口、依赖条件和Host测试target。
+      evidence_ids: [EV-04-20-01-DESIGN, EV-04-20-01-BUILD-NAPI, EV-04-20-01-BUILD-ANI, EV-04-20-01-TEST-BUILD]
+
   - criterion_id: DESIGN-VERIFICATION-PLAN
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design给出Query engine、NAPI/ANI和UIContext三个测试方向，但没有构建命令、真实target、二进制路径、Suite.Case或filter、AC映射、精确预期和风险关闭条件；
+      media_query_test_ng在非full suite配置下只包含占位用例，full suite测试也只覆盖MediaQueryInfo和MediaQueryer，没有NAPI/ANI Listener生命周期及Static对象契约测试。
+    claim_ids: [MEDIA-03, MEDIA-04, MEDIA-06, MEDIA-10]
+    evidence: [*ev_design, *ev_test_build, *ev_test_query, *ev_test_core, *ev_ani_test]
+    findings:
+    - finding_id: SEM-04200100000000000000000d
+      criterion_id: DESIGN-VERIFICATION-PLAN
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 验证方向存在，但缺少可执行命令和AC映射，默认测试配置只有占位用例，Listener与Static结果契约没有测试覆盖。
+      recommendation: 提供Host构建运行命令、target、二进制、用例或filter、预期结果和风险关闭门槛，并新增NAPI/ANI生命周期及Static matches/media测试。
+      evidence_ids: [EV-04-20-01-DESIGN, EV-04-20-01-TEST-BUILD, EV-04-20-01-TEST-QUERY, EV-04-20-01-TEST-CORE, EV-04-20-01-ANI-TEST]
+
   - criterion_id: COMPATIBILITY-API-VERSION
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: CONTRADICTED
+    reason: >-
+      文档记录Dynamic API 7、Static API 23和UIContext API 10起，但没有记录Dynamic模块级matchMediaSync自API 18废弃，且明确写“无变更/废弃API”；
+      Static Public入口经用户确认位于UIContext.static.d.ets中的MediaQuery类，此点本身不构成错误，但三类入口仍缺少按版本、所有者和推荐状态展开的兼容矩阵。
+    claim_ids: [MEDIA-01]
+    evidence: [*ev_spec, *ev_design, *ev_sdk_dynamic, *ev_sdk_ui_dynamic, *ev_sdk_ui_static]
+    findings:
+    - finding_id: SEM-04200100000000000000000e
+      criterion_id: COMPATIBILITY-API-VERSION
+      severity: Major
+      conclusion: CONTRADICTED
+      message: Dynamic模块级API 18废弃事实与文档“无废弃API”直接冲突，版本迁移关系不完整。
+      recommendation: 建立Dynamic模块、Dynamic UIContext和Static UIContext的版本、开放范围、废弃与推荐入口矩阵。
+      evidence_ids: [EV-04-20-01-SPEC, EV-04-20-01-DESIGN, EV-04-20-01-SDK-DYNAMIC, EV-04-20-01-SDK-UI-DYNAMIC, EV-04-20-01-SDK-UI-STATIC]
+
   - criterion_id: COMPATIBILITY-SYSTEM-IMPACT
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design正确记录ArkUI.Full、无权限、无Native Node C API及无新增bundle依赖；但没有展开Dynamic NAPI、runtime_core ANI、libace_compatible、
+      ABC安装和Legacy System模块等存量系统边界，也未说明Static内部加载失败或上下文获取失败的恢复影响。
+    claim_ids: [MEDIA-07, MEDIA-09]
+    evidence: [*ev_design, *ev_build_napi, *ev_build_ani, *ev_sdk_system_dynamic, *ev_ani]
+    findings:
+    - finding_id: SEM-04200100000000000000000f
+      criterion_id: COMPATIBILITY-SYSTEM-IMPACT
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: SysCap和权限结论基本正确，但实际NAPI/ANI依赖、ABC安装、加载失败和Legacy System边界未完整说明。
+      recommendation: 补充存量外部依赖、运行产物、加载失败处理及Legacy模块承接关系，不仅记录本次无新增依赖。
+      evidence_ids: [EV-04-20-01-DESIGN, EV-04-20-01-BUILD-NAPI, EV-04-20-01-BUILD-ANI, EV-04-20-01-SDK-SYSTEM-DYNAMIC, EV-04-20-01-SRC-ANI]
+
   - criterion_id: COMPATIBILITY-MULTI-DEVICE
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Spec覆盖手机、平板和圆形设备，并正确把orientation、尺寸、device-type和round-screen作为差异来源；
+      但冻结实现还区分TV、car、wearable和2in1，设备声明没有覆盖这些OHOS内部设备形态及default到phone的映射。
+      按用户既定口径，本轮不评价ArkUI-X，也不要求Static对wearable的支持。
+    claim_ids: [MEDIA-11]
+    evidence: [*ev_spec, *ev_design, *ev_info, *ev_test_query]
+    findings:
+    - finding_id: SEM-042001000000000000000010
+      criterion_id: COMPATIBILITY-MULTI-DEVICE
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: OHOS设备矩阵只列手机、平板和圆形设备，遗漏TV、car、wearable、2in1及default映射。
+      recommendation: 在不扩展到ArkUI-X和Static wearable承诺的前提下，补齐OHOS内部设备类型的匹配值、差异和验证方式。
+      evidence_ids: [EV-04-20-01-SPEC, EV-04-20-01-SRC-INFO, EV-04-20-01-TEST-QUERY]
+
   - criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Spec和Design引用了SDK、NAPI、ANI、Queryer及测试目录，主体文件能够在冻结revision下复现；但静态Evidence coverage仅32.26%，
+      AC、Rule和VM使用范围ID，Listener生命周期证据以源码代替测试，UIContext和Static承接证据没有逐项进入追溯表，维护时仍依赖人工重新搜索。
+    claim_ids: [MEDIA-08, MEDIA-10]
+    evidence: [*ev_static, *ev_spec, *ev_design, *ev_napi, *ev_queryer, *ev_ani, *ev_test_build]
+    findings:
+    - finding_id: SEM-042001000000000000000011
+      criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 核心文件可复现，但覆盖率低、范围ID和以源码冒充测试证据使变更后的复核不稳定。
+      recommendation: 使用仓内完整路径和原子ID，将每个关键声明关联到真实SDK、源码、构建target和测试用例。
+      evidence_ids: [EV-04-20-01-STATIC, EV-04-20-01-SPEC, EV-04-20-01-DESIGN, EV-04-20-01-TEST-BUILD]
+
   - criterion_id: MAINTAINABILITY-STRUCTURE
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      单Feat结构简洁，用户故事、AC、Rule、VM、API、兼容性和Design分层章节均可定位；但验收追溯表头不符合标准，7处范围ID重复压缩原子关系，
+      API入口和语法规则又分散在概述、兼容性、架构约束及Design多个位置，后续修改容易产生漂移。静态8条Major保持权威，本语义Criterion不降低其严重度。
+    claim_ids: [MEDIA-08]
+    evidence: [*ev_spec, *ev_design, *ev_static]
+    findings:
+    - finding_id: SEM-042001000000000000000012
+      criterion_id: MAINTAINABILITY-STRUCTURE
+      severity: Minor
+      conclusion: PARTIALLY_SUPPORTED
+      message: 文档整体可读，但表头、范围ID及分散的API和语法信息增加了重复维护成本。
+      recommendation: 修正规范表头和原子追溯，并集中维护API版本矩阵及MediaQuery语法支持矩阵。
+      evidence_ids: [EV-04-20-01-SPEC, EV-04-20-01-DESIGN, EV-04-20-01-STATIC]
+
   - criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design列出语法非完整CSS和Dynamic/Static方法名差异两项风险并指定ArkUI SIG；但未记录API 18废弃迁移、Static内部结构与运行验证、
+      原生对象所有权、UIContext限制、详细语法解析、Legacy范围、构建部署、默认占位测试和Listener测试缺失，也没有状态、期限和关闭条件。
+    claim_ids: [MEDIA-01, MEDIA-03, MEDIA-04, MEDIA-05, MEDIA-06, MEDIA-07, MEDIA-09, MEDIA-10, MEDIA-12]
+    evidence: [*ev_design, *ev_spec, *ev_sdk_dynamic, *ev_ani, *ev_test_build]
+    findings:
+    - finding_id: SEM-042001000000000000000013
+      criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
+      severity: Minor
+      conclusion: PARTIALLY_SUPPORTED
+      message: 风险表有Owner但覆盖不足，且没有状态、关闭证据和完成条件，无法牵引后续质量提升。
+      recommendation: 将已确认问题登记为Accepted存量风险，并为语法、API迁移、Static验证、资源回收、构建和测试分别定义Owner、关闭条件和证据。
+      evidence_ids: [EV-04-20-01-DESIGN, EV-04-20-01-SDK-DYNAMIC, EV-04-20-01-SRC-ANI, EV-04-20-01-TEST-BUILD]
   coverage:
     expected_criteria: 20
     evaluated_criteria: 20
     applicable_criteria: 20
     not_applicable_criteria: 0
-    not_verifiable_criteria: 20
+    not_verifiable_criteria: 0
   execution:
     static_complete: true
     evidence_complete: true
-    semantic_complete: false
+    semantic_complete: true
     notes:
-    - 'Draft template: Criterion conclusions and scores are pending.'
+    - 静态报告8条Major Finding保持权威，语义评价未删除或降级静态问题。
+    - 用户确认Static Public matchMediaSync位于UIContext.static.d.ets中的MediaQuery类，撤销原MEDIA-02错误结论。
+    - 用户确认MEDIA-03仅记录内部实现未采用SDK一致继承方式及运行证据不足，不判定为确定运行时错误。
+    - 用户确认MEDIA-06同时属于Spec规则和Design解析算法完整性问题，MediaQuery语法与解析应作为最高优先级补齐。
+    - 多设备只评价OHOS内部设备形态，不评价ArkUI-X，也不要求Static对wearable的支持。
+    - 其余问题及评分由用户确认写入，存量风险按Accepted记录。
 scores:
   dimensions:
-    correctness: null
-    spec_executability: null
-    design_quality: null
-    compatibility_system_impact: null
-    maintainability: null
-  raw_score: null
-  published_score: null
-  confidence: null
+    correctness: 16.0
+    spec_executability: 12.5
+    design_quality: 11.0
+    compatibility_system_impact: 3.0
+    maintainability: 5.0
+  raw_score: 47.5
+  published_score: 39.0
+  confidence: 1.0
   admission: NOT_READY
 confirmation:
-  confirmed_by: null
-  confirmed_at: null
-  conclusion: pending
-  notes: []
+  confirmed_by: sunfei2021
+  confirmed_at: '2026-08-07T11:16:05+08:00'
+  conclusion: accepted
+  notes:
+  - 撤销原MEDIA-02“Static不存在Public matchMediaSync”的判断；Static Public入口由UIContext.MediaQuery提供，仅保留API矩阵清晰度改进项。
+  - MEDIA-03按内部实现结构与SDK继承模型不一致、缺少运行验证记录，不断言最终运行时必然失败。
+  - MEDIA-06确认Spec和Design均未完整描述MediaQuery语法规则及解析算法，后续应优先补齐。
+  - Dynamic模块级matchMediaSync自API 18废弃的SDK事实与文档“无废弃API”冲突，MEDIA-01保持成立。
+  - 其余静态、源码、构建、验证、设备和风险问题无异议，存量风险统一按Accepted记录。
+  - 原始分47.5；CORRECTNESS-SDK-CONTRACT存在Critical冲突，按Rubric v0.2封顶后发布分39.0。
+  - 静态Gate为FAIL，准入结论为NOT_READY。
 notes:
-- 完成20个Criterion后填写精确分数并进行一次确认。
-- Critical/Major Finding必须包含冻结revision下的可复现证据。
+- 本Review只记录评价结论，不修改Spec、Design、KB或产品源码。
+- 后续提升优先补齐MediaQuery语法与解析、API版本迁移、Static运行验证、资源所有权、构建部署及可执行测试闭环。

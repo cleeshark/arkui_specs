@@ -4,10 +4,10 @@ evaluation_id: EVAL-02-01-04
 func_id: 02-01-04
 input_fingerprint: sha256:de5fd7ca5acdf60dada61f770388aafb2164c1869955acfb18ab916cc3e5300c
 source_revision: d91b4e4990a990da2bfe809514e573e35852193e
-status: draft
+status: confirmed
 evaluator:
   evaluator_id: sunfei2021
-  evaluated_at: null
+  evaluated_at: '2026-08-06T11:49:21+08:00'
 semantic_result:
   schema_version: 1
   rubric_version: 0.2.0
@@ -32,211 +32,587 @@ semantic_result:
   - criterion_id: CORRECTNESS-SOURCE-SUPPORT
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
+    conclusion: SUPPORTED
+    reason: >-
+      三个Feat关于桌面OS/CPU平台发现、preview公共开关、View表面和输入转发、Stage/FA Context、
+      Rosen/Flutter分支以及SDK资源、NAPI、ABC和共享库复制的主体事实均可在冻结源码中复现。
+      PPA-03属于聚合target术语不精确，未改变四组platform_deps存在及被libace模板消费的事实。
+    claim_ids: [Feat-01, Feat-02, Feat-03, AC-PLATFORM, AC-RUNTIME, AC-SDK]
+    evidence:
+    - &ev_spec_1
+      evidence_id: EV-02-01-04-SPEC-01
+      type: spec_location
+      path: specs/02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/Feat-01-previewer-platform-build-spec.md
+      line_start: 1
+      line_end: 156
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:d77558b1826e52952689c32cd996840156ef7a8b76c90bc71fa0db4409320245
+      description: Feat-01全文，包含平台选择、公共开关、规则、VM和追溯引用。
+    - &ev_spec_2
+      evidence_id: EV-02-01-04-SPEC-02
+      type: spec_location
+      path: specs/02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/Feat-02-previewer-runtime-mock-spec.md
+      line_start: 1
+      line_end: 158
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:757a555bac48e6bedaaaa8850b8aba82e3a63043ce054458a8810e9a00bd39fd
+      description: Feat-02全文，包含View、输入、渲染后端和Context替身规格。
+    - &ev_spec_3
+      evidence_id: EV-02-01-04-SPEC-03
+      type: spec_location
+      path: specs/02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/Feat-03-previewer-sdk-packaging-spec.md
+      line_start: 1
+      line_end: 157
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:064d542d4c13748ffea063fd7595b3ffc34c9dac609b66e2329b096637b13f56
+      description: Feat-03全文，包含资源、NAPI、ABC、共享库和条件输出规格。
+    - &ev_design
+      evidence_id: EV-02-01-04-DESIGN
+      type: design_location
+      path: specs/02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/design.md
+      line_start: 1
+      line_end: 198
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:bc7e783ffa12cd7bfe4d5b93b23f9a603559cbb781c8b2fddb91948a7fa87c76
+      description: Function级Design全文，包含架构骨架、ADR、测试方向、详细设计和风险表。
+    - &ev_static
+      evidence_id: EV-02-01-04-STATIC
+      type: static_finding
+      path: specs/.evaluator/d91b4e4990a990da2bfe809514e573e35852193e/02-01-04/report.md
+      line_start: 1
+      line_end: 149
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:1eaabbd5c5f3bc02e0e0d08176b4f872cb10d762ee18c5d9eaf66e9b543c6ecf
+      description: 静态Gate FAIL，24条Major Finding和5.63%证据覆盖率。
+    - &ev_registry_function
+      evidence_id: EV-02-01-04-REGISTRY-FUNCTION
+      type: registry_entry
+      path: specs/registry/functions.yaml
+      line_start: 134
+      line_end: 146
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7e4afd02833c5d35cf434267941b5dad7fbf433fcd0308262236e75fb580a535
+      description: Function路径、Design和待补充状态注册。
+    - &ev_registry_features
+      evidence_id: EV-02-01-04-REGISTRY-FEATURES
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 12
+      line_end: 26
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9a81e2cff4a6a9810fc28c1841f5eb70748a23117a569cc8a69c78c30453fdfe
+      description: 三个Feat的标题、Spec路径和Baselined状态注册。
+    - &ev_config
+      evidence_id: EV-02-01-04-CONFIG
+      type: source_citation
+      path: adapter/preview/build/config.gni
+      line_start: 15
+      line_end: 24
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:a90e538722be316100c30ad215e9ee10afa75ae66d8edf8620d757078fed8eb5
+      description: Windows、Linux和macOS宿主OS/CPU组合判定。
+    - &ev_platform
+      evidence_id: EV-02-01-04-PLATFORM
+      type: source_citation
+      path: adapter/preview/build/platform.gni
+      line_start: 17
+      line_end: 50
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:8221fba5d6d8a883acbace5fdd696311aba96b824fab4048fefe1bcba850a95f
+      description: 受支持组合向platforms追加windows、mac和linux平台。
+    - &ev_common
+      evidence_id: EV-02-01-04-PREVIEW-COMMON
+      type: source_citation
+      path: adapter/preview/build/preview_common.gni
+      line_start: 14
+      line_end: 133
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:46bd0c030cc8ef4961ea33a204e4282f8534e8c51b1559558598426bcb74bfff
+      description: Preview默认开关、宏、四组platform_deps和libace目标。
+    - &ev_ace_lib
+      evidence_id: EV-02-01-04-ACE-LIB
+      type: source_citation
+      path: build/ace_lib.gni
+      line_start: 78
+      line_end: 93
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:033309623b3f8dfe704db4ceda403b4e230738712e68343825a3422c35a47db1
+      description: libace模板实际消费config.platform_deps并接入预览内置Ark引擎。
+    - &ev_view
+      evidence_id: EV-02-01-04-ACE-VIEW
+      type: source_citation
+      path: adapter/preview/entrance/ace_view_preview.cpp
+      line_start: 32
+      line_end: 107
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7228ef26becd2c435b72eee0ae09a2f9eca2ec09c048470c8809fa50e964b26b
+      description: ThreadModel创建、表面状态、输入回调和Rosen/Flutter DrawDelegate分支。
+    - &ev_event
+      evidence_id: EV-02-01-04-EVENT-DISPATCH
+      type: source_citation
+      path: adapter/preview/entrance/event_dispatcher.cpp
+      line_start: 344
+      line_end: 366
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:2d876cbc784760d46b463f191521cbeaf66c3fd6bdaa62da05f2c74bf69f319d
+      description: PointerEvent按mouse、axis和touch类型转换并转发到AceViewPreview。
+    - &ev_context
+      evidence_id: EV-02-01-04-CONTEXT
+      type: source_citation
+      path: adapter/preview/external/ability/context.cpp
+      line_start: 27
+      line_end: 58
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:292c97eb2418ffc96ef63bda2ba8ef99cedf50395d5e4ace6d58008adb23edbf
+      description: Stage/FA文件选择、平台分隔符、文件失败和Context创建Parse流程。
+    - &ev_stage_context
+      evidence_id: EV-02-01-04-STAGE-CONTEXT
+      type: source_citation
+      path: adapter/preview/external/ability/stage/stage_context.cpp
+      line_start: 24
+      line_end: 33
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:3a61c4e3cd24d163088153be7ad0227f73ba635365520f31b465dc0e04859f2a
+      description: 非法Stage JSON仅告警返回，Context对象本身不会转为null。
+    - &ev_entrance_build
+      evidence_id: EV-02-01-04-ENTRANCE-BUILD
+      type: source_citation
+      path: adapter/preview/entrance/BUILD.gn
+      line_start: 17
+      line_end: 133
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:6ab9482a739daaf6f592ae5cd0470234011e5a12a595f54fd8dcbbb28b52de01
+      description: preview_entrance_source源码、平台配置和window/graphic/resource依赖。
+    - &ev_osal_build
+      evidence_id: EV-02-01-04-OSAL-BUILD
+      type: source_citation
+      path: adapter/preview/osal/BUILD.gn
+      line_start: 38
+      line_end: 183
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:ec6d515a533b54f3b130d5f6536c87bf9ecf8fe9377a0ba81048171d8ed04ffd
+      description: preview_osal_source的大量平台替身、外部依赖和标准/非标准资源分支。
+    - &ev_sdk
+      evidence_id: EV-02-01-04-SDK-BUILD
+      type: sdk_declaration
+      path: adapter/preview/sdk/BUILD.gn
+      line_start: 19
+      line_end: 464
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:aa737bf1696447c97c058f05c443575bbfea9c7f5391c679c7537226cf8700ad
+      description: 系统资源action、NAPI/ABC/共享库、cacert和TV/穿戴资源复制契约。
+    - &ev_kb_test
+      evidence_id: EV-02-01-04-KB-TEST
+      type: test_evidence
+      path: docs/kb/architecture/preview-platform-adaptation.md
+      line_start: 50
+      line_end: 58
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:94490b4f3784c8b369862a2d41c388fdc41c918ae4d0dd69fd30468ac7f18f50
+      description: 当前可用Previewer测试路由以及缺少adapter/preview专属ACE单测的核验记录。
+    - &ev_sdk_registry
+      evidence_id: EV-02-01-04-SDK-REGISTRY
+      type: sdk_declaration
+      path: build/ohos/sdk/ohos_sdk_description_std.json
+      line_start: 1273
+      line_end: 1349
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c43bd30f30e2fa2605b0391f84b4fb4d216953143a0da6bf6ad49bb653488875
+      description: OpenHarmony build仓8eb1737e注册Preview共享库、系统资源、ABC及Windows证书的安装目录和目标OS。
+    - &ev_ide_runtime
+      evidence_id: EV-02-01-04-IDE-RUNTIME
+      type: source_citation
+      path: ide/tools/previewer/jsapp/rich/JsAppImpl.cpp
+      line_start: 237
+      line_end: 271
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:6ef267af2b2b4ddd86376a2babef46b73d4149c19dc125be98075824e21054c1
+      description: IDE Previewer仓e9691a3b中宿主创建AceAbility、Window和Surface的真实运行入口。
+    - &ev_ide_jsapp_build
+      evidence_id: EV-02-01-04-IDE-JSAPP-BUILD
+      type: source_citation
+      path: ide/tools/previewer/jsapp/BUILD.gn
+      line_start: 33
+      line_end: 71
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:a59f470861461bb0f8b73c58ad597412424a0577e9ecee27d70a84e9e8e78330
+      description: IDE Previewer宿主对libace_compatible、graphic_2d、window_manager和ability_runtime的依赖。
+    - &ev_ide_previewer_build
+      evidence_id: EV-02-01-04-IDE-PREVIEWER-BUILD
+      type: source_citation
+      path: ide/tools/previewer/BUILD.gn
+      line_start: 60
+      line_end: 97
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:5ed38ca70b026a2420b7ab84948413fba3ebf0ef3f33a228064c070b8c88f73f
+      description: IDE Previewer仓e9691a3b中rich预览器聚合平台矩阵和Previewer可执行目标。
     findings: []
+
   - criterion_id: CORRECTNESS-SDK-CONTRACT
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
+    conclusion: SUPPORTED
+    reason: >-
+      Feat-03声明的SystemResources提取、资源值生成、标准系统previewer/common输出、非标准
+      macOS/TV/穿戴资源来源、NAPI prefix目录、ArkUI ABC目录、共享库、ICU/Skia配置及Windows
+      cacert均与adapter/preview/sdk/BUILD.gn和正式SDK描述中的目标及安装位置一致。
+    claim_ids: [AC-1.1, AC-1.2, AC-1.3, AC-2.1, AC-2.2, AC-2.3]
+    evidence: [*ev_spec_3, *ev_sdk, *ev_sdk_registry]
     findings: []
+
   - criterion_id: CORRECTNESS-BOUNDARY-STATE
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Spec准确覆盖未知Touch返回false、缺文件返回null、平台分隔符、Rosen/Flutter及主要资源条件，
+      但没有定义非法JSON解析后仍返回默认Context对象、Mouse/Axis回调未注册时缺少空值保护、
+      以及线程模型和资源action失败如何传播等适用边界。
+    claim_ids: [PPA-04, AC-1.3, AC-2.2, R-3, R-6]
+    evidence: [*ev_spec_2, *ev_spec_3, *ev_view, *ev_context, *ev_stage_context, *ev_sdk]
+    findings:
+    - finding_id: SEM-000000000000000000000101
+      criterion_id: CORRECTNESS-BOUNDARY-STATE
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 主要正常和文件缺失分支准确，但非法配置、空输入回调、线程和构建action失败状态未形成完整边界模型。
+      recommendation: 补充非法JSON、未注册输入回调、线程参数、action失败和半初始化资源的返回值、日志及恢复规则。
+      evidence_ids: [EV-02-01-04-SPEC-02, EV-02-01-04-SPEC-03, EV-02-01-04-ACE-VIEW, EV-02-01-04-CONTEXT, EV-02-01-04-STAGE-CONTEXT, EV-02-01-04-SDK-BUILD]
+
   - criterion_id: CORRECTNESS-CROSS-DOC-CONSISTENCY
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      FuncID、路径、三个Feat标题和Spec注册一致，但Function Registry仍为待补充，而三个Feat和Design均声明
+      Baselined；Feat-01又把由libace模板消费的platform_deps描述成入口target依赖，Design及Spec共享了
+      漂移证据区间，跨文档状态和调用主体不完全一致。
+    claim_ids: [PPA-03, PPA-07, REGISTRY-02-01-04]
+    evidence: [*ev_spec_1, *ev_design, *ev_registry_function, *ev_registry_features, *ev_common, *ev_ace_lib]
+    findings:
+    - finding_id: SEM-000000000000000000000102
+      criterion_id: CORRECTNESS-CROSS-DOC-CONSISTENCY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 注册路径正确，但Function状态、Feat/Design状态、platform_deps消费主体和共享证据基线不完全一致。
+      recommendation: 统一Function状态，明确libace聚合target消费四组platform_deps，并同步修订Spec与Design证据定位。
+      evidence_ids: [EV-02-01-04-SPEC-01, EV-02-01-04-DESIGN, EV-02-01-04-REGISTRY-FUNCTION, EV-02-01-04-REGISTRY-FEATURES, EV-02-01-04-PREVIEW-COMMON, EV-02-01-04-ACE-LIB]
+
   - criterion_id: SPEC-AC-TESTABILITY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      AC均为可观察的WHEN/THEN行为并可人工核对源码和输出目录，但VM仅写GN矩阵、fake事件、临时JSON和
+      文件清单；所谓Preview runtime UT与Context mock UT没有对应ACE测试资产，也缺少真实target、二进制、
+      case/filter、命令、预期结果和实际通过记录。
+    claim_ids: [PPA-06, VM-1, VM-2]
+    evidence: [*ev_spec_1, *ev_spec_2, *ev_spec_3, *ev_kb_test, *ev_ide_previewer_build]
+    findings:
+    - finding_id: SEM-000000000000000000000103
+      criterion_id: SPEC-AC-TESTABILITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: AC可人工审查，但不能仅按Spec直接完成三Feat的构建、执行和通过判定。
+      recommendation: 为平台矩阵、View/Context边界和SDK输出补充真实GN/Ninja目标、Host资产、精确命令、预期结果及实际记录。
+      evidence_ids: [EV-02-01-04-SPEC-01, EV-02-01-04-SPEC-02, EV-02-01-04-SPEC-03, EV-02-01-04-KB-TEST, EV-02-01-04-IDE-PREVIEWER-BUILD]
+
   - criterion_id: SPEC-RULE-COMPLETENESS
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      三个Feat的20条规则覆盖主要平台选择、输入、Context和打包行为，但Feat-02范围中的Inspector/OSAL没有规则，
+      非法JSON和空回调行为缺失，SDK正式注册、宿主加载、Linux arm64端到端限制及wearable ABC裁剪也未规则化。
+    claim_ids: [PPA-04, PPA-05, PPA-13, R-1, R-7]
+    evidence: [*ev_spec_1, *ev_spec_2, *ev_spec_3, *ev_stage_context, *ev_osal_build, *ev_sdk, *ev_sdk_registry, *ev_ide_previewer_build]
+    findings:
+    - finding_id: SEM-000000000000000000000104
+      criterion_id: SPEC-RULE-COMPLETENESS
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 主体规则存在，但平台替身、失败状态、正式打包注册、宿主加载和设备裁剪缺少完整规则。
+      recommendation: 按触发条件、处理、输出、失败和恢复补齐Inspector/OSAL、JSON、回调、SDK注册、宿主及设备差异规则。
+      evidence_ids: [EV-02-01-04-SPEC-01, EV-02-01-04-SPEC-02, EV-02-01-04-SPEC-03, EV-02-01-04-STAGE-CONTEXT, EV-02-01-04-OSAL-BUILD, EV-02-01-04-SDK-BUILD, EV-02-01-04-SDK-REGISTRY, EV-02-01-04-IDE-PREVIEWER-BUILD]
+
   - criterion_id: SPEC-TRACEABILITY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      AC、规则和VM表均存在，但静态Gate确认三个验收追溯表头错误、20处AC/Rule范围写法和一条Design越界引用；
+      71项Claim的证据覆盖仅5.63%，范围写法还抑制了逐项NO-VM/NO-RULE判断，追溯链不能闭环。
+    claim_ids: [PPA-01, TRACE-RANGE-ID-001, SPEC-STRUCT-TABLE-FIELD-001, REF-LINE-RANGE-001]
+    evidence: [*ev_static, *ev_spec_1, *ev_spec_2, *ev_spec_3, *ev_design]
+    findings:
+    - finding_id: SEM-000000000000000000000105
+      criterion_id: SPEC-TRACEABILITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 追溯表存在，但24条Major静态问题和5.63%证据覆盖使AC、Rule、VM与证据无法逐项闭环。
+      recommendation: 将表头改为AC编号，显式展开全部范围ID，修正越界及漂移引用，并为每个VM补充可执行证据。
+      evidence_ids: [EV-02-01-04-STATIC, EV-02-01-04-SPEC-01, EV-02-01-04-SPEC-02, EV-02-01-04-SPEC-03, EV-02-01-04-DESIGN]
+
   - criterion_id: SPEC-SCOPE-BOUNDARY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      平台发现、运行入口、Context和SDK打包三个主范围可识别，也明确不新增公开API和不等同真机服务；
+      但Feat-02 Delta把Inspector和OSAL列入范围却没有AC/规则，Feat-03也未定界正式SDK描述、IDE宿主、
+      外部字体目标和端到端平台支持边界。
+    claim_ids: [PPA-05, PPA-12, PPA-13, DELTA-FEAT-02, DELTA-FEAT-03]
+    evidence: [*ev_spec_2, *ev_spec_3, *ev_design, *ev_osal_build, *ev_sdk_registry, *ev_ide_jsapp_build]
+    findings:
+    - finding_id: SEM-000000000000000000000106
+      criterion_id: SPEC-SCOPE-BOUNDARY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 三个主Feat边界存在，但平台替身和完整Previewer SDK/宿主范围没有被Spec一致承接。
+      recommendation: 明确本仓适配与IDE宿主、SDK注册、外部资源及Inspector/OSAL的包含关系，并为纳入项补齐AC和规则。
+      evidence_ids: [EV-02-01-04-SPEC-02, EV-02-01-04-SPEC-03, EV-02-01-04-DESIGN, EV-02-01-04-OSAL-BUILD, EV-02-01-04-SDK-REGISTRY, EV-02-01-04-IDE-JSAPP-BUILD]
+
   - criterion_id: DESIGN-IMPLEMENTATION-PATH
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design识别平台发现、公共配置、入口、external、inspector、osal和SDK分层，但涉及仓仅重复列ace_engine，
+      没有覆盖IDE Previewer宿主、Window、RenderService、AbilityRuntime、资源管理和build SDK描述仓，
+      也没有形成Host到AceAbility、AceContainer、AceView和最终产物的端到端调用链。
+    claim_ids: [PPA-08, DESIGN-CONTEXT, DESIGN-LAYERING]
+    evidence: [*ev_design, *ev_registry_features, *ev_entrance_build, *ev_osal_build, *ev_ide_runtime, *ev_ide_jsapp_build]
+    findings:
+    - finding_id: SEM-000000000000000000000107
+      criterion_id: DESIGN-IMPLEMENTATION-PATH
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: ace_engine内部骨架存在，但实际参与仓、宿主入口、跨模块调用方向和职责所有权不完整。
+      recommendation: 补充IDE、Window、Graphic、Ability、Resource和build仓职责，并画出宿主创建到渲染、输入和SDK加载的端到端链。
+      evidence_ids: [EV-02-01-04-DESIGN, EV-02-01-04-REGISTRY-FEATURES, EV-02-01-04-ENTRANCE-BUILD, EV-02-01-04-OSAL-BUILD, EV-02-01-04-IDE-RUNTIME, EV-02-01-04-IDE-JSAPP-BUILD]
+
   - criterion_id: DESIGN-FEAT-RUNTIME-COVERAGE
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: MISSING
+    reason: >-
+      三个注册Feat均只能在骨架表、四步数据流和两段详细设计摘要中定位。Feat-01没有完整GN发现和target消费链，
+      Feat-02没有宿主入口、状态、事件分派、Context失败和Inspector/OSAL设计，Feat-03没有action、copy、
+      SDK注册、安装和加载闭环；没有任何Feat满足输入、状态、处理、输出、恢复和测试六环节要求。
+    claim_ids: [PPA-09, Feat-01, Feat-02, Feat-03]
+    evidence: [*ev_design, *ev_spec_1, *ev_spec_2, *ev_spec_3, *ev_config, *ev_view, *ev_context, *ev_sdk, *ev_ide_runtime]
+    findings:
+    - finding_id: SEM-000000000000000000000108
+      criterion_id: DESIGN-FEAT-RUNTIME-COVERAGE
+      severity: Major
+      conclusion: MISSING
+      message: 三个Feat均只有摘要级说明，没有形成逐Feat六环节端到端运行设计。
+      recommendation: 分别按输入入口、解析和状态、核心处理、可观测输出、异常恢复及可执行测试补齐三个Feat详细设计。
+      evidence_ids: [EV-02-01-04-DESIGN, EV-02-01-04-SPEC-01, EV-02-01-04-SPEC-02, EV-02-01-04-SPEC-03, EV-02-01-04-CONFIG, EV-02-01-04-ACE-VIEW, EV-02-01-04-CONTEXT, EV-02-01-04-SDK-BUILD, EV-02-01-04-IDE-RUNTIME]
+
   - criterion_id: DESIGN-ALGORITHM-DATA-STATE
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design提到OS/CPU选择、事件输入、Context mock和资源分支等主要模式，但没有描述ThreadModel参数与线程所有权、
+      width/height及回调生命周期、PointerEvent转换状态、JSON解析后的默认对象、GN action依赖状态、资源失效和失败传播。
+    claim_ids: [PPA-10, THREAD-MODEL, CONTEXT-STATE, SDK-ACTION-STATE]
+    evidence: [*ev_design, *ev_view, *ev_event, *ev_context, *ev_stage_context, *ev_sdk]
+    findings:
+    - finding_id: SEM-000000000000000000000109
+      criterion_id: DESIGN-ALGORITHM-DATA-STATE
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 主分支可识别，但数据生命周期、状态转换、资源所有权、线程并发和失败恢复设计明显不足。
+      recommendation: 增加View/Context/事件/资源的数据模型、创建持有释放、任务线程、重入约束、失败传播和恢复状态设计。
+      evidence_ids: [EV-02-01-04-DESIGN, EV-02-01-04-ACE-VIEW, EV-02-01-04-EVENT-DISPATCH, EV-02-01-04-CONTEXT, EV-02-01-04-STAGE-CONTEXT, EV-02-01-04-SDK-BUILD]
+
   - criterion_id: DESIGN-DECISION-QUALITY
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      四项ADR覆盖OS/CPU、feature边界、Rosen/Flutter和打包分组，候选方向具有基础差异；但没有给出真实适用条件、
+      性能和维护成本、兼容限制、Linux arm64宿主差异、迁移影响、失败条件及可复现验证依据。
+    claim_ids: [PPA-11, ADR-1, ADR-2, ADR-3, ADR-4]
+    evidence: [*ev_design, *ev_config, *ev_view, *ev_sdk, *ev_ide_previewer_build]
+    findings:
+    - finding_id: SEM-00000000000000000000010a
+      criterion_id: DESIGN-DECISION-QUALITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: ADR具备问题和候选雏形，但成本、限制、兼容性、失败条件及验证依据未闭环。
+      recommendation: 为关键决策补充适用矩阵、收益代价、存量兼容和迁移成本、失败条件、源码依据及验证命令。
+      evidence_ids: [EV-02-01-04-DESIGN, EV-02-01-04-CONFIG, EV-02-01-04-ACE-VIEW, EV-02-01-04-SDK-BUILD, EV-02-01-04-IDE-PREVIEWER-BUILD]
+
   - criterion_id: DESIGN-IMPACT-COVERAGE
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design说明了四组source set、资源/NAPI/ABC/共享库类别和部分输出目录，具备可识别的构建部署方向；
+      但缺少真实target清单、deps/external_deps、正式SDK描述注册、Previewer可执行程序、安装目录、
+      libace加载关系、外部字体目标和平台可用条件。
+    claim_ids: [PPA-12, BUILD-TARGETS, OUTPUTS, REGISTRATION, LOADING]
+    evidence: [*ev_design, *ev_entrance_build, *ev_osal_build, *ev_sdk, *ev_sdk_registry, *ev_ide_jsapp_build, *ev_ide_previewer_build]
+    findings:
+    - finding_id: SEM-00000000000000000000010b
+      criterion_id: DESIGN-IMPACT-COVERAGE
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 产物类别和路径方向存在，但target、依赖、注册、安装、宿主加载和平台部署链不完整。
+      recommendation: 建立target到依赖、文件产物、SDK条目、安装目录、Previewer加载入口和平台条件的完整映射。
+      evidence_ids: [EV-02-01-04-DESIGN, EV-02-01-04-ENTRANCE-BUILD, EV-02-01-04-OSAL-BUILD, EV-02-01-04-SDK-BUILD, EV-02-01-04-SDK-REGISTRY, EV-02-01-04-IDE-JSAPP-BUILD, EV-02-01-04-IDE-PREVIEWER-BUILD]
+
   - criterion_id: DESIGN-VERIFICATION-PLAN
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design给出GN矩阵、fake事件/文件和输出清单三个验证方向，但没有逐Feat/AC映射、真实构建target、
+      可执行测试二进制、case/filter、预期通过标准、失败注入、实际结果或风险关闭证据；现有样例和
+      HostPreview工具也未被接入验证计划。
+    claim_ids: [PPA-06, VERIFY-GN, VERIFY-RUNTIME, VERIFY-PACKAGING]
+    evidence: [*ev_design, *ev_spec_1, *ev_spec_2, *ev_spec_3, *ev_kb_test, *ev_ide_previewer_build]
+    findings:
+    - finding_id: SEM-00000000000000000000010c
+      criterion_id: DESIGN-VERIFICATION-PLAN
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 已有验证方向，但无法按Design直接构建、执行、判定三个Feat或关闭风险。
+      recommendation: 补充逐AC目标、命令、二进制或脚本、精确范围、预期结果、失败恢复用例和风险关闭记录。
+      evidence_ids: [EV-02-01-04-DESIGN, EV-02-01-04-SPEC-01, EV-02-01-04-SPEC-02, EV-02-01-04-SPEC-03, EV-02-01-04-KB-TEST, EV-02-01-04-IDE-PREVIEWER-BUILD]
+
   - criterion_id: COMPATIBILITY-API-VERSION
     dimension_id: compatibility_system_impact
-    applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
+    applicability: NOT_APPLICABLE
+    conclusion: NOT_APPLICABLE
+    reason: 本Function的SDK含义是Previewer内部资源与运行模块打包，不定义应用侧API签名、API Level、开放范围、废弃或ABI迁移链。
+    applicability_reason: 三个Spec和KB均明确没有独立ArkTS、Modifier、Native Node或NDK公开接口变更。
+    claim_ids: [API-VERSION-NONE]
+    evidence: [*ev_spec_1, *ev_spec_2, *ev_spec_3, *ev_kb_test]
     findings: []
+
   - criterion_id: COMPATIBILITY-SYSTEM-IMPACT
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      文档正确声明不新增权限和真机系统服务行为，并提到Window/Ability mock边界；但Function实际依赖
+      window_manager、graphic_2d、ability_runtime、resource_management、IDE Previewer、build SDK描述及多个
+      third_party运行库，Design没有记录用途、条件、版本、不可用影响和降级结果。
+    claim_ids: [PPA-08, PPA-12, SYSTEM-DEPENDENCIES]
+    evidence: [*ev_design, *ev_entrance_build, *ev_osal_build, *ev_sdk, *ev_sdk_registry, *ev_ide_jsapp_build]
+    findings:
+    - finding_id: SEM-00000000000000000000010d
+      criterion_id: COMPATIBILITY-SYSTEM-IMPACT
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 无新增权限结论成立，但存量外部部件、运行库、SDK注册和依赖失败影响没有完整承接。
+      recommendation: 按外部仓和部件列出目标、职责、平台条件、版本revision、运行影响及不可用时的失败或降级行为。
+      evidence_ids: [EV-02-01-04-DESIGN, EV-02-01-04-ENTRANCE-BUILD, EV-02-01-04-OSAL-BUILD, EV-02-01-04-SDK-BUILD, EV-02-01-04-SDK-REGISTRY, EV-02-01-04-IDE-JSAPP-BUILD]
+
   - criterion_id: COMPATIBILITY-MULTI-DEVICE
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Spec覆盖Windows/Linux/macOS、TV和穿戴资源来源与目录，但没有说明ACE注册linux_arm64而IDE rich Previewer
+      聚合仅含linux_x64的端到端差异，也没有覆盖wearable对advanced/component ABC集合的裁剪及各示例设备目标。
+    claim_ids: [PPA-13, LINUX-ARM64, WEARABLE-ABC, DEVICE-SAMPLES]
+    evidence: [*ev_spec_1, *ev_spec_3, *ev_design, *ev_config, *ev_sdk, *ev_ide_previewer_build]
+    findings:
+    - finding_id: SEM-00000000000000000000010e
+      criterion_id: COMPATIBILITY-MULTI-DEVICE
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 基础宿主和资源差异已描述，但端到端Linux arm64可用性、wearable模块裁剪和设备目标矩阵缺失。
+      recommendation: 分开记录ACE适配层与IDE宿主支持矩阵，并补齐设备类型对资源、ABC、样例target和最终SDK产物的影响。
+      evidence_ids: [EV-02-01-04-SPEC-01, EV-02-01-04-SPEC-03, EV-02-01-04-DESIGN, EV-02-01-04-CONFIG, EV-02-01-04-SDK-BUILD, EV-02-01-04-IDE-PREVIEWER-BUILD]
+
   - criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      文档多数使用可定位的仓内文件名，但静态报告确认一条越界引用，人工核验发现EventDispatcher和Context区间
+      未覆盖所声明行为；相同file:line在多处复制，正式SDK与IDE Previewer关联仓revision也未进入冻结输入，
+      当前静态证据覆盖仅5.63%。
+    claim_ids: [PPA-02, REF-LINE-RANGE-001, EVIDENCE-COVERAGE, RELATED-REVISIONS]
+    evidence: [*ev_static, *ev_spec_1, *ev_spec_2, *ev_spec_3, *ev_design, *ev_event, *ev_context, *ev_sdk_registry, *ev_ide_runtime]
+    findings:
+    - finding_id: SEM-00000000000000000000010f
+      criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 路径主体可定位，但越界和错位区间、低覆盖及未冻结关联仓使证据基线不稳定。
+      recommendation: 修正引用，优先引用稳定target或符号，固定build和IDE等关联仓commit，并减少重复file:line维护。
+      evidence_ids: [EV-02-01-04-STATIC, EV-02-01-04-SPEC-01, EV-02-01-04-SPEC-02, EV-02-01-04-SPEC-03, EV-02-01-04-DESIGN, EV-02-01-04-EVENT-DISPATCH, EV-02-01-04-CONTEXT, EV-02-01-04-SDK-REGISTRY, EV-02-01-04-IDE-RUNTIME]
+
   - criterion_id: MAINTAINABILITY-STRUCTURE
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      三个Spec和Design章节总体清晰，用户故事采用标准三段式，但三个验收追溯表头错误，大量范围ID及同一构建事实在
+      AC、追溯、规则、架构约束、ADR和详细设计中重复，已造成证据区间同步漂移和维护成本上升。
+    claim_ids: [PPA-01, DOCUMENT-STRUCTURE, SPEC-STRUCT-TABLE-FIELD-001, TRACE-RANGE-ID-001]
+    evidence: [*ev_spec_1, *ev_spec_2, *ev_spec_3, *ev_design, *ev_static]
+    findings:
+    - finding_id: SEM-000000000000000000000110
+      criterion_id: MAINTAINABILITY-STRUCTURE
+      severity: Minor
+      conclusion: PARTIALLY_SUPPORTED
+      message: 主体结构可读，但表头错误、范围ID和重复事实增加同步维护成本并诱发行号漂移。
+      recommendation: 统一标准表头，显式展开ID，将稳定事实集中到单一证据或设计表，其他章节通过ID引用。
+      evidence_ids: [EV-02-01-04-SPEC-01, EV-02-01-04-SPEC-02, EV-02-01-04-SPEC-03, EV-02-01-04-DESIGN, EV-02-01-04-STATIC]
+
   - criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
+    conclusion: SUPPORTED
+    reason: >-
+      Design列出OS/CPU支持限制、mock与真机语义差异、资源路径按系统/设备分支三项存量风险，均包含类型、影响、
+      处理方式和ArkUI SIG Owner；用户已在本次单次确认中将三项统一记录为Accepted，当前简化评价流程下风险处置闭环。
+    claim_ids: [RISK-PLATFORM-MATRIX, RISK-MOCK-SEMANTICS, RISK-RESOURCE-BRANCH]
+    evidence: [*ev_design]
     findings: []
+
   coverage:
     expected_criteria: 20
     evaluated_criteria: 20
-    applicable_criteria: 20
-    not_applicable_criteria: 0
-    not_verifiable_criteria: 20
+    applicable_criteria: 19
+    not_applicable_criteria: 1
+    not_verifiable_criteria: 0
   execution:
     static_complete: true
     evidence_complete: true
-    semantic_complete: false
+    semantic_complete: true
     notes:
-    - 'Draft template: Criterion conclusions and scores are pending.'
+    - 静态报告24条Major Finding保持权威，语义评价未删除或降级静态问题。
+    - 用户已统一确认PPA-01至PPA-13问题、推荐结论和精确评分。
+    - Design中的三项存量风险均记录为Accepted。
+    - 关联证据核验使用build仓8eb1737e80671872bb212b658bb131fbaa074533和IDE Previewer仓e9691a3bd4f84dc98996999a2d2271848d049706。
 scores:
   dimensions:
-    correctness: null
-    spec_executability: null
-    design_quality: null
-    compatibility_system_impact: null
-    maintainability: null
-  raw_score: null
-  published_score: null
-  confidence: null
+    correctness: 24.0
+    spec_executability: 12.5
+    design_quality: 10.0
+    compatibility_system_impact: 5.0
+    maintainability: 6.5
+  raw_score: 58.0
+  published_score: 58.0
+  confidence: 1.0
   admission: NOT_READY
 confirmation:
-  confirmed_by: null
-  confirmed_at: null
-  conclusion: pending
-  notes: []
+  confirmed_by: sunfei2021
+  confirmed_at: '2026-08-06T11:49:21+08:00'
+  conclusion: accepted
+  notes:
+  - 用户统一确认PPA-01至PPA-13问题与20项Criterion推荐结论，无异议。
+  - 平台支持限制、mock语义差异和资源路径分支三项存量风险统一记录为Accepted。
+  - 静态Gate为FAIL；评价器按Rubric v0.2计算发布分58.0，准入结论为NOT_READY。
 notes:
-- 完成20个Criterion后填写精确分数并进行一次确认。
-- Critical/Major Finding必须包含冻结revision下的可复现证据。
+- 本Review只记录评价结论，不修改Spec、Design、KB或产品源码。
+- 后续提升应优先修复静态追溯和证据基线，再补齐逐Feat运行设计、跨仓构建部署链及可执行验证。

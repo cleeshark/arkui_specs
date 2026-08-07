@@ -4,10 +4,10 @@ evaluation_id: EVAL-02-02-01
 func_id: 02-02-01
 input_fingerprint: sha256:ba69e74956a53164e12d81a41c8bd8e73d38bec3b153f7f81b967676c38ddda8
 source_revision: d91b4e4990a990da2bfe809514e573e35852193e
-status: draft
+status: confirmed
 evaluator:
   evaluator_id: sunfei2021
-  evaluated_at: null
+  evaluated_at: '2026-08-06T15:47:19+08:00'
 semantic_result:
   schema_version: 1
   rubric_version: 0.2.0
@@ -32,211 +32,664 @@ semantic_result:
   - criterion_id: CORRECTNESS-SOURCE-SUPPORT
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: CONTRADICTED
+    reason: >-
+      RenderContext工厂和部分Rosen主体链可由源码支持，但三个Feat中的多项核心事实已与冻结源码冲突：
+      RenderContext虚方法和Drawing alias统计不准确；DetachedRsNodeManager PreFreeze语义错误；Preview
+      Surface路径错误；CanvasImage签名、Modifier模式、Transition类型、Effect参数来源及AnimationUtils接口模型均已漂移。
+    claim_ids: [ROSEN-02, ROSEN-03, ROSEN-04, ROSEN-05, ROSEN-06, ROSEN-07, ROSEN-08, ROSEN-09, ROSEN-10]
+    evidence:
+    - &ev_spec_1
+      evidence_id: EV-02-02-01-SPEC-01
+      type: spec_location
+      path: specs/02-cross-platform/02-render-backend-adapter/01-rosen-render-backend-adapter/Feat-01-render-backend-core-architecture-spec.md
+      line_start: 1
+      line_end: 296
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:05dae9ec9988072a04d8ab5cbb352182677f1a254a0ba6202fdff266d5736a8c
+      description: Feat-01全文，包含RenderContext、Drawing、Mixed Child、Detached、Surface和Stub规格。
+    - &ev_spec_2
+      evidence_id: EV-02-02-01-SPEC-02
+      type: spec_location
+      path: specs/02-cross-platform/02-render-backend-adapter/01-rosen-render-backend-adapter/Feat-02-drawing-visual-effect-adapter-spec.md
+      line_start: 1
+      line_end: 212
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:28fe13c4eeba5e41d51eaa06e18aed23aec27d7b19d7202ca7a7dcaa8ad642d0
+      description: Feat-02全文，包含CanvasImage、Modifier、Transition和Effect规格。
+    - &ev_spec_3
+      evidence_id: EV-02-02-01-SPEC-03
+      type: spec_location
+      path: specs/02-cross-platform/02-render-backend-adapter/01-rosen-render-backend-adapter/Feat-03-animation-bridge-adapter-spec.md
+      line_start: 1
+      line_end: 151
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7dde41cbeb10b82779b4055976284ed39a0c4adb3d5bd5b6616d59072cb00e50
+      description: Feat-03全文，包含AnimationUtils Rosen/Fake接口、规则、VM和NFR。
+    - &ev_design
+      evidence_id: EV-02-02-01-DESIGN
+      type: design_location
+      path: specs/02-cross-platform/02-render-backend-adapter/01-rosen-render-backend-adapter/design.md
+      line_start: 1
+      line_end: 487
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:dde51e98c5949ae639747866093e08b6282f325a35b662985a6a730b7dda9e05
+      description: Function级Design全文，包含架构图、ADR、逐层设计、构建验证和风险表。
+    - &ev_static
+      evidence_id: EV-02-02-01-STATIC
+      type: static_finding
+      path: specs/.evaluator/d91b4e4990a990da2bfe809514e573e35852193e/02-02-01/report.md
+      line_start: 1
+      line_end: 369
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:6deefc64c7dbf497d856bdb520b5a7641e73852ed32b5b7406c34156e78a2fca
+      description: 静态Gate FAIL，68条Major Finding且Evidence coverage为0%。
+    - &ev_registry_function
+      evidence_id: EV-02-02-01-REGISTRY-FUNCTION
+      type: registry_entry
+      path: specs/registry/functions.yaml
+      line_start: 147
+      line_end: 159
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7e4afd02833c5d35cf434267941b5dad7fbf433fcd0308262236e75fb580a535
+      description: Function路径、Design和active状态注册。
+    - &ev_registry_features
+      evidence_id: EV-02-02-01-REGISTRY-FEATURES
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 27
+      line_end: 41
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9a81e2cff4a6a9810fc28c1841f5eb70748a23117a569cc8a69c78c30453fdfe
+      description: 三个Feat标题、Spec路径和Baselined状态注册。
+    - &ev_context_creator
+      evidence_id: EV-02-02-01-CONTEXT-CREATOR
+      type: source_citation
+      path: frameworks/core/components_ng/render/render_context_creator.cpp
+      line_start: 16
+      line_end: 31
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:38f8f822160f64b09050aaa8976f456404455c1d5f7dad1f56123e26b63d4563
+      description: RenderContext编译宏和运行时Rosen开关双层工厂。
+    - &ev_context_header
+      evidence_id: EV-02-02-01-CONTEXT-HEADER
+      type: source_citation
+      path: frameworks/core/components_ng/render/render_context.h
+      line_start: 193
+      line_end: 1022
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:aa74b9e8adbd8ec01fcc9e3b797a1b0dfac0cd1545c02b8b51262662d457d886
+      description: ContextType和RenderContext当前虚方法接口全集。
+    - &ev_preview_config
+      evidence_id: EV-02-02-01-PREVIEW-CONFIG
+      type: source_citation
+      path: adapter/preview/build/preview_common.gni
+      line_start: 28
+      line_end: 123
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:46bd0c030cc8ef4961ea33a204e4282f8534e8c51b1559558598426bcb74bfff
+      description: Preview默认Rosen开关和编译定义，未使能RENDER_EXTRACT_SUPPORTED。
+    - &ev_android_config
+      evidence_id: EV-02-02-01-ANDROID-CONFIG
+      type: source_citation
+      path: adapter/android/build/config.gni
+      line_start: 90
+      line_end: 100
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:781c87c64ef436be75520efa52ccc8b81c3efbe23cf82b269feecd8c7d15a2ff
+      description: ArkUI-X Android使能RENDER_EXTRACT_SUPPORTED。
+    - &ev_ios_config
+      evidence_id: EV-02-02-01-IOS-CONFIG
+      type: source_citation
+      path: adapter/ios/build/config.gni
+      line_start: 96
+      line_end: 106
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7d59f2d9c7ce28c3d2690dbfd61f800cc153ed9a014e8d20c0d0db6cfaae7819
+      description: ArkUI-X iOS使能RENDER_EXTRACT_SUPPORTED。
+    - &ev_mixed
+      evidence_id: EV-02-02-01-MIXED-CHILD
+      type: source_citation
+      path: frameworks/core/components_ng/render/adapter/rosen_mixed_render_child_list.cpp
+      line_start: 265
+      line_end: 337
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:ebb89a5e204a1e56857f963682068970876244e4e2daaac63703f61da2c725c0
+      description: Mixed Child切换条件、顺序组装和去重逻辑。
+    - &ev_detached
+      evidence_id: EV-02-02-01-DETACHED
+      type: source_citation
+      path: frameworks/core/components_ng/render/adapter/detached_rs_node_manager.cpp
+      line_start: 36
+      line_end: 129
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:714f821668bcdbfb3dd68a033dc72b03e5508d9fed190e7a8609a40068a2be35
+      description: 脱离RSUIContext延迟Flush和PreFreeze对前台窗口ForceFlushVsync的真实链路。
+    - &ev_detached_test
+      evidence_id: EV-02-02-01-DETACHED-TEST
+      type: test_evidence
+      path: test/unittest/core/rosen/detached_rs_node_manager_test.cpp
+      line_start: 100
+      line_end: 294
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:cfa47c7e12178a31f82bdd86487d30071e2960dd5e6e1c2b15d939ff139a2c6b
+      description: DetachedRsNodeManager Flush和ForceFlushVsync分支的现有UT。
+    - &ev_surface
+      evidence_id: EV-02-02-01-SURFACE
+      type: source_citation
+      path: frameworks/core/components_ng/render/render_surface_creator.cpp
+      line_start: 16
+      line_end: 52
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:94c7022b8c4d37a8f38d94c129b54f40d4412099d397af22e91b41770790541d
+      description: Render Extract、OHOS Rosen和no-op基类三类Surface工厂分支。
+    - &ev_canvas
+      evidence_id: EV-02-02-01-CANVAS
+      type: source_citation
+      path: frameworks/core/components_ng/render/canvas_image.h
+      line_start: 77
+      line_end: 105
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:32ef5a02ef0d750cd85862bfffc788e8802ba1e3768ef9941354b0ee506fe683
+      description: CanvasImage当前四参数纯虚DrawToRSCanvas接口。
+    - &ev_pixelmap
+      evidence_id: EV-02-02-01-PIXELMAP
+      type: source_citation
+      path: frameworks/core/components_ng/render/adapter/pixelmap_image.cpp
+      line_start: 322
+      line_end: 368
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:67f5854f725a4ee0ec7915969152d9438bc2910438d191eeedfcaa6c226befe1
+      description: PixelMapImage四参数绘制实现和真实Drawing调用。
+    - &ev_modifier_base
+      evidence_id: EV-02-02-01-MODIFIER-BASE
+      type: source_citation
+      path: frameworks/core/components_ng/render/modifier_adapter.h
+      line_start: 24
+      line_end: 34
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c3d4330758741ca7e57f902c5bcf11c2e69a982491051e711dcf70481102439e
+      description: ModifierAdapter仅定义静态RemoveModifier，不存在Create工厂。
+    - &ev_modifier_rosen
+      evidence_id: EV-02-02-01-MODIFIER-ROSEN
+      type: source_citation
+      path: frameworks/core/components_ng/render/adapter/rosen_modifier_adapter.cpp
+      line_start: 30
+      line_end: 212
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:2accf2909301933c054af762711cab519a2f5fad1394224dfd021390be86c3d5
+      description: Content、Overlay和Foreground转换及属性附着链路。
+    - &ev_transition_property
+      evidence_id: EV-02-02-01-TRANSITION-PROPERTY
+      type: source_citation
+      path: frameworks/core/components_ng/property/transition_property.h
+      line_start: 138
+      line_end: 147
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:30e39cf915570cea71b56c93a03f173404316f64decbc12259422c6e42e9bc43
+      description: 当前八种ChainedTransitionEffectType枚举。
+    - &ev_transition
+      evidence_id: EV-02-02-01-TRANSITION
+      type: source_citation
+      path: frameworks/core/components_ng/render/adapter/rosen_transition_effect.cpp
+      line_start: 35
+      line_end: 178
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:1fe2f11b156afba9be75116f5e963118e7e9a1e8c689bbb8afb01eb596996a5d
+      description: RosenTransitionEffect转换、Attach和Detach真实实现。
+    - &ev_effect
+      evidence_id: EV-02-02-01-EFFECT
+      type: source_citation
+      path: frameworks/core/components_ng/render/adapter/rosen_effect_converter.cpp
+      line_start: 34
+      line_end: 145
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:55a02f326161d75ea169b0198f3a9e2035d9caba479787e9b33a8e2b0b97afed
+      description: FrostedGlassParam向Rosen Filter转换及平台条件分支。
+    - &ev_material
+      evidence_id: EV-02-02-01-MATERIAL
+      type: source_citation
+      path: frameworks/core/components_ng/render/adapter/ui_material_filter_creator.cpp
+      line_start: 33
+      line_end: 814
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:d86c146ab1f2a1d9dc03f04cdec842adb4bd8cb8815d559b2558f1439729c539
+      description: ace_engine仓内硬编码的多组FrostedGlass材质参数和映射表。
+    - &ev_blur_map
+      evidence_id: EV-02-02-01-BLUR-MAP
+      type: source_citation
+      path: frameworks/core/common/rosen/rosen_convert_helper.cpp
+      line_start: 21
+      line_end: 48
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:5cb34adf2f7207999fef17129405005ceb11315af5b8121ec74308ceaf8ab97e
+      description: BlurStyle Regular与Light/Dark材质枚举映射。
+    - &ev_animation_header
+      evidence_id: EV-02-02-01-ANIMATION-HEADER
+      type: source_citation
+      path: frameworks/core/components_ng/render/animation_utils.h
+      line_start: 51
+      line_end: 116
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:d643d3694db3b8c24a0fd1aa1262f971c0af943e30383b90842d7b72368ff0a8
+      description: AnimationUtils当前公开内部方法签名，不包含AnimateFrom。
+    - &ev_animation_rosen
+      evidence_id: EV-02-02-01-ANIMATION-ROSEN
+      type: source_citation
+      path: frameworks/core/components_ng/render/adapter/rosen_animation_utils.cpp
+      line_start: 117
+      line_end: 307
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:e912105373048379af07543c4cd07cf339628da86b8986fcb8413ea64e90ef34
+      description: Open/Close、Current方法和StartAnimation的RSNode真实调用链。
+    - &ev_animation_fake
+      evidence_id: EV-02-02-01-ANIMATION-FAKE
+      type: source_citation
+      path: frameworks/core/components_ng/render/adapter/fake_animation_utils.cpp
+      line_start: 23
+      line_end: 145
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7cd6dc0f7230445a7654cb403c37b3ccae9e713a9d746a6b5fde1a59496c59e5
+      description: Fake方法的空操作、false、true、SUCCESS和nullptr边界返回契约。
+    - &ev_render_build
+      evidence_id: EV-02-02-01-RENDER-BUILD
+      type: source_citation
+      path: frameworks/core/components_ng/render/BUILD.gn
+      line_start: 17
+      line_end: 152
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:884c7cc20c12a96a362476dae6078e26b7247bfbdcf52500d08f83e1856cee51
+      description: Fake基础sources、Rosen sources、依赖和render目标定义。
+    - &ev_components_gni
+      evidence_id: EV-02-02-01-COMPONENTS-GNI
+      type: source_citation
+      path: frameworks/core/components_ng/components.gni
+      line_start: 190
+      line_end: 205
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:b7303517f83e38adfd541d7c3d3c47b592d2438121cc880cad0fed6daf729b19
+      description: enable_rosen_backend条件加入Rosen sources的构建选择。
+    - &ev_rosen_test_build
+      evidence_id: EV-02-02-01-ROSEN-TEST-BUILD
+      type: test_evidence
+      path: test/unittest/core/rosen/BUILD.gn
+      line_start: 73
+      line_end: 373
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7da8cbe631f53d78e6bee54514b29c114429baf69b105c36f68f3fab1a71b5ab
+      description: arkui_rosen_render_context_test目标、源码集合和依赖。
+    findings:
+    - finding_id: SEM-f8f282db93e7aaf408b5d0ea
+      criterion_id: CORRECTNESS-SOURCE-SUPPORT
+      severity: Critical
+      conclusion: CONTRADICTED
+      message: 多个核心接口、运行链和类型模型与冻结源码直接冲突，Feat-02与Feat-03主体适配模型已明显漂移。
+      recommendation: 以冻结源码重建CanvasImage、Modifier、Transition、Effect和Animation契约，并修正Detached、Surface及统计事实。
+      evidence_ids: [EV-02-02-01-SPEC-01, EV-02-02-01-SPEC-02, EV-02-02-01-SPEC-03, EV-02-02-01-DESIGN, EV-02-02-01-DETACHED, EV-02-02-01-SURFACE, EV-02-02-01-CANVAS, EV-02-02-01-MODIFIER-BASE, EV-02-02-01-TRANSITION-PROPERTY, EV-02-02-01-EFFECT, EV-02-02-01-ANIMATION-HEADER]
+
   - criterion_id: CORRECTNESS-SDK-CONTRACT
     dimension_id: correctness
-    applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
+    applicability: NOT_APPLICABLE
+    conclusion: NOT_APPLICABLE
+    reason: 本Function描述ace_engine内部Rosen渲染适配，不定义应用侧SDK、NDK或公开API契约。
+    applicability_reason: 三个Feat的接口分析均标记为InnerApi，未声明ArkTS、Native Node、NDK开放范围或API Level演进链。
+    claim_ids: [SDK-CONTRACT-NONE]
+    evidence: [*ev_spec_1, *ev_spec_2, *ev_spec_3, *ev_design]
     findings: []
+
   - criterion_id: CORRECTNESS-BOUNDARY-STATE
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: CONTRADICTED
+    reason: >-
+      文档包含宏、运行时开关、弱引用和Fake分支，但多个关键边界结论错误：PreFreeze并不冲刷脱离RSUIContext；
+      Android/iOS因RENDER_EXTRACT_SUPPORTED走SurfaceImpl/TextureImpl，Preview未使能该宏并回落no-op基类；
+      Mixed Child切换条件和Fake取消动画返回值也比文档描述更复杂。
+    claim_ids: [ROSEN-04, ROSEN-05, ROSEN-10, AC-4.6, AC-5.2]
+    evidence: [*ev_spec_1, *ev_spec_3, *ev_design, *ev_mixed, *ev_detached, *ev_detached_test, *ev_surface, *ev_preview_config, *ev_android_config, *ev_ios_config, *ev_animation_fake]
+    findings:
+    - finding_id: SEM-28237b99608f4560b641ba21
+      criterion_id: CORRECTNESS-BOUNDARY-STATE
+      severity: Major
+      conclusion: CONTRADICTED
+      message: PreFreeze、Preview Surface、Mixed Child和Fake动画的状态与条件分支存在实质性错误或过度简化。
+      recommendation: 按宏组合、平台、Rosen开关、节点类别和返回状态建立完整决策表，并逐项映射测试。
+      evidence_ids: [EV-02-02-01-SPEC-01, EV-02-02-01-SPEC-03, EV-02-02-01-DETACHED, EV-02-02-01-SURFACE, EV-02-02-01-PREVIEW-CONFIG, EV-02-02-01-ANDROID-CONFIG, EV-02-02-01-IOS-CONFIG, EV-02-02-01-ANIMATION-FAKE]
+
   - criterion_id: CORRECTNESS-CROSS-DOC-CONSISTENCY
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Registry的Function路径、三个Feat、Design和Baselined状态一致，Spec与Design也共享相同主题；但它们同步复制了
+      Detached、Surface、CanvasImage、Modifier、Transition、Effect和Animation的过时模型，且Design路径、架构图和
+      接口表之间存在进一步不一致，跨文档只能判定部分支持。
+    claim_ids: [ROSEN-01, ROSEN-02, ROSEN-04, ROSEN-05, ROSEN-06, ROSEN-07, ROSEN-08, ROSEN-09, ROSEN-10]
+    evidence: [*ev_spec_1, *ev_spec_2, *ev_spec_3, *ev_design, *ev_static, *ev_registry_function, *ev_registry_features]
+    findings:
+    - finding_id: SEM-df1aa2617995e57be2a0848f
+      criterion_id: CORRECTNESS-CROSS-DOC-CONSISTENCY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 注册关系一致，但Spec与Design共同固化了多项过时事实，内部路径、接口和运行图也未保持一致。
+      recommendation: 修正事实后以单一接口和运行链为真相源，通过Feat、AC、Design章节引用避免同步漂移。
+      evidence_ids: [EV-02-02-01-SPEC-01, EV-02-02-01-SPEC-02, EV-02-02-01-SPEC-03, EV-02-02-01-DESIGN, EV-02-02-01-STATIC, EV-02-02-01-REGISTRY-FUNCTION, EV-02-02-01-REGISTRY-FEATURES]
+
   - criterion_id: SPEC-AC-TESTABILITY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      AC多数采用WHEN/THEN并给出可观察返回或类型，具备人工核验入口；但大量AC所引用的方法、参数、类型和平台结果
+      不存在或错误，VM仅写单测、编译检查和集成测试，没有真实target、二进制、filter、命令、预期结果或已执行记录。
+    claim_ids: [ROSEN-06, ROSEN-07, ROSEN-08, ROSEN-10, VM-1, VM-5]
+    evidence: [*ev_spec_1, *ev_spec_2, *ev_spec_3, *ev_static, *ev_rosen_test_build, *ev_detached_test]
+    findings:
+    - finding_id: SEM-65e985917d793627640be638
+      criterion_id: SPEC-AC-TESTABILITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: AC形式可观察，但错误接口和缺失执行入口使三个Feat不能按Spec直接完成验证。
+      recommendation: 先校正AC到真实符号，再补充GN/Ninja目标、Host测试二进制、gtest filter、预期结果和实际通过记录。
+      evidence_ids: [EV-02-02-01-SPEC-01, EV-02-02-01-SPEC-02, EV-02-02-01-SPEC-03, EV-02-02-01-ROSEN-TEST-BUILD, EV-02-02-01-DETACHED-TEST]
+
   - criterion_id: SPEC-RULE-COMPLETENESS
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      三个Feat均有规则表并覆盖主体正向场景，但规则复制了错误的PreFreeze、Preview、CanvasImage、Modifier、Transition、
+      Effect和Animation行为；ArkUI-X与Preview宏组合、动画集合为空、平台转换返回null、资源所有权和失败恢复等边界也未完整规则化。
+    claim_ids: [ROSEN-04, ROSEN-05, ROSEN-06, ROSEN-07, ROSEN-08, ROSEN-09, ROSEN-10]
+    evidence: [*ev_spec_1, *ev_spec_2, *ev_spec_3, *ev_surface, *ev_detached, *ev_canvas, *ev_modifier_rosen, *ev_transition, *ev_effect, *ev_animation_rosen]
+    findings:
+    - finding_id: SEM-c809d1a274abc8aa04e5cb79
+      criterion_id: SPEC-RULE-COMPLETENESS
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 规则表结构存在，但主体适配规则包含错误事实，关键条件组合、失败状态和恢复行为覆盖不足。
+      recommendation: 按工厂决策表和逐适配器输入、状态、输出、失败、回退重写规则，并引用真实接口签名。
+      evidence_ids: [EV-02-02-01-SPEC-01, EV-02-02-01-SPEC-02, EV-02-02-01-SPEC-03, EV-02-02-01-SURFACE, EV-02-02-01-DETACHED, EV-02-02-01-CANVAS, EV-02-02-01-MODIFIER-ROSEN, EV-02-02-01-TRANSITION, EV-02-02-01-EFFECT, EV-02-02-01-ANIMATION-ROSEN]
+
   - criterion_id: SPEC-TRACEABILITY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      AC、Rule和VM表均存在，但静态报告确认43处范围ID、3个表头字段、10个无效引用和12个非结构化用户故事；
+      Evidence coverage为0%，范围写法还抑制连锁NO-VM/NO-RULE判断，无法形成逐Claim证据闭环。
+    claim_ids: [ROSEN-01, TRACE-RANGE-ID-001, SPEC-STRUCT-TABLE-FIELD-001, REF-NOT-FOUND-001, SPEC-STRUCT-USER-STORY-001]
+    evidence: [*ev_static, *ev_spec_1, *ev_spec_2, *ev_spec_3, *ev_design]
+    findings:
+    - finding_id: SEM-82742145a7077d843ba14cc0
+      criterion_id: SPEC-TRACEABILITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 追溯表存在，但68条Major静态问题和0%证据覆盖使AC、Rule、VM与源码证据无法逐项闭环。
+      recommendation: 修正表头和路径，显式展开范围ID，为每个AC绑定真实VM、符号、target和执行证据。
+      evidence_ids: [EV-02-02-01-STATIC, EV-02-02-01-SPEC-01, EV-02-02-01-SPEC-02, EV-02-02-01-SPEC-03, EV-02-02-01-DESIGN]
+
   - criterion_id: SPEC-SCOPE-BOUNDARY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      三个Feat分别覆盖核心后端、绘制视效和动画桥接，Function主范围清晰，也声明不新增公开接口；但CanvasImage、
+      Modifier、Transition、Effect和Animation的存量实现边界识别错误，ArkUI-X与Preview又被混入同一非OHOS分支，
+      纳入范围与实际资产不一致。
+    claim_ids: [ROSEN-05, ROSEN-06, ROSEN-07, ROSEN-08, ROSEN-09, ROSEN-10]
+    evidence: [*ev_spec_1, *ev_spec_2, *ev_spec_3, *ev_design, *ev_surface, *ev_modifier_base, *ev_transition, *ev_animation_header]
+    findings:
+    - finding_id: SEM-ac13401569535858832df77f
+      criterion_id: SPEC-SCOPE-BOUNDARY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: Function主题边界明确，但多个不存在或已迁移的适配器被纳入，真实实现和平台分支未被准确承接。
+      recommendation: 重新盘点冻结源码资产，明确OHOS、ArkUI-X、Preview以及每个适配器的包含和排除边界。
+      evidence_ids: [EV-02-02-01-SPEC-01, EV-02-02-01-SPEC-02, EV-02-02-01-SPEC-03, EV-02-02-01-DESIGN, EV-02-02-01-SURFACE, EV-02-02-01-MODIFIER-BASE, EV-02-02-01-TRANSITION, EV-02-02-01-ANIMATION-HEADER]
+
   - criterion_id: DESIGN-IMPLEMENTATION-PATH
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: CONTRADICTED
+    reason: >-
+      Design给出NG、工厂、Drawing、视觉、Animation和RS分层图，但主调用方向建立在错误或不存在的
+      SkImageHolder、Modifier Create/Extended、TransitionAdapter、EffectAdapter、frameworks/core/animation路径上；
+      Surface与Detached主链也与源码冲突，不能作为准确架构上下文。
+    claim_ids: [ROSEN-02, ROSEN-04, ROSEN-05, ROSEN-06, ROSEN-07, ROSEN-08, ROSEN-09, ROSEN-10]
+    evidence: [*ev_design, *ev_registry_features, *ev_detached, *ev_surface, *ev_canvas, *ev_modifier_rosen, *ev_transition, *ev_effect, *ev_animation_rosen]
+    findings:
+    - finding_id: SEM-303462e3134913e12afcb407
+      criterion_id: DESIGN-IMPLEMENTATION-PATH
+      severity: Critical
+      conclusion: CONTRADICTED
+      message: Design的核心分层和调用链包含多个不存在的类、错误路径及错误调用方向，与冻结实现实质冲突。
+      recommendation: 从真实入口、基类、适配器、RS调用和平台分支重建端到端架构图，并标注职责与加载条件。
+      evidence_ids: [EV-02-02-01-DESIGN, EV-02-02-01-DETACHED, EV-02-02-01-SURFACE, EV-02-02-01-CANVAS, EV-02-02-01-MODIFIER-ROSEN, EV-02-02-01-TRANSITION, EV-02-02-01-EFFECT, EV-02-02-01-ANIMATION-ROSEN]
+
   - criterion_id: DESIGN-FEAT-RUNTIME-COVERAGE
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: CONTRADICTED
+    reason: >-
+      三个Feat均可在Design中定位，但Feat-01的Detached与Surface流程错误，Feat-02的CanvasImage、Modifier、Transition和
+      Effect运行模型多数已失效，Feat-03又包含不存在的AnimateFrom和错误Current接口语义；逐Feat输入、状态、处理、
+      输出、异常恢复及测试衔接不能作为真实运行设计。
+    claim_ids: [Feat-01, Feat-02, Feat-03, ROSEN-04, ROSEN-05, ROSEN-06, ROSEN-07, ROSEN-08, ROSEN-09, ROSEN-10]
+    evidence: [*ev_design, *ev_spec_1, *ev_spec_2, *ev_spec_3, *ev_detached, *ev_surface, *ev_canvas, *ev_modifier_rosen, *ev_transition, *ev_effect, *ev_animation_rosen]
+    findings:
+    - finding_id: SEM-2ec02fd91dad8073c52f0078
+      criterion_id: DESIGN-FEAT-RUNTIME-COVERAGE
+      severity: Major
+      conclusion: CONTRADICTED
+      message: 三个Feat有章节覆盖，但关键运行步骤与源码冲突，无法形成可信的逐Feat六环节运行设计。
+      recommendation: 逐Feat重新描述输入入口、状态更新、核心调用、输出事件、失败回退和可执行测试交接。
+      evidence_ids: [EV-02-02-01-DESIGN, EV-02-02-01-SPEC-01, EV-02-02-01-SPEC-02, EV-02-02-01-SPEC-03, EV-02-02-01-DETACHED, EV-02-02-01-SURFACE, EV-02-02-01-CANVAS, EV-02-02-01-MODIFIER-ROSEN, EV-02-02-01-TRANSITION, EV-02-02-01-EFFECT, EV-02-02-01-ANIMATION-ROSEN]
+
   - criterion_id: DESIGN-ALGORITHM-DATA-STATE
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: CONTRADICTED
+    reason: >-
+      Design虽描述弱引用、unordered_set、Modifier属性和动画控制等数据，但Detached资源生命周期、Mixed Child切换、
+      Transition树、材质来源及Animation集合状态与源码不一致；线程、所有权、空结果、平台null回退和失败恢复也未准确建模。
+    claim_ids: [ROSEN-04, ROSEN-07, ROSEN-08, ROSEN-09, ROSEN-10]
+    evidence: [*ev_design, *ev_mixed, *ev_detached, *ev_modifier_rosen, *ev_transition, *ev_material, *ev_animation_rosen]
+    findings:
+    - finding_id: SEM-36e6f6482bb1b21b364e9071
+      criterion_id: DESIGN-ALGORITHM-DATA-STATE
+      severity: Critical
+      conclusion: CONTRADICTED
+      message: 关键资源生命周期、状态转换和转换算法基于错误模型，且缺少并发、所有权和恢复设计。
+      recommendation: 按真实容器、弱引用、RS对象集合、Property链、Transition树和Animation向量重建设计与失败状态。
+      evidence_ids: [EV-02-02-01-DESIGN, EV-02-02-01-MIXED-CHILD, EV-02-02-01-DETACHED, EV-02-02-01-MODIFIER-ROSEN, EV-02-02-01-TRANSITION, EV-02-02-01-MATERIAL, EV-02-02-01-ANIMATION-ROSEN]
+
   - criterion_id: DESIGN-DECISION-QUALITY
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: CONTRADICTED
+    reason: >-
+      Design列出八项ADR并具备候选方案形式，但ADR-6把PreFreeze误写为脱离节点空闲冲刷，ADR-7遗漏Preview回落和
+      ArkUI-X宏条件；部分决策又依赖不存在或过时的接口，已选择方案和取舍依据不能由冻结实现验证。
+    claim_ids: [ADR-1, ADR-2, ADR-3, ADR-4, ADR-5, ADR-6, ADR-7, ADR-8, ROSEN-04, ROSEN-05]
+    evidence: [*ev_design, *ev_detached, *ev_surface, *ev_preview_config, *ev_android_config, *ev_ios_config]
+    findings:
+    - finding_id: SEM-8d8cd92c76d1e45cc041da07
+      criterion_id: DESIGN-DECISION-QUALITY
+      severity: Major
+      conclusion: CONTRADICTED
+      message: ADR形式完整，但关键选择和取舍理由建立在错误实现事实上，缺少可复现验证依据。
+      recommendation: 校正实现事实后重新记录候选、平台条件、兼容成本、失败模式和验证证据。
+      evidence_ids: [EV-02-02-01-DESIGN, EV-02-02-01-DETACHED, EV-02-02-01-SURFACE, EV-02-02-01-PREVIEW-CONFIG, EV-02-02-01-ANDROID-CONFIG, EV-02-02-01-IOS-CONFIG]
+
   - criterion_id: DESIGN-IMPACT-COVERAGE
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: CONTRADICTED
+    reason: >-
+      Design提到render BUILD和Rosen宏，但错误引用frameworks/core/animation/BUILD.gn，未准确说明Fake基础sources、
+      Rosen sources由components.gni条件加入、RENDER_EXTRACT_SUPPORTED的平台来源、graphic_2d等外部依赖、
+      目标产物和部署加载关系，因此构建影响结论与源码冲突且明显不完整。
+    claim_ids: [ROSEN-05, ROSEN-11, BUILD-CONDITIONS, DEPENDENCIES, OUTPUTS]
+    evidence: [*ev_design, *ev_render_build, *ev_components_gni, *ev_android_config, *ev_ios_config, *ev_rosen_test_build]
+    findings:
+    - finding_id: SEM-be080fa11768c95284ae202d
+      criterion_id: DESIGN-IMPACT-COVERAGE
+      severity: Major
+      conclusion: CONTRADICTED
+      message: 构建文件、条件选择和依赖结论存在错误，产物、注册、加载及部署链未形成闭环。
+      recommendation: 建立source set、开关、平台defines、target、deps、共享库产物和加载部署路径的完整映射。
+      evidence_ids: [EV-02-02-01-DESIGN, EV-02-02-01-RENDER-BUILD, EV-02-02-01-COMPONENTS-GNI, EV-02-02-01-ANDROID-CONFIG, EV-02-02-01-IOS-CONFIG, EV-02-02-01-ROSEN-TEST-BUILD]
+
   - criterion_id: DESIGN-VERIFICATION-PLAN
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design给出编译检查、单测和集成测试方向，仓内也存在arkui_rosen_render_context_test及Detached专用UT；但没有
+      真实构建命令、测试二进制、case/filter、逐Feat/AC映射、精确预期和实际通过记录，Mixed Child与Surface缺少专用UT，
+      InitContext、Modifier Apply和StartAnimation性能阈值也没有证据。
+    claim_ids: [ROSEN-12, VM-1, VM-5, NFR-INIT, NFR-MODIFIER, NFR-ANIMATION]
+    evidence: [*ev_design, *ev_spec_1, *ev_spec_2, *ev_spec_3, *ev_detached_test, *ev_rosen_test_build]
+    findings:
+    - finding_id: SEM-18bc7b5d2a693e1b2ca853a0
+      criterion_id: DESIGN-VERIFICATION-PLAN
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 有测试方向和部分资产，但不能按Design直接构建、执行、判定三个Feat或证明三个性能阈值。
+      recommendation: 补充Host构建命令、target、二进制、filter、预期结果、失败注入、实际结果和NFR基准证据。
+      evidence_ids: [EV-02-02-01-DESIGN, EV-02-02-01-SPEC-01, EV-02-02-01-SPEC-02, EV-02-02-01-SPEC-03, EV-02-02-01-DETACHED-TEST, EV-02-02-01-ROSEN-TEST-BUILD]
+
   - criterion_id: COMPATIBILITY-API-VERSION
     dimension_id: compatibility_system_impact
-    applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
+    applicability: NOT_APPLICABLE
+    conclusion: NOT_APPLICABLE
+    reason: 本Function不新增或变更应用侧公开API、API Level、开放范围、废弃链或ABI。
+    applicability_reason: Spec中的接口均声明InnerApi，评价范围是存量ace_engine内部渲染适配行为。
+    claim_ids: [API-VERSION-NONE]
+    evidence: [*ev_spec_1, *ev_spec_2, *ev_spec_3, *ev_design]
     findings: []
+
   - criterion_id: COMPATIBILITY-SYSTEM-IMPACT
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      文档识别Rosen、Drawing和Surface等外部系统能力，也声明无新增权限；但未完整记录graphic_2d、graphic_surface、
+      window_manager等依赖用途、条件和不可用影响，ArkUI-X、Preview与OHOS宏组合的降级结果也只有部分描述且含错误。
+    claim_ids: [ROSEN-05, ROSEN-09, ROSEN-11, SYSTEM-DEPENDENCIES]
+    evidence: [*ev_design, *ev_render_build, *ev_surface, *ev_effect, *ev_android_config, *ev_ios_config, *ev_preview_config]
+    findings:
+    - finding_id: SEM-346c8f906ea5dd01ac922725
+      criterion_id: COMPATIBILITY-SYSTEM-IMPACT
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 主要系统能力可识别，但外部依赖、平台条件、不可用影响和回退结果没有完整准确承接。
+      recommendation: 按部件和平台列出依赖目标、用途、开关、版本、失败影响及no-op或null降级行为。
+      evidence_ids: [EV-02-02-01-DESIGN, EV-02-02-01-RENDER-BUILD, EV-02-02-01-SURFACE, EV-02-02-01-EFFECT, EV-02-02-01-ANDROID-CONFIG, EV-02-02-01-IOS-CONFIG, EV-02-02-01-PREVIEW-CONFIG]
+
   - criterion_id: COMPATIBILITY-MULTI-DEVICE
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
+    conclusion: SUPPORTED
+    reason: >-
+      本Criterion按用户确认仅评价OHOS内部手机、平板、穿戴、车机等设备形态，不把OHOS、Preview、Android和iOS
+      平台差异计入多设备项。三个Spec均声明OHOS设备类型无差异，当前评价范围内未发现需要单独建模的OHOS设备、
+      窗口或输入形态分支；平台编译差异已在Surface和系统影响Criterion评价。
+    claim_ids: [MULTI-DEVICE-OHOS-SCOPE, ROSEN-13-WITHDRAWN]
+    evidence: [*ev_spec_1, *ev_spec_2, *ev_spec_3, *ev_design]
     findings: []
+
   - criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: MISSING
+    reason: >-
+      静态报告确认10个引用目标不存在，Evidence coverage为0%；人工核验又发现多个路径已迁移、接口签名和类型模型
+      大幅漂移。现有证据不能稳定复现Spec和Design中的核心结论，且相同错误事实在多个章节重复。
+    claim_ids: [ROSEN-01, ROSEN-02, REF-NOT-FOUND-001, EVIDENCE-COVERAGE]
+    evidence: [*ev_static, *ev_spec_1, *ev_spec_2, *ev_spec_3, *ev_design, *ev_canvas, *ev_modifier_base, *ev_transition, *ev_animation_header]
+    findings:
+    - finding_id: SEM-cc3ae26a6df1cd80d801128b
+      criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
+      severity: Major
+      conclusion: MISSING
+      message: 无效路径、0%覆盖和大规模接口漂移使核心证据基线不可稳定复现。
+      recommendation: 替换为仓内完整路径和稳定符号，记录冻结revision及哈希，并为全部核心Claim补充可执行证据。
+      evidence_ids: [EV-02-02-01-STATIC, EV-02-02-01-SPEC-01, EV-02-02-01-SPEC-02, EV-02-02-01-SPEC-03, EV-02-02-01-DESIGN, EV-02-02-01-CANVAS, EV-02-02-01-MODIFIER-BASE, EV-02-02-01-TRANSITION, EV-02-02-01-ANIMATION-HEADER]
+
   - criterion_id: MAINTAINABILITY-STRUCTURE
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      三个Spec和Design章节、表格及分Feat结构清晰，但12个用户故事未使用标准三段式，3个追溯表头错误，43处范围ID
+      无法逐项解析；同一事实还在AC、Rule、VM、ADR、架构图和详细设计中重复并同步漂移。
+    claim_ids: [ROSEN-01, SPEC-STRUCT-USER-STORY-001, SPEC-STRUCT-TABLE-FIELD-001, TRACE-RANGE-ID-001]
+    evidence: [*ev_spec_1, *ev_spec_2, *ev_spec_3, *ev_design, *ev_static]
+    findings:
+    - finding_id: SEM-de2bc15436f59c4de6dc316f
+      criterion_id: MAINTAINABILITY-STRUCTURE
+      severity: Minor
+      conclusion: PARTIALLY_SUPPORTED
+      message: 主体结构可读，但用户故事、表头、范围ID和重复事实增加解析及同步维护成本。
+      recommendation: 使用标准三段式用户故事和AC编号表头，展开范围ID，并集中维护接口和运行事实。
+      evidence_ids: [EV-02-02-01-SPEC-01, EV-02-02-01-SPEC-02, EV-02-02-01-SPEC-03, EV-02-02-01-DESIGN, EV-02-02-01-STATIC]
+
   - criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design列出五项存量风险并包含类型、影响、处理方式和ArkUI SIG Owner，用户已统一记录为Accepted；但风险表没有
+      覆盖核心接口漂移、错误调用链、平台条件、构建依赖和验证缺口，且PreFreeze及材质来源风险的事实前提本身不准确。
+    claim_ids: [ROSEN-14, RISK-CANVAS-NAMING, RISK-SINGLE-BACKEND, RISK-DRAWING-ALIAS, RISK-PREFREEZE, RISK-MATERIAL]
+    evidence: [*ev_design, *ev_detached, *ev_material]
+    findings:
+    - finding_id: SEM-acfef1b7ff57f09a9eb7fc28
+      criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
+      severity: Minor
+      conclusion: PARTIALLY_SUPPORTED
+      message: 五项风险具备Owner并已Accepted，但重大源码漂移和验证缺口未进入风险表，部分风险前提不准确。
+      recommendation: 保留Accepted处置记录，同时补充接口、平台、构建、验证风险并校正PreFreeze和材质来源事实。
+      evidence_ids: [EV-02-02-01-DESIGN, EV-02-02-01-DETACHED, EV-02-02-01-MATERIAL]
+
   coverage:
     expected_criteria: 20
     evaluated_criteria: 20
-    applicable_criteria: 20
-    not_applicable_criteria: 0
-    not_verifiable_criteria: 20
+    applicable_criteria: 18
+    not_applicable_criteria: 2
+    not_verifiable_criteria: 0
   execution:
     static_complete: true
     evidence_complete: true
-    semantic_complete: false
+    semantic_complete: true
     notes:
-    - 'Draft template: Criterion conclusions and scores are pending.'
+    - 静态报告68条Major Finding保持权威，语义评价未删除或降级静态问题。
+    - 用户确认ROSEN-01至ROSEN-12、ROSEN-14及20项Criterion；ROSEN-13按OHOS多设备范围定义撤销。
+    - ArkUI-X Android/iOS使能RENDER_EXTRACT_SUPPORTED，Preview未使能并回落RenderSurface基类。
+    - Design中的五项存量风险统一记录为Accepted；接受处置不代表认可其中错误的事实前提。
 scores:
   dimensions:
-    correctness: null
-    spec_executability: null
-    design_quality: null
-    compatibility_system_impact: null
-    maintainability: null
-  raw_score: null
-  published_score: null
-  confidence: null
+    correctness: 3.75
+    spec_executability: 12.5
+    design_quality: 2.5
+    compatibility_system_impact: 7.5
+    maintainability: 3.0
+  raw_score: 29.25
+  published_score: 29.25
+  confidence: 1.0
   admission: NOT_READY
 confirmation:
-  confirmed_by: null
-  confirmed_at: null
-  conclusion: pending
-  notes: []
+  confirmed_by: sunfei2021
+  confirmed_at: '2026-08-06T15:47:19+08:00'
+  conclusion: accepted
+  notes:
+  - 用户确认ROSEN-01至ROSEN-12、ROSEN-14和推荐评分，无其他异议。
+  - ROSEN-05按用户确认收敛为ArkUI-X Android/iOS走Render Extract路径、Preview回落no-op基类。
+  - ROSEN-13撤销，多设备仅指OHOS内部设备形态，不包含多平台差异。
+  - Design中的五项存量风险统一记录为Accepted，事实错误仍保留相应扣分。
+  - 静态Gate为FAIL；Rubric v0.2发布分为29.25，准入结论为NOT_READY。
 notes:
-- 完成20个Criterion后填写精确分数并进行一次确认。
-- Critical/Major Finding必须包含冻结revision下的可复现证据。
+- 本Review只记录评价结论，不修改Spec、Design、KB或产品源码。
+- 后续提升应先修复源码事实和静态追溯，再重建逐Feat运行设计、构建部署链和可执行验证计划。

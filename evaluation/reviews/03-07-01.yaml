@@ -4,10 +4,10 @@ evaluation_id: EVAL-03-07-01
 func_id: 03-07-01
 input_fingerprint: sha256:9fd175b89cc0dae9e750c56befa36fe761ed47aae72f6a0f7b07d999ce2913f8
 source_revision: d91b4e4990a990da2bfe809514e573e35852193e
-status: draft
+status: confirmed
 evaluator:
   evaluator_id: sunfei2021
-  evaluated_at: null
+  evaluated_at: '2026-08-06T23:00:45+08:00'
 semantic_result:
   schema_version: 1
   rubric_version: 0.2.0
@@ -40,211 +40,601 @@ semantic_result:
   - criterion_id: CORRECTNESS-SOURCE-SUPPORT
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: CONTRADICTED
+    reason: >-
+      焦点移动、悬停探测、ChildTree和NDK Provider注册分发主体可由冻结源码支持；但元素查询的
+      no-hide-descendants、朗读字段模型、动作事件blocker、属性事件类型以及NDK异步事件回调等多个核心契约
+      与冻结实现直接冲突，覆盖Feat-01、Feat-02、Feat-06和Feat-07，不能判定为仅有局部证据缺口。
+    claim_ids: [A11Y-01, A11Y-02, A11Y-03, A11Y-04, A11Y-05]
+    evidence:
+    - &ev_spec_01
+      evidence_id: EV-03-07-01-SPEC-01
+      type: spec_location
+      path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-01-accessibility-element-info-query-spec.md
+      line_start: 1
+      line_end: 304
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:40728fb9f5a01d80a39957d2c32e14d9491f6ac409456292901c69abf09e5fc9
+      description: Feat-01元素信息查询规格，包含查询、字段组装、level、NDK字段、AC和规则。
+    - &ev_spec_02
+      evidence_id: EV-03-07-01-SPEC-02
+      type: spec_location
+      path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-02-accessibility-action-execution-spec.md
+      line_start: 1
+      line_end: 225
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:065c0ef5b431346dc9b3258d9a005425e63868c6cd91e99d8f712d5e16bde0f7
+      description: Feat-02动作执行规格，包含动作门控、直接处理、fallback和事件阻塞规则。
+    - &ev_spec_03
+      evidence_id: EV-03-07-01-SPEC-03
+      type: spec_location
+      path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-03-accessibility-focus-move-spec.md
+      line_start: 1
+      line_end: 205
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:1578b2bff1405ab0e75175001c3ee861040e6008a3e980d768a1af9442c832fc
+      description: Feat-03焦点移动规格，包含方向、滚动祖先、ChildTree、虚拟节点和边界规则。
+    - &ev_spec_04
+      evidence_id: EV-03-07-01-SPEC-04
+      type: spec_location
+      path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-04-accessibility-hover-exploration-spec.md
+      line_start: 1
+      line_end: 228
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:514b11aa18c013f4ab420ca800b8335f02f02555c85865d64fc0adcb14a0ba76
+      description: Feat-04悬停探测规格，包含命中、level策略、节流、状态和跨会话转发。
+    - &ev_spec_05
+      evidence_id: EV-03-07-01-SPEC-05
+      type: spec_location
+      path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-05-accessibility-childtree-cross-process-spec.md
+      line_start: 1
+      line_end: 159
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:2b90b55ed7e2e281cd7818bc7ec196d3806d337ed61e35e37a0454e6e06dab50
+      description: Feat-05 ChildTree注册与跨进程接入规格，包含SessionAdapter、注册和去重。
+    - &ev_spec_06
+      evidence_id: EV-03-07-01-SPEC-06
+      type: spec_location
+      path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-06-accessibility-native-provider-spec.md
+      line_start: 1
+      line_end: 179
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:92e5b6c113953ebcbb148aef3ab0d1a755699a1ef3d03829b640e23c09f4fc31
+      description: Feat-06 NDK Provider开放能力规格，包含两套回调结构、注册、查询、动作和事件边界。
+    - &ev_spec_07
+      evidence_id: EV-03-07-01-SPEC-07
+      type: spec_location
+      path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-07-accessibility-event-notification-spec.md
+      line_start: 1
+      line_end: 235
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c37d6e2ca557c50bb3667b2ebae2814258a080452b6dfa7b647aafeb9936e5ed
+      description: Feat-07事件通知规格，包含属性触发、转换、门控、blocker和NDK异步上报。
+    - &ev_design
+      evidence_id: EV-03-07-01-DESIGN
+      type: design_location
+      path: specs/03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/design.md
+      line_start: 1
+      line_end: 407
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:e34c177804201d99596bc73411d6b3ffc8cd17aaeb55374f528548c265196bdd
+      description: Function级Design全文，包含架构、七个Feat运行设计、构建、ADR、验证和风险表。
+    - &ev_static
+      evidence_id: EV-03-07-01-STATIC
+      type: static_finding
+      path: specs/.evaluator/d91b4e4990a990da2bfe809514e573e35852193e/03-07-01/report.md
+      line_start: 1
+      line_end: 443
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:b4f35378ef6e0f450fdd08a0fa8701817461aff37b0a64b057dcbe2a53a4eeaa
+      description: 静态Gate FAIL，82条Major Finding，Evidence coverage为3.35%。
+    - &ev_registry_function
+      evidence_id: EV-03-07-01-REGISTRY-FUNCTION
+      type: registry_entry
+      path: specs/registry/functions.yaml
+      line_start: 430
+      line_end: 445
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9a86e134a49112bdd45ae2c12ada8cd7933e1ddbf442f033b0c98d6198bdcb44
+      description: 无障碍能力Function路径、Design和active状态注册。
+    - &ev_registry_feature
+      evidence_id: EV-03-07-01-REGISTRY-FEATURE
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 67
+      line_end: 101
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:64e21a7c8cb5fefcf6ffd6e91240fc2bbf1527fb9b3c46c074998ba2e5557b61
+      description: 七个Feat的标题、Spec路径及Draft状态注册。
+    - &ev_query
+      evidence_id: EV-03-07-01-SRC-QUERY
+      type: source_citation
+      path: adapter/ohos/osal/js_accessibility_manager.cpp
+      line_start: 943
+      line_end: 1085
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4eb54703fec306eda84dfca531f197cec4ded81b8a9bbe583e17e8b0725c104f
+      description: 查询阶段level检查当前恒true及FrameNode子节点遍历的真实实现。
+    - &ev_text
+      evidence_id: EV-03-07-01-SRC-TEXT
+      type: source_citation
+      path: frameworks/core/accessibility/utils/accessibility_property_utils.cpp
+      line_start: 138
+      line_end: 155
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:c8a9ac0c94d183c3a64955bd89e0825cf4d43206415eb773c440d196695f606f
+      description: Content与AccessibilityText分字段计算及userTextValue和group preferred条件。
+    - &ev_action
+      evidence_id: EV-03-07-01-SRC-ACTION
+      type: source_citation
+      path: adapter/ohos/osal/js_accessibility_manager.cpp
+      line_start: 7967
+      line_end: 8166
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:6b1552ae288af7ba56532ba51dc0d65c3bb40ff0c58cee0eec02998afacf1846
+      description: blocker仅在ACTIONS fallback设置，直接焦点、点击和长按动作优先处理的真实分发顺序。
+    - &ev_property_event
+      evidence_id: EV-03-07-01-SRC-PROPERTY-EVENT
+      type: source_citation
+      path: frameworks/core/components_ng/property/accessibility_property.cpp
+      line_start: 385
+      line_end: 395
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:cd41a371c443687acbe489c4df3c9b78af69d000c52a15cbb6aca8c5fe9dfe9a
+      description: NotifyComponentChangeEvent忽略传入事件类型并固定入队ELEMENT_INFO_CHANGE回调。
+    - &ev_custom_action
+      evidence_id: EV-03-07-01-SRC-CUSTOM-ACTION
+      type: source_citation
+      path: frameworks/core/components_ng/property/accessibility_property.cpp
+      line_start: 1892
+      line_end: 1911
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:afed5c8963a32a43f0b4f2b09b72edc384543a974dd16759bb26b6b0689841f0
+      description: SetAccessibilityCustomActions不比较新旧值且每次通知变化事件。
+    - &ev_ndk_event
+      evidence_id: EV-03-07-01-SRC-NDK-EVENT
+      type: source_citation
+      path: adapter/ohos/osal/js_third_provider_interaction_operation.cpp
+      line_start: 1045
+      line_end: 1145
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:89fe07e9d27c7349384333549a4de6a492bcbc01f5fc1af64c70b5080e35818e
+      description: NDK事件提交后台任务后立即callback(0)，后台分支不回传SA实际发送结果。
+    - &ev_build_osal
+      evidence_id: EV-03-07-01-BUILD-OSAL
+      type: source_citation
+      path: adapter/ohos/osal/BUILD.gn
+      line_start: 188
+      line_end: 215
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4655bc2a00f3f61631f2e1a2a05ca917e7ca220f2379f33c2743363e6778e1a0
+      description: accessibility_support条件、真实/fake实现选择及accessibility外部编译依赖。
+    - &ev_build_ndk
+      evidence_id: EV-03-07-01-BUILD-NDK
+      type: source_citation
+      path: interfaces/native/BUILD.gn
+      line_start: 38
+      line_end: 70
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7c66b8c25767c41b558b6f6f00b1b8c0f0a7bca799743f10c7dafa697275ace0
+      description: ace_ndk共享库及无障碍Provider实现源码的真实构建产物入口。
+    - &ev_ndk_header
+      evidence_id: EV-03-07-01-NDK-HEADER
+      type: sdk_declaration
+      path: interfaces/native/native_interface_accessibility.h
+      line_start: 329
+      line_end: 530
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:a7f77615e5b7aae02c056fdb967f0a8c0b710c63eec3fd2be30b132ced070086
+      description: 两套NDK Provider回调结构的七个具体字段及异步事件开放接口声明。
+    - &ev_provider
+      evidence_id: EV-03-07-01-SRC-PROVIDER
+      type: source_citation
+      path: frameworks/core/accessibility/native_interface_accessibility_provider.cpp
+      line_start: 25
+      line_end: 278
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:caa5a66a07e613aa78696b7746d466e99343188ceec7790dba8553bc807e4dbe
+      description: 两套Provider注册要求七回调非空、WithInstance优先及实际分发实现。
+    - &ev_hover
+      evidence_id: EV-03-07-01-SRC-HOVER
+      type: source_citation
+      path: frameworks/core/accessibility/accessibility_manager_ng.cpp
+      line_start: 215
+      line_end: 600
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:2caeee75a4182a267599f3a0baac275f6db8ee411d0404900b9335b120dc4a7c
+      description: 悬停状态、10ms节流、1000ms source切换、虚拟节点和Session转发主体实现。
+    - &ev_test_build
+      evidence_id: EV-03-07-01-TEST-BUILD
+      type: test_evidence
+      path: test/unittest/core/accessibility/BUILD.gn
+      line_start: 17
+      line_end: 215
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:3da01d645a9d0344dbe68482f6eda8cc0fd5e41c749d22795ff6d2f152df28f0
+      description: 无障碍Host单测真实GN target和测试资产入口。
+    findings:
+    - finding_id: SEM-b39734ea75f6391e6bd96a74
+      criterion_id: CORRECTNESS-SOURCE-SUPPORT
+      severity: Critical
+      conclusion: CONTRADICTED
+      message: no-hide-descendants查询、朗读字段、动作blocker、属性事件类型和NDK回调五类核心行为与冻结源码冲突。
+      recommendation: 按查询实际level过滤、Content/AccessibilityText双字段、直接/fallback动作分支、固定ELEMENT_INFO_CHANGE及异步投递语义分别修订Spec和Design。
+      evidence_ids: [EV-03-07-01-SPEC-01, EV-03-07-01-SPEC-02, EV-03-07-01-SPEC-06, EV-03-07-01-SPEC-07, EV-03-07-01-SRC-QUERY, EV-03-07-01-SRC-TEXT, EV-03-07-01-SRC-ACTION, EV-03-07-01-SRC-PROPERTY-EVENT, EV-03-07-01-SRC-NDK-EVENT]
+
   - criterion_id: CORRECTNESS-SDK-CONTRACT
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      本Function只把NDK开放能力纳入接口契约评价，sdk-js仅作为无障碍服务调用链上下文；NDK Provider两套结构、注册入口和
+      主体声明可定位，但API表使用...WithInstance泛写且没有逐项列出七个回调字段，接口描述尚未形成完整可核验清单。
+    claim_ids: [A11Y-09]
+    evidence: [*ev_spec_06, *ev_ndk_header, *ev_provider, *ev_static]
+    findings:
+    - finding_id: SEM-614964b6f479d2ad0bdd9a0f
+      criterion_id: CORRECTNESS-SDK-CONTRACT
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: NDK Provider API表用...WithInstance省略具体结构和七个回调字段，无法逐项核验开放能力契约。
+      recommendation: 分别展开ArkUI_AccessibilityProviderCallbacks和ArkUI_AccessibilityProviderCallbacksWithInstance，并逐项列出七个回调字段。
+      evidence_ids: [EV-03-07-01-SPEC-06, EV-03-07-01-NDK-HEADER, EV-03-07-01-STATIC]
+
   - criterion_id: CORRECTNESS-BOUNDARY-STATE
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: CONTRADICTED
+    reason: >-
+      文档覆盖了level、动作门控、帧聚合和异步上报边界，但查询level实际不生效、blocker不覆盖直接处理成功动作、
+      CustomActions不做相等短路、属性事件类型被统一转换，且NDK回调不反映SA实际发送结果，关键状态与异常分支结论错误。
+    claim_ids: [A11Y-01, A11Y-03, A11Y-04, A11Y-05]
+    evidence: [*ev_spec_01, *ev_spec_02, *ev_spec_07, *ev_query, *ev_action, *ev_property_event, *ev_custom_action, *ev_ndk_event]
+    findings:
+    - finding_id: SEM-5463cecd7e5dce308129d6e1
+      criterion_id: CORRECTNESS-BOUNDARY-STATE
+      severity: Major
+      conclusion: CONTRADICTED
+      message: 查询过滤、动作分支、属性去重、事件类型及NDK异步失败分支均存在与文档相反的边界行为。
+      recommendation: 以真实分发顺序和后台发送状态为基线重写边界矩阵，并为每个分支给出可观测结果。
+      evidence_ids: [EV-03-07-01-SRC-QUERY, EV-03-07-01-SRC-ACTION, EV-03-07-01-SRC-PROPERTY-EVENT, EV-03-07-01-SRC-CUSTOM-ACTION, EV-03-07-01-SRC-NDK-EVENT]
+
   - criterion_id: CORRECTNESS-CROSS-DOC-CONSISTENCY
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: CONTRADICTED
+    reason: >-
+      Registry与七份Spec均为Draft，而Design标记Baselined；Design先承认查询阶段不按accessibilityLevel过滤，随后又声明
+      no-hide-descendants整棵子树不进入查询，并与Feat-01共同给出相反结论，状态和核心语义均不一致。
+    claim_ids: [A11Y-01, A11Y-11]
+    evidence: [*ev_spec_01, *ev_design, *ev_registry_feature]
+    findings:
+    - finding_id: SEM-90a257d512406d21e7b502c5
+      criterion_id: CORRECTNESS-CROSS-DOC-CONSISTENCY
+      severity: Major
+      conclusion: CONTRADICTED
+      message: Design的Baselined状态与七个Draft Feat冲突，且Design内部对查询阶段level过滤给出互相矛盾的结论。
+      recommendation: 统一Registry、Spec和Design状态，并只保留冻结源码支持的查询level语义。
+      evidence_ids: [EV-03-07-01-SPEC-01, EV-03-07-01-DESIGN, EV-03-07-01-REGISTRY-FEATURE]
+
   - criterion_id: SPEC-AC-TESTABILITY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      七份Spec均使用WHEN/THEN AC并给出可观测结果，主体形式可测试；但多项AC预期与当前实现相反，按帧和异步完成等声明
+      缺少明确测试入口、时序阈值和失败观测，不能直接转化为可靠验收用例。
+    claim_ids: [A11Y-01, A11Y-03, A11Y-04, A11Y-05, A11Y-12]
+    evidence: [*ev_spec_01, *ev_spec_02, *ev_spec_07, *ev_test_build, *ev_query, *ev_action, *ev_property_event, *ev_ndk_event]
+    findings:
+    - finding_id: SEM-301c5641aaa7b65c4cadcf7c
+      criterion_id: SPEC-AC-TESTABILITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: AC结构清晰但关键预期与实现冲突，且事件聚合和异步结果缺少可直接执行的验收入口。
+      recommendation: 校正错误预期，并补充Host target、测试二进制、gtest filter、时序观测和失败结果断言。
+      evidence_ids: [EV-03-07-01-SPEC-01, EV-03-07-01-SPEC-02, EV-03-07-01-SPEC-07, EV-03-07-01-TEST-BUILD]
+
   - criterion_id: SPEC-RULE-COMPLETENESS
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      查询、动作、焦点、悬停、ChildTree、Provider和事件均有规则表，覆盖面较广；但查询level、朗读字段、blocker覆盖、
+      CustomActions相等短路、事件类型和NDK回调规则不准确，完整性不能仅由规则数量证明。
+    claim_ids: [A11Y-01, A11Y-02, A11Y-03, A11Y-04, A11Y-05]
+    evidence: [*ev_spec_01, *ev_spec_02, *ev_spec_03, *ev_spec_04, *ev_spec_05, *ev_spec_06, *ev_spec_07, *ev_query, *ev_text, *ev_action, *ev_property_event, *ev_ndk_event]
+    findings:
+    - finding_id: SEM-5cb5e1502fe4c875b37c137a
+      criterion_id: SPEC-RULE-COMPLETENESS
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 七个Feat均有规则表，但五类核心规则的条件、字段或结果与冻结实现不一致。
+      recommendation: 按源码重建查询、字段、动作、事件和异步回调规则，并补齐CustomActions重复赋值边界。
+      evidence_ids: [EV-03-07-01-SPEC-01, EV-03-07-01-SPEC-02, EV-03-07-01-SPEC-07, EV-03-07-01-SRC-QUERY, EV-03-07-01-SRC-ACTION, EV-03-07-01-SRC-PROPERTY-EVENT, EV-03-07-01-SRC-NDK-EVENT]
+
   - criterion_id: SPEC-TRACEABILITY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: CONTRADICTED
+    reason: >-
+      静态扫描为FAIL，共82条Major，Evidence coverage仅3.35%；61条证据basename歧义、6条路径不存在、14条表头字段错误，
+      且NDK API表没有展开具体回调字段，现有AC、Rule、VM与证据无法形成稳定闭环。
+    claim_ids: [A11Y-09, A11Y-10]
+    evidence: [*ev_static, *ev_spec_01, *ev_spec_02, *ev_spec_03, *ev_spec_04, *ev_spec_05, *ev_spec_06, *ev_spec_07]
+    findings:
+    - finding_id: SEM-44e351de96d71376646855eb
+      criterion_id: SPEC-TRACEABILITY
+      severity: Major
+      conclusion: CONTRADICTED
+      message: 82条Major和3.35%证据覆盖率表明追溯证据大面积不可唯一解析或结构不符合协议。
+      recommendation: 使用仓内完整路径、修正迁移路径和AC编号表头，并展开NDK Provider具体回调清单后重新扫描。
+      evidence_ids: [EV-03-07-01-STATIC]
+
   - criterion_id: SPEC-SCOPE-BOUNDARY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
+    conclusion: SUPPORTED
+    reason: >-
+      七个Feat分别界定查询、动作、焦点、悬停、ChildTree、NDK Provider和事件通知，并在各Spec中明确与相邻Feat的排除关系；
+      本次确认进一步固化NDK开放能力在范围内、sdk-js只作为服务调用链上下文而不做关键API核验。
     claim_ids: []
-    evidence: []
+    evidence: [*ev_spec_01, *ev_spec_02, *ev_spec_03, *ev_spec_04, *ev_spec_05, *ev_spec_06, *ev_spec_07, *ev_design]
     findings: []
+
   - criterion_id: DESIGN-IMPLEMENTATION-PATH
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: CONTRADICTED
+    reason: >-
+      Design给出了SA、OSAL、NG属性、Provider和SessionAdapter主链，但明确声称引擎不对无障碍子系统形成编译期依赖；
+      实际accessibility_support分支直接依赖accessibility_common、accessibilityclient和accessibilityconfig，仓与模块边界结论错误。
+    claim_ids: [A11Y-06]
+    evidence: [*ev_design, *ev_build_osal, *ev_registry_function]
+    findings:
+    - finding_id: SEM-f176492c82c39e005d787965
+      criterion_id: DESIGN-IMPLEMENTATION-PATH
+      severity: Critical
+      conclusion: CONTRADICTED
+      message: Design的“仅运行时回调、无编译期无障碍依赖”与OSAL真实external_deps直接冲突。
+      recommendation: 在架构上下文中明确accessibility系统部件、OSAL条件编译、服务客户端依赖和运行时回调的双重边界。
+      evidence_ids: [EV-03-07-01-DESIGN, EV-03-07-01-BUILD-OSAL]
+
   - criterion_id: DESIGN-FEAT-RUNTIME-COVERAGE
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: CONTRADICTED
+    reason: >-
+      七个已注册Feat均能在Design中定位运行设计，但Feat-01查询与字段组装、Feat-02动作blocker、Feat-06异步事件以及
+      Feat-07属性事件类型等关键输入、状态和输出路径与冻结源码存在实质冲突。
+    claim_ids: [A11Y-01, A11Y-02, A11Y-03, A11Y-04, A11Y-05]
+    evidence: [*ev_design, *ev_registry_feature, *ev_spec_01, *ev_spec_02, *ev_spec_06, *ev_spec_07, *ev_query, *ev_text, *ev_action, *ev_property_event, *ev_ndk_event]
+    findings:
+    - finding_id: SEM-41abc32e46ccccbd5f8baf4d
+      criterion_id: DESIGN-FEAT-RUNTIME-COVERAGE
+      severity: Major
+      conclusion: CONTRADICTED
+      message: 所有Feat虽有章节，但四个Feat的核心运行链结果与实现冲突，不能视为准确的逐Feat覆盖。
+      recommendation: 按七个Feat分别重画输入、分支、状态、输出和异常链，并为冲突Feat补充测试衔接。
+      evidence_ids: [EV-03-07-01-DESIGN, EV-03-07-01-SRC-QUERY, EV-03-07-01-SRC-ACTION, EV-03-07-01-SRC-PROPERTY-EVENT, EV-03-07-01-SRC-NDK-EVENT]
+
   - criterion_id: DESIGN-ALGORITHM-DATA-STATE
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: CONTRADICTED
+    reason: >-
+      焦点移动和悬停状态机主体描述较完整，但查询level状态、Content与AccessibilityText数据模型、动作blocker生效条件、
+      属性事件转换及异步callback生命周期均与源码冲突，涉及关键算法、数据和状态转换。
+    claim_ids: [A11Y-01, A11Y-02, A11Y-03, A11Y-04, A11Y-05]
+    evidence: [*ev_design, *ev_query, *ev_text, *ev_action, *ev_property_event, *ev_custom_action, *ev_ndk_event, *ev_hover]
+    findings:
+    - finding_id: SEM-e84580636606fb0310e79557
+      criterion_id: DESIGN-ALGORITHM-DATA-STATE
+      severity: Critical
+      conclusion: CONTRADICTED
+      message: 查询、字段组装、事件阻塞、事件转换和异步回调五类关键状态模型与实现不一致。
+      recommendation: 将查询过滤、双字段模型、direct/fallback动作状态、按帧事件ID和后台发送生命周期分别建模。
+      evidence_ids: [EV-03-07-01-DESIGN, EV-03-07-01-SRC-QUERY, EV-03-07-01-SRC-TEXT, EV-03-07-01-SRC-ACTION, EV-03-07-01-SRC-PROPERTY-EVENT, EV-03-07-01-SRC-NDK-EVENT]
+
   - criterion_id: DESIGN-DECISION-QUALITY
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design记录了多项ADR并说明选型理由，能够识别NG查询、Provider、ChildTree和事件聚合等关键决策；但替代方案、
+      成本、适用条件和可执行验证多数为简述，且查询level和编译依赖等决策前提与实现不一致。
+    claim_ids: [A11Y-01, A11Y-06]
+    evidence: [*ev_design, *ev_query, *ev_build_osal]
+    findings:
+    - finding_id: SEM-62b5c9e8e0b58166a184320c
+      criterion_id: DESIGN-DECISION-QUALITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: ADR数量充足但候选、成本和验证不足，部分取舍建立在错误的查询和依赖前提上。
+      recommendation: 为关键ADR补充真实候选方案、兼容性成本、适用条件和可复现验证，并校正错误前提。
+      evidence_ids: [EV-03-07-01-DESIGN, EV-03-07-01-SRC-QUERY, EV-03-07-01-BUILD-OSAL]
+
   - criterion_id: DESIGN-IMPACT-COVERAGE
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: CONTRADICTED
+    reason: >-
+      Design仅说明本次无BUILD.gn变更和无新增component，未覆盖存量ace_ndk产物、accessibility_support条件、
+      accessibility外部依赖、真实/fake实现选择及注册加载关系，并给出无编译期依赖的相反结论。
+    claim_ids: [A11Y-06, A11Y-07]
+    evidence: [*ev_design, *ev_build_osal, *ev_build_ndk]
+    findings:
+    - finding_id: SEM-8edd6cb8b5b68784f159c5d8
+      criterion_id: DESIGN-IMPACT-COVERAGE
+      severity: Major
+      conclusion: CONTRADICTED
+      message: 构建部署章节既遗漏真实target、条件、依赖和产物，又错误否认无障碍编译期依赖。
+      recommendation: 补齐ace_ndk、OSAL source set、accessibility_support、external_deps、fake实现、产物和加载部署路径。
+      evidence_ids: [EV-03-07-01-DESIGN, EV-03-07-01-BUILD-OSAL, EV-03-07-01-BUILD-NDK]
+
   - criterion_id: DESIGN-VERIFICATION-PLAN
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design给出单测、集成测试和代码检查方向，仓内也存在accessibility_linux_test_ng等真实测试target；但没有提供
+      build target、测试二进制、gtest filter、Feat/AC映射、预期结果、异常恢复和风险关闭条件，关键冲突路径也无对应测试证据。
+    claim_ids: [A11Y-12]
+    evidence: [*ev_design, *ev_test_build, *ev_spec_01, *ev_spec_02, *ev_spec_06, *ev_spec_07]
+    findings:
+    - finding_id: SEM-bbcae777422ce3bb6319eaae
+      criterion_id: DESIGN-VERIFICATION-PLAN
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 验证方向存在但不能直接执行，且缺少查询level、blocker、事件类型和异步回调的精确用例。
+      recommendation: 提供Host build target、二进制、gtest filter、Feat/AC映射、预期结果及风险关闭条件。
+      evidence_ids: [EV-03-07-01-DESIGN, EV-03-07-01-TEST-BUILD]
+
   - criterion_id: COMPATIBILITY-API-VERSION
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      仅NDK开放能力属于本Criterion范围，sdk-js接口不作为当前Function关键API核验项；NDK主结构和since信息可在仓内头文件定位，
+      但Spec使用...WithInstance泛写，没有将两套结构的七个回调、版本和能力差异逐项展开。
+    claim_ids: [A11Y-09]
+    evidence: [*ev_spec_06, *ev_ndk_header, *ev_provider]
+    findings:
+    - finding_id: SEM-8eb5bb3b25e781623b96313e
+      criterion_id: COMPATIBILITY-API-VERSION
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: NDK版本上下文存在，但两套Provider结构及七个回调未逐项展开，无法完整核验版本和兼容差异。
+      recommendation: 按NDK头文件分别列出两套结构、七个字段、since、入参实例差异和兼容要求；sdk-js保持上下文用途。
+      evidence_ids: [EV-03-07-01-SPEC-06, EV-03-07-01-NDK-HEADER]
+
   - criterion_id: COMPATIBILITY-SYSTEM-IMPACT
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: CONTRADICTED
+    reason: >-
+      Function确实通过OHOS accessibility系统能力与SA交互，OSAL在accessibility_support条件下形成明确外部依赖；
+      Design却称仅运行时回调且无编译期依赖，系统部件和构建影响结论与冻结工程配置相反。
+    claim_ids: [A11Y-06]
+    evidence: [*ev_design, *ev_build_osal, *ev_registry_function]
+    findings:
+    - finding_id: SEM-04b89cff25127696fd48856e
+      criterion_id: COMPATIBILITY-SYSTEM-IMPACT
+      severity: Major
+      conclusion: CONTRADICTED
+      message: accessibility系统部件的真实编译依赖与Design的“无编译期依赖”声明冲突。
+      recommendation: 明确系统能力开关、外部部件依赖、关闭能力时的fake实现及运行时注册条件。
+      evidence_ids: [EV-03-07-01-DESIGN, EV-03-07-01-BUILD-OSAL]
+
   - criterion_id: COMPATIBILITY-MULTI-DEVICE
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      多设备仅指OHOS内部手机、平板和折叠屏形态，不包含ArkUI-X多平台；七个Feat均声明无差异，但多数表格的验证方式和证据为空，
+      除坐标随窗口transform外没有给出设备形态分支核验或测试结果。
     claim_ids: []
-    evidence: []
-    findings: []
+    evidence: [*ev_spec_01, *ev_spec_02, *ev_spec_03, *ev_spec_04, *ev_spec_05, *ev_spec_06, *ev_spec_07, *ev_design]
+    findings:
+    - finding_id: SEM-33053baf5cc6e5ab117bd952
+      criterion_id: COMPATIBILITY-MULTI-DEVICE
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: OHOS手机、平板和折叠屏无差异的声明缺少源码分支核验和可执行验证证据。
+      recommendation: 保持OHOS设备形态范围，补充窗口坐标、折叠变化和不同设备配置下的无差异验证记录。
+      evidence_ids: [EV-03-07-01-SPEC-01, EV-03-07-01-SPEC-03, EV-03-07-01-SPEC-04, EV-03-07-01-DESIGN]
+
   - criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: CONTRADICTED
+    reason: >-
+      静态报告包含61条basename歧义、6条不存在路径及NDK API泛写问题，XComponent和Custom引用仍使用旧目录，
+      Design多处只写impl.h或单文件名；证据无法在冻结revision下稳定唯一复现。
+    claim_ids: [A11Y-09, A11Y-10]
+    evidence: [*ev_static, *ev_spec_06, *ev_design, *ev_ndk_header]
+    findings:
+    - finding_id: SEM-5cee3f2878353a9ba4313631
+      criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
+      severity: Major
+      conclusion: CONTRADICTED
+      message: 大量basename、旧路径和泛写API导致证据不可唯一解析或不可复现。
+      recommendation: 全部改用ace_engine仓内完整路径，修正迁移目录，删除无法定位的impl.h写法并展开NDK回调。
+      evidence_ids: [EV-03-07-01-STATIC, EV-03-07-01-SPEC-06, EV-03-07-01-DESIGN]
+
   - criterion_id: MAINTAINABILITY-STRUCTURE
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Function按七个Feat拆分且章节结构统一，便于增量维护；但大量重复自审信息、七份AC表头字段不符合AC编号标准、
+      追溯表字段不统一，并存在重复或互相矛盾的语义说明。
+    claim_ids: [A11Y-10, A11Y-11]
+    evidence: [*ev_spec_01, *ev_spec_02, *ev_spec_03, *ev_spec_04, *ev_spec_05, *ev_spec_06, *ev_spec_07, *ev_design, *ev_static]
+    findings:
+    - finding_id: SEM-d8891f7e2dafb1c9d094a594
+      criterion_id: MAINTAINABILITY-STRUCTURE
+      severity: Minor
+      conclusion: PARTIALLY_SUPPORTED
+      message: Feat拆分清晰，但表头不统一、重复内容和Design内部矛盾降低增量维护质量。
+      recommendation: 统一AC编号和追溯字段，去除重复自审文本，并消除Design内部相反结论。
+      evidence_ids: [EV-03-07-01-DESIGN, EV-03-07-01-STATIC]
+
   - criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design记录22项存量风险并统一给出无障碍SIG Owner，本次确认按既定流程将这些存量风险记录为Accepted；但风险表缺少状态、
+      关闭条件、截止版本和验证证据，也未登记本轮发现的查询、事件、回调和构建依赖事实冲突。
+    claim_ids: [A11Y-13]
+    evidence: [*ev_design, *ev_static, *ev_query, *ev_action, *ev_property_event, *ev_ndk_event, *ev_build_osal]
+    findings:
+    - finding_id: SEM-0f9428b66dbb5e48e711f6b3
+      criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
+      severity: Minor
+      conclusion: PARTIALLY_SUPPORTED
+      message: 22项风险有Owner并Accepted，但没有状态闭环字段，且遗漏本轮确认的核心事实风险。
+      recommendation: 保留Accepted处置，同时补充状态、关闭条件、版本和验证证据，并登记新增事实冲突；Accepted不代表认可错误前提。
+      evidence_ids: [EV-03-07-01-DESIGN, EV-03-07-01-SRC-QUERY, EV-03-07-01-SRC-ACTION, EV-03-07-01-SRC-PROPERTY-EVENT, EV-03-07-01-SRC-NDK-EVENT, EV-03-07-01-BUILD-OSAL]
+
   coverage:
     expected_criteria: 20
     evaluated_criteria: 20
     applicable_criteria: 20
     not_applicable_criteria: 0
-    not_verifiable_criteria: 20
+    not_verifiable_criteria: 0
   execution:
     static_complete: true
     evidence_complete: true
-    semantic_complete: false
+    semantic_complete: true
     notes:
-    - 'Draft template: Criterion conclusions and scores are pending.'
+    - 静态报告82条Major Finding保持权威，语义评价未删除或降级静态问题。
+    - 用户确认A11Y-01至A11Y-07、A11Y-09至A11Y-13及20项Criterion；A11Y-08按范围澄清撤销。
+    - NDK开放能力属于本Function评价范围，sdk-js只作为无障碍服务调用链上下文，不作为关键API核验对象。
+    - Design中的22项存量风险统一记录为Accepted；接受处置不代表认可其中不准确的事实前提。
 scores:
   dimensions:
-    correctness: null
-    spec_executability: null
-    design_quality: null
-    compatibility_system_impact: null
-    maintainability: null
-  raw_score: null
-  published_score: null
-  confidence: null
+    correctness: 3.0
+    spec_executability: 12.0
+    design_quality: 4.5
+    compatibility_system_impact: 3.5
+    maintainability: 3.0
+  raw_score: 26.0
+  published_score: 26.0
+  confidence: 1.0
   admission: NOT_READY
 confirmation:
-  confirmed_by: null
-  confirmed_at: null
-  conclusion: pending
-  notes: []
+  confirmed_by: sunfei2021
+  confirmed_at: '2026-08-06T23:00:45+08:00'
+  conclusion: accepted
+  notes:
+  - 用户确认除A11Y-08外的全部问题、22项存量风险Accepted及20项Criterion，无其他异议。
+  - A11Y-08撤销：sdk-js只作为调用链上下文，不将仓检出状态、JS API完整性或文件归属作为本Function关键核验项。
+  - A11Y-09保留：NDK开放能力在范围内，...WithInstance写法必须展开两套结构和七个具体回调字段。
+  - 多设备仅指OHOS手机、平板和折叠屏设备形态，不包含ArkUI-X多平台。
+  - 原始分26.0，Critical语义封顶为39但原始分已更低，因此发布分为26.0。
+  - 静态Gate为FAIL，准入结论为NOT_READY。
 notes:
-- 完成20个Criterion后填写精确分数并进行一次确认。
-- Critical/Major Finding必须包含冻结revision下的可复现证据。
+- 本Review只记录评价结论，不修改Spec、Design、KB或产品源码。
+- 优先整改查询level语义、动作blocker、属性事件类型、NDK异步回调、编译依赖和证据路径，再补齐构建测试与风险闭环。

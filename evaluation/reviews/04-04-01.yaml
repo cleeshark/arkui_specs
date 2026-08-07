@@ -4,10 +4,10 @@ evaluation_id: EVAL-04-04-01
 func_id: 04-04-01
 input_fingerprint: sha256:a61b5f16cc2b564c9a29e388923b68cc599084e3df82457beec921c0166331f2
 source_revision: d91b4e4990a990da2bfe809514e573e35852193e
-status: draft
+status: confirmed
 evaluator:
   evaluator_id: sunfei2021
-  evaluated_at: null
+  evaluated_at: '2026-08-07T00:04:03+08:00'
 semantic_result:
   schema_version: 1
   rubric_version: 0.2.0
@@ -32,211 +32,584 @@ semantic_result:
   - criterion_id: CORRECTNESS-SOURCE-SUPPORT
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Feat-01的注册、传播、preventDefault和鼠标转换，以及Feat-02的多点快照、坐标、ID和Native基础getter主体均由冻结源码支持；
+      Feat-03对当前高级getter、历史多点、末项重复和pressure入口差异的描述也按用户确认允许固化当前行为，但AC-3.2和Design把
+      GetResampleCoord与GetResamplePointerEvent两套算法错误合并为统一拒绝条件，源码事实只能判定部分支持。
+    claim_ids: [TOUCH-01, TOUCH-02, TOUCH-03, TOUCH-04, TOUCH-05]
+    evidence:
+    - &ev_feat1
+      evidence_id: EV-04-04-01-SPEC-FEAT-01
+      type: spec_location
+      path: specs/04-common-capability/04-common-events/01-touch-events/Feat-01-touch-callback-propagation-spec.md
+      line_start: 1
+      line_end: 415
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:8e7f62e6425d7ec28a11159651d7026610ca05ae5c754d5d1afefe45aad84b54
+      description: Feat-01全文，包含onTouch注册、传播控制、鼠标转换、默认行为、Native注册、规则、VM和设备声明。
+    - &ev_feat2
+      evidence_id: EV-04-04-01-SPEC-FEAT-02
+      type: spec_location
+      path: specs/04-common-capability/04-common-events/01-touch-events/Feat-02-touch-event-multipoint-data-model-spec.md
+      line_start: 1
+      line_end: 408
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:37add955bd59b23b4414a56f8ababfe84c45287685aba4c4fd07ad92b59201c8
+      description: Feat-02全文，包含TouchType、元数据、多点列表、坐标系统、Native getter、规则和VM。
+    - &ev_feat3
+      evidence_id: EV-04-04-01-SPEC-FEAT-03
+      type: spec_location
+      path: specs/04-common-capability/04-common-events/01-touch-events/Feat-03-history-sampling-advanced-touch-info-spec.md
+      line_start: 1
+      line_end: 471
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7fb7a712cbd68717501f148c298e4cc123bc4aaa0dc4d13f401699546fdfbb0e
+      description: Feat-03全文，包含历史采样、pressure、姿态、Native高级getter、历史多点、兼容风险和VM。
+    - &ev_design
+      evidence_id: EV-04-04-01-DESIGN
+      type: design_location
+      path: specs/04-common-capability/04-common-events/01-touch-events/design.md
+      line_start: 1
+      line_end: 673
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4b3925e2725c48ca045d46fbf28dd3fd47863bff14f8ccbeffd21f38c2ca7588
+      description: Function级Design全文，包含仓模块、分层调用链、ADR、算法、测试设计、构建声明和19项风险。
+    - &ev_static
+      evidence_id: EV-04-04-01-STATIC
+      type: static_finding
+      path: specs/.evaluator/d91b4e4990a990da2bfe809514e573e35852193e/04-04-01/report.md
+      line_start: 1
+      line_end: 1239
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:d8627bf2ead608995ca4b6db534a7a296eaa0a3517c57f5850dac95d35fdb267
+      description: 静态Gate FAIL，242条Major Finding，294个Claim，Evidence coverage为12.24%。
+    - &ev_registry_function
+      evidence_id: EV-04-04-01-REGISTRY-FUNCTION
+      type: registry_entry
+      path: specs/registry/functions.yaml
+      line_start: 745
+      line_end: 757
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7e4afd02833c5d35cf434267941b5dad7fbf433fcd0308262236e75fb580a535
+      description: 触摸事件Function路径、Design和active状态注册。
+    - &ev_registry_feature
+      evidence_id: EV-04-04-01-REGISTRY-FEATURE
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 422
+      line_end: 436
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9a81e2cff4a6a9810fc28c1841f5eb70748a23117a569cc8a69c78c30453fdfe
+      description: 三个Feat标题、Spec路径和Baselined状态注册。
+    - &ev_sdk_dynamic
+      evidence_id: EV-04-04-01-SDK-DYNAMIC
+      type: sdk_declaration
+      path: interface/sdk-js/api/@internal/component/ets/common.d.ts
+      line_start: 8440
+      line_end: 10238
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:0d26086699c95397773ae8ce8d5068060112a573a953cf085c560ad978d3af81
+      description: Dynamic BaseEvent、TouchObject、HistoricalPoint和TouchEvent的版本、字段、范围及历史点公开契约。
+    - &ev_sdk_native
+      evidence_id: EV-04-04-01-SDK-NATIVE
+      type: sdk_declaration
+      path: interfaces/native/ui_input_event.h
+      line_start: 730
+      line_end: 1066
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:3bcff73d3847fbb61dd3c4fb9e24908f4857cfe9665f5885b602747aba33168e
+      description: Native当前pressure、tilt、area及历史双索引getter的pointerIndex公开语义。
+    - &ev_touch_actuator
+      evidence_id: EV-04-04-01-SRC-TOUCH-ACTUATOR
+      type: source_citation
+      path: frameworks/core/components_ng/event/touch_event.cpp
+      line_start: 88
+      line_end: 359
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:eb789347db91ce5050fb528bc762c69b7df064a662df045bcb1ddbe45e040bb4
+      description: lastPoint选择、changedTouches/touches、完整history转换和节点内回调顺序实现。
+    - &ev_ui_input
+      evidence_id: EV-04-04-01-SRC-UI-INPUT
+      type: source_citation
+      path: interfaces/native/event/ui_input_event.cpp
+      line_start: 2200
+      line_end: 2942
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:af59201e17cb770341d00c16e94a101ae969c02083800c5741f73b6521f0dee5
+      description: Native当前高级getter忽略或使用pointerIndex以及历史二维getter的真实实现。
+    - &ev_node_modifier
+      evidence_id: EV-04-04-01-SRC-NODE-MODIFIER
+      type: source_citation
+      path: frameworks/core/interfaces/native/node/node_common_modifier.cpp
+      line_start: 10495
+      line_end: 11405
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:6001ef37ee1d4d6f1b035ce544975ac801467a8ede979e0ca476868d3b4e2890
+      description: Native当前点、最多10点、历史20乘10、共享historyLocation坐标和面积退化构造实现。
+    - &ev_resample
+      evidence_id: EV-04-04-01-SRC-RESAMPLE
+      type: source_citation
+      path: frameworks/core/event/resample_algo.cpp
+      line_start: 69
+      line_end: 226
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:2d96c74a2de29a00c2a8cf9caf2530392629f51963fc7be44ee25ddef4bb3fb1
+      description: GetResampleCoord常规路径与GetResamplePointerEvent加速路径的不同拒绝和预测条件。
+    - &ev_resample_header
+      evidence_id: EV-04-04-01-SRC-RESAMPLE-HEADER
+      type: source_citation
+      path: frameworks/core/event/resample_algo.h
+      line_start: 20
+      line_end: 24
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:22c7e2bc000178b0bfa63c9c9c238dd9fedfe5ff468d48c52c063bfdd2cfe3df
+      description: 常规坐标重采样20ms目标阈值和100ms样本间隔上限。
+    - &ev_touch_core
+      evidence_id: EV-04-04-01-SRC-TOUCH-CORE
+      type: source_citation
+      path: frameworks/core/event/touch_event.cpp
+      line_start: 406
+      line_end: 468
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:16bb56afa9aa5dda5a30cb1fb4c10a458437d26079796d38bdd5bec5492fcb36
+      description: 对外ID恢复以及CreateScalePoint和UpdateScalePoint临时pointers缩放未写回的实现风险。
+    - &ev_js_touch
+      evidence_id: EV-04-04-01-SRC-JS-TOUCH
+      type: source_citation
+      path: frameworks/bridge/declarative_frontend/engine/functions/js_touch_function.cpp
+      line_start: 28
+      line_end: 60
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:59bb3dd42f2614ac037576796845dd320035ab706f8f678ac780472eb2a23e1d
+      description: Dynamic live TouchObject坐标和pressure的density换算。
+    - &ev_static_touch
+      evidence_id: EV-04-04-01-SRC-STATIC-TOUCH
+      type: source_citation
+      path: frameworks/core/interfaces/native/implementation/touch_object_accessor.cpp
+      line_start: 200
+      line_end: 220
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:672b509b5f77126f17672a9c116d19dd6e3a48199da533d36ec2815c9d3dadf1
+      description: Static live TouchObject pressure的density换算。
+    - &ev_frame_touch
+      evidence_id: EV-04-04-01-SRC-FRAME-TOUCH
+      type: source_citation
+      path: frameworks/bridge/declarative_frontend/engine/jsi/nativeModule/arkts_native_frame_node_bridge.cpp
+      line_start: 235
+      line_end: 259
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4612809cf4981bc4bbd927e09b7977bf9ede9a6ab313cdd04bd67f6b466460f5
+      description: FrameNode TouchObject保留原始force并映射坐标字段。
+    - &ev_test_pressure
+      evidence_id: EV-04-04-01-TEST-PRESSURE
+      type: test_evidence
+      path: test/unittest/interfaces/ace_ui_input_event/oh_arkui_pointerevent_getpressure_test.cpp
+      line_start: 24
+      line_end: 160
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:354b9c91cd965198468e49c28c254c62c6fa03f247984369d113555a9e24cf85
+      description: Native pressure测试显式锁定普通ON_TOUCH忽略pointerIndex并返回最后一点的现有行为。
+    - &ev_test_area
+      evidence_id: EV-04-04-01-TEST-AREA
+      type: test_evidence
+      path: test/unittest/interfaces/ace_ui_input_event/oh_arkui_pointerevent_gettouchareawidth_test.cpp
+      line_start: 24
+      line_end: 150
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:b5ecaf144762cd77d5ad524b99ccf73cfc6ae5f17832b45e1dbb6eb771d49bee
+      description: Native touch-area测试锁定普通ON_TOUCH忽略pointerIndex的现有行为。
+    - &ev_test_event_build
+      evidence_id: EV-04-04-01-TEST-BUILD-EVENT
+      type: test_evidence
+      path: test/unittest/core/event/BUILD.gn
+      line_start: 236
+      line_end: 240
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:dbde607b8dd0fdf21d0e2c7274c73e20862937ad37a0270dbf34aa272c85893e
+      description: touch_event_test_ng真实Host单测target入口。
+    - &ev_test_interface_build
+      evidence_id: EV-04-04-01-TEST-BUILD-INTERFACE
+      type: test_evidence
+      path: test/unittest/interfaces/ace_ui_input_event/BUILD.gn
+      line_start: 20
+      line_end: 100
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:f6cf2798ca4a19a1aba9d73e0b31875f0e6039aa81852788ee1b08ff31428b72
+      description: ui_input_event_test真实Native输入事件单测target及源文件集合。
+    - &ev_build_native
+      evidence_id: EV-04-04-01-BUILD-NATIVE
+      type: source_citation
+      path: interfaces/native/BUILD.gn
+      line_start: 27
+      line_end: 160
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:e86bdbdc7a6586215d3960833e3fb6bc0ac8003e7f602cd53bb3d2cf415c9df3
+      description: Native接口、libace_ndk及相关构建依赖的真实入口。
+    findings:
+    - finding_id: SEM-040401000000000000000001
+      criterion_id: CORRECTNESS-SOURCE-SUPPORT
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 触摸主链和已确认固化的当前行为多数准确，但重采样AC把两套源码算法合并成不存在的统一条件。
+      recommendation: 将AC-3.2、R-17及Design分别改写为GetResampleCoord常规路径和GetResamplePointerEvent加速路径。
+      evidence_ids: [EV-04-04-01-SPEC-FEAT-03, EV-04-04-01-DESIGN, EV-04-04-01-SRC-RESAMPLE, EV-04-04-01-SRC-RESAMPLE-HEADER]
+
   - criterion_id: CORRECTNESS-SDK-CONTRACT
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: CONTRADICTED
+    reason: >-
+      用户确认允许将冻结实现固化为规格并将偏差作为Accepted风险：普通ON_TOUCH的pressure、tilt和area忽略pointerIndex，
+      Native历史多点共享坐标和面积退化，非插值history末项与当前点重复，live/history pressure入口输出不同；但这些行为分别与
+      Native目标触点语义、历史双索引语义、Dynamic历史点说明和无量纲pressure公开契约存在直接偏差，接受处置不消除SDK契约冲突。
+    claim_ids: [TOUCH-01, TOUCH-02, TOUCH-03, TOUCH-04]
+    evidence: [*ev_feat3, *ev_design, *ev_sdk_dynamic, *ev_sdk_native, *ev_ui_input, *ev_node_modifier, *ev_touch_actuator, *ev_js_touch, *ev_static_touch, *ev_frame_touch]
+    findings:
+    - finding_id: SEM-040401000000000000000002
+      criterion_id: CORRECTNESS-SDK-CONTRACT
+      severity: Critical
+      conclusion: CONTRADICTED
+      message: 四类已确认固化行为与公开SDK的pointerIndex、历史点和pressure契约存在可观察偏差。
+      recommendation: 保留当前行为AC和Accepted兼容风险，同时明确每个偏差的适用入口、版本、信息损失和禁止推导项，避免被解释为SDK统一语义。
+      evidence_ids: [EV-04-04-01-SPEC-FEAT-03, EV-04-04-01-SDK-DYNAMIC, EV-04-04-01-SDK-NATIVE, EV-04-04-01-SRC-UI-INPUT, EV-04-04-01-SRC-NODE-MODIFIER, EV-04-04-01-SRC-TOUCH-ACTUATOR]
+
   - criterion_id: CORRECTNESS-BOUNDARY-STATE
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: CONTRADICTED
+    reason: >-
+      大部分注册、传播、空列表、10点上限、历史20乘10和错误状态边界可由源码支持；但AC-4.1规定普通高级getter忽略任意pointerIndex，
+      AC-4.4又把索引越界统一描述为错误，二者内部冲突，实际只有真正使用索引的ByIndex getter才校验越界；AC-3.2还错误统一了两套重采样边界。
+    claim_ids: [TOUCH-01, TOUCH-05]
+    evidence: [*ev_feat3, *ev_ui_input, *ev_test_pressure, *ev_test_area, *ev_resample, *ev_resample_header]
+    findings:
+    - finding_id: SEM-040401000000000000000003
+      criterion_id: CORRECTNESS-BOUNDARY-STATE
+      severity: Major
+      conclusion: CONTRADICTED
+      message: AC-4.4的统一越界错误与AC-4.1及测试锁定行为冲突，重采样拒绝边界也不是两条路径的共同条件。
+      recommendation: 将忽略索引的pressure、tilt、area与真正ByIndex getter分开写错误规则，并拆分常规和加速重采样边界。
+      evidence_ids: [EV-04-04-01-SPEC-FEAT-03, EV-04-04-01-SRC-UI-INPUT, EV-04-04-01-TEST-PRESSURE, EV-04-04-01-TEST-AREA, EV-04-04-01-SRC-RESAMPLE]
+
   - criterion_id: CORRECTNESS-CROSS-DOC-CONSISTENCY
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Function和三Feat注册、标题、路径、状态均一致，Spec与Design对当前getter、历史多点、末项重复及pressure差异也采用同一口径；
+      但Spec内部AC-4.1与AC-4.4冲突，Spec和Design又共同复制了错误的统一重采样条件，跨文档一致性只能判定部分支持。
+    claim_ids: [TOUCH-01, TOUCH-05]
+    evidence: [*ev_feat1, *ev_feat2, *ev_feat3, *ev_design, *ev_registry_function, *ev_registry_feature]
+    findings:
+    - finding_id: SEM-040401000000000000000004
+      criterion_id: CORRECTNESS-CROSS-DOC-CONSISTENCY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 注册和三Feat关系一致，但高级getter边界在Spec内部冲突，重采样错误在Spec与Design间同步复制。
+      recommendation: 以冻结源码的getter分类和两套重采样路径为共同真相源，同步修订AC、Rule、ADR、详细设计和验证矩阵。
+      evidence_ids: [EV-04-04-01-SPEC-FEAT-03, EV-04-04-01-DESIGN, EV-04-04-01-REGISTRY-FUNCTION, EV-04-04-01-REGISTRY-FEATURE]
+
   - criterion_id: SPEC-AC-TESTABILITY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      88个AC普遍使用WHEN/THEN并给出可观察输出，当前行为固化项也可以通过参数化测试验证；但AC-3.2混合两套算法、AC-4.4混合忽略索引与ByIndex接口，
+      VM只有测试方向而没有真实target、二进制、Suite.Case、执行命令和精确通过标准，无法直接形成稳定自动化断言。
+    claim_ids: [TOUCH-01, TOUCH-05, TOUCH-08]
+    evidence: [*ev_feat1, *ev_feat2, *ev_feat3, *ev_test_event_build, *ev_test_interface_build]
+    findings:
+    - finding_id: SEM-040401000000000000000005
+      criterion_id: SPEC-AC-TESTABILITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: AC形式可测试，但部分条件混合不同运行路径，且VM不能定位并执行真实测试用例。
+      recommendation: 按算法路径和getter类别拆分AC，并为每组AC补充Host target、测试二进制、filter或Suite.Case及预期结果。
+      evidence_ids: [EV-04-04-01-SPEC-FEAT-03, EV-04-04-01-TEST-BUILD-EVENT, EV-04-04-01-TEST-BUILD-INTERFACE]
+
   - criterion_id: SPEC-RULE-COMPLETENESS
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      三Feat规则表覆盖注册、传播、输入转换、多点、坐标、历史、高级字段和Native主要边界；但R-17未区分常规与加速重采样，R-25没有按getter分类索引错误，
+      CreateScalePoint和UpdateScalePoint的active point与pointers尺度不一致风险只有Design记录，未形成明确AC、Rule和VM闭环。
+    claim_ids: [TOUCH-01, TOUCH-05, TOUCH-06]
+    evidence: [*ev_feat3, *ev_design, *ev_resample, *ev_touch_core]
+    findings:
+    - finding_id: SEM-040401000000000000000006
+      criterion_id: SPEC-RULE-COMPLETENESS
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 规则主体完整，但重采样、索引错误分类和多点缩放结果丢失缺少准确的原子规则闭环。
+      recommendation: 拆分R-17和R-25，并为非1.0 scale下active point与pointers差异补充AC、Rule、VM和边界测试。
+      evidence_ids: [EV-04-04-01-SPEC-FEAT-03, EV-04-04-01-DESIGN, EV-04-04-01-SRC-RESAMPLE, EV-04-04-01-SRC-TOUCH-CORE]
+
   - criterion_id: SPEC-TRACEABILITY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      AC、Rule、VM和证据栏目均已建立，但静态报告保留242条Major Finding，其中142条范围ID和85条basename歧义占主体；
+      294个Claim的Evidence coverage仅12.24%，范围聚合、三处非标准表头、失效引用和漂移SDK行号阻断稳定机器闭环。
+    claim_ids: [TOUCH-09, TRACE-RANGE-ID-001, REF-AMBIGUOUS-001, SPEC-STRUCT-TABLE-FIELD-001]
+    evidence: [*ev_static, *ev_feat1, *ev_feat2, *ev_feat3, *ev_design]
+    findings:
+    - finding_id: SEM-040401000000000000000007
+      criterion_id: SPEC-TRACEABILITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 追溯结构存在，但范围ID、歧义路径、表头和漂移引用使294个Claim只有12.24%的可复现证据覆盖。
+      recommendation: 展开全部AC和Rule范围，统一AC编号表头，使用仓内完整路径，并将每个VM绑定具体源码或真实测试入口。
+      evidence_ids: [EV-04-04-01-STATIC, EV-04-04-01-SPEC-FEAT-01, EV-04-04-01-SPEC-FEAT-02, EV-04-04-01-SPEC-FEAT-03, EV-04-04-01-DESIGN]
+
   - criterion_id: SPEC-SCOPE-BOUNDARY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
+    conclusion: SUPPORTED
+    reason: >-
+      Function按回调传播、多点数据和历史高级信息拆分三Feat，明确BuilderNode和Native自定义输入投递由Func-04-04-03-Feat-04承接；
+      Dynamic、Static、Native入口以及历史高级字段的承接边界均可定位。按已确认口径，ArkUI-X与Preview不纳入本轮完整性扣分。
+    claim_ids: [TOUCH-SCOPE]
+    evidence: [*ev_feat1, *ev_feat2, *ev_feat3, *ev_design, *ev_registry_function, *ev_registry_feature]
     findings: []
+
   - criterion_id: DESIGN-IMPLEMENTATION-PATH
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
+    conclusion: SUPPORTED
+    reason: >-
+      Design覆盖SDK、Dynamic与Static Bridge、ViewAbstract、GestureEventHub、TouchEventActuator、Pipeline、MMI转换和Native NodeModifier/getter，
+      注册、输入、节点内回调、节点间传播、多点列表、历史构造和公开输出主链均能由冻结源码定位。构建产物缺口单独由DESIGN-IMPACT-COVERAGE评价。
+    claim_ids: [DESIGN-CONTEXT-REPOSITORIES, DESIGN-LAYER-END-TO-END]
+    evidence: [*ev_design, *ev_feat1, *ev_feat2, *ev_feat3, *ev_registry_function, *ev_registry_feature, *ev_touch_actuator, *ev_node_modifier, *ev_ui_input]
     findings: []
+
   - criterion_id: DESIGN-FEAT-RUNTIME-COVERAGE
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: CONTRADICTED
+    reason: >-
+      Feat-01和Feat-02的输入、核心处理、输出和异常路径较完整，Feat-03也覆盖历史聚合、高级字段和Native输出；但其详细运行设计将
+      常规GetResampleCoord和加速GetResamplePointerEvent的条件合并，导致关键输入判断、降级路径和测试衔接与冻结源码存在实质冲突。
+    claim_ids: [TOUCH-05]
+    evidence: [*ev_design, *ev_feat3, *ev_registry_feature, *ev_resample, *ev_resample_header]
+    findings:
+    - finding_id: SEM-040401000000000000000008
+      criterion_id: DESIGN-FEAT-RUNTIME-COVERAGE
+      severity: Major
+      conclusion: CONTRADICTED
+      message: Feat-03重采样运行设计把两条实际路径合成一条不存在的统一流程。
+      recommendation: 分别补齐两条路径的输入样本、时间条件、核心计算、display隔离、回退结果和测试衔接。
+      evidence_ids: [EV-04-04-01-DESIGN, EV-04-04-01-SPEC-FEAT-03, EV-04-04-01-SRC-RESAMPLE, EV-04-04-01-SRC-RESAMPLE-HEADER]
+
   - criterion_id: DESIGN-ALGORITHM-DATA-STATE
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: CONTRADICTED
+    reason: >-
+      多点列表、回调顺序、历史20乘10、字段继承和资源所有权等设计较丰富，当前行为固化项也与源码一致；但重采样是本Function关键算法，
+      Design声称样本少于2、2至20ms、反弹、8ms预测和display不同均统一拒绝，真实常规路径使用100ms上限且无2ms、反弹和8ms条件，
+      加速内插分支也不检查最大20ms，符合Rubric的关键算法与冻结源码冲突情形。
+    claim_ids: [TOUCH-05]
+    evidence: [*ev_design, *ev_feat3, *ev_resample, *ev_resample_header]
+    findings:
+    - finding_id: SEM-040401000000000000000009
+      criterion_id: DESIGN-ALGORITHM-DATA-STATE
+      severity: Critical
+      conclusion: CONTRADICTED
+      message: 关键重采样算法的时间窗、反弹和预测限制被错误泛化，无法准确解释实际插值和回退结果。
+      recommendation: 为GetResampleCoord和GetResamplePointerEvent分别建立算法决策表，精确列出常规、内插、外插和调用层display条件。
+      evidence_ids: [EV-04-04-01-DESIGN, EV-04-04-01-SPEC-FEAT-03, EV-04-04-01-SRC-RESAMPLE, EV-04-04-01-SRC-RESAMPLE-HEADER]
+
   - criterion_id: DESIGN-DECISION-QUALITY
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      ADR覆盖undefined版本、回调槽隔离、传播时点、preventDefault、鼠标转换、多点列表、坐标、Native当前点、历史和pressure差异；
+      用户确认TOUCH-01至TOUCH-04采用当前行为固化并作为Accepted兼容风险。但部分ADR将源码偏差描述为统一兼容选择，
+      缺少按公开SDK、入口适用条件、信息损失、演进成本和可执行验证依据的完整取舍，重采样ADR也未识别两套算法。
+    claim_ids: [TOUCH-01, TOUCH-02, TOUCH-03, TOUCH-04, TOUCH-05]
+    evidence: [*ev_design, *ev_feat3, *ev_sdk_dynamic, *ev_sdk_native, *ev_ui_input, *ev_node_modifier, *ev_resample]
+    findings:
+    - finding_id: SEM-040401000000000000000010
+      criterion_id: DESIGN-DECISION-QUALITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: ADR数量和候选较完整，但已接受的SDK偏差缺少精确适用边界与演进成本，重采样关键决策基于错误的统一算法前提。
+      recommendation: 为四类Accepted兼容行为补充入口、版本、损失和禁止推导项，并新增两套重采样路径的独立ADR和验证依据。
+      evidence_ids: [EV-04-04-01-DESIGN, EV-04-04-01-SDK-DYNAMIC, EV-04-04-01-SDK-NATIVE, EV-04-04-01-SRC-RESAMPLE]
+
   - criterion_id: DESIGN-IMPACT-COVERAGE
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: MISSING
+    reason: >-
+      Design的BUILD章节仅说明本次文档补录不修改BUILD.gn、bundle.json或依赖，没有列出存量构建target、条件编译、依赖、
+      libace_compatible.z.so、libace_ndk.z.so、ArkTS frontend或ABC产物，也没有说明Native注册加载和部署打包路径，符合Rubric对MISSING的明确定义。
+    claim_ids: [TOUCH-07]
+    evidence: [*ev_design, *ev_build_native, *ev_registry_function]
+    findings:
+    - finding_id: SEM-040401000000000000000011
+      criterion_id: DESIGN-IMPACT-COVERAGE
+      severity: Major
+      conclusion: MISSING
+      message: “本次不修改BUILD文件”不能替代Function存量构建、产物、注册加载和部署设计。
+      recommendation: 补充Dynamic、Static、OHOS adapter和Native的真实GN target、条件、依赖、共享库或ABC产物、注册入口及安装路径。
+      evidence_ids: [EV-04-04-01-DESIGN, EV-04-04-01-BUILD-NATIVE, EV-04-04-01-REGISTRY-FUNCTION]
+
   - criterion_id: DESIGN-VERIFICATION-PLAN
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design列出Bridge、NG事件、Pipeline、Hyperlink、C API、历史重采样和多点等验证方向，仓内也存在touch_event_test_ng和ui_input_event_test target；
+      但没有给出构建命令、真实二进制、Suite.Case或filter、逐Feat和AC映射、可判定预期结果、失败恢复步骤及19项风险的关闭证据。
+    claim_ids: [TOUCH-08]
+    evidence: [*ev_design, *ev_feat1, *ev_feat2, *ev_feat3, *ev_test_event_build, *ev_test_interface_build, *ev_test_pressure, *ev_test_area]
+    findings:
+    - finding_id: SEM-040401000000000000000012
+      criterion_id: DESIGN-VERIFICATION-PLAN
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 验证范围较广，但缺少可直接执行的target、二进制、用例、AC映射和风险关闭标准。
+      recommendation: 为三Feat建立AC到真实Host或C API target、测试二进制、filter、输入、预期输出和风险关闭证据的矩阵。
+      evidence_ids: [EV-04-04-01-DESIGN, EV-04-04-01-TEST-BUILD-EVENT, EV-04-04-01-TEST-BUILD-INTERFACE, EV-04-04-01-TEST-PRESSURE, EV-04-04-01-TEST-AREA]
+
   - criterion_id: COMPATIBILITY-API-VERSION
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: CONTRADICTED
+    reason: >-
+      Dynamic、Static和Native主要since边界、SysCap及字段版本均有记录；但用户确认固化的当前行为在API 12起Native pointerIndex、
+      API 10起历史点及API 15起高级pressure等已发布范围内与SDK描述存在可观察差异，且文档把实现偏差作为既有输出保证，构成版本兼容契约冲突。
+    claim_ids: [TOUCH-01, TOUCH-02, TOUCH-03, TOUCH-04]
+    evidence: [*ev_feat3, *ev_design, *ev_sdk_dynamic, *ev_sdk_native, *ev_ui_input, *ev_node_modifier, *ev_touch_actuator]
+    findings:
+    - finding_id: SEM-040401000000000000000013
+      criterion_id: COMPATIBILITY-API-VERSION
+      severity: Major
+      conclusion: CONTRADICTED
+      message: 已接受固化行为跨越多个已发布API版本，与公开SDK描述存在持续兼容偏差。
+      recommendation: 在版本矩阵逐项标注偏差起始版本、适用入口、当前输出、SDK输出、信息损失和Accepted处置，禁止笼统外推。
+      evidence_ids: [EV-04-04-01-SPEC-FEAT-03, EV-04-04-01-DESIGN, EV-04-04-01-SDK-DYNAMIC, EV-04-04-01-SDK-NATIVE]
+
   - criterion_id: COMPATIBILITY-SYSTEM-IMPACT
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
+    conclusion: SUPPORTED
+    reason: >-
+      Function使用既有ArkUI SysCap和MMI输入链，不新增权限、跨用户存储、后台轮询或新的系统部件依赖；Design对输入事件所有权、
+      性能、功耗、内存、安全和多窗口影响已有结论，冻结实现未发现超出既有输入与渲染管线的新增系统能力影响。
+    claim_ids: [TOUCH-SYSTEM-IMPACT]
+    evidence: [*ev_design, *ev_feat1, *ev_feat2, *ev_feat3, *ev_registry_function]
     findings: []
+
   - criterion_id: COMPATIBILITY-MULTI-DEVICE
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
+    conclusion: SUPPORTED
+    reason: >-
+      本评价按已确认口径仅审查OHOS内部设备形态，不把ArkUI-X和Preview作为多设备扣分项。Spec覆盖手机、平板或手写笔、
+      折叠屏或多屏、Wearable以及桌面或二合一的输入来源、display隔离和Wearable重复位置过滤，未发现该范围内的新增语义冲突。
+    claim_ids: [TOUCH-MULTI-DEVICE]
+    evidence: [*ev_feat1, *ev_feat2, *ev_feat3, *ev_design]
     findings: []
+
   - criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      关键实现和SDK文件能够定位，但静态报告包含85条REF-AMBIGUOUS、3条REF-NOT-FOUND和1条REF-LINE-RANGE，
+      大量文档使用basename和已漂移SDK行号；242条Major Finding及12.24%的Evidence coverage表明证据尚不能稳定复现全部Claim。
+    claim_ids: [TOUCH-09]
+    evidence: [*ev_static, *ev_feat1, *ev_feat2, *ev_feat3, *ev_design, *ev_sdk_dynamic, *ev_sdk_native]
+    findings:
+    - finding_id: SEM-040401000000000000000014
+      criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 大量basename、失效引用和漂移行号使证据在同名源码与SDK演进后难以稳定复现。
+      recommendation: 使用仓内完整路径和稳定符号作为主定位，行号仅作辅助，并在关联仓证据中记录明确revision。
+      evidence_ids: [EV-04-04-01-STATIC, EV-04-04-01-SPEC-FEAT-01, EV-04-04-01-SPEC-FEAT-02, EV-04-04-01-SPEC-FEAT-03, EV-04-04-01-DESIGN]
+
   - criterion_id: MAINTAINABILITY-STRUCTURE
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      三Feat和Function Design章节齐全，规则、VM、API矩阵、设备声明和详细设计便于人工定位；但142条范围ID、三处非标准表头以及
+      Spec与Design重复维护SDK行号、算法和当前偏差事实，已经产生AC边界冲突和重采样同步错误，结构维护成本较高。
+    claim_ids: [TOUCH-01, TOUCH-05, TOUCH-09]
+    evidence: [*ev_feat1, *ev_feat2, *ev_feat3, *ev_design, *ev_static]
+    findings:
+    - finding_id: SEM-040401000000000000000015
+      criterion_id: MAINTAINABILITY-STRUCTURE
+      severity: Minor
+      conclusion: PARTIALLY_SUPPORTED
+      message: 文档可读性较好，但范围缩写和多处重复事实源已造成边界与算法描述漂移。
+      recommendation: 展开原子ID，统一标准表头，并让Spec、ADR、算法和风险表引用同一套getter分类及两路径重采样模型。
+      evidence_ids: [EV-04-04-01-SPEC-FEAT-01, EV-04-04-01-SPEC-FEAT-02, EV-04-04-01-SPEC-FEAT-03, EV-04-04-01-DESIGN, EV-04-04-01-STATIC]
+
   - criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design列出19项风险并提供ArkUI SIG Owner，用户确认全部存量风险按Accepted处置，且TOUCH-01至TOUCH-04允许当前行为固化；
+      但风险表缺少状态字段、关闭条件、目标版本、验证证据和到具体AC或实现问题的责任闭环，接受处置也不代表消除SDK兼容偏差。
+    claim_ids: [TOUCH-01, TOUCH-02, TOUCH-03, TOUCH-04, TOUCH-08]
+    evidence: [*ev_design, *ev_feat3, *ev_sdk_dynamic, *ev_sdk_native, *ev_test_pressure, *ev_test_area]
+    findings:
+    - finding_id: SEM-040401000000000000000016
+      criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
+      severity: Minor
+      conclusion: PARTIALLY_SUPPORTED
+      message: 风险已有Owner并Accepted，但没有状态、关闭条件、目标版本和验证证据，无法判断后续是否真正闭环。
+      recommendation: 为每项风险补充Accepted状态、适用版本、影响入口、关闭或长期接受条件、验证证据和复审触发条件。
+      evidence_ids: [EV-04-04-01-DESIGN, EV-04-04-01-SPEC-FEAT-03, EV-04-04-01-SDK-DYNAMIC, EV-04-04-01-SDK-NATIVE, EV-04-04-01-TEST-PRESSURE, EV-04-04-01-TEST-AREA]
+
   coverage:
     expected_criteria: 20
     evaluated_criteria: 20
     applicable_criteria: 20
     not_applicable_criteria: 0
-    not_verifiable_criteria: 20
+    not_verifiable_criteria: 0
   execution:
     static_complete: true
     evidence_complete: true
-    semantic_complete: false
+    semantic_complete: true
     notes:
-    - 'Draft template: Criterion conclusions and scores are pending.'
+    - 静态报告242条Major Finding保持权威，语义评价未删除或降级静态问题。
+    - 用户确认TOUCH-01至TOUCH-04允许按冻结实现固化为规格并作为Accepted SDK兼容风险。
+    - TOUCH-01要求修正AC-4.4，区分忽略pointerIndex的getter与真正ByIndex getter的越界行为。
+    - TOUCH-05必须拆分GetResampleCoord常规路径和GetResamplePointerEvent加速路径，不能保留统一拒绝条件。
+    - 多设备只评价OHOS内部设备形态，ArkUI-X和Preview不作为本轮扣分项。
 scores:
   dimensions:
-    correctness: null
-    spec_executability: null
-    design_quality: null
-    compatibility_system_impact: null
-    maintainability: null
-  raw_score: null
-  published_score: null
-  confidence: null
+    correctness: 10.0
+    spec_executability: 15.0
+    design_quality: 8.5
+    compatibility_system_impact: 6.0
+    maintainability: 5.0
+  raw_score: 44.5
+  published_score: 39.0
+  confidence: 1.0
   admission: NOT_READY
 confirmation:
-  confirmed_by: null
-  confirmed_at: null
-  conclusion: pending
-  notes: []
+  confirmed_by: sunfei2021
+  confirmed_at: '2026-08-07T00:04:03+08:00'
+  conclusion: accepted
+  notes:
+  - 用户确认TOUCH-01当前getter行为可以固化，但AC-4.4不得与AC-4.1冲突，需按是否真正使用索引拆分错误规则。
+  - 用户确认TOUCH-02历史多点共享坐标和面积退化、TOUCH-03非插值历史末项重复均允许固化为规格。
+  - 用户确认TOUCH-04不同入口pressure输出允许固化，TOUCH-05按两套实际重采样算法分别描述。
+  - 其余问题、20项Criterion和评分无异议；19项存量风险统一记录为Accepted。
+  - 原始分44.5；CORRECTNESS-SDK-CONTRACT和DESIGN-ALGORITHM-DATA-STATE存在Critical冲突，按Rubric v0.2封顶后发布分39.0。
+  - 静态Gate为FAIL，准入结论为NOT_READY。
 notes:
-- 完成20个Criterion后填写精确分数并进行一次确认。
-- Critical/Major Finding必须包含冻结revision下的可复现证据。
+- 本Review只记录评价结论，不修改Spec、Design、KB或产品源码。
+- 后续提升优先修正AC-4.4索引边界和两套重采样路径，再补齐构建产物、可执行测试、证据路径及风险关闭条件。

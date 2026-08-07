@@ -4,10 +4,10 @@ evaluation_id: EVAL-01-01-01
 func_id: 01-01-01
 input_fingerprint: sha256:970313b314c55fd8392ec16980b6b9c5b7cef094a51db9a08f24e9a83108c24e
 source_revision: d91b4e4990a990da2bfe809514e573e35852193e
-status: draft
+status: confirmed
 evaluator:
   evaluator_id: sunfei2021
-  evaluated_at: null
+  evaluated_at: '2026-08-06T11:22:01+08:00'
 semantic_result:
   schema_version: 1
   rubric_version: 0.2.0
@@ -28,211 +28,553 @@ semantic_result:
   - criterion_id: CORRECTNESS-SOURCE-SUPPORT
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      平台发现、主库聚合、前端生成、接口包和测试入口的主体构建链具有冻结源码支持，但多处
+      file:line已经漂移；R-31所述ace_static_ndk在当前interfaces/native中不存在，Design又把
+      Arkoala native interface依赖误归入NG core模板。关联Android/iOS仓当前实现也已改为独立
+      ace_ndk产物，AC-5.3及组件库引用区间不再支持原文。
+    claim_ids: [AC-1.1, AC-1.2, AC-1.3, AC-4.1, AC-5.3, AC-5.4, R-31]
+    evidence:
+    - &ev_spec
+      evidence_id: EV-01-01-01-SPEC
+      type: spec_location
+      path: specs/01-architecture/01-architecture-design/01-build-system/Feat-01-build-gn-structure-spec.md
+      line_start: 1
+      line_end: 348
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:cf1746ec15af6bd00b6a34388ad56ff2fb1014788eaf2563b1a798104352de09
+      description: Feat-01全文，包含AC、规则、VM、兼容性、多设备声明和源码引用。
+    - &ev_design
+      evidence_id: EV-01-01-01-DESIGN
+      type: design_location
+      path: specs/01-architecture/01-architecture-design/01-build-system/design.md
+      line_start: 1
+      line_end: 403
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:ad53910d2e6bbecdc8b6bd1827be56c38fc6148752a1dfa5c256713cbac6f4d5
+      description: Function级Design全文，包含架构链、ADR、构建影响、验证方案和风险表。
+    - &ev_ace_config
+      evidence_id: EV-01-01-01-ACE-CONFIG
+      type: source_citation
+      path: ace_config.gni
+      line_start: 192
+      line_end: 373
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:daabd5d5f75b692f01a1c91d7cde6084ea8eafe9b91b64089917d4ab8eaa7c16
+      description: part/subsystem实际定义和adapter扫描、平台过滤、current_platform选择实现。
+    - &ev_root_build
+      evidence_id: EV-01-01-01-ROOT-BUILD
+      type: source_citation
+      path: BUILD.gn
+      line_start: 18
+      line_end: 211
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:44f436af0838944415c4d0abf0d99388ed4b1da1ee86c059a6ab0cb79a3489f9
+      description: ace_config、ace_test_config和ace_coverage_config的实际完整区间。
+    - &ev_build
+      evidence_id: EV-01-01-01-BUILD-MAIN
+      type: source_citation
+      path: build/BUILD.gn
+      line_start: 20
+      line_end: 233
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:bd4b450a591a8110ec519ad90b29ea7cc44834a173b7e3de8c0403954f1faae9
+      description: libace_static遍历、分离engine、libace_compatible、libace_compatible_components和libace目标。
+    - &ev_core
+      evidence_id: EV-01-01-01-CORE-BUILD
+      type: source_citation
+      path: frameworks/core/BUILD.gn
+      line_start: 70
+      line_end: 1285
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:4645eb56e1694ed5e5798d49c9777ddea769a384eccb38a3cc1f785530e4886d
+      description: 旧core模板、其native interface依赖、NG core模板及平台实例化的真实位置。
+    - &ev_native
+      evidence_id: EV-01-01-01-NATIVE-BUILD
+      type: source_citation
+      path: interfaces/native/BUILD.gn
+      line_start: 18
+      line_end: 161
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:e86bdbdc7a6586215d3960833e3fb6bc0ac8003e7f602cd53bb3d2cf415c9df3
+      description: 当前NDK headers、ace_ndk共享库和ace_packages_ndk；不存在ace_static_ndk目标。
+    - &ev_android
+      evidence_id: EV-01-01-01-ANDROID-BUILD
+      type: source_citation
+      path: adapter/android/build/BUILD.gn
+      line_start: 25
+      line_end: 354
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:45e710b1c87d6bd2d3b2219a439f44577e8be901c61fdd8e9b3d7a21a8bdfe4d
+      description: 当前Android主库、独立ace_ndk、组件共享库和ace_packages实际构建结构；关联仓实际commit为f18378dc2e07707d58a56ca48e3144e245785b98。
+    - &ev_ios
+      evidence_id: EV-01-01-01-IOS-BUILD
+      type: source_citation
+      path: adapter/ios/build/BUILD.gn
+      line_start: 27
+      line_end: 984
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9829844872992f5b847a23482fb4e334db4e121460354723cb85426993554218
+      description: 当前iOS主framework、arkui_ios依赖、独立libace_ndk和组件framework打包结构；关联仓实际commit为1e68ba48e938b5ec6a63644a9f34c191888f4d1e。
+    findings:
+    - finding_id: SEM-000000000000000000000001
+      criterion_id: CORRECTNESS-SOURCE-SUPPORT
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 多个核心事实仍可验证，但NDK、core模板归属、关联仓构建结构及大量引用区间与当前冻结证据不完全一致。
+      recommendation: 按冻结源码修订所有区间，删除失效ace_static_ndk结论，纠正core模板归属，并按关联仓当前独立ace_ndk结构更新AC-5和Design。
+      evidence_ids: [EV-01-01-01-SPEC, EV-01-01-01-DESIGN, EV-01-01-01-ACE-CONFIG, EV-01-01-01-ROOT-BUILD, EV-01-01-01-BUILD-MAIN, EV-01-01-01-CORE-BUILD, EV-01-01-01-NATIVE-BUILD, EV-01-01-01-ANDROID-BUILD, EV-01-01-01-IOS-BUILD]
+
   - criterion_id: CORRECTNESS-SDK-CONTRACT
     dimension_id: correctness
-    applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
+    applicability: NOT_APPLICABLE
+    conclusion: NOT_APPLICABLE
+    reason: 编译构建Function描述内部GN/Ninja架构，不定义独立SDK、NDK公开签名或API Level契约。
+    applicability_reason: Spec和Build System KB均明确本Feature不新增或变更ArkTS、C API、NAPI及ABI契约。
+    claim_ids: [API-NONE]
+    evidence:
+    - *ev_spec
+    - &ev_kb
+      evidence_id: EV-01-01-01-KB
+      type: source_citation
+      path: docs/kb/architecture/build-system.md
+      line_start: 1
+      line_end: 80
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:eb160523e8af083fce695b96e72bbf8079fe9e01b60fc0f1b2013f931a3c3d23
+      description: 当前Build System KB明确该Function没有独立SDK API，并给出真实构建路由。
     findings: []
+
   - criterion_id: CORRECTNESS-BOUNDARY-STATE
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Spec覆盖is_asan、libace开关、is_arkui_x、target_os、build_ohos_sdk和host平台等主要分支，
+      但缺少当前独立ace_ndk路径、libace_compatible_components、关联仓新打包状态及完整产品条件矩阵；
+      adapter缺少platform.gni会导致GN加载失败，也不能与未导出platforms或缺少name的静默跳过混为一类。
+    claim_ids: [R-26, R-27, R-28, R-31, R-32, R-33, R-34, R-35]
+    evidence: [*ev_spec, *ev_design, *ev_ace_config, *ev_build, *ev_native, *ev_android, *ev_ios]
+    findings:
+    - finding_id: SEM-000000000000000000000002
+      criterion_id: CORRECTNESS-BOUNDARY-STATE
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 平台、产品、NDK和主库状态分支没有按当前实现形成完整且互斥的边界模型。
+      recommendation: 增加构建条件矩阵，区分GN导入失败、平台跳过、fake group、独立NDK产物、SDK dummy生成链及各平台打包状态。
+      evidence_ids: [EV-01-01-01-SPEC, EV-01-01-01-DESIGN, EV-01-01-01-ACE-CONFIG, EV-01-01-01-BUILD-MAIN, EV-01-01-01-NATIVE-BUILD, EV-01-01-01-ANDROID-BUILD, EV-01-01-01-IOS-BUILD]
+
   - criterion_id: CORRECTNESS-CROSS-DOC-CONSISTENCY
     dimension_id: correctness
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Registry、index、Spec和Design对FuncID及Feat-01注册关系一致，但Spec输入文档仍指向已不存在的旧KB；
+      Spec和Design共同保留失效NDK及漂移引用，关联Android/iOS仓revision也未进入冻结清单，导致跨文档证据基线不完整。
+    claim_ids: [REGISTRY-01-01-01, INPUT-KB, AC-5.3, AC-5.4]
+    evidence:
+    - *ev_spec
+    - *ev_design
+    - *ev_kb
+    - &ev_registry_functions
+      evidence_id: EV-01-01-01-REGISTRY-FUNCTION
+      type: registry_entry
+      path: specs/registry/functions.yaml
+      line_start: 43
+      line_end: 55
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:7e4afd02833c5d35cf434267941b5dad7fbf433fcd0308262236e75fb580a535
+      description: 01-01-01 Function的路径、Design和active状态注册。
+    - &ev_registry_features
+      evidence_id: EV-01-01-01-REGISTRY-FEATURE
+      type: registry_entry
+      path: specs/registry/features.yaml
+      line_start: 1
+      line_end: 6
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:9a81e2cff4a6a9810fc28c1841f5eb70748a23117a569cc8a69c78c30453fdfe
+      description: Feat-01 BUILD.gn结构的Spec路径和Baselined状态注册。
+    findings:
+    - finding_id: SEM-000000000000000000000003
+      criterion_id: CORRECTNESS-CROSS-DOC-CONSISTENCY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 注册关系正确，但旧KB链接、共享的过期NDK结论和未冻结关联仓使跨文档基线无法完整复现。
+      recommendation: 更新KB入口，以当前源码统一Spec与Design，并在评价或文档元数据中固定Android/iOS关联仓revision。
+      evidence_ids: [EV-01-01-01-SPEC, EV-01-01-01-DESIGN, EV-01-01-01-KB, EV-01-01-01-REGISTRY-FUNCTION, EV-01-01-01-REGISTRY-FEATURE]
+
   - criterion_id: SPEC-AC-TESTABILITY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      AC均使用WHEN/THEN并给出源码定位，但验证主体仍是人工读取源码；VM没有提供逐AC真实GN/Ninja target、
+      Host测试二进制、case/filter、ArkUI-X构建入口、可判定预期结果或实际通过记录。
+    claim_ids: [VM-1, VM-2, VM-3, VM-4, VM-5, VM-6, VM-7]
+    evidence:
+    - *ev_spec
+    - &ev_unittest
+      evidence_id: EV-01-01-01-UNITTEST-BUILD
+      type: test_evidence
+      path: test/unittest/BUILD.gn
+      line_start: 20
+      line_end: 67
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:cb0ee86ebcc1c6936e1a63a97d99b21499690effa9c45685ec596b42a69ca6d8
+      description: unittest、Host分支、linux_unittest_capi和run_linux_unittest_capi真实入口。
+    - &ev_benchmark
+      evidence_id: EV-01-01-01-BENCHMARK-BUILD
+      type: test_evidence
+      path: test/benchmark/BUILD.gn
+      line_start: 17
+      line_end: 41
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:ffe5b5f056a17893486fb156f5a15e890fdd88267d009bea9cc832aada6debab
+      description: ace_baseline、benchmark和benchmark_linux真实构建target。
+    findings:
+    - finding_id: SEM-000000000000000000000004
+      criterion_id: SPEC-AC-TESTABILITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: AC可人工审查，但无法仅按文档直接完成构建、执行并判定逐AC结果。
+      recommendation: 为每组AC补充准确target、执行目录、Host二进制或检查脚本、filter、预期产物和通过条件，并记录实际结果。
+      evidence_ids: [EV-01-01-01-SPEC, EV-01-01-01-UNITTEST-BUILD, EV-01-01-01-BENCHMARK-BUILD]
+
   - criterion_id: SPEC-RULE-COMPLETENESS
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      R-1至R-39覆盖正常、异常和恢复方向，但所有规则触发条件及边界列基本为空；R-31已经失效，
+      libace_compatible_components、独立ace_ndk、SDK dummy生成链、关联仓新打包结构及安装加载条件未被完整规则化。
+    claim_ids: [R-1, R-26, R-31, R-34, R-39]
+    evidence: [*ev_spec, *ev_build, *ev_native, *ev_android, *ev_ios]
+    findings:
+    - finding_id: SEM-000000000000000000000005
+      criterion_id: SPEC-RULE-COMPLETENESS
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 规则数量较多，但必要前提、边界字段和当前新增构建分支没有形成完整规格。
+      recommendation: 修订失效规则并为每条规则补齐触发条件、互斥条件、输出、失败方式和关联AC，新增当前缺失产物规则。
+      evidence_ids: [EV-01-01-01-SPEC, EV-01-01-01-BUILD-MAIN, EV-01-01-01-NATIVE-BUILD, EV-01-01-01-ANDROID-BUILD, EV-01-01-01-IOS-BUILD]
+
   - criterion_id: SPEC-TRACEABILITY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      AC-1.1至AC-5.4具有规则和VM表，但静态扫描确认R-26至R-39共14条规则未被任何AC引用，
+      另有两条越界引用和五条用户故事结构错误；92项Claim的静态证据覆盖仅28.26%。
+    claim_ids: [REF-LINE-RANGE-001, SPEC-STRUCT-USER-STORY-001, TRACE-RULE-ORPHAN-001]
+    evidence:
+    - &ev_static
+      evidence_id: EV-01-01-01-STATIC
+      type: static_finding
+      path: specs/.evaluator/d91b4e4990a990da2bfe809514e573e35852193e/01-01-01/report.md
+      line_start: 1
+      line_end: 132
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:5b0e46e51650c13fc770f27230b17b82b3d83911421f260f97b2821ce675549d
+      description: 静态Gate FAIL，21条Major Finding，包括2条越界引用、5条用户故事格式和14条孤儿规则。
+    - *ev_spec
+    findings:
+    - finding_id: SEM-000000000000000000000006
+      criterion_id: SPEC-TRACEABILITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: AC、Rule和VM已有基础关系，但孤儿规则、越界证据和低证据覆盖使追溯链不能闭环。
+      recommendation: 将R-26至R-39逐项关联到现有或新增AC，修正引用和用户故事结构，并为VM补充可执行证据。
+      evidence_ids: [EV-01-01-01-STATIC, EV-01-01-01-SPEC]
+
   - criterion_id: SPEC-SCOPE-BOUNDARY
     dimension_id: spec_executability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
+    conclusion: SUPPORTED
+    reason: >-
+      Spec明确这是现有BUILD.gn/gni结构补录，不提出源码行为修改；范围覆盖OpenHarmony根入口、主库、
+      framework、接口、测试和ArkUI-X参考，并明确不新增API、依赖或生成文件修改，功能边界可识别。
+    claim_ids: [DELTA, SCOPE, NON-GOALS]
+    evidence: [*ev_spec, *ev_design, *ev_registry_functions, *ev_registry_features]
     findings: []
+
   - criterion_id: DESIGN-IMPLEMENTATION-PATH
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design覆盖OpenHarmony根入口、bundle、全局配置、adapter、base/core/bridge、接口和测试层，
+      但图中BUILD到接口、TOP到测试等边关系过度简化，core模板归属存在错误，且当前独立NDK与
+      libace_compatible_components没有进入端到端主链。
+    claim_ids: [DESIGN-CONTEXT, DESIGN-LAYERING, DESIGN-FLOW]
+    evidence: [*ev_design, *ev_build, *ev_core, *ev_native, *ev_android, *ev_ios]
+    findings:
+    - finding_id: SEM-000000000000000000000007
+      criterion_id: DESIGN-IMPLEMENTATION-PATH
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 主构建层次存在，但部分调用边、模块归属和新增产物路径不准确或缺失。
+      recommendation: 以bundle/adapter package为聚合入口重画依赖方向，并补入compatible components及Android/iOS独立NDK链。
+      evidence_ids: [EV-01-01-01-DESIGN, EV-01-01-01-BUILD-MAIN, EV-01-01-01-CORE-BUILD, EV-01-01-01-NATIVE-BUILD, EV-01-01-01-ANDROID-BUILD, EV-01-01-01-IOS-BUILD]
+
   - criterion_id: DESIGN-FEAT-RUNTIME-COVERAGE
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      对本构建型Feat，Design给出了build.sh输入、GN平台发现、target实例化和主产物输出的等价执行链，
+      但没有完整覆盖当前每类产物的安装加载、独立NDK、compatible components、异常恢复和可执行测试衔接。
+    claim_ids: [Feat-01, AC-1.1, AC-2.1, AC-3.3, AC-4.1, AC-5.3]
+    evidence: [*ev_spec, *ev_design, *ev_build, *ev_native, *ev_android, *ev_ios, *ev_unittest]
+    findings:
+    - finding_id: SEM-000000000000000000000008
+      criterion_id: DESIGN-FEAT-RUNTIME-COVERAGE
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: Feat主执行链可定位，但输出、异常、恢复、部署及测试交接未达到逐Feat闭环。
+      recommendation: 按输入、GN解析、条件分派、Ninja构建、产物、安装加载、失败恢复和验证结果补齐Feat-01端到端设计。
+      evidence_ids: [EV-01-01-01-SPEC, EV-01-01-01-DESIGN, EV-01-01-01-BUILD-MAIN, EV-01-01-01-NATIVE-BUILD, EV-01-01-01-ANDROID-BUILD, EV-01-01-01-IOS-BUILD, EV-01-01-01-UNITTEST-BUILD]
+
   - criterion_id: DESIGN-ALGORITHM-DATA-STATE
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      平台扫描流程、platform scope、engine_config、libace_target及基础资源生命周期已有描述，
+      但GN参数优先级、完整条件矩阵、生成物失效条件、Ninja依赖状态、关联仓NDK迁移和失败恢复仍不完整，
+      资源及线程表也主要是通用构建工具描述。
+    claim_ids: [ALGORITHM-PLATFORM-DISCOVERY, DATA-PLATFORM, STATE-LIBACE, RESOURCE-OUTPUT]
+    evidence: [*ev_design, *ev_ace_config, *ev_build, *ev_android, *ev_ios]
+    findings:
+    - finding_id: SEM-000000000000000000000009
+      criterion_id: DESIGN-ALGORITHM-DATA-STATE
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 核心平台算法存在，但配置优先级、产物状态、生命周期和失败恢复模型不足。
+      recommendation: 增加GN参数和产品开关优先级、target状态转换、生成物失效重建、Ninja并发约束及失败恢复设计。
+      evidence_ids: [EV-01-01-01-DESIGN, EV-01-01-01-ACE-CONFIG, EV-01-01-01-BUILD-MAIN, EV-01-01-01-ANDROID-BUILD, EV-01-01-01-IOS-BUILD]
+
   - criterion_id: DESIGN-DECISION-QUALITY
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      六项ADR覆盖平台发现、主库聚合、引擎分离、生成链、bundle入口和ArkUI-X复用，候选方案具有差异；
+      但多数ADR缺少成本、迁移约束、失败条件和可执行验证，且部分选定方案事实已随独立NDK演进而过期。
+    claim_ids: [ADR-1, ADR-2, ADR-3, ADR-4, ADR-5, ADR-6]
+    evidence: [*ev_design, *ev_build, *ev_android, *ev_ios]
+    findings:
+    - finding_id: SEM-00000000000000000000000a
+      criterion_id: DESIGN-DECISION-QUALITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: ADR具备真实候选和理由，但成本、适用条件、兼容性、验证及当前演进状态不完整。
+      recommendation: 为关键ADR补充成本和限制、迁移兼容影响、失败条件、验证命令及关联仓revision，并更新NDK相关决策。
+      evidence_ids: [EV-01-01-01-DESIGN, EV-01-01-01-BUILD-MAIN, EV-01-01-01-ANDROID-BUILD, EV-01-01-01-IOS-BUILD]
+
   - criterion_id: DESIGN-IMPACT-COVERAGE
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design识别多数BUILD目标、条件开关、ABC、接口包和bundle入口，但遗漏libace_compatible_components的
+      详细职责、advanced_ui_component_static、关联仓独立NDK产物、完整external_deps、安装位置、加载方式和部署条件。
+    claim_ids: [BUILD-TARGETS, OUTPUTS, PACKAGING, LOADING]
+    evidence:
+    - *ev_design
+    - *ev_build
+    - *ev_android
+    - *ev_ios
+    - &ev_ohos_package
+      evidence_id: EV-01-01-01-OHOS-PACKAGE
+      type: source_citation
+      path: adapter/ohos/build/BUILD.gn
+      line_start: 18
+      line_end: 154
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:8c6c3b0a601d1135939ee3a18c82af7b7b7d5fd491ae2e7e298c14e27ba9cbba
+      description: OHOS组件共享库、wearable条件和ace_packages实际聚合清单。
+    - &ev_bundle
+      evidence_id: EV-01-01-01-BUNDLE
+      type: registry_entry
+      path: bundle.json
+      line_start: 136
+      line_end: 235
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:8841a844460bf7f1f2c81077f35a9d46377752fabc1fbd4d524f01bd2ce3026c
+      description: fwk_group、service_group和inner_kits部件注册及接口暴露。
+    findings:
+    - finding_id: SEM-00000000000000000000000b
+      criterion_id: DESIGN-IMPACT-COVERAGE
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 构建入口覆盖较广，但实际产物、依赖、注册、加载和部署链仍有关键遗漏。
+      recommendation: 建立按平台的target到文件产物、package、安装目录、运行时加载和失败条件映射，并补齐缺失目标。
+      evidence_ids: [EV-01-01-01-DESIGN, EV-01-01-01-BUILD-MAIN, EV-01-01-01-ANDROID-BUILD, EV-01-01-01-IOS-BUILD, EV-01-01-01-OHOS-PACKAGE, EV-01-01-01-BUNDLE]
+
   - criterion_id: DESIGN-VERIFICATION-PLAN
     dimension_id: design_quality
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design列出bundle JSON、ace_engine和unittest构建方向，但没有逐AC映射到实际命令结果；缺少SDK、
+      benchmark、C API、Host二进制执行、Android/iOS构建、case/filter、预期产物、失败注入和风险关闭证据。
+    claim_ids: [VERIFY-JSON, VERIFY-ACE, VERIFY-UNITTEST, VM-1, VM-7]
+    evidence: [*ev_design, *ev_spec, *ev_unittest, *ev_benchmark]
+    findings:
+    - finding_id: SEM-00000000000000000000000c
+      criterion_id: DESIGN-VERIFICATION-PLAN
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 已有验证方向，但不具备逐AC可执行命令、精确范围、预期结果和风险关闭证据。
+      recommendation: 补充完整ace_engine、SDK、Host unittest、C API、benchmark及ArkUI-X验证命令，记录二进制、filter、结果和风险关闭条件。
+      evidence_ids: [EV-01-01-01-DESIGN, EV-01-01-01-SPEC, EV-01-01-01-UNITTEST-BUILD, EV-01-01-01-BENCHMARK-BUILD]
+
   - criterion_id: COMPATIBILITY-API-VERSION
     dimension_id: compatibility_system_impact
-    applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
+    applicability: NOT_APPLICABLE
+    conclusion: NOT_APPLICABLE
+    reason: 本Function不定义公开API签名、开放范围、API Level或废弃迁移链。
+    applicability_reason: Spec明确新增和变更API均为无，Build System KB也将其定位为内部构建架构。
+    claim_ids: [API-VERSION-NONE]
+    evidence: [*ev_spec, *ev_kb]
     findings: []
+
   - criterion_id: COMPATIBILITY-SYSTEM-IMPACT
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      文档正确声明本次补录不新增权限和BUILD依赖，但Function本身涉及graphic_2d、runtime、NAPI、ANI、
+      HiLog、FFRT等存量跨部件依赖以及bundle inner kit暴露，Design没有形成完整条件、用途和失败影响矩阵。
+    claim_ids: [SYSTEM-DEPENDENCIES, BUNDLE-INNER-KITS]
+    evidence: [*ev_design, *ev_kb, *ev_bundle, *ev_build, *ev_native]
+    findings:
+    - finding_id: SEM-00000000000000000000000d
+      criterion_id: COMPATIBILITY-SYSTEM-IMPACT
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 无新增依赖结论成立，但存量外部部件、接口暴露和条件依赖影响没有完整承接。
+      recommendation: 在Design中按依赖部件列出目标、用途、条件、产物影响和依赖不可用时的失败或降级结果。
+      evidence_ids: [EV-01-01-01-DESIGN, EV-01-01-01-KB, EV-01-01-01-BUNDLE, EV-01-01-01-BUILD-MAIN, EV-01-01-01-NATIVE-BUILD]
+
   - criterion_id: COMPATIBILITY-MULTI-DEVICE
     dimension_id: compatibility_system_impact
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: CONTRADICTED
+    reason: >-
+      Spec多设备表将手机、平板和折叠屏均概括为无差异，但本Function明确包含产品构建条件；
+      ace_engine_feature_wearable会改变OHOS组件共享库和advanced_ui_component依赖集合，根配置也注入wearable defines，
+      因而不能把构建产物和依赖行为统一声明为无设备或产品差异。
+    claim_ids: [DEVICE-PHONE, DEVICE-TABLET, DEVICE-FOLDABLE, DEVICE-WEARABLE]
+    evidence:
+    - *ev_spec
+    - *ev_root_build
+    - *ev_ohos_package
+    - &ev_advanced
+      evidence_id: EV-01-01-01-ADVANCED-BUILD
+      type: source_citation
+      path: advanced_ui_component/BUILD.gn
+      line_start: 42
+      line_end: 124
+      source_revision: d91b4e4990a990da2bfe809514e573e35852193e
+      content_hash: sha256:ef2c988e1562674d2723628fec93b18e53f58b45917f836e1ad27cc73dd78767
+      description: wearable开关改变advanced_ui_component聚合依赖集合。
+    findings:
+    - finding_id: SEM-00000000000000000000000e
+      criterion_id: COMPATIBILITY-MULTI-DEVICE
+      severity: Major
+      conclusion: CONTRADICTED
+      message: 多设备无差异声明与wearable构建宏、组件裁剪及产物集合差异直接冲突。
+      recommendation: 将运行时UI语义无差异与产品构建差异分开，明确wearable及其他产品条件对defines、target和产物的影响。
+      evidence_ids: [EV-01-01-01-SPEC, EV-01-01-01-ROOT-BUILD, EV-01-01-01-OHOS-PACKAGE, EV-01-01-01-ADVANCED-BUILD]
+
   - criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      多数证据使用完整仓内路径，但静态扫描已确认两条越界引用，人工核验又发现多组区间与内容不对应；
+      Android/iOS关联仓未冻结revision，旧KB路径失效，重复行号引用使长期维护和复现成本较高。
+    claim_ids: [REF-LINE-RANGE-001, EVIDENCE-COVERAGE, EXTERNAL-REVISION]
+    evidence: [*ev_static, *ev_spec, *ev_design, *ev_android, *ev_ios, *ev_kb]
+    findings:
+    - finding_id: SEM-00000000000000000000000f
+      criterion_id: MAINTAINABILITY-EVIDENCE-STABILITY
+      severity: Major
+      conclusion: PARTIALLY_SUPPORTED
+      message: 路径主体可定位，但错误行号、旧KB和未冻结关联仓使证据基线不稳定。
+      recommendation: 固定关联仓commit，修正全部引用，优先引用稳定target或符号并减少相同file:line在多章节重复维护。
+      evidence_ids: [EV-01-01-01-STATIC, EV-01-01-01-SPEC, EV-01-01-01-DESIGN, EV-01-01-01-ANDROID-BUILD, EV-01-01-01-IOS-BUILD, EV-01-01-01-KB]
+
   - criterion_id: MAINTAINABILITY-STRUCTURE
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      文档章节、编号和表格总体清晰，但同一构建事实在AC、追溯表、规则、架构约束、ADR、骨架和详细设计中多次复制，
+      造成行号同步漂移；五个用户故事又未采用统一结构化格式。
+    claim_ids: [DOCUMENT-STRUCTURE, SPEC-STRUCT-USER-STORY-001]
+    evidence: [*ev_spec, *ev_design, *ev_static]
+    findings:
+    - finding_id: SEM-000000000000000000000010
+      criterion_id: MAINTAINABILITY-STRUCTURE
+      severity: Minor
+      conclusion: PARTIALLY_SUPPORTED
+      message: 主体结构可读，但大量重复证据和非标准用户故事增加同步维护成本。
+      recommendation: 将稳定事实集中到单一设计章节或证据表，其他章节用ID引用，并按三行结构统一用户故事。
+      evidence_ids: [EV-01-01-01-SPEC, EV-01-01-01-DESIGN, EV-01-01-01-STATIC]
+
   - criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
     dimension_id: maintainability
     applicability: APPLICABLE
-    conclusion: NOT_VERIFIABLE
-    reason: 待评价人根据冻结输入和证据填写
-    missing_evidence: 待评价人说明缺少的证据，或改为可验证结论
-    claim_ids: []
-    evidence: []
-    findings: []
+    conclusion: PARTIALLY_SUPPORTED
+    reason: >-
+      Design列出六项存量架构和兼容性风险并给出处理方向，但Owner统一为ArkUI SIG，没有状态、责任人、
+      关闭条件、目标时间和验证证据；本次识别的关联仓revision漂移、独立NDK和验证缺口也尚未进入风险表。
+    claim_ids: [RISK-PLATFORM, RISK-GENERATION, RISK-BUNDLE, RISK-ARKUIX]
+    evidence: [*ev_design, *ev_android, *ev_ios]
+    findings:
+    - finding_id: SEM-000000000000000000000011
+      criterion_id: MAINTAINABILITY-RISK-OWNERSHIP
+      severity: Minor
+      conclusion: PARTIALLY_SUPPORTED
+      message: 风险已识别但缺少个人Owner、状态、关闭条件和验证证据，新增风险也未纳入。
+      recommendation: 为每项风险填写责任人、处置状态、关闭标准和验证链接，并加入关联仓冻结、NDK演进和验证覆盖风险。
+      evidence_ids: [EV-01-01-01-DESIGN, EV-01-01-01-ANDROID-BUILD, EV-01-01-01-IOS-BUILD]
+
   coverage:
     expected_criteria: 20
     evaluated_criteria: 20
-    applicable_criteria: 20
-    not_applicable_criteria: 0
-    not_verifiable_criteria: 20
+    applicable_criteria: 18
+    not_applicable_criteria: 2
+    not_verifiable_criteria: 0
   execution:
     static_complete: true
     evidence_complete: true
-    semantic_complete: false
+    semantic_complete: true
     notes:
-    - 'Draft template: Criterion conclusions and scores are pending.'
+    - 静态报告21条Major Finding保持权威，语义评价未删除或降级静态问题。
+    - Android证据固定到f18378dc2e07707d58a56ca48e3144e245785b98，iOS证据固定到1e68ba48e938b5ec6a63644a9f34c191888f4d1e。
+    - 评价人已统一确认BUILD-01至BUILD-13的问题、Remediate处置和精确评分。
 scores:
   dimensions:
-    correctness: null
-    spec_executability: null
-    design_quality: null
-    compatibility_system_impact: null
-    maintainability: null
-  raw_score: null
-  published_score: null
-  confidence: null
+    correctness: 16.25
+    spec_executability: 15.0
+    design_quality: 12.5
+    compatibility_system_impact: 2.5
+    maintainability: 5.0
+  raw_score: 51.25
+  published_score: 51.25
+  confidence: 1.0
   admission: NOT_READY
 confirmation:
-  confirmed_by: null
-  confirmed_at: null
-  conclusion: pending
-  notes: []
+  confirmed_by: sunfei2021
+  confirmed_at: '2026-08-06T11:22:01+08:00'
+  conclusion: accepted
+  notes:
+  - 确认BUILD-01至BUILD-13全部问题及Remediate建议。
+  - 用户确认20项Criterion结论；评价器按既定扣分规则计算精确分数51.25，准入结论为NOT_READY。
 notes:
-- 完成20个Criterion后填写精确分数并进行一次确认。
-- Critical/Major Finding必须包含冻结revision下的可复现证据。
+- 本Review只记录评价结论，不修改Spec、Design、KB或产品源码。
+- 后续提升应优先修复事实错误和证据基线，再补齐构建部署及可执行验证设计。
