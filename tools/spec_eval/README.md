@@ -24,7 +24,7 @@
 - N/A、兼容性、设备差异和系统影响结论是否成立。
 - 完整五维语义质量评分。
 
-这些判断由后续评价 Skill 消费本工具生成的证据包完成。NEXT-005 已经冻结候选版机器协议，但尚未实现评价 Skill 和实际聚合器，因此当前 `check`、`evidence`、`scan` 仍不输出语义总分。静态工具不会自动修改任何 spec、design 或 registry 文件。
+这些判断由评价 Skill 消费本工具生成的证据包完成。`score` 命令可以将一份完成态 `semantic-result.json` 与同一 Function、同一源码 revision 的静态结果和证据清单确定性聚合为 `score-result.json`。`check`、`evidence`、`scan` 本身仍不调用语义评价，也不输出语义总分。工具不会自动修改任何 spec、design 或 registry 文件。
 
 ## 2. 环境要求
 
@@ -111,7 +111,32 @@ python3 specs/tools/spec_eval/cli.py \
 - `check` 输出静态门禁和 Findings。
 - `evidence` 输出证据声明、源码引用和 SDK 定位结果。
 
-### 3.4 根据变更文件评价受影响 Function
+### 3.4 聚合单个 Function 的确定性评分
+
+语义评价完成后，使用同一 Function、同一源码 revision 的三个输入生成最终评分：
+
+```bash
+python3 specs/tools/spec_eval/cli.py --json score \
+  --static-result /tmp/spec-evaluation/<revision>/05-03-10/static-result.json \
+  --evidence-manifest /tmp/spec-evaluation/<revision>/05-03-10/evidence-manifest.json \
+  --semantic-result /tmp/semantic-result.json \
+  --write /tmp/score-result.json \
+  --analysis-write /tmp/function-analysis.json
+```
+
+聚合器会先校验 FuncID、源码 revision、Rubric/复杂度规则/协议版本及 `static_complete`、`evidence_complete`、`semantic_complete` 执行状态，再按冻结 Rubric 计算维度得分、发布分封顶、有效 Gate、置信度和准入状态。相同输入会生成完全相同的 JSON 内容。
+
+可选的 `--analysis-write` 不改变冻结的 `score-result.json` 协议，而是额外生成确定性的 Function 分析文件，包含：
+
+- static tool/rule、Evaluator Skill/协议、Rubric、复杂度规则和 Aggregator 的完整版本包。
+- static、evidence manifest、全部 evidence shard 和 semantic 输入的 SHA-256 指纹。
+- 按严重度、问题规模和稳定身份排序的 Top 5 整改项，以及 Finding、Criterion、Rule、Feat、Claim、Evidence 和路径下钻索引。
+- 各 Feat 的静态/语义 Finding 数、最高风险等级、证据支持率、追溯闭环率和关联整改项。
+- 无法精确归属到单个 Feat 的 Function-shared 风险。
+
+质量 Gate 为 `fail` 时，命令仍会写出合法的 `score-result.json`，并返回退出码 `1`；输入不一致、协议不合法或语义执行未完成时不生成评分结果，返回退出码 `2`。
+
+### 3.5 根据变更文件评价受影响 Function
 
 准备一份每行一个仓库相对路径的文件列表：
 
@@ -130,7 +155,7 @@ python3 specs/tools/spec_eval/cli.py \
 
 任一 Feature 发生变化时，工具都会重新评价它所属的整个 Function。多个文件映射到同一 FuncID 时只运行一次。
 
-### 3.5 全仓扫描
+### 3.6 全仓扫描
 
 ```bash
 python3 specs/tools/spec_eval/cli.py \
@@ -167,7 +192,7 @@ python3 specs/tools/spec_eval/cli.py \
 - 完整站点快照固定写入 `<output>/site-report.json`，并更新 `<output>/latest.json` 指针；快照内部和指针都记录 source revision。
 - 使用 `--output specs/.evaluator` 时，只需将 `site-report.json`、`latest.json` 和可选 README 随 specs 仓入库。revision 原始报告和 `.cache/` 保留本地；站点生成器不在 GitHub Pages 发布任务中重新扫描源码仓和 SDK 仓。
 
-### 3.6 冻结稳定 Finding 基线
+### 3.7 冻结稳定 Finding 基线
 
 全量无错误扫描完成后，将 revision 原始结果和同一次扫描产生的 `site-report.json` 冻结为小型 manifest：
 
@@ -186,7 +211,7 @@ python3 specs/tools/spec_eval/cli.py baseline \
 
 基线按稳定 Finding 身份压缩重复问题，只保存比较所需摘要，不复制证据包和完整 Function 报告。
 
-### 3.7 对比当前结果和基线
+### 3.8 对比当前结果和基线
 
 ```bash
 python3 specs/tools/spec_eval/cli.py --json compare \
@@ -338,6 +363,8 @@ python3 specs/tools/spec_eval/ci_runner.py \
 | `static-result.json` | Function 门禁、Findings、指标和追溯图 |
 | `evidence-manifest.json` | 证据分片清单和证据覆盖指标 |
 | `evidence/*.json` | 按 Feature/Design 切分的 Claim、源码和 SDK 证据 |
+| `score-result.json` | `score` 命令基于完成态语义结果生成的确定性维度得分、发布分、Gate、置信度和准入状态 |
+| `function-analysis.json` | `score --analysis-write` 生成的版本/输入指纹、Top整改项、Feat风险分布和下钻索引 |
 | `performance.json` | 单 Function 的 parser/checker/证据/写盘阶段耗时 |
 | `report.md` | 面向人工阅读的 Function 静态评价报告 |
 | `ci-summary.json` | 变更影响Function的CI摘要 |

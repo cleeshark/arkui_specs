@@ -15,8 +15,13 @@ if __package__ in (None, ""):
 from spec_eval.config import EvaluationConfig
 from spec_eval.discovery import ChangedFunctionResolver, FunctionLocator
 from spec_eval.errors import SpecEvalError
+from spec_eval.function_analysis import (
+    build_function_analysis_from_paths,
+    write_function_analysis,
+)
 from spec_eval.orchestrator import EvaluationOrchestrator
 from spec_eval.report import BaselineReporter, PerformanceReporter, SiteReporter
+from spec_eval.score import build_score_result_from_paths, write_score_result
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -55,6 +60,17 @@ def build_parser() -> argparse.ArgumentParser:
     baseline.add_argument("--results", type=Path, required=True, help="Revision result root")
     baseline.add_argument("--site-report", type=Path, required=True, help="Complete scan site-report.json")
     baseline.add_argument("--write", type=Path, required=True, help="Destination baseline manifest")
+
+    score = sub.add_parser("score", help="Build one deterministic Function score result")
+    score.add_argument("--static-result", type=Path, required=True)
+    score.add_argument("--evidence-manifest", type=Path, required=True)
+    score.add_argument("--semantic-result", type=Path, required=True)
+    score.add_argument("--write", type=Path, required=True, help="Destination score-result.json")
+    score.add_argument(
+        "--analysis-write",
+        type=Path,
+        help="Optional destination for deterministic function-analysis.json",
+    )
     return parser
 
 
@@ -86,6 +102,36 @@ def main(argv: list[str] | None = None) -> int:
                 args,
                 gate="pass",
             )
+        if args.command == "score":
+            result = build_score_result_from_paths(
+                static_result_path=args.static_result,
+                evidence_manifest_path=args.evidence_manifest,
+                semantic_result_path=args.semantic_result,
+                evaluation_root=config.rules_root,
+            )
+            analysis = None
+            if args.analysis_write is not None:
+                analysis = build_function_analysis_from_paths(
+                    static_result_path=args.static_result,
+                    evidence_manifest_path=args.evidence_manifest,
+                    semantic_result_path=args.semantic_result,
+                    score_result=result,
+                )
+            write_score_result(args.write, result)
+            if analysis is not None:
+                write_function_analysis(args.analysis_write, analysis)
+            payload = {
+                "func_id": result["func_id"],
+                "output_path": args.write.as_posix(),
+                "raw_score": result["raw_score"],
+                "published_score": result["published_score"],
+                "confidence": result["confidence"]["score"],
+                "admission": result["admission"]["status"],
+                "gate": result["gate"]["effective"],
+            }
+            if args.analysis_write is not None:
+                payload["analysis_path"] = args.analysis_write.as_posix()
+            return emit(payload, args, gate=result["gate"]["effective"])
 
         orchestrator = EvaluationOrchestrator(config)
         if args.command in ("check", "evidence"):
