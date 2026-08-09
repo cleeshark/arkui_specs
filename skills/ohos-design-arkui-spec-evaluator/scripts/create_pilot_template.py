@@ -48,7 +48,7 @@ from spec_eval.protocol_validator import validate_protocol  # noqa: E402
 EVALUATION_ROOT = SPECS_ROOT / "evaluation"
 MANIFEST_PATH = EVALUATION_ROOT / "golden" / "manifest.yaml"
 REVIEWS_ROOT = (EVALUATION_ROOT / "reviews").resolve()
-DEFAULT_EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.4"
+DEFAULT_EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.11"
 
 
 def _load_object(path: Path) -> dict[str, Any]:
@@ -129,55 +129,43 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--input-dir", type=Path, required=True)
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument(
-        "--evaluator-version",
-        default=DEFAULT_EVALUATOR_VERSION,
-    )
     return parser
 
 
-def main(argv: list[str] | None = None) -> int:
-    args = build_parser().parse_args(argv)
+def create_semantic_template(
+    func_id: str,
+    input_dir: Path,
+    run_id: str,
+    evaluator_version: str = DEFAULT_EVALUATOR_VERSION,
+) -> dict[str, Any]:
     rubric, complexity, errors = validate_protocol(EVALUATION_ROOT)
     if errors:
-        for error in errors:
-            print(f"ERROR: {error}", file=sys.stderr)
-        return 1
+        raise ValueError("; ".join(errors))
     manifest = yaml.safe_load(MANIFEST_PATH.read_text(encoding="utf-8"))
     if not isinstance(manifest, dict):
-        print(f"ERROR: {MANIFEST_PATH}: expected a YAML mapping", file=sys.stderr)
-        return 1
+        raise ValueError(f"{MANIFEST_PATH}: expected a YAML mapping")
     sample = next(
-        (item for item in manifest.get("pilot_functions", []) if item.get("func_id") == args.func_id),
+        (item for item in manifest.get("pilot_functions", []) if item.get("func_id") == func_id),
         None,
     )
     if sample is None:
-        print(
-            f"ERROR: {args.func_id} is outside the frozen NEXT-007 Pilot; "
-            "general Function templates are not enabled in the MVP framework",
-            file=sys.stderr,
+        raise LookupError(
+            f"{func_id} is outside the frozen NEXT-007 Pilot; "
+            "general Function templates are not enabled in the MVP framework"
         )
-        return 2
-    if _output_is_forbidden(args.output):
-        print("ERROR: automatic Skill output may not be written under evaluation/reviews", file=sys.stderr)
-        return 2
     source_revision = str(manifest.get("revisions", {}).get("ace_engine", ""))
-    try:
-        _validate_input_dir(args.input_dir.resolve(), args.func_id, source_revision)
-        evaluation = build_evaluation_template(
-            manifest,
-            EvaluationConfig.discover(),
-            rubric,
-            complexity,
-            args.func_id,
-            "skill-framework",
-        )
-    except (OSError, ValueError) as exc:
-        print(f"ERROR: {exc}", file=sys.stderr)
-        return 2
+    _validate_input_dir(input_dir.resolve(), func_id, source_revision)
+    evaluation = build_evaluation_template(
+        manifest,
+        EvaluationConfig.discover(),
+        rubric,
+        complexity,
+        func_id,
+        "skill-framework",
+    )
     semantic = evaluation["semantic_result"]
-    semantic["evaluator_version"] = args.evaluator_version
-    semantic["run_id"] = args.run_id
+    semantic["evaluator_version"] = evaluator_version
+    semantic["run_id"] = run_id
     semantic["execution"] = {
         "static_complete": True,
         "evidence_complete": True,
@@ -188,6 +176,26 @@ def main(argv: list[str] | None = None) -> int:
             *_scope_notes(sample),
         ],
     }
+    return semantic
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+    if _output_is_forbidden(args.output):
+        print("ERROR: automatic Skill output may not be written under evaluation/reviews", file=sys.stderr)
+        return 2
+    try:
+        semantic = create_semantic_template(
+            args.func_id,
+            args.input_dir,
+            args.run_id,
+        )
+    except LookupError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
+    except (OSError, ValueError) as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(
         json.dumps(semantic, ensure_ascii=False, indent=2) + "\n",

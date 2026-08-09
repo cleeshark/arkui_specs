@@ -13,7 +13,7 @@ metadata:
   stage: design
   domain: arkui
   capability: spec-evaluator
-  version: 0.1.4
+  version: 0.1.11
   status: mvp
   evaluation-unit: function
   rubric-version: 0.3.0
@@ -64,7 +64,10 @@ Require all of the following before judging:
 - Frozen `specs/evaluation/rubric.yaml`, complexity rules, design completeness rules, and semantic result Schema.
 - Read access to every source revision and related SDK repository named by the evidence.
 
-Read [`references/input-output-contract.md`](references/input-output-contract.md) completely before preparing a run. Read [`references/criterion-guide.md`](references/criterion-guide.md) completely before assigning conclusions.
+Read [`references/input-output-contract.md`](references/input-output-contract.md) and
+[`references/staged-run-contract.md`](references/staged-run-contract.md) completely before preparing
+a run. Read [`references/criterion-guide.md`](references/criterion-guide.md) completely before
+assigning conclusions.
 
 ## Workflow
 
@@ -99,23 +102,82 @@ Require these artifacts under `<output>/<source-revision>/<FuncID>/`:
 - every shard declared under `evidence/`
 - `report.md` for human navigation
 
-### 3. Create a run-local semantic template
+### 3. Initialize a resumable staged run
 
-NEXT-007 calibration starts with the 12 frozen Pilot Functions. Create a result outside `evaluation/reviews/`:
+NEXT-007 calibration starts with the 12 frozen Pilot Functions. Create a run outside
+`evaluation/reviews/`:
 
 ```bash
-python3 specs/skills/ohos-design-arkui-spec-evaluator/scripts/create_pilot_template.py \
+python3 specs/skills/ohos-design-arkui-spec-evaluator/scripts/initialize_staged_run.py \
   --func-id <FuncID> \
   --input-dir /tmp/spec-evaluation/<source-revision>/<FuncID> \
   --run-id <unique-run-id> \
-  --output /tmp/spec-evaluator/<FuncID>/<unique-run-id>/semantic-result.json
+  --run-dir /tmp/spec-evaluator/<FuncID>/<unique-run-id>
 ```
 
-The helper rejects non-Pilot FuncIDs, mismatched revisions, incomplete evidence shards, tool-error static results, and attempts to write into confirmed Review storage. General registered-Function template generation is intentionally deferred until Pilot calibration is stable.
+The helper rejects non-Pilot FuncIDs, mismatched revisions, incomplete evidence shards, tool-error
+static results, non-empty run directories, and attempts to write into confirmed Review storage. It
+hashes frozen inputs, partitions static findings by Feat, and creates run-state, work items,
+observation templates, and an aggregation template. General registered-Function initialization is
+intentionally deferred until Pilot calibration is stable.
 
-### 4. Review deterministic signals first
+### 4. Process one durable work item at a time
 
-Read `function-context.json`, `static-result.json`, `evidence-manifest.json`, `report.md`, and all evidence shards before opening additional source files.
+Read `run-state.json`, then request only the next pending item instead of loading the complete
+multi-Feat plan into context:
+
+```bash
+python3 specs/skills/ohos-design-arkui-spec-evaluator/scripts/show_next_work_item.py \
+  --run-dir /tmp/spec-evaluator/<FuncID>/<unique-run-id>
+```
+
+Load only that item's declared `input_paths`: Function context, one Feature Spec, one evidence
+shard, and its static slice. For `function-global`, load Design, its evidence shard, static index,
+global static slice, Rubric, and design rules. Do not preload full `work-items.json`,
+`static-result.json`, every Feature shard, every Spec, or `report.md` into model context.
+Deterministic initialization has already validated and hashed the complete package.
+
+For each Feature observation:
+
+- Complete one `claim_reviews` row for every initialized claim ID. Enumerate the actual frontend,
+  version, state, boundary, or lifecycle units checked; one broad observation cannot mark several
+  compound claims complete by implication.
+- For every reviewed unit, complete a `unit_reviews` row with its semantic facet, local outcome,
+  evidence, and atomic fact. Split compound claims by independent condition, field transformation,
+  state transition, callback result, observable output, failure path, timing guarantee, or
+  compatibility side. A file-level citation or a generic “main path supported” statement cannot
+  close several independent behavior verbs.
+- For a helper that establishes a blocker, gate, reset, callback, event, cache update, or other
+  side effect, inspect both the helper body and every parent entry path claimed to receive that
+  effect. Enumerate direct-success branches, early returns, fallback dispatch, and the actual helper
+  call edge. A locally correct helper does not prove a Function-wide or all-action contract when a
+  parent branch can bypass it.
+- For every AC mapped to `SPEC-AC-TESTABILITY`, review trigger/precondition, exact branch values,
+  exact result assertion, and the executable asset separately. A test directory, source file, test
+  name, or generic non-crash assertion cannot close several ACs by proximity.
+- Map every initialized required check to at least one observation through `check_ids`. The
+  `completed_checks` list is derived from that evidence mapping, not asserted independently.
+- Record evidence-backed local observations with `local_outcome`, semantic `breadth`, and a stable
+  `contract_family`.
+- Give each `CONFLICT` or `MISSING` observation one stable `defect_key` and one primary Criterion.
+  Reuse that key for repeated symptoms of the same root defect instead of multiplying deductions.
+- When the same false contract appears in Spec behavior, boundary/state, per-Feat runtime Design,
+  algorithm/data-state Design, build impact, or system impact, list every materially affected
+  Criterion in the observation. One root defect remains one ownership record, but aggregation must
+  not hide its distinct Criterion consequences.
+- Keep source excerpts short; persist reproducible paths and hashes instead of copying large files.
+- Do not assign final Criterion conclusions or a Function score.
+- Set the work item to complete and validate it before opening the next Feat.
+
+```bash
+python3 specs/skills/ohos-design-arkui-spec-evaluator/scripts/validate_staged_run.py \
+  --run-dir /tmp/spec-evaluator/<FuncID>/<unique-run-id> \
+  --work-item feature:<FeatID> --update-state
+```
+
+Treat a validated observation as the durable handoff after context compaction or a new Agent
+session. Never reconstruct a completed Feat from conversation memory. After all Features, complete
+and validate `function-global`, then validate the entire observation phase.
 
 For each static finding:
 
@@ -123,23 +185,33 @@ For each static finding:
 - Use it as an input signal for the matching hybrid Criterion.
 - Add a semantic finding only when evidence establishes a separate semantic defect, such as an unsupported behavior claim or incomplete design decision.
 
-### 5. Evaluate all 20 Criteria in Rubric order
+### 5. Aggregate all 20 Criteria in a clean phase
 
-Follow the exact Criterion order from `rubric.yaml`. Do not skip a Criterion or reorder the output.
+Start aggregation only after every observation checkpoint passes. Read compact observation files
+and Rubric first. Reopen an original shard or static slice only to resolve a specific evidence
+question. Follow exact Criterion order from `rubric.yaml`; do not skip or reorder output.
 
-Before assigning conclusions, create a run-local scratch coverage matrix:
+The staged observations are the run-local scratch coverage matrix:
 
 - Correctness: one row for every AC and Rule claim. Split compound statements into independently
   checked facets, including condition, input, quantitative relation, terminology, direction/axis,
   state transition, and observable result.
 - AC testability: for every boundary or versioned AC, record the concrete trigger values/branch and
-  the exact result assertion. A test name or nearby generic test does not prove boundary coverage.
+  the exact result assertion plus the real target, produced Host binary, and Suite.Case/filter or
+  equivalent executable asset. A test name or nearby generic test does not prove boundary coverage.
+- Side-effect reachability: cross each claimed entry with direct-success and early-return branches,
+  fallback dispatch, helper reachability, state mutation, and observable result. Do not infer parent
+  coverage from a helper's local implementation.
 - Reset/default/update semantics: cross every applicable frontend or entry path with configuration
   gates/API versions, prior state, input class, post-state fields, and observable output. Do not
   generalize one supported reset path to other frontends or pre-existing states.
 - Design runtime: every non-Deprecated Feat crossed with input/entry, state update, core processing,
   output/event, exception/recovery, and test handoff.
 - Design completeness: one row for every applicable `required_check` in the frozen rules.
+- Decision quality: review each material ADR or tradeoff across decision object, genuine candidate
+  alternatives, applicability conditions, benefits, costs/constraints, compatibility/maintenance
+  impact, and executable validation basis. A populated table row does not make these facets
+  substantive.
 - Compatibility: one row for every included device, API version, frontend, and platform identified
   by the Function context and Pilot evaluation scope.
 
@@ -147,8 +219,11 @@ An included device form makes `COMPATIBILITY-MULTI-DEVICE` applicable. Absence o
 device test is not by itself a defect when frozen source proves that the included forms share the
 same generic constraint, density, theme, and rendering path and no device-specific branch exists.
 
-Do not finish a Criterion while an applicable matrix row remains unreviewed. The scratch matrix is
-run-local working state and does not create a separately maintained capability baseline.
+Do not finish a Criterion while an applicable observation or initialized claim remains unreviewed.
+An applicable Criterion with a mapped `NOT_VERIFIABLE` observation, Claim, or atomic unit cannot be
+`SUPPORTED`; resolve the evidence gap or aggregate to the evidence-appropriate conclusion.
+These files are disposable run-local working state and do not create a separately maintained
+capability baseline.
 
 For every Criterion:
 
@@ -167,6 +242,12 @@ frontend, version, state, build, or verification defects merely to keep one Find
 Use `PARTIALLY_SUPPORTED` when the Criterion's main body is present and supported but one or more
 units are incomplete, inaccurate, or locally contradicted. Use `CONTRADICTED` only when the core
 capability, primary architecture direction, or Criterion-wide claim conflicts with frozen evidence.
+Judge whether a conflict is local by its semantic breadth, not by counting supported rows. A
+`CONTRADICTED` result must record a `contradiction_bases` entry proving either two independent core
+contract families or one materially false Function-shared assertion, and must explain why fixing
+the defect requires replacing the Criterion core rather than correcting a local path. Old or missing
+entry details with an otherwise accurate middle and downstream path remain partial. Do not soften
+genuinely independent cross-Feat core conflicts merely because the Function is large.
 Use `MISSING` only when the Rubric outcome policy defines the required content or covered unit as
 absent; do not promote one missing subcheck inside an otherwise present unit to Criterion-wide
 `MISSING`. Derive Finding conclusion and minimum severity from the final aggregate Criterion result,
@@ -174,10 +255,32 @@ not from the harshest local observation.
 Always apply a Criterion's frozen `outcome_policy` before these general aggregation heuristics. If
 the policy explicitly classifies a present-but-placeholder section as `MISSING`, do not soften it to
 `PARTIALLY_SUPPORTED` merely because the heading or a generic statement exists.
+For `DESIGN-IMPACT-COVERAGE`, distinguish omission from contradiction: a no-change placeholder that
+only omits the existing build/deployment path is `MISSING`; a section that additionally makes a
+material false claim about targets, conditions, dependencies, artifacts, loading, or deployment is
+`CONTRADICTED`.
 For `DESIGN-VERIFICATION-PLAN`, do not infer `MISSING` from absent target/binary/filter details
 alone. Function-specific unit-test, manual, Feat/AC, boundary, or risk validation directions establish
 that a plan body exists; missing execution details then aggregate to `PARTIALLY_SUPPORTED`.
 Use `MISSING` only when no Function-specific verification direction or usable scenario exists.
+
+For `DESIGN-DECISION-QUALITY`, complexity controls whether the evaluator should demand a new ADR;
+it does not erase decisions already recorded by the Design. If the Design contains a material ADR,
+candidate solution, compatibility choice, architecture direction, or explicit tradeoff, this
+Criterion is applicable even for a simple Function. Evaluate whether the selected direction matches
+frozen implementation and whether alternatives, costs, conditions, compatibility, and validation
+are substantive. Use `NOT_APPLICABLE` only when no material decision is recorded and none is
+required by the applicable complexity policy.
+
+For `COMPATIBILITY-SYSTEM-IMPACT`, a materially false Function-shared denial of a participating
+compile-time dependency, runtime service, permission, IPC, lifecycle, security, or device-system
+boundary can establish `CONTRADICTED`. Do not dilute that shared core error merely because other
+secondary system-impact rows are supported.
+
+For `SPEC-SCOPE-BOUNDARY`, keep API inventory defects in their owning Criterion. An omitted concrete
+symbol, overload, `WithInstance` variant, or signature detail does not by itself make scope partial;
+deduct scope only when the omission makes inclusion/exclusion, ownership, frontend exposure, or the
+supported capability boundary unclear.
 
 ### 6. Apply Function modeling without a separate capability baseline
 
@@ -195,20 +298,72 @@ details. When a broad component Feat clearly owns their observable behavior, kee
 Criterion. Use `PARTIALLY_SUPPORTED` only when an actual functional entry, key behavior, or
 lifecycle capability has no Feat owner or is explicitly outside every Feat's scope.
 
+For boundary and decomposition, distinguish ownership from dependency. A consumer Feat may state
+the precondition or result of a mechanism owned by another Feat without becoming a duplicate owner.
+Require conflicting acceptance responsibility, incompatible contracts, or independently changeable
+capabilities with no clear owner before deducting. Do not split one cohesive entry-to-output
+capability merely because its implementation contains several callbacks, fields, algorithms, or
+pipeline stages.
+
+Before emitting a Function-modeling defect, record a `modeling_basis`. For an ownership overlap,
+identify at least two Feats that each claim independent acceptance responsibility and show either
+incompatible contracts or a genuinely ambiguous owner. An API name, callback list, precondition,
+result, source call, or shared mechanism mentioned by a consumer is dependency/context evidence,
+not a second owner. If that ownership proof is absent, do not deduct coverage, decomposition, or
+boundary quality.
+
 Do not introduce or require a separately maintained capability checklist.
 
-### 7. Complete and validate the semantic result
+### 7. Assemble and validate the semantic result
 
-Update coverage counters and set `execution.semantic_complete` to `true` only after all 20 Criteria have been judged. Keep it `false` when required evidence or a required repository is unavailable.
+Complete `aggregation.json`, list every work-item ID in initialized order, and set
+`cross_feat_contracts_reviewed=true` only after comparing breadth and contract families across all
+Feats. Assign every semantic Finding to exactly one `defect_ownership` record. Cross-Criterion
+effects may be listed as secondary, but only the primary Criterion may carry a Critical Finding for
+that defect. Validate aggregation before assembly:
 
-Validate the result:
+Before finalizing the six calibration-sensitive Criteria initialized under `outcome_policy_bases`,
+record `content_status`, `evidence_status`, and `conflict_scope` from the validated observations:
+
+- `PRESENT + VERIFIED + NONE` -> `SUPPORTED`.
+- `PRESENT + PARTIAL` or `PRESENT + LOCAL` -> `PARTIALLY_SUPPORTED`.
+- `PRESENT + UNAVAILABLE + NONE` -> `NOT_VERIFIABLE`.
+- `ABSENT` or `PLACEHOLDER_ONLY` without a core conflict -> `MISSING`.
+- Any materially false `CORE` contract -> `CONTRADICTED`.
+- Use all three `NOT_APPLICABLE` statuses only when the Criterion is reproducibly inapplicable.
+
+These bases prevent executable-detail gaps from erasing an existing AC, trace, verification,
+impact, API-version, or device-scope body. An existing verification direction is partial when
+commands or assets are missing, and an explicit false dependency/loading assertion is contradicted
+even when other impact details are merely omitted.
+
+One root defect may support `contradiction_bases` for both its primary and materially affected
+secondary Criteria. Keep one `defect_ownership` record and at most one Critical Finding; secondary
+Contradicted Criteria use the same root as evidence without becoming duplicate owners.
 
 ```bash
-python3 specs/skills/ohos-design-arkui-spec-evaluator/scripts/validate_semantic_result.py \
-  /tmp/spec-evaluator/<FuncID>/<unique-run-id>/semantic-result.json
+python3 specs/skills/ohos-design-arkui-spec-evaluator/scripts/validate_staged_run.py \
+  --run-dir /tmp/spec-evaluator/<FuncID>/<unique-run-id> \
+  --stage aggregation --update-state
 ```
 
-Repair every protocol or Schema error before delivery.
+Generate coverage counters and `semantic-result.json` deterministically:
+
+```bash
+python3 specs/skills/ohos-design-arkui-spec-evaluator/scripts/assemble_semantic_result.py \
+  --run-dir /tmp/spec-evaluator/<FuncID>/<unique-run-id>
+```
+
+Then validate both the staged contract and frozen semantic protocol:
+
+```bash
+python3 specs/skills/ohos-design-arkui-spec-evaluator/scripts/validate_staged_run.py \
+  --run-dir /tmp/spec-evaluator/<FuncID>/<unique-run-id> \
+  --stage final --update-state
+```
+
+Repair every checkpoint, protocol, or Schema error before delivery. Keep semantic completeness
+false by withholding assembly when required evidence or a required repository is unavailable.
 
 ### 8. Deliver without overwriting the baseline
 

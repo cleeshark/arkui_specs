@@ -8,13 +8,18 @@
       "files": [],
       "expectations": [
         "输出包含Rubric顺序下全部20项Criterion且每项仅出现一次",
+        "使用分阶段run-state和逐Feat observation完成可恢复核验，不在启动时把全部证据分片一次性载入上下文",
         "先形成逐AC结论再聚合Criterion，局部冲突不自动升级为Criterion级CONTRADICTED或Critical",
+        "每个初始化Claim都有独立claim_reviews记录，required check由observation.check_ids和证据映射闭环，不能用一条大范围SUPPORTED批量代替",
         "覆盖Divider全部13项AC，并核验VM引用的测试target、二进制和Suite.Case或filter能否真实定位",
         "逐AC拆分核验术语、方向和轴关系，能够识别垂直Divider主轴/交叉轴名称与实现语义不一致",
         "对无效输入、版本回退和裁剪边界核验真实触发值及精确结果断言，而不是仅确认存在相邻测试",
         "对reset/default/theme update建立前端、配置门控、已有状态、输入和结果状态矩阵，不用单一路径代替全部状态组合",
-        "DESIGN-IMPACT-COVERAGE遵循Criterion专属outcome_policy：只有无BUILD变更或已注册占位说明时判定MISSING",
+        "DESIGN-IMPACT-COVERAGE遵循Criterion专属outcome_policy：只有无BUILD变更或已注册占位且仅为遗漏时判定MISSING；存在与冻结BUILD相反的依赖/产物/加载声明时判定CONTRADICTED",
         "DESIGN-VERIFICATION-PLAN存在Function级UT、手工、Feat/AC或风险验证方向时判定主体存在，缺执行细节为PARTIALLY_SUPPORTED而非MISSING",
+        "DESIGN-IMPLEMENTATION-PATH只有入口陈旧或缺失而中下游准确时保持PARTIALLY_SUPPORTED；COMPATIBILITY-SYSTEM-IMPACT中的普通graphic_2d依赖错误不单独升级CONTRADICTED",
+        "即使Function复杂度为simple，只要Design已经记录实质ADR或候选取舍，DESIGN-DECISION-QUALITY仍适用并核验其准确性，不能仅凭复杂度判NOT_APPLICABLE",
+        "每个CONTRADICTED均具有核心冲突basis；同一root defect跨Criterion只有一个primary归属且最多产生一个Critical",
         "遵循Pilot评价范围：只评价OHOS phone、tablet、foldable，不评价已排除的ArkUI-X或wearable Static Modifier支持，也不记录无可复现场景的1px观察",
         "纳入范围的设备形态使多设备Criterion适用；源码证明共用通用路径且无设备分支时，不因缺少专项设备测试制造Partial",
         "按独立可验收能力判断Feat所有权，不把内部Bridge、加载模块、共享SO或legacy实现机制重复报为Feat未覆盖",
@@ -31,9 +36,24 @@
       "files": [],
       "expectations": [
         "评价范围覆盖完整Function和全部非Deprecated Feat",
+        "7个Feat分别完成并通过observation checkpoint，最终由单一Function聚合阶段统一产生20项Criterion结论",
         "SDK接口仅在实际契约相关时参与CORRECTNESS-SDK-CONTRACT判断",
         "NOT_APPLICABLE具有协议允许性、理由和可复现证据",
         "缺少关联仓或证据时使用NOT_VERIFIABLE而不是推测"
+        ,"逐Feat核验查询字段组装、动作blocker、属性去重与事件类型转换、NDK异步回调结果等独立行为单元，不用入口/主分发链Supported代替下游数据和失败契约"
+        ,"动作blocker等副作用声明同时核验helper局部实现和所有父级动作入口的实际可达性；CLICK、FOCUS、LONG_CLICK等直接成功或提前返回分支若绕过helper，必须记录冲突"
+        ,"每个AC的可测试性分别核验真实GN target、Host测试二进制、Suite.Case/filter、进入精确分支的输入值和精确断言；只有测试目录或邻近测试不能判SUPPORTED"
+        ,"逐项ADR按决策对象、真实候选、适用条件、收益、成本/兼容维护影响和可执行验证依据核验；表格存在不等于内容充分"
+        ,"Design否认实际存在的Function共享accessibility编译依赖时，系统影响Criterion按共享核心断言评估CONTRADICTED，不被其他支持项稀释"
+        ,"WithInstance或具体事件API清单省略主要归属SDK契约/规则完整性；仅在造成included/excluded、owner或前端支持边界不清时才影响Scope Boundary"
+        ,"映射到适用Criterion的NOT_VERIFIABLE observation、Claim或原子unit不得聚合为SUPPORTED"
+        ,"同一root defect可为primary和secondary受影响Criterion分别提供contradiction basis，但仍只有一个owner且最多一个Critical"
+        ,"AC/追溯/验证/构建影响/API版本/多设备必须填写outcome_policy_bases；内容存在但执行证据不足判Partial，核心错误声明判Contradicted，不能误判Missing"
+        ,"同一源码冲突若同时否定Spec行为、边界状态、Feat运行设计和算法数据状态，应在一个defect_key下映射所有受影响Criterion，不能让Design Criterion保持SUPPORTED"
+        ,"Provider等共享能力只有在两个Feat都声明独立验收所有权且契约冲突或owner真实不明确时才报重叠；consumer引用、前置条件和结果上下文不构成拆分或边界Finding"
+        ,"多个核心契约跨多个Feat与源码冲突时聚合为CONTRADICTED，不因其他Feat受支持而稀释为PARTIALLY_SUPPORTED"
+        ,"Function级追溯图无可识别AC或闭环且存在广泛Major结构/引用失败时，判定核心追溯声明CONTRADICTED"
+        ,"共享机制在owner Feat与consumer Feat中被引用不等于重复所有权，不制造Feat拆分或边界误报"
       ]
     },
     {
@@ -43,6 +63,7 @@
       "files": [],
       "expectations": [
         "DESIGN-FEAT-RUNTIME-COVERAGE逐个检查所有注册非Deprecated Feat",
+        "逐Feat事实先落盘为可恢复observation，Function级聚合只读取紧凑观察并按需回查原始证据",
         "算法、数据状态、资源和异常恢复按适用范围核验",
         "Function建模只使用现有Registry、Spec、Design、源码和测试证据",
         "不以Feat数量、文档长度、表格数或图数量直接评价质量"

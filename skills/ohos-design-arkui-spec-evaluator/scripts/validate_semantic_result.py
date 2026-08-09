@@ -10,7 +10,28 @@ from pathlib import Path
 
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
-SPECS_ROOT = SKILL_ROOT.parents[1]
+
+
+def _discover_specs_root() -> Path:
+    candidates = [SKILL_ROOT.parents[1], Path.cwd(), Path.cwd() / "specs"]
+    for parent in Path.cwd().parents:
+        candidates.extend((parent, parent / "specs"))
+    visited: set[Path] = set()
+    for candidate in candidates:
+        resolved = candidate.resolve()
+        if resolved in visited:
+            continue
+        visited.add(resolved)
+        if (resolved / "tools" / "spec_eval").is_dir() and (
+            resolved / "evaluation" / "rubric.yaml"
+        ).is_file():
+            return resolved
+    raise RuntimeError(
+        "cannot locate specs root; run from the ace_engine repository root or its specs directory"
+    )
+
+
+SPECS_ROOT = _discover_specs_root()
 TOOLS_ROOT = SPECS_ROOT / "tools"
 if str(TOOLS_ROOT) not in sys.path:
     sys.path.insert(0, str(TOOLS_ROOT))

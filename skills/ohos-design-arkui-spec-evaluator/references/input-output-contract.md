@@ -46,6 +46,34 @@ Write automatic runs to a temporary or run-specific directory, for example:
 /tmp/spec-evaluator/<FuncID>/<run-id>/semantic-result.json
 ```
 
+For complex or multi-Feat Functions, initialize the full run directory described by
+`staged-run-contract.md`. Feature and Function-global observation files are disposable external
+memory for that run. They may be resumed after context compaction or handed to a clean aggregation
+session, but they are not confirmed Reviews or a maintained capability baseline.
+
+New staged schema v2 runs are produced by evaluator
+`skill:ohos-design-arkui-spec-evaluator@0.1.11`. Schema-compatible historical 0.1.7 through 0.1.10
+runs remain readable. Schema v2 requires atomic `claim_reviews`, evidence-backed
+required-check mapping, stable defect ownership, and an explicit core-conflict basis for every
+`CONTRADICTED` Criterion. Schema v1 remains readable for historical 0.1.6 runs; new runs must not
+downgrade or override the initialized evaluator version.
+
+Evaluator 0.1.9 additionally requires atomic `unit_reviews` for each Claim and structured
+`modeling_basis` evidence for Function coverage/decomposition/boundary defects. These additions
+increase review depth without changing the frozen semantic-result Schema or Rubric weights.
+
+Evaluator 0.1.10 additionally rejects `SUPPORTED` aggregation when an applicable Criterion still
+has a mapped `NOT_VERIFIABLE` observation, Claim, or atomic unit. It also requires the evaluator to
+verify parent-entry reachability for side-effect helpers and to keep API inventory omissions from
+being duplicated as scope-boundary deductions without actual boundary ambiguity.
+
+Evaluator 0.1.11 adds run-local `outcome_policy_bases` for AC testability, traceability, Design
+impact, Design verification, API-version compatibility, and multi-device compatibility. These
+records distinguish present content with partial evidence from absent content, and core false
+claims from local gaps. The staged validator also allows one owned root defect to support
+Contradicted conclusions in materially affected secondary Criteria while preserving a single
+Critical owner. The frozen semantic-result Schema and Rubric weights remain unchanged.
+
 Do not write automatic output to:
 
 - `specs/evaluation/reviews/`
@@ -54,6 +82,10 @@ Do not write automatic output to:
 - generated site data
 
 Confirmed Reviews are read-only calibration baselines.
+
+Do not manually construct the staged run's final `semantic-result.json`. Complete and validate every
+observation, write final Criterion judgments to `aggregation.json`, and let
+`assemble_semantic_result.py` calculate coverage and semantic completion.
 
 ## 5. Semantic output
 
@@ -116,6 +148,10 @@ original `static_finding` evidence. Preserve the static Finding ID, severity, an
 Finding conclusion must match the final aggregate Criterion conclusion. A local source conflict
 inside an otherwise supported Criterion therefore produces a `PARTIALLY_SUPPORTED` Finding at the
 Rubric-defined severity, while its message identifies the conflicting unit precisely.
+
+Every Finding in a staged schema v2 aggregation belongs to exactly one root `defect_key`. If one
+root defect affects several Criteria, choose the Criterion that owns the correction as primary and
+list the others as secondary. Do not create several Critical deductions for the same defect.
 
 ## 8. Calibration comparison
 
