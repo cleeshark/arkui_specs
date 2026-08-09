@@ -136,7 +136,45 @@ python3 specs/tools/spec_eval/cli.py --json score \
 
 质量 Gate 为 `fail` 时，命令仍会写出合法的 `score-result.json`，并返回退出码 `1`；输入不一致、协议不合法或语义执行未完成时不生成评分结果，返回退出码 `2`。
 
-### 3.5 根据变更文件评价受影响 Function
+### 3.5 分析多次独立语义评价的稳定性
+
+同一 Function、同一源码 revision、同一 Evaluator 版本至少完成三次独立评价后，可以生成稳定性元数据：
+
+```bash
+python3 specs/tools/spec_eval/cli.py --json stability \
+  --static-result /tmp/spec-evaluation/<revision>/05-03-10/static-result.json \
+  --evidence-manifest /tmp/spec-evaluation/<revision>/05-03-10/evidence-manifest.json \
+  --semantic-result /tmp/run-1/semantic-result.json \
+  --semantic-result /tmp/run-2/semantic-result.json \
+  --semantic-result /tmp/run-3/semantic-result.json \
+  --selected-run-id run-3 \
+  --write /tmp/stability-result.json
+```
+
+结果包含原始分最小值、最大值、range、均值、总体标准差，20项 Criterion 的结论分布、2/3共识、无共识项、各 run 的同伴一致率和离群标记。输入顺序不影响输出。
+
+离群标记只使用 Criterion 共识偏离，不使用分数高低猜测：某个 run 必须是唯一最高偏离者，偏离至少20%的 Criterion，且比次高 run 至少多2项，才标记为 `OUTLIER`。分数统计、共识和离群信息仅作为稳定性元数据；正式发布分始终来自 `--selected-run-id` 明确选择的单次 semantic result，多数投票不会改写其结论。
+
+`stability` 是分析命令，合法生成结果时返回 `0`，不会因为被分析 run 的质量 Gate 为 `fail` 而返回 `1`。
+
+### 3.6 组装 Function 总报告
+
+评分、分析和稳定性结果可以组装为冻结 Schema 兼容的 `evaluation-report.json`，并同时生成包含整改项、Feat 风险和稳定性摘要的 Markdown 报告：
+
+```bash
+python3 specs/tools/spec_eval/cli.py --json report \
+  --static-result /tmp/spec-evaluation/<revision>/05-03-10/static-result.json \
+  --semantic-result /tmp/run-3/semantic-result.json \
+  --score-result /tmp/score-result.json \
+  --analysis-result /tmp/function-analysis.json \
+  --stability-result /tmp/stability-result.json \
+  --json-write /tmp/evaluation-report.json \
+  --markdown-write /tmp/function-report.md
+```
+
+`evaluation-report.json` 只包含冻结协议允许的 static、semantic、score 和 summary 字段；`function-analysis.json` 与 `stability-result.json` 保持为伴随机器输入，不扩展冻结 Schema。显式选定的 semantic run 必须与 stability 的 `selected_run` 一致，多数 Criterion 共识不会改写正式结论或分数。
+
+### 3.7 根据变更文件评价受影响 Function
 
 准备一份每行一个仓库相对路径的文件列表：
 
@@ -155,7 +193,7 @@ python3 specs/tools/spec_eval/cli.py \
 
 任一 Feature 发生变化时，工具都会重新评价它所属的整个 Function。多个文件映射到同一 FuncID 时只运行一次。
 
-### 3.6 全仓扫描
+### 3.8 全仓扫描
 
 ```bash
 python3 specs/tools/spec_eval/cli.py \
@@ -192,7 +230,7 @@ python3 specs/tools/spec_eval/cli.py \
 - 完整站点快照固定写入 `<output>/site-report.json`，并更新 `<output>/latest.json` 指针；快照内部和指针都记录 source revision。
 - 使用 `--output specs/.evaluator` 时，只需将 `site-report.json`、`latest.json` 和可选 README 随 specs 仓入库。revision 原始报告和 `.cache/` 保留本地；站点生成器不在 GitHub Pages 发布任务中重新扫描源码仓和 SDK 仓。
 
-### 3.7 冻结稳定 Finding 基线
+### 3.9 冻结稳定 Finding 基线
 
 全量无错误扫描完成后，将 revision 原始结果和同一次扫描产生的 `site-report.json` 冻结为小型 manifest：
 
@@ -211,7 +249,7 @@ python3 specs/tools/spec_eval/cli.py baseline \
 
 基线按稳定 Finding 身份压缩重复问题，只保存比较所需摘要，不复制证据包和完整 Function 报告。
 
-### 3.8 对比当前结果和基线
+### 3.10 对比当前结果和基线
 
 ```bash
 python3 specs/tools/spec_eval/cli.py --json compare \
@@ -365,6 +403,9 @@ python3 specs/tools/spec_eval/ci_runner.py \
 | `evidence/*.json` | 按 Feature/Design 切分的 Claim、源码和 SDK 证据 |
 | `score-result.json` | `score` 命令基于完成态语义结果生成的确定性维度得分、发布分、Gate、置信度和准入状态 |
 | `function-analysis.json` | `score --analysis-write` 生成的版本/输入指纹、Top整改项、Feat风险分布和下钻索引 |
+| `stability-result.json` | `stability` 命令生成的多run分数波动、Criterion共识、同伴一致率、离群标记和显式选定run |
+| `evaluation-report.json` | `report` 命令生成的冻结 Schema 兼容 Function 核心报告 |
+| `function-report.md` | `report` 命令生成的整改项、Feat 风险和稳定性 Markdown 总报告 |
 | `performance.json` | 单 Function 的 parser/checker/证据/写盘阶段耗时 |
 | `report.md` | 面向人工阅读的 Function 静态评价报告 |
 | `ci-summary.json` | 变更影响Function的CI摘要 |

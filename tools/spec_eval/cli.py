@@ -19,9 +19,11 @@ from spec_eval.function_analysis import (
     build_function_analysis_from_paths,
     write_function_analysis,
 )
+from spec_eval.function_report import build_function_report_from_paths, write_function_report
 from spec_eval.orchestrator import EvaluationOrchestrator
 from spec_eval.report import BaselineReporter, PerformanceReporter, SiteReporter
 from spec_eval.score import build_score_result_from_paths, write_score_result
+from spec_eval.stability import build_stability_result_from_paths, write_stability_result
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -71,6 +73,29 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         help="Optional destination for deterministic function-analysis.json",
     )
+
+    stability = sub.add_parser("stability", help="Analyze repeated semantic evaluation stability")
+    stability.add_argument("--static-result", type=Path, required=True)
+    stability.add_argument("--evidence-manifest", type=Path, required=True)
+    stability.add_argument(
+        "--semantic-result",
+        type=Path,
+        action="append",
+        required=True,
+        dest="semantic_results",
+        help="Repeat once per independent semantic-result.json",
+    )
+    stability.add_argument("--selected-run-id", required=True)
+    stability.add_argument("--write", type=Path, required=True, help="Destination stability-result.json")
+
+    report = sub.add_parser("report", help="Assemble a Function JSON and Markdown report")
+    report.add_argument("--static-result", type=Path, required=True)
+    report.add_argument("--semantic-result", type=Path, required=True)
+    report.add_argument("--score-result", type=Path, required=True)
+    report.add_argument("--analysis-result", type=Path, required=True)
+    report.add_argument("--stability-result", type=Path, required=True)
+    report.add_argument("--json-write", type=Path, required=True, help="Destination evaluation-report.json")
+    report.add_argument("--markdown-write", type=Path, required=True, help="Destination function-report.md")
     return parser
 
 
@@ -132,6 +157,59 @@ def main(argv: list[str] | None = None) -> int:
             if args.analysis_write is not None:
                 payload["analysis_path"] = args.analysis_write.as_posix()
             return emit(payload, args, gate=result["gate"]["effective"])
+        if args.command == "stability":
+            result = build_stability_result_from_paths(
+                static_result_path=args.static_result,
+                evidence_manifest_path=args.evidence_manifest,
+                semantic_result_paths=args.semantic_results,
+                selected_run_id=args.selected_run_id,
+                evaluation_root=config.rules_root,
+            )
+            write_stability_result(args.write, result)
+            return emit(
+                {
+                    "func_id": result["func_id"],
+                    "output_path": args.write.as_posix(),
+                    "run_count": result["score_statistics"]["count"],
+                    "raw_range": result["score_statistics"]["range"],
+                    "population_stddev": result["score_statistics"]["population_stddev"],
+                    "consensus_count": result["consensus_summary"]["consensus_count"],
+                    "no_consensus_count": result["consensus_summary"]["no_consensus_count"],
+                    "outlier_run_ids": result["outlier_run_ids"],
+                    "selected_run_id": result["selected_run"]["run_id"],
+                    "gate": "pass",
+                },
+                args,
+                gate="pass",
+            )
+        if args.command == "report":
+            report, markdown = build_function_report_from_paths(
+                static_result_path=args.static_result,
+                semantic_result_path=args.semantic_result,
+                score_result_path=args.score_result,
+                analysis_result_path=args.analysis_result,
+                stability_result_path=args.stability_result,
+                evaluation_root=config.rules_root,
+            )
+            write_function_report(
+                json_path=args.json_write,
+                markdown_path=args.markdown_write,
+                report=report,
+                markdown=markdown,
+            )
+            return emit(
+                {
+                    "func_id": report["func_id"],
+                    "json_path": args.json_write.as_posix(),
+                    "markdown_path": args.markdown_write.as_posix(),
+                    "published_score": report["summary"]["published_score"],
+                    "confidence": report["summary"]["confidence"],
+                    "admission": report["summary"]["admission_status"],
+                    "gate": report["summary"]["gate"],
+                },
+                args,
+                gate=report["summary"]["gate"],
+            )
 
         orchestrator = EvaluationOrchestrator(config)
         if args.command in ("check", "evidence"):
