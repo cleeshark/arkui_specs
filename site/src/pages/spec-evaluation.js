@@ -301,6 +301,11 @@ export default function SpecEvaluationPage() {
             <p className="eyebrow">spec_eval / Function-level</p>
             <h1>Spec Evaluation Report</h1>
             <p className="heroCopy">所有注册功能域的结构、追溯、引用、SDK 合约和证据覆盖扫描结果。</p>
+            <div className="heroActions">
+              <Link className="button button--primary" to="/spec-evaluation-guide">
+                了解评分规则
+              </Link>
+            </div>
             {summaryData.available && (
               <div className="evalMeta">
                 <span>Source <code>{summaryData.sourceRevision?.slice(0, 12)}</code></span>

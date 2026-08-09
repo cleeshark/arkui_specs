@@ -61,6 +61,7 @@ const config = {
           { to: '/', label: 'Portal', position: 'left' },
           { to: '/docs', label: 'Docs', position: 'left' },
           { to: '/spec-evaluation', label: 'Spec Eval', position: 'left' },
+          { to: '/spec-evaluation-guide', label: 'Scoring Guide', position: 'left' },
           {
             href: repositoryUrl,
             label: 'GitHub',
