@@ -24,6 +24,8 @@ REGISTRY_JSON = DATA_DIR / "registry.json"
 SPEC_EVAL_SUMMARY_JSON = DATA_DIR / "spec-evaluation-summary.json"
 STATIC_DATA_DIR = SITE_DIR / "static" / "data"
 SPEC_EVAL_STATIC_JSON = STATIC_DATA_DIR / "spec-evaluation.json"
+SEMANTIC_EVAL_SUMMARY_JSON = DATA_DIR / "semantic-evaluation-summary.json"
+SEMANTIC_EVAL_STATIC_JSON = STATIC_DATA_DIR / "semantic-evaluation.json"
 SPEC_EVAL_ARCHIVE_DIR = ROOT / ".evaluator"
 
 
@@ -260,6 +262,30 @@ def load_archived_spec_evaluation(archive_root: Path = SPEC_EVAL_ARCHIVE_DIR) ->
     return report
 
 
+def load_archived_semantic_evaluation(archive_root: Path = SPEC_EVAL_ARCHIVE_DIR) -> dict[str, Any]:
+    report_path = archive_root / "site-evaluation-report.json"
+    if not report_path.is_file():
+        return {
+            "schemaVersion": 1,
+            "reportVersion": None,
+            "available": False,
+            "sourceRevision": None,
+            "staticReport": {"path": "site-report.json", "sourceRevision": None},
+            "summary": {
+                "confirmedFunctionCount": 0,
+                "expiredFunctionCount": 0,
+                "functionCount": 0,
+                "findingCount": 0,
+                "expiredFindingCount": 0,
+            },
+            "functions": [],
+        }
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    if not isinstance(report, dict) or not isinstance(report.get("functions"), list):
+        raise ValueError(f"invalid archived semantic evaluation report: {report_path}")
+    return report
+
+
 def spec_evaluation_summary(report: dict[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in report.items() if key != "functions"}
 
@@ -300,6 +326,15 @@ def generate() -> None:
         encoding="utf-8",
     )
     spec_evaluation = load_archived_spec_evaluation()
+    semantic_evaluation = load_archived_semantic_evaluation()
+    if (
+        semantic_evaluation.get("available")
+        and semantic_evaluation.get("sourceRevision") != spec_evaluation.get("sourceRevision")
+    ):
+        raise ValueError(
+            "semantic and static site archives use different source revisions: "
+            f"{semantic_evaluation.get('sourceRevision')} != {spec_evaluation.get('sourceRevision')}"
+        )
     SPEC_EVAL_SUMMARY_JSON.write_text(
         json.dumps(spec_evaluation_summary(spec_evaluation), ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
@@ -308,12 +343,22 @@ def generate() -> None:
         json.dumps(spec_evaluation, ensure_ascii=False, separators=(",", ":")) + "\n",
         encoding="utf-8",
     )
+    SEMANTIC_EVAL_SUMMARY_JSON.write_text(
+        json.dumps(spec_evaluation_summary(semantic_evaluation), ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    SEMANTIC_EVAL_STATIC_JSON.write_text(
+        json.dumps(semantic_evaluation, ensure_ascii=False, separators=(",", ":")) + "\n",
+        encoding="utf-8",
+    )
 
     print(f"generated {DOCS_DIR.relative_to(ROOT)}")
     print(f"generated {SIDEBAR_FILE.relative_to(ROOT)}")
     print(f"generated {REGISTRY_JSON.relative_to(ROOT)}")
     print(f"generated {SPEC_EVAL_SUMMARY_JSON.relative_to(ROOT)}")
     print(f"generated {SPEC_EVAL_STATIC_JSON.relative_to(ROOT)}")
+    print(f"generated {SEMANTIC_EVAL_SUMMARY_JSON.relative_to(ROOT)}")
+    print(f"generated {SEMANTIC_EVAL_STATIC_JSON.relative_to(ROOT)}")
 
 
 def main() -> int:

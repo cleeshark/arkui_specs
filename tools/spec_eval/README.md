@@ -174,7 +174,22 @@ python3 specs/tools/spec_eval/cli.py --json report \
 
 `evaluation-report.json` 只包含冻结协议允许的 static、semantic、score 和 summary 字段；`function-analysis.json` 与 `stability-result.json` 保持为伴随机器输入，不扩展冻结 Schema。显式选定的 semantic run 必须与 stability 的 `selected_run` 一致，多数 Criterion 共识不会改写正式结论或分数。
 
-### 3.7 根据变更文件评价受影响 Function
+### 3.7 导出 confirmed Review 站点语义归档
+
+站点发布使用已确认 Review 和已归档静态 `site-report.json`，不重新扫描源码、SDK 或调用模型：
+
+```bash
+python3 specs/tools/spec_eval/cli.py --json site-evaluation \
+  --reviews-root specs/evaluation/reviews \
+  --site-report specs/.evaluator/site-report.json \
+  --write specs/.evaluator/site-evaluation-report.json
+```
+
+只有 `status: confirmed` 的 Review 会进入归档。Review 的 `func_id + source_revision` 与静态报告不一致时保留记录但标记为 `EXPIRED`，不会计入当前 revision 的 `findingCount`。输出通过 `evaluation/schemas/site-evaluation-report.schema.json` 校验，并包含人工分数、20 项 Criterion 摘要、静态/语义 Finding、recommendation、证据路径和确认信息。
+
+站点详情页将五维分数绘制为 SVG 雷达图，并同时显示 published/raw 总分；对 `CONTRADICTED` 和 `PARTIALLY_SUPPORTED` Criterion，在同一 Criterion 区块内展示具体 Finding、关联证据路径和 recommendation，不再把建议和证据拆成独立列表。详情页支持下载单个 Function JSON 输入包，作为负责人后续优化的上下文输入。
+
+### 3.8 根据变更文件评价受影响 Function
 
 准备一份每行一个仓库相对路径的文件列表：
 
@@ -193,7 +208,7 @@ python3 specs/tools/spec_eval/cli.py \
 
 任一 Feature 发生变化时，工具都会重新评价它所属的整个 Function。多个文件映射到同一 FuncID 时只运行一次。
 
-### 3.8 全仓扫描
+### 3.9 全仓扫描
 
 ```bash
 python3 specs/tools/spec_eval/cli.py \
@@ -230,7 +245,7 @@ python3 specs/tools/spec_eval/cli.py \
 - 完整站点快照固定写入 `<output>/site-report.json`，并更新 `<output>/latest.json` 指针；快照内部和指针都记录 source revision。
 - 使用 `--output specs/.evaluator` 时，只需将 `site-report.json`、`latest.json` 和可选 README 随 specs 仓入库。revision 原始报告和 `.cache/` 保留本地；站点生成器不在 GitHub Pages 发布任务中重新扫描源码仓和 SDK 仓。
 
-### 3.9 冻结稳定 Finding 基线
+### 3.10 冻结稳定 Finding 基线
 
 全量无错误扫描完成后，将 revision 原始结果和同一次扫描产生的 `site-report.json` 冻结为小型 manifest：
 
@@ -249,7 +264,7 @@ python3 specs/tools/spec_eval/cli.py baseline \
 
 基线按稳定 Finding 身份压缩重复问题，只保存比较所需摘要，不复制证据包和完整 Function 报告。
 
-### 3.10 对比当前结果和基线
+### 3.11 对比当前结果和基线
 
 ```bash
 python3 specs/tools/spec_eval/cli.py --json compare \
@@ -406,6 +421,7 @@ python3 specs/tools/spec_eval/ci_runner.py \
 | `stability-result.json` | `stability` 命令生成的多run分数波动、Criterion共识、同伴一致率、离群标记和显式选定run |
 | `evaluation-report.json` | `report` 命令生成的冻结 Schema 兼容 Function 核心报告 |
 | `function-report.md` | `report` 命令生成的整改项、Feat 风险和稳定性 Markdown 总报告 |
+| `site-evaluation-report.json` | `site-evaluation` 命令导出的 confirmed Review 语义站点归档 |
 | `performance.json` | 单 Function 的 parser/checker/证据/写盘阶段耗时 |
 | `report.md` | 面向人工阅读的 Function 静态评价报告 |
 | `ci-summary.json` | 变更影响Function的CI摘要 |

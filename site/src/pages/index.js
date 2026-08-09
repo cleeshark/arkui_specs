@@ -3,6 +3,7 @@ import Link from '@docusaurus/Link';
 import Layout from '@theme/Layout';
 import registry from '../data/registry.json';
 import evaluation from '../data/spec-evaluation-summary.json';
+import semanticEvaluation from '../data/semantic-evaluation-summary.json';
 
 function Stat({label, value}) {
   return (
@@ -103,7 +104,7 @@ export default function Home() {
               <h2>Spec Evaluation Report</h2>
               <p>
                 {evaluation.available
-                  ? `${evaluation.summary.completedFunctionCount}/${evaluation.summary.registeredFunctionCount} registered Functions scanned, with ${evaluation.summary.findingCount} findings.`
+                  ? `${evaluation.summary.completedFunctionCount}/${evaluation.summary.registeredFunctionCount} registered Functions scanned, with ${evaluation.summary.findingCount} findings. ${semanticEvaluation.available ? `${semanticEvaluation.summary.confirmedFunctionCount} confirmed semantic reviews are available.` : ''}`
                   : 'Run the full spec evaluator to publish Gate, rule, severity, and evidence coverage results.'}
               </p>
             </div>

@@ -607,6 +607,139 @@
   color: #6330a5;
 }
 
+.semanticReview {
+  margin-bottom: 28px;
+  padding: 16px;
+  border: 1px solid var(--portal-border);
+  border-radius: 6px;
+  background: var(--portal-soft);
+}
+
+.criterionList {
+  display: grid;
+  gap: 6px;
+}
+
+.radarWrap {
+  display: grid;
+  grid-template-columns: 130px minmax(260px, 320px) minmax(240px, 1fr);
+  gap: 18px;
+  align-items: center;
+  margin: 20px 0 28px;
+}
+
+.radarScore {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 130px;
+  border: 1px solid var(--portal-border);
+  border-radius: 8px;
+  background: var(--portal-surface);
+}
+
+.radarScore strong {
+  color: var(--ifm-color-primary);
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.radarScore span,
+.radarScore small {
+  margin-top: 6px;
+  color: var(--portal-muted);
+}
+
+.radarChart {
+  width: 100%;
+  max-width: 320px;
+}
+
+.radarGrid,
+.radarAxis {
+  fill: none;
+  stroke: var(--portal-border);
+  stroke-width: 1;
+}
+
+.radarValue {
+  fill: rgba(36, 84, 214, 0.2);
+  stroke: var(--ifm-color-primary);
+  stroke-width: 2;
+}
+
+.radarLabel {
+  fill: var(--ifm-font-color-base);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.radarLegend {
+  display: grid;
+  gap: 8px;
+}
+
+.radarLegend span {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--portal-border);
+  font-size: 0.83rem;
+}
+
+.criterionBlock {
+  border: 1px solid var(--portal-border);
+  border-radius: 6px;
+  background: var(--portal-surface);
+}
+
+.criterionActionable {
+  border-left: 4px solid #c33d50;
+}
+
+.criterionHeading {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 12px;
+}
+
+.criterionHeading span {
+  color: var(--portal-muted);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.criterionEvidence {
+  padding: 0 12px 12px;
+  border-top: 1px solid var(--portal-border);
+}
+
+.criterionFinding {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 5px;
+  background: var(--portal-soft);
+}
+
+.criterionEvidencePaths {
+  display: grid;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.criterionEvidencePaths code {
+  display: block;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.detailDownloadButton {
+  margin-top: 12px;
+}
+
 @media (max-width: 900px) {
   .portalHeroInner {
     grid-template-columns: 1fr;
@@ -633,6 +766,14 @@
 
   .evalModalBackdrop {
     padding: 16px;
+  }
+
+  .radarWrap {
+    grid-template-columns: 1fr;
+  }
+
+  .radarChart {
+    justify-self: center;
   }
 }
 

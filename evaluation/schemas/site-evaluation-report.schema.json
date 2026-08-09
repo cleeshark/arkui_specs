@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "site-evaluation-report.schema.json",
+  "title": "ArkUI Confirmed Semantic Site Evaluation Report",
+  "type": "object",
+  "required": ["schemaVersion", "reportVersion", "available", "sourceRevision", "staticReport", "summary", "functions"],
+  "properties": {
+    "schemaVersion": {"type": "integer", "const": 1},
+    "reportVersion": {"type": "string", "minLength": 1},
+    "available": {"type": "boolean"},
+    "sourceRevision": {"type": "string", "minLength": 1},
+    "staticReport": {
+      "type": "object",
+      "required": ["path", "sourceRevision"],
+      "properties": {"path": {"type": "string", "minLength": 1}, "sourceRevision": {"type": "string", "minLength": 1}},
+      "additionalProperties": false
+    },
+    "summary": {
+      "type": "object",
+      "required": ["confirmedFunctionCount", "expiredFunctionCount", "functionCount", "findingCount", "expiredFindingCount"],
+      "properties": {
+        "confirmedFunctionCount": {"type": "integer", "minimum": 0},
+        "expiredFunctionCount": {"type": "integer", "minimum": 0},
+        "functionCount": {"type": "integer", "minimum": 0},
+        "findingCount": {"type": "integer", "minimum": 0},
+        "expiredFindingCount": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "functions": {"type": "array", "items": {"$ref": "#/$defs/function"}}
+  },
+  "$defs": {
+    "function": {
+      "type": "object",
+      "required": ["func_id", "title", "source_revision", "status", "scores", "criterion_summaries", "findings", "recommendations", "evidence_paths", "confirmation", "static_report_reference"],
+      "properties": {
+        "func_id": {"type": "string", "pattern": "^[0-9]{2}-[0-9]{2}-[0-9]{2}$"},
+        "title": {"type": "string"},
+        "source_revision": {"type": "string", "minLength": 1},
+        "status": {"type": "string", "enum": ["CONFIRMED", "EXPIRED"]},
+        "scores": {"type": "object"},
+        "criterion_summaries": {"type": "array", "items": {"type": "object"}},
+        "findings": {"type": "array", "items": {"type": "object"}},
+        "recommendations": {"type": "array", "items": {"type": "object"}},
+        "evidence_paths": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+        "confirmation": {"type": "object"},
+        "static_report_reference": {"type": "object"},
+        "staleness": {"type": "object"}
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
