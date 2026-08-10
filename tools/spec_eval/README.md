@@ -421,6 +421,9 @@ python3 specs/tools/spec_eval/gitcode_webhook.py \
 curl http://127.0.0.1:8765/healthz
 ```
 
+`GET /webhooks/gitcode` 同样返回 `200`，用于 GitCode 或反向代理在保存 Webhook 配置时执行
+连通性探测；事件投递仍使用 `POST /webhooks/gitcode`。
+
 使用 GitCode WebHook 密码启动：
 
 ```bash

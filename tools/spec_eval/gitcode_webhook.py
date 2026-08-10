@@ -249,10 +249,10 @@ def create_server(
             LOGGER.info("http client=%s message=%s", self.client_address[0], format % args)
 
         def do_GET(self) -> None:  # noqa: N802 - BaseHTTPRequestHandler API
-            if self.path != "/healthz":
+            if self.path not in {"/healthz", webhook_path}:
                 _json_response(self, 404, {"status": "error", "code": "NOT_FOUND"})
                 return
-            _json_response(self, 200, {"status": "ok"})
+            _json_response(self, 200, {"status": "ok", "webhook_path": webhook_path})
 
         def do_POST(self) -> None:  # noqa: N802 - BaseHTTPRequestHandler API
             if self.path != webhook_path:

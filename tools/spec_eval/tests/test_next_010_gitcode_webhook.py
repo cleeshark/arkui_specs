@@ -122,7 +122,20 @@ class Next010GitCodeWebhookTest(unittest.TestCase):
                 connection.request("GET", "/healthz")
                 response = connection.getresponse()
                 self.assertEqual(response.status, 200)
-                self.assertEqual(json.loads(response.read()), {"status": "ok"})
+                self.assertEqual(
+                    json.loads(response.read()),
+                    {"status": "ok", "webhook_path": "/webhooks/gitcode"},
+                )
+                connection.close()
+
+                connection = http.client.HTTPConnection(*server.server_address, timeout=5)
+                connection.request("GET", "/webhooks/gitcode")
+                response = connection.getresponse()
+                self.assertEqual(response.status, 200)
+                self.assertEqual(
+                    json.loads(response.read()),
+                    {"status": "ok", "webhook_path": "/webhooks/gitcode"},
+                )
                 connection.close()
 
                 first = self._post(server, self.headers(token="token-value"))
