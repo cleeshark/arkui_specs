@@ -18,7 +18,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"   # ace_engine/
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"   # ace_engine/ (spec_eval -> tools -> specs -> ace_engine)
 cd "$REPO_ROOT"
 
 if [ -z "${GITCODE_WEBHOOK_TOKEN:-}" ] && [ -f "$HOME/.gitcode_webhook_token" ]; then
