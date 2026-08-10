@@ -6,11 +6,13 @@ from pathlib import Path
 
 import yaml
 
-from spec_eval.checks import ReferenceChecker, SdkContractChecker
+from spec_eval.checks.reference_checks import ReferenceChecker
+from spec_eval.checks.sdk_contract_checks import SdkContractChecker
 from spec_eval.config import EvaluationConfig
-from spec_eval.discovery import FunctionLocator
+from spec_eval.discovery.function_locator import FunctionLocator
 from spec_eval.evidence.evidence_builder import FunctionEvidenceBuilder
-from spec_eval.parser import CitationParser, MarkdownParser
+from spec_eval.parser.citation_parser import CitationParser
+from spec_eval.parser.markdown_parser import MarkdownParser
 
 
 class EvidenceFixture:

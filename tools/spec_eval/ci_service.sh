@@ -49,8 +49,9 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 # Optional: report the automated GitCode PR test as passed when the run finds no new errors.
+# Enabled by default; set CI_TEST_ON_PASS=0 to opt out.
 TEST_ARGS=""
-[ "${CI_TEST_ON_PASS:-0}" = "1" ] && TEST_ARGS="$TEST_ARGS --test-on-pass"
+[ "${CI_TEST_ON_PASS:-1}" = "1" ] && TEST_ARGS="$TEST_ARGS --test-on-pass"
 [ "${CI_FORCE_TEST:-0}" = "1" ] && TEST_ARGS="$TEST_ARGS --force-test"
 
 echo "[ci_service] starting CI worker in watch mode (poll ${POLL}s, repo ${REPO})${TEST_ARGS:+ (test-on-pass)}"

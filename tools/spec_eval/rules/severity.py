@@ -1,6 +1,6 @@
 """Severity ordering helpers."""
 
-from spec_eval.models import Severity
+from spec_eval.models.finding import Severity
 
 
 GATE_ORDER = {"pass": 0, "warn": 1, "fail": 2, "error": 3}

@@ -15,10 +15,11 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from spec_eval.config import EvaluationConfig
-from spec_eval.discovery import ChangedFunctionResolver
+from spec_eval.discovery.changed_function_resolver import ChangedFunctionResolver
 from spec_eval.errors import SpecEvalError
 from spec_eval.orchestrator import EvaluationOrchestrator
-from spec_eval.report import BaselineReporter, PerformanceReporter
+from spec_eval.report.baseline_reporter import BaselineReporter
+from spec_eval.report.performance_reporter import PerformanceReporter
 from spec_eval.rules.delta_gate_engine import DeltaGateEngine
 
 

@@ -8,9 +8,13 @@ from pathlib import Path
 import yaml
 
 from spec_eval.config import EvaluationConfig
-from spec_eval.discovery import ChangedFunctionResolver, FunctionLocator, RegistryLoader
-from spec_eval.models import Finding, Severity
-from spec_eval.parser import CitationParser, IdParser, MarkdownParser
+from spec_eval.discovery.changed_function_resolver import ChangedFunctionResolver
+from spec_eval.discovery.function_locator import FunctionLocator
+from spec_eval.discovery.registry_loader import RegistryLoader
+from spec_eval.models.finding import Finding, Severity
+from spec_eval.parser.citation_parser import CitationParser
+from spec_eval.parser.id_parser import IdParser
+from spec_eval.parser.markdown_parser import MarkdownParser
 from spec_eval.parser.table_parser import split_table_row
 
 

@@ -9,8 +9,8 @@ from io import StringIO
 from pathlib import Path
 
 from spec_eval.cli import main
-from spec_eval.models import Finding, Severity
-from spec_eval.report import BaselineReporter
+from spec_eval.models.finding import Finding, Severity
+from spec_eval.report.baseline_reporter import BaselineReporter
 
 
 class BaselineDeltaTest(unittest.TestCase):

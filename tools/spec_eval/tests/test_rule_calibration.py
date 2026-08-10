@@ -6,10 +6,12 @@ from pathlib import Path
 
 import yaml
 
-from spec_eval.checks import ReferenceChecker, SdkContractChecker, TraceabilityChecker
+from spec_eval.checks.reference_checks import ReferenceChecker
+from spec_eval.checks.sdk_contract_checks import SdkContractChecker
+from spec_eval.checks.traceability_checks import TraceabilityChecker
 from spec_eval.config import EvaluationConfig
 from spec_eval.orchestrator import EvaluationOrchestrator
-from spec_eval.parser import MarkdownParser
+from spec_eval.parser.markdown_parser import MarkdownParser
 from spec_eval.tests.test_infra_004_008 import CheckFixture
 
 

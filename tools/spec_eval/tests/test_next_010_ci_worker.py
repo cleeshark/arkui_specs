@@ -21,7 +21,7 @@ from spec_eval.ci_worker import (
     mark_processed,
     mark_pr_test_passed,
     passes_whitelist,
-    post_or_update_comment,
+    post_comment,
     process_receipt,
     processed_set,
     render_comment,
@@ -179,7 +179,7 @@ class ResolverPrefixContractTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         from spec_eval.config import EvaluationConfig
-        from spec_eval.discovery import ChangedFunctionResolver
+        from spec_eval.discovery.changed_function_resolver import ChangedFunctionResolver
         from spec_eval.orchestrator import EvaluationOrchestrator
 
         config = EvaluationConfig.discover()
@@ -199,31 +199,34 @@ class ResolverPrefixContractTest(unittest.TestCase):
         self.assertGreater(len(contexts), 50, "global tool root should trigger a full re-scan")
 
 
-class PostOrUpdateCommentTest(unittest.TestCase):
+class PostCommentTest(unittest.TestCase):
     @staticmethod
     def _proc(stdout: str = "", returncode: int = 0) -> mock.Mock:
         return mock.Mock(returncode=returncode, stdout=stdout, stderr="")
 
-    def test_creates_when_no_existing(self) -> None:
-        responses = iter([self._proc("[]"), self._proc('{"id": 99, "url": "https://gitcode.com/c/99"}')])
-        with mock.patch.object(ci_worker, "_oh_gc", side_effect=lambda *a, **k: next(responses)):
-            result = post_or_update_comment("arkui_architecture/arkui-specs", 61, COMMENT_MARKER + " body")
+    def test_creates_comment(self) -> None:
+        # A fresh comment is posted every time; no listing/edit-in-place, so
+        # _oh_gc is called exactly once (the create call).
+        responses = iter([self._proc('{"id": 99, "url": "https://gitcode.com/c/99"}')])
+        with mock.patch.object(ci_worker, "_oh_gc", side_effect=lambda *a, **k: next(responses)) as ohgc:
+            result = post_comment("arkui_architecture/arkui-specs", 61, COMMENT_MARKER + " body")
+        self.assertEqual(ohgc.call_count, 1)
         self.assertEqual(result["action"], "created")
         self.assertEqual(result["id"], 99)
 
-    def test_edits_when_marker_present(self) -> None:
-        existing = [{"id": 5, "url": "https://gitcode.com/c/5", "body": COMMENT_MARKER + "\nold"}]
-        # list returns the comments JSON; edit returns empty stdout (oh-gc quirk) but exit 0.
-        responses = iter([self._proc(json.dumps(existing)), self._proc("")])
-        with mock.patch.object(ci_worker, "_oh_gc", side_effect=lambda *a, **k: next(responses)):
-            result = post_or_update_comment("arkui_architecture/arkui-specs", 61, COMMENT_MARKER + " new")
-        self.assertEqual(result["action"], "updated")
-        self.assertEqual(result["id"], 5)
-        self.assertEqual(result["url"], "https://gitcode.com/c/5")
+    def test_always_creates_new_comment(self) -> None:
+        # Even when a marker comment already exists on the PR, we post a new
+        # comment rather than editing it in place.
+        responses = iter([self._proc('{"id": 7, "url": "https://gitcode.com/c/7"}')])
+        with mock.patch.object(ci_worker, "_oh_gc", side_effect=lambda *a, **k: next(responses)) as ohgc:
+            result = post_comment("arkui_architecture/arkui-specs", 61, COMMENT_MARKER + " new")
+        self.assertEqual(ohgc.call_count, 1)
+        self.assertEqual(result["action"], "created")
+        self.assertEqual(result["id"], 7)
 
     def test_dry_run_does_not_call_oh_gc(self) -> None:
         with mock.patch.object(ci_worker, "_oh_gc") as ohgc:
-            result = post_or_update_comment("arkui_architecture/arkui-specs", 61, "body", dry_run=True)
+            result = post_comment("arkui_architecture/arkui-specs", 61, "body", dry_run=True)
         ohgc.assert_not_called()
         self.assertEqual(result["action"], "dry-run")
 
@@ -364,26 +367,26 @@ class MarkPrTestPassedTest(unittest.TestCase):
             oh_gc="oh-gc",
         )
 
-    def test_invokes_pr_test_with_json(self) -> None:
+    def test_invokes_pr_test(self) -> None:
         captured: list[list[str]] = []
 
-        def fake_json(args, *, oh_gc):
+        def fake_oh_gc(args, *, oh_gc):
             captured.append(args)
-            return {"id": 1, "state": "passed"}
+            return mock.Mock()
 
-        with mock.patch.object(ci_worker, "_oh_gc_json", side_effect=fake_json):
+        with mock.patch.object(ci_worker, "_oh_gc", side_effect=fake_oh_gc):
             result = mark_pr_test_passed("arkui_architecture/arkui-specs", 61)
         self.assertEqual(result["action"], "test_passed")
-        self.assertEqual(captured[0], ["pr", "test", "61", "--repo", "arkui_architecture/arkui-specs", "--json"])
+        self.assertEqual(captured[0], ["pr", "test", "61", "--repo", "arkui_architecture/arkui-specs"])
 
     def test_force_inserts_force_flag(self) -> None:
         captured: list[list[str]] = []
 
-        def fake_json(args, *, oh_gc):
+        def fake_oh_gc(args, *, oh_gc):
             captured.append(args)
-            return {}
+            return mock.Mock()
 
-        with mock.patch.object(ci_worker, "_oh_gc_json", side_effect=fake_json):
+        with mock.patch.object(ci_worker, "_oh_gc", side_effect=fake_oh_gc):
             mark_pr_test_passed("arkui_architecture/arkui-specs", 61, force=True)
         self.assertIn("--force", captured[0])
 
@@ -427,7 +430,7 @@ class ProcessReceiptTestResultTest(unittest.TestCase):
             with mock.patch.object(ci_worker, "ensure_specs_at_sha", return_value=("936b9f4", True, "matched", None)), \
                  mock.patch.object(ci_worker, "compute_changed_files", return_value=(["specs/x"], "ok")), \
                  mock.patch.object(ci_worker, "run_ci_runner", return_value=(summary, 0, 1.0, "")), \
-                 mock.patch.object(ci_worker, "post_or_update_comment", return_value={"action": "created"}), \
+                 mock.patch.object(ci_worker, "post_comment", return_value={"action": "created"}), \
                  mock.patch.object(ci_worker, "reset_pr_test", return_value={"action": "test_reset"}) as reset, \
                  mock.patch.object(ci_worker, "current_pr_head_sha", return_value=_receipt()["revisions"]["tested"]), \
                  mock.patch.object(ci_worker, "mark_pr_test_passed", return_value={"action": "test_passed"}) as mark_test:
@@ -438,6 +441,22 @@ class ProcessReceiptTestResultTest(unittest.TestCase):
             self.assertEqual(result["test"]["pass"]["action"], "test_passed")
             self.assertTrue((Path(tmp) / "ci/pr-61/61_probe-delivery-0001/test-result.json").is_file())
 
+    def test_skips_test_writeback_echo_for_same_head(self) -> None:
+        # Same tested SHA already processed -> echo from the pr-test writeback;
+        # must skip without resetting/posting/marking (breaks the echo loop).
+        tested = _receipt()["revisions"]["tested"]
+        with tempfile.TemporaryDirectory() as tmp:
+            ctx = self._passing_ctx(Path(tmp))
+            with mock.patch.object(ci_worker, "_last_processed_head_for", return_value=tested), \
+                 mock.patch.object(ci_worker, "reset_pr_test") as reset, \
+                 mock.patch.object(ci_worker, "mark_pr_test_passed") as mark_test, \
+                 mock.patch.object(ci_worker, "post_comment") as comment:
+                result = process_receipt(_receipt(), ctx)
+            self.assertEqual(result["status"], "skipped_unchanged_head")
+            reset.assert_not_called()
+            mark_test.assert_not_called()
+            comment.assert_not_called()
+
     def test_does_not_mark_test_passed_when_new_errors(self) -> None:
         summary = json.loads((FIXTURES / "ci-summary-n-affected-with-added.json").read_text(encoding="utf-8"))
         with tempfile.TemporaryDirectory() as tmp:
@@ -445,7 +464,7 @@ class ProcessReceiptTestResultTest(unittest.TestCase):
             with mock.patch.object(ci_worker, "ensure_specs_at_sha", return_value=("936b9f4", True, "matched", None)), \
                  mock.patch.object(ci_worker, "compute_changed_files", return_value=(["specs/x"], "ok")), \
                  mock.patch.object(ci_worker, "run_ci_runner", return_value=(summary, 0, 1.0, "")), \
-                 mock.patch.object(ci_worker, "post_or_update_comment", return_value={"action": "created"}), \
+                 mock.patch.object(ci_worker, "post_comment", return_value={"action": "created"}), \
                  mock.patch.object(ci_worker, "reset_pr_test", return_value={"action": "test_reset"}) as reset, \
                  mock.patch.object(ci_worker, "current_pr_head_sha") as current_head, \
                  mock.patch.object(ci_worker, "mark_pr_test_passed") as mark_test:
@@ -462,7 +481,7 @@ class ProcessReceiptTestResultTest(unittest.TestCase):
             with mock.patch.object(ci_worker, "ensure_specs_at_sha", return_value=("936b9f4", True, "matched", None)), \
                  mock.patch.object(ci_worker, "compute_changed_files", return_value=(["specs/x"], "ok")), \
                  mock.patch.object(ci_worker, "run_ci_runner", return_value=(summary, 0, 1.0, "")), \
-                 mock.patch.object(ci_worker, "post_or_update_comment", return_value={"action": "dry-run"}), \
+                 mock.patch.object(ci_worker, "post_comment", return_value={"action": "dry-run"}), \
                  mock.patch.object(ci_worker, "reset_pr_test") as reset, \
                  mock.patch.object(ci_worker, "mark_pr_test_passed") as mark_test:
                 process_receipt(_receipt(), ctx)
@@ -477,7 +496,7 @@ class ProcessReceiptTestResultTest(unittest.TestCase):
             with mock.patch.object(ci_worker, "ensure_specs_at_sha", return_value=("936b9f4", True, "matched", None)), \
                  mock.patch.object(ci_worker, "compute_changed_files", return_value=(["specs/x"], "ok")), \
                  mock.patch.object(ci_worker, "run_ci_runner", return_value=(summary, 0, 1.0, "")), \
-                 mock.patch.object(ci_worker, "post_or_update_comment", return_value={"action": "created"}), \
+                 mock.patch.object(ci_worker, "post_comment", return_value={"action": "created"}), \
                  mock.patch.object(ci_worker, "reset_pr_test") as reset, \
                  mock.patch.object(ci_worker, "mark_pr_test_passed") as mark_test:
                 process_receipt(_receipt(), ctx)
@@ -491,7 +510,7 @@ class ProcessReceiptTestResultTest(unittest.TestCase):
             with mock.patch.object(ci_worker, "ensure_specs_at_sha", return_value=("936b9f4", True, "matched", None)), \
                  mock.patch.object(ci_worker, "compute_changed_files", return_value=(["specs/x"], "ok")), \
                  mock.patch.object(ci_worker, "run_ci_runner", return_value=(summary, 0, 1.0, "")), \
-                 mock.patch.object(ci_worker, "post_or_update_comment", return_value={"action": "created"}), \
+                 mock.patch.object(ci_worker, "post_comment", return_value={"action": "created"}), \
                  mock.patch.object(ci_worker, "reset_pr_test", return_value={"action": "test_reset"}), \
                  mock.patch.object(ci_worker, "current_pr_head_sha", return_value="newer-head"), \
                  mock.patch.object(ci_worker, "mark_pr_test_passed") as mark_test:
@@ -506,7 +525,7 @@ class ProcessReceiptTestResultTest(unittest.TestCase):
             with mock.patch.object(ci_worker, "ensure_specs_at_sha", return_value=("936b9f4", True, "matched", None)), \
                  mock.patch.object(ci_worker, "compute_changed_files", return_value=(["specs/x"], "ok")), \
                  mock.patch.object(ci_worker, "run_ci_runner", return_value=(summary, 0, 1.0, "")), \
-                 mock.patch.object(ci_worker, "post_or_update_comment", return_value={"action": "created"}), \
+                 mock.patch.object(ci_worker, "post_comment", return_value={"action": "created"}), \
                  mock.patch.object(ci_worker, "reset_pr_test", side_effect=RuntimeError("reset unavailable")), \
                  mock.patch.object(ci_worker, "current_pr_head_sha") as current_head, \
                  mock.patch.object(ci_worker, "mark_pr_test_passed") as mark_test:

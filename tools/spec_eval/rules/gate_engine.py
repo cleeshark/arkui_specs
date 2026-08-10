@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 
-from spec_eval.models import Finding, Severity
+from spec_eval.models.finding import Finding, Severity
 from spec_eval.rules.rule_loader import RuleConfiguration
 from spec_eval.rules.severity import default_gate, max_gate
 

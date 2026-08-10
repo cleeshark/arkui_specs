@@ -8,8 +8,10 @@ from unittest import mock
 
 from spec_eval.evidence.sdk_reader import SdkReader
 from spec_eval.evidence.source_reader import SourceReader
-from spec_eval.models import Claim, EvaluationRun, EvidenceBundle, StaticResult
-from spec_eval.report import JsonReporter, PerformanceReporter
+from spec_eval.models.evidence import Claim, EvidenceBundle
+from spec_eval.models.result import EvaluationRun, StaticResult
+from spec_eval.report.json_reporter import JsonReporter
+from spec_eval.report.performance_reporter import PerformanceReporter
 from test_infra_009_011 import EvidenceFixture
 
 

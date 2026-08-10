@@ -6,7 +6,7 @@ import hashlib
 from pathlib import Path
 
 from spec_eval.config import EvaluationConfig
-from spec_eval.models import FunctionContext
+from spec_eval.models.function import FunctionContext
 
 
 def function_fingerprint(config: EvaluationConfig, context: FunctionContext) -> str:

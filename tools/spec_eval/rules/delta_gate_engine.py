@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from spec_eval.models import Severity
+from spec_eval.models.finding import Severity
 from spec_eval.rules.rule_loader import RuleConfiguration
 from spec_eval.rules.severity import default_gate, max_gate
 

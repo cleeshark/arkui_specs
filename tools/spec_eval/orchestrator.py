@@ -9,24 +9,26 @@ from typing import Iterable
 
 from spec_eval.cache.content_hash import function_fingerprint
 from spec_eval.cache.result_cache import ResultCache
-from spec_eval.checks import (
-    DesignStructureChecker,
-    HygieneChecker,
-    ReferenceChecker,
-    RegistryChecker,
-    SdkContractChecker,
-    SpecStructureChecker,
-    TraceabilityChecker,
-)
+from spec_eval.checks.design_structure_checks import DesignStructureChecker
+from spec_eval.checks.hygiene_checks import HygieneChecker
+from spec_eval.checks.reference_checks import ReferenceChecker
+from spec_eval.checks.registry_checks import RegistryChecker
+from spec_eval.checks.sdk_contract_checks import SdkContractChecker
+from spec_eval.checks.spec_structure_checks import SpecStructureChecker
+from spec_eval.checks.traceability_checks import TraceabilityChecker
 from spec_eval.config import EvaluationConfig
-from spec_eval.discovery import FunctionLocator
+from spec_eval.discovery.function_locator import FunctionLocator
 from spec_eval.evidence.evidence_builder import FunctionEvidenceBuilder
 from spec_eval.evidence.sdk_reader import SdkReader
 from spec_eval.evidence.source_reader import SourceReader
-from spec_eval.models import DocumentModel, EvaluationRun, FunctionContext, StaticResult
-from spec_eval.parser import MarkdownParser
-from spec_eval.report import JsonReporter, MarkdownReporter
-from spec_eval.rules import GateEngine, RuleLoader
+from spec_eval.models.document import DocumentModel
+from spec_eval.models.result import EvaluationRun, StaticResult
+from spec_eval.models.function import FunctionContext
+from spec_eval.parser.markdown_parser import MarkdownParser
+from spec_eval.report.json_reporter import JsonReporter
+from spec_eval.report.markdown_reporter import MarkdownReporter
+from spec_eval.rules.gate_engine import GateEngine
+from spec_eval.rules.rule_loader import RuleLoader
 
 
 class EvaluationOrchestrator:
