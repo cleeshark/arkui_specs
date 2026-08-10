@@ -1,0 +1,33 @@
+{
+  "produce_random_id": "f2378f237c994e368e28b40e25210a97",
+  "event_type": "merge_request",
+  "object_kind": "merge_request",
+  "object_attributes": {
+    "id": 6830111,
+    "iid": 27,
+    "title": "Update WaterFlow specification",
+    "state": "opened",
+    "action": "open",
+    "work_in_progress": false,
+    "source_branch": "feature/waterflow-spec",
+    "target_branch": "main",
+    "url": "https://gitcode.com/arkui_architecture/arkui-specs/merge_requests/27",
+    "conflict": false,
+    "last_commit": {
+      "id": "23adec6d9afeb011992b73d700c854ee9388205f"
+    }
+  },
+  "project": {
+    "id": 1848674,
+    "name": "arkui-specs",
+    "web_url": "https://gitcode.com/arkui_architecture/arkui-specs",
+    "path_with_namespace": "arkui_architecture/arkui-specs",
+    "default_branch": "main"
+  },
+  "manual_build": false,
+  "virtual_merge_build": true,
+  "git_branch": "merge-requests/27/merge",
+  "git_commit_no": "7083553a6d16960c879dd601db307b565f2994bb",
+  "git_target_branch_commit_no": "d55f9d34de9537bddaae80d6dcfe07aaa15e957a",
+  "uuid": "27_637deb9c-5c95-480f-8530-4d91006c72df"
+}
