@@ -449,7 +449,11 @@ POST /webhooks/gitcode
 - `X-GitCode-Event: Merge Request Hook`。
 - 非空的 `X-GitCode-Delivery`，用于跨重启去重。
 - `event_type` 和 `object_kind` 均为 `merge_request`。
-- `open`、`update` 事件包含 `git_commit_no` 和 `git_target_branch_commit_no`。
+
+GitCode 的真实 `update` 事件可能省略顶层 `git_commit_no` 或
+`git_target_branch_commit_no`。接收器优先使用顶层 SHA，缺失时使用
+`object_attributes.last_commit.id` 作为待测 revision；仍缺失的目标 SHA 保留为 `null`，由后续
+CI Worker 通过 PR API 或 fetch 后补齐，不因此拒绝基本事件接收。
 
 成功事件返回 HTTP `202`。重复 Delivery 也返回 `202`，但响应中
 `duplicate` 为 `true`，NDJSON 中不会重复写入。接收记录不保存 PR 描述、提交消息、作者姓名或邮箱；

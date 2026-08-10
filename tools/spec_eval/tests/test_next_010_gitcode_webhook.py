@@ -60,12 +60,13 @@ class Next010GitCodeWebhookTest(unittest.TestCase):
         self.assertNotIn("description", serialized)
         self.assertNotIn("author", serialized)
 
-    def test_open_and_update_require_tested_and_target_revisions(self) -> None:
+    def test_update_falls_back_to_last_commit_when_top_level_revision_is_empty(self) -> None:
         payload = json.loads(json.dumps(self.payload))
         payload["git_commit_no"] = ""
-        with self.assertRaises(WebhookRequestError) as context:
-            build_receipt(self.headers(), payload)
-        self.assertEqual(context.exception.code, "INVALID_PAYLOAD")
+        payload["git_target_branch_commit_no"] = ""
+        receipt = build_receipt(self.headers(), payload)
+        self.assertEqual(receipt["revisions"]["tested"], payload["object_attributes"]["last_commit"]["id"])
+        self.assertIsNone(receipt["revisions"]["target"])
 
     def test_token_and_signature_authentication(self) -> None:
         signature_secret = "signature-secret"

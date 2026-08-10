@@ -162,17 +162,24 @@ def build_receipt(
     if not isinstance(iid, int) or isinstance(iid, bool) or iid <= 0:
         raise WebhookRequestError(400, "INVALID_PAYLOAD", "object_attributes.iid must be a positive integer")
 
-    requires_revisions = action in {"open", "update"}
-    tested_revision = _optional_sha(payload.get("git_commit_no"), "git_commit_no", required=requires_revisions)
-    target_revision = _optional_sha(
-        payload.get("git_target_branch_commit_no"),
-        "git_target_branch_commit_no",
-        required=requires_revisions,
-    )
     last_commit = attributes.get("last_commit")
     source_revision = None
     if isinstance(last_commit, dict):
         source_revision = _optional_sha(last_commit.get("id"), "object_attributes.last_commit.id", required=False)
+    tested_revision = _optional_sha(
+        payload.get("git_commit_no") or source_revision,
+        "git_commit_no",
+        required=False,
+    )
+    target_branch_commit = attributes.get("target_branch_commit")
+    target_revision_value = payload.get("git_target_branch_commit_no")
+    if not target_revision_value and isinstance(target_branch_commit, dict):
+        target_revision_value = target_branch_commit.get("id")
+    target_revision = _optional_sha(
+        target_revision_value,
+        "git_target_branch_commit_no",
+        required=False,
+    )
 
     timestamp = received_at or datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     return {
