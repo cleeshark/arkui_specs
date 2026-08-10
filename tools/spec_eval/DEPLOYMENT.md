@@ -28,8 +28,10 @@
 # 选一个部署根（其下会长 foundation/ 和 interface/）
 export OH_ROOT=/opt/ohos-spec-eval       # 或任意可写目录
 
-curl -o deploy_ci.py \
-  https://gitcode.com/arkui_architecture/arkui-specs/raw/master/tools/spec_eval/deploy_ci.py
+# 用 GitCode API v5 的 raw 端点拉脚本（web 端 /raw/ 对 curl 返回 HTML 壳；默认分支是 main）。
+# 私有仓追加 &access_token=<PAT>。
+curl -fsSL -o deploy_ci.py \
+  "https://api.gitcode.com/api/v5/repos/arkui_architecture/arkui-specs/raw/tools/spec_eval/deploy_ci.py?ref=main"
 
 # 部署 4 个仓到正确目录结构 + 种入 webhook token（从环境变量读）
 GITCODE_WEBHOOK_TOKEN='<你在 GitCode 配的 webhook 密码>' \
