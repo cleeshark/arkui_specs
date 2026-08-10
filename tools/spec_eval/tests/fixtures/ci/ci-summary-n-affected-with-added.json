@@ -1,0 +1,87 @@
+{
+  "absolute_gate_failed_count": 0,
+  "affected_function_count": 1,
+  "baseline": {
+    "identity_version": 1,
+    "path": "specs/evaluation/baselines/current.json",
+    "rule_version": "0.2.16",
+    "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e"
+  },
+  "changed_files": [
+    "specs/05-ui-components/01-layout-components/02-divider/Feat-01-divider-spec.md"
+  ],
+  "delta": {
+    "added": 2,
+    "reclassified": 0,
+    "resolved": 1,
+    "unchanged": 20
+  },
+  "delta_gate_failed_count": 1,
+  "delta_reasons": [
+    {"code": "DELTA_MAJOR_ADDED", "func_id": "05-01-02", "count": 1, "gate": "fail"}
+  ],
+  "delta_warn_count": 0,
+  "error_count": 0,
+  "exit_reasons": [],
+  "functions": [
+    {
+      "absolute_gate": "fail",
+      "baseline_status": "existing",
+      "cached": false,
+      "delta": {
+        "added": 2,
+        "added_counts": {"Critical": 0, "Info": 0, "Major": 1, "Minor": 1},
+        "exempted_added_count": 0,
+        "reason_codes": [{"code": "DELTA_MAJOR_ADDED", "count": 1}],
+        "reclassified": 0,
+        "resolved": 1,
+        "unchanged": 20
+      },
+      "delta_gate": "fail",
+      "delta_reasons": [{"code": "DELTA_MAJOR_ADDED", "func_id": "05-01-02", "count": 1, "gate": "fail"}],
+      "document_count": 2,
+      "feature_count": 1,
+      "finding_count": 22,
+      "func_id": "05-01-02",
+      "gate": "fail",
+      "output_path": "specs/.evaluator/ci/pr-9/probe/out/d91b4e4990a990da2bfe809514e573e35852193e/05-01-02",
+      "severity_counts": {"Critical": 0, "Info": 0, "Major": 21, "Minor": 1},
+      "top_added_findings": [
+        {
+          "details": {"source_path": "frameworks/zzz_regression_probe/zzz.cpp"},
+          "feat_id": "Feat-01",
+          "finding_id": "FND-regressionprobe00000000000a",
+          "func_id": "05-01-02",
+          "identity_version": 1,
+          "line": 87,
+          "message": "source citation cannot be resolved: `frameworks/zzz_regression_probe/zzz.cpp`",
+          "path": "specs/05-ui-components/01-layout-components/02-divider/Feat-01-divider-spec.md",
+          "problem_key": "{\"source_path\":\"frameworks/zzz_regression_probe/zzz.cpp\"}",
+          "rule_id": "REF-NOT-FOUND-001",
+          "severity": "Major"
+        },
+        {
+          "details": {"source_path": "frameworks/zzz_regression_probe/zzz.h"},
+          "feat_id": "Feat-01",
+          "finding_id": "FND-regressionprobe00000000000b",
+          "func_id": "05-01-02",
+          "identity_version": 1,
+          "line": 88,
+          "message": "source citation cannot be resolved: `frameworks/zzz_regression_probe/zzz.h`",
+          "path": "specs/05-ui-components/01-layout-components/02-divider/Feat-01-divider-spec.md",
+          "problem_key": "{\"source_path\":\"frameworks/zzz_regression_probe/zzz.h\"}",
+          "rule_id": "REF-NOT-FOUND-001",
+          "severity": "Minor"
+        }
+      ],
+      "top_findings": [],
+      "top_reclassified_findings": [],
+      "top_resolved_findings": []
+    }
+  ],
+  "gate_failed_count": 1,
+  "mode": "report-only",
+  "new_function_count": 0,
+  "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
+  "summary_path": "specs/.evaluator/ci/pr-9/probe/out/d91b4e4990a990da2bfe809514e573e35852193e/ci-summary.json"
+}

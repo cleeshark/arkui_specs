@@ -1,0 +1,40 @@
+{
+  "absolute_gate_failed_count": 0,
+  "affected_function_count": 1,
+  "baseline": {
+    "identity_version": 1,
+    "path": "specs/evaluation/baselines/current.json",
+    "rule_version": "0.2.16",
+    "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e"
+  },
+  "changed_files": [
+    "specs/05-ui-components/01-layout-components/02-divider/Feat-01-divider-spec.md"
+  ],
+  "delta": {
+    "added": 0,
+    "reclassified": 0,
+    "resolved": 0,
+    "unchanged": 0
+  },
+  "delta_gate_failed_count": 0,
+  "delta_reasons": [],
+  "delta_warn_count": 0,
+  "error_count": 1,
+  "exit_reasons": [
+    {"code": "FUNCTION_EVALUATION_INCOMPLETE", "func_id": "05-01-02", "count": 1, "gate": "error"}
+  ],
+  "functions": [
+    {
+      "absolute_gate": "error",
+      "delta_gate": "error",
+      "error": "boom: simulated orchestrator failure",
+      "func_id": "05-01-02",
+      "gate": "error"
+    }
+  ],
+  "gate_failed_count": 0,
+  "mode": "report-only",
+  "new_function_count": 0,
+  "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
+  "summary_path": "specs/.evaluator/ci/pr-9/probe/out/d91b4e4990a990da2bfe809514e573e335852193e/ci-summary.json"
+}

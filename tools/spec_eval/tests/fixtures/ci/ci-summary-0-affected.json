@@ -1,0 +1,31 @@
+{
+  "absolute_gate_failed_count": 0,
+  "affected_function_count": 0,
+  "baseline": {
+    "identity_version": 1,
+    "path": "specs/evaluation/baselines/current.json",
+    "rule_version": "0.2.16",
+    "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e"
+  },
+  "changed_files": [
+    "specs/tools/spec_eval/gitcode_webhook.py",
+    "specs/tools/spec_eval/tests/test_next_010_gitcode_webhook.py"
+  ],
+  "delta": {
+    "added": 0,
+    "reclassified": 0,
+    "resolved": 0,
+    "unchanged": 0
+  },
+  "delta_gate_failed_count": 0,
+  "delta_reasons": [],
+  "delta_warn_count": 0,
+  "error_count": 0,
+  "exit_reasons": [],
+  "functions": [],
+  "gate_failed_count": 0,
+  "mode": "report-only",
+  "new_function_count": 0,
+  "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
+  "summary_path": "specs/.evaluator/ci/pr-61/probe/out/d91b4e4990a990da2bfe809514e573e35852193e/ci-summary.json"
+}
