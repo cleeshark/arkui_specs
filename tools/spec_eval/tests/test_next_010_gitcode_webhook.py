@@ -180,6 +180,30 @@ class Next010GitCodeWebhookTest(unittest.TestCase):
                 server.server_close()
                 thread.join(timeout=5)
 
+    def test_http_receiver_acknowledges_non_merge_request_events_without_persisting(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            receipt_path = Path(directory) / "receipts.ndjson"
+            server = create_server(
+                "127.0.0.1",
+                0,
+                store=ReceiptStore(receipt_path),
+                token="token-value",
+            )
+            thread = threading.Thread(target=server.serve_forever, daemon=True)
+            thread.start()
+            try:
+                headers = self.headers(token="token-value")
+                headers["X-GitCode-Event"] = "Push Hook"
+                status, response = self._post(server, headers)
+                self.assertEqual(status, 202)
+                self.assertEqual(response["status"], "ignored")
+                self.assertEqual(response["event"], "Push Hook")
+                self.assertFalse(receipt_path.exists())
+            finally:
+                server.shutdown()
+                server.server_close()
+                thread.join(timeout=5)
+
     def _post(
         self,
         server,

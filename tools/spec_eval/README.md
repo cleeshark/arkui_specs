@@ -462,6 +462,10 @@ CI Worker 通过 PR API 或 fetch 后补齐，不因此拒绝基本事件接收�
 `duplicate` 为 `true`，NDJSON 中不会重复写入。接收记录不保存 PR 描述、提交消息、作者姓名或邮箱；
 只保留后续 CI 路由需要的项目、PR、分支和 revision 字段。
 
+如果同一个 GitCode Webhook 同时启用了 Push Event，接收器会对
+`X-GitCode-Event: Push Hook` 返回 HTTP `202` 和 `status: ignored`，不写入 MR receipt，避免
+GitCode 将无关事件标记为失败或持续重试。
+
 ## 6. 输出目录
 
 默认输出位于 `out/spec-evaluation/`。建议本地试验使用 `/tmp`，避免污染工作区。

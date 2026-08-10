@@ -284,6 +284,23 @@ def create_server(
                     raise WebhookRequestError(400, "INVALID_JSON", "request body must be valid UTF-8 JSON") from error
                 if not isinstance(payload, dict):
                     raise WebhookRequestError(400, "INVALID_PAYLOAD", "request body must be a JSON object")
+                event_name = _required_string(
+                    _header(self.headers, "X-GitCode-Event"),
+                    "X-GitCode-Event",
+                )
+                if event_name != MERGE_REQUEST_EVENT:
+                    delivery_id = _header(self.headers, "X-GitCode-Delivery")
+                    LOGGER.info("ignored delivery=%s event=%s", delivery_id, event_name)
+                    _json_response(
+                        self,
+                        202,
+                        {
+                            "status": "ignored",
+                            "delivery_id": delivery_id or None,
+                            "event": event_name,
+                        },
+                    )
+                    return
                 receipt = build_receipt(self.headers, payload)
                 created = store.append(receipt)
                 LOGGER.info(
