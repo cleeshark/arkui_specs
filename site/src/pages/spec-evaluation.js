@@ -180,12 +180,20 @@ function FunctionDetailModal({item, onClose}) {
         <div>
           <div className="detailEyebrow">{item.l1.title} / {item.l2.title}</div>
           <h2 id="function-detail-title">{item.funcId} {item.title}</h2>
-              <div className="functionPath">{item.path}</div>
-              <button className="button button--sm button--secondary detailDownloadButton" type="button" onClick={() => downloadFunctionJson(item)}>
-                下载 Function JSON
-              </button>
+          <div className="functionPath">{item.path}</div>
         </div>
         <GateBadge gate={item.gate} />
+      </div>
+
+      <div className="detailDownloadBar">
+        <div>
+          <strong>下载负责人优化输入</strong>
+          <span>包含五维评分、Criterion、Finding、证据路径和优化建议</span>
+        </div>
+        <button className="button button--primary detailDownloadButton" type="button" onClick={() => downloadFunctionJson(item)}>
+          <span aria-hidden="true">↓</span>
+          下载 Function JSON 报告
+        </button>
       </div>
 
       {item.error && <div className="evalErrorBox">扫描异常：{item.error}</div>}

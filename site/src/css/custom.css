@@ -737,8 +737,46 @@
   white-space: normal;
 }
 
+.detailDownloadBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin: 20px 0 28px;
+  padding: 16px 18px;
+  border: 1px solid rgba(36, 84, 214, 0.4);
+  border-left: 5px solid var(--ifm-color-primary);
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(36, 84, 214, 0.12), rgba(36, 84, 214, 0.04));
+}
+
+.detailDownloadBar strong,
+.detailDownloadBar span {
+  display: block;
+}
+
+.detailDownloadBar > div > span {
+  margin-top: 4px;
+  color: var(--portal-muted);
+  font-size: 0.86rem;
+}
+
 .detailDownloadButton {
-  margin-top: 12px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding-right: 18px;
+  padding-left: 18px;
+  box-shadow: 0 8px 20px rgba(36, 84, 214, 0.22);
+  white-space: nowrap;
+}
+
+.detailDownloadButton > span {
+  font-size: 1.15rem;
+  font-weight: 800;
+  line-height: 1;
 }
 
 .guideHero {
@@ -919,6 +957,11 @@
   .guideTwoColumn {
     grid-template-columns: 1fr;
   }
+
+  .detailDownloadBar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
 }
 
 @media (max-width: 520px) {
@@ -952,6 +995,11 @@
 
   .functionDetail {
     max-height: 100dvh;
+  }
+
+  .detailDownloadButton {
+    justify-content: center;
+    width: 100%;
   }
 
   .guideFlow {
