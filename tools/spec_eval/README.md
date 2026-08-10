@@ -403,6 +403,58 @@ python3 specs/tools/spec_eval/ci_runner.py \
 
 全局Registry、规则配置或核心检查代码发生变化时，工具会评价全部已注册Function；最终仍根据所选绝对或增量模式决定是否阻塞。
 
+### 5.6 GitCode Webhook 消息接收
+
+NEXT-010 第一阶段提供独立的 GitCode Merge Request Webhook 接收器。当前只负责接收、鉴权、
+去重和保存最小事件记录，不会检出仓库、执行评价或回写 Pull Request。
+
+本机无鉴权启动：
+
+```bash
+python3 specs/tools/spec_eval/gitcode_webhook.py \
+  --events-file specs/.evaluator/webhook/receipts.ndjson
+```
+
+健康检查：
+
+```bash
+curl http://127.0.0.1:8765/healthz
+```
+
+使用 GitCode WebHook 密码启动：
+
+```bash
+export GITCODE_WEBHOOK_TOKEN='<configured-secret>'
+python3 specs/tools/spec_eval/gitcode_webhook.py \
+  --host 0.0.0.0 \
+  --port 8765 \
+  --events-file specs/.evaluator/webhook/receipts.ndjson
+```
+
+非 loopback 地址必须配置 `GITCODE_WEBHOOK_TOKEN` 或
+`GITCODE_WEBHOOK_SIGNATURE_SECRET`。如果两者都配置，接收器会同时校验
+`X-GitCode-Token` 和 `X-GitCode-Signature-256`。签名按原始请求正文计算
+HMAC-SHA256，并使用 `sha256=<hex>` 格式比对；首次连接真实 GitCode Webhook 时仍需用测试投递
+确认服务端与平台的签名正文完全一致。
+
+Webhook 地址默认为：
+
+```text
+POST /webhooks/gitcode
+```
+
+接收器要求：
+
+- `Content-Type: application/json`。
+- `X-GitCode-Event: Merge Request Hook`。
+- 非空的 `X-GitCode-Delivery`，用于跨重启去重。
+- `event_type` 和 `object_kind` 均为 `merge_request`。
+- `open`、`update` 事件包含 `git_commit_no` 和 `git_target_branch_commit_no`。
+
+成功事件返回 HTTP `202`。重复 Delivery 也返回 `202`，但响应中
+`duplicate` 为 `true`，NDJSON 中不会重复写入。接收记录不保存 PR 描述、提交消息、作者姓名或邮箱；
+只保留后续 CI 路由需要的项目、PR、分支和 revision 字段。
+
 ## 6. 输出目录
 
 默认输出位于 `out/spec-evaluation/`。建议本地试验使用 `/tmp`，避免污染工作区。
@@ -696,7 +748,8 @@ spec_eval/
 ├── protocol_validator.py  # Rubric、复杂度、Schema和结果跨字段校验
 ├── evaluation_validator.py # Function输入指纹、评价模板和单次确认校验
 ├── cli.py         # 本地和全仓统一入口
-└── ci_runner.py   # 变更Function的CI入口
+├── ci_runner.py   # 变更Function的CI入口
+└── gitcode_webhook.py # GitCode Merge Request Webhook接收入口
 ```
 
 新增检查器时应保持以下约束：
