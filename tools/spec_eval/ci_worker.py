@@ -650,6 +650,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--no-comment", action="store_true", help="skip oh-gc comment posting (archive still written)")
     parser.add_argument("--auto-checkout", action="store_true", help="detached-HEAD checkout specs to tested SHA on mismatch")
     parser.add_argument("--process-limit", type=int, default=0, help="process at most N unprocessed receipts (0=all)")
+    parser.add_argument(
+        "--watch",
+        action="store_true",
+        help="stay resident: poll the receipts file and process new deliveries as they arrive",
+    )
+    parser.add_argument("--poll-interval", type=int, default=10, help="--watch poll interval in seconds (default 10)")
     parser.add_argument("--oh-gc", default="oh-gc")
     parser.add_argument("--python", default="python3")
     parser.add_argument("--json", action="store_true", help="print one JSON line per processed receipt")
@@ -684,19 +690,16 @@ def build_context(args: argparse.Namespace) -> WorkerContext:
     )
 
 
-def main(argv: list[str] | None = None) -> int:
-    args = build_parser().parse_args(argv)
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
-    ctx = build_context(args)
+def run_once(ctx: WorkerContext, *, process_limit: int, emit_json: bool) -> int:
+    """Process all currently-pending receipts once. Returns the count processed."""
     done = processed_set(ctx.processed_ledger)
     receipts = load_receipts(ctx.receipts)
-    results: list[dict[str, Any]] = []
     processed = 0
     for receipt in receipts:
         delivery = receipt.get("delivery_id")
         if delivery in done:
             continue
-        if args.process_limit and processed >= args.process_limit:
+        if process_limit and processed >= process_limit:
             break
         result = process_receipt(receipt, ctx)
         mark_processed(
@@ -705,11 +708,35 @@ def main(argv: list[str] | None = None) -> int:
             status=result.get("status"),
             archive=result.get("archive_dir"),
         )
-        results.append(result)
         processed += 1
-        if args.json:
-            print(json.dumps(result, ensure_ascii=False, sort_keys=True))
-    LOGGER.info("processed %d receipt(s) (%d already done)", processed, len(done))
+        if emit_json:
+            print(json.dumps(result, ensure_ascii=False, sort_keys=True), flush=True)
+    return processed
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+    ctx = build_context(args)
+    if args.watch:
+        # In watch mode every tick drains all pending receipts; --process-limit
+        # is a one-shot batch control and does not apply per tick.
+        LOGGER.info(
+            "watch mode: polling %s every %ds (ledger=%s)",
+            ctx.receipts, args.poll_interval, ctx.processed_ledger,
+        )
+        try:
+            while True:
+                processed = run_once(ctx, process_limit=0, emit_json=args.json)
+                if processed:
+                    LOGGER.info("watch tick: processed %d receipt(s)", processed)
+                time.sleep(args.poll_interval)
+        except KeyboardInterrupt:
+            LOGGER.info("watch interrupted, exiting")
+        return EXIT_OK
+    processed = run_once(ctx, process_limit=args.process_limit, emit_json=args.json)
+    already = len(processed_set(ctx.processed_ledger))
+    LOGGER.info("processed %d receipt(s) (%d already done)", processed, already)
     return EXIT_OK
 
 

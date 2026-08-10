@@ -307,6 +307,29 @@ class MainIdempotencyTest(unittest.TestCase):
             self.assertEqual(processed_set(tmp_path / "processed.ndjson"), {"ok", "skip"})
 
 
+class WatchModeTest(unittest.TestCase):
+    def test_watch_drains_then_exits_on_interrupt(self) -> None:
+        summary = json.loads((FIXTURES / "ci-summary-0-affected.json").read_text(encoding="utf-8"))
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            (tmp_path / "receipts.ndjson").write_text(json.dumps(_receipt(delivery="w1")) + "\n", encoding="utf-8")
+            args = ["--receipts", str(tmp_path / "receipts.ndjson"),
+                    "--processed-ledger", str(tmp_path / "processed.ndjson"),
+                    "--output-root", str(tmp_path / "ci"),
+                    "--specs-root", str(REPO_ROOT / "specs"),
+                    "--repo", "arkui_architecture/arkui-specs",
+                    "--watch", "--poll-interval", "0", "--dry-run", "--json"]
+            # first sleep returns (after draining w1); second sleep breaks the loop
+            with mock.patch.object(ci_worker, "ensure_specs_at_sha", return_value=("936b9f4", True, "matched", None)), \
+                 mock.patch.object(ci_worker, "compute_changed_files", return_value=(["specs/x"], "ok")), \
+                 mock.patch.object(ci_worker, "run_ci_runner", return_value=(summary, 0, 1.0, "")) as runner, \
+                 mock.patch.object(ci_worker.time, "sleep", side_effect=[None, KeyboardInterrupt()]):
+                self.assertEqual(main(args), 0)
+            # the worker processed the receipt exactly once across the ticks, then idled
+            self.assertEqual(runner.call_count, 1)
+            self.assertEqual(processed_set(tmp_path / "processed.ndjson"), {"w1"})
+
+
 @unittest.skipUnless(os.environ.get("SPECEVAL_LONG"), "slow; set SPECEVAL_LONG=1 to run the in-place regression integration test")
 class NewErrorDetectionIntegrationTest(unittest.TestCase):
     """Inject a bogus source citation into a real Function spec and prove the
