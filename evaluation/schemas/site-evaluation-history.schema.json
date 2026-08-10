@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "site-evaluation-history.schema.json",
+  "title": "ArkUI Site Evaluation History",
+  "type": "object",
+  "required": ["schemaVersion", "reportVersion", "available", "currentRevision", "summary", "snapshots", "recentDelta", "activeFindings"],
+  "properties": {
+    "schemaVersion": {"type": "integer", "const": 1},
+    "reportVersion": {"type": "string", "minLength": 1},
+    "available": {"type": "boolean"},
+    "currentRevision": {"type": "string", "minLength": 1},
+    "summary": {
+      "type": "object",
+      "required": ["snapshotCount", "comparisonStatus", "baselineRevision", "currentFindingCount", "addedFindingCount", "resolvedFindingCount", "persistentFindingCount", "reclassifiedFindingCount"],
+      "properties": {
+        "snapshotCount": {"type": "integer", "minimum": 0},
+        "comparisonStatus": {"type": "string", "enum": ["INITIAL", "REVISION_CHANGED", "REVIEW_UPDATED"]},
+        "baselineRevision": {"type": ["string", "null"]},
+        "currentFindingCount": {"type": "integer", "minimum": 0},
+        "addedFindingCount": {"type": "integer", "minimum": 0},
+        "resolvedFindingCount": {"type": "integer", "minimum": 0},
+        "persistentFindingCount": {"type": "integer", "minimum": 0},
+        "reclassifiedFindingCount": {"type": "integer", "minimum": 0}
+      },
+      "additionalProperties": false
+    },
+    "snapshots": {"type": "array", "items": {"type": "object"}},
+    "recentDelta": {"type": "object"},
+    "activeFindings": {"type": "array", "items": {"type": "object"}}
+  },
+  "additionalProperties": false
+}

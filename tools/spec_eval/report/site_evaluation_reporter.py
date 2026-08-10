@@ -9,11 +9,12 @@ from typing import Any
 
 import yaml
 
+from spec_eval.models.finding import enrich_finding_identity
 from spec_eval.protocol_validator import JsonSchemaSubsetValidator
 
 
 SITE_EVALUATION_SCHEMA_VERSION = 1
-SITE_EVALUATION_VERSION = "spec-eval-site-evaluation@0.1.0"
+SITE_EVALUATION_VERSION = "spec-eval-site-evaluation@0.2.0"
 SEVERITIES = ("Critical", "Major", "Minor", "Info")
 SEVERITY_RANK = {value: len(SEVERITIES) - index for index, value in enumerate(SEVERITIES)}
 
@@ -94,9 +95,9 @@ def _semantic_data(review: dict[str, Any]) -> tuple[list[dict[str, Any]], list[d
     return criteria, findings, sorted(evidence_paths)
 
 
-def _static_data(static: dict[str, Any]) -> tuple[list[dict[str, Any]], list[str]]:
+def _static_data(static: dict[str, Any], *, func_id: str) -> tuple[list[dict[str, Any]], list[str]]:
     findings = [
-        _compact_finding(finding, source="static")
+        _compact_finding(enrich_finding_identity(finding, default_func_id=func_id), source="static")
         for finding in static.get("findings", [])
         if isinstance(finding, dict)
     ]
@@ -132,7 +133,7 @@ def _function_entry(
     func_id = str(review.get("func_id", ""))
     review_revision = str(review.get("source_revision", ""))
     criteria, semantic_findings, semantic_paths = _semantic_data(review)
-    static_findings, static_paths = _static_data(static or {})
+    static_findings, static_paths = _static_data(static or {}, func_id=func_id)
     all_findings = static_findings + semantic_findings
     confirmation = review.get("confirmation", {})
     status = "CONFIRMED" if review_revision == site_revision and static is not None else "EXPIRED"

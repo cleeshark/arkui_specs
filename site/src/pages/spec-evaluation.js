@@ -4,6 +4,7 @@ import useBaseUrl from '@docusaurus/useBaseUrl';
 import Layout from '@theme/Layout';
 import summaryData from '../data/spec-evaluation-summary.json';
 import semanticSummaryData from '../data/semantic-evaluation-summary.json';
+import historyData from '../data/spec-evaluation-history.json';
 
 const GATES = ['all', 'pass', 'warn', 'fail', 'error'];
 const SEVERITIES = ['Critical', 'Major', 'Minor', 'Info'];
@@ -29,6 +30,85 @@ function SummaryCard({label, value, tone}) {
       <strong>{value}</strong>
       <span>{label}</span>
     </div>
+  );
+}
+
+function TrendChart({snapshots}) {
+  const width = 560;
+  const height = 180;
+  const left = 42;
+  const right = 16;
+  const top = 18;
+  const bottom = 38;
+  const chartWidth = width - left - right;
+  const chartHeight = height - top - bottom;
+  const values = snapshots.map((item) => Number(item.publishedScoreAverage) || 0);
+  const point = (value, index) => {
+    const x = snapshots.length === 1 ? left + chartWidth / 2 : left + (index * chartWidth) / (snapshots.length - 1);
+    const y = top + chartHeight - (Math.max(0, Math.min(100, value)) / 100) * chartHeight;
+    return {x, y};
+  };
+  const points = values.map(point);
+  return (
+    <svg className="governanceTrendChart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Published score average history">
+      {[0, 25, 50, 75, 100].map((value) => {
+        const y = point(value, 0).y;
+        return <g key={value}><line x1={left} y1={y} x2={width - right} y2={y} className="trendGrid" /><text x={left - 8} y={y + 4} textAnchor="end" className="trendAxisLabel">{value}</text></g>;
+      })}
+      {points.length > 1 && <polyline points={points.map(({x, y}) => `${x},${y}`).join(' ')} className="trendLine" />}
+      {points.map(({x, y}, index) => <g key={snapshots[index].sourceRevision}><circle cx={x} cy={y} r="5" className="trendPoint" /><text x={x} y={y - 11} textAnchor="middle" className="trendValueLabel">{values[index]}</text><text x={x} y={height - 12} textAnchor="middle" className="trendRevisionLabel">{snapshots[index].sourceRevision.slice(0, 7)}</text></g>)}
+    </svg>
+  );
+}
+
+function GovernanceOverview() {
+  if (!historyData.available || historyData.snapshots.length === 0) return null;
+  const summary = historyData.summary;
+  const current = historyData.snapshots[historyData.snapshots.length - 1];
+  const delta = historyData.recentDelta || {functions: []};
+  return (
+    <section className="pageBand governanceBand">
+      <div className="contentWrap">
+        <div className="sectionHeader">
+          <h2>Quality Governance</h2>
+          <p>轻量历史快照与稳定 Finding ID 差异；不会把完整历史报告打入站点。</p>
+        </div>
+        <div className="evalSummaryGrid governanceSummaryGrid">
+          <SummaryCard label="Snapshots" value={summary.snapshotCount} />
+          <SummaryCard label="Confirmed Findings" value={summary.currentFindingCount} />
+          <SummaryCard label="Added" value={summary.addedFindingCount} tone={summary.addedFindingCount ? 'fail' : 'pass'} />
+          <SummaryCard label="Resolved" value={summary.resolvedFindingCount} tone="pass" />
+          <SummaryCard label="Reclassified" value={summary.reclassifiedFindingCount} tone={summary.reclassifiedFindingCount ? 'warn' : 'pass'} />
+        </div>
+        {summary.comparisonStatus === 'INITIAL' && <div className="governanceNotice">当前是首个历史快照。后续归档新的源码 revision 后，这里会显示新增、已解决和持续存在的 Finding。</div>}
+        <div className="governanceGrid">
+          <article className="governancePanel">
+            <div className="governancePanelHeader"><h3>Published score trend</h3><span>平均 {current.publishedScoreAverage}</span></div>
+            <TrendChart snapshots={historyData.snapshots} />
+          </article>
+          <article className="governancePanel">
+            <div className="governancePanelHeader"><h3>Dimension averages</h3><span>{current.functionCount} confirmed Functions</span></div>
+            <div className="dimensionBars">
+              {DIMENSIONS.map((dimension) => {
+                const value = Number(current.dimensionAverages?.[dimension.id] || 0);
+                return <div className="dimensionBar" key={dimension.id}><div><span>{dimension.label}</span><strong>{value}/{dimension.max}</strong></div><div className="dimensionBarTrack"><span style={{width: `${Math.min(100, (value / dimension.max) * 100)}%`}} /></div></div>;
+              })}
+            </div>
+          </article>
+        </div>
+        <div className="governanceGrid governanceTables">
+          <article className="governancePanel">
+            <div className="governancePanelHeader"><h3>Top risk Functions</h3><span>按 Finding 数</span></div>
+            <div className="governanceList">{(current.topFunctions || []).slice(0, 6).map((item) => <div key={item.funcId}><code>{item.funcId}</code><span>{item.title}</span><strong>{item.findingCount}</strong></div>)}</div>
+          </article>
+          <article className="governancePanel">
+            <div className="governancePanelHeader"><h3>Top static rules</h3><span>当前快照</span></div>
+            <div className="governanceList">{(current.topRules || []).slice(0, 6).map((item) => <div key={item.ruleId}><code>{item.ruleId}</code><span></span><strong>{item.count}</strong></div>)}</div>
+          </article>
+        </div>
+        {(delta.functions || []).length > 0 && <div className="tableScroll governanceDeltaTable"><table className="portalTable"><thead><tr><th>Function</th><th>Added</th><th>Resolved</th><th>Reclassified</th></tr></thead><tbody>{delta.functions.map((item) => <tr key={item.funcId}><td><code>{item.funcId}</code> {item.title}</td><td>{item.added}</td><td>{item.resolved}</td><td>{item.reclassified}</td></tr>)}</tbody></table></div>}
+      </div>
+    </section>
   );
 }
 
@@ -347,6 +427,8 @@ export default function SpecEvaluationPage() {
                 </div>
               </div>
             </section>
+
+            <GovernanceOverview />
 
             <section className="pageBand mutedBand">
               <div className="contentWrap evalOverviewGrid">

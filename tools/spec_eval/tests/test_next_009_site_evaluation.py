@@ -91,6 +91,8 @@ class Next009SiteEvaluationTest(unittest.TestCase):
         criterion = confirmed["criterion_summaries"][0]
         self.assertEqual(criterion["findings"][0]["recommendation"], "Fix the contract.")
         self.assertEqual(criterion["evidence"][0]["path"], "frameworks/example.cpp")
+        static_finding = next(item for item in confirmed["findings"] if item["source"] == "static")
+        self.assertRegex(static_finding["finding_id"], r"^FND-[0-9a-f]{24}$")
         expired = next(item for item in result["functions"] if item["status"] == "EXPIRED")
         self.assertEqual(expired["staleness"]["reason"], "review_source_revision_mismatch")
 

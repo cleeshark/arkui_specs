@@ -26,6 +26,10 @@ from spec_eval.report.site_evaluation_reporter import (
     build_site_evaluation_report_from_paths,
     write_site_evaluation_report,
 )
+from spec_eval.report.site_evaluation_history import (
+    build_site_evaluation_history_from_paths,
+    write_site_evaluation_history,
+)
 from spec_eval.score import build_score_result_from_paths, write_score_result
 from spec_eval.stability import build_stability_result_from_paths, write_stability_result
 
@@ -107,6 +111,13 @@ def build_parser() -> argparse.ArgumentParser:
     site_evaluation.add_argument("--reviews-root", type=Path, required=True)
     site_evaluation.add_argument("--site-report", type=Path, required=True)
     site_evaluation.add_argument("--write", type=Path, required=True, help="Destination site-evaluation-report.json")
+
+    site_history = sub.add_parser(
+        "site-evaluation-history", help="Update compact trend and Finding delta history"
+    )
+    site_history.add_argument("--site-evaluation-report", type=Path, required=True)
+    site_history.add_argument("--history", type=Path, help="Existing site-evaluation-history.json")
+    site_history.add_argument("--write", type=Path, required=True, help="Destination site-evaluation-history.json")
     return parser
 
 
@@ -237,6 +248,26 @@ def main(argv: list[str] | None = None) -> int:
                     "expired_function_count": result["summary"]["expiredFunctionCount"],
                     "finding_count": result["summary"]["findingCount"],
                     "expired_finding_count": result["summary"]["expiredFindingCount"],
+                    "gate": "pass",
+                },
+                args,
+                gate="pass",
+            )
+        if args.command == "site-evaluation-history":
+            result = build_site_evaluation_history_from_paths(
+                current_report_path=args.site_evaluation_report,
+                previous_history_path=args.history,
+                schemas_root=config.rules_root / "schemas",
+            )
+            write_site_evaluation_history(args.write, result)
+            return emit(
+                {
+                    "output_path": args.write.as_posix(),
+                    "source_revision": result["currentRevision"],
+                    "snapshot_count": result["summary"]["snapshotCount"],
+                    "comparison_status": result["summary"]["comparisonStatus"],
+                    "added_finding_count": result["summary"]["addedFindingCount"],
+                    "resolved_finding_count": result["summary"]["resolvedFindingCount"],
                     "gate": "pass",
                 },
                 args,

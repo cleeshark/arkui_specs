@@ -779,6 +779,150 @@
   line-height: 1;
 }
 
+.governanceBand {
+  border-top: 1px solid var(--portal-border);
+  border-bottom: 1px solid var(--portal-border);
+  background: var(--portal-soft);
+}
+
+.governanceSummaryGrid {
+  margin-bottom: 18px;
+}
+
+.governanceNotice {
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  border: 1px solid rgba(36, 84, 214, 0.35);
+  border-radius: 6px;
+  background: var(--portal-surface);
+  color: var(--portal-muted);
+}
+
+.governanceGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.governancePanel {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--portal-border);
+  border-radius: 8px;
+  background: var(--portal-surface);
+}
+
+.governancePanelHeader {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.governancePanelHeader h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.governancePanelHeader span {
+  color: var(--portal-muted);
+  font-size: 0.82rem;
+}
+
+.governanceTrendChart {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.trendGrid {
+  stroke: var(--portal-border);
+  stroke-width: 1;
+}
+
+.trendLine {
+  fill: none;
+  stroke: var(--ifm-color-primary);
+  stroke-width: 3;
+}
+
+.trendPoint {
+  fill: var(--portal-surface);
+  stroke: var(--ifm-color-primary);
+  stroke-width: 3;
+}
+
+.trendAxisLabel,
+.trendRevisionLabel {
+  fill: var(--portal-muted);
+  font-size: 10px;
+}
+
+.trendValueLabel {
+  fill: var(--ifm-color-primary);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.dimensionBars {
+  display: grid;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.dimensionBar > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+  font-size: 0.86rem;
+}
+
+.dimensionBarTrack {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--portal-soft);
+}
+
+.dimensionBarTrack span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--ifm-color-primary), #009b77);
+}
+
+.governanceList {
+  display: grid;
+  gap: 2px;
+  margin-top: 12px;
+}
+
+.governanceList > div {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--portal-border);
+  font-size: 0.84rem;
+}
+
+.governanceList > div:last-child {
+  border-bottom: 0;
+}
+
+.governanceList span {
+  overflow: hidden;
+  color: var(--portal-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.governanceDeltaTable {
+  margin-top: 14px;
+}
+
 .guideHero {
   padding: 64px 0 52px;
   border-bottom: 1px solid var(--portal-border);
@@ -961,6 +1105,10 @@
   .detailDownloadBar {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .governanceGrid {
+    grid-template-columns: 1fr;
   }
 }
 

@@ -189,7 +189,26 @@ python3 specs/tools/spec_eval/cli.py --json site-evaluation \
 
 站点详情页将五维分数绘制为 SVG 雷达图，并同时显示 published/raw 总分；对 `CONTRADICTED` 和 `PARTIALLY_SUPPORTED` Criterion，在同一 Criterion 区块内展示具体 Finding、关联证据路径和 recommendation，不再把建议和证据拆成独立列表。详情页支持下载单个 Function JSON 输入包，作为负责人后续优化的上下文输入。
 
-### 3.8 根据变更文件评价受影响 Function
+### 3.8 更新站点趋势和 Finding 差异归档
+
+confirmed Review 站点归档生成后，可更新轻量历史文件：
+
+```bash
+python3 specs/tools/spec_eval/cli.py --json site-evaluation-history \
+  --site-evaluation-report specs/.evaluator/site-evaluation-report.json \
+  --history specs/.evaluator/site-evaluation-history.json \
+  --write specs/.evaluator/site-evaluation-history.json
+```
+
+历史文件只保留最多 52 个 revision 汇总快照、当前活跃 Finding 的紧凑身份索引和最近一次差异，
+不会重复保存每个 revision 的完整报告。差异基于 `source + func_id + finding_id` 和严重度/消息分类，
+输出新增、已解决、持续存在和重新分类数量，以及受影响 Function 和有限数量的下钻详情。
+
+同一 revision、同一 confirmed Review 指纹重复运行时输出保持不变；源码 revision 变化或同 revision
+下人工 Review 发生变化时才追加/更新快照并重新计算差异。站点生成器会移除 `activeFindings`，只把约
+数 KB 的趋势摘要打入页面数据。
+
+### 3.9 根据变更文件评价受影响 Function
 
 准备一份每行一个仓库相对路径的文件列表：
 
@@ -208,7 +227,7 @@ python3 specs/tools/spec_eval/cli.py \
 
 任一 Feature 发生变化时，工具都会重新评价它所属的整个 Function。多个文件映射到同一 FuncID 时只运行一次。
 
-### 3.9 全仓扫描
+### 3.10 全仓扫描
 
 ```bash
 python3 specs/tools/spec_eval/cli.py \
@@ -245,7 +264,7 @@ python3 specs/tools/spec_eval/cli.py \
 - 完整站点快照固定写入 `<output>/site-report.json`，并更新 `<output>/latest.json` 指针；快照内部和指针都记录 source revision。
 - 使用 `--output specs/.evaluator` 时，只需将 `site-report.json`、`latest.json` 和可选 README 随 specs 仓入库。revision 原始报告和 `.cache/` 保留本地；站点生成器不在 GitHub Pages 发布任务中重新扫描源码仓和 SDK 仓。
 
-### 3.10 冻结稳定 Finding 基线
+### 3.11 冻结稳定 Finding 基线
 
 全量无错误扫描完成后，将 revision 原始结果和同一次扫描产生的 `site-report.json` 冻结为小型 manifest：
 
