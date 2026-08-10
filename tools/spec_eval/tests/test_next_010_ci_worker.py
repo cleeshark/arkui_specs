@@ -13,15 +13,19 @@ from spec_eval.ci_worker import (
     COMMENT_MARKER,
     WorkerContext,
     compute_changed_files,
+    current_pr_head_sha,
+    decide_test_pass,
     ensure_specs_at_sha,
     load_receipts,
     main,
     mark_processed,
+    mark_pr_test_passed,
     passes_whitelist,
     post_or_update_comment,
     process_receipt,
     processed_set,
     render_comment,
+    reset_pr_test,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
@@ -328,6 +332,213 @@ class WatchModeTest(unittest.TestCase):
             # the worker processed the receipt exactly once across the ticks, then idled
             self.assertEqual(runner.call_count, 1)
             self.assertEqual(processed_set(tmp_path / "processed.ndjson"), {"w1"})
+
+
+class DecideTestPassTest(unittest.TestCase):
+    def test_passes_when_ok_and_no_new_errors(self) -> None:
+        summary = json.loads((FIXTURES / "ci-summary-0-affected.json").read_text(encoding="utf-8"))
+        self.assertTrue(decide_test_pass(summary, status="ok", incomplete=False))
+
+    def test_withholds_when_new_errors(self) -> None:
+        summary = json.loads((FIXTURES / "ci-summary-n-affected-with-added.json").read_text(encoding="utf-8"))
+        self.assertFalse(decide_test_pass(summary, status="ok", incomplete=False))
+
+    def test_withholds_when_incomplete_or_not_ok(self) -> None:
+        summary = json.loads((FIXTURES / "ci-summary-0-affected.json").read_text(encoding="utf-8"))
+        self.assertFalse(decide_test_pass(summary, status="incomplete", incomplete=True))
+        self.assertFalse(decide_test_pass(summary, status="skipped_mismatch", incomplete=False))
+        self.assertFalse(decide_test_pass(None, status="ok", incomplete=False))
+
+
+class MarkPrTestPassedTest(unittest.TestCase):
+    def test_reads_current_pr_head_before_pass(self) -> None:
+        with mock.patch.object(
+            ci_worker, "_oh_gc_json", return_value={"head": {"sha": "new-head"}}
+        ) as oh_gc_json:
+            self.assertEqual(
+                current_pr_head_sha("arkui_architecture/arkui-specs", 61),
+                "new-head",
+            )
+        oh_gc_json.assert_called_once_with(
+            ["pr", "view", "61", "--repo", "arkui_architecture/arkui-specs", "--json"],
+            oh_gc="oh-gc",
+        )
+
+    def test_invokes_pr_test_with_json(self) -> None:
+        captured: list[list[str]] = []
+
+        def fake_json(args, *, oh_gc):
+            captured.append(args)
+            return {"id": 1, "state": "passed"}
+
+        with mock.patch.object(ci_worker, "_oh_gc_json", side_effect=fake_json):
+            result = mark_pr_test_passed("arkui_architecture/arkui-specs", 61)
+        self.assertEqual(result["action"], "test_passed")
+        self.assertEqual(captured[0], ["pr", "test", "61", "--repo", "arkui_architecture/arkui-specs", "--json"])
+
+    def test_force_inserts_force_flag(self) -> None:
+        captured: list[list[str]] = []
+
+        def fake_json(args, *, oh_gc):
+            captured.append(args)
+            return {}
+
+        with mock.patch.object(ci_worker, "_oh_gc_json", side_effect=fake_json):
+            mark_pr_test_passed("arkui_architecture/arkui-specs", 61, force=True)
+        self.assertIn("--force", captured[0])
+
+
+class ResetPrTestTest(unittest.TestCase):
+    def test_calls_documented_patch_endpoint_for_current_tester_only(self) -> None:
+        with mock.patch.object(ci_worker, "_gitcode_api_json", return_value={"ok": True}) as api:
+            result = reset_pr_test("arkui_architecture/arkui-specs", 61)
+        api.assert_called_once_with(
+            "PATCH",
+            "/repos/arkui_architecture/arkui-specs/pulls/61/testers",
+            body={"reset_all": False},
+        )
+        self.assertEqual(result["action"], "test_reset")
+
+    def test_force_mode_resets_all_testers(self) -> None:
+        with mock.patch.object(ci_worker, "_gitcode_api_json", return_value={}) as api:
+            result = reset_pr_test("arkui_architecture/arkui-specs", 60, reset_all=True)
+        api.assert_called_once_with(
+            "PATCH",
+            "/repos/arkui_architecture/arkui-specs/pulls/60/testers",
+            body={"reset_all": True},
+        )
+        self.assertEqual(result["action"], "test_reset_all")
+
+    def test_rejects_invalid_repo(self) -> None:
+        with self.assertRaises(ValueError):
+            reset_pr_test("arkui-specs", 61)
+
+
+class ProcessReceiptTestResultTest(unittest.TestCase):
+    def _passing_ctx(self, tmp_path: Path, **overrides: object) -> WorkerContext:
+        base: dict[str, object] = {"test_on_pass": True, "dry_run": False}
+        base.update(overrides)
+        return _ctx(tmp_path, **base)
+
+    def test_marks_test_passed_when_enabled(self) -> None:
+        summary = json.loads((FIXTURES / "ci-summary-0-affected.json").read_text(encoding="utf-8"))
+        with tempfile.TemporaryDirectory() as tmp:
+            ctx = self._passing_ctx(Path(tmp))
+            with mock.patch.object(ci_worker, "ensure_specs_at_sha", return_value=("936b9f4", True, "matched", None)), \
+                 mock.patch.object(ci_worker, "compute_changed_files", return_value=(["specs/x"], "ok")), \
+                 mock.patch.object(ci_worker, "run_ci_runner", return_value=(summary, 0, 1.0, "")), \
+                 mock.patch.object(ci_worker, "post_or_update_comment", return_value={"action": "created"}), \
+                 mock.patch.object(ci_worker, "reset_pr_test", return_value={"action": "test_reset"}) as reset, \
+                 mock.patch.object(ci_worker, "current_pr_head_sha", return_value=_receipt()["revisions"]["tested"]), \
+                 mock.patch.object(ci_worker, "mark_pr_test_passed", return_value={"action": "test_passed"}) as mark_test:
+                result = process_receipt(_receipt(), ctx)
+            reset.assert_called_once_with("arkui_architecture/arkui-specs", 61, reset_all=False)
+            mark_test.assert_called_once()
+            self.assertEqual(result["test"]["reset"]["action"], "test_reset")
+            self.assertEqual(result["test"]["pass"]["action"], "test_passed")
+            self.assertTrue((Path(tmp) / "ci/pr-61/61_probe-delivery-0001/test-result.json").is_file())
+
+    def test_does_not_mark_test_passed_when_new_errors(self) -> None:
+        summary = json.loads((FIXTURES / "ci-summary-n-affected-with-added.json").read_text(encoding="utf-8"))
+        with tempfile.TemporaryDirectory() as tmp:
+            ctx = self._passing_ctx(Path(tmp))
+            with mock.patch.object(ci_worker, "ensure_specs_at_sha", return_value=("936b9f4", True, "matched", None)), \
+                 mock.patch.object(ci_worker, "compute_changed_files", return_value=(["specs/x"], "ok")), \
+                 mock.patch.object(ci_worker, "run_ci_runner", return_value=(summary, 0, 1.0, "")), \
+                 mock.patch.object(ci_worker, "post_or_update_comment", return_value={"action": "created"}), \
+                 mock.patch.object(ci_worker, "reset_pr_test", return_value={"action": "test_reset"}) as reset, \
+                 mock.patch.object(ci_worker, "current_pr_head_sha") as current_head, \
+                 mock.patch.object(ci_worker, "mark_pr_test_passed") as mark_test:
+                result = process_receipt(_receipt(), ctx)
+            reset.assert_called_once()
+            current_head.assert_not_called()
+            mark_test.assert_not_called()
+            self.assertEqual(result["test"]["pass"]["reason"], "evaluation_not_passed")
+
+    def test_does_not_mark_test_passed_in_dry_run(self) -> None:
+        summary = json.loads((FIXTURES / "ci-summary-0-affected.json").read_text(encoding="utf-8"))
+        with tempfile.TemporaryDirectory() as tmp:
+            ctx = self._passing_ctx(Path(tmp), dry_run=True)
+            with mock.patch.object(ci_worker, "ensure_specs_at_sha", return_value=("936b9f4", True, "matched", None)), \
+                 mock.patch.object(ci_worker, "compute_changed_files", return_value=(["specs/x"], "ok")), \
+                 mock.patch.object(ci_worker, "run_ci_runner", return_value=(summary, 0, 1.0, "")), \
+                 mock.patch.object(ci_worker, "post_or_update_comment", return_value={"action": "dry-run"}), \
+                 mock.patch.object(ci_worker, "reset_pr_test") as reset, \
+                 mock.patch.object(ci_worker, "mark_pr_test_passed") as mark_test:
+                process_receipt(_receipt(), ctx)
+            reset.assert_not_called()
+            mark_test.assert_not_called()
+
+    def test_disabled_by_default(self) -> None:
+        # _ctx defaults test_on_pass=False
+        summary = json.loads((FIXTURES / "ci-summary-0-affected.json").read_text(encoding="utf-8"))
+        with tempfile.TemporaryDirectory() as tmp:
+            ctx = _ctx(Path(tmp))  # test_on_pass defaults off
+            with mock.patch.object(ci_worker, "ensure_specs_at_sha", return_value=("936b9f4", True, "matched", None)), \
+                 mock.patch.object(ci_worker, "compute_changed_files", return_value=(["specs/x"], "ok")), \
+                 mock.patch.object(ci_worker, "run_ci_runner", return_value=(summary, 0, 1.0, "")), \
+                 mock.patch.object(ci_worker, "post_or_update_comment", return_value={"action": "created"}), \
+                 mock.patch.object(ci_worker, "reset_pr_test") as reset, \
+                 mock.patch.object(ci_worker, "mark_pr_test_passed") as mark_test:
+                process_receipt(_receipt(), ctx)
+            reset.assert_not_called()
+            mark_test.assert_not_called()
+
+    def test_withholds_pass_if_pr_head_changed_during_evaluation(self) -> None:
+        summary = json.loads((FIXTURES / "ci-summary-0-affected.json").read_text(encoding="utf-8"))
+        with tempfile.TemporaryDirectory() as tmp:
+            ctx = self._passing_ctx(Path(tmp))
+            with mock.patch.object(ci_worker, "ensure_specs_at_sha", return_value=("936b9f4", True, "matched", None)), \
+                 mock.patch.object(ci_worker, "compute_changed_files", return_value=(["specs/x"], "ok")), \
+                 mock.patch.object(ci_worker, "run_ci_runner", return_value=(summary, 0, 1.0, "")), \
+                 mock.patch.object(ci_worker, "post_or_update_comment", return_value={"action": "created"}), \
+                 mock.patch.object(ci_worker, "reset_pr_test", return_value={"action": "test_reset"}), \
+                 mock.patch.object(ci_worker, "current_pr_head_sha", return_value="newer-head"), \
+                 mock.patch.object(ci_worker, "mark_pr_test_passed") as mark_test:
+                result = process_receipt(_receipt(), ctx)
+            mark_test.assert_not_called()
+            self.assertEqual(result["test"]["pass"]["reason"], "stale_head")
+
+    def test_withholds_pass_if_old_test_state_cannot_be_reset(self) -> None:
+        summary = json.loads((FIXTURES / "ci-summary-0-affected.json").read_text(encoding="utf-8"))
+        with tempfile.TemporaryDirectory() as tmp:
+            ctx = self._passing_ctx(Path(tmp))
+            with mock.patch.object(ci_worker, "ensure_specs_at_sha", return_value=("936b9f4", True, "matched", None)), \
+                 mock.patch.object(ci_worker, "compute_changed_files", return_value=(["specs/x"], "ok")), \
+                 mock.patch.object(ci_worker, "run_ci_runner", return_value=(summary, 0, 1.0, "")), \
+                 mock.patch.object(ci_worker, "post_or_update_comment", return_value={"action": "created"}), \
+                 mock.patch.object(ci_worker, "reset_pr_test", side_effect=RuntimeError("reset unavailable")), \
+                 mock.patch.object(ci_worker, "current_pr_head_sha") as current_head, \
+                 mock.patch.object(ci_worker, "mark_pr_test_passed") as mark_test:
+                result = process_receipt(_receipt(), ctx)
+            current_head.assert_not_called()
+            mark_test.assert_not_called()
+            self.assertEqual(result["test"]["reset"]["action"], "error")
+            self.assertEqual(result["test"]["pass"]["reason"], "test_reset_failed")
+
+    def test_resets_old_pass_even_when_local_specs_head_mismatches(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            ctx = self._passing_ctx(Path(tmp))
+            with mock.patch.object(
+                ci_worker, "ensure_specs_at_sha", return_value=("old-head", False, "skipped_mismatch", None)
+            ), mock.patch.object(
+                ci_worker, "reset_pr_test", return_value={"action": "test_reset"}
+            ) as reset:
+                result = process_receipt(_receipt(), ctx)
+            reset.assert_called_once()
+            self.assertEqual(result["status"], "skipped_mismatch")
+            self.assertEqual(result["test"]["reset"]["action"], "test_reset")
+
+    def test_force_mode_uses_admin_reset_all(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            ctx = self._passing_ctx(Path(tmp), force_test=True)
+            with mock.patch.object(
+                ci_worker, "ensure_specs_at_sha", return_value=("old-head", False, "skipped_mismatch", None)
+            ), mock.patch.object(
+                ci_worker, "reset_pr_test", return_value={"action": "test_reset_all"}
+            ) as reset:
+                process_receipt(_receipt(), ctx)
+            reset.assert_called_once_with("arkui_architecture/arkui-specs", 61, reset_all=True)
 
 
 @unittest.skipUnless(os.environ.get("SPECEVAL_LONG"), "slow; set SPECEVAL_LONG=1 to run the in-place regression integration test")
