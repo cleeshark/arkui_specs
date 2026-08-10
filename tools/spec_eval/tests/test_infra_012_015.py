@@ -7,9 +7,10 @@ import unittest
 from pathlib import Path
 
 from spec_eval.config import EvaluationConfig
-from spec_eval.models import Finding, Severity
+from spec_eval.models.finding import Finding, Severity
 from spec_eval.orchestrator import EvaluationOrchestrator
-from spec_eval.rules import GateEngine, RuleLoader
+from spec_eval.rules.gate_engine import GateEngine
+from spec_eval.rules.rule_loader import RuleLoader
 
 
 class Infra012To015Test(unittest.TestCase):

@@ -13,7 +13,8 @@ if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from spec_eval.config import EvaluationConfig
-from spec_eval.discovery import ChangedFunctionResolver, FunctionLocator
+from spec_eval.discovery.changed_function_resolver import ChangedFunctionResolver
+from spec_eval.discovery.function_locator import FunctionLocator
 from spec_eval.errors import SpecEvalError
 from spec_eval.function_analysis import (
     build_function_analysis_from_paths,
@@ -21,7 +22,9 @@ from spec_eval.function_analysis import (
 )
 from spec_eval.function_report import build_function_report_from_paths, write_function_report
 from spec_eval.orchestrator import EvaluationOrchestrator
-from spec_eval.report import BaselineReporter, PerformanceReporter, SiteReporter
+from spec_eval.report.baseline_reporter import BaselineReporter
+from spec_eval.report.performance_reporter import PerformanceReporter
+from spec_eval.report.site_reporter import SiteReporter
 from spec_eval.report.site_evaluation_reporter import (
     build_site_evaluation_report_from_paths,
     write_site_evaluation_report,

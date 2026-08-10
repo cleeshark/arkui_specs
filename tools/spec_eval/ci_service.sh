@@ -14,6 +14,8 @@
 #   WEBHOOK_HOST / WEBHOOK_PORT   receiver bind (default 127.0.0.1 / 8765)
 #   SPEC_EVAL_REPO          whitelisted GitCode owner/repo (default arkui_architecture/arkui-specs)
 #   CI_POLL_INTERVAL        worker poll seconds (default 10)
+#   CI_TEST_ON_PASS          set to 1 to mark the GitCode PR test passed when no new errors are found
+#   CI_FORCE_TEST            set to 1 with CI_TEST_ON_PASS to pass --force to oh-gc pr test
 #   EXTRA_WORKER_ARGS       extra flags forwarded to ci_worker (e.g. "--dry-run")
 set -euo pipefail
 
@@ -46,10 +48,17 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-echo "[ci_service] starting CI worker in watch mode (poll ${POLL}s, repo ${REPO})"
+# Optional: report the automated GitCode PR test as passed when the run finds no new errors.
+# Enabled by default; set CI_TEST_ON_PASS=0 to opt out.
+TEST_ARGS=""
+[ "${CI_TEST_ON_PASS:-1}" = "1" ] && TEST_ARGS="$TEST_ARGS --test-on-pass"
+[ "${CI_FORCE_TEST:-0}" = "1" ] && TEST_ARGS="$TEST_ARGS --force-test"
+
+echo "[ci_service] starting CI worker in watch mode (poll ${POLL}s, repo ${REPO})${TEST_ARGS:+ (test-on-pass)}"
 # The worker runs in the foreground; exiting it (Ctrl-C) tears down the receiver.
 exec python3 specs/tools/spec_eval/ci_worker.py \
     --repo "$REPO" --allow-project "$REPO" \
     --receipts "$RECEIPTS" --processed-ledger "$LEDGER" \
     --watch --poll-interval "$POLL" \
+    $TEST_ARGS \
     ${EXTRA_WORKER_ARGS:-}

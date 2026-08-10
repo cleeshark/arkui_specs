@@ -5,7 +5,9 @@ from __future__ import annotations
 from pathlib import Path
 
 from spec_eval.config import EvaluationConfig
-from spec_eval.models import DocumentModel, Finding, FunctionContext, Severity
+from spec_eval.models.document import DocumentModel
+from spec_eval.models.finding import Finding, Severity
+from spec_eval.models.function import FunctionContext
 
 
 def document_map(documents: list[DocumentModel]) -> dict[Path, DocumentModel]:

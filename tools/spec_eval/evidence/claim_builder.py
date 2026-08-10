@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from spec_eval.models import Claim, DocumentModel
+from spec_eval.models.evidence import Claim
+from spec_eval.models.document import DocumentModel
 
 
 class ClaimBuilder:

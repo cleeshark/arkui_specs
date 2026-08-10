@@ -7,8 +7,11 @@ from dataclasses import dataclass, field, replace
 from spec_eval.checks.base import make_finding
 from spec_eval.config import EvaluationConfig
 from spec_eval.evidence.source_reader import SourceReader
-from spec_eval.models import Citation, DocumentModel, Finding, FunctionContext, Severity
-from spec_eval.parser import CitationParser
+from spec_eval.models.evidence import Citation
+from spec_eval.models.document import DocumentModel
+from spec_eval.models.finding import Finding, Severity
+from spec_eval.models.function import FunctionContext
+from spec_eval.parser.citation_parser import CitationParser
 
 
 @dataclass

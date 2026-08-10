@@ -6,16 +6,18 @@ from pathlib import Path
 
 import yaml
 
-from spec_eval.checks import (
-    DesignStructureChecker,
-    HygieneChecker,
-    RegistryChecker,
-    SpecStructureChecker,
-    TraceabilityChecker,
-)
+from spec_eval.checks.design_structure_checks import DesignStructureChecker
+
+from spec_eval.checks.hygiene_checks import HygieneChecker
+
+from spec_eval.checks.registry_checks import RegistryChecker
+
+from spec_eval.checks.spec_structure_checks import SpecStructureChecker
+
+from spec_eval.checks.traceability_checks import TraceabilityChecker
 from spec_eval.config import EvaluationConfig
-from spec_eval.discovery import FunctionLocator
-from spec_eval.parser import MarkdownParser
+from spec_eval.discovery.function_locator import FunctionLocator
+from spec_eval.parser.markdown_parser import MarkdownParser
 
 
 class CheckFixture:

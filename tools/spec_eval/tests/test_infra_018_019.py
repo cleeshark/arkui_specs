@@ -10,7 +10,7 @@ from generate_site import load_archived_spec_evaluation, spec_evaluation_summary
 from spec_eval.cli import build_parser
 from spec_eval.config import EvaluationConfig
 from spec_eval.evidence.sdk_reader import SdkReader
-from spec_eval.report import SiteReporter
+from spec_eval.report.site_reporter import SiteReporter
 
 
 class Infra018SiteReportTest(unittest.TestCase):

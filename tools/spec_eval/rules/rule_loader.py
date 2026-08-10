@@ -12,7 +12,7 @@ import yaml
 
 from spec_eval.config import EvaluationConfig
 from spec_eval.errors import ConfigurationError
-from spec_eval.models import Severity
+from spec_eval.models.finding import Severity
 
 
 @dataclass(frozen=True)

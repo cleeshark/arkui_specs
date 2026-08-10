@@ -28,8 +28,10 @@
 # 选一个部署根（其下会长 foundation/ 和 interface/）
 export OH_ROOT=/opt/ohos-spec-eval       # 或任意可写目录
 
-curl -o deploy_ci.py \
-  https://gitcode.com/arkui_architecture/arkui-specs/raw/master/tools/spec_eval/deploy_ci.py
+# 用 GitCode API v5 的 raw 端点拉脚本（web 端 /raw/ 对 curl 返回 HTML 壳；默认分支是 main）。
+# 私有仓追加 &access_token=<PAT>。
+curl -fsSL -o deploy_ci.py \
+  "https://api.gitcode.com/api/v5/repos/arkui_architecture/arkui-specs/raw/tools/spec_eval/deploy_ci.py?ref=main"
 
 # 部署 4 个仓到正确目录结构 + 种入 webhook token（从环境变量读）
 GITCODE_WEBHOOK_TOKEN='<你在 GitCode 配的 webhook 密码>' \
@@ -118,7 +120,22 @@ cd "$OH_ROOT/foundation/arkui/ace_engine"
 
 `ci_service.sh` 后台起接收器、前台起 `ci_worker --watch`（每 10s 轮询 receipt），Ctrl-C 同时关闭两者，
 token 自动读 `~/.gitcode_webhook_token`。环境变量覆盖：`WEBHOOK_HOST/PORT`、`SPEC_EVAL_REPO`（白名单
-owner/repo，默认 `arkui_architecture/arkui-specs`）、`CI_POLL_INTERVAL`、`EXTRA_WORKER_ARGS`。
+owner/repo，默认 `arkui_architecture/arkui-specs`）、`CI_POLL_INTERVAL`、`EXTRA_WORKER_ARGS`、
+`CI_TEST_ON_PASS=1`（运行通过即调 `oh-gc pr test` 写入测试通过，见下）、`CI_FORCE_TEST=1`（配合前者加 `--force`）。
+
+**通过即回写 CI 测试结果**：`CI_TEST_ON_PASS=1 ./ci_service.sh`。每次新的 MR Hook 被 Worker 消费时，先调用
+GitCode `PATCH /repos/{owner}/{repo}/pulls/{n}/testers` 复位旧测试状态，再执行评价。普通模式使用
+`reset_all=false`，要求 `oh-gc` 登录用户已经是该 PR 的 tester，仅复位自己；若 CI 使用管理员/非 tester 账号，必须
+显式配置 `CI_FORCE_TEST=1`，此时使用管理员专属的 `reset_all=true` 复位全部 tester，并在通过时调用
+`oh-gc pr test --force`。判定"通过"= 评价完成且 `delta.added == 0`（无新增错误，既有 baseline 债务不计）。写通过前会再次
+读取 PR 当前 head，只有它仍等于本次 receipt 的 tested SHA 才调用
+`oh-gc pr test <PR> --repo <REPO>`。因此后续 push 会先撤销旧的 bot 测试通过，旧任务也不能覆盖新 head 的状态。
+有新增错误、评价未完成、复位失败或 head 已变化时均**不写测试通过**（评论仍照常发）。该流程不会调用代表人工代码
+评审的 `oh-gc pr review`。`--dry-run` 下不执行复位或测试状态回写。
+
+真实 API 验证（PR #60）：`sunfei2021` 对由 `arkui_architecture` 测试通过的 PR 调 `reset_all=false` 返回
+HTTP 400 `Must be a tester of this merge request`，状态不变；同一管理员账号调 `reset_all=true` 成功，
+`arkui_architecture.accept` 从 `true` 变为 `false`，`approval_testers_required_passed` 从 `true` 变为 `false`。
 
 常驻方式由你选，例如 tmux / nohup，或一段 systemd unit（参考，不随包安装）：
 

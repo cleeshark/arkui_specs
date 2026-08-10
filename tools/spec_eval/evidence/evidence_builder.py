@@ -5,7 +5,9 @@ from __future__ import annotations
 from spec_eval.checks.reference_checks import ReferenceResult
 from spec_eval.checks.sdk_contract_checks import SdkContractResult
 from spec_eval.evidence.claim_builder import ClaimBuilder
-from spec_eval.models import DocumentModel, EvidenceBundle, FunctionContext
+from spec_eval.models.document import DocumentModel
+from spec_eval.models.evidence import EvidenceBundle
+from spec_eval.models.function import FunctionContext
 from spec_eval.parser.id_parser import IdParser
 
 

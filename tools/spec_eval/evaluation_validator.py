@@ -13,7 +13,7 @@ from typing import Any
 import yaml
 
 from spec_eval.config import EvaluationConfig
-from spec_eval.discovery import FunctionLocator
+from spec_eval.discovery.function_locator import FunctionLocator
 from spec_eval.protocol_validator import (
     JsonSchemaSubsetValidator,
     aggregate_function_complexity,

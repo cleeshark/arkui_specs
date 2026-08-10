@@ -15,15 +15,17 @@ import yaml
 
 from spec_eval import cli
 from spec_eval import ci_runner
-from spec_eval.checks import ReferenceChecker, SpecStructureChecker, TraceabilityChecker
+from spec_eval.checks.reference_checks import ReferenceChecker
+from spec_eval.checks.spec_structure_checks import SpecStructureChecker
+from spec_eval.checks.traceability_checks import TraceabilityChecker
 from spec_eval.config import EvaluationConfig
-from spec_eval.discovery import FunctionLocator
+from spec_eval.discovery.function_locator import FunctionLocator
 from spec_eval.errors import ParseError
-from spec_eval.models import Finding, Severity
+from spec_eval.models.finding import Finding, Severity
 from spec_eval.orchestrator import EvaluationOrchestrator
-from spec_eval.parser import MarkdownParser
+from spec_eval.parser.markdown_parser import MarkdownParser
 from spec_eval.parser.table_parser import split_table_row
-from spec_eval.rules import GateEngine
+from spec_eval.rules.gate_engine import GateEngine
 from spec_eval.rules.rule_loader import Exemption, RuleConfiguration
 from spec_eval.tests.test_infra_001_003 import TemporaryRepository
 

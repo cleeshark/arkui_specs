@@ -6,7 +6,10 @@ from dataclasses import dataclass
 
 from spec_eval.checks.base import make_finding
 from spec_eval.config import EvaluationConfig
-from spec_eval.models import DocumentModel, Finding, FunctionContext, Severity, TraceEdge, TraceGraph, TraceNode
+from spec_eval.models.document import DocumentModel
+from spec_eval.models.finding import Finding, Severity
+from spec_eval.models.function import FunctionContext
+from spec_eval.models.traceability import TraceEdge, TraceGraph, TraceNode
 from spec_eval.parser.id_parser import IdParser
 
 

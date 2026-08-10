@@ -7,7 +7,9 @@ from pathlib import Path
 
 from spec_eval.checks.base import make_finding, status_of
 from spec_eval.config import EvaluationConfig
-from spec_eval.models import DocumentModel, Finding, FunctionContext, Severity
+from spec_eval.models.document import DocumentModel
+from spec_eval.models.finding import Finding, Severity
+from spec_eval.models.function import FunctionContext
 
 
 class HygieneChecker:

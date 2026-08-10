@@ -5,7 +5,7 @@ from datetime import date, timedelta
 
 from spec_eval.rules.delta_gate_engine import DeltaGateEngine
 from spec_eval.rules.rule_loader import Exemption, RuleConfiguration, RulePolicy
-from spec_eval.models import Severity
+from spec_eval.models.finding import Severity
 
 
 class DeltaGateEngineTest(unittest.TestCase):

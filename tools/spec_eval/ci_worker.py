@@ -4,15 +4,15 @@
 Consumes the append-only receipt log written by ``gitcode_webhook.py`` and, for
 each unprocessed delivery, runs the report-only static evaluation
 (``ci_runner.py``) over the PR's changed specs files, archives the result
-per-PR/per-delivery, and posts an updatable summary comment back to the PR via
+per-PR/per-delivery, and posts a fresh summary comment to the PR via
 ``oh-gc``.
 
 The Worker is report-only and non-blocking: it never passes ``--enforce`` or
 ``--delta-enforce`` and does not gate the PR. Semantic evaluation and blocking
 gates are intentionally out of scope (see handoff NEXT-010). It is idempotent:
 receipts are de-duplicated on ingest (``ReceiptStore``) and on processing
-(``processed.ndjson`` keyed by ``delivery_id``), and the PR comment is edited in
-place via a hidden marker rather than re-posted.
+(``processed.ndjson`` keyed by ``delivery_id``); each delivery posts a fresh
+PR comment (no in-place edit).
 """
 
 from __future__ import annotations
@@ -23,6 +23,9 @@ import logging
 import subprocess
 import sys
 import time
+import urllib.error
+import urllib.parse
+import urllib.request
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -65,6 +68,8 @@ class WorkerContext:
     auto_checkout: bool
     oh_gc: str
     python: str
+    test_on_pass: bool = False
+    force_test: bool = False
 
 
 # --------------------------------------------------------------------------- #
@@ -365,38 +370,133 @@ def _oh_gc_json(args: list[str], *, oh_gc: str) -> Any:
         raise RuntimeError(f"oh-gc returned non-JSON output: {stdout[:160]!r}") from exc
 
 
-def post_or_update_comment(
+def _gitcode_api_token() -> str:
+    """Load the same token used by oh-gc, without exposing it in logs."""
+    config_path = Path.home() / ".config/gitcode-cli/config.json"
+    try:
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise RuntimeError(
+            "GitCode API token unavailable; run `oh-gc auth login`"
+        ) from exc
+    token = config.get("token")
+    if not isinstance(token, str) or not token:
+        raise RuntimeError(
+            "GitCode API token unavailable; run `oh-gc auth login`"
+        )
+    return token
+
+
+def _gitcode_api_json(
+    method: str,
+    path: str,
+    *,
+    body: dict[str, Any] | None = None,
+) -> Any:
+    """Call GitCode API v5 while keeping the access token out of error messages."""
+    token = _gitcode_api_token()
+    query = urllib.parse.urlencode({"access_token": token})
+    url = f"https://api.gitcode.com/api/v5{path}?{query}"
+    payload = None if body is None else json.dumps(body).encode("utf-8")
+    request = urllib.request.Request(
+        url,
+        data=payload,
+        method=method,
+        headers={"Accept": "application/json", "Content-Type": "application/json"},
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            raw = response.read().decode("utf-8")
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", "replace")[:500]
+        raise RuntimeError(f"GitCode API {method} {path} failed ({exc.code}): {detail}") from exc
+    except urllib.error.URLError as exc:
+        raise RuntimeError(f"GitCode API {method} {path} connection failed") from exc
+    if not raw:
+        return None
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"GitCode API {method} {path} returned invalid JSON") from exc
+
+
+def post_comment(
     repo: str,
     pr_iid: Any,
     body: str,
     *,
-    bot_login: str = DEFAULT_BOT_LOGIN,
     dry_run: bool = False,
     oh_gc: str = "oh-gc",
 ) -> dict[str, Any]:
-    """Create or edit-in-place the bot's updatable PR comment."""
+    """Post a fresh PR comment for every delivery (no in-place update)."""
     if dry_run:
         return {"action": "dry-run", "id": None, "url": None}
-    comments = _oh_gc_json(
-        ["pr", "comments", str(pr_iid), "--repo", repo, "--json", "--comment-type", "pr_comment"],
-        oh_gc=oh_gc,
-    ) or []
-    own = [c for c in comments if isinstance(c, dict) and COMMENT_MARKER in (c.get("body") or "")]
-    if own:
-        target = max(own, key=lambda c: int(c.get("id") or 0))
-        comment_id = target.get("id")
-        # ``pr comment-edit --json`` prints ``undefined`` (oh-gc quirk), so we do
-        # not parse its stdout; success is the zero exit code from ``_oh_gc``.
-        _oh_gc(
-            ["pr", "comment-edit", str(comment_id), "--repo", repo, "--body", body],
-            oh_gc=oh_gc,
-        )
-        return {"action": "updated", "id": comment_id, "url": target.get("url")}
     created = _oh_gc_json(
         ["pr", "comment", str(pr_iid), "--repo", repo, "--body", body, "--json"],
         oh_gc=oh_gc,
     ) or {}
     return {"action": "created", "id": created.get("id"), "url": created.get("url")}
+
+
+def decide_test_pass(ci_summary: dict[str, Any] | None, *, status: str, incomplete: bool) -> bool:
+    """A run "passes" (no new errors) iff it completed cleanly with ``delta.added == 0``.
+
+    Pre-existing baseline debt never blocks the CI test result (report-only is non-blocking);
+    only *new* findings (``delta.added`` after exemptions) or an incomplete/tool-error
+    run withhold it.
+    """
+    if ci_summary is None or status != "ok" or incomplete:
+        return False
+    delta = ci_summary.get("delta") or {}
+    return int(delta.get("added", 0) or 0) == 0
+
+
+def reset_pr_test(repo: str, pr_iid: Any, *, reset_all: bool = False) -> dict[str, Any]:
+    """Reset the authenticated tester, or all testers in explicit force mode.
+
+    GitCode documents ``PATCH /pulls/{number}/testers`` as the test-state reset
+    endpoint. ``reset_all=false`` requires the caller to be an assigned tester;
+    ``reset_all=true`` is admin-only and resets every tester, so it is coupled to
+    the existing explicit ``--force-test`` opt-in.
+    """
+    owner, separator, name = repo.partition("/")
+    if not separator or not owner or not name:
+        raise ValueError(f"invalid GitCode repo: {repo!r}; expected OWNER/REPO")
+    path = (
+        f"/repos/{urllib.parse.quote(owner, safe='')}/{urllib.parse.quote(name, safe='')}"
+        f"/pulls/{pr_iid}/testers"
+    )
+    detail = _gitcode_api_json("PATCH", path, body={"reset_all": reset_all}) or {}
+    return {"action": "test_reset_all" if reset_all else "test_reset", "detail": detail}
+
+
+def current_pr_head_sha(repo: str, pr_iid: Any, *, oh_gc: str = "oh-gc") -> str | None:
+    """Read the current GitCode PR head immediately before writing a pass state."""
+    detail = _oh_gc_json(
+        ["pr", "view", str(pr_iid), "--repo", repo, "--json"],
+        oh_gc=oh_gc,
+    ) or {}
+    head = detail.get("head") or {}
+    sha = head.get("sha")
+    return sha if isinstance(sha, str) and sha else None
+
+
+def mark_pr_test_passed(
+    repo: str,
+    pr_iid: Any,
+    *,
+    oh_gc: str = "oh-gc",
+    force: bool = False,
+) -> dict[str, Any]:
+    """Mark the PR's automated test as passed via ``oh-gc pr test``."""
+    args = ["pr", "test", str(pr_iid), "--repo", repo]
+    if force:
+        args.append("--force")
+    # ``oh-gc pr test --json`` prints ``undefined`` (oh-gc quirk, same as
+    # ``pr comment-edit``), so success is the zero exit code from ``_oh_gc``;
+    # we do not parse its stdout.
+    _oh_gc(args, oh_gc=oh_gc)
+    return {"action": "test_passed"}
 
 
 # --------------------------------------------------------------------------- #
@@ -410,6 +510,32 @@ def _write_json(path: Path, value: Any) -> None:
 def _archive_dir_for(output_root: Path, iid: Any, delivery_id: str) -> Path:
     safe_delivery = (delivery_id or "unknown").replace("/", "_")
     return output_root / f"pr-{iid}" / safe_delivery
+
+
+def _last_processed_head_for(output_root: Path, iid: Any) -> str | None:
+    """Return the tested SHA of the most recent successfully-processed delivery for ``iid``.
+
+    Used to detect test-writeback echo: ``oh-gc pr test`` flips the merge-request
+    test state, which GitCode re-delivers as another ``action=update`` webhook
+    with the same head SHA. A delivery whose head was already processed
+    successfully is that echo, not a new change.
+    """
+    pr_dir = output_root / f"pr-{iid}"
+    if not pr_dir.is_dir():
+        return None
+    best: tuple[str, str] | None = None  # (finished_at, sha)
+    for meta_path in pr_dir.glob("*/run-meta.json"):
+        try:
+            meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            continue
+        if meta.get("status") not in {"ok", "incomplete"}:
+            continue
+        finished = meta.get("finished_at") or ""
+        sha = (meta.get("shas") or {}).get("tested")
+        if isinstance(sha, str) and sha and (best is None or finished > best[0]):
+            best = (finished, sha)
+    return best[1] if best else None
 
 
 def write_run_meta(
@@ -427,6 +553,7 @@ def write_run_meta(
     comment_result: dict[str, Any] | None,
     timing: dict[str, float],
     status: str,
+    test_result: dict[str, Any] | None = None,
     error: str | None = None,
 ) -> dict[str, Any]:
     pull_request = receipt.get("pull_request") or {}
@@ -466,6 +593,7 @@ def write_run_meta(
             "errors": (ci_summary or {}).get("error_count"),
         },
         "comment": comment_result,
+        "test": test_result,
         "timing_ms": timing,
         "status": status,
         "started_at": None,
@@ -498,6 +626,51 @@ def process_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[str, An
     archive_dir = _archive_dir_for(ctx.output_root, iid, delivery)
     result["archive_dir"] = archive_dir.as_posix()
 
+    # When test writeback is on, break the echo loop: marking the PR test passed
+    # flips the merge-request test state, which GitCode re-delivers as another
+    # ``action=update`` webhook with the same head SHA. A delivery whose head was
+    # already processed successfully is that echo, not a new change.
+    if ctx.test_on_pass and tested is not None:
+        last_head = _last_processed_head_for(ctx.output_root, iid)
+        if last_head == tested:
+            LOGGER.info(
+                "delivery=%s pr=%s skipped (head %s already processed; test-writeback echo)",
+                delivery, iid, _short(tested),
+            )
+            write_run_meta(
+                archive_dir,
+                receipt=receipt,
+                ctx=ctx,
+                shas=shas,
+                specs_head_before=None,
+                ensure_action="unchanged_head",
+                ci_summary=None,
+                exit_code=None,
+                incomplete=False,
+                changed_files=[],
+                comment_result=None,
+                test_result=None,
+                timing=timing,
+                status="skipped_unchanged_head",
+                error=f"PR head {tested} already processed (test-writeback echo)",
+            )
+            result["status"] = "skipped_unchanged_head"
+            return result
+
+    # A pass belongs to one PR head. Reset this CI tester's prior state as soon
+    # as a new delivery is consumed, before checkout/diff/evaluation can fail.
+    test_result: dict[str, Any] | None = None
+    if ctx.test_on_pass and not ctx.dry_run:
+        test_result = {"reset": None, "pass": None}
+        try:
+            test_result["reset"] = reset_pr_test(ctx.repo, iid, reset_all=ctx.force_test)
+        except Exception as exc:  # noqa: BLE001 - preserve the evaluation/report path
+            LOGGER.exception("delivery=%s pr=%s test reset failed", delivery, iid)
+            test_result["reset"] = {"action": "error", "error": str(exc)}
+        archive_dir.mkdir(parents=True, exist_ok=True)
+        _write_json(archive_dir / "test-result.json", test_result)
+        result["test"] = test_result
+
     specs_head_before, ok, action, restore_ref = ensure_specs_at_sha(
         ctx.specs_root, tested, auto_checkout=ctx.auto_checkout
     )
@@ -516,6 +689,7 @@ def process_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[str, An
                 incomplete=False,
                 changed_files=[],
                 comment_result=None,
+                test_result=test_result,
                 timing=timing,
                 status=action,
                 error=f"specs HEAD {specs_head_before} != tested {tested}",
@@ -535,7 +709,8 @@ def process_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[str, An
             write_run_meta(
                 archive_dir, receipt=receipt, ctx=ctx, shas=shas, specs_head_before=specs_head_before,
                 ensure_action=action, ci_summary=None, exit_code=None, incomplete=False,
-                changed_files=changed_files, comment_result=None, timing=timing, status=diff_status,
+                changed_files=changed_files, comment_result=None, test_result=test_result,
+                timing=timing, status=diff_status,
             )
             return result
 
@@ -560,7 +735,8 @@ def process_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[str, An
             write_run_meta(
                 archive_dir, receipt=receipt, ctx=ctx, shas=shas, specs_head_before=specs_head_before,
                 ensure_action=action, ci_summary=summary, exit_code=exit_code, incomplete=False,
-                changed_files=changed_files, comment_result=None, timing=timing, status="tool_error",
+                changed_files=changed_files, comment_result=None, test_result=test_result,
+                timing=timing, status="tool_error",
                 error=error,
             )
             (archive_dir / "ci-runner-stderr.log").write_text(stderr, encoding="utf-8")
@@ -578,9 +754,8 @@ def process_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[str, An
         )
         (archive_dir / "comment-body.md").write_text(comment_body, encoding="utf-8")
         try:
-            comment_result = post_or_update_comment(
+            comment_result = post_comment(
                 ctx.repo, iid, comment_body,
-                bot_login=ctx.bot_login,
                 dry_run=ctx.dry_run or ctx.no_comment,
                 oh_gc=ctx.oh_gc,
             )
@@ -592,27 +767,55 @@ def process_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[str, An
         )
         _write_json(archive_dir / "ci-summary.json", summary)
 
+        final_status = "incomplete" if incomplete else "ok"
+        if test_result is not None:
+            reset_ok = (test_result.get("reset") or {}).get("action") in {"test_reset", "test_reset_all"}
+            if not reset_ok:
+                test_result["pass"] = {"action": "withheld", "reason": "test_reset_failed"}
+            elif not decide_test_pass(summary, status=final_status, incomplete=incomplete):
+                test_result["pass"] = {"action": "withheld", "reason": "evaluation_not_passed"}
+            else:
+                try:
+                    current_head = current_pr_head_sha(ctx.repo, iid, oh_gc=ctx.oh_gc)
+                    if current_head != tested:
+                        test_result["pass"] = {
+                            "action": "withheld",
+                            "reason": "stale_head",
+                            "tested": tested,
+                            "current_head": current_head,
+                        }
+                    else:
+                        test_result["pass"] = mark_pr_test_passed(
+                            ctx.repo, iid, oh_gc=ctx.oh_gc, force=ctx.force_test,
+                        )
+                except Exception as exc:  # noqa: BLE001 - test writeback must not abort archiving
+                    LOGGER.exception("delivery=%s pr=%s test writeback failed", delivery, iid)
+                    test_result["pass"] = {"action": "error", "error": str(exc)}
+            _write_json(archive_dir / "test-result.json", test_result)
+
         timing["total_ms"] = round((time.perf_counter() - started) * 1000.0, 3)
         write_run_meta(
             archive_dir, receipt=receipt, ctx=ctx, shas=shas, specs_head_before=specs_head_before,
             ensure_action=action, ci_summary=summary, exit_code=exit_code, incomplete=incomplete,
-            changed_files=changed_files, comment_result=comment_result, timing=timing,
-            status="incomplete" if incomplete else "ok",
+            changed_files=changed_files, comment_result=comment_result, test_result=test_result,
+            timing=timing, status=final_status,
         )
         result.update(
             {
-                "status": "incomplete" if incomplete else "ok",
+                "status": final_status,
                 "affected_function_count": summary.get("affected_function_count"),
                 "delta": summary.get("delta"),
                 "exit_code": exit_code,
                 "comment": comment_result,
+                "test": test_result,
                 "archive_dir": archive_dir.as_posix(),
             }
         )
         LOGGER.info(
-            "delivery=%s pr=%s status=%s affected=%s exit=%s comment=%s",
+            "delivery=%s pr=%s status=%s affected=%s exit=%s comment=%s test=%s",
             delivery, iid, result["status"], result.get("affected_function_count"),
             exit_code, comment_result.get("action"),
+            (test_result.get("pass") or {}).get("action") if test_result else "off",
         )
         return result
     finally:
@@ -649,6 +852,16 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--dry-run", action="store_true", help="do everything except post the PR comment")
     parser.add_argument("--no-comment", action="store_true", help="skip oh-gc comment posting (archive still written)")
     parser.add_argument("--auto-checkout", action="store_true", help="detached-HEAD checkout specs to tested SHA on mismatch")
+    parser.add_argument(
+        "--test-on-pass",
+        action="store_true",
+        help="on a passing run (delta.added == 0, not incomplete), mark GitCode PR test passed via `oh-gc pr test`",
+    )
+    parser.add_argument(
+        "--force-test",
+        action="store_true",
+        help="with --test-on-pass, pass --force to `oh-gc pr test` (e.g. to re-submit the test result)",
+    )
     parser.add_argument("--process-limit", type=int, default=0, help="process at most N unprocessed receipts (0=all)")
     parser.add_argument(
         "--watch",
@@ -687,6 +900,8 @@ def build_context(args: argparse.Namespace) -> WorkerContext:
         auto_checkout=args.auto_checkout,
         oh_gc=args.oh_gc,
         python=args.python,
+        test_on_pass=args.test_on_pass,
+        force_test=args.force_test,
     )
 
 

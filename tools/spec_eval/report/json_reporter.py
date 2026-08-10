@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from spec_eval.models import EvaluationRun
+from spec_eval.models.result import EvaluationRun
 
 
 class JsonReporter:
