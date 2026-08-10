@@ -466,6 +466,47 @@ CI Worker 通过 PR API 或 fetch 后补齐，不因此拒绝基本事件接收�
 `X-GitCode-Event: Push Hook` 返回 HTTP `202` 和 `status: ignored`，不写入 MR receipt，避免
 GitCode 将无关事件标记为失败或持续重试。
 
+### 5.7 CI 服务：接收器 + Worker（receipt 后自动触发评价）
+
+接收器只负责入队 receipt 并快速返回 202；**实际评价由独立的 CI Worker**
+（`ci_worker.py`）消费 receipt 完成。两者解耦：接收器保持轻量，Worker 串行执行、
+崩溃自愈（未标记完成的 delivery 下一轮自动补跑），可独立重启。
+
+一键同时拉起两者：
+
+```bash
+./specs/tools/spec_eval/ci_service.sh
+```
+
+`ci_service.sh` 会在后台启动接收器（默认 `127.0.0.1:8765`），前台启动
+`ci_worker.py --watch`（默认每 10s 轮询 receipt），Ctrl-C 同时关闭两者。
+Token 优先取 `GITCODE_WEBHOOK_TOKEN`，否则读 `~/.gitcode_webhook_token`。可用的环境变量覆盖：
+`WEBHOOK_HOST`、`WEBHOOK_PORT`、`SPEC_EVAL_REPO`（白名单 owner/repo，默认
+`arkui_architecture/arkui-specs`）、`CI_POLL_INTERVAL`、`EXTRA_WORKER_ARGS`
+（如 `EXTRA_WORKER_ARGS=--dry-run` 只归档不发评论）。
+
+只起 Worker（不接 webhook，消费已有 receipt 后退出）：
+
+```bash
+python3 specs/tools/spec_eval/ci_worker.py \
+  --repo arkui_architecture/arkui-specs --allow-project arkui_architecture/arkui-specs --json
+```
+
+Worker 常驻轮询模式（无接收器也可，配合外部写入 receipt）：
+
+```bash
+python3 specs/tools/spec_eval/ci_worker.py \
+  --repo arkui_architecture/arkui-specs --allow-project arkui_architecture/arkui-specs \
+  --watch --poll-interval 10
+```
+
+Worker 处理每条 receipt 时：校验项目白名单 → 解析 tested/target SHA → 校验 specs 工作树
+在 tested SHA（不匹配则跳过，可选 `--auto-checkout`）→ `git -C specs diff` 取变更文件并加
+`specs/` 前缀 → 以 report-only、非阻塞方式运行 `ci_runner.py`（对冻结 baseline 做 delta）
+→ 按 PR/按 delivery 归档到 `specs/.evaluator/ci/pr-<iid>/<delivery>/` → 通过 `oh-gc`
+回写**可更新**的 PR 评论（首条创建，后续按隐藏标记 edit-in-place）。幂等：receipt 入库去重
++ `processed.ndjson` 处理去重。report-only 永远不阻塞 PR。
+
 ## 6. 输出目录
 
 默认输出位于 `out/spec-evaluation/`。建议本地试验使用 `/tmp`，避免污染工作区。
