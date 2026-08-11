@@ -16,6 +16,7 @@
 #   CI_POLL_INTERVAL        worker poll seconds (default 10)
 #   CI_TEST_ON_PASS          set to 1 to mark the GitCode PR test passed when no new errors are found
 #   CI_FORCE_TEST            set to 1 with CI_TEST_ON_PASS to pass --force to oh-gc pr test
+#   CI_AUTO_CHECKOUT         set to 0 to skip fetch+checkout to the tested SHA (default 1; see issue #8)
 #   EXTRA_WORKER_ARGS       extra flags forwarded to ci_worker (e.g. "--dry-run")
 set -euo pipefail
 
@@ -53,6 +54,10 @@ trap cleanup EXIT INT TERM
 TEST_ARGS=""
 [ "${CI_TEST_ON_PASS:-1}" = "1" ] && TEST_ARGS="$TEST_ARGS --test-on-pass"
 [ "${CI_FORCE_TEST:-0}" = "1" ] && TEST_ARGS="$TEST_ARGS --force-test"
+# Fetch + detached-HEAD checkout to the tested SHA so evaluation runs on the PR
+# head (default on; fixes issue #8 — otherwise every PR is skipped_mismatch).
+# Set CI_AUTO_CHECKOUT=0 to opt out (evaluation is skipped when worktree != tested).
+[ "${CI_AUTO_CHECKOUT:-1}" = "0" ] && TEST_ARGS="$TEST_ARGS --no-auto-checkout"
 
 echo "[ci_service] starting CI worker in watch mode (poll ${POLL}s, repo ${REPO})${TEST_ARGS:+ (test-on-pass)}"
 # The worker runs in the foreground; exiting it (Ctrl-C) tears down the receiver.
