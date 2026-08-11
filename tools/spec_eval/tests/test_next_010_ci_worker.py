@@ -173,6 +173,115 @@ class EnsureSpecsAndDiffTest(unittest.TestCase):
         self.assertEqual(files, [])
 
 
+class EnsureSpecsFetchTest(unittest.TestCase):
+    """issue #8: the worker must fetch the tested SHA before evaluating,
+    otherwise every PR hits skipped_mismatch because the worktree (parked on
+    main) never contains the PR source branch head."""
+
+    @staticmethod
+    def _proc(returncode: int = 0, stdout: str = "") -> mock.Mock:
+        return mock.Mock(returncode=returncode, stdout=stdout)
+
+    def test_object_exists_reflects_cat_file(self) -> None:
+        with mock.patch.object(ci_worker, "_git", side_effect=[self._proc(0), self._proc(1)]):
+            self.assertTrue(ci_worker._object_exists(Path("/tmp/specs"), "abc123"))
+            self.assertFalse(ci_worker._object_exists(Path("/tmp/specs"), "abc123"))
+
+    def test_object_exists_empty_sha_skips_git(self) -> None:
+        with mock.patch.object(ci_worker, "_git") as git:
+            self.assertFalse(ci_worker._object_exists(Path("/tmp/specs"), ""))
+            self.assertFalse(ci_worker._object_exists(Path("/tmp/specs"), None))  # type: ignore[arg-type]
+        git.assert_not_called()
+
+    def test_matched_skips_fetch(self) -> None:
+        with mock.patch.object(ci_worker, "_git", side_effect=[
+            self._proc(0, stdout="abc123\n"),  # rev-parse HEAD -> current == tested
+        ]) as git:
+            _, ok, action, restore = ensure_specs_at_sha(
+                Path("/tmp/specs"), "abc123", auto_checkout=True, source_branch="feature/x")
+        self.assertTrue(ok)
+        self.assertEqual(action, "matched")
+        self.assertIsNone(restore)
+        self.assertEqual(git.call_count, 1)
+
+    def test_fetches_source_branch_then_checks_out(self) -> None:
+        with mock.patch.object(ci_worker, "_git", side_effect=[
+            self._proc(0, stdout="main\n"),    # rev-parse -> current=main (!= tested)
+            self._proc(1),                     # cat-file -> absent (trigger fetch)
+            self._proc(0),                     # fetch origin feature/x -> ok
+            self._proc(0),                     # cat-file -> present (_fetch_into hit)
+            self._proc(0, stdout="main\n"),    # symbolic-ref -> restore=main
+            self._proc(0),                     # checkout --detach -> ok
+        ]) as git:
+            _, ok, action, restore = ensure_specs_at_sha(
+                Path("/tmp/specs"), "abc123", auto_checkout=True, source_branch="feature/x")
+        self.assertTrue(ok)
+        self.assertEqual(action, "checked_out")
+        self.assertEqual(restore, "main")
+        self.assertEqual(git.call_args_list[2].args[1:], ("fetch", "origin", "feature/x"))
+
+    def test_falls_back_to_origin_when_source_branch_lacks_commit(self) -> None:
+        with mock.patch.object(ci_worker, "_git", side_effect=[
+            self._proc(0, stdout="main\n"),    # rev-parse
+            self._proc(1),                     # cat-file -> absent
+            self._proc(0),                     # fetch origin feature/x -> ok
+            self._proc(1),                     # cat-file -> still absent (branch lacks it)
+            self._proc(0),                     # fetch origin -> ok (fallback)
+            self._proc(0),                     # cat-file -> present
+            self._proc(0, stdout="main\n"),    # symbolic-ref
+            self._proc(0),                     # checkout
+        ]) as git:
+            _, ok, action, _ = ensure_specs_at_sha(
+                Path("/tmp/specs"), "abc123", auto_checkout=True, source_branch="feature/x")
+        self.assertTrue(ok)
+        self.assertEqual(action, "checked_out")
+        self.assertEqual(git.call_args_list[4].args[1:], ("fetch", "origin"))
+
+    def test_fetches_origin_directly_when_no_source_branch(self) -> None:
+        with mock.patch.object(ci_worker, "_git", side_effect=[
+            self._proc(0, stdout="main\n"),    # rev-parse
+            self._proc(1),                     # cat-file -> absent
+            self._proc(0),                     # fetch origin (no source branch)
+            self._proc(0),                     # cat-file -> present
+            self._proc(0, stdout="main\n"),    # symbolic-ref
+            self._proc(0),                     # checkout
+        ]) as git:
+            _, ok, action, _ = ensure_specs_at_sha(
+                Path("/tmp/specs"), "abc123", auto_checkout=True, source_branch=None)
+        self.assertTrue(ok)
+        self.assertEqual(action, "checked_out")
+        self.assertEqual(git.call_args_list[2].args[1:], ("fetch", "origin"))
+
+    def test_fetch_command_failure_reports_fetch_failed(self) -> None:
+        with mock.patch.object(ci_worker, "_git", side_effect=[
+            self._proc(0, stdout="main\n"),    # rev-parse
+            self._proc(1),                     # cat-file -> absent
+            self._proc(1),                     # fetch origin feature/x -> fail
+            self._proc(1),                     # fetch origin -> fail
+        ]):
+            _, ok, action, restore = ensure_specs_at_sha(
+                Path("/tmp/specs"), "abc123", auto_checkout=True, source_branch="feature/x")
+        self.assertFalse(ok)
+        self.assertEqual(action, "fetch_failed")
+        self.assertIsNone(restore)
+
+    def test_force_pushed_absent_after_fetch_reports_skipped_mismatch(self) -> None:
+        # fetch commands succeed but the commit is gone (force-pushed away).
+        with mock.patch.object(ci_worker, "_git", side_effect=[
+            self._proc(0, stdout="main\n"),    # rev-parse
+            self._proc(1),                     # cat-file -> absent
+            self._proc(0),                     # fetch origin feature/x -> ok
+            self._proc(1),                     # cat-file -> still absent
+            self._proc(0),                     # fetch origin -> ok
+            self._proc(1),                     # cat-file -> still absent
+        ]):
+            _, ok, action, restore = ensure_specs_at_sha(
+                Path("/tmp/specs"), "abc123", auto_checkout=True, source_branch="feature/x")
+        self.assertFalse(ok)
+        self.assertEqual(action, "skipped_mismatch")
+        self.assertIsNone(restore)
+
+
 class ResolverPrefixContractTest(unittest.TestCase):
     """The specs/ prefix is load-bearing: the resolver joins candidates onto repo_root."""
 

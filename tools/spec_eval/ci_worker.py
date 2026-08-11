@@ -137,11 +137,44 @@ def _git(specs_root: Path, *args: str) -> subprocess.CompletedProcess[str]:
     )
 
 
+def _object_exists(specs_root: Path, sha: str) -> bool:
+    """True iff ``sha`` resolves to a commit already in the local object store."""
+    if not sha:
+        return False
+    return _git(specs_root, "cat-file", "-e", f"{sha}^{{commit}}").returncode == 0
+
+
+def _fetch_into(specs_root: Path, sha: str, source_branch: str | None) -> str:
+    """Fetch ``sha`` from origin; return the outcome.
+
+    The webhook ``tested`` SHA comes from the PR source branch, which the worker
+    checkout (parked on main) usually does not contain. Fetch the source branch
+    first (precise, cheap); if that does not surface the commit, fall back to a
+    full ``origin`` fetch. ``git fetch`` is idempotent and safe on a clean
+    checkout. Returns ``"fetched_branch"`` / ``"fetched_origin"`` when the commit
+    becomes available, ``"absent"`` when the fetch commands succeeded but the
+    commit is still missing (force-pushed away — a real mismatch), or ``"error"``
+    when every fetch command failed.
+    """
+    any_ok = False
+    if source_branch:
+        if _git(specs_root, "fetch", "origin", source_branch).returncode == 0:
+            any_ok = True
+            if _object_exists(specs_root, sha):
+                return "fetched_branch"
+    if _git(specs_root, "fetch", "origin").returncode == 0:
+        any_ok = True
+        if _object_exists(specs_root, sha):
+            return "fetched_origin"
+    return "absent" if any_ok else "error"
+
+
 def ensure_specs_at_sha(
     specs_root: Path,
     tested: str | None,
     *,
     auto_checkout: bool,
+    source_branch: str | None = None,
 ) -> tuple[str | None, bool, str, str | None]:
     """Ensure ``ace_engine/specs`` is at ``tested``.
 
@@ -161,6 +194,16 @@ def ensure_specs_at_sha(
         return current, True, "matched", None
     if not auto_checkout:
         return current, False, "skipped_mismatch", None
+    # The webhook's tested SHA comes from the PR source branch, which the worker
+    # checkout (parked on main) usually does not contain. Fetch it before
+    # detaching; a SHA still absent after fetch (force-pushed away) is the only
+    # real mismatch.
+    if not _object_exists(specs_root, tested):
+        outcome = _fetch_into(specs_root, tested, source_branch)
+        if outcome == "error":
+            return current, False, "fetch_failed", None
+        if outcome == "absent":
+            return current, False, "skipped_mismatch", None
     symbolic = _git(specs_root, "symbolic-ref", "--short", "HEAD")
     restore = symbolic.stdout.strip() if (symbolic.returncode == 0 and symbolic.stdout.strip()) else current
     checkout = _git(specs_root, "checkout", "--detach", tested)
@@ -671,8 +714,9 @@ def process_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[str, An
         _write_json(archive_dir / "test-result.json", test_result)
         result["test"] = test_result
 
+    source_branch = (receipt.get("pull_request") or {}).get("source_branch")
     specs_head_before, ok, action, restore_ref = ensure_specs_at_sha(
-        ctx.specs_root, tested, auto_checkout=ctx.auto_checkout
+        ctx.specs_root, tested, auto_checkout=ctx.auto_checkout, source_branch=source_branch
     )
     try:
         if not ok:
@@ -851,7 +895,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--no-cache", action="store_true", help="disable ci_runner exact-input cache")
     parser.add_argument("--dry-run", action="store_true", help="do everything except post the PR comment")
     parser.add_argument("--no-comment", action="store_true", help="skip oh-gc comment posting (archive still written)")
-    parser.add_argument("--auto-checkout", action="store_true", help="detached-HEAD checkout specs to tested SHA on mismatch")
+    parser.add_argument(
+        "--no-auto-checkout",
+        action="store_true",
+        help="do NOT detached-HEAD checkout specs to the tested SHA (default: fetch + checkout so PR evaluation runs at the PR head)",
+    )
     parser.add_argument(
         "--test-on-pass",
         action="store_true",
@@ -897,7 +945,7 @@ def build_context(args: argparse.Namespace) -> WorkerContext:
         no_cache=args.no_cache,
         dry_run=args.dry_run,
         no_comment=args.no_comment,
-        auto_checkout=args.auto_checkout,
+        auto_checkout=not args.no_auto_checkout,
         oh_gc=args.oh_gc,
         python=args.python,
         test_on_pass=args.test_on_pass,
