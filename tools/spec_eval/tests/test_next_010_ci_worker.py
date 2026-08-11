@@ -838,7 +838,7 @@ class ProcessReceiptSpecsTest(unittest.TestCase):
                  mock.patch.object(ci_worker, "run_specs_checks", return_value=_specs_failed()), \
                  mock.patch.object(ci_worker, "compute_changed_files", return_value=(["specs/x"], "ok")), \
                  mock.patch.object(ci_worker, "run_ci_runner", return_value=(summary, 0, 1.0, "")), \
-                 mock.patch.object(ci_worker, "post_or_update_comment", return_value={"action": "created"}), \
+                 mock.patch.object(ci_worker, "post_comment", return_value={"action": "created"}), \
                  mock.patch.object(ci_worker, "reset_pr_test", return_value={"action": "test_reset"}), \
                  mock.patch.object(ci_worker, "current_pr_head_sha") as current_head, \
                  mock.patch.object(ci_worker, "mark_pr_test_passed") as mark_test:
