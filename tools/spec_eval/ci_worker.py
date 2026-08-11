@@ -26,7 +26,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
@@ -70,6 +70,7 @@ class WorkerContext:
     python: str
     test_on_pass: bool = False
     force_test: bool = False
+    specs_checks_enabled: bool = True
 
 
 # --------------------------------------------------------------------------- #
@@ -273,6 +274,98 @@ def run_ci_runner(
     return summary, proc.returncode, elapsed, proc.stderr.strip()
 
 
+@dataclass
+class SpecCheckResult:
+    """One repo-level specs integrity check (generate_index / validate_specs).
+
+    A non-zero ``exit_code`` records a failure rather than raising, so a broken
+    specs tree gates the PR through the comment / test-status path instead of
+    aborting the Worker.
+    """
+
+    name: str
+    command: list[str]
+    exit_code: int
+    stdout: str
+    stderr: str
+    elapsed_ms: float
+
+    @property
+    def passed(self) -> bool:
+        return self.exit_code == 0
+
+
+def specs_checks_passed(results: list[SpecCheckResult] | None) -> bool:
+    """True iff every specs integrity check exited 0 (``None`` means not run)."""
+    if not results:
+        return True
+    return all(result.passed for result in results)
+
+
+def _specs_checks_summary(results: list[SpecCheckResult] | None) -> list[dict[str, Any]] | None:
+    """Project ``SpecCheckResult`` list into a JSON-safe meta summary (no output bodies)."""
+    if results is None:
+        return None
+    return [
+        {"name": r.name, "exit_code": r.exit_code, "passed": r.passed, "elapsed_ms": r.elapsed_ms}
+        for r in results
+    ]
+
+
+# Cap captured check output so a noisy failure cannot blow up the PR comment.
+_SPECS_OUTPUT_MAX_LINES = 30
+_SPECS_OUTPUT_MAX_CHARS = 4000
+
+
+def _truncate_check_output(text: str) -> str:
+    """Trim a check's stdout/stderr to a comment-safe size (lines then chars)."""
+    if not text:
+        return ""
+    lines = text.splitlines()
+    if len(lines) > _SPECS_OUTPUT_MAX_LINES:
+        lines = lines[:_SPECS_OUTPUT_MAX_LINES]
+        lines.append(f"... ({len(text.splitlines()) - _SPECS_OUTPUT_MAX_LINES} more line(s) truncated)")
+    trimmed = "\n".join(lines)
+    if len(trimmed) > _SPECS_OUTPUT_MAX_CHARS:
+        trimmed = trimmed[:_SPECS_OUTPUT_MAX_CHARS] + "\n... (output truncated)"
+    return trimmed
+
+
+def _check_output_for_comment(result: SpecCheckResult) -> str:
+    """Prefer stderr (generate_index writes ``error:`` there), fall back to stdout."""
+    return _truncate_check_output(result.stderr or result.stdout)
+
+
+def run_specs_checks(*, specs_root: Path, python: str = "python3") -> list[SpecCheckResult]:
+    """Run the two repo-level specs integrity checks in a stable order.
+
+    Both scripts locate ROOT via ``__file__`` (i.e. ``specs_root``), so the
+    working directory does not change behavior; ``cwd=specs_root`` is set for
+    clarity only. Never raises — failures are recorded as non-zero ``exit_code``
+    so they gate the PR via the comment / test-status path.
+    """
+    targets = [
+        ("generate_index", [python, str(specs_root / "tools" / "generate_index.py"), "--check"]),
+        ("validate_specs", [python, str(specs_root / "tools" / "validate_specs.py")]),
+    ]
+    results: list[SpecCheckResult] = []
+    for name, command in targets:
+        started = time.perf_counter()
+        proc = subprocess.run(command, cwd=str(specs_root), capture_output=True, text=True, check=False)
+        elapsed = (time.perf_counter() - started) * 1000.0
+        results.append(
+            SpecCheckResult(
+                name=name,
+                command=command,
+                exit_code=proc.returncode,
+                stdout=proc.stdout.strip(),
+                stderr=proc.stderr.strip(),
+                elapsed_ms=round(elapsed, 3),
+            )
+        )
+    return results
+
+
 def render_comment(
     ci_summary: dict[str, Any],
     receipt: dict[str, Any],
@@ -280,6 +373,7 @@ def render_comment(
     shas: dict[str, str | None],
     ensure_action: str,
     exit_code: int = EXIT_OK,
+    specs_checks: list[SpecCheckResult] | None = None,
 ) -> str:
     """Render the updatable PR comment markdown from a ci-summary.
 
@@ -319,6 +413,46 @@ def render_comment(
         f" (rule v{baseline.get('rule_version', '?')}, identity v{baseline.get('identity_version', '?')}) |",
         "",
     ]
+
+    # When the specs integrity checks ran, surface a one-line header summary so
+    # PR authors can confirm they executed (✅ pass / ❌ fail); a failure still
+    # expands into the detailed block below.
+    if specs_checks:
+        marks = " · ".join(f"{'✅' if result.passed else '❌'} {result.name}" for result in specs_checks)
+        lines.insert(len(lines) - 1, f"| **Specs checks** | {marks} |")
+
+    specs_failed = not specs_checks_passed(specs_checks)
+    if specs_failed:
+        lines += [
+            "**⛔ Specs 仓库完整性检查失败 · 已拦截 CI 通过**",
+            "",
+            "### ❌ Specs 完整性检查",
+            "",
+        ]
+        for result in specs_checks or []:
+            mark = "✅" if result.passed else "❌"
+            lines.append(f"#### {mark} `{result.name}` (exit {result.exit_code}, {result.elapsed_ms:.0f} ms)")
+            output = _check_output_for_comment(result)
+            if output:
+                lines += ["", "```", output, "```"]
+            elif result.passed:
+                lines += ["", "_检查通过。_"]
+            lines.append("")
+        lines += [
+            "本地复现：",
+            "",
+            "```",
+            "python3 tools/generate_index.py --check",
+            "python3 tools/validate_specs.py",
+            "```",
+            "",
+            "修复后重新推送即可；静态评估结果（report-only）见下，仅供参考。",
+            "",
+            "---",
+            "",
+            "### 静态评估 (report-only)",
+            "",
+        ]
 
     if error_count > 0:
         lines.append(f"**⚠️ evaluation incomplete for {error_count} Function(s) — see below.**")
@@ -596,6 +730,7 @@ def write_run_meta(
     comment_result: dict[str, Any] | None,
     timing: dict[str, float],
     status: str,
+    specs_checks: list[SpecCheckResult] | None = None,
     test_result: dict[str, Any] | None = None,
     error: str | None = None,
 ) -> dict[str, Any]:
@@ -635,6 +770,7 @@ def write_run_meta(
             "delta_warn": (ci_summary or {}).get("delta_warn_count"),
             "errors": (ci_summary or {}).get("error_count"),
         },
+        "specs_checks": _specs_checks_summary(specs_checks),
         "comment": comment_result,
         "test": test_result,
         "timing_ms": timing,
@@ -715,6 +851,7 @@ def process_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[str, An
         result["test"] = test_result
 
     source_branch = (receipt.get("pull_request") or {}).get("source_branch")
+    specs_checks: list[SpecCheckResult] | None = None
     specs_head_before, ok, action, restore_ref = ensure_specs_at_sha(
         ctx.specs_root, tested, auto_checkout=ctx.auto_checkout, source_branch=source_branch
     )
@@ -734,6 +871,7 @@ def process_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[str, An
                 changed_files=[],
                 comment_result=None,
                 test_result=test_result,
+                specs_checks=specs_checks,
                 timing=timing,
                 status=action,
                 error=f"specs HEAD {specs_head_before} != tested {tested}",
@@ -742,6 +880,11 @@ def process_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[str, An
             return result
 
         archive_dir.mkdir(parents=True, exist_ok=True)
+        if ctx.specs_checks_enabled:
+            specs_checks = run_specs_checks(specs_root=ctx.specs_root, python=ctx.python)
+            timing["specs_checks_ms"] = round(sum(r.elapsed_ms for r in specs_checks), 3)
+            _write_json(archive_dir / "specs-checks.json", [asdict(r) for r in specs_checks])
+
         changed_files, diff_status = compute_changed_files(ctx.specs_root, target, tested)
         (archive_dir / "changed-files.txt").write_text(
             "\n".join(changed_files) + ("\n" if changed_files else ""), encoding="utf-8"
@@ -754,7 +897,7 @@ def process_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[str, An
                 archive_dir, receipt=receipt, ctx=ctx, shas=shas, specs_head_before=specs_head_before,
                 ensure_action=action, ci_summary=None, exit_code=None, incomplete=False,
                 changed_files=changed_files, comment_result=None, test_result=test_result,
-                timing=timing, status=diff_status,
+                specs_checks=specs_checks, timing=timing, status=diff_status,
             )
             return result
 
@@ -780,7 +923,7 @@ def process_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[str, An
                 archive_dir, receipt=receipt, ctx=ctx, shas=shas, specs_head_before=specs_head_before,
                 ensure_action=action, ci_summary=summary, exit_code=exit_code, incomplete=False,
                 changed_files=changed_files, comment_result=None, test_result=test_result,
-                timing=timing, status="tool_error",
+                specs_checks=specs_checks, timing=timing, status="tool_error",
                 error=error,
             )
             (archive_dir / "ci-runner-stderr.log").write_text(stderr, encoding="utf-8")
@@ -795,6 +938,7 @@ def process_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[str, An
             shas=shas,
             ensure_action=action,
             exit_code=exit_code,
+            specs_checks=specs_checks,
         )
         (archive_dir / "comment-body.md").write_text(comment_body, encoding="utf-8")
         try:
@@ -811,11 +955,18 @@ def process_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[str, An
         )
         _write_json(archive_dir / "ci-summary.json", summary)
 
-        final_status = "incomplete" if incomplete else "ok"
+        if not specs_checks_passed(specs_checks):
+            final_status = "specs_check_failed"
+        elif incomplete:
+            final_status = "incomplete"
+        else:
+            final_status = "ok"
         if test_result is not None:
             reset_ok = (test_result.get("reset") or {}).get("action") in {"test_reset", "test_reset_all"}
             if not reset_ok:
                 test_result["pass"] = {"action": "withheld", "reason": "test_reset_failed"}
+            elif not specs_checks_passed(specs_checks):
+                test_result["pass"] = {"action": "withheld", "reason": "specs_check_failed"}
             elif not decide_test_pass(summary, status=final_status, incomplete=incomplete):
                 test_result["pass"] = {"action": "withheld", "reason": "evaluation_not_passed"}
             else:
@@ -842,7 +993,7 @@ def process_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[str, An
             archive_dir, receipt=receipt, ctx=ctx, shas=shas, specs_head_before=specs_head_before,
             ensure_action=action, ci_summary=summary, exit_code=exit_code, incomplete=incomplete,
             changed_files=changed_files, comment_result=comment_result, test_result=test_result,
-            timing=timing, status=final_status,
+            specs_checks=specs_checks, timing=timing, status=final_status,
         )
         result.update(
             {
@@ -901,6 +1052,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="do NOT detached-HEAD checkout specs to the tested SHA (default: fetch + checkout so PR evaluation runs at the PR head)",
     )
     parser.add_argument(
+        "--no-specs-check",
+        action="store_true",
+        help="skip repo-level specs integrity checks (generate_index --check, validate_specs)",
+    )
+    parser.add_argument(
         "--test-on-pass",
         action="store_true",
         help="on a passing run (delta.added == 0, not incomplete), mark GitCode PR test passed via `oh-gc pr test`",
@@ -946,6 +1102,7 @@ def build_context(args: argparse.Namespace) -> WorkerContext:
         dry_run=args.dry_run,
         no_comment=args.no_comment,
         auto_checkout=not args.no_auto_checkout,
+        specs_checks_enabled=not args.no_specs_check,
         oh_gc=args.oh_gc,
         python=args.python,
         test_on_pass=args.test_on_pass,

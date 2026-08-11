@@ -11,6 +11,7 @@ from unittest import mock
 from spec_eval import ci_worker
 from spec_eval.ci_worker import (
     COMMENT_MARKER,
+    SpecCheckResult,
     WorkerContext,
     compute_changed_files,
     current_pr_head_sha,
@@ -26,6 +27,8 @@ from spec_eval.ci_worker import (
     processed_set,
     render_comment,
     reset_pr_test,
+    run_specs_checks,
+    specs_checks_passed,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
@@ -73,11 +76,42 @@ def _ctx(tmp_path: Path, **overrides: object) -> WorkerContext:
         dry_run=False,
         no_comment=False,
         auto_checkout=False,
+        # Specs integrity checks default ON in production; tests opt in via
+        # SpecsCheckTest so the rest of the suite stays isolated from the
+        # global specs checkout state.
+        specs_checks_enabled=False,
         oh_gc="oh-gc",
         python="python3",
     )
     base.update(overrides)
     return WorkerContext(**base)  # type: ignore[arg-type]
+
+
+def _check(name: str, exit_code: int, *, stdout: str = "", stderr: str = "") -> SpecCheckResult:
+    return SpecCheckResult(
+        name=name,
+        command=["python3", f"tools/{name}.py"],
+        exit_code=exit_code,
+        stdout=stdout,
+        stderr=stderr,
+        elapsed_ms=5.0,
+    )
+
+
+def _specs_ok() -> list:
+    return [
+        _check("generate_index", 0, stdout="index.md is up to date"),
+        _check("validate_specs", 0, stdout="validate_specs: 0 error(s), 0 warning(s)"),
+    ]
+
+
+def _specs_failed() -> list:
+    # generate_index passes; validate_specs fails with two ERROR lines on stdout.
+    return [
+        _check("generate_index", 0, stdout="index.md is up to date"),
+        _check("validate_specs", 1, stdout="validate_specs: 2 error(s), 0 warning(s)",
+               stderr="ERROR: Feat-01-x-spec.md: missing AC entries\nERROR: Feat-02-y-spec.md: invalid status `Draftx`"),
+    ]
 
 
 class RenderCommentTest(unittest.TestCase):
@@ -667,6 +701,180 @@ class ProcessReceiptTestResultTest(unittest.TestCase):
             ) as reset:
                 process_receipt(_receipt(), ctx)
             reset.assert_called_once_with("arkui_architecture/arkui-specs", 61, reset_all=True)
+
+
+class RunSpecsChecksTest(unittest.TestCase):
+    @staticmethod
+    def _proc(returncode: int = 0, stdout: str = "", stderr: str = "") -> mock.Mock:
+        return mock.Mock(returncode=returncode, stdout=stdout, stderr=stderr)
+
+    def test_returns_one_result_per_check_in_stable_order(self) -> None:
+        with mock.patch("spec_eval.ci_worker.subprocess.run", side_effect=[
+            self._proc(0, "index.md is up to date\n"),
+            self._proc(0, "validate_specs: 0 error(s)\n"),
+        ]):
+            results = run_specs_checks(specs_root=Path("/tmp/specs"))
+        self.assertEqual([r.name for r in results], ["generate_index", "validate_specs"])
+        self.assertTrue(all(r.passed for r in results))
+
+    def test_invokes_expected_scripts_with_specs_root_cwd(self) -> None:
+        captured: list = []
+
+        def fake_run(cmd, **kw):
+            captured.append((cmd, kw.get("cwd")))
+            return self._proc()
+
+        with mock.patch("spec_eval.ci_worker.subprocess.run", side_effect=fake_run):
+            run_specs_checks(specs_root=Path("/tmp/specs"), python="python3.11")
+        self.assertEqual(captured[0][0], ["python3.11", "/tmp/specs/tools/generate_index.py", "--check"])
+        self.assertEqual(captured[1][0], ["python3.11", "/tmp/specs/tools/validate_specs.py"])
+        self.assertEqual(captured[0][1], "/tmp/specs")
+
+    def test_records_nonzero_without_raising(self) -> None:
+        with mock.patch("spec_eval.ci_worker.subprocess.run", return_value=self._proc(1, "", "boom")):
+            results = run_specs_checks(specs_root=Path("/tmp/specs"))
+        self.assertEqual([r.exit_code for r in results], [1, 1])
+        self.assertFalse(any(r.passed for r in results))
+        self.assertEqual(results[0].stderr, "boom")
+
+
+class SpecsChecksPassedTest(unittest.TestCase):
+    def test_none_or_empty_is_passed(self) -> None:
+        self.assertTrue(specs_checks_passed(None))
+        self.assertTrue(specs_checks_passed([]))
+
+    def test_all_passed(self) -> None:
+        self.assertTrue(specs_checks_passed(_specs_ok()))
+
+    def test_one_failed(self) -> None:
+        self.assertFalse(specs_checks_passed(_specs_failed()))
+
+
+class RenderCommentSpecsTest(unittest.TestCase):
+    def _summary(self) -> dict:
+        return json.loads((FIXTURES / "ci-summary-0-affected.json").read_text(encoding="utf-8"))
+
+    def test_specs_failure_block_present_and_keeps_ci_result(self) -> None:
+        body = render_comment(
+            self._summary(), _receipt(),
+            shas={"tested": "936b9f4abc", "target": "dd3687695c"},
+            ensure_action="matched", specs_checks=_specs_failed(),
+        )
+        self.assertIn(COMMENT_MARKER, body)
+        self.assertIn("完整性检查失败", body)
+        self.assertIn("已拦截", body)
+        self.assertIn("validate_specs", body)
+        self.assertIn("missing AC entries", body)
+        # Header table summarizes pass/fail per check.
+        self.assertIn("✅ generate_index", body)
+        self.assertIn("❌ validate_specs", body)
+        self.assertIn("python3 tools/generate_index.py --check", body)
+        self.assertIn("python3 tools/validate_specs.py", body)
+        # ci_runner still ran (continue-on-failure policy); its result stays visible.
+        self.assertIn("report-only", body)
+
+    def test_specs_passed_omits_block(self) -> None:
+        body = render_comment(
+            self._summary(), _receipt(),
+            shas={"tested": "936b9f4abc", "target": "dd3687695c"},
+            ensure_action="matched", specs_checks=_specs_ok(),
+        )
+        self.assertNotIn("完整性检查失败", body)
+        self.assertNotIn("已拦截", body)
+        # Header table surfaces a one-line ✅ confirmation when checks ran clean.
+        self.assertIn("| **Specs checks**", body)
+        self.assertIn("✅ generate_index", body)
+        self.assertIn("✅ validate_specs", body)
+
+    def test_specs_none_is_backward_compatible(self) -> None:
+        body = render_comment(
+            self._summary(), _receipt(),
+            shas={"tested": "936b9f4abc", "target": "dd3687695c"},
+            ensure_action="matched",
+        )
+        self.assertNotIn("完整性检查失败", body)
+        self.assertNotIn("Specs checks", body)
+
+    def test_long_output_is_truncated(self) -> None:
+        long_stderr = "\n".join(f"ERROR: file-{i}.md: boom" for i in range(200))
+        results = [_check("generate_index", 0), _check("validate_specs", 1, stderr=long_stderr)]
+        body = render_comment(
+            self._summary(), _receipt(),
+            shas={"tested": "936b9f4abc", "target": "dd3687695c"},
+            ensure_action="matched", specs_checks=results,
+        )
+        self.assertIn("truncated", body)
+
+
+class ProcessReceiptSpecsTest(unittest.TestCase):
+    def _ctx_with_checks(self, tmp_path: Path, **overrides: object) -> WorkerContext:
+        return _ctx(tmp_path, specs_checks_enabled=True, **overrides)
+
+    def test_specs_failure_marks_failed_but_still_runs_ci_runner(self) -> None:
+        summary = json.loads((FIXTURES / "ci-summary-0-affected.json").read_text(encoding="utf-8"))
+        with tempfile.TemporaryDirectory() as tmp:
+            ctx = self._ctx_with_checks(Path(tmp), dry_run=True)
+            with mock.patch.object(ci_worker, "ensure_specs_at_sha", return_value=("936b9f4", True, "matched", None)), \
+                 mock.patch.object(ci_worker, "run_specs_checks", return_value=_specs_failed()), \
+                 mock.patch.object(ci_worker, "compute_changed_files", return_value=(["specs/x"], "ok")), \
+                 mock.patch.object(ci_worker, "run_ci_runner", return_value=(summary, 0, 1.0, "")) as runner:
+                result = process_receipt(_receipt(), ctx)
+            self.assertEqual(result["status"], "specs_check_failed")
+            runner.assert_called_once()  # continue-on-failure: ci_runner still runs
+            archive = Path(result["archive_dir"])
+            self.assertTrue((archive / "specs-checks.json").is_file())
+            self.assertTrue((archive / "comment-body.md").is_file())
+            meta = json.loads((archive / "run-meta.json").read_text(encoding="utf-8"))
+            self.assertEqual(meta["status"], "specs_check_failed")
+            self.assertIsNotNone(meta["specs_checks"])
+            self.assertTrue(meta["specs_checks"][0]["passed"])
+            self.assertFalse(meta["specs_checks"][1]["passed"])
+
+    def test_specs_failure_withholds_test_pass(self) -> None:
+        summary = json.loads((FIXTURES / "ci-summary-0-affected.json").read_text(encoding="utf-8"))
+        with tempfile.TemporaryDirectory() as tmp:
+            ctx = self._ctx_with_checks(Path(tmp), test_on_pass=True, dry_run=False)
+            with mock.patch.object(ci_worker, "ensure_specs_at_sha", return_value=("936b9f4", True, "matched", None)), \
+                 mock.patch.object(ci_worker, "run_specs_checks", return_value=_specs_failed()), \
+                 mock.patch.object(ci_worker, "compute_changed_files", return_value=(["specs/x"], "ok")), \
+                 mock.patch.object(ci_worker, "run_ci_runner", return_value=(summary, 0, 1.0, "")), \
+                 mock.patch.object(ci_worker, "post_or_update_comment", return_value={"action": "created"}), \
+                 mock.patch.object(ci_worker, "reset_pr_test", return_value={"action": "test_reset"}), \
+                 mock.patch.object(ci_worker, "current_pr_head_sha") as current_head, \
+                 mock.patch.object(ci_worker, "mark_pr_test_passed") as mark_test:
+                result = process_receipt(_receipt(), ctx)
+            current_head.assert_not_called()
+            mark_test.assert_not_called()
+            self.assertEqual(result["test"]["pass"]["reason"], "specs_check_failed")
+
+    def test_specs_passed_proceeds_normally(self) -> None:
+        summary = json.loads((FIXTURES / "ci-summary-0-affected.json").read_text(encoding="utf-8"))
+        with tempfile.TemporaryDirectory() as tmp:
+            ctx = self._ctx_with_checks(Path(tmp), dry_run=True)
+            with mock.patch.object(ci_worker, "ensure_specs_at_sha", return_value=("936b9f4", True, "matched", None)), \
+                 mock.patch.object(ci_worker, "run_specs_checks", return_value=_specs_ok()) as specs_runner, \
+                 mock.patch.object(ci_worker, "compute_changed_files", return_value=(["specs/x"], "ok")), \
+                 mock.patch.object(ci_worker, "run_ci_runner", return_value=(summary, 0, 1.0, "")):
+                result = process_receipt(_receipt(), ctx)
+            specs_runner.assert_called_once()
+            self.assertEqual(result["status"], "ok")
+            archive = Path(result["archive_dir"])
+            self.assertTrue((archive / "specs-checks.json").is_file())
+
+    def test_disabled_when_specs_checks_enabled_false(self) -> None:
+        summary = json.loads((FIXTURES / "ci-summary-0-affected.json").read_text(encoding="utf-8"))
+        with tempfile.TemporaryDirectory() as tmp:
+            ctx = _ctx(Path(tmp), dry_run=True)  # _ctx default: specs_checks_enabled=False
+            self.assertFalse(ctx.specs_checks_enabled)
+            with mock.patch.object(ci_worker, "ensure_specs_at_sha", return_value=("936b9f4", True, "matched", None)), \
+                 mock.patch.object(ci_worker, "run_specs_checks") as specs_runner, \
+                 mock.patch.object(ci_worker, "compute_changed_files", return_value=(["specs/x"], "ok")), \
+                 mock.patch.object(ci_worker, "run_ci_runner", return_value=(summary, 0, 1.0, "")):
+                result = process_receipt(_receipt(), ctx)
+            specs_runner.assert_not_called()
+            self.assertEqual(result["status"], "ok")
+            archive = Path(result["archive_dir"])
+            self.assertFalse((archive / "specs-checks.json").is_file())
 
 
 @unittest.skipUnless(os.environ.get("SPECEVAL_LONG"), "slow; set SPECEVAL_LONG=1 to run the in-place regression integration test")
