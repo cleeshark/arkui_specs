@@ -40,6 +40,23 @@ COMMENT_MARKER = "<!-- spec-eval-bot:updatable:v1 -->"
 DEFAULT_BOT_LOGIN = "arkui_architecture"
 DEFAULT_ALLOW_PROJECTS = ("arkui_architecture/arkui-specs",)
 
+# GitCode MR webhook ``action`` values that signal a completed merge. A merge
+# receipt does not represent a PR head to evaluate; instead it triggers a
+# force-sync of every CI repo to its default-branch tip (see handle_merge_receipt).
+MERGE_ACTIONS = {"merge", "merged"}
+
+# Repositories that make up the CI environment, as (name, rel-path-below-oh_root,
+# default-branch-fallback). The single source of truth is
+# ``deploy_ci.REPO_TABLE`` / ``specs/evaluation/golden/manifest.yaml``; this inline
+# copy keeps ci_worker self-contained and unit-testable. MirrorRepoTableTest
+# guards against drift between the two.
+CI_SYNC_REPOS = (
+    ("ace_engine", "foundation/arkui/ace_engine", "master"),
+    ("specs", "foundation/arkui/ace_engine/specs", "main"),
+    ("sdk-js", "interface/sdk-js", "master"),
+    ("sdk_c", "interface/sdk_c", "master"),
+)
+
 EXIT_OK = 0
 EXIT_TOOL_ERROR = 2
 EXIT_INCOMPLETE = 3
@@ -71,6 +88,8 @@ class WorkerContext:
     test_on_pass: bool = False
     force_test: bool = False
     specs_checks_enabled: bool = True
+    sync_on_merge: bool = True
+    force_sync: bool = False
 
 
 # --------------------------------------------------------------------------- #
@@ -168,6 +187,114 @@ def _fetch_into(specs_root: Path, sha: str, source_branch: str | None) -> str:
         if _object_exists(specs_root, sha):
             return "fetched_origin"
     return "absent" if any_ok else "error"
+
+
+# --------------------------------------------------------------------------- #
+# Repo tip-sync (triggered by action=merge receipts)
+# --------------------------------------------------------------------------- #
+def _git_at(repo_path: Path, *args: str) -> subprocess.CompletedProcess[str]:
+    """Run git in an arbitrary repo path (capture, never raise)."""
+    return subprocess.run(
+        ["git", "-C", str(repo_path), *args],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+def _head_sha(repo_path: Path) -> str | None:
+    result = _git_at(repo_path, "rev-parse", "HEAD")
+    if result.returncode != 0:
+        return None
+    return result.stdout.strip() or None
+
+
+def _worktree_dirty(repo_path: Path) -> bool:
+    """True iff the working tree has tracked-file modifications (uncommitted)."""
+    result = _git_at(repo_path, "status", "--porcelain")
+    return result.returncode == 0 and bool(result.stdout.strip())
+
+
+def _origin_default_branch(repo_path: Path, fallback: str) -> str:
+    """Best-effort default branch of origin (master/main); ``fallback`` on failure."""
+    _git_at(repo_path, "remote", "set-head", "origin", "--auto")
+    result = _git_at(repo_path, "symbolic-ref", "--short", "refs/remotes/origin/HEAD")
+    head = result.stdout.strip()
+    if head.startswith("origin/"):
+        return head.split("origin/", 1)[1]
+    return head or fallback
+
+
+@dataclass
+class RepoSyncResult:
+    """Outcome of force-syncing one CI repo to its default-branch tip."""
+
+    name: str
+    path: str
+    action: str  # updated / skipped_dirty / error / missing
+    branch: str | None
+    before: str | None
+    after: str | None
+    error: str | None = None
+
+
+def sync_repo_to_tip(
+    name: str,
+    repo_path: Path,
+    *,
+    fallback_branch: str,
+    force: bool,
+) -> RepoSyncResult:
+    """Fetch + ``reset --hard origin/<default-branch>`` for one repo.
+
+    Mirrors ``deploy_ci.sync_repo`` (follow-master mode) with two additions: a
+    dirty-tree guard (skip unless ``force``) so uncommitted local work is never
+    silently discarded, and per-repo error capture (never raises). A missing
+    ``.git`` is reported as ``missing``; the CI environment is expected to be
+    provisioned by ``deploy_ci.py``.
+    """
+    path_str = str(repo_path)
+    before = _head_sha(repo_path)
+    if not (repo_path / ".git").exists():
+        return RepoSyncResult(name, path_str, "missing", None, before, None)
+    if _worktree_dirty(repo_path) and not force:
+        return RepoSyncResult(name, path_str, "skipped_dirty", None, before, before)
+    branch = _origin_default_branch(repo_path, fallback_branch)
+    fetch = _git_at(repo_path, "fetch", "origin", "--tags")
+    if fetch.returncode != 0:
+        return RepoSyncResult(
+            name, path_str, "error", branch, before, before,
+            error=(fetch.stderr or fetch.stdout).strip(),
+        )
+    reset = _git_at(repo_path, "reset", "--hard", f"origin/{branch}")
+    if reset.returncode != 0:
+        return RepoSyncResult(
+            name, path_str, "error", branch, before, before,
+            error=(reset.stderr or reset.stdout).strip(),
+        )
+    return RepoSyncResult(name, path_str, "updated", branch, before, _head_sha(repo_path))
+
+
+def sync_ci_repos(oh_root: Path, *, force: bool) -> list[RepoSyncResult]:
+    """Force-sync every CI repo to its default-branch tip (``oh_root`` layout).
+
+    ``oh_root`` is the OpenHarmony aggregate root (``repo_root.parents[2]``,
+    matching ``config.py``). A repo path without ``.git`` yields ``missing``;
+    exceptions are captured as ``error`` so one broken repo never aborts the
+    rest of the sync.
+    """
+    results: list[RepoSyncResult] = []
+    for name, rel, fallback in CI_SYNC_REPOS:
+        repo_path = oh_root / rel
+        try:
+            results.append(
+                sync_repo_to_tip(name, repo_path, fallback_branch=fallback, force=force)
+            )
+        except Exception as exc:  # noqa: BLE001 - keep syncing the remaining repos
+            results.append(
+                RepoSyncResult(name, str(repo_path), "error", None, None, None, error=str(exc))
+            )
+    return results
 
 
 def ensure_specs_at_sha(
@@ -732,6 +859,7 @@ def write_run_meta(
     status: str,
     specs_checks: list[SpecCheckResult] | None = None,
     test_result: dict[str, Any] | None = None,
+    repo_sync: list[dict[str, Any]] | None = None,
     error: str | None = None,
 ) -> dict[str, Any]:
     pull_request = receipt.get("pull_request") or {}
@@ -773,6 +901,7 @@ def write_run_meta(
         "specs_checks": _specs_checks_summary(specs_checks),
         "comment": comment_result,
         "test": test_result,
+        "repo_sync": repo_sync,
         "timing_ms": timing,
         "status": status,
         "started_at": None,
@@ -786,6 +915,67 @@ def write_run_meta(
 # --------------------------------------------------------------------------- #
 # Orchestrator
 # --------------------------------------------------------------------------- #
+def handle_merge_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[str, Any]:
+    """Handle an ``action=merge`` receipt by force-syncing the CI repos to tip.
+
+    A merged PR has no head to evaluate and its target branch has already
+    advanced, so the eval pipeline is skipped entirely (no ci_runner, comment,
+    or test-status writeback). Instead every CI repo is reset to its
+    default-branch tip so the next evaluation starts from a clean, current
+    baseline. When sync is disabled the delivery is still consumed (recorded as
+    ``merge_skipped_no_sync``) and never falls through to eval.
+    """
+    delivery = receipt.get("delivery_id")
+    pull_request = receipt.get("pull_request") or {}
+    iid = pull_request.get("iid")
+    archive_dir = _archive_dir_for(ctx.output_root, iid, delivery)
+    archive_dir.mkdir(parents=True, exist_ok=True)
+    timing: dict[str, float] = {}
+
+    repo_sync_dicts: list[dict[str, Any]] | None = None
+    if ctx.sync_on_merge:
+        oh_root = ctx.repo_root.parents[2]
+        started = time.perf_counter()
+        results = sync_ci_repos(oh_root, force=ctx.force_sync)
+        timing["repo_sync_ms"] = round((time.perf_counter() - started) * 1000.0, 3)
+        repo_sync_dicts = [asdict(r) for r in results]
+        _write_json(archive_dir / "repo-sync.json", repo_sync_dicts)
+        status = "merge_synced" if all(r.action != "error" for r in results) else "merge_sync_partial"
+        LOGGER.info(
+            "delivery=%s pr=%s merge-sync status=%s repos=%s",
+            delivery, iid, status,
+            {r.name: r.action for r in results},
+        )
+    else:
+        status = "merge_skipped_no_sync"
+        LOGGER.info("delivery=%s pr=%s merge-sync disabled (sync_on_merge=False)", delivery, iid)
+
+    write_run_meta(
+        archive_dir,
+        receipt=receipt,
+        ctx=ctx,
+        shas={"tested": None, "target": None},
+        specs_head_before=None,
+        ensure_action="merge_sync",
+        ci_summary=None,
+        exit_code=None,
+        incomplete=False,
+        changed_files=[],
+        comment_result=None,
+        test_result=None,
+        repo_sync=repo_sync_dicts,
+        timing=timing,
+        status=status,
+    )
+    return {
+        "delivery_id": delivery,
+        "pr_iid": iid,
+        "status": status,
+        "archive_dir": archive_dir.as_posix(),
+        "repo_sync": repo_sync_dicts,
+    }
+
+
 def process_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[str, Any]:
     """Process one receipt end-to-end. Always idempotent (caller marks processed)."""
     delivery = receipt.get("delivery_id")
@@ -799,6 +989,11 @@ def process_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[str, An
         result["status"] = "skipped_whitelist"
         LOGGER.info("delivery=%s skipped (project not whitelisted)", delivery)
         return result
+
+    # A merge delivery does not represent a PR head to evaluate; force-sync the
+    # CI repos to tip and consume it without entering the eval pipeline.
+    if receipt.get("action") in MERGE_ACTIONS:
+        return handle_merge_receipt(receipt, ctx)
 
     target, tested = resolve_shas(receipt)
     shas = {"tested": tested, "target": target}
@@ -1057,6 +1252,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="skip repo-level specs integrity checks (generate_index --check, validate_specs)",
     )
     parser.add_argument(
+        "--no-sync-on-merge",
+        action="store_true",
+        help="do NOT force-sync CI repos to tip on action=merge receipts (default: sync all 4 repos)",
+    )
+    parser.add_argument(
+        "--force-sync",
+        action="store_true",
+        help="with merge-sync enabled, reset --hard even repos with uncommitted local changes",
+    )
+    parser.add_argument(
         "--test-on-pass",
         action="store_true",
         help="on a passing run (delta.added == 0, not incomplete), mark GitCode PR test passed via `oh-gc pr test`",
@@ -1103,6 +1308,8 @@ def build_context(args: argparse.Namespace) -> WorkerContext:
         no_comment=args.no_comment,
         auto_checkout=not args.no_auto_checkout,
         specs_checks_enabled=not args.no_specs_check,
+        sync_on_merge=not args.no_sync_on_merge,
+        force_sync=args.force_sync,
         oh_gc=args.oh_gc,
         python=args.python,
         test_on_pass=args.test_on_pass,

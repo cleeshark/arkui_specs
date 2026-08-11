@@ -18,6 +18,8 @@
 #   CI_FORCE_TEST            set to 1 with CI_TEST_ON_PASS to pass --force to oh-gc pr test
 #   CI_AUTO_CHECKOUT         set to 0 to skip fetch+checkout to the tested SHA (default 1; see issue #8)
 #   CI_SPECS_CHECK          set to 0 to skip repo-level specs integrity checks (default: enabled)
+#   CI_SYNC_ON_MERGE        set to 0 to skip force-syncing CI repos to tip on action=merge (default: enabled)
+#   CI_FORCE_SYNC           set to 1 to reset --hard even repos with uncommitted local changes (default: off)
 #   EXTRA_WORKER_ARGS       extra flags forwarded to ci_worker (e.g. "--dry-run")
 set -euo pipefail
 
@@ -62,6 +64,12 @@ TEST_ARGS=""
 # Repo-level specs integrity checks (generate_index --check, validate_specs) run by default;
 # set CI_SPECS_CHECK=0 to opt out (e.g. while triaging a repo-wide baseline breakage).
 [ "${CI_SPECS_CHECK:-1}" = "0" ] && TEST_ARGS="$TEST_ARGS --no-specs-check"
+# On action=merge receipts, force every CI repo (ace_engine/specs/sdk-js/sdk_c) to its
+# default-branch tip so the next evaluation starts from a clean baseline. Enabled by default;
+# set CI_SYNC_ON_MERGE=0 to opt out. Set CI_FORCE_SYNC=1 to reset --hard even repos that have
+# uncommitted local changes (default: dirty repos are skipped to avoid discarding work).
+[ "${CI_SYNC_ON_MERGE:-1}" = "0" ] && TEST_ARGS="$TEST_ARGS --no-sync-on-merge"
+[ "${CI_FORCE_SYNC:-0}" = "1" ] && TEST_ARGS="$TEST_ARGS --force-sync"
 
 echo "[ci_service] starting CI worker in watch mode (poll ${POLL}s, repo ${REPO})${TEST_ARGS:+ (test-on-pass)}"
 # The worker runs in the foreground; exiting it (Ctrl-C) tears down the receiver.
