@@ -11,12 +11,15 @@ from unittest import mock
 from spec_eval import ci_worker
 from spec_eval.ci_worker import (
     COMMENT_MARKER,
+    MERGE_ACTIONS,
+    RepoSyncResult,
     SpecCheckResult,
     WorkerContext,
     compute_changed_files,
     current_pr_head_sha,
     decide_test_pass,
     ensure_specs_at_sha,
+    handle_merge_receipt,
     load_receipts,
     main,
     mark_processed,
@@ -29,6 +32,8 @@ from spec_eval.ci_worker import (
     reset_pr_test,
     run_specs_checks,
     specs_checks_passed,
+    sync_ci_repos,
+    sync_repo_to_tip,
 )
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
@@ -42,11 +47,13 @@ def _receipt(
     delivery: str = "61_probe-delivery-0001",
     tested: str = "936b9f4abffee0f35cf189242f463a9ada73edee",
     target: str = "dd3687695c63a60226bd8c7cf62defff957dee74",
+    action: str = "update",
+    state: str = "opened",
 ) -> dict:
     return {
         "delivery_id": delivery,
-        "action": "update",
-        "state": "opened",
+        "action": action,
+        "state": state,
         "received_at": "2026-08-10T09:53:05.191Z",
         "project": {"path_with_namespace": project, "web_url": "https://gitcode.com/" + project},
         "pull_request": {
@@ -80,6 +87,8 @@ def _ctx(tmp_path: Path, **overrides: object) -> WorkerContext:
         # SpecsCheckTest so the rest of the suite stays isolated from the
         # global specs checkout state.
         specs_checks_enabled=False,
+        sync_on_merge=True,
+        force_sync=False,
         oh_gc="oh-gc",
         python="python3",
     )
@@ -911,6 +920,267 @@ class NewErrorDetectionIntegrationTest(unittest.TestCase):
             self.assertGreaterEqual(int((summary.get("delta") or {}).get("added", 0)), 1, f"expected added>=1; stderr={proc.stderr[-400:]}")
             body = render_comment(summary, _receipt(iid=9, delivery="9_integration"), shas={"tested": "936b9f4abc", "target": "dd3687695c"}, ensure_action="matched")
             self.assertIn("new error(s)", body)
+
+
+def _git_cp(returncode: int = 0, stdout: str = "", stderr: str = "") -> subprocess.CompletedProcess:
+    """Build a CompletedProcess for the mocked _git_at helper."""
+    return subprocess.CompletedProcess(args=["git"], returncode=returncode, stdout=stdout, stderr=stderr)
+
+
+def _git_at_recorder(responses: list[subprocess.CompletedProcess]):
+    """Return a side_effect for ci_worker._git_at that records calls and replays responses."""
+    calls: list[tuple] = []
+
+    def _impl(*args):
+        calls.append(args)
+        if responses:
+            return responses.pop(0)
+        return _git_cp()
+
+    _impl.calls = calls  # type: ignore[attr-defined]
+    return _impl
+
+
+class MergeSyncRoutingTest(unittest.TestCase):
+    """process_receipt routes action=merge to repo sync, never the eval pipeline."""
+
+    def test_merge_runs_sync_and_skips_eval(self) -> None:
+        tmp = tempfile.mkdtemp()
+        ctx = _ctx(Path(tmp))
+        with mock.patch.object(ci_worker, "sync_ci_repos", return_value=[]) as sync, \
+                mock.patch.object(ci_worker, "run_ci_runner") as runner, \
+                mock.patch.object(ci_worker, "post_comment") as comment:
+            result = process_receipt(_receipt(action="merge", state="merged"), ctx)
+        self.assertEqual(result["status"], "merge_synced")
+        sync.assert_called_once_with(REPO_ROOT.parents[2], force=False)
+        runner.assert_not_called()
+        comment.assert_not_called()
+        # repo-sync.json archived
+        self.assertTrue((Path(tmp) / "ci" / "pr-61" / result["delivery_id"] / "repo-sync.json").is_file())
+
+    def test_merge_with_force_sync_propagates(self) -> None:
+        tmp = tempfile.mkdtemp()
+        ctx = _ctx(Path(tmp), force_sync=True)
+        with mock.patch.object(ci_worker, "sync_ci_repos", return_value=[]) as sync:
+            result = process_receipt(_receipt(action="merge"), ctx)
+        self.assertEqual(result["status"], "merge_synced")
+        sync.assert_called_once_with(REPO_ROOT.parents[2], force=True)
+
+    def test_merge_synced_partial_when_any_repo_errors(self) -> None:
+        tmp = tempfile.mkdtemp()
+        ctx = _ctx(Path(tmp))
+        results = [
+            RepoSyncResult("ace_engine", "/p", "updated", "master", "a", "b", None),
+            RepoSyncResult("specs", "/p", "error", "main", "a", "a", "boom"),
+        ]
+        with mock.patch.object(ci_worker, "sync_ci_repos", return_value=results):
+            result = process_receipt(_receipt(action="merge"), ctx)
+        self.assertEqual(result["status"], "merge_sync_partial")
+
+    def test_merge_skipped_when_disabled(self) -> None:
+        tmp = tempfile.mkdtemp()
+        ctx = _ctx(Path(tmp), sync_on_merge=False)
+        with mock.patch.object(ci_worker, "sync_ci_repos") as sync:
+            result = process_receipt(_receipt(action="merge"), ctx)
+        self.assertEqual(result["status"], "merge_skipped_no_sync")
+        sync.assert_not_called()
+
+    def test_non_merge_action_does_not_sync(self) -> None:
+        tmp = tempfile.mkdtemp()
+        ctx = _ctx(Path(tmp))
+        with mock.patch.object(ci_worker, "sync_ci_repos") as sync, \
+                mock.patch.object(
+                    ci_worker, "ensure_specs_at_sha",
+                    return_value=(None, False, "skipped_mismatch", None),
+                ):
+            process_receipt(_receipt(action="update"), ctx)
+        sync.assert_not_called()
+
+    def test_non_whitelisted_merge_does_not_sync(self) -> None:
+        tmp = tempfile.mkdtemp()
+        ctx = _ctx(Path(tmp))
+        with mock.patch.object(ci_worker, "sync_ci_repos") as sync:
+            result = process_receipt(_receipt(action="merge", project="other/repo"), ctx)
+        self.assertEqual(result["status"], "skipped_whitelist")
+        sync.assert_not_called()
+
+
+class SyncRepoToTipTest(unittest.TestCase):
+    """sync_repo_to_tip: dirty guard, force override, missing, fetch/reset errors."""
+
+    def test_clean_repo_updated_to_origin_tip(self) -> None:
+        responses = [
+            _git_cp(0, "abc123\n"),                      # rev-parse HEAD (before)
+            _git_cp(0, ""),                              # status --porcelain (clean)
+            _git_cp(0),                                  # remote set-head --auto
+            _git_cp(0, "origin/main\n"),                 # symbolic-ref origin/HEAD
+            _git_cp(0),                                  # fetch origin --tags
+            _git_cp(0),                                  # reset --hard origin/main
+            _git_cp(0, "def456\n"),                      # rev-parse HEAD (after)
+        ]
+        side = _git_at_recorder(responses)
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch.object(ci_worker, "_git_at", side_effect=side):
+            repo = Path(tmp) / "repo"
+            repo.mkdir()
+            (repo / ".git").mkdir()
+            result = sync_repo_to_tip("specs", repo, fallback_branch="main", force=False)
+        self.assertEqual(result.action, "updated")
+        self.assertEqual(result.branch, "main")
+        self.assertEqual(result.before, "abc123")
+        self.assertEqual(result.after, "def456")
+        self.assertIn(("reset", "--hard", "origin/main"), [c[1:] for c in side.calls])
+
+    def test_dirty_repo_skipped_without_force(self) -> None:
+        responses = [
+            _git_cp(0, "abc123\n"),                      # rev-parse HEAD (before)
+            _git_cp(0, " M dirty.txt\n"),                # status --porcelain (dirty)
+        ]
+        side = _git_at_recorder(responses)
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch.object(ci_worker, "_git_at", side_effect=side):
+            repo = Path(tmp) / "repo"
+            repo.mkdir()
+            (repo / ".git").mkdir()
+            result = sync_repo_to_tip("ace_engine", repo, fallback_branch="master", force=False)
+        self.assertEqual(result.action, "skipped_dirty")
+        self.assertEqual(result.before, "abc123")
+        self.assertEqual(result.after, "abc123")
+        # no fetch / reset attempted
+        subs = [c[1] for c in side.calls]
+        self.assertNotIn("fetch", subs)
+        self.assertNotIn("reset", subs)
+
+    def test_dirty_repo_reset_with_force(self) -> None:
+        responses = [
+            _git_cp(0, "abc\n"),                         # rev-parse HEAD
+            _git_cp(0, " M x\n"),                        # status (dirty)
+            _git_cp(0),                                  # remote set-head
+            _git_cp(0, "origin/master\n"),               # symbolic-ref
+            _git_cp(0),                                  # fetch
+            _git_cp(0),                                  # reset --hard (force overrides dirty)
+            _git_cp(0, "def\n"),                         # rev-parse HEAD (after)
+        ]
+        side = _git_at_recorder(responses)
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch.object(ci_worker, "_git_at", side_effect=side):
+            repo = Path(tmp) / "repo"
+            repo.mkdir()
+            (repo / ".git").mkdir()
+            result = sync_repo_to_tip("ace_engine", repo, fallback_branch="master", force=True)
+        self.assertEqual(result.action, "updated")
+        self.assertIn(("reset", "--hard", "origin/master"), [c[1:] for c in side.calls])
+
+    def test_missing_git_dir_reported(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch.object(ci_worker, "_git_at", side_effect=_git_at_recorder([_git_cp(1, "", "nope")])):
+            repo = Path(tmp) / "no-git"  # no .git
+            result = sync_repo_to_tip("sdk_c", repo, fallback_branch="master", force=False)
+        self.assertEqual(result.action, "missing")
+        self.assertIsNone(result.before)
+
+    def test_fetch_failure_reports_error_without_reset(self) -> None:
+        responses = [
+            _git_cp(0, "abc\n"),                         # rev-parse HEAD
+            _git_cp(0, ""),                              # status (clean)
+            _git_cp(0),                                  # remote set-head
+            _git_cp(0, "origin/main\n"),                 # symbolic-ref
+            _git_cp(1, "", "network down"),              # fetch fails
+        ]
+        side = _git_at_recorder(responses)
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch.object(ci_worker, "_git_at", side_effect=side):
+            repo = Path(tmp) / "repo"
+            repo.mkdir()
+            (repo / ".git").mkdir()
+            result = sync_repo_to_tip("specs", repo, fallback_branch="main", force=False)
+        self.assertEqual(result.action, "error")
+        self.assertIn("network down", result.error or "")
+        self.assertNotIn("reset", [c[1] for c in side.calls])
+
+    def test_reset_failure_reports_error(self) -> None:
+        responses = [
+            _git_cp(0, "abc\n"),                         # rev-parse HEAD
+            _git_cp(0, ""),                              # status (clean)
+            _git_cp(0),                                  # remote set-head
+            _git_cp(0, "origin/main\n"),                 # symbolic-ref
+            _git_cp(0),                                  # fetch
+            _git_cp(1, "", "reset boom"),                # reset fails
+        ]
+        side = _git_at_recorder(responses)
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch.object(ci_worker, "_git_at", side_effect=side):
+            repo = Path(tmp) / "repo"
+            repo.mkdir()
+            (repo / ".git").mkdir()
+            result = sync_repo_to_tip("specs", repo, fallback_branch="main", force=False)
+        self.assertEqual(result.action, "error")
+        self.assertIn("reset boom", result.error or "")
+
+    def test_origin_default_branch_resolves_then_falls_back(self) -> None:
+        # origin/HEAD -> origin/main resolves to "main"
+        side = _git_at_recorder([_git_cp(0), _git_cp(0, "origin/main\n")])
+        with mock.patch.object(ci_worker, "_git_at", side_effect=side):
+            self.assertEqual(ci_worker._origin_default_branch(Path("/p"), "master"), "main")
+        # empty symbolic-ref falls back to the provided fallback
+        side2 = _git_at_recorder([_git_cp(1), _git_cp(0, "")])
+        with mock.patch.object(ci_worker, "_git_at", side_effect=side2):
+            self.assertEqual(ci_worker._origin_default_branch(Path("/p"), "master"), "master")
+
+
+class SyncCiReposTest(unittest.TestCase):
+    """sync_ci_repos resolves all 4 repos under oh_root and isolates per-repo failures."""
+
+    def test_resolves_four_repos_in_table_order(self) -> None:
+        oh_root = Path("/oh")
+        seen: list[tuple] = []
+
+        def fake(name, path, *, fallback_branch, force):
+            seen.append((name, path.as_posix(), fallback_branch, force))
+            return RepoSyncResult(name, str(path), "updated", fallback_branch, "a", "b")
+
+        with mock.patch.object(ci_worker, "sync_repo_to_tip", side_effect=fake):
+            results = sync_ci_repos(oh_root, force=False)
+        self.assertEqual([r.name for r in results], ["ace_engine", "specs", "sdk-js", "sdk_c"])
+        self.assertEqual(
+            seen,
+            [
+                ("ace_engine", "/oh/foundation/arkui/ace_engine", "master", False),
+                ("specs", "/oh/foundation/arkui/ace_engine/specs", "main", False),
+                ("sdk-js", "/oh/interface/sdk-js", "master", False),
+                ("sdk_c", "/oh/interface/sdk_c", "master", False),
+            ],
+        )
+
+    def test_one_repo_exception_does_not_abort_others(self) -> None:
+        def fake(name, path, *, fallback_branch, force):
+            if name == "sdk-js":
+                raise RuntimeError("sdk-js blew up")
+            return RepoSyncResult(name, str(path), "updated", fallback_branch, "a", "b")
+
+        with mock.patch.object(ci_worker, "sync_repo_to_tip", side_effect=fake):
+            results = sync_ci_repos(Path("/oh"), force=False)
+        by_name = {r.name: r for r in results}
+        self.assertEqual(by_name["ace_engine"].action, "updated")
+        self.assertEqual(by_name["sdk-js"].action, "error")
+        self.assertIn("sdk-js blew up", by_name["sdk-js"].error or "")
+        self.assertEqual(by_name["sdk_c"].action, "updated")
+
+
+class MirrorRepoTableTest(unittest.TestCase):
+    """CI_SYNC_REPOS must mirror deploy_ci.REPO_TABLE (name, rel) to avoid drift."""
+
+    def test_ci_sync_repos_matches_deploy_table(self) -> None:
+        from spec_eval.deploy_ci import REPO_TABLE
+
+        embedded = {(name, rel) for name, rel, _ in ci_worker.CI_SYNC_REPOS}
+        deploy = {r["name"]: r["rel"] for r in REPO_TABLE}
+        self.assertEqual(embedded, set(deploy.items()))
+        # branch fallbacks: specs -> main, the rest -> master
+        branches = {name: branch for name, _, branch in ci_worker.CI_SYNC_REPOS}
+        self.assertEqual(branches["specs"], "main")
+        for name in ("ace_engine", "sdk-js", "sdk_c"):
+            self.assertEqual(branches[name], "master")
 
 
 if __name__ == "__main__":
