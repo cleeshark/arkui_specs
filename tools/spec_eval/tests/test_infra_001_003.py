@@ -115,6 +115,8 @@ class Infra001ContractTest(unittest.TestCase):
             "function-evaluation.schema.json",
             "site-evaluation-report.schema.json",
             "site-evaluation-history.schema.json",
+            "semantic-service-job.schema.json",
+            "executor-result.schema.json",
         }
         self.assertEqual({path.name for path in schemas.glob("*.json")}, expected)
         for path in schemas.glob("*.json"):

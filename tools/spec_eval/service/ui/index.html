@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Semantic Evaluation Service</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header>
+    <h1>Semantic Evaluation Service</h1>
+    <span id="status" class="muted">connecting…</span>
+  </header>
+
+  <section class="card">
+    <h2>Create job</h2>
+    <form id="create-form">
+      <label>FuncID <input name="func_id" placeholder="04-01-01" required pattern="[0-9]{2}-[0-9]{2}-[0-9]{2}" /></label>
+      <label>Runs <input name="run_count" type="number" min="1" max="10" value="1" /></label>
+      <label>Revision <input name="source_revision" placeholder="(default: current HEAD)" /></label>
+      <button type="submit">Create</button>
+    </form>
+    <p id="create-error" class="error" hidden></p>
+  </section>
+
+  <section class="card">
+    <h2>Jobs <select id="filter">
+      <option value="">all</option>
+      <option value="queued">queued</option>
+      <option value="preparing">preparing</option>
+      <option value="evidence">evidence</option>
+      <option value="semantic">semantic</option>
+      <option value="awaiting_executor">awaiting_executor</option>
+      <option value="completed">completed</option>
+      <option value="failed">failed</option>
+      <option value="cancelled">cancelled</option>
+    </select></h2>
+    <table id="jobs">
+      <thead><tr><th>FuncID</th><th>Status</th><th>Progress</th><th>Updated</th><th>Actions</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </section>
+
+  <section class="card" id="detail" hidden>
+    <h2 id="detail-title">Job detail</h2>
+    <div class="grid">
+      <div><h3>Events</h3><ul id="events"></ul></div>
+      <div><h3>State</h3><pre id="detail-state"></pre></div>
+    </div>
+  </section>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

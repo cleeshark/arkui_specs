@@ -1,0 +1,48 @@
+:root {
+  --bg: #f6f7f9;
+  --card: #ffffff;
+  --line: #d7dbe0;
+  --muted: #6b7280;
+  --accent: #2563eb;
+  --ok: #16a34a;
+  --warn: #d97706;
+  --bad: #dc2626;
+  --wait: #6366f1;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+body { margin: 0; background: var(--bg); color: #111827; }
+header { display: flex; justify-content: space-between; align-items: baseline;
+  padding: 1rem 1.5rem; background: var(--card); border-bottom: 1px solid var(--line); }
+header h1 { margin: 0; font-size: 1.1rem; }
+
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+  margin: 1rem 1.5rem; padding: 1rem; }
+.card h2 { margin: 0 0 0.75rem; font-size: 1rem; }
+
+form { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: end; }
+label { display: flex; flex-direction: column; font-size: 0.8rem; color: var(--muted); }
+input { padding: 0.35rem 0.5rem; border: 1px solid var(--line); border-radius: 4px; font-size: 0.9rem; }
+button { background: var(--accent); color: #fff; border: 0; border-radius: 4px;
+  padding: 0.35rem 0.6rem; margin-right: 0.25rem; cursor: pointer; font-size: 0.8rem; }
+button:hover { filter: brightness(1.05); }
+
+table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+th, td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--line); }
+th { color: var(--muted); font-weight: 600; }
+
+.muted { color: var(--muted); }
+.error { color: var(--bad); }
+.badge { padding: 0.1rem 0.4rem; border-radius: 10px; font-size: 0.75rem; color: #fff; background: var(--muted); }
+.badge.completed { background: var(--ok); }
+.badge.failed { background: var(--bad); }
+.badge.cancelled { background: var(--muted); }
+.badge.queued, .badge.preparing, .badge.evidence, .badge.semantic { background: var(--accent); }
+.badge.awaiting_executor { background: var(--wait); }
+
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.grid h3 { margin: 0 0 0.5rem; font-size: 0.85rem; color: var(--muted); }
+ul { list-style: none; padding: 0; margin: 0; max-height: 320px; overflow: auto; }
+li { padding: 0.35rem 0; border-bottom: 1px solid var(--line); font-size: 0.8rem; }
+pre { background: #f1f5f9; padding: 0.5rem; border-radius: 4px; overflow: auto;
+  font-size: 0.78rem; white-space: pre-wrap; }
