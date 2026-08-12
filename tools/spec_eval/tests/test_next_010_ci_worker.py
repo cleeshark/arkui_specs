@@ -16,6 +16,7 @@ from spec_eval.ci_worker import (
     SpecCheckResult,
     WorkerContext,
     compute_changed_files,
+    capture_master_snapshot,
     current_pr_head_sha,
     decide_test_pass,
     ensure_specs_at_sha,
@@ -124,6 +125,36 @@ def _specs_failed() -> list:
         _check("validate_specs", 1, stdout="validate_specs: 2 error(s), 0 warning(s)",
                stderr="ERROR: Feat-01-x-spec.md: missing AC entries\nERROR: Feat-02-y-spec.md: invalid status `Draftx`"),
     ]
+
+
+class DependencySnapshotTest(unittest.TestCase):
+    def test_captures_local_remote_tips_without_remote_set_head(self) -> None:
+        root = Path("/oh")
+        responses: list[subprocess.CompletedProcess] = []
+        for name, _rel, _fallback in ci_worker.CI_SYNC_REPOS:
+            responses.extend([
+                _git_cp(0),
+                _git_cp(0, f"{name}-tip\n"),
+            ])
+
+        def fake_git_at(path: Path, *args: str) -> subprocess.CompletedProcess:
+            if args == ("rev-parse", "HEAD"):
+                return _git_cp(0, "local-head\n")
+            if args == ("rev-parse", "origin/master") or args == ("rev-parse", "origin/main"):
+                return responses.pop(0)
+            return _git_cp(0)
+
+        with mock.patch.object(ci_worker, "_git_at", side_effect=fake_git_at) as git_at, \
+             mock.patch.object(Path, "exists", return_value=True):
+            result = capture_master_snapshot(root)
+        self.assertEqual(len(result), 4)
+        self.assertTrue(all(item["status"] == "ok" for item in result))
+        self.assertFalse(any(call.args[1:3] == ("remote", "set-head") for call in git_at.call_args_list))
+
+    def test_missing_repo_is_explicit(self) -> None:
+        with mock.patch.object(Path, "exists", return_value=False):
+            result = capture_master_snapshot(Path("/missing"))
+        self.assertEqual([item["status"] for item in result], ["missing"] * 4)
 
 
 class RenderCommentTest(unittest.TestCase):
