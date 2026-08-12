@@ -58,6 +58,11 @@ CI_SYNC_REPOS = (
     ("sdk_c", "interface/sdk_c", "master"),
 )
 
+# The dependency snapshot is captured once per delivery.  The worker is
+# intentionally single-flight, so this gives one immutable view of the
+# ace_engine/specs/SDK tips for every step of that task while the next task
+# observes whatever the repositories have advanced to in the meantime.
+
 EXIT_OK = 0
 EXIT_TOOL_ERROR = 2
 EXIT_INCOMPLETE = 3
@@ -93,6 +98,47 @@ class WorkerContext:
     force_sync: bool = False
     rebuild_site_on_merge: bool = True
     site_base_url: str = "/arkui_specs/"
+
+
+def capture_master_snapshot(oh_root: Path) -> list[dict[str, Any]]:
+    """Capture the current default-branch tips of all CI dependency repos.
+
+    This is metadata only: evaluation still runs against the checked-out tree
+    (and the tested specs SHA).  Missing repositories or unavailable remote
+    refs are recorded explicitly instead of being inferred.
+    """
+    snapshot: list[dict[str, Any]] = []
+    for name, rel, fallback in CI_SYNC_REPOS:
+        repo_path = oh_root / rel
+        item: dict[str, Any] = {"name": name, "path": str(repo_path), "branch": fallback}
+        if not (repo_path / ".git").exists():
+            item.update({"status": "missing", "sha": None})
+            snapshot.append(item)
+            continue
+        # Do not contact the network while processing a receipt.  Merge-sync
+        # owns fetch/update; ordinary deliveries only snapshot the local
+        # remote-tracking ref that was available at task start.
+        candidates = [fallback] + [branch for branch in ("master", "main") if branch != fallback]
+        ref = None
+        branch = fallback
+        for candidate in candidates:
+            probe = _git_at(repo_path, "rev-parse", f"origin/{candidate}")
+            if probe.returncode == 0 and probe.stdout.strip():
+                ref = probe
+                branch = candidate
+                break
+            ref = probe
+        item["branch"] = branch
+        if ref is not None and ref.returncode == 0 and ref.stdout.strip():
+            item.update({"status": "ok", "sha": ref.stdout.strip()})
+        else:
+            head = _head_sha(repo_path)
+            if head:
+                item.update({"status": "head_fallback", "sha": head})
+            else:
+                item.update({"status": "error", "sha": None, "error": (ref.stderr or ref.stdout).strip() if ref else "unavailable"})
+        snapshot.append(item)
+    return snapshot
 
 
 # --------------------------------------------------------------------------- #
@@ -901,6 +947,7 @@ def write_run_meta(
     test_result: dict[str, Any] | None = None,
     repo_sync: list[dict[str, Any]] | None = None,
     site_build: dict[str, Any] | None = None,
+    dependency_snapshot: list[dict[str, Any]] | None = None,
     error: str | None = None,
 ) -> dict[str, Any]:
     pull_request = receipt.get("pull_request") or {}
@@ -944,6 +991,7 @@ def write_run_meta(
         "test": test_result,
         "repo_sync": repo_sync,
         "site_build": site_build,
+        "dependency_snapshot": dependency_snapshot,
         "timing_ms": timing,
         "status": status,
         "started_at": None,
@@ -976,12 +1024,14 @@ def handle_merge_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[st
 
     repo_sync_dicts: list[dict[str, Any]] | None = None
     site_build_dict: dict[str, Any] | None = None
+    dependency_snapshot: list[dict[str, Any]] | None = None
     if ctx.sync_on_merge:
         oh_root = ctx.repo_root.parents[2]
         started = time.perf_counter()
         results = sync_ci_repos(oh_root, force=ctx.force_sync)
         timing["repo_sync_ms"] = round((time.perf_counter() - started) * 1000.0, 3)
         repo_sync_dicts = [asdict(r) for r in results]
+        dependency_snapshot = capture_master_snapshot(oh_root)
         _write_json(archive_dir / "repo-sync.json", repo_sync_dicts)
         status = "merge_synced" if all(r.action != "error" for r in results) else "merge_sync_partial"
         LOGGER.info(
@@ -1004,6 +1054,7 @@ def handle_merge_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[st
                 LOGGER.warning("delivery=%s pr=%s site rebuild failed: %s", delivery, iid, site_result.get("error"))
     else:
         status = "merge_skipped_no_sync"
+        dependency_snapshot = capture_master_snapshot(ctx.repo_root.parents[2])
         LOGGER.info("delivery=%s pr=%s merge-sync disabled (sync_on_merge=False)", delivery, iid)
 
     write_run_meta(
@@ -1021,6 +1072,7 @@ def handle_merge_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[st
         test_result=None,
         repo_sync=repo_sync_dicts,
         site_build=site_build_dict,
+        dependency_snapshot=dependency_snapshot,
         timing=timing,
         status=status,
     )
@@ -1031,6 +1083,7 @@ def handle_merge_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[st
         "archive_dir": archive_dir.as_posix(),
         "repo_sync": repo_sync_dicts,
         "site_build": site_build_dict,
+        "dependency_snapshot": dependency_snapshot,
     }
 
 
@@ -1052,6 +1105,11 @@ def process_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[str, An
     # CI repos to tip and consume it without entering the eval pipeline.
     if receipt.get("action") in MERGE_ACTIONS:
         return handle_merge_receipt(receipt, ctx)
+
+    # Freeze the dependency view for this delivery before any specs checkout;
+    # subsequent deliveries capture a fresh view after merge-sync/tip updates.
+    dependency_snapshot = capture_master_snapshot(ctx.repo_root.parents[2])
+    result["dependency_snapshot"] = dependency_snapshot
 
     target, tested = resolve_shas(receipt)
     shas = {"tested": tested, "target": target}
@@ -1084,6 +1142,7 @@ def process_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[str, An
                 test_result=None,
                 timing=timing,
                 status="skipped_unchanged_head",
+                dependency_snapshot=dependency_snapshot,
                 error=f"PR head {tested} already processed (test-writeback echo)",
             )
             result["status"] = "skipped_unchanged_head"
@@ -1125,6 +1184,7 @@ def process_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[str, An
                 comment_result=None,
                 test_result=test_result,
                 specs_checks=specs_checks,
+                dependency_snapshot=dependency_snapshot,
                 timing=timing,
                 status=action,
                 error=f"specs HEAD {specs_head_before} != tested {tested}",
@@ -1151,6 +1211,7 @@ def process_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[str, An
                 ensure_action=action, ci_summary=None, exit_code=None, incomplete=False,
                 changed_files=changed_files, comment_result=None, test_result=test_result,
                 specs_checks=specs_checks, timing=timing, status=diff_status,
+                dependency_snapshot=dependency_snapshot,
             )
             return result
 
@@ -1177,6 +1238,7 @@ def process_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[str, An
                 ensure_action=action, ci_summary=summary, exit_code=exit_code, incomplete=False,
                 changed_files=changed_files, comment_result=None, test_result=test_result,
                 specs_checks=specs_checks, timing=timing, status="tool_error",
+                dependency_snapshot=dependency_snapshot,
                 error=error,
             )
             (archive_dir / "ci-runner-stderr.log").write_text(stderr, encoding="utf-8")
@@ -1247,6 +1309,7 @@ def process_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[str, An
             ensure_action=action, ci_summary=summary, exit_code=exit_code, incomplete=incomplete,
             changed_files=changed_files, comment_result=comment_result, test_result=test_result,
             specs_checks=specs_checks, timing=timing, status=final_status,
+            dependency_snapshot=dependency_snapshot,
         )
         result.update(
             {
