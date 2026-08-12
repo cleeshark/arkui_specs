@@ -281,6 +281,16 @@ class SiteStaticServeTest(unittest.TestCase):
         status, _, _ = self._get(server, "/healthz")
         self.assertEqual(status, 200)
 
+    def test_missing_site_root_dir_starts_and_404s(self) -> None:
+        # Fresh deploy: build dir is absent until the first merge-rebuild.
+        # The server must still start, and /arkui_specs/ 404s at request time.
+        missing = Path(tempfile.mkdtemp()) / "never-built"
+        server = self._serve(missing)
+        status, _, _ = self._get(server, "/arkui_specs/")
+        self.assertEqual(status, 404)
+        status, _, _ = self._get(server, "/healthz")
+        self.assertEqual(status, 200)
+
     def test_healthz_and_site_coexist(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

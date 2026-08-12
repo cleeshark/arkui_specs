@@ -284,10 +284,16 @@ def create_server(
     if max_body_bytes <= 0:
         raise ValueError("max_body_bytes must be positive")
     if site_root is not None:
-        if not site_root.is_dir():
-            raise ValueError(f"site_root must be an existing directory: {site_root}")
         if not site_base_path.startswith("/"):
             raise ValueError("site_base_path must start with /")
+        if not site_root.is_dir():
+            # The build dir is produced by the first merge-rebuild; until it
+            # exists, /arkui_specs simply 404s at request time. Do not abort
+            # startup, or the webhook can never receive the merge that builds it.
+            LOGGER.warning(
+                "site_root %s does not exist yet; %s will 404 until a rebuild creates it",
+                site_root, site_base_path,
+            )
 
     class GitCodeWebhookHandler(BaseHTTPRequestHandler):
         server_version = "ArkUISpecEvalWebhook/0.1"
