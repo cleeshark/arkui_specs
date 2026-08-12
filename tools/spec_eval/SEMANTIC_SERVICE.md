@@ -15,11 +15,11 @@ an isolated automated archive.
 From the ace_engine root:
 
 ```bash
-# 1. serve (HTTP + scheduler), default port 8765, loopback only
-python3 specs/tools/spec_eval/service_cli.py serve --port 8765 --max-workers 2
+# 1. serve (HTTP + scheduler), default port 8790, loopback only
+python3 specs/tools/spec_eval/service_cli.py serve --port 8790 --max-workers 2
 
 # 2. open the UI
-xdg-open http://127.0.0.1:8765/   # create a job for a FuncID, watch it progress
+xdg-open http://127.0.0.1:8790/   # create a job for a FuncID, watch it progress
 
 # 3. one-shot governance
 python3 specs/tools/spec_eval/service_cli.py metrics  --write metrics.json

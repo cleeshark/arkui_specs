@@ -4,7 +4,7 @@
 Default action is ``serve`` (HTTP + scheduler). Governance subcommands export
 metrics, clean disposable run dirs, and back up the DB.
 
-    python3 specs/tools/spec_eval/service_cli.py serve --port 8765
+    python3 specs/tools/spec_eval/service_cli.py serve --port 8790
     python3 specs/tools/spec_eval/service_cli.py metrics --write metrics.json
     python3 specs/tools/spec_eval/service_cli.py cleanup --retention-days 14
     python3 specs/tools/spec_eval/service_cli.py backup
@@ -33,7 +33,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     serve = sub.add_parser("serve", help="run the HTTP server + scheduler (default)")
     serve.add_argument("--host", default="127.0.0.1")
-    serve.add_argument("--port", type=int, default=8765)
+    serve.add_argument("--port", type=int, default=8790)
     serve.add_argument("--max-workers", type=int, default=2)
     serve.add_argument("--token", default=None)
 

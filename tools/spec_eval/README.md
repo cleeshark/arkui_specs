@@ -826,29 +826,29 @@ spec_eval/
 ### 14.1 启动与使用
 
 ```bash
-# 默认绑定 127.0.0.1:8765；需要本机 codex CLI 已认证
-python3 specs/tools/spec_eval/service_cli.py serve --port 8765 --max-workers 2
+# 默认绑定 127.0.0.1:8790（避开 webhook 的 8765）；需要本机 codex CLI 已认证
+python3 specs/tools/spec_eval/service_cli.py serve --port 8790 --max-workers 2
 # 局域网暴露时必须带 --token
 python3 specs/tools/spec_eval/service_cli.py serve --host 0.0.0.0 --token "$TOKEN"
 ```
 
-浏览器打开 `http://127.0.0.1:8765/` 填入 FuncID 创建任务；或在命令行调 API：
+浏览器打开 `http://127.0.0.1:8790/` 填入 FuncID 创建任务；或在命令行调 API：
 
 ```bash
 # 创建任务（status: queued -> preparing -> evidence -> semantic -> aggregation
 #          -> archive -> site_history -> completed）
-curl -sX POST http://127.0.0.1:8765/api/jobs \
+curl -sX POST http://127.0.0.1:8790/api/jobs \
   -H 'Content-Type: application/json' \
   -d '{"func_id":"04-01-01","run_count":1}'
 # 查看/筛选/详情/事件/取消/重试
-curl -s 'http://127.0.0.1:8765/api/jobs?status=completed'
-curl -s  http://127.0.0.1:8765/api/jobs/<job_id>
-curl -s 'http://127.0.0.1:8765/api/jobs/<job_id>/events?since_seq=0'
-curl -sX POST http://127.0.0.1:8765/api/jobs/<job_id>/cancel
-curl -sX POST http://127.0.0.1:8765/api/jobs/<job_id>/retry
-curl -s  http://127.0.0.1:8765/api/jobs/<job_id>/artifacts/score-result -o score.json
+curl -s 'http://127.0.0.1:8790/api/jobs?status=completed'
+curl -s  http://127.0.0.1:8790/api/jobs/<job_id>
+curl -s 'http://127.0.0.1:8790/api/jobs/<job_id>/events?since_seq=0'
+curl -sX POST http://127.0.0.1:8790/api/jobs/<job_id>/cancel
+curl -sX POST http://127.0.0.1:8790/api/jobs/<job_id>/retry
+curl -s  http://127.0.0.1:8790/api/jobs/<job_id>/artifacts/score-result -o score.json
 # 运维指标
-curl -s  http://127.0.0.1:8765/api/metrics
+curl -s  http://127.0.0.1:8790/api/metrics
 ```
 
 ### 14.2 治理子命令
