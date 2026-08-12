@@ -1880,15 +1880,20 @@
         "raw_score": 55.25
       },
       "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
+      "staleness": {
+        "reason": "review_source_revision_mismatch",
+        "review_source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
+        "static_source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+      },
       "static_report_reference": {
         "available": true,
         "finding_count": 21,
         "func_id": "01-01-01",
         "gate": "fail",
         "path": "site-report.json",
-        "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e"
+        "source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
       },
-      "status": "CONFIRMED",
+      "status": "EXPIRED",
       "title": "编译构建"
     },
     {
@@ -4134,15 +4139,20 @@
         "raw_score": 60.5
       },
       "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
+      "staleness": {
+        "reason": "review_source_revision_mismatch",
+        "review_source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
+        "static_source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+      },
       "static_report_reference": {
         "available": true,
         "finding_count": 24,
         "func_id": "02-01-04",
         "gate": "fail",
         "path": "site-report.json",
-        "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e"
+        "source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
       },
-      "status": "CONFIRMED",
+      "status": "EXPIRED",
       "title": "预览器平台适配"
     },
     {
@@ -7162,15 +7172,20 @@
         "raw_score": 34.25
       },
       "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
+      "staleness": {
+        "reason": "review_source_revision_mismatch",
+        "review_source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
+        "static_source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+      },
       "static_report_reference": {
         "available": true,
         "finding_count": 68,
         "func_id": "02-02-01",
         "gate": "fail",
         "path": "site-report.json",
-        "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e"
+        "source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
       },
-      "status": "CONFIRMED",
+      "status": "EXPIRED",
       "title": "Rosen渲染后端对接"
     },
     {
@@ -9268,15 +9283,20 @@
         "raw_score": 50.0
       },
       "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
+      "staleness": {
+        "reason": "review_source_revision_mismatch",
+        "review_source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
+        "static_source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+      },
       "static_report_reference": {
         "available": true,
         "finding_count": 29,
         "func_id": "03-02-08",
         "gate": "fail",
         "path": "site-report.json",
-        "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e"
+        "source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
       },
-      "status": "CONFIRMED",
+      "status": "EXPIRED",
       "title": "路径动画"
     },
     {
@@ -12199,15 +12219,20 @@
         "raw_score": 33.0
       },
       "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
+      "staleness": {
+        "reason": "review_source_revision_mismatch",
+        "review_source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
+        "static_source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+      },
       "static_report_reference": {
         "available": true,
         "finding_count": 82,
         "func_id": "03-07-01",
         "gate": "fail",
         "path": "site-report.json",
-        "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e"
+        "source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
       },
-      "status": "CONFIRMED",
+      "status": "EXPIRED",
       "title": "无障碍能力"
     },
     {
@@ -15392,16 +15417,6 @@
         },
         {
           "feat_id": "Feat-02",
-          "finding_id": "FND-1f38a3681de38ac4abd1d389",
-          "line": 279,
-          "message": "source citation is ambiguous: `enums.d.ts`; use the complete repository-relative path, for example `interface/sdk-js/.../enums.d.ts` for an SDK declaration or `frameworks/.../enums.d.ts` for an ace_engine source",
-          "path": "specs/04-common-capability/04-common-events/01-touch-events/Feat-02-touch-event-multipoint-data-model-spec.md",
-          "rule_id": "REF-AMBIGUOUS-001",
-          "severity": "Major",
-          "source": "static"
-        },
-        {
-          "feat_id": "Feat-02",
           "finding_id": "FND-975654d9655928bda5a9a4cb",
           "line": 280,
           "message": "source citation is ambiguous: `common.d.ts`; use the complete repository-relative path, for example `interface/sdk-js/.../common.d.ts` for an SDK declaration or `frameworks/.../common.d.ts` for an ace_engine source",
@@ -15445,16 +15460,6 @@
           "finding_id": "FND-975654d9655928bda5a9a4cb",
           "line": 284,
           "message": "source citation is ambiguous: `common.d.ts`; use the complete repository-relative path, for example `interface/sdk-js/.../common.d.ts` for an SDK declaration or `frameworks/.../common.d.ts` for an ace_engine source",
-          "path": "specs/04-common-capability/04-common-events/01-touch-events/Feat-02-touch-event-multipoint-data-model-spec.md",
-          "rule_id": "REF-AMBIGUOUS-001",
-          "severity": "Major",
-          "source": "static"
-        },
-        {
-          "feat_id": "Feat-02",
-          "finding_id": "FND-1f38a3681de38ac4abd1d389",
-          "line": 285,
-          "message": "source citation is ambiguous: `enums.d.ts`; use the complete repository-relative path, for example `interface/sdk-js/.../enums.d.ts` for an SDK declaration or `frameworks/.../enums.d.ts` for an ace_engine source",
           "path": "specs/04-common-capability/04-common-events/01-touch-events/Feat-02-touch-event-multipoint-data-model-spec.md",
           "rule_id": "REF-AMBIGUOUS-001",
           "severity": "Major",
@@ -15512,29 +15517,9 @@
         },
         {
           "feat_id": "Feat-02",
-          "finding_id": "FND-1f38a3681de38ac4abd1d389",
-          "line": 308,
-          "message": "source citation is ambiguous: `enums.d.ts`; use the complete repository-relative path, for example `interface/sdk-js/.../enums.d.ts` for an SDK declaration or `frameworks/.../enums.d.ts` for an ace_engine source",
-          "path": "specs/04-common-capability/04-common-events/01-touch-events/Feat-02-touch-event-multipoint-data-model-spec.md",
-          "rule_id": "REF-AMBIGUOUS-001",
-          "severity": "Major",
-          "source": "static"
-        },
-        {
-          "feat_id": "Feat-02",
           "finding_id": "FND-09bc0b5468ea5aa301373f3a",
           "line": 317,
           "message": "source citation is ambiguous: `mmi_event_convertor.cpp`; use the complete repository-relative path from the ace_engine root, for example `frameworks/.../mmi_event_convertor.cpp`",
-          "path": "specs/04-common-capability/04-common-events/01-touch-events/Feat-02-touch-event-multipoint-data-model-spec.md",
-          "rule_id": "REF-AMBIGUOUS-001",
-          "severity": "Major",
-          "source": "static"
-        },
-        {
-          "feat_id": "Feat-02",
-          "finding_id": "FND-1f38a3681de38ac4abd1d389",
-          "line": 319,
-          "message": "source citation is ambiguous: `enums.d.ts`; use the complete repository-relative path, for example `interface/sdk-js/.../enums.d.ts` for an SDK declaration or `frameworks/.../enums.d.ts` for an ace_engine source",
           "path": "specs/04-common-capability/04-common-events/01-touch-events/Feat-02-touch-event-multipoint-data-model-spec.md",
           "rule_id": "REF-AMBIGUOUS-001",
           "severity": "Major",
@@ -15556,16 +15541,6 @@
           "line": 320,
           "message": "source citation is ambiguous: `pipeline_context.cpp`; use the complete repository-relative path from the ace_engine root, for example `frameworks/.../pipeline_context.cpp`",
           "path": "specs/04-common-capability/04-common-events/01-touch-events/Feat-02-touch-event-multipoint-data-model-spec.md",
-          "rule_id": "REF-AMBIGUOUS-001",
-          "severity": "Major",
-          "source": "static"
-        },
-        {
-          "feat_id": "Feat-03",
-          "finding_id": "FND-5b3463f7fd17f4b4eb52fed6",
-          "line": 32,
-          "message": "source citation is ambiguous: `enums.d.ts`; use the complete repository-relative path, for example `interface/sdk-js/.../enums.d.ts` for an SDK declaration or `frameworks/.../enums.d.ts` for an ace_engine source",
-          "path": "specs/04-common-capability/04-common-events/01-touch-events/Feat-03-history-sampling-advanced-touch-info-spec.md",
           "rule_id": "REF-AMBIGUOUS-001",
           "severity": "Major",
           "source": "static"
@@ -15655,16 +15630,6 @@
           "finding_id": "FND-55a55e3b238f4fb64c28e8b4",
           "line": 130,
           "message": "source citation is ambiguous: `touch_event.cpp`; use the complete repository-relative path from the ace_engine root, for example `frameworks/.../touch_event.cpp`",
-          "path": "specs/04-common-capability/04-common-events/01-touch-events/Feat-03-history-sampling-advanced-touch-info-spec.md",
-          "rule_id": "REF-AMBIGUOUS-001",
-          "severity": "Major",
-          "source": "static"
-        },
-        {
-          "feat_id": "Feat-03",
-          "finding_id": "FND-81d248c51be38c16e1a19b11",
-          "line": 132,
-          "message": "source citation is ambiguous: `touch_object_accessor.cpp`; use the complete repository-relative path from the ace_engine root, for example `frameworks/.../touch_object_accessor.cpp`",
           "path": "specs/04-common-capability/04-common-events/01-touch-events/Feat-03-history-sampling-advanced-touch-info-spec.md",
           "rule_id": "REF-AMBIGUOUS-001",
           "severity": "Major",
@@ -15830,15 +15795,6 @@
           "finding_id": "FND-846fe2f49affa3d8f4e5ee00",
           "line": 160,
           "message": "source citation is ambiguous: `common.d.ts`; use the complete repository-relative path, for example `interface/sdk-js/.../common.d.ts` for an SDK declaration or `frameworks/.../common.d.ts` for an ace_engine source",
-          "path": "specs/04-common-capability/04-common-events/01-touch-events/design.md",
-          "rule_id": "REF-AMBIGUOUS-001",
-          "severity": "Major",
-          "source": "static"
-        },
-        {
-          "finding_id": "FND-a88374ea0724614007902486",
-          "line": 164,
-          "message": "source citation is ambiguous: `enums.d.ts`; use the complete repository-relative path, for example `interface/sdk-js/.../enums.d.ts` for an SDK declaration or `frameworks/.../enums.d.ts` for an ace_engine source",
           "path": "specs/04-common-capability/04-common-events/01-touch-events/design.md",
           "rule_id": "REF-AMBIGUOUS-001",
           "severity": "Major",
@@ -16046,15 +16002,6 @@
           "finding_id": "FND-846fe2f49affa3d8f4e5ee00",
           "line": 589,
           "message": "source citation is ambiguous: `common.d.ts`; use the complete repository-relative path, for example `interface/sdk-js/.../common.d.ts` for an SDK declaration or `frameworks/.../common.d.ts` for an ace_engine source",
-          "path": "specs/04-common-capability/04-common-events/01-touch-events/design.md",
-          "rule_id": "REF-AMBIGUOUS-001",
-          "severity": "Major",
-          "source": "static"
-        },
-        {
-          "finding_id": "FND-a88374ea0724614007902486",
-          "line": 589,
-          "message": "source citation is ambiguous: `enums.d.ts`; use the complete repository-relative path, for example `interface/sdk-js/.../enums.d.ts` for an SDK declaration or `frameworks/.../enums.d.ts` for an ace_engine source",
           "path": "specs/04-common-capability/04-common-events/01-touch-events/design.md",
           "rule_id": "REF-AMBIGUOUS-001",
           "severity": "Major",
@@ -16463,15 +16410,20 @@
         "raw_score": 49.5
       },
       "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
+      "staleness": {
+        "reason": "review_source_revision_mismatch",
+        "review_source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
+        "static_source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+      },
       "static_report_reference": {
         "available": true,
-        "finding_count": 242,
+        "finding_count": 234,
         "func_id": "04-04-01",
         "gate": "fail",
         "path": "site-report.json",
-        "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e"
+        "source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
       },
-      "status": "CONFIRMED",
+      "status": "EXPIRED",
       "title": "触摸事件"
     },
     {
@@ -18504,15 +18456,20 @@
         "raw_score": 51.5
       },
       "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
+      "staleness": {
+        "reason": "review_source_revision_mismatch",
+        "review_source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
+        "static_source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+      },
       "static_report_reference": {
         "available": true,
         "finding_count": 8,
         "func_id": "04-20-01",
         "gate": "fail",
         "path": "site-report.json",
-        "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e"
+        "source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
       },
-      "status": "CONFIRMED",
+      "status": "EXPIRED",
       "title": "MediaQuery"
     },
     {
@@ -20611,15 +20568,20 @@
         "raw_score": 56.0
       },
       "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
+      "staleness": {
+        "reason": "review_source_revision_mismatch",
+        "review_source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
+        "static_source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+      },
       "static_report_reference": {
         "available": true,
         "finding_count": 5,
         "func_id": "05-01-02",
         "gate": "fail",
         "path": "site-report.json",
-        "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e"
+        "source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
       },
-      "status": "CONFIRMED",
+      "status": "EXPIRED",
       "title": "Divider"
     },
     {
@@ -22766,15 +22728,20 @@
         "raw_score": 53.5
       },
       "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
+      "staleness": {
+        "reason": "review_source_revision_mismatch",
+        "review_source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
+        "static_source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+      },
       "static_report_reference": {
         "available": true,
         "finding_count": 68,
         "func_id": "05-03-10",
         "gate": "fail",
         "path": "site-report.json",
-        "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e"
+        "source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
       },
-      "status": "CONFIRMED",
+      "status": "EXPIRED",
       "title": "WaterFlow/FlowItem"
     },
     {
@@ -26856,21 +26823,21 @@
         },
         {
           "feat_id": "Feat-01",
-          "finding_id": "FND-b0ebbdd1f5f8874b8b916636",
+          "finding_id": "FND-642c33484eb1e79ec2350d1b",
           "line": 142,
-          "message": "source citation is ambiguous: `arkoala_api_generated.h`; use the complete repository-relative path from the ace_engine root, for example `frameworks/.../arkoala_api_generated.h`",
+          "message": "generated/site copies cannot be used as authoritative evidence",
           "path": "specs/05-ui-components/09-text-components/02-rich-editor/Feat-01-component-init-dual-mode-spec.md",
-          "rule_id": "REF-AMBIGUOUS-001",
+          "rule_id": "REF-DISALLOWED-SOURCE-001",
           "severity": "Major",
           "source": "static"
         },
         {
           "feat_id": "Feat-01",
-          "finding_id": "FND-b0ebbdd1f5f8874b8b916636",
+          "finding_id": "FND-642c33484eb1e79ec2350d1b",
           "line": 143,
-          "message": "source citation is ambiguous: `arkoala_api_generated.h`; use the complete repository-relative path from the ace_engine root, for example `frameworks/.../arkoala_api_generated.h`",
+          "message": "generated/site copies cannot be used as authoritative evidence",
           "path": "specs/05-ui-components/09-text-components/02-rich-editor/Feat-01-component-init-dual-mode-spec.md",
-          "rule_id": "REF-AMBIGUOUS-001",
+          "rule_id": "REF-DISALLOWED-SOURCE-001",
           "severity": "Major",
           "source": "static"
         },
@@ -26886,31 +26853,31 @@
         },
         {
           "feat_id": "Feat-02",
-          "finding_id": "FND-684f0a2e8b5a9cc09f025f4b",
+          "finding_id": "FND-e0c4eaabe6a570bd6cd96265",
           "line": 120,
-          "message": "source citation is ambiguous: `richEditor.ets`; use the complete repository-relative path from the ace_engine root, for example `frameworks/.../richEditor.ets`",
+          "message": "generated/site copies cannot be used as authoritative evidence",
           "path": "specs/05-ui-components/09-text-components/02-rich-editor/Feat-02-span-content-management-spec.md",
-          "rule_id": "REF-AMBIGUOUS-001",
+          "rule_id": "REF-DISALLOWED-SOURCE-001",
           "severity": "Major",
           "source": "static"
         },
         {
           "feat_id": "Feat-02",
-          "finding_id": "FND-684f0a2e8b5a9cc09f025f4b",
+          "finding_id": "FND-e0c4eaabe6a570bd6cd96265",
           "line": 179,
-          "message": "source citation is ambiguous: `richEditor.ets`; use the complete repository-relative path from the ace_engine root, for example `frameworks/.../richEditor.ets`",
+          "message": "generated/site copies cannot be used as authoritative evidence",
           "path": "specs/05-ui-components/09-text-components/02-rich-editor/Feat-02-span-content-management-spec.md",
-          "rule_id": "REF-AMBIGUOUS-001",
+          "rule_id": "REF-DISALLOWED-SOURCE-001",
           "severity": "Major",
           "source": "static"
         },
         {
           "feat_id": "Feat-02",
-          "finding_id": "FND-684f0a2e8b5a9cc09f025f4b",
+          "finding_id": "FND-e0c4eaabe6a570bd6cd96265",
           "line": 228,
-          "message": "source citation is ambiguous: `richEditor.ets`; use the complete repository-relative path from the ace_engine root, for example `frameworks/.../richEditor.ets`",
+          "message": "generated/site copies cannot be used as authoritative evidence",
           "path": "specs/05-ui-components/09-text-components/02-rich-editor/Feat-02-span-content-management-spec.md",
-          "rule_id": "REF-AMBIGUOUS-001",
+          "rule_id": "REF-DISALLOWED-SOURCE-001",
           "severity": "Major",
           "source": "static"
         },
@@ -27036,21 +27003,21 @@
         },
         {
           "feat_id": "Feat-07",
-          "finding_id": "FND-ed9b67049d8b839fc49aa5c7",
+          "finding_id": "FND-9c603b0cc3706b460a6f921c",
           "line": 201,
-          "message": "source citation is ambiguous: `richEditor.ets`; use the complete repository-relative path from the ace_engine root, for example `frameworks/.../richEditor.ets`",
+          "message": "generated/site copies cannot be used as authoritative evidence",
           "path": "specs/05-ui-components/09-text-components/02-rich-editor/Feat-07-editing-lifecycle-content-events-spec.md",
-          "rule_id": "REF-AMBIGUOUS-001",
+          "rule_id": "REF-DISALLOWED-SOURCE-001",
           "severity": "Major",
           "source": "static"
         },
         {
           "feat_id": "Feat-07",
-          "finding_id": "FND-ed9b67049d8b839fc49aa5c7",
+          "finding_id": "FND-9c603b0cc3706b460a6f921c",
           "line": 203,
-          "message": "source citation is ambiguous: `richEditor.ets`; use the complete repository-relative path from the ace_engine root, for example `frameworks/.../richEditor.ets`",
+          "message": "generated/site copies cannot be used as authoritative evidence",
           "path": "specs/05-ui-components/09-text-components/02-rich-editor/Feat-07-editing-lifecycle-content-events-spec.md",
-          "rule_id": "REF-AMBIGUOUS-001",
+          "rule_id": "REF-DISALLOWED-SOURCE-001",
           "severity": "Major",
           "source": "static"
         },
@@ -27086,21 +27053,21 @@
         },
         {
           "feat_id": "Feat-09",
-          "finding_id": "FND-fb4397461276d53b4d5c6b04",
+          "finding_id": "FND-b41650471e76a6aa392fd083",
           "line": 116,
-          "message": "source citation is ambiguous: `richEditor.ets`; use the complete repository-relative path from the ace_engine root, for example `frameworks/.../richEditor.ets`",
+          "message": "generated/site copies cannot be used as authoritative evidence",
           "path": "specs/05-ui-components/09-text-components/02-rich-editor/Feat-09-clipboard-data-detection-menu-spec.md",
-          "rule_id": "REF-AMBIGUOUS-001",
+          "rule_id": "REF-DISALLOWED-SOURCE-001",
           "severity": "Major",
           "source": "static"
         },
         {
           "feat_id": "Feat-09",
-          "finding_id": "FND-0691a843b0aabb972ea4d338",
+          "finding_id": "FND-b41650471e76a6aa392fd083",
           "line": 131,
-          "message": "source citation is ambiguous: `arkoala_api_generated.h`; use the complete repository-relative path from the ace_engine root, for example `frameworks/.../arkoala_api_generated.h`",
+          "message": "generated/site copies cannot be used as authoritative evidence",
           "path": "specs/05-ui-components/09-text-components/02-rich-editor/Feat-09-clipboard-data-detection-menu-spec.md",
-          "rule_id": "REF-AMBIGUOUS-001",
+          "rule_id": "REF-DISALLOWED-SOURCE-001",
           "severity": "Major",
           "source": "static"
         },
@@ -27154,20 +27121,20 @@
           "source": "static"
         },
         {
-          "finding_id": "FND-0a2ec4ed3fce1defcaa60e2b",
+          "finding_id": "FND-d57e5a4ca8b9c89e2e36f53e",
           "line": 84,
-          "message": "source citation is ambiguous: `arkoala_api_generated.h`; use the complete repository-relative path from the ace_engine root, for example `frameworks/.../arkoala_api_generated.h`",
+          "message": "generated/site copies cannot be used as authoritative evidence",
           "path": "specs/05-ui-components/09-text-components/02-rich-editor/design.md",
-          "rule_id": "REF-AMBIGUOUS-001",
+          "rule_id": "REF-DISALLOWED-SOURCE-001",
           "severity": "Major",
           "source": "static"
         },
         {
-          "finding_id": "FND-0a2ec4ed3fce1defcaa60e2b",
+          "finding_id": "FND-d57e5a4ca8b9c89e2e36f53e",
           "line": 322,
-          "message": "source citation is ambiguous: `arkoala_api_generated.h`; use the complete repository-relative path from the ace_engine root, for example `frameworks/.../arkoala_api_generated.h`",
+          "message": "generated/site copies cannot be used as authoritative evidence",
           "path": "specs/05-ui-components/09-text-components/02-rich-editor/design.md",
-          "rule_id": "REF-AMBIGUOUS-001",
+          "rule_id": "REF-DISALLOWED-SOURCE-001",
           "severity": "Major",
           "source": "static"
         },
@@ -27558,15 +27525,20 @@
         "raw_score": 51.0
       },
       "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
+      "staleness": {
+        "reason": "review_source_revision_mismatch",
+        "review_source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
+        "static_source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+      },
       "static_report_reference": {
         "available": true,
         "finding_count": 340,
         "func_id": "05-09-02",
         "gate": "fail",
         "path": "site-report.json",
-        "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e"
+        "source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
       },
-      "status": "CONFIRMED",
+      "status": "EXPIRED",
       "title": "RichEditor"
     },
     {
@@ -29004,15 +28976,20 @@
         "raw_score": 56.0
       },
       "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
+      "staleness": {
+        "reason": "review_source_revision_mismatch",
+        "review_source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
+        "static_source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+      },
       "static_report_reference": {
         "available": true,
         "finding_count": 10,
         "func_id": "07-02-02",
         "gate": "fail",
         "path": "site-report.json",
-        "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e"
+        "source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
       },
-      "status": "CONFIRMED",
+      "status": "EXPIRED",
       "title": "状态管理V1数据对象内状态管理"
     },
     {
@@ -31190,30 +31167,35 @@
         "raw_score": 53.0
       },
       "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
+      "staleness": {
+        "reason": "review_source_revision_mismatch",
+        "review_source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
+        "static_source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+      },
       "static_report_reference": {
         "available": true,
         "finding_count": 59,
         "func_id": "10-01-01",
         "gate": "fail",
         "path": "site-report.json",
-        "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e"
+        "source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
       },
-      "status": "CONFIRMED",
+      "status": "EXPIRED",
       "title": "弧形组件"
     }
   ],
   "reportVersion": "spec-eval-site-evaluation@0.2.0",
   "schemaVersion": 1,
-  "sourceRevision": "d91b4e4990a990da2bfe809514e573e35852193e",
+  "sourceRevision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863",
   "staticReport": {
     "path": "site-report.json",
-    "sourceRevision": "d91b4e4990a990da2bfe809514e573e35852193e"
+    "sourceRevision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
   },
   "summary": {
-    "confirmedFunctionCount": 12,
-    "expiredFindingCount": 0,
-    "expiredFunctionCount": 0,
-    "findingCount": 1154,
+    "confirmedFunctionCount": 0,
+    "expiredFindingCount": 1146,
+    "expiredFunctionCount": 12,
+    "findingCount": 0,
     "functionCount": 12
   }
 }
