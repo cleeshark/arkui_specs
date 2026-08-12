@@ -9,6 +9,7 @@ import hmac
 import ipaddress
 import json
 import logging
+import mimetypes
 import os
 import re
 import threading
@@ -23,6 +24,7 @@ DEFAULT_PORT = 8765
 DEFAULT_WEBHOOK_PATH = "/webhooks/gitcode"
 DEFAULT_EVENTS_FILE = Path("specs/.evaluator/webhook/receipts.ndjson")
 DEFAULT_MAX_BODY_BYTES = 1024 * 1024
+DEFAULT_SITE_BASE_PATH = "/arkui_specs"
 MERGE_REQUEST_EVENT = "Merge Request Hook"
 SHA_PATTERN = re.compile(r"^[0-9a-fA-F]{40,64}$")
 
@@ -224,6 +226,45 @@ def _json_response(handler: BaseHTTPRequestHandler, status: int, value: dict[str
     handler.wfile.write(body)
 
 
+def _serve_site_path(
+    handler: BaseHTTPRequestHandler,
+    raw_path: str,
+    site_root: Path,
+    base_path: str,
+) -> None:
+    """Serve a static file from ``site_root`` for a ``base_path``-prefixed URL.
+
+    Used to host the rebuilt Docusaurus site on the same HTTP server that
+    receives webhooks. Public (unauthenticated) read; path traversal outside
+    ``site_root`` resolves to a 404. Directory requests serve ``index.html``.
+    """
+    url_path = raw_path.split("?", 1)[0]
+    rel = url_path[len(base_path):].lstrip("/")
+    site_root_resolved = site_root.resolve()
+    candidate = (site_root_resolved / rel) if rel else site_root_resolved
+    try:
+        candidate.resolve().relative_to(site_root_resolved)
+    except ValueError:
+        _json_response(handler, 404, {"status": "error", "code": "NOT_FOUND"})
+        return
+    if candidate.is_dir():
+        candidate = candidate / "index.html"
+    if not candidate.is_file():
+        _json_response(handler, 404, {"status": "error", "code": "NOT_FOUND"})
+        return
+    content_type, _ = mimetypes.guess_type(str(candidate))
+    if content_type is None:
+        content_type = "application/octet-stream"
+    elif content_type.startswith("text/") or content_type in {"application/javascript", "application/json"}:
+        content_type = f"{content_type}; charset=utf-8"
+    data = candidate.read_bytes()
+    handler.send_response(200)
+    handler.send_header("Content-Type", content_type)
+    handler.send_header("Content-Length", str(len(data)))
+    handler.end_headers()
+    handler.wfile.write(data)
+
+
 def create_server(
     host: str,
     port: int,
@@ -233,6 +274,8 @@ def create_server(
     signature_secret: str | None = None,
     webhook_path: str = DEFAULT_WEBHOOK_PATH,
     max_body_bytes: int = DEFAULT_MAX_BODY_BYTES,
+    site_root: Path | None = None,
+    site_base_path: str = DEFAULT_SITE_BASE_PATH,
 ) -> ThreadingHTTPServer:
     """Create a configured HTTP server without starting its event loop."""
 
@@ -240,6 +283,11 @@ def create_server(
         raise ValueError("webhook_path must start with /")
     if max_body_bytes <= 0:
         raise ValueError("max_body_bytes must be positive")
+    if site_root is not None:
+        if not site_root.is_dir():
+            raise ValueError(f"site_root must be an existing directory: {site_root}")
+        if not site_base_path.startswith("/"):
+            raise ValueError("site_base_path must start with /")
 
     class GitCodeWebhookHandler(BaseHTTPRequestHandler):
         server_version = "ArkUISpecEvalWebhook/0.1"
@@ -249,6 +297,10 @@ def create_server(
             LOGGER.info("http client=%s message=%s", self.client_address[0], format % args)
 
         def do_GET(self) -> None:  # noqa: N802 - BaseHTTPRequestHandler API
+            url_path = self.path.split("?", 1)[0]
+            if site_root is not None and (url_path == site_base_path or url_path.startswith(site_base_path + "/")):
+                _serve_site_path(self, self.path, site_root, site_base_path)
+                return
             if self.path not in {"/healthz", webhook_path}:
                 _json_response(self, 404, {"status": "error", "code": "NOT_FOUND"})
                 return
@@ -353,6 +405,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--path", default=DEFAULT_WEBHOOK_PATH, help="Webhook endpoint path")
     parser.add_argument("--events-file", type=Path, default=DEFAULT_EVENTS_FILE)
     parser.add_argument("--max-body-bytes", type=int, default=DEFAULT_MAX_BODY_BYTES)
+    parser.add_argument("--site-root", type=Path, default=None,
+                        help="Directory of the rebuilt Docusaurus site to serve at --site-base-path (default: site not served)")
+    parser.add_argument("--site-base-path", default=DEFAULT_SITE_BASE_PATH,
+                        help=f"URL path prefix for the served site (default {DEFAULT_SITE_BASE_PATH})")
     parser.add_argument("--token-env", default="GITCODE_WEBHOOK_TOKEN")
     parser.add_argument("--signature-secret-env", default="GITCODE_WEBHOOK_SIGNATURE_SECRET")
     return parser
@@ -375,6 +431,8 @@ def main(argv: list[str] | None = None) -> int:
             signature_secret=signature_secret,
             webhook_path=args.path,
             max_body_bytes=args.max_body_bytes,
+            site_root=args.site_root,
+            site_base_path=args.site_base_path,
         )
     except (OSError, ValueError) as error:
         parser.error(str(error))

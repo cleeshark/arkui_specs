@@ -217,5 +217,80 @@ class Next010GitCodeWebhookTest(unittest.TestCase):
         return response.status, value
 
 
+class SiteStaticServeTest(unittest.TestCase):
+    """The webhook server optionally serves the rebuilt Docusaurus site at a path."""
+
+    def setUp(self) -> None:
+        self._servers: list = []
+
+    def tearDown(self) -> None:
+        for server, thread in self._servers:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=5)
+
+    def _serve(self, site_root: Path | None) -> tuple:
+        receipts = Path(tempfile.mkdtemp()) / "receipts.ndjson"
+        kwargs: dict = {"store": ReceiptStore(receipts)}
+        if site_root is not None:
+            kwargs["site_root"] = site_root
+        server = create_server("127.0.0.1", 0, **kwargs)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        self._servers.append((server, thread))
+        return server
+
+    @staticmethod
+    def _get(server: tuple, path: str) -> tuple[int, bytes, str]:
+        connection = http.client.HTTPConnection(*server.server_address, timeout=5)
+        connection.request("GET", path)
+        response = connection.getresponse()
+        body = response.read()
+        content_type = response.getheader("Content-Type", "")
+        connection.close()
+        return response.status, body, content_type
+
+    def test_serves_index_and_asset_with_content_type(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "assets").mkdir()
+            (root / "index.html").write_text("<html>home</html>", encoding="utf-8")
+            (root / "assets" / "style.css").write_text("body{}", encoding="utf-8")
+            server = self._serve(root)
+            status, body, content_type = self._get(server, "/arkui_specs/")
+            self.assertEqual(status, 200)
+            self.assertIn(b"home", body)
+            self.assertIn("text/html", content_type)
+            status, body, content_type = self._get(server, "/arkui_specs/assets/style.css")
+            self.assertEqual(status, 200)
+            self.assertEqual(body, b"body{}")
+            self.assertIn("text/css", content_type)
+
+    def test_traversal_outside_site_root_is_not_found(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "index.html").write_text("ok", encoding="utf-8")
+            server = self._serve(root)
+            status, _, _ = self._get(server, "/arkui_specs/../../../../etc/passwd")
+            self.assertEqual(status, 404)
+
+    def test_site_root_none_is_backward_compatible(self) -> None:
+        server = self._serve(None)
+        status, _, _ = self._get(server, "/arkui_specs/")
+        self.assertEqual(status, 404)
+        status, _, _ = self._get(server, "/healthz")
+        self.assertEqual(status, 200)
+
+    def test_healthz_and_site_coexist(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "index.html").write_text("<html>x</html>", encoding="utf-8")
+            server = self._serve(root)
+            status, _, _ = self._get(server, "/healthz")
+            self.assertEqual(status, 200)
+            status, _, _ = self._get(server, "/arkui_specs/")
+            self.assertEqual(status, 200)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import subprocess
 import sys
 import time
@@ -90,6 +91,8 @@ class WorkerContext:
     specs_checks_enabled: bool = True
     sync_on_merge: bool = True
     force_sync: bool = False
+    rebuild_site_on_merge: bool = True
+    site_base_url: str = "/arkui_specs/"
 
 
 # --------------------------------------------------------------------------- #
@@ -493,6 +496,43 @@ def run_specs_checks(*, specs_root: Path, python: str = "python3") -> list[SpecC
     return results
 
 
+def rebuild_site(specs_root: Path, *, base_url: str, python: str = "python3") -> dict[str, Any]:
+    """Regenerate the Docusaurus site inputs and build static output.
+
+    Runs ``tools/generate_site.py`` (registry → site/docs + data JSON) then
+    ``npm run build`` with ``BASE_URL`` so asset URLs resolve under ``base_url``
+    (must match the path the site is served at). Best-effort: never raises — a
+    step failure is recorded as a non-zero ``exit_code`` and short-circuits the
+    remaining steps (build is skipped when generation failed). The merge-sync
+    caller keeps its own status regardless of the site outcome.
+    """
+    steps: list[dict[str, Any]] = []
+    plan: list[tuple[str, list[str], dict[str, Any]]] = [
+        ("generate_site", [python, str(specs_root / "tools" / "generate_site.py")], {"cwd": str(specs_root)}),
+        (
+            "build",
+            ["npm", "run", "build"],
+            {"cwd": str(specs_root / "site"), "env": {**os.environ, "BASE_URL": base_url}},
+        ),
+    ]
+    overall_ok = True
+    for name, command, run_kwargs in plan:
+        started = time.perf_counter()
+        proc = subprocess.run(command, capture_output=True, text=True, check=False, **run_kwargs)
+        elapsed = round((time.perf_counter() - started) * 1000.0, 3)
+        steps.append(
+            {"name": name, "exit_code": proc.returncode, "elapsed_ms": elapsed, "stderr_tail": (proc.stderr or "").strip()[-500:]}
+        )
+        if proc.returncode != 0:
+            overall_ok = False
+            break
+    error = None
+    if not overall_ok:
+        failed = next(step for step in steps if step["exit_code"] != 0)
+        error = f"{failed['name']} failed (exit {failed['exit_code']})"
+    return {"action": "rebuilt" if overall_ok else "error", "base_url": base_url, "steps": steps, "error": error}
+
+
 def render_comment(
     ci_summary: dict[str, Any],
     receipt: dict[str, Any],
@@ -860,6 +900,7 @@ def write_run_meta(
     specs_checks: list[SpecCheckResult] | None = None,
     test_result: dict[str, Any] | None = None,
     repo_sync: list[dict[str, Any]] | None = None,
+    site_build: dict[str, Any] | None = None,
     error: str | None = None,
 ) -> dict[str, Any]:
     pull_request = receipt.get("pull_request") or {}
@@ -902,6 +943,7 @@ def write_run_meta(
         "comment": comment_result,
         "test": test_result,
         "repo_sync": repo_sync,
+        "site_build": site_build,
         "timing_ms": timing,
         "status": status,
         "started_at": None,
@@ -933,6 +975,7 @@ def handle_merge_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[st
     timing: dict[str, float] = {}
 
     repo_sync_dicts: list[dict[str, Any]] | None = None
+    site_build_dict: dict[str, Any] | None = None
     if ctx.sync_on_merge:
         oh_root = ctx.repo_root.parents[2]
         started = time.perf_counter()
@@ -946,6 +989,19 @@ def handle_merge_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[st
             delivery, iid, status,
             {r.name: r.action for r in results},
         )
+        # Rebuild the Docusaurus site after sync so the served site reflects the
+        # latest registry + site archives. Best-effort: a failure is recorded but
+        # never changes the merge-sync status (repo sync is the primary outcome).
+        if ctx.rebuild_site_on_merge:
+            site_started = time.perf_counter()
+            site_result = rebuild_site(ctx.specs_root, base_url=ctx.site_base_url, python=ctx.python)
+            timing["site_build_ms"] = round((time.perf_counter() - site_started) * 1000.0, 3)
+            site_build_dict = site_result
+            _write_json(archive_dir / "site-build.json", site_result)
+            if site_result.get("action") == "rebuilt":
+                LOGGER.info("delivery=%s pr=%s site rebuilt (%.0f ms)", delivery, iid, timing["site_build_ms"])
+            else:
+                LOGGER.warning("delivery=%s pr=%s site rebuild failed: %s", delivery, iid, site_result.get("error"))
     else:
         status = "merge_skipped_no_sync"
         LOGGER.info("delivery=%s pr=%s merge-sync disabled (sync_on_merge=False)", delivery, iid)
@@ -964,6 +1020,7 @@ def handle_merge_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[st
         comment_result=None,
         test_result=None,
         repo_sync=repo_sync_dicts,
+        site_build=site_build_dict,
         timing=timing,
         status=status,
     )
@@ -973,6 +1030,7 @@ def handle_merge_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[st
         "status": status,
         "archive_dir": archive_dir.as_posix(),
         "repo_sync": repo_sync_dicts,
+        "site_build": site_build_dict,
     }
 
 
@@ -1262,6 +1320,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="with merge-sync enabled, reset --hard even repos with uncommitted local changes",
     )
     parser.add_argument(
+        "--no-rebuild-site",
+        action="store_true",
+        help="do NOT rebuild the Docusaurus site after a merge-sync (default: rebuild and serve at --site-base-url)",
+    )
+    parser.add_argument(
+        "--site-base-url",
+        default="/arkui_specs/",
+        help="BASE_URL passed to `npm run build` so site assets resolve under the served path (default /arkui_specs/)",
+    )
+    parser.add_argument(
         "--test-on-pass",
         action="store_true",
         help="on a passing run (delta.added == 0, not incomplete), mark GitCode PR test passed via `oh-gc pr test`",
@@ -1310,6 +1378,8 @@ def build_context(args: argparse.Namespace) -> WorkerContext:
         specs_checks_enabled=not args.no_specs_check,
         sync_on_merge=not args.no_sync_on_merge,
         force_sync=args.force_sync,
+        rebuild_site_on_merge=not args.no_rebuild_site,
+        site_base_url=args.site_base_url,
         oh_gc=args.oh_gc,
         python=args.python,
         test_on_pass=args.test_on_pass,

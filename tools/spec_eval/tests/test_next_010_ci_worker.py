@@ -28,6 +28,7 @@ from spec_eval.ci_worker import (
     post_comment,
     process_receipt,
     processed_set,
+    rebuild_site,
     render_comment,
     reset_pr_test,
     run_specs_checks,
@@ -89,6 +90,8 @@ def _ctx(tmp_path: Path, **overrides: object) -> WorkerContext:
         specs_checks_enabled=False,
         sync_on_merge=True,
         force_sync=False,
+        rebuild_site_on_merge=False,
+        site_base_url="/arkui_specs/",
         oh_gc="oh-gc",
         python="python3",
     )
@@ -1003,6 +1006,85 @@ class MergeSyncRoutingTest(unittest.TestCase):
             result = process_receipt(_receipt(action="merge", project="other/repo"), ctx)
         self.assertEqual(result["status"], "skipped_whitelist")
         sync.assert_not_called()
+
+    def test_merge_rebuilds_site_after_sync(self) -> None:
+        tmp = tempfile.mkdtemp()
+        ctx = _ctx(Path(tmp), rebuild_site_on_merge=True)
+        with mock.patch.object(ci_worker, "sync_ci_repos", return_value=[]) as sync, \
+                mock.patch.object(ci_worker, "rebuild_site", return_value={"action": "rebuilt"}) as rebuild:
+            result = process_receipt(_receipt(action="merge"), ctx)
+        self.assertEqual(result["status"], "merge_synced")
+        rebuild.assert_called_once_with(REPO_ROOT / "specs", base_url="/arkui_specs/", python="python3")
+        self.assertTrue((Path(tmp) / "ci" / "pr-61" / result["delivery_id"] / "site-build.json").is_file())
+
+    def test_merge_rebuild_failure_keeps_synced_status(self) -> None:
+        tmp = tempfile.mkdtemp()
+        ctx = _ctx(Path(tmp), rebuild_site_on_merge=True)
+        with mock.patch.object(ci_worker, "sync_ci_repos", return_value=[]), \
+                mock.patch.object(ci_worker, "rebuild_site", return_value={"action": "error", "error": "build failed"}):
+            result = process_receipt(_receipt(action="merge"), ctx)
+        # best-effort: site rebuild failure does not change the merge-sync status
+        self.assertEqual(result["status"], "merge_synced")
+
+    def test_merge_no_rebuild_when_sync_disabled(self) -> None:
+        tmp = tempfile.mkdtemp()
+        ctx = _ctx(Path(tmp), sync_on_merge=False, rebuild_site_on_merge=True)
+        with mock.patch.object(ci_worker, "sync_ci_repos") as sync, \
+                mock.patch.object(ci_worker, "rebuild_site") as rebuild:
+            result = process_receipt(_receipt(action="merge"), ctx)
+        self.assertEqual(result["status"], "merge_skipped_no_sync")
+        sync.assert_not_called()
+        rebuild.assert_not_called()
+
+
+class RebuildSiteTest(unittest.TestCase):
+    """rebuild_site: generate_site + npm build, best-effort, never raises."""
+
+    @staticmethod
+    def _proc(returncode: int = 0, stderr: str = "") -> subprocess.CompletedProcess:
+        return subprocess.CompletedProcess(args=[], returncode=returncode, stdout="", stderr=stderr)
+
+    def test_both_steps_succeed(self) -> None:
+        with mock.patch.object(ci_worker.subprocess, "run",
+                               side_effect=[self._proc(0), self._proc(0)]) as run:
+            result = rebuild_site(Path("/specs"), base_url="/arkui_specs/")
+        self.assertEqual(result["action"], "rebuilt")
+        self.assertEqual([step["name"] for step in result["steps"]], ["generate_site", "build"])
+        self.assertEqual(result["base_url"], "/arkui_specs/")
+        self.assertIsNone(result["error"])
+        self.assertEqual(run.call_count, 2)
+
+    def test_generate_failure_skips_build(self) -> None:
+        with mock.patch.object(ci_worker.subprocess, "run",
+                               side_effect=[self._proc(1, "gen boom")]) as run:
+            result = rebuild_site(Path("/specs"), base_url="/arkui_specs/")
+        self.assertEqual(result["action"], "error")
+        self.assertEqual(len(result["steps"]), 1)
+        self.assertIn("generate_site", result["error"] or "")
+        self.assertEqual(run.call_count, 1)
+
+    def test_build_failure_reports_error(self) -> None:
+        with mock.patch.object(ci_worker.subprocess, "run",
+                               side_effect=[self._proc(0), self._proc(1, "npm boom")]):
+            result = rebuild_site(Path("/specs"), base_url="/arkui_specs/")
+        self.assertEqual(result["action"], "error")
+        self.assertEqual(len(result["steps"]), 2)
+        self.assertIn("build", result["error"] or "")
+
+    def test_build_step_uses_base_url_env_and_site_cwd(self) -> None:
+        captured: list[tuple[list[str], dict]] = []
+
+        def fake_run(command: list[str], **kwargs):
+            captured.append((command, kwargs))
+            return self._proc(0)
+
+        with mock.patch.object(ci_worker.subprocess, "run", side_effect=fake_run):
+            rebuild_site(Path("/specs"), base_url="/arkui_specs/")
+        # second call is the npm build step
+        build_command, build_kwargs = captured[1]
+        self.assertEqual(build_command[:3], ["npm", "run", "build"])
+        self.assertEqual(build_kwargs["env"]["BASE_URL"], "/arkui_specs/")
+        self.assertTrue(str(build_kwargs["cwd"]).endswith("/site"))
 
 
 class SyncRepoToTipTest(unittest.TestCase):
