@@ -1,0 +1,342 @@
+"""Host unit + integration tests for the Phase 2 pipeline (TASK-011-03/04).
+
+The semantic loop is driven with a FakeExecutor and a FakeScriptRunner so the
+loop mechanics (executor dispatch, observation write, validate, checkpoint,
+status transitions, awaiting/failed/cancelled) are covered without burning
+Codex quota or producing a fully valid observation. One integration test runs
+the REAL staged scripts against a real cached evidence package to confirm the
+wrappers invoke them correctly.
+
+    python3 -m unittest spec_eval.tests.test_next_011_pipeline -v
+"""
+
+from __future__ import annotations
+
+import json
+import shutil
+import subprocess
+import tempfile
+import threading
+import unittest
+from pathlib import Path
+
+from spec_eval.service.domain import states as S
+from spec_eval.service.domain.models import CreateJobCommand
+from spec_eval.service.executors import contract as C
+from spec_eval.service.pipeline.context import RunContext
+from spec_eval.service.pipeline.semantic_stage import run_job_pipeline, run_semantic
+from spec_eval.service.settings import ServiceSettings
+from spec_eval.service.store.repositories import (
+    ArtifactRepository,
+    AttemptRepository,
+    DependencySnapshotRepository,
+    EventRepository,
+    JobRepository,
+)
+from spec_eval.service.store.sqlite_store import SqliteStore
+
+EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.11"
+JOB_ID = "c" * 40
+
+
+# --- fakes ------------------------------------------------------------------
+
+class FakeExecutor:
+    """Writes a minimal valid executor-result; configurable to fail/await."""
+
+    def __init__(self, *, fail_on: set[str] | None = None, awaiting: bool = False) -> None:
+        self.fail_on = fail_on or set()
+        self.awaiting = awaiting
+        self.calls: list[str] = []
+
+    def is_available(self) -> bool:
+        return not self.awaiting
+
+    def describe(self) -> dict:
+        return {"type": "fake"}
+
+    def execute(self, work: C.WorkItemInput, emit, cancel=None) -> C.ExecutionResult:
+        self.calls.append(work.work_item_id)
+        emit(C.ExecutionEvent(kind="command", message="fake-executor"))
+        if self.awaiting:
+            return C.ExecutionResult(status=C.STATUS_AWAITING, error="no executor")
+        if work.work_item_id in self.fail_on:
+            return C.ExecutionResult(status=C.STATUS_FAILED, error="injected failure")
+        doc = {
+            "schema_version": 1,
+            "work_item_id": work.work_item_id,
+            "status": "completed",
+            "observation": {"observation_id": work.work_item_id, "status": "complete"},
+        }
+        Path(work.executor_result_path).parent.mkdir(parents=True, exist_ok=True)
+        Path(work.executor_result_path).write_text(json.dumps(doc), encoding="utf-8")
+        return C.ExecutionResult(
+            status=C.STATUS_COMPLETED,
+            exit_code=0,
+            executor_result_path=work.executor_result_path,
+        )
+
+
+class FakeScriptRunner:
+    """Simulates the staged-run skill scripts from their argv."""
+
+    def __init__(self, work_items: list[dict]) -> None:
+        self.work_items = list(work_items)
+        self.calls: list[list[str]] = []
+
+    def __call__(self, argv, *, cwd, timeout):
+        self.calls.append(list(argv))
+        joined = " ".join(argv)
+        if "initialize_staged_run.py" in joined:
+            return subprocess.CompletedProcess(argv, 0, "", "")
+        if "show_next_work_item.py" in joined:
+            if self.work_items:
+                item = self.work_items.pop(0)
+                return subprocess.CompletedProcess(
+                    argv, 0, json.dumps({"current_phase": "semantic", "work_item": item}), ""
+                )
+            return subprocess.CompletedProcess(
+                argv, 0, json.dumps({"current_phase": "aggregation", "next_action": "done"}), ""
+            )
+        if "validate_staged_run.py" in joined:
+            return subprocess.CompletedProcess(argv, 0, "", "")
+        if "assemble_semantic_result.py" in joined:
+            run_dir = next((a for i, a in enumerate(argv) if i and argv[i - 1] == "--run-dir"), None)
+            if run_dir:
+                Path(run_dir, "semantic-result.json").write_text("{}", encoding="utf-8")
+            return subprocess.CompletedProcess(argv, 0, "", "")
+        # spec_eval score/stability/report: write dummy outputs to the */write paths
+        for flag in ("--write", "--analysis-write", "--json-write", "--markdown-write"):
+            for i, a in enumerate(argv):
+                if a == flag and i + 1 < len(argv):
+                    Path(argv[i + 1]).parent.mkdir(parents=True, exist_ok=True)
+                    content = b"{}\n" if argv[i + 1].endswith(".json") else b"# report\n"
+                    Path(argv[i + 1]).write_bytes(content)
+        return subprocess.CompletedProcess(argv, 0, "", "")
+
+
+# --- fixtures ---------------------------------------------------------------
+
+class _PipelineTestBase(unittest.TestCase):
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.settings = ServiceSettings.discover(data_root=Path(self.tmp.name))
+        self.store = SqliteStore(self.settings)
+        self.jobs = JobRepository(self.store)
+        self.attempts = AttemptRepository(self.store)
+        self.events = EventRepository(self.store)
+        self.artifacts = ArtifactRepository(self.store)
+        self.snapshots = DependencySnapshotRepository(self.store)
+        job = self.jobs.create_job(
+            CreateJobCommand(func_id="04-01-01", source_revision="rev-abc", run_count=1, job_id=JOB_ID),
+            evaluator_version=EVALUATOR_VERSION,
+        )
+        self.ctx = RunContext.for_run(
+            self.settings,
+            job_id=job.job_id,
+            func_id=job.func_id,
+            source_revision=job.source_revision,
+            run_id="run-1",
+            evaluator_version=job.evaluator_version,
+        )
+        self.obs_dir = self.ctx.run_dir.parent / "obs"
+        self.obs_dir.mkdir(parents=True, exist_ok=True)
+
+    def tearDown(self) -> None:
+        self.store.close()
+        self.tmp.cleanup()
+
+    def _items(self, ids: list[str]) -> list[dict]:
+        return [
+            {
+                "id": wid,
+                "feat_id": wid.split(":")[-1],
+                "input_paths": [],
+                "output_path": str(self.obs_dir / f"{wid.replace(':', '_')}.json"),
+            }
+            for wid in ids
+        ]
+
+    def _to_semantic(self) -> None:
+        """Advance the fresh job to SEMANTIC via the legal transition chain."""
+        self.jobs.transition_status(JOB_ID, S.PREPARING, event_type="enter_preparing")
+        self.jobs.transition_status(JOB_ID, S.EVIDENCE, event_type="enter_evidence")
+        self.jobs.transition_status(JOB_ID, S.SEMANTIC, event_type="enter_semantic")
+
+
+# --- run_semantic loop tests ------------------------------------------------
+
+class RunSemanticTest(_PipelineTestBase):
+    def test_completes_all_items_and_records_checkpoints(self) -> None:
+        self._to_semantic()
+        executor = FakeExecutor()
+        runner = FakeScriptRunner(self._items(["feature:Feat-01", "function:global"]))
+        result = run_semantic(
+            self.ctx, executor, jobs=self.jobs, attempts=self.attempts, events=self.events, runner=runner
+        )
+        self.assertEqual(result.outcome, C.STATUS_COMPLETED)
+        self.assertEqual(result.completed_items, 2)
+        self.assertEqual(executor.calls, ["feature:Feat-01", "function:global"])
+        # one completed checkpoint per work item, all in the semantic stage
+        ckpts = self.attempts.list_for_job(JOB_ID, stage=S.STAGE_SEMANTIC)
+        self.assertEqual(len(ckpts), 2)
+        for ckpt in ckpts:
+            self.assertEqual(ckpt.status, S.ATTEMPT_COMPLETED)
+        # observation files were written
+        self.assertTrue((self.obs_dir / "feature_Feat-01.json").is_file())
+        # observations_complete event recorded
+        types = [e.event_type for e in self.events.list_for_job(JOB_ID)]
+        self.assertIn("observations_complete", types)
+
+    def test_awaiting_executor_pauses_job(self) -> None:
+        self._to_semantic()
+        executor = FakeExecutor(awaiting=True)
+        runner = FakeScriptRunner(self._items(["feature:Feat-01"]))
+        result = run_semantic(
+            self.ctx, executor, jobs=self.jobs, attempts=self.attempts, events=self.events, runner=runner
+        )
+        self.assertEqual(result.outcome, C.STATUS_AWAITING)
+        self.assertEqual(self.jobs.get_job(JOB_ID).status, S.AWAITING_EXECUTOR)
+        # no checkpoint completed while awaiting
+        self.assertEqual(len(self.attempts.list_for_job(JOB_ID)), 0)
+
+    def test_executor_failure_fails_job(self) -> None:
+        self._to_semantic()
+        executor = FakeExecutor(fail_on={"feature:Feat-01"})
+        runner = FakeScriptRunner(self._items(["feature:Feat-01"]))
+        result = run_semantic(
+            self.ctx, executor, jobs=self.jobs, attempts=self.attempts, events=self.events, runner=runner
+        )
+        self.assertEqual(result.outcome, C.STATUS_FAILED)
+        self.assertEqual(self.jobs.get_job(JOB_ID).status, S.FAILED)
+
+    def test_pre_set_cancel_returns_cancelled(self) -> None:
+        self._to_semantic()
+        cancel = threading.Event()
+        cancel.set()
+        runner = FakeScriptRunner(self._items(["feature:Feat-01"]))
+        result = run_semantic(
+            self.ctx, FakeExecutor(),
+            jobs=self.jobs, attempts=self.attempts, events=self.events,
+            cancel=cancel, runner=runner,
+        )
+        self.assertEqual(result.outcome, C.STATUS_CANCELLED)
+
+    def test_resume_skips_init_when_run_state_exists(self) -> None:
+        # simulate a previously-initialized run
+        self.ctx.run_dir.mkdir(parents=True, exist_ok=True)
+        (self.ctx.run_dir / "run-state.json").write_text("{}", encoding="utf-8")
+        runner = FakeScriptRunner([])  # no items -> completes immediately
+        run_semantic(
+            self.ctx, FakeExecutor(),
+            jobs=self.jobs, attempts=self.attempts, events=self.events, runner=runner,
+        )
+        # initialize_staged_run.py must NOT have been called
+        self.assertFalse(
+            any("initialize_staged_run.py" in " ".join(c) for c in runner.calls)
+        )
+
+
+# --- run_job_pipeline driver test ------------------------------------------
+
+class RunJobPipelineTest(_PipelineTestBase):
+    def test_fresh_job_runs_to_completion(self) -> None:
+        # pre-seed the evidence input-dir so the real evidence build is skipped
+        self.ctx.input_dir.mkdir(parents=True, exist_ok=True)
+        (self.ctx.input_dir / "function-context.json").write_text("{}", encoding="utf-8")
+        executor = FakeExecutor()
+        runner = FakeScriptRunner(self._items(["feature:Feat-01"]))
+        result = run_job_pipeline(
+            JOB_ID,
+            settings=self.settings, jobs=self.jobs, attempts=self.attempts,
+            events=self.events, artifacts=self.artifacts, snapshots=self.snapshots,
+            executor=executor, runner=runner,
+        )
+        self.assertEqual(result.outcome, C.STATUS_COMPLETED)
+        job = self.jobs.get_job(JOB_ID)
+        # full legal path queued -> preparing -> evidence -> semantic -> aggregation
+        # -> archive -> site_history -> completed
+        self.assertEqual(job.status, S.COMPLETED)
+        types = [e.event_type for e in self.events.list_for_job(JOB_ID)]
+        for stage in ("enter_preparing", "enter_evidence", "enter_semantic",
+                      "enter_aggregation", "enter_archive", "enter_site_history",
+                      "job_completed"):
+            self.assertIn(stage, types)
+        # dependency snapshot frozen for at least the ace_engine repo
+        snaps = self.snapshots.list_for_job(JOB_ID)
+        self.assertTrue(any(s.repo_name == "ace_engine" and s.status == "frozen" for s in snaps))
+        # automated archive produced
+        archive_dir = self.settings.archives_root / job.source_revision / job.func_id / job.job_id
+        self.assertTrue((archive_dir / "archive-manifest.json").is_file())
+
+
+# --- real staged-script integration on cached evidence ----------------------
+
+class StagedScriptIntegrationTest(unittest.TestCase):
+    """Runs the REAL initialize/show_next scripts against a cached evidence dir."""
+
+    def setUp(self) -> None:
+        # locate a real cached evidence package under specs/.evaluator/<rev>/<FuncID>/
+        evaluator_root = (
+            Path(__file__).resolve().parents[3] / ".evaluator"
+        )
+        self.func_id: str | None = None
+        self.fixture: Path | None = None
+        if evaluator_root.is_dir():
+            for rev_dir in evaluator_root.iterdir():
+                if not rev_dir.is_dir() or len(rev_dir.name) != 40:
+                    continue
+                for cand in sorted(rev_dir.iterdir()):
+                    if (
+                        cand.is_dir()
+                        and (cand / "function-context.json").is_file()
+                        and (cand / "static-result.json").is_file()
+                        and (cand / "evidence-manifest.json").is_file()
+                    ):
+                        self.func_id = cand.name
+                        self.fixture = cand
+                        break
+                if self.fixture:
+                    break
+
+    def test_real_init_and_show_next(self) -> None:
+        if self.fixture is None:
+            self.skipTest("no cached evidence package under specs/.evaluator; skipping integration test")
+        tmp = tempfile.TemporaryDirectory()
+        try:
+            settings = ServiceSettings.discover(data_root=Path(tmp.name))
+            store = SqliteStore(settings)
+            jobs = JobRepository(store)
+            job = jobs.create_job(
+                CreateJobCommand(
+                    func_id=self.func_id,  # type: ignore[arg-type]
+                    source_revision="integration",
+                    run_count=1,
+                    job_id="d" * 40,
+                ),
+                evaluator_version=EVALUATOR_VERSION,
+            )
+            ctx = RunContext.for_run(
+                settings, job_id=job.job_id, func_id=job.func_id,
+                source_revision="integration", run_id="run-1",
+                evaluator_version=EVALUATOR_VERSION,
+            )
+            # copy the cached evidence package into place as the input-dir
+            shutil.copytree(self.fixture, ctx.input_dir)  # type: ignore[arg-type]
+
+            from spec_eval.service.pipeline import staged_stage
+
+            staged_stage.init_staged_run(ctx)  # real subprocess
+            self.assertTrue((ctx.run_dir / "run-state.json").is_file())
+            self.assertTrue((ctx.run_dir / "work-items.json").is_file())
+            item = staged_stage.next_work_item(ctx)  # real subprocess
+            self.assertIsInstance(item, dict)
+            self.assertIn("id", item)
+            self.assertIn("output_path", item)
+            store.close()
+        finally:
+            tmp.cleanup()
+
+
+if __name__ == "__main__":
+    unittest.main()

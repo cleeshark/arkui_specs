@@ -801,7 +801,10 @@ spec_eval/
 ├── evaluation_validator.py # Function输入指纹、评价模板和单次确认校验
 ├── cli.py         # 本地和全仓统一入口
 ├── ci_runner.py   # 变更Function的CI入口
-└── gitcode_webhook.py # GitCode Merge Request Webhook接收入口
+├── gitcode_webhook.py # GitCode Merge Request Webhook接收入口
+├── service/       # 本地语义评价服务（domain/store/scheduler/pipeline/executors/http/ui）
+├── service_cli.py # 语义评价服务入口（serve/metrics/cleanup/backup）
+└── SEMANTIC_SERVICE.md # 语义服务部署、Executor配置、数据目录和治理手册
 ```
 
 新增检查器时应保持以下约束：
@@ -811,3 +814,55 @@ spec_eval/
 - Feature内部ID必须以FeatID作为Function级命名空间。
 - 不直接修改spec、design、registry或生产源码。
 - 新规则必须补充正反例、Mutation或参考样本测试。
+
+## 14. 本地语义评价服务（自动化，TASK-011）
+
+`service_cli.py` 把上面手工分步的 evidence → staged semantic → 聚合 → 归档流程，
+工程化为一个本地、可恢复、可观测的服务：输入 FuncID 即可排队执行，自动断点续跑、
+崩溃恢复，并通过浏览器查看进度。它复用本模块的 evidence/staged/score/report 能力，
+不重写评分规则；自动结果写入独立的 `automated` 命名空间，绝不覆盖 confirmed Review
+或站点归档。完整部署/排错见 [`SEMANTIC_SERVICE.md`](./SEMANTIC_SERVICE.md)。
+
+### 14.1 启动与使用
+
+```bash
+# 默认绑定 127.0.0.1:8765；需要本机 codex CLI 已认证
+python3 specs/tools/spec_eval/service_cli.py serve --port 8765 --max-workers 2
+# 局域网暴露时必须带 --token
+python3 specs/tools/spec_eval/service_cli.py serve --host 0.0.0.0 --token "$TOKEN"
+```
+
+浏览器打开 `http://127.0.0.1:8765/` 填入 FuncID 创建任务；或在命令行调 API：
+
+```bash
+# 创建任务（status: queued -> preparing -> evidence -> semantic -> aggregation
+#          -> archive -> site_history -> completed）
+curl -sX POST http://127.0.0.1:8765/api/jobs \
+  -H 'Content-Type: application/json' \
+  -d '{"func_id":"04-01-01","run_count":1}'
+# 查看/筛选/详情/事件/取消/重试
+curl -s 'http://127.0.0.1:8765/api/jobs?status=completed'
+curl -s  http://127.0.0.1:8765/api/jobs/<job_id>
+curl -s 'http://127.0.0.1:8765/api/jobs/<job_id>/events?since_seq=0'
+curl -sX POST http://127.0.0.1:8765/api/jobs/<job_id>/cancel
+curl -sX POST http://127.0.0.1:8765/api/jobs/<job_id>/retry
+curl -s  http://127.0.0.1:8765/api/jobs/<job_id>/artifacts/score-result -o score.json
+# 运维指标
+curl -s  http://127.0.0.1:8765/api/metrics
+```
+
+### 14.2 治理子命令
+
+```bash
+python3 specs/tools/spec_eval/service_cli.py metrics --write metrics.json [--format csv]
+python3 specs/tools/spec_eval/service_cli.py cleanup --retention-days 14   # 只清临时 run 目录，不删归档
+python3 specs/tools/spec_eval/service_cli.py backup                        # WAL checkpoint + DB 备份 + 恢复校验
+```
+
+### 14.3 边界
+
+- Codex 不可用时，semantic 阶段进入 `awaiting_executor`；aggregation 阶段按状态矩阵
+  只能 `failed`（retry 会重跑 semantic + aggregation）。
+- 自动归档位于 `<data-root>/archives/automated/<rev>/<func>/<job>/`，带 SHA-256 清单；
+  confirmed Review 与 `site-evaluation-history.json` 字节级不被触碰。
+- 本服务不修改冻结的 Spec/Design/Registry、CI delta 门禁或父仓 `ace_engine` 生产代码。
