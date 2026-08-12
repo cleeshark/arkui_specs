@@ -20,6 +20,8 @@
 #   CI_SPECS_CHECK          set to 0 to skip repo-level specs integrity checks (default: enabled)
 #   CI_SYNC_ON_MERGE        set to 0 to skip force-syncing CI repos to tip on action=merge (default: enabled)
 #   CI_FORCE_SYNC           set to 1 to reset --hard even repos with uncommitted local changes (default: off)
+#   CI_REBUILD_SITE         set to 0 to skip rebuilding the Docusaurus site after a merge-sync (default: enabled)
+#   CI_SITE_BASE_PATH       URL path the site is served at + BASE_URL for the build (default /arkui_specs)
 #   EXTRA_WORKER_ARGS       extra flags forwarded to ci_worker (e.g. "--dry-run")
 set -euo pipefail
 
@@ -35,14 +37,16 @@ REPO="${SPEC_EVAL_REPO:-arkui_architecture/arkui-specs}"
 HOST="${WEBHOOK_HOST:-127.0.0.1}"
 PORT="${WEBHOOK_PORT:-8765}"
 POLL="${CI_POLL_INTERVAL:-10}"
+SITE_BASE_PATH="${CI_SITE_BASE_PATH:-/arkui_specs}"
 RECEIPTS="specs/.evaluator/webhook/receipts.ndjson"
 LEDGER="specs/.evaluator/ci/processed.ndjson"
 
 mkdir -p specs/.evaluator/webhook specs/.evaluator/ci
 
-echo "[ci_service] starting webhook receiver on ${HOST}:${PORT}"
+echo "[ci_service] starting webhook receiver on ${HOST}:${PORT} (site at ${SITE_BASE_PATH})"
 python3 specs/tools/spec_eval/gitcode_webhook.py \
-    --host "$HOST" --port "$PORT" --events-file "$RECEIPTS" &
+    --host "$HOST" --port "$PORT" --events-file "$RECEIPTS" \
+    --site-root specs/site/build --site-base-path "$SITE_BASE_PATH" &
 RECEIVER_PID=$!
 
 cleanup() {
@@ -70,6 +74,11 @@ TEST_ARGS=""
 # uncommitted local changes (default: dirty repos are skipped to avoid discarding work).
 [ "${CI_SYNC_ON_MERGE:-1}" = "0" ] && TEST_ARGS="$TEST_ARGS --no-sync-on-merge"
 [ "${CI_FORCE_SYNC:-0}" = "1" ] && TEST_ARGS="$TEST_ARGS --force-sync"
+# After a merge-sync, regenerate the Docusaurus site and serve it at SITE_BASE_PATH.
+# Enabled by default; set CI_REBUILD_SITE=0 to opt out. --site-base-url keeps the
+# build's BASE_URL aligned with the path the webhook server serves the site at.
+[ "${CI_REBUILD_SITE:-1}" = "0" ] && TEST_ARGS="$TEST_ARGS --no-rebuild-site"
+TEST_ARGS="$TEST_ARGS --site-base-url ${SITE_BASE_PATH}/"
 
 echo "[ci_service] starting CI worker in watch mode (poll ${POLL}s, repo ${REPO})${TEST_ARGS:+ (test-on-pass)}"
 # The worker runs in the foreground; exiting it (Ctrl-C) tears down the receiver.
