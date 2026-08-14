@@ -13,7 +13,7 @@ metadata:
   stage: design
   domain: arkui
   capability: spec-evaluator
-  version: 0.1.11
+  version: 0.1.12
   status: mvp
   evaluation-unit: function
   rubric-version: 0.3.0
@@ -118,8 +118,10 @@ python3 specs/skills/ohos-design-arkui-spec-evaluator/scripts/initialize_staged_
 The helper rejects non-Pilot FuncIDs, mismatched revisions, incomplete evidence shards, tool-error
 static results, non-empty run directories, and attempts to write into confirmed Review storage. It
 hashes frozen inputs, partitions static findings by Feat, and creates run-state, work items,
-observation templates, and an aggregation template. General registered-Function initialization is
-intentionally deferred until Pilot calibration is stable.
+observation templates, an aggregation template, and `output-contract.json`. The output contract is
+generated from the same constants and frozen Rubric used by the staged validator; treat its evidence
+types, ID/hash patterns, Criterion IDs, and conditional defect-ownership rules as normative.
+General registered-Function initialization is intentionally deferred until Pilot calibration is stable.
 
 ### 4. Process one durable work item at a time
 
@@ -136,6 +138,11 @@ shard, and its static slice. For `function-global`, load Design, its evidence sh
 global static slice, Rubric, and design rules. Do not preload full `work-items.json`,
 `static-result.json`, every Feature shard, every Spec, or `report.md` into model context.
 Deterministic initialization has already validated and hashed the complete package.
+
+Before writing nested evidence or defect ownership fields, read the run-local
+`output-contract.json`. Evidence IDs use the `EV-` prefix, hashes use the literal `sha256:` prefix,
+evidence `type` is one of the declared enums, Criterion IDs come only from its frozen list, and
+claim `defect_keys` remain empty unless the local outcome is `CONFLICT` or `MISSING`.
 
 For each Feature observation:
 

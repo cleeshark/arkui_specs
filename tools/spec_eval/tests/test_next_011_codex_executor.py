@@ -220,6 +220,29 @@ class CodexExecutorTest(unittest.TestCase):
         self.assertIn("service-owned fields", requirement)
         self.assertNotIn("initialized identity, input", requirement)
 
+    def test_repair_prompt_is_bounded_to_candidate_and_machine_contract(self) -> None:
+        work = replace(
+            self.work,
+            input_paths=("/tmp/.Feat-01.json.candidate", "/tmp/Feat-01.json", "/tmp/output-contract.json"),
+            prompt_extras={
+                "mode": "repair_candidate",
+                "result_kind": "staged_observation_payload",
+                "template_path": "/tmp/Feat-01.json",
+                "output_contract_path": "/tmp/output-contract.json",
+                "candidate_path": "/tmp/.Feat-01.json.candidate",
+                "validation_errors": ["evidence_id: invalid evidence ID"],
+                "payload_fields": ["claim_reviews", "observations", "open_questions", "notes"],
+                "service_derived_fields": ["status", "reviewed_claim_ids", "completed_checks"],
+                "machine_contract": {"common": {"evidence": {"evidence_id_pattern": "^EV-"}}},
+            },
+        )
+        runner = _FakeRunner(result_doc=_result_doc(work.work_item_id))
+        self._executor(runner).execute(work, lambda e: None)
+        prompt = json.loads(runner.last_stdin or "{}")
+        self.assertIn("Repair one staged", prompt["task"])
+        self.assertIn("do not redo semantic evaluation", " ".join(prompt["constraints"]))
+        self.assertEqual(prompt["result_contract"]["mode"], "repair_candidate")
+
     def test_nonzero_exit_is_failed(self) -> None:
         runner = _FakeRunner(exit_code=2, write_result=False)
         result = self._executor(runner).execute(self.work, lambda e: None)

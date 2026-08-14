@@ -24,6 +24,7 @@ from staged_run_support import (
     OUTCOME_POLICY_BASIS_CRITERIA,
     content_hash,
     load_object,
+    staged_output_contract,
     write_object,
 )
 
@@ -124,6 +125,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--evaluation-mode", choices=("golden", "automated"), default="golden"
     )
     parser.add_argument("--source-revision")
+    parser.add_argument("--evaluator-version", default=DEFAULT_EVALUATOR_VERSION)
     return parser
 
 
@@ -142,7 +144,7 @@ def main(argv: list[str] | None = None) -> int:
             args.func_id,
             input_dir,
             args.run_id,
-            DEFAULT_EVALUATOR_VERSION,
+            args.evaluator_version,
             source_revision=args.source_revision,
             allow_non_pilot=args.evaluation_mode == "automated",
         )
@@ -184,6 +186,14 @@ def main(argv: list[str] | None = None) -> int:
     slices_dir.mkdir()
 
     try:
+        output_contract_path = run_dir / "output-contract.json"
+        write_object(
+            output_contract_path,
+            staged_output_contract(
+                source_revision=str(semantic["source_revision"]),
+                evaluator_version=str(semantic["evaluator_version"]),
+            ),
+        )
         artifacts = [
             _artifact(input_dir / "function-context.json", "function_context"),
             _artifact(input_dir / "static-result.json", "static_result"),
@@ -194,6 +204,7 @@ def main(argv: list[str] | None = None) -> int:
             _artifact(EVALUATION_ROOT / "design_completeness_rules.yaml", "design_rules"),
             _artifact(design_path, "design"),
             _artifact(design_shard_path, "design_evidence_shard"),
+            _artifact(output_contract_path, "staged_output_contract"),
         ]
         items: list[dict[str, Any]] = []
         feature_ids: list[str] = []
@@ -243,6 +254,7 @@ def main(argv: list[str] | None = None) -> int:
                 str(spec_path),
                 str(shard_path),
                 str(static_slice_path),
+                str(output_contract_path),
             ]
             item = {
                 "id": item_id,
@@ -294,6 +306,7 @@ def main(argv: list[str] | None = None) -> int:
             str(global_slice_path),
             str(EVALUATION_ROOT / "rubric.yaml"),
             str(EVALUATION_ROOT / "design_completeness_rules.yaml"),
+            str(output_contract_path),
         ]
         items.append(
             {

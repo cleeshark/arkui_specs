@@ -41,22 +41,71 @@ def load_template(path: Path) -> dict[str, Any]:
     return value
 
 
-def observation_prompt_contract(template_path: Path) -> dict[str, Any]:
+def observation_prompt_contract(
+    template_path: Path, output_contract_path: Path | None = None
+) -> dict[str, Any]:
+    output_contract_path = output_contract_path or template_path.parents[1] / "output-contract.json"
+    output_contract = _load_optional_output_contract(output_contract_path)
     return {
         "result_kind": "staged_observation_payload",
         "template_path": str(template_path),
+        "output_contract_path": str(output_contract_path),
         "payload_fields": list(OBSERVATION_PAYLOAD_FIELDS),
         "service_derived_fields": ["status", "reviewed_claim_ids", "completed_checks"],
+        "machine_contract": {
+            "valid_criterion_ids": output_contract.get("valid_criterion_ids", []),
+            "common": output_contract.get("common", {}),
+            "payload": output_contract.get("observation_payload", {}),
+        },
     }
 
 
-def aggregation_prompt_contract(template_path: Path) -> dict[str, Any]:
+def aggregation_prompt_contract(
+    template_path: Path, output_contract_path: Path | None = None
+) -> dict[str, Any]:
+    output_contract_path = output_contract_path or template_path.parent / "output-contract.json"
+    output_contract = _load_optional_output_contract(output_contract_path)
     return {
         "result_kind": "staged_aggregation_payload",
         "template_path": str(template_path),
+        "output_contract_path": str(output_contract_path),
         "payload_fields": list(AGGREGATION_PAYLOAD_FIELDS),
         "service_derived_fields": ["status", "source_observation_ids"],
+        "machine_contract": {
+            "valid_criterion_ids": output_contract.get("valid_criterion_ids", []),
+            "common": output_contract.get("common", {}),
+            "payload": output_contract.get("aggregation_payload", {}),
+        },
     }
+
+
+def repair_prompt_contract(
+    base_contract: dict[str, Any],
+    *,
+    candidate_path: Path,
+    validation_errors: Iterable[str],
+) -> dict[str, Any]:
+    """Describe one bounded mechanical repair without widening evidence access."""
+    contract = copy.deepcopy(base_contract)
+    contract.update({
+        "mode": "repair_candidate",
+        "candidate_path": str(candidate_path),
+        "validation_errors": list(validation_errors),
+        "repair_constraints": [
+            "Preserve the candidate's semantic judgments, facts, claim coverage and ordering.",
+            "Repair only the listed validation errors and linked references affected by those repairs.",
+            "Do not reopen source, SDK, Spec, Design or evidence shards.",
+            "Return the complete corrected executor-owned payload, not a patch.",
+        ],
+    })
+    return contract
+
+
+def _load_optional_output_contract(path: Path) -> dict[str, Any]:
+    """Keep pre-0.1.12 staged runs resumable without inventing a new contract."""
+    if not path.is_file():
+        return {}
+    return load_template(path)
 
 
 def merge_observation_payload(

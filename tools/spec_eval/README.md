@@ -843,6 +843,7 @@ python3 specs/tools/spec_eval/service_cli.py serve --port 8790 --max-workers 2
 - 输入 FuncID、run 数量和可选 ace_engine revision，手动启动刷新。
 - 按 `--max-workers` 并行执行不同任务，每 2 秒刷新 Job 状态、阶段和事件；执行中的任务显示旋转/流光动效，持续时间每秒更新。
 - 在任务列表、详情和顶部统计卡中查看总历时、Executor 累计耗时、调用次数、Token 消耗与 usage 上报覆盖率。
+- evaluator 0.1.12 会把 Skill 校验器同源的字段级契约注入 Codex prompt；若候选仅有 `EV-`、`sha256:`、evidence type、Criterion ID 或 defect ownership 等白名单格式错误，服务最多执行一次不重读证据的定向修复。
 - 查看全部 Function 的当前报告、版本、分数、Gate、刷新状态和历史数量。
 - 按新鲜度筛选 `FRESH`、`EXPIRING`、`EXPIRED_TIME`、`STALE_INPUT` 和 `MISSING`。
 - 取消活动任务、重试失败任务，并查看单 Function 的历史报告和 Finding delta。

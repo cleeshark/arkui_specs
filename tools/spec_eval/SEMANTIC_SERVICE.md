@@ -153,6 +153,14 @@ after validation succeeds. Observation and aggregation use separate payload
 contracts. A nested `identity`/`input` document or any other extra field is
 rejected without overwriting the initialized template.
 
+Evaluator 0.1.12 also generates `output-contract.json` from the same Rubric and Skill validator
+constants. The service embeds the relevant section into every Codex prompt, including evidence
+types, `EV-`/`sha256:` formats, legal Criterion IDs and conditional defect ownership. If an
+observation candidate fails only the allowlisted mechanical contract checks, the service makes one
+repair call restricted to the candidate, initialized template and machine contract. It does not
+reopen evidence or silently normalize output. Both executor calls retain separate result files and
+are included in Job duration/Token statistics.
+
 The service also audits every structured-output schema object node for
 `additionalProperties: false` and complete `required` coverage before starting
 Codex. A locally invalid output schema therefore fails at service startup

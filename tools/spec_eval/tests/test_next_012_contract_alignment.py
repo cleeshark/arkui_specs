@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import tempfile
 import unittest
@@ -15,11 +16,16 @@ from spec_eval.service.pipeline.context import RunContext
 from spec_eval.service.pipeline.result_payload import merge_aggregation_payload
 from spec_eval.service.pipeline.semantic_stage import run_semantic
 from spec_eval.service.settings import ServiceSettings
-from spec_eval.service.store.repositories import AttemptRepository, EventRepository, JobRepository
+from spec_eval.service.store.repositories import (
+    AttemptRepository,
+    EventRepository,
+    JobRepository,
+    JobStatisticsRepository,
+)
 from spec_eval.service.store.sqlite_store import SqliteStore
 
 
-EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.11"
+EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.12"
 SOURCE_REVISION = "a" * 40
 
 
@@ -104,6 +110,56 @@ class _AggregationPayloadExecutor:
         )
 
 
+class _Issue13RepairExecutor(_PayloadExecutor):
+    """First emit the real issue #13 shape, then mechanically repair it."""
+
+    def __init__(self, *, repair_succeeds: bool = True) -> None:
+        super().__init__()
+        self.repair_succeeds = repair_succeeds
+
+    def execute(self, work: C.WorkItemInput, emit, cancel=None) -> C.ExecutionResult:
+        result = super().execute(work, emit, cancel)
+        payload = result.observation
+        assert payload is not None
+        repair_mode = work.prompt_extras.get("mode") == "repair_candidate"
+        if work.work_item_id != "feature:Feat-01":
+            return result
+
+        rubric_path = Path(work.repo_root) / "specs" / "evaluation" / "rubric.yaml"
+        digest = hashlib.sha256(rubric_path.read_bytes()).hexdigest()
+        repaired = repair_mode and self.repair_succeeds
+        evidence_id = "EV-E1" if repaired else "E1"
+        evidence = {
+            "evidence_id": evidence_id,
+            "path": "specs/evaluation/rubric.yaml",
+            "source_revision": SOURCE_REVISION,
+            "content_hash": f"sha256:{digest}" if repaired else digest,
+            "description": "Synthetic issue #13 contract evidence.",
+        }
+        if repaired:
+            evidence["type"] = "spec_location"
+        observation = payload["observations"][0]
+        observation.update(
+            local_outcome="SUPPORTED",
+            criterion_ids=[
+                "CORRECTNESS-SOURCE-SUPPORT"
+                if repaired else "DESIGN-EXCEPTION-RECOVERY"
+            ],
+            evidence=[evidence],
+        )
+        review = payload["claim_reviews"][0]
+        review.update(
+            local_outcome="SUPPORTED",
+            evidence_ids=[evidence_id],
+            defect_keys=[] if repaired else ["misplaced-defect"],
+        )
+        review["unit_reviews"][0].update(
+            local_outcome="SUPPORTED",
+            evidence_ids=[evidence_id],
+        )
+        return result
+
+
 class ContractAlignmentIntegrationTest(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()
@@ -112,6 +168,7 @@ class ContractAlignmentIntegrationTest(unittest.TestCase):
         self.jobs = JobRepository(self.store)
         self.attempts = AttemptRepository(self.store)
         self.events = EventRepository(self.store)
+        self.statistics = JobStatisticsRepository(self.store)
         self.job = self.jobs.create_job(
             CreateJobCommand(
                 func_id="01-01-01",
@@ -205,9 +262,52 @@ class ContractAlignmentIntegrationTest(unittest.TestCase):
         self.assertNotIn("input", feature)
         first_work = executor.prompts[0]
         self.assertIn(str(Path(first_work.work_item["output_path"])), first_work.input_paths)
+        self.assertIn(str(self.ctx.run_dir / "output-contract.json"), first_work.input_paths)
         self.assertEqual(
             first_work.prompt_extras["result_kind"], "staged_observation_payload"
         )
+        machine_contract = first_work.prompt_extras["machine_contract"]
+        self.assertIn("source_citation", machine_contract["common"]["evidence"]["type_enum"])
+        self.assertEqual(
+            machine_contract["common"]["evidence"]["evidence_id_pattern"],
+            "^EV-[A-Za-z0-9._-]+$",
+        )
+        self.assertIn(
+            "CORRECTNESS-SOURCE-SUPPORT", machine_contract["valid_criterion_ids"]
+        )
+
+    def test_issue_13_contract_drift_is_repaired_once(self) -> None:
+        executor = _Issue13RepairExecutor()
+        result = run_semantic(
+            self.ctx,
+            executor,
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+            statistics=self.statistics,
+        )
+        self.assertEqual(result.outcome, C.STATUS_COMPLETED, result.error)
+        self.assertEqual(len(executor.prompts), 3)
+        repair_work = executor.prompts[1]
+        self.assertEqual(repair_work.prompt_extras["mode"], "repair_candidate")
+        self.assertTrue(repair_work.executor_result_path.endswith(".repair-1.json"))
+        self.assertEqual(len(repair_work.input_paths), 3)
+        self.assertTrue(any(path.endswith(".candidate") for path in repair_work.input_paths))
+
+        feature = json.loads(
+            (self.ctx.run_dir / "observations" / "Feat-01.json").read_text(encoding="utf-8")
+        )
+        evidence = feature["observations"][0]["evidence"][0]
+        self.assertEqual(evidence["type"], "spec_location")
+        self.assertEqual(evidence["evidence_id"], "EV-E1")
+        self.assertTrue(evidence["content_hash"].startswith("sha256:"))
+        self.assertEqual(feature["claim_reviews"][0]["defect_keys"], [])
+
+        event_types = [event.event_type for event in self.events.list_for_job(self.job.job_id)]
+        self.assertIn("candidate_validation_failed", event_types)
+        self.assertIn("candidate_repair_started", event_types)
+        self.assertIn("candidate_repair_completed", event_types)
+        self.assertEqual(self.statistics.get(self.job.job_id).executor_invocations, 3)
 
     def test_nested_issue_12_shape_is_rejected_without_overwriting_template(self) -> None:
         template_path = self.ctx.run_dir / "observations" / "Feat-01.json"
@@ -223,12 +323,45 @@ class ContractAlignmentIntegrationTest(unittest.TestCase):
         self.assertIn("payload fields", result.error or "")
         self.assertEqual(template_path.read_bytes(), before)
 
+    def test_pre_012_run_without_machine_contract_remains_resumable(self) -> None:
+        contract_path = self.ctx.run_dir / "output-contract.json"
+        contract_path.unlink()
+        state_path = self.ctx.run_dir / "run-state.json"
+        state = json.loads(state_path.read_text(encoding="utf-8"))
+        state["input_artifacts"] = [
+            item
+            for item in state["input_artifacts"]
+            if item.get("kind") != "staged_output_contract"
+        ]
+        state_path.write_text(json.dumps(state), encoding="utf-8")
+        work_items_path = self.ctx.run_dir / "work-items.json"
+        work_items = json.loads(work_items_path.read_text(encoding="utf-8"))
+        for item in work_items["items"]:
+            item["input_paths"] = [
+                path for path in item["input_paths"] if path != str(contract_path)
+            ]
+        work_items_path.write_text(json.dumps(work_items), encoding="utf-8")
+
+        executor = _PayloadExecutor()
+        result = run_semantic(
+            self.ctx,
+            executor,
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+        )
+        self.assertEqual(result.outcome, C.STATUS_COMPLETED, result.error)
+        self.assertEqual(executor.prompts[0].prompt_extras["machine_contract"], {
+            "valid_criterion_ids": [], "common": {}, "payload": {}
+        })
+
     def test_invalid_candidate_is_rejected_without_overwriting_template(self) -> None:
         template_path = self.ctx.run_dir / "observations" / "Feat-01.json"
         before = template_path.read_bytes()
+        executor = _PayloadExecutor(invalid=True)
         result = run_semantic(
             self.ctx,
-            _PayloadExecutor(invalid=True),
+            executor,
             jobs=self.jobs,
             attempts=self.attempts,
             events=self.events,
@@ -236,6 +369,26 @@ class ContractAlignmentIntegrationTest(unittest.TestCase):
         self.assertEqual(result.outcome, C.STATUS_FAILED)
         self.assertIn("expected at least one evidence-backed observation", result.error or "")
         self.assertEqual(template_path.read_bytes(), before)
+        self.assertEqual(len(executor.prompts), 1)
+
+    def test_failed_repair_keeps_initialized_template_and_stops_after_one_round(self) -> None:
+        template_path = self.ctx.run_dir / "observations" / "Feat-01.json"
+        before = template_path.read_bytes()
+        executor = _Issue13RepairExecutor(repair_succeeds=False)
+        result = run_semantic(
+            self.ctx,
+            executor,
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+            statistics=self.statistics,
+        )
+        self.assertEqual(result.outcome, C.STATUS_FAILED)
+        self.assertEqual(len(executor.prompts), 2)
+        self.assertEqual(template_path.read_bytes(), before)
+        self.assertEqual(self.statistics.get(self.job.job_id).executor_invocations, 2)
+        event_types = [event.event_type for event in self.events.list_for_job(self.job.job_id)]
+        self.assertIn("candidate_repair_failed", event_types)
 
     def test_aggregation_merge_keeps_identity_and_derives_sources(self) -> None:
         initialized = json.loads(

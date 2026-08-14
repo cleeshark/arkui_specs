@@ -178,6 +178,7 @@ def _build_aggregation_input(ctx: RunContext) -> C.WorkItemInput:
     aggregation_path = ctx.run_dir / "aggregation.json"
     for contract_input in (
         aggregation_path,
+        ctx.run_dir / "output-contract.json",
         ctx.run_dir / "work-items.json",
         ctx.skill_scripts_dir.parent / "references" / "staged-run-contract.md",
     ):
@@ -202,7 +203,9 @@ def _build_aggregation_input(ctx: RunContext) -> C.WorkItemInput:
         skill_version=ctx.evaluator_version,
         protocol_version=ctx.protocol_version,
         forbidden_paths=ctx.forbidden_paths,
-        prompt_extras=aggregation_prompt_contract(aggregation_path),
+        prompt_extras=aggregation_prompt_contract(
+            aggregation_path, ctx.run_dir / "output-contract.json"
+        ),
     )
 
 

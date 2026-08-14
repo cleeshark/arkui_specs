@@ -298,21 +298,45 @@ class CodexCliExecutor:
     @staticmethod
     def _build_prompt(work: C.WorkItemInput) -> str:
         result_contract = dict(work.prompt_extras)
+        repair_mode = result_contract.get("mode") == "repair_candidate"
+        has_machine_contract = bool(
+            result_contract.get("machine_contract", {}).get("payload")
+        )
         payload_fields = result_contract.get("payload_fields", [])
         derived_fields = result_contract.get("service_derived_fields", [])
         result_kind = result_contract.get("result_kind", "staged_payload")
         payload_field_text = json.dumps(payload_fields, ensure_ascii=False)
         derived_field_text = json.dumps(derived_fields, ensure_ascii=False)
+        constraints = [
+            "Follow the declared evaluator Skill and staged-run contract.",
+            "Read only the declared input_paths and frozen source/SDK files.",
+            "Do not read paths in forbidden_paths (confirmed reviews or other runs).",
+            "Do not modify any formal Spec, Design, Registry, source or test file.",
+            "Do not modify the initialized staged template; the service owns and publishes it.",
+            "Write only the structured final result.",
+        ]
+        if has_machine_contract:
+            constraints.insert(
+                -1,
+                "Treat result_contract.machine_contract as normative for nested fields, enums, IDs, hashes and conditional ownership rules.",
+            )
+        if repair_mode:
+            constraints = [
+                "Perform one mechanical repair of the declared invalid candidate.",
+                "Read only candidate_path, template_path and output_contract_path from input_paths.",
+                "Do not reopen source, SDK, Spec, Design or evidence shards and do not redo semantic evaluation.",
+                "Preserve semantic judgments, facts, claim coverage and array ordering.",
+                "Repair every listed validation error plus directly linked evidence ID references.",
+                "Treat result_contract.machine_contract as normative for nested fields, enums, IDs, hashes and conditional ownership rules.",
+                "Return the complete corrected executor-owned payload, not a patch.",
+            ]
         payload = {
-            "task": "Complete exactly one staged semantic evaluation work item.",
-            "constraints": [
-                "Follow the declared evaluator Skill and staged-run contract.",
-                "Read only the declared input_paths and frozen source/SDK files.",
-                "Do not read paths in forbidden_paths (confirmed reviews or other runs).",
-                "Do not modify any formal Spec, Design, Registry, source or test file.",
-                "Do not modify the initialized staged template; the service owns and publishes it.",
-                "Write only the structured final result.",
-            ],
+            "task": (
+                "Repair one staged semantic evaluation candidate after validation failure."
+                if repair_mode else
+                "Complete exactly one staged semantic evaluation work item."
+            ),
+            "constraints": constraints,
             "func_id": work.func_id,
             "run_id": work.run_id,
             "work_item": work.work_item,

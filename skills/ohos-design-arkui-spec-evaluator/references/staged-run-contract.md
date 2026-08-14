@@ -9,6 +9,7 @@ not a maintained capability baseline.
 <run-dir>/
 ├── run-state.json
 ├── work-items.json
+├── output-contract.json
 ├── semantic-template.json
 ├── aggregation.json
 ├── observations/
@@ -38,6 +39,11 @@ Do not create `semantic-result.json` manually. Produce it with
 
 Never rely on prior conversation memory for a completed work item. Treat its validated observation
 file as the durable handoff after context compaction or a new Agent session.
+
+`output-contract.json` is the machine-readable companion to this document. It is generated from
+the same constants and frozen Rubric used by the validator. Automated executors must follow it for
+nested fields, enums, patterns, Criterion order, and conditional rules instead of reconstructing
+those details from prose.
 
 ## Observation contract
 
@@ -154,6 +160,17 @@ ambiguous owner.
 Evidence objects use the same contract as `semantic-result.json`. Record path, frozen revision,
 SHA-256 hash, and a description of the proved fact. Keep source excerpts out of observation files
 unless a short excerpt is essential; use paths and evidence hashes as the durable reference.
+
+The exact evidence syntax is:
+
+- `evidence_id`: `EV-` followed by letters, digits, `.`, `_`, or `-`.
+- `type`: one of the eight values listed in `output-contract.json`.
+- `content_hash`: `sha256:` followed by exactly 64 lowercase hexadecimal digits.
+- `source_revision`: the initialized frozen revision, copied exactly.
+
+When an evidence ID changes, update every observation, Claim, and unit-level `evidence_ids`
+reference. Claim `defect_keys` are required for `CONFLICT` and `MISSING`, and must be empty for
+`SUPPORTED`, `NOT_APPLICABLE`, and `NOT_VERIFIABLE`.
 
 ## Function-global scope
 

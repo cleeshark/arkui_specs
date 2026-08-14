@@ -18,7 +18,9 @@ if str(SKILL_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SKILL_SCRIPTS))
 
 from staged_run_support import (  # noqa: E402
+    EVIDENCE_TYPES,
     OUTCOME_POLICY_BASIS_CRITERIA,
+    staged_output_contract,
     validate_aggregation_document,
     validate_observation_document,
 )
@@ -35,7 +37,7 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
     def _staged_identity(self) -> dict[str, object]:
         return {
             "schema_version": 2,
-            "evaluator_version": "skill:ohos-design-arkui-spec-evaluator@0.1.11",
+            "evaluator_version": "skill:ohos-design-arkui-spec-evaluator@0.1.12",
             "func_id": "05-01-02",
             "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
             "run_id": "validator-unit-test",
@@ -130,7 +132,7 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
         _, frontmatter, _ = content.split("---", 2)
         metadata = yaml.safe_load(frontmatter)
         self.assertEqual(metadata["name"], "ohos-design-arkui-spec-evaluator")
-        self.assertEqual(metadata["metadata"]["version"], "0.1.11")
+        self.assertEqual(metadata["metadata"]["version"], "0.1.12")
         self.assertEqual(metadata["metadata"]["rubric-version"], "0.3.0")
         self.assertLess(len(content.splitlines()), 500)
         for relative in (
@@ -202,7 +204,7 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             semantic = json.loads(result_path.read_text(encoding="utf-8"))
             self.assertEqual(
                 semantic["evaluator_version"],
-                "skill:ohos-design-arkui-spec-evaluator@0.1.11",
+                "skill:ohos-design-arkui-spec-evaluator@0.1.12",
             )
             expected_ids = [
                 criterion["id"]
@@ -280,8 +282,27 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(
                 json.loads(output.read_text(encoding="utf-8"))["evaluator_version"],
-                "skill:ohos-design-arkui-spec-evaluator@0.1.11",
+                "skill:ohos-design-arkui-spec-evaluator@0.1.12",
             )
+
+    def test_machine_output_contract_matches_validator_and_rubric(self) -> None:
+        source_revision = "a" * 40
+        contract = staged_output_contract(source_revision=source_revision)
+        expected_criteria = [
+            criterion["id"]
+            for dimension in self.rubric["dimensions"]
+            for criterion in dimension["criteria"]
+        ]
+        self.assertEqual(contract["valid_criterion_ids"], expected_criteria)
+        evidence = contract["common"]["evidence"]
+        self.assertEqual(evidence["type_enum"], list(EVIDENCE_TYPES))
+        self.assertEqual(evidence["evidence_id_pattern"], "^EV-[A-Za-z0-9._-]+$")
+        self.assertEqual(
+            evidence["content_hash_pattern"], "^sha256:[0-9a-f]{64}$"
+        )
+        example = evidence["format_example_only"]
+        self.assertEqual(example["source_revision"], source_revision)
+        self.assertTrue(example["content_hash"].startswith("sha256:"))
 
     def test_automated_template_accepts_explicit_non_pilot_revision(self) -> None:
         func_id = "01-01-02"  # registered Function, deliberately outside the frozen Pilot

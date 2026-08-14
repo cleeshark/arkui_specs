@@ -44,6 +44,7 @@ from .result_payload import (
     load_template,
     merge_observation_payload,
     observation_prompt_contract,
+    repair_prompt_contract,
 )
 from . import staged_stage
 from ..freshness import DEPENDENCY_SNAPSHOT_CHANGED
@@ -65,6 +66,14 @@ class SemanticStageResult:
     outcome: str  # C.STATUS_COMPLETED | C.STATUS_AWAITING | C.STATUS_FAILED | C.STATUS_CANCELLED
     completed_items: int
     error: str | None = None
+
+
+_REPAIRABLE_VALIDATION_ERROR_MARKERS = (
+    ".evidence_id: invalid evidence ID",
+    ".content_hash: expected sha256:<64 lowercase hex digits>",
+    ".criterion_ids: unknown criteria",
+    ".defect_keys: only conflict or missing claims may own defects",
+)
 
 
 # --- executor event -> DB event bridge (capped) -----------------------------
@@ -157,6 +166,78 @@ def run_semantic(
             verdict = staged_stage.validate_work_item_candidate(
                 ctx, work.work_item_id, candidate_path, runner=runner
             )
+            if (
+                not verdict.ok
+                and work.prompt_extras.get("machine_contract", {}).get("payload")
+                and _repairable_validation_errors(verdict.errors)
+            ):
+                events.append(
+                    ctx.job_id,
+                    "candidate_validation_failed",
+                    {
+                        "work_item_id": work.work_item_id,
+                        "repairable": True,
+                        "errors": list(verdict.errors),
+                    },
+                )
+                repair_work = _build_repair_work_input(work, candidate_path, verdict.errors)
+                events.append(
+                    ctx.job_id,
+                    "candidate_repair_started",
+                    {"work_item_id": work.work_item_id, "repair_attempt": 1},
+                )
+                repair_result = executor.execute(repair_work, emit, cancel)
+                _record_executor_statistics(statistics, ctx.job_id, repair_result)
+                if repair_result.status == C.STATUS_CANCELLED or (
+                    cancel is not None and cancel.is_set()
+                ):
+                    return SemanticStageResult(
+                        C.STATUS_CANCELLED, completed, "cancelled during candidate repair"
+                    )
+                if not repair_result.succeeded:
+                    error = repair_result.error or f"repair executor {repair_result.status}"
+                    events.append(
+                        ctx.job_id,
+                        "candidate_repair_failed",
+                        {
+                            "work_item_id": work.work_item_id,
+                            "repair_attempt": 1,
+                            "error": error,
+                        },
+                    )
+                    jobs.transition_status(
+                        ctx.job_id,
+                        S.FAILED,
+                        event_type="semantic_failed",
+                        payload={"work_item_id": work.work_item_id, "error": error},
+                    )
+                    return SemanticStageResult(C.STATUS_FAILED, completed, error)
+                try:
+                    candidate = merge_observation_payload(initialized, repair_result.observation)
+                    _write_candidate(candidate_path, candidate)
+                except (OSError, KeyError, ValueError, json.JSONDecodeError) as exc:
+                    events.append(
+                        ctx.job_id,
+                        "candidate_repair_failed",
+                        {
+                            "work_item_id": work.work_item_id,
+                            "repair_attempt": 1,
+                            "error": str(exc),
+                        },
+                    )
+                    raise
+                verdict = staged_stage.validate_work_item_candidate(
+                    ctx, work.work_item_id, candidate_path, runner=runner
+                )
+                events.append(
+                    ctx.job_id,
+                    "candidate_repair_completed" if verdict.ok else "candidate_repair_failed",
+                    {
+                        "work_item_id": work.work_item_id,
+                        "repair_attempt": 1,
+                        "errors": list(verdict.errors),
+                    },
+                )
             if not verdict.ok:
                 jobs.transition_status(
                     ctx.job_id, S.FAILED,
@@ -235,8 +316,49 @@ def _build_work_input(ctx: RunContext, item: dict[str, Any]) -> C.WorkItemInput:
         skill_version=ctx.evaluator_version,
         protocol_version=ctx.protocol_version,
         forbidden_paths=ctx.forbidden_paths,
-        prompt_extras=observation_prompt_contract(output_path),
+        prompt_extras=observation_prompt_contract(
+            output_path, ctx.run_dir / "output-contract.json"
+        ),
     )
+
+
+def _build_repair_work_input(
+    work: C.WorkItemInput,
+    candidate_path: Path,
+    validation_errors: tuple[str, ...],
+) -> C.WorkItemInput:
+    template_path = Path(str(work.prompt_extras["template_path"]))
+    output_contract_path = Path(str(work.prompt_extras["output_contract_path"]))
+    result_path = Path(work.executor_result_path)
+    repair_result_path = result_path.with_name(
+        f"{result_path.stem}.repair-1{result_path.suffix}"
+    )
+    return replace(
+        work,
+        input_paths=(
+            str(candidate_path),
+            str(template_path),
+            str(output_contract_path),
+        ),
+        executor_result_path=str(repair_result_path),
+        prompt_extras=repair_prompt_contract(
+            work.prompt_extras,
+            candidate_path=candidate_path,
+            validation_errors=validation_errors,
+        ),
+    )
+
+
+def _repairable_validation_errors(errors: tuple[str, ...]) -> bool:
+    if not errors:
+        return False
+    for error in errors:
+        if ".evidence[" in error and ".type:" in error:
+            continue
+        if any(marker in error for marker in _REPAIRABLE_VALIDATION_ERROR_MARKERS):
+            continue
+        return False
+    return True
 
 
 def _write_candidate(path: Path, document: dict[str, Any]) -> None:
