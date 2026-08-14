@@ -17,7 +17,7 @@ import time
 from pathlib import Path
 from typing import Any, Callable
 
-from spec_eval.protocol_validator import JsonSchemaSubsetValidator
+from spec_eval.protocol_validator import JsonSchemaSubsetValidator, validate_strict_output_schema
 
 from . import contract as C
 from .process import ProcessResult, run_subprocess
@@ -43,6 +43,7 @@ class CodexCliExecutor:
         self._schemas_root = Path(schemas_root)
         schema_name = str(config.get("output_schema", "executor-result.schema.json"))
         self._output_schema_path = self._schemas_root / schema_name
+        self._validate_output_schema()
         self._runner = runner
         self._available: bool | None = None
 
@@ -184,13 +185,82 @@ class CodexCliExecutor:
                 elapsed_seconds=time.monotonic() - started,
                 event_count=event_count,
             )
+        status = document.get("status")
+        if status == "failed":
+            error = document.get("error")
+            if not isinstance(error, str) or not error.strip():
+                error = "executor reported failure without an error message"
+            return C.ExecutionResult(
+                status=C.STATUS_FAILED,
+                exit_code=proc_result.exit_code,
+                executor_result_path=work.executor_result_path,
+                error=error,
+                elapsed_seconds=time.monotonic() - started,
+                event_count=event_count,
+            )
+        if document.get("error") is not None:
+            return C.ExecutionResult(
+                status=C.STATUS_FAILED,
+                exit_code=proc_result.exit_code,
+                executor_result_path=work.executor_result_path,
+                error="completed executor result must set error to null",
+                elapsed_seconds=time.monotonic() - started,
+                event_count=event_count,
+            )
+        raw_observation = document.get("observation_json")
+        if not isinstance(raw_observation, str):
+            return C.ExecutionResult(
+                status=C.STATUS_FAILED,
+                exit_code=proc_result.exit_code,
+                executor_result_path=work.executor_result_path,
+                error="completed executor result must contain observation_json",
+                elapsed_seconds=time.monotonic() - started,
+                event_count=event_count,
+            )
+        try:
+            observation = json.loads(raw_observation)
+        except json.JSONDecodeError as exc:
+            return C.ExecutionResult(
+                status=C.STATUS_FAILED,
+                exit_code=proc_result.exit_code,
+                executor_result_path=work.executor_result_path,
+                error=f"observation_json is not valid JSON: {exc}",
+                elapsed_seconds=time.monotonic() - started,
+                event_count=event_count,
+            )
+        if not isinstance(observation, dict):
+            return C.ExecutionResult(
+                status=C.STATUS_FAILED,
+                exit_code=proc_result.exit_code,
+                executor_result_path=work.executor_result_path,
+                error="observation_json must decode to an object",
+                elapsed_seconds=time.monotonic() - started,
+                event_count=event_count,
+            )
         return C.ExecutionResult(
             status=C.STATUS_COMPLETED,
             exit_code=proc_result.exit_code,
             executor_result_path=work.executor_result_path,
+            observation=observation,
             elapsed_seconds=time.monotonic() - started,
             event_count=event_count,
         )
+
+    def _validate_output_schema(self) -> None:
+        try:
+            schema = json.loads(self._output_schema_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise ValueError(
+                f"cannot load executor output schema {self._output_schema_path}: {exc}"
+            ) from exc
+        if not isinstance(schema, dict):
+            raise ValueError(f"executor output schema is not an object: {self._output_schema_path}")
+        errors = validate_strict_output_schema(schema)
+        if errors:
+            raise ValueError(
+                f"executor output schema is not strict: {self._output_schema_path}: "
+                + "; ".join(errors)
+            )
 
     def _build_argv(self, work: C.WorkItemInput) -> list[str]:
         argv = [self._command, "exec"]
@@ -229,10 +299,14 @@ class CodexCliExecutor:
                 "path": work.executor_result_path,
                 "schema": "executor-result.schema.json",
                 "requirement": (
-                    "Return a JSON object with schema_version=1, work_item_id, "
-                    "status (completed|failed|not_verifiable), and the completed "
-                    "observation body. The observation must keep the initialized "
-                    "identity, input, expected_claim_ids and required_checks fields."
+                    "Return every schema field. Use schema_version=2. For a completed "
+                    "work item set status=completed, error=null, notes to a string array, "
+                    "and observation_json to the JSON serialization of the completed "
+                    "observation or aggregation object. The decoded object must keep the "
+                    "initialized identity, input, expected_claim_ids and required_checks "
+                    "fields. Local NOT_VERIFIABLE outcomes still use status=completed. "
+                    "Use status=failed only when no complete object can be produced; then "
+                    "set observation_json=null and provide a non-empty error."
                 ),
             },
         }

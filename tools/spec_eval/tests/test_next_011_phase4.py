@@ -73,10 +73,22 @@ class _FakeExecutor:
         )
         Path(work.executor_result_path).parent.mkdir(parents=True, exist_ok=True)
         Path(work.executor_result_path).write_text(
-            json.dumps({"schema_version": 1, "work_item_id": work.work_item_id, "status": "completed", "observation": body}),
+            json.dumps({
+                "schema_version": 2,
+                "work_item_id": work.work_item_id,
+                "status": "completed",
+                "observation_json": json.dumps(body),
+                "notes": [],
+                "error": None,
+            }),
             encoding="utf-8",
         )
-        return C.ExecutionResult(status=C.STATUS_COMPLETED, exit_code=0, executor_result_path=work.executor_result_path)
+        return C.ExecutionResult(
+            status=C.STATUS_COMPLETED,
+            exit_code=0,
+            executor_result_path=work.executor_result_path,
+            observation=body,
+        )
 
 
 class _FakeScriptRunner:

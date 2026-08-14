@@ -14,7 +14,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from spec_eval.protocol_validator import JsonSchemaSubsetValidator
+from spec_eval.protocol_validator import JsonSchemaSubsetValidator, validate_strict_output_schema
 from spec_eval.service.executors import contract as C
 from spec_eval.service.executors.codex_cli import CodexCliExecutor
 from spec_eval.service.executors.process import ProcessResult
@@ -22,13 +22,26 @@ from spec_eval.service.executors.redaction import redact_jsonl
 from spec_eval.service.settings import ServiceSettings
 
 
-def _result_doc(work_item_id: str, *, observation: dict | None = None, status: str = "completed") -> dict:
+def _result_doc(
+    work_item_id: str,
+    *,
+    observation: dict | None = None,
+    status: str = "completed",
+    error: str | None = None,
+) -> dict:
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "work_item_id": work_item_id,
         "status": status,
-        "observation": observation if observation is not None else {"observation_id": work_item_id},
+        "observation_json": (
+            json.dumps(
+                observation if observation is not None else {"observation_id": work_item_id}
+            )
+            if status == "completed"
+            else None
+        ),
         "notes": [],
+        "error": error,
     }
 
 
@@ -139,6 +152,7 @@ class CodexExecutorTest(unittest.TestCase):
         self.assertTrue(result.succeeded)
         self.assertEqual(result.status, C.STATUS_COMPLETED)
         self.assertEqual(result.executor_result_path, self.work.executor_result_path)
+        self.assertEqual(result.observation, {"observation_id": self.work.work_item_id})
         # JSONL + command events were forwarded
         kinds = [e.kind for e in out]
         self.assertIn("command", kinds)
@@ -171,11 +185,30 @@ class CodexExecutorTest(unittest.TestCase):
         self.assertEqual(result.status, C.STATUS_FAILED)
 
     def test_bad_schema_result_is_failed(self) -> None:
-        bad = {"schema_version": 1, "work_item_id": self.work.work_item_id}  # missing required fields
+        bad = {"schema_version": 2, "work_item_id": self.work.work_item_id}  # missing required fields
         runner = _FakeRunner(result_doc=bad)
         result = self._executor(runner).execute(self.work, lambda e: None)
         self.assertEqual(result.status, C.STATUS_FAILED)
         self.assertIn("schema", (result.error or "").lower())
+
+    def test_invalid_observation_json_is_failed(self) -> None:
+        document = _result_doc(self.work.work_item_id)
+        document["observation_json"] = "not-json"
+        result = self._executor(_FakeRunner(result_doc=document)).execute(
+            self.work, lambda e: None
+        )
+        self.assertEqual(result.status, C.STATUS_FAILED)
+        self.assertIn("observation_json", result.error or "")
+
+    def test_reported_failed_status_is_not_promoted_to_completed(self) -> None:
+        document = _result_doc(
+            self.work.work_item_id, status="failed", error="cannot complete work item"
+        )
+        result = self._executor(_FakeRunner(result_doc=document)).execute(
+            self.work, lambda e: None
+        )
+        self.assertEqual(result.status, C.STATUS_FAILED)
+        self.assertEqual(result.error, "cannot complete work item")
 
     def test_wrong_work_item_id_is_failed(self) -> None:
         runner = _FakeRunner(result_doc=_result_doc("feature:Feat-99"))
@@ -214,6 +247,51 @@ class CodexExecutorTest(unittest.TestCase):
         self.assertFalse(ex.is_available())
         result = ex.execute(self.work, lambda e: None)
         self.assertEqual(result.status, C.STATUS_AWAITING)
+
+    def test_invalid_output_schema_fails_before_executor_start(self) -> None:
+        schemas_root = Path(self.tmp.name) / "schemas"
+        schemas_root.mkdir()
+        (schemas_root / "invalid.json").write_text(
+            json.dumps({
+                "type": "object",
+                "required": ["payload"],
+                "properties": {"payload": {"type": "object"}},
+                "additionalProperties": False,
+            }),
+            encoding="utf-8",
+        )
+        with self.assertRaisesRegex(ValueError, "not strict"):
+            CodexCliExecutor(
+                dict(self.config, output_schema="invalid.json"),
+                schemas_root=schemas_root,
+                runner=_FakeRunner(),
+            )
+
+
+class StrictOutputSchemaTest(unittest.TestCase):
+    def test_executor_result_schema_is_strict(self) -> None:
+        root = ServiceSettings.discover().schemas_root
+        schema = json.loads((root / "executor-result.schema.json").read_text(encoding="utf-8"))
+        self.assertEqual(validate_strict_output_schema(schema), [])
+
+    def test_nested_open_object_and_optional_property_are_rejected(self) -> None:
+        schema = {
+            "type": "object",
+            "required": ["payload"],
+            "properties": {
+                "payload": {
+                    "type": "object",
+                    "properties": {"value": {"type": "string"}},
+                },
+                "notes": {"type": "array", "items": {"type": "string"}},
+            },
+            "additionalProperties": False,
+        }
+        errors = validate_strict_output_schema(schema)
+        self.assertTrue(any("$.required" in error and "notes" in error for error in errors))
+        self.assertTrue(
+            any("$.properties.payload.additionalProperties" in error for error in errors)
+        )
 
 
 class RedactionTest(unittest.TestCase):

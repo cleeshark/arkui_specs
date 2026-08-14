@@ -635,6 +635,70 @@ class JsonSchemaSubsetValidator:
         return errors
 
 
+def validate_strict_output_schema(schema: dict[str, Any]) -> list[str]:
+    """Check the JSON Schema subset required by strict structured outputs.
+
+    Every object node must be closed and every declared property must be
+    required. Optional values are represented by nullable types, not by
+    omitting their property from ``required``.
+    """
+
+    errors: list[str] = []
+
+    def walk(node: Any, path: str) -> None:
+        if not isinstance(node, dict):
+            return
+        declared_type = node.get("type")
+        is_object = declared_type == "object" or (
+            isinstance(declared_type, list) and "object" in declared_type
+        )
+        if is_object:
+            if node.get("additionalProperties") is not False:
+                errors.append(f"{path}.additionalProperties: must be false")
+            properties = node.get("properties")
+            if not isinstance(properties, dict):
+                errors.append(f"{path}.properties: expected an object")
+                properties = {}
+            required = node.get("required")
+            if not isinstance(required, list) or any(
+                not isinstance(item, str) for item in required
+            ):
+                errors.append(f"{path}.required: expected a list of property names")
+                required = []
+            elif len(required) != len(set(required)):
+                errors.append(f"{path}.required: duplicate property names are not allowed")
+            missing = sorted(set(properties) - set(required))
+            extra = sorted(set(required) - set(properties))
+            if missing or extra:
+                errors.append(
+                    f"{path}.required: must contain every property exactly once; "
+                    f"missing={missing} extra={extra}"
+                )
+            for key, child in properties.items():
+                walk(child, f"{path}.properties.{key}")
+
+        items = node.get("items")
+        if isinstance(items, dict):
+            walk(items, f"{path}.items")
+        prefix_items = node.get("prefixItems")
+        if isinstance(prefix_items, list):
+            for index, child in enumerate(prefix_items):
+                walk(child, f"{path}.prefixItems[{index}]")
+        for keyword in ("anyOf", "oneOf", "allOf"):
+            branches = node.get(keyword)
+            if isinstance(branches, list):
+                for index, child in enumerate(branches):
+                    walk(child, f"{path}.{keyword}[{index}]")
+        for keyword in ("$defs", "definitions"):
+            definitions = node.get(keyword)
+            if isinstance(definitions, dict):
+                for key, child in definitions.items():
+                    walk(child, f"{path}.{keyword}.{key}")
+
+    walk(schema, "$")
+    return errors
+
+
 def validate_schema_contracts(schemas_root: Path, rubric: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     expected = {
@@ -654,6 +718,15 @@ def validate_schema_contracts(schemas_root: Path, rubric: dict[str, Any]) -> lis
         declared = schema.get("properties", {}).get("schema_version", {}).get("const")
         if declared != compatibility.get(compatibility_key):
             errors.append(f"{filename}: schema_version const does not match rubric compatibility")
+    executor_schema_path = schemas_root / "executor-result.schema.json"
+    if not executor_schema_path.is_file():
+        errors.append("missing schema: executor-result.schema.json")
+    else:
+        executor_schema = _load_json(executor_schema_path)
+        errors.extend(
+            f"executor-result.schema.json: {error}"
+            for error in validate_strict_output_schema(executor_schema)
+        )
     return errors
 
 

@@ -74,12 +74,10 @@ def run_aggregation(
 
     aggregation_path = ctx.run_dir / "aggregation.json"
     try:
-        document = json.loads(Path(result.executor_result_path).read_text(encoding="utf-8"))
-        body = document.get("observation")
-        if not isinstance(body, dict):
+        if not isinstance(result.observation, dict):
             raise ValueError("executor result has no aggregation object")
         aggregation_path.write_text(
-            json.dumps(body, ensure_ascii=False, indent=2), encoding="utf-8"
+            json.dumps(result.observation, ensure_ascii=False, indent=2), encoding="utf-8"
         )
     except (OSError, KeyError, ValueError, json.JSONDecodeError) as exc:
         jobs.transition_status(
