@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "executor-result.schema.json",
   "title": "Semantic Executor Final Result",
-  "description": "Strict envelope written by the Codex CLI executor (--output-last-message) for one staged work item. observation_json carries the serialized observation or aggregation object; the service parses it and validates the body separately against the staged-run contract.",
+  "description": "Strict envelope written by the Codex CLI executor (--output-last-message) for one staged work item. observation_json carries only the serialized executor-owned observation or aggregation payload; the service merges it into the initialized staged template and validates the candidate separately against the staged-run contract.",
   "type": "object",
   "required": [
     "schema_version",

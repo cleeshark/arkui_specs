@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
 
@@ -69,10 +70,12 @@ class _FakeRunner:
         self.stdout_log = stdout_log
         self.stderr_log = stderr_log
         self.last_argv: list[str] | None = None
+        self.last_stdin: str | None = None
         self.lines_seen: list[str] = []
 
     def __call__(self, argv, *, cwd, stdin, timeout, stdout_log_path, stderr_log_path, cancel=None, line_sink=None, env=None):
         self.last_argv = list(argv)
+        self.last_stdin = stdin
         Path(stdout_log_path).parent.mkdir(parents=True, exist_ok=True)
         Path(stdout_log_path).write_text(self.stdout_log, encoding="utf-8")
         Path(stderr_log_path).write_text(self.stderr_log, encoding="utf-8")
@@ -172,6 +175,31 @@ class CodexExecutorTest(unittest.TestCase):
         self.assertEqual(_argv_value(argv, "--cd"), str(self.settings.repo_root))
         self.assertEqual(_argv_value(argv, "--add-dir"), self.work.run_dir)
         self.assertEqual(_argv_value(argv, "--output-last-message"), self.work.executor_result_path)
+
+    def test_prompt_requests_only_executor_owned_payload_fields(self) -> None:
+        work = replace(
+            self.work,
+            prompt_extras={
+                "result_kind": "staged_observation_payload",
+                "template_path": "/tmp/Feat-01.json",
+                "payload_fields": [
+                    "claim_reviews", "observations", "open_questions", "notes"
+                ],
+                "service_derived_fields": [
+                    "status", "reviewed_claim_ids", "completed_checks"
+                ],
+            },
+        )
+        runner = _FakeRunner(result_doc=_result_doc(work.work_item_id))
+        self._executor(runner).execute(work, lambda e: None)
+        prompt = json.loads(runner.last_stdin or "{}")
+        self.assertEqual(
+            prompt["result_contract"]["result_kind"], "staged_observation_payload"
+        )
+        requirement = prompt["output"]["requirement"]
+        self.assertIn("containing exactly these fields", requirement)
+        self.assertIn("service-owned fields", requirement)
+        self.assertNotIn("initialized identity, input", requirement)
 
     def test_nonzero_exit_is_failed(self) -> None:
         runner = _FakeRunner(exit_code=2, write_result=False)

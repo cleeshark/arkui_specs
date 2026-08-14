@@ -24,6 +24,7 @@ def validate_stage(
     run_dir: Path,
     stage: str,
     work_item_id: str | None = None,
+    candidate_path: Path | None = None,
 ) -> tuple[list[str], dict[str, Any], dict[str, Any]]:
     errors: list[str] = []
     try:
@@ -49,14 +50,23 @@ def validate_stage(
                 errors.append(f"work-item {item!r}: missing output_path")
                 continue
             try:
-                document = load_object(Path(output_value))
+                document_path = (
+                    candidate_path
+                    if candidate_path is not None
+                    and stage == "observations"
+                    and work_item_id == item.get("id")
+                    else Path(output_value)
+                )
+                document = load_object(document_path)
             except ValueError as exc:
                 errors.append(str(exc))
                 continue
             errors.extend(validate_observation_document(document, item, state))
     if stage in {"aggregation", "final"}:
         try:
-            aggregation = load_object(run_dir / "aggregation.json")
+            aggregation = load_object(
+                candidate_path if stage == "aggregation" and candidate_path else run_dir / "aggregation.json"
+            )
         except ValueError as exc:
             errors.append(str(exc))
         else:
@@ -82,6 +92,11 @@ def build_parser() -> argparse.ArgumentParser:
         default="observations",
     )
     parser.add_argument("--work-item")
+    parser.add_argument(
+        "--candidate",
+        type=Path,
+        help="validate this candidate document without replacing the initialized run file",
+    )
     parser.add_argument("--update-state", action="store_true")
     return parser
 
@@ -91,8 +106,18 @@ def main(argv: list[str] | None = None) -> int:
     if args.work_item and args.stage != "observations":
         print("ERROR: --work-item is only valid for the observations stage", file=sys.stderr)
         return 2
+    if args.candidate and args.stage == "observations" and not args.work_item:
+        print("ERROR: an observation --candidate requires --work-item", file=sys.stderr)
+        return 2
+    if args.candidate and args.stage == "final":
+        print("ERROR: --candidate is not valid for the final stage", file=sys.stderr)
+        return 2
+    if args.candidate and args.update_state:
+        print("ERROR: --candidate validation may not update run state", file=sys.stderr)
+        return 2
     run_dir = args.run_dir.resolve()
-    errors, state, work_items = validate_stage(run_dir, args.stage, args.work_item)
+    candidate = args.candidate.resolve() if args.candidate else None
+    errors, state, work_items = validate_stage(run_dir, args.stage, args.work_item, candidate)
     if errors:
         for error in errors:
             print(f"ERROR: {error}", file=sys.stderr)

@@ -280,13 +280,21 @@ class CodexCliExecutor:
 
     @staticmethod
     def _build_prompt(work: C.WorkItemInput) -> str:
+        result_contract = dict(work.prompt_extras)
+        payload_fields = result_contract.get("payload_fields", [])
+        derived_fields = result_contract.get("service_derived_fields", [])
+        result_kind = result_contract.get("result_kind", "staged_payload")
+        payload_field_text = json.dumps(payload_fields, ensure_ascii=False)
+        derived_field_text = json.dumps(derived_fields, ensure_ascii=False)
         payload = {
             "task": "Complete exactly one staged semantic evaluation work item.",
             "constraints": [
+                "Follow the declared evaluator Skill and staged-run contract.",
                 "Read only the declared input_paths and frozen source/SDK files.",
                 "Do not read paths in forbidden_paths (confirmed reviews or other runs).",
                 "Do not modify any formal Spec, Design, Registry, source or test file.",
-                "Write only the structured final result; the service writes the observation file.",
+                "Do not modify the initialized staged template; the service owns and publishes it.",
+                "Write only the structured final result.",
             ],
             "func_id": work.func_id,
             "run_id": work.run_id,
@@ -295,16 +303,21 @@ class CodexCliExecutor:
             "forbidden_paths": list(work.forbidden_paths),
             "skill_version": work.skill_version,
             "protocol_version": work.protocol_version,
+            "result_contract": result_contract,
             "output": {
                 "path": work.executor_result_path,
                 "schema": "executor-result.schema.json",
                 "requirement": (
                     "Return every schema field. Use schema_version=2. For a completed "
                     "work item set status=completed, error=null, notes to a string array, "
-                    "and observation_json to the JSON serialization of the completed "
-                    "observation or aggregation object. The decoded object must keep the "
-                    "initialized identity, input, expected_claim_ids and required_checks "
-                    "fields. Local NOT_VERIFIABLE outcomes still use status=completed. "
+                    f"and observation_json to the JSON serialization of one {result_kind} "
+                    f"object containing exactly these fields: {payload_field_text}. Read the "
+                    "initialized template and staged-run contract from input_paths, but do "
+                    "not copy identity, input paths, expected lists, or other service-owned "
+                    f"fields into the payload. The service derives: {derived_field_text}. "
+                    "Complete every payload field and preserve required array ordering according "
+                    "to the flat staged-run contract. "
+                    "Local NOT_VERIFIABLE outcomes still use envelope status=completed. "
                     "Use status=failed only when no complete object can be produced; then "
                     "set observation_json=null and provide a non-empty error."
                 ),

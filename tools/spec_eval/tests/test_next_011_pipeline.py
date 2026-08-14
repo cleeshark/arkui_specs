@@ -65,13 +65,28 @@ class FakeExecutor:
             return C.ExecutionResult(status=C.STATUS_AWAITING, error="no executor")
         if work.work_item_id in self.fail_on:
             return C.ExecutionResult(status=C.STATUS_FAILED, error="injected failure")
+        payload = (
+            {
+                "cross_feat_contracts_reviewed": True,
+                "contradiction_bases": [],
+                "defect_ownership": [],
+                "outcome_policy_bases": [],
+                "criterion_results": [],
+                "notes": [],
+            }
+            if work.work_item_id == "aggregation:final"
+            else {
+                "claim_reviews": [],
+                "observations": [],
+                "open_questions": [],
+                "notes": [],
+            }
+        )
         doc = {
             "schema_version": 2,
             "work_item_id": work.work_item_id,
             "status": "completed",
-            "observation_json": json.dumps(
-                {"observation_id": work.work_item_id, "status": "complete"}
-            ),
+            "observation_json": json.dumps(payload),
             "notes": [],
             "error": None,
         }
@@ -81,7 +96,7 @@ class FakeExecutor:
             status=C.STATUS_COMPLETED,
             exit_code=0,
             executor_result_path=work.executor_result_path,
-            observation={"observation_id": work.work_item_id, "status": "complete"},
+            observation=payload,
         )
 
 
@@ -155,15 +170,64 @@ class _PipelineTestBase(unittest.TestCase):
         self.tmp.cleanup()
 
     def _items(self, ids: list[str]) -> list[dict]:
-        return [
-            {
+        items: list[dict] = []
+        for wid in ids:
+            item_type = "feature" if wid.startswith("feature:") else "function_global"
+            output_path = self.obs_dir / f"{wid.replace(':', '_')}.json"
+            item = {
                 "id": wid,
-                "feat_id": wid.split(":")[-1],
+                "type": item_type,
+                "feat_id": wid.split(":")[-1] if item_type == "feature" else None,
                 "input_paths": [],
-                "output_path": str(self.obs_dir / f"{wid.replace(':', '_')}.json"),
+                "output_path": str(output_path),
+                "expected_claim_ids": [],
+                "required_checks": [],
             }
-            for wid in ids
-        ]
+            output_path.write_text(
+                json.dumps({
+                    "schema_version": 2,
+                    "evaluator_version": EVALUATOR_VERSION,
+                    "func_id": self.ctx.func_id,
+                    "source_revision": self.ctx.source_revision,
+                    "run_id": self.ctx.run_id,
+                    "observation_id": wid,
+                    "observation_type": item_type,
+                    "status": "pending",
+                    "input_paths": [],
+                    "expected_claim_ids": [],
+                    "reviewed_claim_ids": [],
+                    "claim_reviews": [],
+                    "completed_checks": [],
+                    "observations": [],
+                    "open_questions": [],
+                    "notes": [],
+                }),
+                encoding="utf-8",
+            )
+            items.append(item)
+        self.ctx.run_dir.mkdir(parents=True, exist_ok=True)
+        (self.ctx.run_dir / "work-items.json").write_text(
+            json.dumps({"items": items}), encoding="utf-8"
+        )
+        (self.ctx.run_dir / "aggregation.json").write_text(
+            json.dumps({
+                "schema_version": 2,
+                "evaluator_version": EVALUATOR_VERSION,
+                "func_id": self.ctx.func_id,
+                "source_revision": self.ctx.source_revision,
+                "run_id": self.ctx.run_id,
+                "status": "pending",
+                "source_observation_ids": [],
+                "cross_feat_contracts_reviewed": False,
+                "contradiction_bases": [],
+                "defect_ownership": [],
+                "outcome_policy_bases": [],
+                "criterion_results": [],
+                "notes": [],
+            }),
+            encoding="utf-8",
+        )
+        return items
 
     def _to_semantic(self) -> None:
         """Advance the fresh job to SEMANTIC via the legal transition chain."""
