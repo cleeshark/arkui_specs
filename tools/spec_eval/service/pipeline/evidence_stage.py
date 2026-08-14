@@ -51,8 +51,12 @@ def prepare_evidence(
     except subprocess.TimeoutExpired as exc:
         raise EvidenceStageError(f"evidence command timed out after {timeout:.0f}s") from exc
     write_logs(log_dir / "evidence.stdout.log", log_dir / "evidence.stderr.log", cp)
-    if cp.returncode != 0:
-        tail = (cp.stderr or "").strip().splitlines()[-5:]
+    # The CLI exits 1 when the *static gate* is "fail" — findings exist, which is
+    # exactly what the semantic evaluation is meant to judge. The evidence
+    # package is written before the gate is checked, so rc 0/1 both mean the
+    # run succeeded; rc 2 is a SpecEvalError and rc 3 is gate "error".
+    if cp.returncode not in (0, 1):
+        tail = (cp.stderr or "").strip().splitlines()[-5:] or (cp.stdout or "").strip().splitlines()[-5:]
         raise EvidenceStageError(
             f"spec_eval evidence exited {cp.returncode}: {' | '.join(tail) or 'see logs'}"
         )

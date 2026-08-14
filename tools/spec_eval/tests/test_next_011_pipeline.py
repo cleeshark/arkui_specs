@@ -24,6 +24,8 @@ from spec_eval.service.domain import states as S
 from spec_eval.service.domain.models import CreateJobCommand
 from spec_eval.service.executors import contract as C
 from spec_eval.service.pipeline.context import RunContext
+from spec_eval.service.pipeline.evidence_stage import EvidenceStageError, prepare_evidence
+from spec_eval.service.pipeline.report_stage import ReportStageError, run_report
 from spec_eval.service.pipeline.semantic_stage import run_job_pipeline, run_semantic
 from spec_eval.service.settings import ServiceSettings
 from spec_eval.service.store.repositories import (
@@ -268,6 +270,73 @@ class RunJobPipelineTest(_PipelineTestBase):
         # automated archive produced
         archive_dir = self.settings.archives_root / job.source_revision / job.func_id / job.job_id
         self.assertTrue((archive_dir / "archive-manifest.json").is_file())
+
+
+# --- gate-fail exit codes ----------------------------------------------------
+
+class GateFailExitCodeTest(_PipelineTestBase):
+    """The spec_eval CLI exits 1 when a *gate* is "fail" (static gate for
+    ``evidence``, effective gate for ``score``/``report``) even though all
+    outputs are written. Findings producing a fail gate are the normal input
+    for semantic evaluation, so the pipeline must keep running; only rc >= 2
+    (SpecEvalError / gate "error") is a stage failure."""
+
+    def _evidence_runner(self, rc: int):
+        def runner(argv, *, cwd, timeout):
+            for name in ("function-context.json", "static-result.json", "evidence-manifest.json"):
+                path = self.ctx.input_dir / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("{}", encoding="utf-8")
+            return subprocess.CompletedProcess(argv, rc, "", "")
+        return runner
+
+    def test_evidence_static_gate_fail_is_not_an_error(self) -> None:
+        prepare_evidence(self.ctx, runner=self._evidence_runner(1))
+        self.assertTrue((self.ctx.input_dir / "static-result.json").is_file())
+
+    def test_evidence_spec_eval_error_still_raises(self) -> None:
+        with self.assertRaises(EvidenceStageError):
+            prepare_evidence(self.ctx, runner=self._evidence_runner(2))
+
+    def _report_runner(self, rc: int, *, write_outputs: bool = True):
+        def runner(argv, *, cwd, timeout):
+            if write_outputs:
+                for flag in ("--write", "--analysis-write", "--json-write", "--markdown-write"):
+                    for i, arg in enumerate(argv):
+                        if arg == flag and i + 1 < len(argv):
+                            Path(argv[i + 1]).parent.mkdir(parents=True, exist_ok=True)
+                            content = "{}\n" if argv[i + 1].endswith(".json") else "# report\n"
+                            Path(argv[i + 1]).write_text(content, encoding="utf-8")
+            return subprocess.CompletedProcess(argv, rc, "", "")
+        return runner
+
+    def _semantic_results(self) -> dict[str, Path]:
+        sr = self.ctx.run_dir / "semantic-result.json"
+        sr.parent.mkdir(parents=True, exist_ok=True)
+        sr.write_text("{}", encoding="utf-8")
+        return {"run-1": sr}
+
+    def test_report_effective_gate_fail_is_not_an_error(self) -> None:
+        outputs = run_report(
+            self.ctx, semantic_results=self._semantic_results(), selected_run_id="run-1",
+            runner=self._report_runner(1),
+        )
+        self.assertTrue(all(p.is_file() for p in outputs.values()))
+
+    def test_report_spec_eval_error_still_raises(self) -> None:
+        with self.assertRaises(ReportStageError):
+            run_report(
+                self.ctx, semantic_results=self._semantic_results(), selected_run_id="run-1",
+                runner=self._report_runner(2),
+            )
+
+    def test_report_missing_output_after_gate_fail_raises(self) -> None:
+        # rc 1 accepted only when the outputs were actually written
+        with self.assertRaises(ReportStageError):
+            run_report(
+                self.ctx, semantic_results=self._semantic_results(), selected_run_id="run-1",
+                runner=self._report_runner(1, write_outputs=False),
+            )
 
 
 # --- real staged-script integration on cached evidence ----------------------

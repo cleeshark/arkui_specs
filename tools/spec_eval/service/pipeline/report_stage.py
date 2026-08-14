@@ -47,6 +47,13 @@ def run_report(
     _stability(ctx, runner, log_dir, static, evidence, semantic_results, selected_run_id, stability_path, timeout)
     _report(ctx, runner, log_dir, static, selected_sr, score_path, analysis_path, stability_path, report_json, report_md, timeout)
 
+    for name, path in (
+        ("score", score_path), ("analysis", analysis_path), ("stability", stability_path),
+        ("report_json", report_json), ("report_md", report_md),
+    ):
+        if not path.is_file():
+            raise ReportStageError(f"{name} output missing after report stage: {path}")
+
     return {
         "score": score_path,
         "analysis": analysis_path,
@@ -101,6 +108,10 @@ def _run(ctx, runner, log_dir, name, argv, timeout):
     except subprocess.TimeoutExpired as exc:
         raise ReportStageError(f"{name} timed out after {timeout:.0f}s") from exc
     write_logs(log_dir / f"{name}.stdout.log", log_dir / f"{name}.stderr.log", cp)
-    if cp.returncode != 0:
-        tail = (cp.stderr or "").strip().splitlines()[-4:]
+    # rc 1 from score/report means the *effective gate* is "fail" — the outputs
+    # are still written and the job must continue to archive them. rc 2 is a
+    # SpecEvalError, rc 3 is gate "error"; both abort. Output existence is
+    # verified by the caller (run_report).
+    if cp.returncode not in (0, 1):
+        tail = (cp.stderr or "").strip().splitlines()[-4:] or (cp.stdout or "").strip().splitlines()[-4:]
         raise ReportStageError(f"{name} exited {cp.returncode}: {' | '.join(tail) or 'see logs'}")
