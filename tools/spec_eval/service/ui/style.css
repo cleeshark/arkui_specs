@@ -39,6 +39,10 @@ th { color: var(--muted); font-weight: 600; }
 .badge.cancelled { background: var(--muted); }
 .badge.queued, .badge.preparing, .badge.evidence, .badge.semantic { background: var(--accent); }
 .badge.awaiting_executor { background: var(--wait); }
+.badge.FRESH { background: var(--ok); }
+.badge.EXPIRING { background: var(--warn); }
+.badge.EXPIRED_TIME, .badge.STALE_INPUT { background: var(--bad); }
+.badge.MISSING { background: var(--muted); }
 
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .grid h3 { margin: 0 0 0.5rem; font-size: 0.85rem; color: var(--muted); }

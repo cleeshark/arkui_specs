@@ -815,54 +815,142 @@ spec_eval/
 - 不直接修改spec、design、registry或生产源码。
 - 新规则必须补充正反例、Mutation或参考样本测试。
 
-## 14. 本地语义评价服务（自动化，TASK-011）
+## 14. 本地语义评价服务（手动滚动刷新，TASK-011 / NEXT-012）
 
-`service_cli.py` 把上面手工分步的 evidence → staged semantic → 聚合 → 归档流程，
-工程化为一个本地、可恢复、可观测的服务：输入 FuncID 即可排队执行，自动断点续跑、
-崩溃恢复，并通过浏览器查看进度。它复用本模块的 evidence/staged/score/report 能力，
-不重写评分规则；自动结果写入独立的 `automated` 命名空间，绝不覆盖 confirmed Review
-或站点归档。完整部署/排错见 [`SEMANTIC_SERVICE.md`](./SEMANTIC_SERVICE.md)。
+`service_cli.py` 把 evidence → staged semantic → 聚合 → 归档流程工程化为一个本地、
+可恢复、可观测的服务。当前版本以**手动指定 FuncID 刷新**为唯一调度入口；定时滚动扫描、
+每日 token 额度和自动挑选过期 Function 尚未实现。服务复用已有评价 Skill 和
+`spec_eval` 的 evidence/score/report 能力，不重写 Rubric，也不修改 Spec、Design、Registry
+或 confirmed Review。详细部署、API、数据目录和排障见
+[`SEMANTIC_SERVICE.md`](./SEMANTIC_SERVICE.md)。
 
-### 14.1 启动与使用
+### 14.1 启动和界面
+
+从 `ace_engine` 根目录运行：
 
 ```bash
-# 默认绑定 127.0.0.1:8790（避开 webhook 的 8765）；需要本机 codex CLI 已认证
+# 分别确认 CLI 可执行和登录状态
+codex --version
+codex login status
+
+# 默认数据目录：specs/.evaluator/service-data/
+# 默认绑定 127.0.0.1:8790
 python3 specs/tools/spec_eval/service_cli.py serve --port 8790 --max-workers 2
-# 局域网暴露时必须带 --token
-python3 specs/tools/spec_eval/service_cli.py serve --host 0.0.0.0 --token "$TOKEN"
 ```
 
-浏览器打开 `http://127.0.0.1:8790/` 填入 FuncID 创建任务；或在命令行调 API：
+浏览器打开 `http://127.0.0.1:8790/`。界面支持：
+
+- 输入 FuncID、run 数量和可选 ace_engine revision，手动启动刷新。
+- 按 `--max-workers` 并行执行不同任务，每 2 秒刷新 Job 状态、阶段和事件。
+- 查看全部 Function 的当前报告、版本、分数、Gate、刷新状态和历史数量。
+- 按新鲜度筛选 `FRESH`、`EXPIRING`、`EXPIRED_TIME`、`STALE_INPUT` 和 `MISSING`。
+- 取消活动任务、重试失败任务，并查看单 Function 的历史报告和 Finding delta。
+
+非 loopback 监听必须配置 token，并由 API 客户端发送
+`Authorization: Bearer <token>`。内置界面当前没有 token 输入框，远程使用时应通过能注入
+认证头的反向代理访问，或直接调用 API：
 
 ```bash
-# 创建任务（status: queued -> preparing -> evidence -> semantic -> aggregation
-#          -> archive -> site_history -> completed）
-curl -sX POST http://127.0.0.1:8790/api/jobs \
+python3 specs/tools/spec_eval/service_cli.py serve \
+  --host 0.0.0.0 --port 8790 --max-workers 2 --token "$TOKEN"
+```
+
+### 14.2 推荐的手动刷新 API
+
+滚动报告应使用 Function refresh API。它会在提交时冻结四仓 revision、对活动任务去重，
+并为该 Function 分配单调递增的 generation：
+
+```bash
+# source_revision 省略时使用当前 ace_engine HEAD；也可传完整 SHA、分支或 tag
+curl -sX POST http://127.0.0.1:8790/api/functions/04-01-01/refresh \
   -H 'Content-Type: application/json' \
-  -d '{"func_id":"04-01-01","run_count":1}'
-# 查看/筛选/详情/事件/取消/重试
+  -d '{"run_count":1,"source_revision":"HEAD"}'
+
+# Function 当前状态、历史和新鲜度
+curl -s  http://127.0.0.1:8790/api/functions/04-01-01
+curl -s  http://127.0.0.1:8790/api/functions/04-01-01/history
+curl -s  http://127.0.0.1:8790/api/functions/04-01-01/freshness
+curl -s 'http://127.0.0.1:8790/api/functions?freshness=EXPIRING'
+```
+
+相同 FuncID、四仓 revision、Evaluator/协议版本和 `run_count` 的活动请求返回已有 Job
+（HTTP 200，`deduplicated: true`）；新请求返回 HTTP 202。较旧 generation 即使更晚完成，
+也只进入历史记录，不能覆盖更新的 Function 当前报告。
+
+`POST /api/jobs` 是兼容的底层 Job 入口，不建立 refresh target，因此不应作为滚动报告刷新
+入口。Job 查询和控制接口如下：
+
+```bash
 curl -s 'http://127.0.0.1:8790/api/jobs?status=completed'
 curl -s  http://127.0.0.1:8790/api/jobs/<job_id>
 curl -s 'http://127.0.0.1:8790/api/jobs/<job_id>/events?since_seq=0'
 curl -sX POST http://127.0.0.1:8790/api/jobs/<job_id>/cancel
 curl -sX POST http://127.0.0.1:8790/api/jobs/<job_id>/retry
 curl -s  http://127.0.0.1:8790/api/jobs/<job_id>/artifacts/score-result -o score.json
-# 运维指标
-curl -s  http://127.0.0.1:8790/api/metrics
 ```
 
-### 14.2 治理子命令
+### 14.3 Revision 隔离和并行约束
+
+手动刷新提交时会解析并记录 `ace_engine`、`specs`、`sdk-js`、`sdk_c` 四个仓库的精确
+commit。每个 Job 在 `<data-root>/workspaces/<job_id>/` 下创建一套 OpenHarmony 形状的
+detached Git worktree，evidence、评价 Skill、Rubric 和 SDK 读取均来自这套冻结工作区：
+
+- 用户原始 checkout 即使有未提交修改也不会被读取或切换。
+- reservation manifest 在创建 worktree 前写入；进程中断后 retry 复用同一组 revision。
+- Job 进入 `completed`、`failed` 或 `cancelled` 后释放 worktree，但保留 manifest 用于追溯。
+- `--max-workers` 控制 Job 并发数；同一 FuncID 的执行仍受 Function 资源锁约束。
+
+### 14.4 报告、新鲜度和静态导出
+
+完成态自动报告位于
+`<data-root>/archives/automated/<ace-revision>/<func-id>/<job-id>/`。归档通过临时目录原子
+发布，并用 `archive-manifest.json` 保存文件 SHA-256；发布后的归档不会被 retry 覆盖。
+SQLite 只保存报告索引、Function 当前指针、revision/fingerprint、刷新 generation、新鲜度
+策略和 delta 摘要，大型 evidence、日志和报告仍在文件系统中。
+
+默认新鲜度策略是 30 天有效、到期前 7 天进入 `EXPIRING`。FuncID 专属策略优先于全局
+策略，且要求 `0 <= warning_days < max_age_days`：
+
+```bash
+curl -s http://127.0.0.1:8790/api/freshness-policies
+curl -sX PUT http://127.0.0.1:8790/api/freshness-policies/global \
+  -H 'Content-Type: application/json' \
+  -d '{"max_age_days":30,"warning_days":7}'
+curl -sX PUT http://127.0.0.1:8790/api/freshness-policies/04-01-01 \
+  -H 'Content-Type: application/json' \
+  -d '{"max_age_days":14,"warning_days":3}'
+```
+
+各状态含义：
+
+| 状态 | 含义 |
+|---|---|
+| `MISSING` | 该 Function 尚无当前自动报告 |
+| `FRESH` | 报告输入与期望目标一致，且未进入预警期 |
+| `EXPIRING` | 报告尚未过期，但已进入 `warning_days` 预警窗口 |
+| `EXPIRED_TIME` | 报告完成时间已超过 `max_age_days` |
+| `STALE_INPUT` | 已登记更新的 revision/输入目标，当前报告仍对应旧输入 |
+
+按需生成站点消费的确定性静态 JSON：
+
+```bash
+curl -sX POST http://127.0.0.1:8790/api/site/export
+```
+
+输出位于 `<data-root>/exports/`，包括 Function 索引、站点摘要和每个 FuncID 的历史文件。
+允许不同 Function 的当前报告来自不同 revision；摘要会显式给出 `mixed_revisions` 和
+`report_revisions`。自动归档、自动 history 和 export 均位于 service data root，不覆盖
+`evaluation/reviews/`、confirmed Review 站点归档或 CI delta baseline。
+
+### 14.5 治理子命令和边界
 
 ```bash
 python3 specs/tools/spec_eval/service_cli.py metrics --write metrics.json [--format csv]
-python3 specs/tools/spec_eval/service_cli.py cleanup --retention-days 14   # 只清临时 run 目录，不删归档
-python3 specs/tools/spec_eval/service_cli.py backup                        # WAL checkpoint + DB 备份 + 恢复校验
+python3 specs/tools/spec_eval/service_cli.py cleanup --retention-days 14   # 只清临时 run，不删归档
+python3 specs/tools/spec_eval/service_cli.py backup                        # WAL checkpoint + 恢复校验
 ```
 
-### 14.3 边界
-
-- Codex 不可用时，semantic 阶段进入 `awaiting_executor`；aggregation 阶段按状态矩阵
-  只能 `failed`（retry 会重跑 semantic + aggregation）。
-- 自动归档位于 `<data-root>/archives/automated/<rev>/<func>/<job>/`，带 SHA-256 清单；
-  confirmed Review 与 `site-evaluation-history.json` 字节级不被触碰。
+- Codex 不可用时，semantic 阶段进入 `awaiting_executor`；修复本机 CLI 后调度器会重新探测。
+- 本阶段只有 Codex CLI Executor；不会调用 Claude CLI、远程 Agent API 或其他模型后端。
+- 当前不会自动扫描过期 Function，也没有每日 token 配额；这些属于后续滚动调度阶段。
 - 本服务不修改冻结的 Spec/Design/Registry、CI delta 门禁或父仓 `ace_engine` 生产代码。

@@ -26,7 +26,7 @@ from .settings import ServiceSettings
 from .store.repositories import JobRepository
 from .store.sqlite_store import SqliteStore, utc_now
 
-_SCHEMA_VERSION = "1"
+_SCHEMA_VERSION = "2"
 
 
 def cleanup_temp(
@@ -95,7 +95,7 @@ def disk_usage(settings: ServiceSettings) -> dict[str, Any]:
     """Report bytes used per data subdir plus device free space."""
     usage = shutil.disk_usage(settings.data_root)
     by_subdir: dict[str, int] = {}
-    for name in ("db", "jobs", "archives", "locks", "logs", "backups"):
+    for name in ("db", "jobs", "archives", "locks", "logs", "backups", "workspaces"):
         path = settings.data_root / name
         by_subdir[name] = _dir_size(path) if path.is_dir() else 0
     return {

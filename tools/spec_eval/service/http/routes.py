@@ -72,6 +72,24 @@ def route_request(
     if segments == ["api", "metrics"] and method == "GET":
         return Response.json(200, app.metrics())
 
+    if segments == ["api", "site", "export"] and method == "POST":
+        return Response.json(200, {key: str(path) for key, path in app.export_site().items()})
+
+    # --- /api/freshness-policies -----------------------------------------
+    if segments[:2] == ["api", "freshness-policies"]:
+        return _route_freshness_policies(method, segments[2:], body, app)
+
+    # --- /api/functions/{func_id}/refresh --------------------------------
+    if (
+        len(segments) == 4
+        and segments[:2] == ["api", "functions"]
+        and segments[3] == "refresh"
+    ):
+        return _refresh_function(method, segments[2], body, app)
+
+    if segments[:2] == ["api", "functions"]:
+        return _route_functions(method, segments[2:], query, app)
+
     # --- /api/jobs -------------------------------------------------------
     if segments[:2] == ["api", "jobs"]:
         return _route_jobs(method, segments[2:], query, body, app)
@@ -158,6 +176,107 @@ def _create_job(body: bytes, app: Any) -> Response:
     except DuplicateJobError as exc:
         return _error(409, f"duplicate job: {exc}")
     return Response.json(201, serializers.job_to_dict(job))
+
+
+def _refresh_function(method: str, func_id: str, body: bytes, app: Any) -> Response:
+    if method != "POST":
+        return _error(405, "method not allowed")
+    if not FUNC_ID_RE.match(func_id):
+        return _error(400, "func_id must match NN-NN-NN")
+    try:
+        payload = json.loads(body.decode("utf-8")) if body else {}
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return _error(400, "invalid JSON body")
+    if not isinstance(payload, dict):
+        return _error(400, "body must be a JSON object")
+    try:
+        run_count = int(payload.get("run_count", 1))
+    except (TypeError, ValueError):
+        return _error(400, "run_count must be an integer")
+    if run_count < 1 or run_count > 10:
+        return _error(400, "run_count must be between 1 and 10")
+    source_revision = payload.get("source_revision")
+    if source_revision is not None and not isinstance(source_revision, str):
+        return _error(400, "source_revision must be a string")
+    try:
+        result = app.refresh_function(
+            func_id=func_id, source_revision=source_revision, run_count=run_count
+        )
+    except Exception as exc:
+        return _error(409, str(exc))
+    return Response.json(
+        200 if result.deduplicated else 202,
+        {
+            "job": serializers.job_to_dict(result.job),
+            "desired_generation": result.target.generation,
+            "deduplicated": result.deduplicated,
+        },
+    )
+
+
+def _route_functions(
+    method: str, rest: list[str], query: dict[str, str], app: Any
+) -> Response:
+    if method != "GET":
+        return _error(405, "method not allowed")
+    if not rest:
+        functions = app.list_functions()
+        for key in ("freshness", "refresh_status", "func_id"):
+            value = query.get(key)
+            if value:
+                functions = [item for item in functions if str(item.get(key)) == value]
+        return Response.json(200, functions)
+    func_id = rest[0]
+    if not FUNC_ID_RE.match(func_id):
+        return _error(400, "func_id must match NN-NN-NN")
+    if len(rest) == 1:
+        return Response.json(200, app.get_function(func_id))
+    if len(rest) == 2 and rest[1] == "history":
+        return Response.json(200, app.function_history(func_id))
+    if len(rest) == 2 and rest[1] == "freshness":
+        function = app.get_function(func_id)
+        return Response.json(
+            200,
+            {
+                key: function[key]
+                for key in (
+                    "func_id", "freshness", "stale_reasons", "warn_at", "expires_at",
+                    "remaining_days", "refresh_status", "active_job_id", "last_refresh_error",
+                )
+            },
+        )
+    return _error(404, "not found")
+
+
+def _route_freshness_policies(method: str, rest: list[str], body: bytes, app: Any) -> Response:
+    if not rest:
+        if method != "GET":
+            return _error(405, "method not allowed")
+        return Response.json(
+            200,
+            [serializers.freshness_policy_to_dict(item) for item in app.freshness_policies()],
+        )
+    if method != "PUT" or len(rest) != 1:
+        return _error(405, "method not allowed")
+    scope = rest[0]
+    scope_type, scope_key = ("global", "*") if scope == "global" else ("func", scope)
+    if scope_type == "func" and not FUNC_ID_RE.match(scope_key):
+        return _error(400, "policy scope must be global or a FuncID")
+    try:
+        payload = json.loads(body.decode("utf-8"))
+        max_age_days = int(payload["max_age_days"])
+        warning_days = int(payload["warning_days"])
+        policy = app.set_freshness_policy(
+            scope_type=scope_type,
+            scope_key=scope_key,
+            max_age_days=max_age_days,
+            warning_days=warning_days,
+        )
+    except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:
+        return _error(400, f"invalid freshness policy: {exc}")
+    except Exception as exc:
+        return _error(409, str(exc))
+    return Response.json(200, serializers.freshness_policy_to_dict(policy))
 
 
 def _serve_artifact(job_id: str, kind: str, app: Any) -> Response:

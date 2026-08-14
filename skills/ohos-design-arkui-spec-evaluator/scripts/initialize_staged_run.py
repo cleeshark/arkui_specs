@@ -120,6 +120,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--input-dir", type=Path, required=True)
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--run-dir", type=Path, required=True)
+    parser.add_argument(
+        "--evaluation-mode", choices=("golden", "automated"), default="golden"
+    )
+    parser.add_argument("--source-revision")
     return parser
 
 
@@ -139,6 +143,8 @@ def main(argv: list[str] | None = None) -> int:
             input_dir,
             args.run_id,
             DEFAULT_EVALUATOR_VERSION,
+            source_revision=args.source_revision,
+            allow_non_pilot=args.evaluation_mode == "automated",
         )
         context = load_object(input_dir / "function-context.json")
         static_result = load_object(input_dir / "static-result.json")

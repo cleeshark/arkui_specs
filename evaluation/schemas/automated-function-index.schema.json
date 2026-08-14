@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "automated-function-index.schema.json",
+  "title": "Automated Function Rolling Report Index",
+  "type": "object",
+  "required": ["schema_version", "mode", "generated_at", "semantic_revision", "functions"],
+  "properties": {
+    "schema_version": {"type": "integer", "const": 1},
+    "mode": {"type": "string", "const": "archive"},
+    "generated_at": {"type": "string", "minLength": 1},
+    "semantic_revision": {"type": "null"},
+    "functions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["func_id", "freshness", "refresh_status", "observed_revision", "current_report"],
+        "properties": {
+          "func_id": {"type": "string", "pattern": "^[0-9]{2}-[0-9]{2}-[0-9]{2}$"},
+          "freshness": {"enum": ["FRESH", "EXPIRING", "EXPIRED_TIME", "STALE_INPUT", "MISSING"]},
+          "refresh_status": {"enum": ["IDLE", "REFRESHING", "REFRESH_FAILED"]},
+          "observed_revision": {"type": "string"},
+          "current_report": {"type": ["object", "null"]}
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": false
+}

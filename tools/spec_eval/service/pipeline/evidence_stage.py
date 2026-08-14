@@ -1,7 +1,7 @@
 """Evidence stage: build the Function evidence package (the staged-run input-dir).
 
-Runs ``spec_eval evidence --func-id <FID>`` against the current working tree
-(revision freezing/worktree isolation arrives in Phase 3). The produced package
+Runs ``spec_eval evidence --func-id <FID>`` against the Job's detached revision
+workspace. The produced package
 — ``function-context.json``, ``static-result.json``, ``evidence-manifest.json``
 and the ``evidence/`` shards — is exactly what ``initialize_staged_run.py``
 consumes as ``--input-dir``.
@@ -9,11 +9,12 @@ consumes as ``--input-dir``.
 
 from __future__ import annotations
 
+import json
 import subprocess
 from pathlib import Path
 
 from ._subprocess import Runner, default_runner, write_logs
-from .context import RunContext, discover_input_dir
+from .context import RunContext
 
 DEFAULT_EVIDENCE_TIMEOUT = 1800.0
 
@@ -61,20 +62,38 @@ def prepare_evidence(
             f"spec_eval evidence exited {cp.returncode}: {' | '.join(tail) or 'see logs'}"
         )
 
-    # The package lands at <HEAD-revision>/<func_id>/ (the CLI decides the
-    # revision layer), so discover it instead of assuming the frozen revision.
-    package_dir = discover_input_dir(ctx.evidence_output_root, ctx.func_id)
-    if package_dir is None:
-        raise EvidenceStageError(
-            f"no evidence package (<rev>/{ctx.func_id}/function-context.json) "
-            f"found under {ctx.evidence_output_root}"
-        )
-    _require(package_dir / "function-context.json")
-    _require(package_dir / "static-result.json")
-    _require(package_dir / "evidence-manifest.json")
+    return validate_evidence_package(ctx)
+
+
+def validate_evidence_package(ctx: RunContext) -> Path:
+    """Validate the exact evidence path and its FuncID/revision envelope."""
+    package_dir = ctx.input_dir
+    for name in ("function-context.json", "static-result.json", "evidence-manifest.json"):
+        _require(package_dir / name)
+    _validate_revision_envelope(package_dir, ctx.func_id, ctx.source_revision)
     return package_dir
 
 
 def _require(path: Path) -> None:
     if not path.is_file():
         raise EvidenceStageError(f"evidence package missing required file: {path}")
+
+
+def _validate_revision_envelope(package_dir: Path, func_id: str, source_revision: str) -> None:
+    for name in ("function-context.json", "static-result.json", "evidence-manifest.json"):
+        path = package_dir / name
+        try:
+            document = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            raise EvidenceStageError(f"cannot validate revision envelope in {path}: {exc}") from exc
+        if not isinstance(document, dict):
+            raise EvidenceStageError(f"{name}: expected a JSON object")
+        if document.get("func_id") != func_id:
+            raise EvidenceStageError(
+                f"{name}: FuncID mismatch, expected {func_id}, got {document.get('func_id')!r}"
+            )
+        if document.get("source_revision") != source_revision:
+            raise EvidenceStageError(
+                f"{name}: source revision mismatch, expected {source_revision}, "
+                f"got {document.get('source_revision')!r}"
+            )

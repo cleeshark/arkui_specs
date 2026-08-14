@@ -46,6 +46,10 @@ def write_archive(
 ) -> Path:
     """Atomically write the automated archive and return its directory."""
     target = archive_dir_for(settings, job)
+    # A published archive is immutable. Retries after a crash reuse it; they do
+    # not replace bytes that may already be referenced by evaluation_reports.
+    if (target / "archive-manifest.json").is_file():
+        return target
     tmp = target.with_name(target.name + ".tmp-" + os.getpid().__str__())
     if tmp.exists():
         shutil.rmtree(tmp)
@@ -101,9 +105,9 @@ def write_archive(
     })
     _fsync(manifest_path)
 
-    # atomic publish: replace any prior archive (automated namespace is re-writable)
+    # atomic publish; target cannot exist as a completed archive here.
     if target.exists():
-        shutil.rmtree(target)
+        raise RuntimeError(f"archive target exists without a manifest: {target}")
     os.replace(tmp, target)
     return target
 

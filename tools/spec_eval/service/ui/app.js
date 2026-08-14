@@ -7,6 +7,8 @@ let selectedJob = null;
 const status = (document.getElementById("status"));
 const filter = (document.getElementById("filter"));
 const tbody = document.querySelector("#jobs tbody");
+const functionBody = document.querySelector("#functions tbody");
+const freshnessFilter = document.getElementById("freshness-filter");
 const form = document.getElementById("create-form");
 const createError = document.getElementById("create-error");
 
@@ -56,14 +58,52 @@ function renderJobs(jobs) {
     </tr>`).join("") || `<tr><td class="muted" colspan="5">no jobs</td></tr>`;
 }
 
+function renderFunctions(functions) {
+  const wanted = freshnessFilter.value;
+  const visible = wanted ? functions.filter((item) => item.freshness === wanted) : functions;
+  functionBody.innerHTML = visible.map((item) => {
+    const report = item.current_report;
+    const summary = report && report.summary || {};
+    const refresh = item.refresh_status === "REFRESHING"
+      ? `running ${esc(item.active_job_id || "")}`
+      : item.refresh_status === "REFRESH_FAILED"
+        ? `failed: ${esc(item.last_refresh_error || "")}` : "idle";
+    return `<tr>
+      <td>${esc(item.func_id)}</td><td>${esc(item.title)}</td>
+      <td><span class="badge freshness ${esc(item.freshness)}">${esc(item.freshness)}</span></td>
+      <td>${report ? esc(report.source_revision.slice(0, 10)) : "—"}</td>
+      <td>${report ? `${esc(summary.published_score == null ? "—" : summary.published_score)} / ${esc(summary.gate || "—")}` : "—"}</td>
+      <td>${refresh}</td>
+      <td><button data-act="function-detail" data-id="${esc(item.func_id)}">${esc(item.history_count)}</button></td>
+    </tr>`;
+  }).join("") || `<tr><td class="muted" colspan="7">no functions</td></tr>`;
+}
+
 async function refresh() {
-  const { ok, json } = await api("GET", "/api/jobs");
-  if (ok && Array.isArray(json)) {
-    renderJobs(json);
+  const [jobsResult, functionsResult] = await Promise.all([
+    api("GET", "/api/jobs"), api("GET", "/api/functions")
+  ]);
+  if (jobsResult.ok && Array.isArray(jobsResult.json)) {
+    renderJobs(jobsResult.json);
+    if (functionsResult.ok && Array.isArray(functionsResult.json)) renderFunctions(functionsResult.json);
     if (selectedJob) loadDetail(selectedJob);
   } else {
     status.textContent = "error";
   }
+}
+
+async function loadFunctionDetail(funcId) {
+  const [detail, history] = await Promise.all([
+    api("GET", `/api/functions/${encodeURIComponent(funcId)}`),
+    api("GET", `/api/functions/${encodeURIComponent(funcId)}/history`),
+  ]);
+  const panel = document.getElementById("function-detail");
+  if (!detail.ok) { panel.hidden = true; return; }
+  panel.hidden = false;
+  document.getElementById("function-detail-title").textContent = `Function ${funcId} history`;
+  document.getElementById("function-detail-state").textContent = JSON.stringify({
+    current: detail.json, history: history.json || []
+  }, null, 2);
 }
 
 async function loadDetail(jobId) {
@@ -90,7 +130,10 @@ form.addEventListener("submit", async (e) => {
   const payload = { func_id: fd.get("func_id"), run_count: Number(fd.get("run_count")) || 1 };
   const rev = fd.get("source_revision");
   if (rev) payload.source_revision = rev;
-  const { ok, json } = await api("POST", "/api/jobs", payload);
+  const { ok, json } = await api(
+    "POST", `/api/functions/${encodeURIComponent(payload.func_id)}/refresh`,
+    { run_count: payload.run_count, source_revision: payload.source_revision }
+  );
   if (ok) { form.reset(); refresh(); }
   else { createError.textContent = (json && json.error) || "create failed"; createError.hidden = false; }
 });
@@ -102,8 +145,10 @@ document.addEventListener("click", async (e) => {
   if (t.dataset.act === "cancel") { await api("POST", `/api/jobs/${encodeURIComponent(id)}/cancel`); refresh(); }
   if (t.dataset.act === "retry") { await api("POST", `/api/jobs/${encodeURIComponent(id)}/retry`); refresh(); }
   if (t.dataset.act === "detail") { loadDetail(id); }
+  if (t.dataset.act === "function-detail") { loadFunctionDetail(id); }
 });
 
 filter.addEventListener("change", refresh);
+freshnessFilter.addEventListener("change", refresh);
 refresh();
 setInterval(refresh, POLL_MS);

@@ -27,7 +27,7 @@ from typing import Any, Iterator
 from ..domain import states as S
 from ..settings import ServiceSettings
 
-_SCHEMA_VERSION = "1"
+_SCHEMA_VERSION = "2"
 
 
 def utc_now() -> str:
@@ -82,6 +82,13 @@ class SqliteStore:
                 "SELECT value FROM schema_meta WHERE key = 'schema_version'"
             ).fetchone()
             version = row["value"] if row is not None else None
+            if version == "1":
+                # v2 is additive: schema.sql has already created the new tables.
+                self._conn.execute(
+                    "UPDATE schema_meta SET value = ? WHERE key = 'schema_version'",
+                    (_SCHEMA_VERSION,),
+                )
+                version = _SCHEMA_VERSION
             if version != _SCHEMA_VERSION:
                 raise RuntimeError(
                     f"semantic service DB schema version {version!r} != expected {_SCHEMA_VERSION!r}"
