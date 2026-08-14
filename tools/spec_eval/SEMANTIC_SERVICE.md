@@ -137,13 +137,20 @@ schemas all read from the same frozen revision envelope.
 stdin). `--dangerously-bypass-approvals-and-sandbox` is never used.
 
 The executor uses a strict v2 response envelope. All envelope properties are
-required; `observation_json` carries the serialized staged observation or
-aggregation object, `notes` is an array, and `error` is nullable. The service
-audits every object node for `additionalProperties: false` and complete
-`required` coverage before starting Codex, then parses `observation_json` and
-applies the existing staged-run validator to the decoded object. A locally
-invalid output schema therefore fails at service startup without consuming a
-model request.
+required; `observation_json` carries a serialized executor-owned payload,
+`notes` is an array, and `error` is nullable. Identity, revision, input paths,
+expected claim/check lists and derived completion fields remain owned by the
+initialized staged template. The service freezes that template before invoking Codex, merges only
+the allowlisted mutable payload fields, derives completion fields, validates a
+candidate with the real staged-run validator, and atomically publishes it only
+after validation succeeds. Observation and aggregation use separate payload
+contracts. A nested `identity`/`input` document or any other extra field is
+rejected without overwriting the initialized template.
+
+The service also audits every structured-output schema object node for
+`additionalProperties: false` and complete `required` coverage before starting
+Codex. A locally invalid output schema therefore fails at service startup
+without consuming a model request.
 
 ## Data directory (`--data-root`, default `specs/.evaluator/service-data/`)
 

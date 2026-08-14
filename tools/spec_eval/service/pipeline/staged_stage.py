@@ -116,8 +116,68 @@ def validate_work_item(
         log_dir=log_dir,
         name=f"validate-{work_item_id}",
     )
-    errors = tuple(line[len("ERROR:"):].strip() for line in (cp.stderr or "").splitlines() if line.startswith("ERROR:"))
-    return ValidationResult(ok=cp.returncode == 0 and not errors, errors=errors)
+    return _validation_result(cp, "validate work item")
+
+
+def validate_work_item_candidate(
+    ctx: RunContext,
+    work_item_id: str,
+    candidate_path: Path,
+    *,
+    runner: Runner = default_runner,
+    timeout: float = 120.0,
+) -> ValidationResult:
+    """Validate one candidate observation without replacing the initialized template."""
+    argv = [
+        "python3",
+        str(ctx.validate_script),
+        "--run-dir",
+        str(ctx.run_dir),
+        "--work-item",
+        work_item_id,
+        "--candidate",
+        str(candidate_path),
+    ]
+    log_dir = ctx.jobs_run_root / "logs"
+    cp = _run(
+        argv,
+        cwd=str(ctx.repo_root),
+        runner=runner,
+        timeout=timeout,
+        log_dir=log_dir,
+        name=f"validate-candidate-{work_item_id}",
+    )
+    return _validation_result(cp, "validate observation candidate")
+
+
+def validate_aggregation_candidate(
+    ctx: RunContext,
+    candidate_path: Path,
+    *,
+    runner: Runner = default_runner,
+    timeout: float = 120.0,
+) -> ValidationResult:
+    """Validate aggregation against every checkpoint before publishing it."""
+    argv = [
+        "python3",
+        str(ctx.validate_script),
+        "--run-dir",
+        str(ctx.run_dir),
+        "--stage",
+        "aggregation",
+        "--candidate",
+        str(candidate_path),
+    ]
+    log_dir = ctx.jobs_run_root / "logs"
+    cp = _run(
+        argv,
+        cwd=str(ctx.repo_root),
+        runner=runner,
+        timeout=timeout,
+        log_dir=log_dir,
+        name="validate-aggregation-candidate",
+    )
+    return _validation_result(cp, "validate aggregation candidate")
 
 
 def assemble_semantic(
@@ -164,8 +224,7 @@ def validate_final(
         log_dir=log_dir,
         name="validate-final",
     )
-    errors = tuple(line[len("ERROR:"):].strip() for line in (cp.stderr or "").splitlines() if line.startswith("ERROR:"))
-    return ValidationResult(ok=cp.returncode == 0 and not errors, errors=errors)
+    return _validation_result(cp, "validate final result")
 
 
 def _run(
@@ -188,3 +247,15 @@ def _run(
 def _format_failure(name: str, cp: subprocess.CompletedProcess) -> str:
     tail = (cp.stderr or "").strip().splitlines()[-4:]
     return f"{name} exited {cp.returncode}: {' | '.join(tail) or 'see logs'}"
+
+
+def _validation_result(cp: subprocess.CompletedProcess, name: str) -> ValidationResult:
+    errors = tuple(
+        line[len("ERROR:"):].strip()
+        for line in (cp.stderr or "").splitlines()
+        if line.startswith("ERROR:")
+    )
+    if cp.returncode != 0 and not errors:
+        tail = (cp.stderr or cp.stdout or "").strip().splitlines()[-4:]
+        errors = (f"{name} exited {cp.returncode}: {' | '.join(tail) or 'see logs'}",)
+    return ValidationResult(ok=cp.returncode == 0 and not errors, errors=errors)

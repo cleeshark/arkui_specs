@@ -19,7 +19,7 @@ STATUS_TIMEOUT = "timeout"
 STATUS_CANCELLED = "cancelled"
 STATUS_AWAITING = "awaiting_executor"
 
-EXECUTOR_VERSION = "codex-cli-0.2"
+EXECUTOR_VERSION = "codex-cli-0.3"
 PROTOCOL_VERSION = "0.2.0"
 
 
@@ -32,7 +32,7 @@ class WorkItemInput:
     run_id: str
     work_item_id: str
     work_item: dict[str, Any]  # full work item from show_next_work_item (for the prompt)
-    run_dir: str  # staged run dir; granted to the executor for writes
+    run_dir: str  # staged run dir; exposed as an extra read root for initialized inputs
     input_paths: tuple[str, ...]  # absolute paths the executor may read
     executor_result_path: str  # absolute path the executor must write
     repo_root: str  # working directory granted read-only
@@ -57,9 +57,9 @@ class ExecutionResult:
 
     On ``completed`` the adapter must have written a valid structured result to
     ``executor_result_path``. The pipeline reads + schema-validates that file,
-    extracts the observation and writes it to the work item's observation file,
-    then runs the staged validator. Anything else (failed/timeout/cancelled)
-    means the current work item must NOT be marked complete.
+    extracts the executor-owned payload, merges it into the service-owned staged
+    template, then runs the staged validator before publishing. Anything else
+    (failed/timeout/cancelled) means the current work item must NOT be complete.
     """
 
     status: str

@@ -67,9 +67,21 @@ class _FakeExecutor:
         if work.work_item_id == "aggregation:final" and self.fail_aggregation:
             return C.ExecutionResult(status=C.STATUS_FAILED, error="injected aggregation failure")
         body = (
-            {"aggregation": True, "status": "complete"}
+            {
+                "cross_feat_contracts_reviewed": True,
+                "contradiction_bases": [],
+                "defect_ownership": [],
+                "outcome_policy_bases": [],
+                "criterion_results": [],
+                "notes": [],
+            }
             if work.work_item_id == "aggregation:final"
-            else {"observation_id": work.work_item_id, "status": "complete"}
+            else {
+                "claim_reviews": [],
+                "observations": [],
+                "open_questions": [],
+                "notes": [],
+            }
         )
         Path(work.executor_result_path).parent.mkdir(parents=True, exist_ok=True)
         Path(work.executor_result_path).write_text(
@@ -331,6 +343,8 @@ class _DriverTestBase(unittest.TestCase):
         evidence = {"func_id": self.job.func_id, "source_revision": self.job.source_revision}
         for name in ("function-context.json", "static-result.json", "evidence-manifest.json"):
             (self.ctx.input_dir / name).write_text(json.dumps(evidence), encoding="utf-8")
+        self.ctx.run_dir.mkdir(parents=True, exist_ok=True)
+        self._write_aggregation_template([])
 
     def tearDown(self) -> None:
         self.store.close()
@@ -339,10 +353,58 @@ class _DriverTestBase(unittest.TestCase):
     def _work_items(self) -> list[dict]:
         obs = self.ctx.run_dir.parent / "obs"
         obs.mkdir(parents=True, exist_ok=True)
-        return [{
-            "id": "feature:Feat-01", "feat_id": "Feat-01", "input_paths": [],
-            "output_path": str(obs / "feature_Feat-01.json"),
-        }]
+        output_path = obs / "feature_Feat-01.json"
+        item = {
+            "id": "feature:Feat-01", "type": "feature", "feat_id": "Feat-01",
+            "input_paths": [], "output_path": str(output_path),
+            "expected_claim_ids": [], "required_checks": [],
+        }
+        output_path.write_text(
+            json.dumps({
+                "schema_version": 2,
+                "evaluator_version": EVALUATOR_VERSION,
+                "func_id": self.ctx.func_id,
+                "source_revision": self.ctx.source_revision,
+                "run_id": self.ctx.run_id,
+                "observation_id": item["id"],
+                "observation_type": item["type"],
+                "status": "pending",
+                "input_paths": [],
+                "expected_claim_ids": [],
+                "reviewed_claim_ids": [],
+                "claim_reviews": [],
+                "completed_checks": [],
+                "observations": [],
+                "open_questions": [],
+                "notes": [],
+            }),
+            encoding="utf-8",
+        )
+        self._write_aggregation_template([item])
+        return [item]
+
+    def _write_aggregation_template(self, items: list[dict]) -> None:
+        (self.ctx.run_dir / "work-items.json").write_text(
+            json.dumps({"items": items}), encoding="utf-8"
+        )
+        (self.ctx.run_dir / "aggregation.json").write_text(
+            json.dumps({
+                "schema_version": 2,
+                "evaluator_version": EVALUATOR_VERSION,
+                "func_id": self.ctx.func_id,
+                "source_revision": self.ctx.source_revision,
+                "run_id": self.ctx.run_id,
+                "status": "pending",
+                "source_observation_ids": [],
+                "cross_feat_contracts_reviewed": False,
+                "contradiction_bases": [],
+                "defect_ownership": [],
+                "outcome_policy_bases": [],
+                "criterion_results": [],
+                "notes": [],
+            }),
+            encoding="utf-8",
+        )
 
 
 class AggregationStageTest(_DriverTestBase):

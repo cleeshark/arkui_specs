@@ -39,6 +39,11 @@ from ..store.sqlite_store import utc_now
 from ._subprocess import Runner, default_runner
 from .context import RunContext
 from .evidence_stage import prepare_evidence, validate_evidence_package
+from .result_payload import (
+    load_template,
+    merge_observation_payload,
+    observation_prompt_contract,
+)
 from . import staged_stage
 from ..freshness import DEPENDENCY_SNAPSHOT_CHANGED
 from ..report_registry import ReportRegistry, fingerprint_named_documents
@@ -110,6 +115,17 @@ def run_semantic(
         if item is None:
             break  # no more observation work items
 
+        try:
+            output_path = Path(str(item["output_path"]))
+            initialized = load_template(output_path)
+        except (KeyError, ValueError) as exc:
+            jobs.transition_status(
+                ctx.job_id, S.FAILED,
+                event_type="semantic_failed",
+                payload={"work_item_id": item.get("id"), "error": f"template preflight: {exc}"},
+            )
+            return SemanticStageResult(C.STATUS_FAILED, completed, f"template preflight: {exc}")
+
         work = _build_work_input(ctx, item)
         events.append(ctx.job_id, "work_item_started", {"work_item_id": work.work_item_id})
         result = executor.execute(work, emit, cancel)
@@ -131,15 +147,36 @@ def run_semantic(
             )
             return SemanticStageResult(C.STATUS_FAILED, completed, result.error or f"executor {result.status}")
 
+        candidate_path = output_path.with_name(f".{output_path.name}.candidate")
         try:
-            _write_observation(result.observation, str(item["output_path"]))
+            candidate = merge_observation_payload(initialized, result.observation)
+            _write_candidate(candidate_path, candidate)
+            verdict = staged_stage.validate_work_item_candidate(
+                ctx, work.work_item_id, candidate_path, runner=runner
+            )
+            if not verdict.ok:
+                jobs.transition_status(
+                    ctx.job_id, S.FAILED,
+                    event_type="semantic_failed",
+                    payload={"work_item_id": work.work_item_id, "errors": list(verdict.errors)},
+                )
+                return SemanticStageResult(
+                    C.STATUS_FAILED, completed, "validator: " + "; ".join(verdict.errors)
+                )
+            candidate_path.replace(output_path)
         except (OSError, KeyError, ValueError, json.JSONDecodeError) as exc:
             jobs.transition_status(
                 ctx.job_id, S.FAILED,
-                event_type="semantic_failed",
-                payload={"work_item_id": work.work_item_id, "error": f"observation write: {exc}"},
+                event_type="semantic_failed", payload={
+                    "work_item_id": work.work_item_id,
+                    "error": f"observation candidate: {exc}",
+                },
             )
-            return SemanticStageResult(C.STATUS_FAILED, completed, f"observation write: {exc}")
+            return SemanticStageResult(
+                C.STATUS_FAILED, completed, f"observation candidate: {exc}"
+            )
+        finally:
+            candidate_path.unlink(missing_ok=True)
 
         verdict = staged_stage.validate_work_item(ctx, work.work_item_id, runner=runner)
         if not verdict.ok:
@@ -176,6 +213,12 @@ def run_semantic(
 def _build_work_input(ctx: RunContext, item: dict[str, Any]) -> C.WorkItemInput:
     output_path = Path(str(item["output_path"]))
     executor_result_path = output_path.parent / f"{output_path.stem}.executor-result.json"
+    input_paths = [str(path) for path in item.get("input_paths", [])]
+    input_paths.append(str(output_path))
+    staged_contract = ctx.skill_scripts_dir.parent / "references" / "staged-run-contract.md"
+    if staged_contract.is_file():
+        input_paths.append(str(staged_contract))
+    input_paths = list(dict.fromkeys(input_paths))
     return C.WorkItemInput(
         job_id=ctx.job_id,
         func_id=ctx.func_id,
@@ -183,22 +226,19 @@ def _build_work_input(ctx: RunContext, item: dict[str, Any]) -> C.WorkItemInput:
         work_item_id=str(item["id"]),
         work_item=item,
         run_dir=str(ctx.run_dir),
-        input_paths=tuple(str(p) for p in item.get("input_paths", [])),
+        input_paths=tuple(input_paths),
         executor_result_path=str(executor_result_path),
         repo_root=str(ctx.repo_root),
         skill_version=ctx.evaluator_version,
         protocol_version=ctx.protocol_version,
         forbidden_paths=ctx.forbidden_paths,
+        prompt_extras=observation_prompt_contract(output_path),
     )
 
 
-def _write_observation(observation: dict | None, observation_output_path: str) -> None:
-    """Write the observation body already decoded by the executor adapter."""
-    if not isinstance(observation, dict):
-        raise ValueError("executor result has no observation object")
-    out = Path(observation_output_path)
-    out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps(observation, ensure_ascii=False, indent=2), encoding="utf-8")
+def _write_candidate(path: Path, document: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(document, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 # --- single-job pipeline driver --------------------------------------------

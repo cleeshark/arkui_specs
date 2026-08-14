@@ -4,9 +4,8 @@ After all observation work items are validated, this stage asks the executor to
 complete ``aggregation.json`` (the function-global model judgment: criterion
 conclusions, defect ownership, contradiction bases, outcome policies), then runs
 ``assemble_semantic_result.py`` to freeze ``semantic-result.json`` and validates
-the ``final`` stage. The executor's structured result carries the aggregation
-document in its ``observation`` field; the stage writes it to
-``aggregation.json`` exactly as returned.
+the ``final`` stage. The executor returns only mutable aggregation fields; the
+service merges them into the initialized flat template and retains identity.
 
 Anti-fake-completion: a missing/invalid aggregation body, an assemble failure,
 or a failed final validator all fail the job — ``semantic-result.json`` is never
@@ -27,6 +26,11 @@ from ..store.repositories import AttemptRepository, EventRepository, JobReposito
 from ..store.sqlite_store import utc_now
 from ._subprocess import Runner, default_runner
 from .context import RunContext
+from .result_payload import (
+    aggregation_prompt_contract,
+    load_template,
+    merge_aggregation_payload,
+)
 from .semantic_stage import _DBEmitter
 from . import staged_stage
 
@@ -47,6 +51,19 @@ def run_aggregation(
     ``C.STATUS_*`` tokens; ``semantic_result_path`` is set only on success.
     """
     emit = _DBEmitter(events, ctx.job_id)
+    aggregation_path = ctx.run_dir / "aggregation.json"
+    candidate_path = ctx.run_dir / ".aggregation.json.candidate"
+    try:
+        initialized = load_template(aggregation_path)
+        source_observation_ids = _source_observation_ids(ctx.run_dir / "work-items.json")
+    except ValueError as exc:
+        jobs.transition_status(
+            ctx.job_id, S.FAILED,
+            event_type="aggregation_failed",
+            payload={"error": f"template preflight: {exc}"},
+        )
+        return C.STATUS_FAILED, None
+
     work = _build_aggregation_input(ctx)
     events.append(ctx.job_id, "aggregation_started", {"work_item_id": work.work_item_id})
 
@@ -72,13 +89,24 @@ def run_aggregation(
         )
         return C.STATUS_FAILED, None
 
-    aggregation_path = ctx.run_dir / "aggregation.json"
     try:
-        if not isinstance(result.observation, dict):
-            raise ValueError("executor result has no aggregation object")
-        aggregation_path.write_text(
-            json.dumps(result.observation, ensure_ascii=False, indent=2), encoding="utf-8"
+        candidate = merge_aggregation_payload(
+            initialized,
+            result.observation,
+            source_observation_ids=source_observation_ids,
         )
+        candidate_path.write_text(
+            json.dumps(candidate, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+        verdict = staged_stage.validate_aggregation_candidate(ctx, candidate_path, runner=runner)
+        if not verdict.ok:
+            jobs.transition_status(
+                ctx.job_id, S.FAILED,
+                event_type="aggregation_failed",
+                payload={"errors": list(verdict.errors)},
+            )
+            return C.STATUS_FAILED, None
+        candidate_path.replace(aggregation_path)
     except (OSError, KeyError, ValueError, json.JSONDecodeError) as exc:
         jobs.transition_status(
             ctx.job_id, S.FAILED,
@@ -86,6 +114,8 @@ def run_aggregation(
             payload={"error": f"aggregation write: {exc}"},
         )
         return C.STATUS_FAILED, None
+    finally:
+        candidate_path.unlink(missing_ok=True)
 
     try:
         semantic_result = staged_stage.assemble_semantic(ctx, runner=runner)
@@ -139,6 +169,14 @@ def _build_aggregation_input(ctx: RunContext) -> C.WorkItemInput:
     if rubric.is_file():
         input_paths.append(str(rubric))
     aggregation_path = ctx.run_dir / "aggregation.json"
+    for contract_input in (
+        aggregation_path,
+        ctx.run_dir / "work-items.json",
+        ctx.skill_scripts_dir.parent / "references" / "staged-run-contract.md",
+    ):
+        if contract_input.is_file():
+            input_paths.append(str(contract_input))
+    input_paths = list(dict.fromkeys(input_paths))
     return C.WorkItemInput(
         job_id=ctx.job_id,
         func_id=ctx.func_id,
@@ -157,4 +195,22 @@ def _build_aggregation_input(ctx: RunContext) -> C.WorkItemInput:
         skill_version=ctx.evaluator_version,
         protocol_version=ctx.protocol_version,
         forbidden_paths=ctx.forbidden_paths,
+        prompt_extras=aggregation_prompt_contract(aggregation_path),
     )
+
+
+def _source_observation_ids(work_items_path: Path) -> list[str]:
+    try:
+        document = json.loads(work_items_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"cannot load work items {work_items_path}: {exc}") from exc
+    items = document.get("items") if isinstance(document, dict) else None
+    if not isinstance(items, list):
+        raise ValueError(f"work items document has no items list: {work_items_path}")
+    result: list[str] = []
+    for item in items:
+        item_id = item.get("id") if isinstance(item, dict) else None
+        if not isinstance(item_id, str) or not item_id:
+            raise ValueError(f"work items contain an invalid id: {work_items_path}")
+        result.append(item_id)
+    return result
