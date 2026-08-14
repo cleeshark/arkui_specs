@@ -156,3 +156,20 @@ npm run build
 ```
 
 `tools/generate_site.py` 根据 `.evaluator/latest.json` 选择归档快照。构建后的 `/spec-evaluation` 页面展示 Gate 分布、严重度、规则统计、证据覆盖率，以及每个 Function 的完整 Findings。GitHub Pages 仍只检出当前 specs 仓并执行轻量站点构建。
+
+## 本地语义评价服务
+
+需要按 FuncID 手动执行语义评价、并行查看进度、保存 revision 级报告历史和过期状态时，
+使用本地 Semantic Evaluation Service：
+
+```bash
+python3 tools/spec_eval/service_cli.py serve --port 8790 --max-workers 2
+```
+
+浏览器打开 `http://127.0.0.1:8790/`。当前版本只提供手动刷新；定时滚动扫描和每日 token
+额度属于后续能力。服务会为每个 Job 冻结 `ace_engine`、`specs`、`sdk-js`、`sdk_c` 四仓
+revision，并使用 detached worktree 隔离用户当前 checkout。自动报告和历史保存在被忽略的
+`.evaluator/service-data/`，不会覆盖 confirmed Review 或 CI delta baseline。
+
+完整使用说明见 [tools/spec_eval/README.md](tools/spec_eval/README.md)，
+部署、API、数据目录和排障手册见 [tools/spec_eval/SEMANTIC_SERVICE.md](tools/spec_eval/SEMANTIC_SERVICE.md)。

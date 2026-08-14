@@ -1,40 +1,91 @@
 # Local Semantic Evaluation Service
 
 A local, loopback-bound service that turns Function-level semantic evaluation
-into a queued, resumable, observable workflow. It drives the existing
-`spec_eval` evidence pipeline and the staged-run skill scripts, calls a Codex
-CLI executor per work item, then deterministically scores/aggregates and writes
-an isolated automated archive.
+into a queued, resumable, observable rolling-report workflow. It drives the
+existing `spec_eval` evidence pipeline and staged-run skill scripts, calls a
+Codex CLI executor per work item, deterministically scores and aggregates the
+result, then publishes an immutable automated archive.
 
-> Scope: this service automates evaluation. It does **not** modify frozen
-> Specs/Design/Registry, confirmed Reviews, the site archives, or the CI delta
-> gate. Automated results live in a separate `automated` namespace.
+The current scheduler is deliberately manual: an operator chooses a FuncID and
+starts a refresh. Periodic scanning, automatic selection of stale Functions,
+and daily token budgets are future work.
+
+> Scope: the service evaluates existing content. It does **not** modify frozen
+> Specs/Design/Registry, confirmed Reviews, the confirmed site archives, or the
+> CI delta gate. Automated reports, history, and exports live under the service
+> data root in a separate `automated` namespace.
 
 ## Quick start
 
 From the ace_engine root:
 
 ```bash
-# 1. serve (HTTP + scheduler), default port 8790, loopback only
+# 1. verify the local executor
+codex --version
+codex login status
+
+# 2. serve (HTTP + scheduler), default port 8790, loopback only
 python3 specs/tools/spec_eval/service_cli.py serve --port 8790 --max-workers 2
 
-# 2. open the UI
+# 3. open the UI
 xdg-open http://127.0.0.1:8790/   # create a job for a FuncID, watch it progress
 
-# 3. one-shot governance
+# 4. one-shot governance
 python3 specs/tools/spec_eval/service_cli.py metrics  --write metrics.json
 python3 specs/tools/spec_eval/service_cli.py cleanup  --retention-days 14
 python3 specs/tools/spec_eval/service_cli.py backup
 ```
 
-Codex CLI must be installed and authenticated (`codex --version`). Without it,
-jobs pause in `awaiting_executor` (semantic stage) or fail (aggregation stage).
+`codex --version` verifies installation; `codex login status` verifies the
+configured login. The four local repositories used by the evidence envelope
+must also exist:
+
+- `foundation/arkui/ace_engine`
+- `foundation/arkui/ace_engine/specs`
+- `interface/sdk-js`
+- `interface/sdk_c`
+
+Without Codex, jobs pause in `awaiting_executor` during the semantic stage.
+
+## Manual rolling refresh
+
+Use the Function refresh endpoint for rolling reports:
+
+```bash
+curl -sX POST http://127.0.0.1:8790/api/functions/04-01-01/refresh \
+  -H 'Content-Type: application/json' \
+  -d '{"run_count":1,"source_revision":"HEAD"}'
+```
+
+`source_revision` is resolved in `ace_engine`; it may be a full commit, branch,
+tag, or `HEAD`. At submission time the service also resolves the current
+`specs`, `sdk-js`, and `sdk_c` commits. The four exact SHAs become the immutable
+revision set for the Job.
+
+An active request with the same FuncID, revision set, evaluator/protocol
+version, and run count is deduplicated. A new request allocates the next
+Function generation. Generation-checked promotion prevents an older Job that
+finishes late from replacing a newer desired report; it remains queryable in
+history instead.
+
+`POST /api/jobs` remains a lower-level compatibility endpoint. It does not
+create a refresh target and therefore does not advance the rolling Function
+report head.
 
 ## HTTP API
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| POST   | `/api/jobs` | create `{func_id, run_count?, source_revision?, job_id?}` |
+| GET    | `/api/functions[?freshness=&refresh_status=&func_id=]` | list Function report heads |
+| GET    | `/api/functions/{func_id}` | current report, freshness, refresh state |
+| GET    | `/api/functions/{func_id}/history` | immutable report history and Finding delta |
+| GET    | `/api/functions/{func_id}/freshness` | compact expiry/staleness projection |
+| POST   | `/api/functions/{func_id}/refresh` | recommended manual rolling refresh |
+| GET    | `/api/freshness-policies` | list global and per-Function policies |
+| PUT    | `/api/freshness-policies/global` | update the global expiry policy |
+| PUT    | `/api/freshness-policies/{func_id}` | update a Function-specific policy |
+| POST   | `/api/site/export` | write deterministic automated site JSON |
+| POST   | `/api/jobs` | low-level job creation without rolling promotion |
 | GET    | `/api/jobs[?status=]` | list jobs |
 | GET    | `/api/jobs/{id}` | job detail |
 | GET    | `/api/jobs/{id}/events?since_seq=` | monotonic event log |
@@ -43,8 +94,29 @@ jobs pause in `awaiting_executor` (semantic stage) or fail (aggregation stage).
 | GET    | `/api/jobs/{id}/artifacts/{kind}` | artifact download (path-traversal guarded) |
 | GET    | `/api/metrics` | operational metrics |
 
-Static UI is served at `/` and `/static/*`. Bind `0.0.0.0` only with `--token`
-(bearer auth then required for all API calls).
+Static UI is served at `/` and `/static/*`. It provides manual refresh,
+Function freshness/history, concurrent Job progress, cancel, and retry views.
+
+Bind `0.0.0.0` only with `--token`; every request must then carry
+`Authorization: Bearer <token>`. The built-in UI has no token input field, so
+remote browser access requires a reverse proxy or browser setup that injects
+the header. Loopback UI access remains the recommended deployment.
+
+## Revision-isolated workspaces
+
+Each manual refresh writes a reservation manifest before creating four detached
+Git worktrees under `workspaces/<job_id>/oh/`. The directory layout mirrors the
+OpenHarmony checkout, so evidence, SDK lookup, evaluator scripts, Rubric, and
+schemas all read from the same frozen revision envelope.
+
+- Dirty files in the operator's original checkouts are not read or modified.
+- A retry reuses the reservation manifest instead of resolving new commits.
+- Dependency snapshots are append-only and cannot be overwritten by a later
+  observation.
+- Terminal Jobs release their detached worktrees but retain the manifest for
+  audit and retry reconstruction.
+- `--max-workers` controls global Job concurrency; the Function resource lock
+  prevents conflicting work for the same FuncID.
 
 ## Executor configuration (Phase-1 default)
 
@@ -67,16 +139,24 @@ stdin). `--dangerously-bypass-approvals-and-sandbox` is never used.
 ## Data directory (`--data-root`, default `specs/.evaluator/service-data/`)
 
 ```
-db/service.sqlite3                 # only mutable state (jobs/attempts/events/artifacts/snapshots)
-jobs/<job_id>/runs/<run_id>/       # disposable: evidence/, staged/, logs/
-aggregate/                         # deterministic score/stability/report
+db/service.sqlite3                 # mutable query/control state
+jobs/<job_id>/evidence/            # frozen static evidence for the Job
+jobs/<job_id>/runs/<run_id>/       # disposable staged semantic runs and logs
+jobs/<job_id>/aggregate/           # deterministic score/stability/report/delta
 archives/automated/<rev>/<func>/<job>/   # immutable automated archive + manifest
-site-history-automated.jsonl       # append-only automated history log
-locks/                             # recoverable resource-lock markers
-logs/  backups/
+archives/automated/site-history-automated.jsonl  # append-only automated history log
+workspaces/<job_id>/workspace-manifest.json  # four-repo revision reservation
+exports/                           # deterministic Function index/summary/history JSON
+locks/  logs/  backups/
 ```
 
-Large files live on disk; the DB stores paths, SHA-256, sizes, and status.
+Large files live on disk. SQLite stores Jobs, attempts, events, artifact paths
+and hashes, dependency snapshots, immutable report indexes, Function heads,
+refresh generations, freshness policies, and Finding-delta summaries.
+
+Archive publication is atomic and content-verified. Once
+`archive-manifest.json` exists, retry reuses the published archive and never
+replaces its bytes.
 
 ## Lifecycle & recovery
 
@@ -86,12 +166,61 @@ On restart, any worker-owned active state is reset to `queued` and re-picked-up
 (`awaiting_executor` is left for the scheduler). Per-Feat checkpoints are
 append-only and idempotent, so a resumed run skips already-validated work items.
 
+## Freshness and history
+
+The default policy is 30 valid days with a 7-day warning window. A FuncID policy
+overrides the global policy. Policies require
+`0 <= warning_days < max_age_days`.
+
+```bash
+curl -s http://127.0.0.1:8790/api/freshness-policies
+curl -sX PUT http://127.0.0.1:8790/api/freshness-policies/global \
+  -H 'Content-Type: application/json' \
+  -d '{"max_age_days":30,"warning_days":7}'
+curl -sX PUT http://127.0.0.1:8790/api/freshness-policies/04-01-01 \
+  -H 'Content-Type: application/json' \
+  -d '{"max_age_days":14,"warning_days":3}'
+```
+
+| Status | Meaning |
+|--------|---------|
+| `MISSING` | no current automated report |
+| `FRESH` | current input target and outside the warning window |
+| `EXPIRING` | valid but inside the warning window |
+| `EXPIRED_TIME` | older than `max_age_days` |
+| `STALE_INPUT` | a newer revision/input target is registered while the current report is older |
+
+Each completed refresh creates an immutable report record. History retains its
+revision set, evaluator/protocol/Rubric versions, fingerprints, selected run,
+archive manifest hash, score/Gate summary, and Finding delta from the previous
+current report.
+
+## Static site export
+
+The live UI reads SQLite directly through the service API. Static consumers can
+request a deterministic export:
+
+```bash
+curl -sX POST http://127.0.0.1:8790/api/site/export
+```
+
+The service writes these files under `exports/`:
+
+- `automated-function-index.json`
+- `automated-site-summary.json`
+- `automated-function-history/<func_id>.json`
+
+Reports are intentionally rolling, not tied to one repository-wide baseline.
+Different Functions may point to different source revisions. The summary
+therefore records `mixed_revisions` and the exact `report_revisions` instead of
+pretending the export represents one global revision.
+
 ## Governance (TASK-011-09)
 
 - **metrics**: `GET /api/metrics` or `service_cli.py metrics --write <path>
   [--format csv|json]` — status counts, queue/run duration summary, executor
-  errors, artifact/archive bytes, and Finding added/resolved/reclassified deltas
-  (derived from the automated history log).
+  errors, artifact/archive bytes, and Finding added/resolved/reclassified
+  deltas.
 - **cleanup**: `service_cli.py cleanup --retention-days N` — deletes only
   disposable `jobs/<id>/runs/` dirs for terminal jobs older than N days.
   Archives are **never** deleted.
@@ -107,6 +236,12 @@ append-only and idempotent, so a resumed run skips already-validated work items.
   the job; retry re-runs semantic + aggregation.
 - **archive not reproducible**: re-run the job for the same FuncID + revision;
   deterministic score/report + content-hashed manifest make bytes match.
+- **refresh returns `deduplicated: true`**: an equivalent active refresh already
+  owns the target. Follow the returned Job instead of creating another one.
+- **report is `STALE_INPUT`**: a newer manual refresh target was registered but
+  has not yet become current. Check `active_job_id` or `last_refresh_error`.
+- **report is `EXPIRED_TIME`**: trigger a manual refresh. This version does not
+  schedule expired Functions automatically.
 - **`spec_eval evidence exited 1` / `score exited 1`**: exit 1 from the
   spec_eval CLI means a *gate* is `fail` (static findings exist) — this is a
   normal outcome, outputs are still written, and the job continues. Only
