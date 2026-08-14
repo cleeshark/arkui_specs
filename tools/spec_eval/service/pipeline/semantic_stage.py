@@ -242,7 +242,9 @@ def run_job_pipeline(
         first_ctx = ctx_for(run_ids[0])
         if not (first_ctx.input_dir / "function-context.json").is_file():
             prepare_evidence(first_ctx, runner=runner)
-            _record_evidence_artifacts(first_ctx, job_id, artifacts)
+            # the package landed at <HEAD-revision>/<func_id>/; rebuild the ctx
+            # so input_dir points at the discovered directory
+            _record_evidence_artifacts(ctx_for(run_ids[0]), job_id, artifacts)
 
     # semantic phase: observations for every run
     job = jobs.get_job(job_id)

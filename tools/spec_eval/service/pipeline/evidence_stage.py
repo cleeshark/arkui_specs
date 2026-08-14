@@ -13,7 +13,7 @@ import subprocess
 from pathlib import Path
 
 from ._subprocess import Runner, default_runner, write_logs
-from .context import RunContext
+from .context import RunContext, discover_input_dir
 
 DEFAULT_EVIDENCE_TIMEOUT = 1800.0
 
@@ -61,10 +61,18 @@ def prepare_evidence(
             f"spec_eval evidence exited {cp.returncode}: {' | '.join(tail) or 'see logs'}"
         )
 
-    _require(ctx.input_dir / "function-context.json")
-    _require(ctx.input_dir / "static-result.json")
-    _require(ctx.input_dir / "evidence-manifest.json")
-    return ctx.input_dir
+    # The package lands at <HEAD-revision>/<func_id>/ (the CLI decides the
+    # revision layer), so discover it instead of assuming the frozen revision.
+    package_dir = discover_input_dir(ctx.evidence_output_root, ctx.func_id)
+    if package_dir is None:
+        raise EvidenceStageError(
+            f"no evidence package (<rev>/{ctx.func_id}/function-context.json) "
+            f"found under {ctx.evidence_output_root}"
+        )
+    _require(package_dir / "function-context.json")
+    _require(package_dir / "static-result.json")
+    _require(package_dir / "evidence-manifest.json")
+    return package_dir
 
 
 def _require(path: Path) -> None:
