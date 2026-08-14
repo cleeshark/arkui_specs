@@ -132,7 +132,7 @@ def run_semantic(
             return SemanticStageResult(C.STATUS_FAILED, completed, result.error or f"executor {result.status}")
 
         try:
-            _write_observation(result.executor_result_path, str(item["output_path"]))
+            _write_observation(result.observation, str(item["output_path"]))
         except (OSError, KeyError, ValueError, json.JSONDecodeError) as exc:
             jobs.transition_status(
                 ctx.job_id, S.FAILED,
@@ -192,12 +192,8 @@ def _build_work_input(ctx: RunContext, item: dict[str, Any]) -> C.WorkItemInput:
     )
 
 
-def _write_observation(executor_result_path: str | None, observation_output_path: str) -> None:
-    """Extract the observation body from the executor result and write it."""
-    if not executor_result_path:
-        raise ValueError("executor produced no result path")
-    document = json.loads(Path(executor_result_path).read_text(encoding="utf-8"))
-    observation = document.get("observation")
+def _write_observation(observation: dict | None, observation_output_path: str) -> None:
+    """Write the observation body already decoded by the executor adapter."""
     if not isinstance(observation, dict):
         raise ValueError("executor result has no observation object")
     out = Path(observation_output_path)

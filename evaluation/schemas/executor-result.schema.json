@@ -2,17 +2,24 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "executor-result.schema.json",
   "title": "Semantic Executor Final Result",
-  "description": "Envelope written by the Codex CLI executor (--output-last-message) for one staged work item. The observation body is validated separately by validate_staged_run.py against the staged-run contract; this schema only constrains the envelope shape. Uses only the JsonSchemaSubsetValidator keyword subset.",
+  "description": "Strict envelope written by the Codex CLI executor (--output-last-message) for one staged work item. observation_json carries the serialized observation or aggregation object; the service parses it and validates the body separately against the staged-run contract.",
   "type": "object",
-  "required": ["schema_version", "work_item_id", "status", "observation"],
+  "required": [
+    "schema_version",
+    "work_item_id",
+    "status",
+    "observation_json",
+    "notes",
+    "error"
+  ],
   "properties": {
-    "schema_version": { "type": "integer", "const": 1 },
+    "schema_version": { "type": "integer", "const": 2 },
     "work_item_id": { "type": "string", "minLength": 1 },
     "status": {
       "type": "string",
-      "enum": ["completed", "failed", "not_verifiable"]
+      "enum": ["completed", "failed"]
     },
-    "observation": { "type": "object" },
+    "observation_json": { "type": ["string", "null"] },
     "notes": {
       "type": "array",
       "items": { "type": "string" }

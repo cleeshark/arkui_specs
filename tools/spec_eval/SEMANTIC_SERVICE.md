@@ -136,6 +136,15 @@ schemas all read from the same frozen revision envelope.
 --json --output-schema <schema> --output-last-message <result> -` (prompt via
 stdin). `--dangerously-bypass-approvals-and-sandbox` is never used.
 
+The executor uses a strict v2 response envelope. All envelope properties are
+required; `observation_json` carries the serialized staged observation or
+aggregation object, `notes` is an array, and `error` is nullable. The service
+audits every object node for `additionalProperties: false` and complete
+`required` coverage before starting Codex, then parses `observation_json` and
+applies the existing staged-run validator to the decoded object. A locally
+invalid output schema therefore fails at service startup without consuming a
+model request.
+
 ## Data directory (`--data-root`, default `specs/.evaluator/service-data/`)
 
 ```

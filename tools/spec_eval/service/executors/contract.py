@@ -19,8 +19,8 @@ STATUS_TIMEOUT = "timeout"
 STATUS_CANCELLED = "cancelled"
 STATUS_AWAITING = "awaiting_executor"
 
-EXECUTOR_VERSION = "codex-cli-0.1"
-PROTOCOL_VERSION = "0.1.0"
+EXECUTOR_VERSION = "codex-cli-0.2"
+PROTOCOL_VERSION = "0.2.0"
 
 
 @dataclass(frozen=True)
@@ -65,6 +65,7 @@ class ExecutionResult:
     status: str
     exit_code: int | None = None
     executor_result_path: str | None = None
+    observation: dict[str, Any] | None = None
     error: str | None = None
     elapsed_seconds: float = 0.0
     event_count: int = 0

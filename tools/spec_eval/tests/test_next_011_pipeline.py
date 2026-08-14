@@ -66,10 +66,14 @@ class FakeExecutor:
         if work.work_item_id in self.fail_on:
             return C.ExecutionResult(status=C.STATUS_FAILED, error="injected failure")
         doc = {
-            "schema_version": 1,
+            "schema_version": 2,
             "work_item_id": work.work_item_id,
             "status": "completed",
-            "observation": {"observation_id": work.work_item_id, "status": "complete"},
+            "observation_json": json.dumps(
+                {"observation_id": work.work_item_id, "status": "complete"}
+            ),
+            "notes": [],
+            "error": None,
         }
         Path(work.executor_result_path).parent.mkdir(parents=True, exist_ok=True)
         Path(work.executor_result_path).write_text(json.dumps(doc), encoding="utf-8")
@@ -77,6 +81,7 @@ class FakeExecutor:
             status=C.STATUS_COMPLETED,
             exit_code=0,
             executor_result_path=work.executor_result_path,
+            observation={"observation_id": work.work_item_id, "status": "complete"},
         )
 
 
