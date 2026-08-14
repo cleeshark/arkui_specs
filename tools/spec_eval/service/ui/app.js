@@ -2,7 +2,10 @@
 "use strict";
 
 const POLL_MS = 2000;
+const METRICS_POLL_MS = 10000;
+const ACTIVE_STATES = new Set(["preparing", "evidence", "semantic", "aggregation", "archive", "site_history"]);
 let selectedJob = null;
+let lastMetricsAt = 0;
 
 const status = (document.getElementById("status"));
 const filter = (document.getElementById("filter"));
@@ -38,24 +41,101 @@ function rowActions(job) {
   return `${cancel}${retry}`;
 }
 
-function progressText(job) {
+function progressHtml(job) {
   const p = job.progress || {};
   const note = p.note ? ` · ${esc(p.note)}` : "";
-  return `${esc(p.stage || "—")}${note}`;
+  const active = ACTIVE_STATES.has(job.status);
+  return `<div class="progress-wrap ${active ? "active" : ""}">
+    ${active ? '<span class="activity-spinner" aria-hidden="true"></span>' : ""}
+    <span>${esc(p.stage || "—")}${note}</span>
+  </div>${active ? '<div class="activity-track" aria-label="job running"><span></span></div>' : ""}`;
+}
+
+function formatDuration(ms) {
+  if (!Number.isFinite(ms) || ms < 0) return "—";
+  const total = Math.floor(ms / 1000);
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.floor((total % 3600) / 60);
+  const seconds = total % 60;
+  if (hours) return `${hours}h ${String(minutes).padStart(2, "0")}m ${String(seconds).padStart(2, "0")}s`;
+  if (minutes) return `${minutes}m ${String(seconds).padStart(2, "0")}s`;
+  return `${seconds}s`;
+}
+
+function formatNumber(value) {
+  return Number(value || 0).toLocaleString("en-US");
+}
+
+function durationHtml(job) {
+  const timing = job.timing || {};
+  const live = ACTIVE_STATES.has(job.status) && timing.started_at && !timing.finished_at;
+  const title = `Executor: ${formatDuration(Number(timing.executor_duration_ms || 0))}`;
+  return `<span class="job-duration ${live ? "live-duration" : ""}"
+    data-duration-ms="${Number(timing.duration_ms || 0)}"
+    data-rendered-at="${Date.now()}" title="${esc(title)}">${formatDuration(Number(timing.duration_ms || 0))}</span>`;
+}
+
+function tokenHtml(job) {
+  const usage = job.usage || {};
+  if (!usage.executor_invocations) return '<span class="muted">—</span>';
+  if (!usage.reported) return '<span class="muted" title="Codex did not report usage">not reported</span>';
+  const suffix = usage.complete ? "" : " *";
+  const title = usage.complete ? "All executor invocations reported usage" : "Partial: one or more invocations did not report usage";
+  return `<span title="${esc(title)}">${formatNumber(usage.total_tokens)}${suffix}</span>`;
 }
 
 function renderJobs(jobs) {
   const f = filter.value;
   const visible = f ? jobs.filter((j) => j.status === f) : jobs;
-  status.textContent = `${jobs.length} job(s)`;
+  const running = jobs.filter((j) => ACTIVE_STATES.has(j.status)).length;
+  status.textContent = `${jobs.length} job(s) · ${running} running`;
   tbody.innerHTML = visible.map((job) => `
-    <tr data-id="${esc(job.job_id)}">
+    <tr data-id="${esc(job.job_id)}" class="${ACTIVE_STATES.has(job.status) ? "job-active" : ""}">
       <td>${esc(job.func_id)}</td>
       <td class="badge ${esc(job.status)}">${esc(job.status)}</td>
-      <td>${progressText(job)}</td>
+      <td>${progressHtml(job)}</td>
+      <td>${durationHtml(job)}</td>
+      <td>${tokenHtml(job)}</td>
       <td class="muted">${esc(job.updated_at)}</td>
       <td>${rowActions(job)} <button data-act="detail" data-id="${esc(job.job_id)}">detail</button></td>
-    </tr>`).join("") || `<tr><td class="muted" colspan="5">no jobs</td></tr>`;
+    </tr>`).join("") || `<tr><td class="muted" colspan="7">no jobs</td></tr>`;
+}
+
+function renderMetrics(metrics) {
+  const duration = metrics.duration_summary || {};
+  const executor = metrics.executor_duration_summary || {};
+  const usage = metrics.token_usage || {};
+  const states = metrics.status_counts || {};
+  const running = Array.from(ACTIVE_STATES).reduce((sum, key) => sum + Number(states[key] || 0), 0);
+  document.getElementById("metric-jobs").textContent = formatNumber(metrics.job_total);
+  document.getElementById("metric-running").textContent = formatNumber(running);
+  document.getElementById("metric-duration").textContent = duration.count ? formatDuration(duration.avg_ms) : "—";
+  document.getElementById("metric-executor").textContent = executor.count ? formatDuration(executor.avg_ms) : "—";
+  const invocations = Number(metrics.executor_invocations || 0);
+  const reportedInvocations = Number(usage.reported_invocations || 0);
+  document.getElementById("metric-tokens").textContent = !invocations ? "—"
+    : !reportedInvocations ? "not reported"
+      : `${formatNumber(usage.total_tokens)}${reportedInvocations < invocations ? " *" : ""}`;
+  document.getElementById("metric-coverage").textContent = metrics.executor_invocations
+    ? `${Math.round(Number(usage.reporting_coverage || 0) * 100)}%` : "—";
+  document.getElementById("metrics-updated").textContent = `updated ${new Date().toLocaleTimeString()}`;
+}
+
+async function refreshMetrics(force = false) {
+  if (!force && Date.now() - lastMetricsAt < METRICS_POLL_MS) return;
+  const result = await api("GET", "/api/metrics");
+  if (result.ok && result.json) {
+    lastMetricsAt = Date.now();
+    renderMetrics(result.json);
+  }
+}
+
+function tickDurations() {
+  document.querySelectorAll(".live-duration").forEach((node) => {
+    const base = Number(node.dataset.durationMs || 0);
+    const rendered = Number(node.dataset.renderedAt || Date.now());
+    node.textContent = formatDuration(base + Math.max(0, Date.now() - rendered));
+  });
 }
 
 function renderFunctions(functions) {
@@ -87,6 +167,7 @@ async function refresh() {
     renderJobs(jobsResult.json);
     if (functionsResult.ok && Array.isArray(functionsResult.json)) renderFunctions(functionsResult.json);
     if (selectedJob) loadDetail(selectedJob);
+    refreshMetrics();
   } else {
     status.textContent = "error";
   }
@@ -116,6 +197,13 @@ async function loadDetail(jobId) {
   if (!jobRes.ok) { detail.hidden = true; return; }
   detail.hidden = false;
   document.getElementById("detail-title").textContent = `Job ${jobRes.json.func_id} (${jobRes.json.status})`;
+  const timing = jobRes.json.timing || {};
+  const usage = jobRes.json.usage || {};
+  document.getElementById("detail-stats").innerHTML = `
+    <div class="metric"><span>Duration</span><strong>${durationHtml(jobRes.json)}</strong></div>
+    <div class="metric"><span>Executor time</span><strong>${formatDuration(Number(timing.executor_duration_ms || 0))}</strong></div>
+    <div class="metric"><span>Total tokens</span><strong>${usage.reported ? formatNumber(usage.total_tokens) : "not reported"}</strong></div>
+    <div class="metric"><span>Input / Output</span><strong>${usage.reported ? `${formatNumber(usage.input_tokens)} / ${formatNumber(usage.output_tokens)}` : "—"}</strong></div>`;
   document.getElementById("detail-state").textContent = JSON.stringify(jobRes.json, null, 2);
   const events = Array.isArray(evRes.json) ? evRes.json : [];
   document.getElementById("events").innerHTML = events.slice(-40).reverse().map((e) =>
@@ -152,3 +240,4 @@ filter.addEventListener("change", refresh);
 freshnessFilter.addEventListener("change", refresh);
 refresh();
 setInterval(refresh, POLL_MS);
+setInterval(tickDurations, 1000);

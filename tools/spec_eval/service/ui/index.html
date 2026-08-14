@@ -23,6 +23,18 @@
   </section>
 
   <section class="card">
+    <h2>Execution statistics <span id="metrics-updated" class="muted"></span></h2>
+    <div id="metrics" class="metric-grid">
+      <div class="metric"><span>Jobs</span><strong id="metric-jobs">—</strong></div>
+      <div class="metric"><span>Running</span><strong id="metric-running">—</strong></div>
+      <div class="metric"><span>Average duration</span><strong id="metric-duration">—</strong></div>
+      <div class="metric"><span>Executor time</span><strong id="metric-executor">—</strong></div>
+      <div class="metric"><span>Total tokens</span><strong id="metric-tokens">—</strong></div>
+      <div class="metric"><span>Usage coverage</span><strong id="metric-coverage">—</strong></div>
+    </div>
+  </section>
+
+  <section class="card">
     <h2>Function reports
       <select id="freshness-filter">
         <option value="">all freshness</option>
@@ -46,19 +58,23 @@
       <option value="preparing">preparing</option>
       <option value="evidence">evidence</option>
       <option value="semantic">semantic</option>
+      <option value="aggregation">aggregation</option>
+      <option value="archive">archive</option>
+      <option value="site_history">site_history</option>
       <option value="awaiting_executor">awaiting_executor</option>
       <option value="completed">completed</option>
       <option value="failed">failed</option>
       <option value="cancelled">cancelled</option>
     </select></h2>
     <table id="jobs">
-      <thead><tr><th>FuncID</th><th>Status</th><th>Progress</th><th>Updated</th><th>Actions</th></tr></thead>
+      <thead><tr><th>FuncID</th><th>Status</th><th>Progress</th><th>Duration</th><th>Tokens</th><th>Updated</th><th>Actions</th></tr></thead>
       <tbody></tbody>
     </table>
   </section>
 
   <section class="card" id="detail" hidden>
     <h2 id="detail-title">Job detail</h2>
+    <div id="detail-stats" class="metric-grid compact"></div>
     <div class="grid">
       <div><h3>Events</h3><ul id="events"></ul></div>
       <div><h3>State</h3><pre id="detail-state"></pre></div>

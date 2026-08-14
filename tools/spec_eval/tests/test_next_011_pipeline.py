@@ -34,6 +34,7 @@ from spec_eval.service.store.repositories import (
     DependencySnapshotRepository,
     EventRepository,
     JobRepository,
+    JobStatisticsRepository,
 )
 from spec_eval.service.store.sqlite_store import SqliteStore
 from spec_eval.service.workspace.models import EvaluationWorkspace
@@ -97,6 +98,16 @@ class FakeExecutor:
             exit_code=0,
             executor_result_path=work.executor_result_path,
             observation=payload,
+            elapsed_seconds=0.5,
+            token_usage={
+                "input_tokens": 8,
+                "cached_input_tokens": 2,
+                "cache_write_input_tokens": 0,
+                "output_tokens": 3,
+                "reasoning_output_tokens": 1,
+                "total_tokens": 11,
+            },
+            usage_reported=True,
         )
 
 
@@ -150,6 +161,7 @@ class _PipelineTestBase(unittest.TestCase):
         self.events = EventRepository(self.store)
         self.artifacts = ArtifactRepository(self.store)
         self.snapshots = DependencySnapshotRepository(self.store)
+        self.statistics = JobStatisticsRepository(self.store)
         job = self.jobs.create_job(
             CreateJobCommand(func_id="04-01-01", source_revision="rev-abc", run_count=1, job_id=JOB_ID),
             evaluator_version=EVALUATOR_VERSION,
@@ -255,7 +267,8 @@ class RunSemanticTest(_PipelineTestBase):
         executor = FakeExecutor()
         runner = FakeScriptRunner(self._items(["feature:Feat-01", "function:global"]))
         result = run_semantic(
-            self.ctx, executor, jobs=self.jobs, attempts=self.attempts, events=self.events, runner=runner
+            self.ctx, executor, jobs=self.jobs, attempts=self.attempts,
+            events=self.events, statistics=self.statistics, runner=runner,
         )
         self.assertEqual(result.outcome, C.STATUS_COMPLETED)
         self.assertEqual(result.completed_items, 2)
@@ -270,6 +283,10 @@ class RunSemanticTest(_PipelineTestBase):
         # observations_complete event recorded
         types = [e.event_type for e in self.events.list_for_job(JOB_ID)]
         self.assertIn("observations_complete", types)
+        statistics = self.statistics.get(JOB_ID)
+        self.assertEqual(statistics.executor_invocations, 2)
+        self.assertEqual(statistics.executor_elapsed_ms, 1000)
+        self.assertEqual(statistics.total_tokens, 22)
 
     def test_awaiting_executor_pauses_job(self) -> None:
         self._to_semantic()

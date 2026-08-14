@@ -60,6 +60,8 @@ class CreateListDetailTest(_HttpTestBase):
         self.assertEqual(status, 201)
         self.assertEqual(job["func_id"], "04-01-01")
         self.assertEqual(job["status"], "queued")
+        self.assertEqual(job["timing"]["duration_ms"], 0)
+        self.assertFalse(job["usage"]["reported"])
         job_id = job["job_id"]
 
         status, jobs = self._req("GET", "/api/jobs")
@@ -69,6 +71,8 @@ class CreateListDetailTest(_HttpTestBase):
         status, detail = self._req("GET", f"/api/jobs/{job_id}")
         self.assertEqual(status, 200)
         self.assertEqual(detail["job_id"], job_id)
+        self.assertIn("executor_duration_ms", detail["timing"])
+        self.assertIn("total_tokens", detail["usage"])
 
     def test_invalid_func_id_rejected(self) -> None:
         status, body = self._req("POST", "/api/jobs", {"func_id": "bad"})
@@ -177,6 +181,14 @@ class StaticUITest(_HttpTestBase):
     def test_static_asset_served(self) -> None:
         status, _ = self._req("GET", "/static/style.css")
         self.assertEqual(status, 200)
+
+    def test_ui_contains_execution_statistics_and_activity_animation(self) -> None:
+        status, body = self._req("GET", "/")
+        self.assertEqual(status, 200)
+        self.assertIn("Execution statistics", body)
+        css_status, css = self._req("GET", "/static/style.css")
+        self.assertEqual(css_status, 200)
+        self.assertIn("@keyframes activity-spin", css)
 
     def test_static_traversal_rejected(self) -> None:
         status, _ = self._req("GET", "/static/../../etc/passwd")

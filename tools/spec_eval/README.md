@@ -841,7 +841,8 @@ python3 specs/tools/spec_eval/service_cli.py serve --port 8790 --max-workers 2
 浏览器打开 `http://127.0.0.1:8790/`。界面支持：
 
 - 输入 FuncID、run 数量和可选 ace_engine revision，手动启动刷新。
-- 按 `--max-workers` 并行执行不同任务，每 2 秒刷新 Job 状态、阶段和事件。
+- 按 `--max-workers` 并行执行不同任务，每 2 秒刷新 Job 状态、阶段和事件；执行中的任务显示旋转/流光动效，持续时间每秒更新。
+- 在任务列表、详情和顶部统计卡中查看总历时、Executor 累计耗时、调用次数、Token 消耗与 usage 上报覆盖率。
 - 查看全部 Function 的当前报告、版本、分数、Gate、刷新状态和历史数量。
 - 按新鲜度筛选 `FRESH`、`EXPIRING`、`EXPIRED_TIME`、`STALE_INPUT` 和 `MISSING`。
 - 取消活动任务、重试失败任务，并查看单 Function 的历史报告和 Finding delta。
@@ -906,7 +907,18 @@ detached Git worktree，evidence、评价 Skill、Rubric 和 SDK 读取均来自
 `<data-root>/archives/automated/<ace-revision>/<func-id>/<job-id>/`。归档通过临时目录原子
 发布，并用 `archive-manifest.json` 保存文件 SHA-256；发布后的归档不会被 retry 覆盖。
 SQLite 只保存报告索引、Function 当前指针、revision/fingerprint、刷新 generation、新鲜度
-策略和 delta 摘要，大型 evidence、日志和报告仍在文件系统中。
+策略、delta 摘要和轻量 `job_statistics`。统计表只记录开始/结束时间、Executor 毫秒数、
+调用/上报次数及 input/cached/cache-write/output/reasoning/total Token 整数；不记录 Prompt、
+回复正文、凭据或认证状态。大型 evidence、日志和报告仍在文件系统中。
+
+Codex JSONL 在日志脱敏前提取 usage。当前兼容 `turn.completed.usage` 和
+`token_count.info.total_token_usage` 两类已观测格式；CLI 未上报或出现未知格式时界面明确显示
+`not reported`，不会把估算值伪装成精确消耗。可通过以下接口查看单任务和全局统计：
+
+```bash
+curl -s http://127.0.0.1:8790/api/jobs/<job_id>
+curl -s http://127.0.0.1:8790/api/metrics
+```
 
 默认新鲜度策略是 30 天有效、到期前 7 天进入 `EXPIRING`。FuncID 专属策略优先于全局
 策略，且要求 `0 <= warning_days < max_age_days`：
@@ -952,5 +964,6 @@ python3 specs/tools/spec_eval/service_cli.py backup                        # WAL
 
 - Codex 不可用时，semantic 阶段进入 `awaiting_executor`；修复本机 CLI 后调度器会重新探测。
 - 本阶段只有 Codex CLI Executor；不会调用 Claude CLI、远程 Agent API 或其他模型后端。
+- `metrics` 同时导出任务/排队/Executor 耗时、Executor 调用次数、Token 分类汇总和 usage 上报覆盖率。
 - 当前不会自动扫描过期 Function，也没有每日 token 配额；这些属于后续滚动调度阶段。
 - 本服务不修改冻结的 Spec/Design/Registry、CI delta 门禁或父仓 `ace_engine` 生产代码。

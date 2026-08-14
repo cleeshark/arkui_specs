@@ -31,6 +31,7 @@ from ..domain.models import (
     FreshnessPolicy,
     FunctionReportHead,
     Job,
+    JobStatistics,
     RefreshTarget,
     ReportDelta,
     default_progress,
@@ -183,6 +184,24 @@ def _report_delta_from_row(row: sqlite3.Row) -> ReportDelta:
     )
 
 
+def _job_statistics_from_row(row: sqlite3.Row) -> JobStatistics:
+    return JobStatistics(
+        job_id=row["job_id"],
+        started_at=row["started_at"],
+        finished_at=row["finished_at"],
+        executor_invocations=int(row["executor_invocations"]),
+        usage_reported_invocations=int(row["usage_reported_invocations"]),
+        executor_elapsed_ms=int(row["executor_elapsed_ms"]),
+        input_tokens=int(row["input_tokens"]),
+        cached_input_tokens=int(row["cached_input_tokens"]),
+        cache_write_input_tokens=int(row["cache_write_input_tokens"]),
+        output_tokens=int(row["output_tokens"]),
+        reasoning_output_tokens=int(row["reasoning_output_tokens"]),
+        total_tokens=int(row["total_tokens"]),
+        updated_at=row["updated_at"],
+    )
+
+
 # --- repositories -----------------------------------------------------------
 
 class JobRepository:
@@ -241,6 +260,10 @@ class JobRepository:
                     now,
                     now,
                 ),
+            )
+            self._conn.execute(
+                "INSERT INTO job_statistics (job_id, updated_at) VALUES (?, ?)",
+                (job_id, now),
             )
             self._store._append_event(
                 job_id,
@@ -319,6 +342,22 @@ class JobRepository:
                 "UPDATE jobs SET status = ?, updated_at = ? WHERE job_id = ?",
                 (new, now, job_id),
             )
+            if new == S.PREPARING:
+                self._conn.execute(
+                    "UPDATE job_statistics SET started_at = COALESCE(started_at, ?), "
+                    "finished_at = NULL, updated_at = ? WHERE job_id = ?",
+                    (now, now, job_id),
+                )
+            elif new in S.TERMINAL_STATES:
+                self._conn.execute(
+                    "UPDATE job_statistics SET finished_at = ?, updated_at = ? WHERE job_id = ?",
+                    (now, now, job_id),
+                )
+            elif new == S.QUEUED:
+                self._conn.execute(
+                    "UPDATE job_statistics SET finished_at = NULL, updated_at = ? WHERE job_id = ?",
+                    (now, job_id),
+                )
             event_payload = {"from": src, "to": new}
             if payload:
                 event_payload.update(payload)
@@ -354,6 +393,93 @@ class JobRepository:
                 "SELECT * FROM jobs WHERE job_id = ?", (job_id,)
             ).fetchone()
             return _job_from_row(row)
+
+
+class JobStatisticsRepository:
+    """Durable job timing and aggregate Codex usage counters."""
+
+    _TOKEN_FIELDS = (
+        "input_tokens",
+        "cached_input_tokens",
+        "cache_write_input_tokens",
+        "output_tokens",
+        "reasoning_output_tokens",
+        "total_tokens",
+    )
+
+    def __init__(self, store: SqliteStore) -> None:
+        self.store = store
+        self._conn = store._conn
+
+    def get(self, job_id: str) -> JobStatistics:
+        with self.store._tx(immediate=True):
+            row = self._conn.execute(
+                "SELECT * FROM job_statistics WHERE job_id = ?", (job_id,)
+            ).fetchone()
+            if row is None:
+                job = self._conn.execute(
+                    "SELECT updated_at FROM jobs WHERE job_id = ?", (job_id,)
+                ).fetchone()
+                if job is None:
+                    raise JobNotFoundError(job_id)
+                self._conn.execute(
+                    "INSERT INTO job_statistics (job_id, updated_at) VALUES (?, ?)",
+                    (job_id, job["updated_at"]),
+                )
+                row = self._conn.execute(
+                    "SELECT * FROM job_statistics WHERE job_id = ?", (job_id,)
+                ).fetchone()
+            return _job_statistics_from_row(row)
+
+    def list_all(self) -> list[JobStatistics]:
+        with self.store._tx():
+            rows = self._conn.execute(
+                "SELECT * FROM job_statistics ORDER BY job_id"
+            ).fetchall()
+            return [_job_statistics_from_row(row) for row in rows]
+
+    def record_executor_result(
+        self,
+        job_id: str,
+        *,
+        elapsed_seconds: float,
+        token_usage: dict[str, int] | None,
+        usage_reported: bool,
+    ) -> JobStatistics:
+        usage = token_usage or {}
+        values = []
+        for name in self._TOKEN_FIELDS:
+            raw = usage.get(name, 0)
+            values.append(
+                raw
+                if isinstance(raw, int) and not isinstance(raw, bool) and raw >= 0
+                else 0
+            )
+        elapsed_ms = max(0, int(round(float(elapsed_seconds) * 1000.0)))
+        with self.store._tx(immediate=True):
+            self.get(job_id)
+            now = utc_now()
+            self._conn.execute(
+                "UPDATE job_statistics SET executor_invocations = executor_invocations + 1, "
+                "usage_reported_invocations = usage_reported_invocations + ?, "
+                "executor_elapsed_ms = executor_elapsed_ms + ?, "
+                "input_tokens = input_tokens + ?, cached_input_tokens = cached_input_tokens + ?, "
+                "cache_write_input_tokens = cache_write_input_tokens + ?, "
+                "output_tokens = output_tokens + ?, "
+                "reasoning_output_tokens = reasoning_output_tokens + ?, "
+                "total_tokens = total_tokens + ?, updated_at = ? WHERE job_id = ?",
+                (
+                    1 if usage_reported else 0,
+                    elapsed_ms,
+                    *values,
+                    now,
+                    job_id,
+                ),
+            )
+            row = self._conn.execute(
+                "SELECT * FROM job_statistics WHERE job_id = ?", (job_id,)
+            ).fetchone()
+            return _job_statistics_from_row(row)
 
 
 class AttemptRepository:

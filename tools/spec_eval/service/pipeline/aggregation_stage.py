@@ -22,7 +22,12 @@ from ..domain import states as S
 from ..domain.models import Attempt, make_job_id
 from ..executors import contract as C
 from ..executors.base import SemanticExecutor
-from ..store.repositories import AttemptRepository, EventRepository, JobRepository
+from ..store.repositories import (
+    AttemptRepository,
+    EventRepository,
+    JobRepository,
+    JobStatisticsRepository,
+)
 from ..store.sqlite_store import utc_now
 from ._subprocess import Runner, default_runner
 from .context import RunContext
@@ -31,7 +36,7 @@ from .result_payload import (
     load_template,
     merge_aggregation_payload,
 )
-from .semantic_stage import _DBEmitter
+from .semantic_stage import _DBEmitter, _record_executor_statistics
 from . import staged_stage
 
 
@@ -42,6 +47,7 @@ def run_aggregation(
     jobs: JobRepository,
     attempts: AttemptRepository,
     events: EventRepository,
+    statistics: JobStatisticsRepository | None = None,
     cancel: Any = None,
     runner: Runner = default_runner,
 ) -> tuple[str, Path | None]:
@@ -68,6 +74,7 @@ def run_aggregation(
     events.append(ctx.job_id, "aggregation_started", {"work_item_id": work.work_item_id})
 
     result = executor.execute(work, emit, cancel)
+    _record_executor_statistics(statistics, ctx.job_id, result)
 
     if result.status == C.STATUS_CANCELLED or (cancel is not None and cancel.is_set()):
         return C.STATUS_CANCELLED, None

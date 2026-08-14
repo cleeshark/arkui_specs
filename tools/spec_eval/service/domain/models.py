@@ -190,6 +190,25 @@ class Job:
 
 
 @dataclass(frozen=True)
+class JobStatistics:
+    """Durable execution timing and non-sensitive Codex usage counters."""
+
+    job_id: str
+    started_at: str | None
+    finished_at: str | None
+    executor_invocations: int
+    usage_reported_invocations: int
+    executor_elapsed_ms: int
+    input_tokens: int
+    cached_input_tokens: int
+    cache_write_input_tokens: int
+    output_tokens: int
+    reasoning_output_tokens: int
+    total_tokens: int
+    updated_at: str
+
+
+@dataclass(frozen=True)
 class CreateJobCommand:
     """Request to create a job.
 

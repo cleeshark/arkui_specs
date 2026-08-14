@@ -105,7 +105,7 @@ def _route_jobs(method: str, rest: list[str], query: dict[str, str], body: bytes
         if method == "GET":
             status = query.get("status")
             jobs = app.list_jobs(status)
-            return Response.json(200, [serializers.job_to_dict(j) for j in jobs])
+            return Response.json(200, [_job_to_dict(app, job) for job in jobs])
         if method == "POST":
             return _create_job(body, app)
         return _error(405, "method not allowed")
@@ -115,7 +115,7 @@ def _route_jobs(method: str, rest: list[str], query: dict[str, str], body: bytes
     if len(rest) == 1:
         if method == "GET":
             try:
-                return Response.json(200, serializers.job_to_dict(app.get_job(job_id)))
+                return Response.json(200, _job_to_dict(app, app.get_job(job_id)))
             except JobNotFoundError:
                 return _error(404, "job not found")
         return _error(405, "method not allowed")
@@ -175,7 +175,7 @@ def _create_job(body: bytes, app: Any) -> Response:
         )
     except DuplicateJobError as exc:
         return _error(409, f"duplicate job: {exc}")
-    return Response.json(201, serializers.job_to_dict(job))
+    return Response.json(201, _job_to_dict(app, job))
 
 
 def _refresh_function(method: str, func_id: str, body: bytes, app: Any) -> Response:
@@ -207,7 +207,7 @@ def _refresh_function(method: str, func_id: str, body: bytes, app: Any) -> Respo
     return Response.json(
         200 if result.deduplicated else 202,
         {
-            "job": serializers.job_to_dict(result.job),
+            "job": _job_to_dict(app, result.job),
             "desired_generation": result.target.generation,
             "deduplicated": result.deduplicated,
         },
@@ -317,3 +317,7 @@ def _content_type_for(name: str) -> str:
     if lower.endswith(".json"):
         return "application/json"
     return "application/octet-stream"
+
+
+def _job_to_dict(app: Any, job: Any) -> dict[str, Any]:
+    return serializers.job_to_dict(job, app.job_statistics(job.job_id))

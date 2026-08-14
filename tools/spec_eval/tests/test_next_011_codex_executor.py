@@ -148,7 +148,14 @@ class CodexExecutorTest(unittest.TestCase):
         return out, emit
 
     def test_success_returns_completed_and_writes_result(self) -> None:
-        runner = _FakeRunner(result_doc=_result_doc(self.work.work_item_id), jsonl_lines=['{"type":"message"}'])
+        runner = _FakeRunner(
+            result_doc=_result_doc(self.work.work_item_id),
+            jsonl_lines=[
+                '{"type":"message"}',
+                '{"type":"turn.completed","usage":{"input_tokens":120,'
+                '"cached_input_tokens":20,"output_tokens":30}}',
+            ],
+        )
         ex = self._executor(runner)
         out, emit = self._collected_events()
         result = ex.execute(self.work, emit)
@@ -156,6 +163,18 @@ class CodexExecutorTest(unittest.TestCase):
         self.assertEqual(result.status, C.STATUS_COMPLETED)
         self.assertEqual(result.executor_result_path, self.work.executor_result_path)
         self.assertEqual(result.observation, {"observation_id": self.work.work_item_id})
+        self.assertTrue(result.usage_reported)
+        self.assertEqual(
+            result.token_usage,
+            {
+                "input_tokens": 120,
+                "cached_input_tokens": 20,
+                "cache_write_input_tokens": 0,
+                "output_tokens": 30,
+                "reasoning_output_tokens": 0,
+                "total_tokens": 150,
+            },
+        )
         # JSONL + command events were forwarded
         kinds = [e.kind for e in out]
         self.assertIn("command", kinds)
@@ -249,9 +268,19 @@ class CodexExecutorTest(unittest.TestCase):
         self.assertEqual(result.status, C.STATUS_TIMEOUT)
 
     def test_cancelled_is_reported(self) -> None:
-        runner = _FakeRunner(cancelled=True, write_result=False)
+        runner = _FakeRunner(
+            cancelled=True,
+            write_result=False,
+            jsonl_lines=[
+                '{"type":"token_count","info":{"total_token_usage":'
+                '{"input_tokens":42,"cached_input_tokens":8,"output_tokens":9,'
+                '"reasoning_output_tokens":3,"total_tokens":51}}}',
+            ],
+        )
         result = self._executor(runner).execute(self.work, lambda e: None)
         self.assertEqual(result.status, C.STATUS_CANCELLED)
+        self.assertEqual(result.token_usage["total_tokens"], 51)
+        self.assertTrue(result.usage_reported)
 
     def test_describe_masks_model_and_redacts(self) -> None:
         cfg = dict(self.config, model="secret-model")
