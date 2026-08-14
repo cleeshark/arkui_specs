@@ -17,13 +17,13 @@ from __future__ import annotations
 import hashlib
 import json
 import secrets
-import subprocess
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from ..domain import states as S
-from ..domain.models import Attempt, default_progress, make_job_id
+from ..domain.models import Attempt, Job, default_progress, make_job_id
+from ..domain.models import EvaluationReportRecord, ReportDelta
 from ..executors import contract as C
 from ..executors.base import SemanticExecutor
 from ..settings import ServiceSettings
@@ -33,12 +33,23 @@ from ..store.repositories import (
     DependencySnapshotRepository,
     EventRepository,
     JobRepository,
+    RefreshTargetRepository,
 )
 from ..store.sqlite_store import utc_now
 from ._subprocess import Runner, default_runner
 from .context import RunContext
-from .evidence_stage import prepare_evidence
+from .evidence_stage import prepare_evidence, validate_evidence_package
 from . import staged_stage
+from ..freshness import DEPENDENCY_SNAPSHOT_CHANGED
+from ..report_registry import ReportRegistry, fingerprint_named_documents
+from ..report_delta import build_report_delta, load_archived_report
+from ..store.repositories import (
+    EvaluationReportRepository,
+    FreshnessPolicyRepository,
+    FunctionReportHeadRepository,
+    ReportDeltaRepository,
+)
+from ..workspace.models import EvaluationWorkspace
 
 
 # --- outcome ----------------------------------------------------------------
@@ -206,6 +217,8 @@ def run_job_pipeline(
     artifacts: ArtifactRepository,
     snapshots: DependencySnapshotRepository,
     executor: SemanticExecutor,
+    workspace_provider: Callable[[Job], EvaluationWorkspace],
+    refresh_targets: RefreshTargetRepository | None = None,
     cancel: Any = None,
     runner: Runner = default_runner,
 ) -> SemanticStageResult:
@@ -217,6 +230,8 @@ def run_job_pipeline(
     :func:`run_semantic` resumes from the last validated checkpoint per run.
     """
     job = jobs.get_job(job_id)
+    workspace = workspace_provider(job)
+    resolved_job = replace(job, source_revision=workspace.revisions["ace_engine"])
     run_ids = _run_ids(job)
     selected_run_id = job.selected_run_ids[0] if job.selected_run_ids else run_ids[0]
 
@@ -228,12 +243,13 @@ def run_job_pipeline(
             source_revision=job.source_revision,
             run_id=run_id,
             evaluator_version=job.evaluator_version,
+            workspace=workspace,
         )
 
     # preparing (once): freeze dependency revisions
     if job.status == S.QUEUED:
         jobs.transition_status(job_id, S.PREPARING, event_type="enter_preparing")
-        _freeze_snapshots(ctx_for(run_ids[0]), snapshots, events)
+        _freeze_snapshots(job_id, workspace, snapshots, events)
 
     # evidence (once): build the shared package unless already present
     job = jobs.get_job(job_id)
@@ -242,9 +258,24 @@ def run_job_pipeline(
         first_ctx = ctx_for(run_ids[0])
         if not (first_ctx.input_dir / "function-context.json").is_file():
             prepare_evidence(first_ctx, runner=runner)
-            # the package landed at <HEAD-revision>/<func_id>/; rebuild the ctx
-            # so input_dir points at the discovered directory
-            _record_evidence_artifacts(ctx_for(run_ids[0]), job_id, artifacts)
+        validate_evidence_package(first_ctx)
+        _record_evidence_artifacts(first_ctx, job_id, artifacts)
+        if refresh_targets is not None:
+            target = refresh_targets.get(job_id)
+            if target is not None:
+                input_fingerprint, evidence_fingerprint = _evaluation_input_fingerprints(first_ctx)
+                target = refresh_targets.bind_fingerprints(
+                    job_id,
+                    input_fingerprint=input_fingerprint,
+                    evidence_fingerprint=evidence_fingerprint,
+                )
+                FunctionReportHeadRepository(refresh_targets.store).bind_fingerprint(
+                    job.func_id,
+                    generation=target.generation,
+                    job_id=job_id,
+                    input_fingerprint=input_fingerprint,
+                    stale_reasons=(DEPENDENCY_SNAPSHOT_CHANGED,),
+                )
 
     # semantic phase: observations for every run
     job = jobs.get_job(job_id)
@@ -286,20 +317,47 @@ def run_job_pipeline(
             report_ctx, semantic_results=semantic_results,
             selected_run_id=selected_run_id, runner=runner,
         )
+        pending_delta = None
+        if refresh_targets is not None and refresh_targets.get(job_id) is not None:
+            existing_report = EvaluationReportRepository(refresh_targets.store).get_for_job(job_id)
+            if existing_report is None:
+                pending_delta = _prepare_report_delta(
+                    refresh_targets.store,
+                    resolved_job.func_id,
+                    aggregate_outputs["report_json"],
+                    report_ctx.aggregate_dir,
+                )
+                aggregate_outputs["delta"] = pending_delta[1]
+            else:
+                pending_delta = _load_archived_delta(existing_report.archive_path)
         snapshot_path = site_history_stage.write_site_history_snapshot(
-            settings, job, report_ctx.aggregate_dir,
+            settings, resolved_job, report_ctx.aggregate_dir,
             selected_run_id=selected_run_id, run_ids=run_ids,
         )
         # archive (automated namespace) then advance to terminal
         jobs.transition_status(job_id, S.ARCHIVE, event_type="enter_archive")
         archive_dir = archive_stage.write_archive(
-            settings, job,
+            settings, resolved_job,
             semantic_results=semantic_results,
             aggregate_outputs=aggregate_outputs,
             run_ids=run_ids,
             selected_run_id=selected_run_id,
             site_snapshot_path=snapshot_path,
         )
+        if refresh_targets is not None:
+            target = refresh_targets.get(job_id)
+            if target is not None:
+                _register_rolling_report(
+                    settings=settings,
+                    job=resolved_job,
+                    target=target,
+                    archive_dir=archive_dir,
+                    aggregate_dir=report_ctx.aggregate_dir,
+                    selected_run_id=selected_run_id,
+                    refresh_targets=refresh_targets,
+                    events=events,
+                    pending_delta=pending_delta,
+                )
         events.append(job_id, "job_archived", {"archive_dir": str(archive_dir)})
         jobs.transition_status(job_id, S.SITE_HISTORY, event_type="enter_site_history")
         jobs.transition_status(job_id, S.COMPLETED, event_type="job_completed")
@@ -319,27 +377,18 @@ def _run_ids(job) -> list[str]:
 
 
 def _freeze_snapshots(
-    ctx: RunContext, snapshots: DependencySnapshotRepository, events: EventRepository
+    job_id: str,
+    workspace: EvaluationWorkspace,
+    snapshots: DependencySnapshotRepository,
+    events: EventRepository,
 ) -> None:
-    """Record current git SHAs of the source/SDK repos (task-level freeze)."""
-    oh_root = ctx.repo_root.parents[2]
-    repos = [
-        ("ace_engine", ctx.repo_root, "master"),
-        ("specs", ctx.specs_root, "main"),
-        ("sdk-js", oh_root / "interface" / "sdk-js", "master"),
-        ("sdk_c", oh_root / "interface" / "sdk_c", "master"),
-    ]
+    """Persist the already-isolated workspace envelope without overwriting it."""
     now = utc_now()
     frozen = []
-    for name, path, branch in repos:
-        if not path.is_dir():
-            continue
-        sha = _git_sha(path)
-        if sha is None:
-            continue
-        snapshots.freeze(_snapshot_dto(ctx.job_id, name, branch, sha, now))
+    for name, sha in sorted(workspace.revisions.items()):
+        snapshots.freeze(_snapshot_dto(job_id, name, "detached", sha, now))
         frozen.append({"name": name, "sha": sha})
-    events.append(ctx.job_id, "dependency_snapshot_frozen", {"repos": frozen})
+    events.append(job_id, "dependency_snapshot_frozen", {"repos": frozen})
 
 
 def _record_evidence_artifacts(
@@ -356,22 +405,141 @@ def _record_evidence_artifacts(
         artifacts.record(_artifact_dto(job_id, kind, path))
 
 
-# --- helpers ----------------------------------------------------------------
-
-def _git_sha(path: Path) -> str | None:
-    try:
-        cp = subprocess.run(  # noqa: S603,S607
-            ["git", "-C", str(path), "rev-parse", "HEAD"],
-            capture_output=True,
-            text=True,
-            timeout=15,
+def _evaluation_input_fingerprints(ctx: RunContext) -> tuple[str, str]:
+    evidence_docs: list[tuple[str, Path]] = [
+        ("evidence-manifest.json", ctx.input_dir / "evidence-manifest.json"),
+    ]
+    evidence_root = ctx.input_dir / "evidence"
+    if evidence_root.is_dir():
+        evidence_docs.extend(
+            (f"evidence/{path.relative_to(evidence_root).as_posix()}", path)
+            for path in evidence_root.rglob("*") if path.is_file()
         )
-    except (subprocess.TimeoutExpired, OSError):
-        return None
-    if cp.returncode != 0:
-        return None
-    return cp.stdout.strip() or None
+    input_docs = [
+        ("function-context.json", ctx.input_dir / "function-context.json"),
+        ("static-result.json", ctx.input_dir / "static-result.json"),
+        *evidence_docs,
+    ]
+    for name in ("rubric.yaml", "complexity_rules.yaml", "design_completeness_rules.yaml"):
+        input_docs.append((f"evaluation/{name}", ctx.specs_root / "evaluation" / name))
+    skill_root = ctx.specs_root / "skills" / "ohos-design-arkui-spec-evaluator"
+    if skill_root.is_dir():
+        input_docs.extend(
+            (f"skill/{path.relative_to(skill_root).as_posix()}", path)
+            for path in skill_root.rglob("*")
+            if path.is_file() and "__pycache__" not in path.parts and path.suffix != ".pyc"
+        )
+    return (
+        fingerprint_named_documents(input_docs, normalize_revision_fields=True),
+        fingerprint_named_documents(evidence_docs, normalize_revision_fields=True),
+    )
 
+
+def _register_rolling_report(
+    *,
+    settings: ServiceSettings,
+    job: Job,
+    target,
+    archive_dir: Path,
+    aggregate_dir: Path,
+    selected_run_id: str,
+    refresh_targets: RefreshTargetRepository,
+    events: EventRepository,
+    pending_delta,
+) -> None:
+    if not target.input_fingerprint or not target.evidence_fingerprint:
+        raise RuntimeError("refresh target has no frozen input/evidence fingerprint")
+    manifest_path = archive_dir / "archive-manifest.json"
+    report_path = aggregate_dir / "evaluation-report.json"
+    report_document = json.loads(report_path.read_text(encoding="utf-8"))
+    archive_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    summary = report_document.get("summary", {}) if isinstance(report_document, dict) else {}
+    protocol = report_document.get("protocol", {}) if isinstance(report_document, dict) else {}
+    report = EvaluationReportRecord(
+        report_id=f"report-{job.job_id}",
+        job_id=job.job_id,
+        func_id=job.func_id,
+        source_revision=job.source_revision,
+        revision_set={**target.revision_set, "evaluator_toolchain": job.evaluator_version},
+        input_fingerprint=target.input_fingerprint,
+        evidence_fingerprint=target.evidence_fingerprint,
+        evaluator_version=job.evaluator_version,
+        protocol_version=job.protocol_version,
+        rubric_version=str(protocol.get("rubric_version", "0.3.0")),
+        selected_run_id=selected_run_id,
+        run_count=job.run_count,
+        target_generation=target.generation,
+        completed_at=str(archive_manifest.get("created_at") or utc_now()),
+        archive_path=str(archive_dir),
+        manifest_sha256="sha256:" + hashlib.sha256(manifest_path.read_bytes()).hexdigest(),
+        summary=summary,
+    )
+    store = refresh_targets.store
+    registry = ReportRegistry(
+        settings,
+        EvaluationReportRepository(store),
+        FunctionReportHeadRepository(store),
+        FreshnessPolicyRepository(store),
+    )
+    result = registry.register_and_promote(report)
+    if result.promotion_status in {"PROMOTED", "ALREADY_CURRENT"} and pending_delta is not None:
+        delta_document, _, expected_previous_id = pending_delta
+        if (
+            result.promotion_status == "PROMOTED"
+            and result.previous_report_id != expected_previous_id
+        ):
+            raise RuntimeError(
+                "current report changed while preparing delta: "
+                f"expected {expected_previous_id}, got {result.previous_report_id}"
+            )
+        details_path = archive_dir / "aggregate-delta-report-delta.json"
+        ReportDeltaRepository(store).insert(
+            ReportDelta(
+                report_id=report.report_id,
+                previous_report_id=result.previous_report_id,
+                summary=delta_document["summary"],
+                details_path=str(details_path),
+            )
+        )
+    refresh_targets.finish(job.job_id, status="COMPLETED")
+    events.append(
+        job.job_id,
+        "rolling_report_registered",
+        {"report_id": report.report_id, "promotion_status": result.promotion_status},
+    )
+
+
+def _prepare_report_delta(store, func_id: str, current_report_path: Path, aggregate_dir: Path):
+    heads = FunctionReportHeadRepository(store)
+    reports = EvaluationReportRepository(store)
+    head = heads.ensure(func_id)
+    previous = reports.get(head.current_report_id) if head.current_report_id else None
+    previous_document = load_archived_report(previous.archive_path) if previous else None
+    current_document = json.loads(current_report_path.read_text(encoding="utf-8"))
+    delta = build_report_delta(previous_document, current_document)
+    delta["previous_report_id"] = previous.report_id if previous else None
+    path = aggregate_dir / "report-delta.json"
+    path.write_text(
+        json.dumps(delta, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    return delta, path, previous.report_id if previous else None
+
+
+def _load_archived_delta(archive_path: str):
+    path = Path(archive_path) / "aggregate-delta-report-delta.json"
+    if not path.is_file():
+        return None
+    try:
+        document = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    if not isinstance(document, dict) or not isinstance(document.get("summary"), dict):
+        return None
+    return document, path, document.get("previous_report_id")
+
+
+# --- helpers ----------------------------------------------------------------
 
 def _snapshot_dto(job_id: str, name: str, branch: str, sha: str, now: str):
     from ..domain.models import DependencySnapshot

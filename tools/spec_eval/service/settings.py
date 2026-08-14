@@ -36,6 +36,8 @@ class ServiceSettings:
     locks_root: Path
     logs_root: Path
     backups_root: Path
+    workspaces_root: Path
+    exports_root: Path
     repo_root: Path
     specs_root: Path
     schemas_root: Path
@@ -65,8 +67,19 @@ class ServiceSettings:
         locks_root = data_root / "locks"
         logs_root = data_root / "logs"
         backups_root = data_root / "backups"
+        workspaces_root = data_root / "workspaces"
+        exports_root = data_root / "exports"
         # db_path is a file, not a directory; create its parent plus the other roots.
-        for path in (db_path.parent, jobs_root, archives_root, locks_root, logs_root, backups_root):
+        for path in (
+            db_path.parent,
+            jobs_root,
+            archives_root,
+            locks_root,
+            logs_root,
+            backups_root,
+            workspaces_root,
+            exports_root,
+        ):
             path.mkdir(parents=True, exist_ok=True)
 
         return cls(
@@ -77,6 +90,8 @@ class ServiceSettings:
             locks_root=locks_root,
             logs_root=logs_root,
             backups_root=backups_root,
+            workspaces_root=workspaces_root,
+            exports_root=exports_root,
             repo_root=repo_root,
             specs_root=specs_root,
             schemas_root=schemas_root,

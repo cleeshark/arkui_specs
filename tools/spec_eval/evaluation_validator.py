@@ -186,6 +186,9 @@ def build_evaluation_template(
     complexity_rules: dict[str, Any],
     func_id: str,
     evaluator_id: str,
+    *,
+    source_revision: str | None = None,
+    require_pilot: bool = True,
 ) -> dict[str, Any]:
     """Create one draft evaluation for one Function."""
 
@@ -193,8 +196,9 @@ def build_evaluation_template(
         (item for item in manifest.get("pilot_functions", []) if item.get("func_id") == func_id),
         None,
     )
-    if sample is None:
+    if sample is None and require_pilot:
         raise ValueError(f"FuncID is not registered in the evaluation Pilot: {func_id}")
+    effective_revision = source_revision or manifest["revisions"]["ace_engine"]
     snapshot = function_input_snapshot(config, func_id)
     complexity = aggregate_function_complexity(_complexity_values(config, func_id), complexity_rules)
     criterion_results = []
@@ -219,7 +223,7 @@ def build_evaluation_template(
         "evaluation_id": f"EVAL-{func_id}",
         "func_id": func_id,
         "input_fingerprint": snapshot["input_fingerprint"],
-        "source_revision": manifest["revisions"]["ace_engine"],
+        "source_revision": effective_revision,
         "status": "draft",
         "evaluator": {"evaluator_id": evaluator_id, "evaluated_at": None},
         "semantic_result": {
@@ -229,7 +233,7 @@ def build_evaluation_template(
             "evaluator_protocol_version": "0.3.0",
             "evaluator_version": f"human:{evaluator_id}",
             "func_id": func_id,
-            "source_revision": manifest["revisions"]["ace_engine"],
+            "source_revision": effective_revision,
             "run_id": f"evaluation-{func_id}",
             "complexity": complexity,
             "criterion_results": criterion_results,

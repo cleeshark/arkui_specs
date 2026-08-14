@@ -58,6 +58,29 @@ class CheckpointExistsError(SemanticServiceError):
         self.feat_id = feat_id
 
 
+class SnapshotConflictError(SemanticServiceError):
+    """A Job dependency snapshot was frozen previously with different data."""
+
+    def __init__(self, job_id: str, repo_name: str) -> None:
+        super().__init__(
+            f"dependency snapshot conflict for job={job_id!r} repo={repo_name!r}"
+        )
+        self.job_id = job_id
+        self.repo_name = repo_name
+
+
+class ReportConflictError(SemanticServiceError):
+    """An immutable report id or job id already maps to different content."""
+
+
+class ReportPromotionError(SemanticServiceError):
+    """A report cannot become current for the Function's desired generation."""
+
+
+class FreshnessPolicyError(SemanticServiceError):
+    """A freshness policy is invalid or attempts to reuse a version."""
+
+
 class ValidationError(SemanticServiceError):
     """A document failed JSON Schema or protocol validation."""
 

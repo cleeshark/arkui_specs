@@ -23,7 +23,7 @@ from pathlib import Path
 from spec_eval.service.domain import states as S
 from spec_eval.service.domain.models import CreateJobCommand
 from spec_eval.service.executors import contract as C
-from spec_eval.service.pipeline.context import RunContext, discover_input_dir
+from spec_eval.service.pipeline.context import RunContext
 from spec_eval.service.pipeline.evidence_stage import EvidenceStageError, prepare_evidence
 from spec_eval.service.pipeline.report_stage import ReportStageError, run_report
 from spec_eval.service.pipeline.semantic_stage import run_job_pipeline, run_semantic
@@ -36,6 +36,7 @@ from spec_eval.service.store.repositories import (
     JobRepository,
 )
 from spec_eval.service.store.sqlite_store import SqliteStore
+from spec_eval.service.workspace.models import EvaluationWorkspace
 
 EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.11"
 JOB_ID = "c" * 40
@@ -165,6 +166,17 @@ class _PipelineTestBase(unittest.TestCase):
         self.jobs.transition_status(JOB_ID, S.EVIDENCE, event_type="enter_evidence")
         self.jobs.transition_status(JOB_ID, S.SEMANTIC, event_type="enter_semantic")
 
+    def _write_evidence(self, package: Path | None = None, *, revision: str | None = None) -> Path:
+        package = package or self.ctx.input_dir
+        package.mkdir(parents=True, exist_ok=True)
+        body = {"func_id": self.ctx.func_id, "source_revision": revision or self.ctx.source_revision}
+        for name in ("function-context.json", "static-result.json", "evidence-manifest.json"):
+            (package / name).write_text(json.dumps(body), encoding="utf-8")
+        return package
+
+    def _workspace(self, job) -> EvaluationWorkspace:
+        return EvaluationWorkspace.control_checkout(self.settings, job.source_revision)
+
 
 # --- run_semantic loop tests ------------------------------------------------
 
@@ -244,15 +256,14 @@ class RunSemanticTest(_PipelineTestBase):
 class RunJobPipelineTest(_PipelineTestBase):
     def test_fresh_job_runs_to_completion(self) -> None:
         # pre-seed the evidence input-dir so the real evidence build is skipped
-        self.ctx.input_dir.mkdir(parents=True, exist_ok=True)
-        (self.ctx.input_dir / "function-context.json").write_text("{}", encoding="utf-8")
+        self._write_evidence()
         executor = FakeExecutor()
         runner = FakeScriptRunner(self._items(["feature:Feat-01"]))
         result = run_job_pipeline(
             JOB_ID,
             settings=self.settings, jobs=self.jobs, attempts=self.attempts,
             events=self.events, artifacts=self.artifacts, snapshots=self.snapshots,
-            executor=executor, runner=runner,
+            executor=executor, workspace_provider=self._workspace, runner=runner,
         )
         self.assertEqual(result.outcome, C.STATUS_COMPLETED)
         job = self.jobs.get_job(JOB_ID)
@@ -283,12 +294,7 @@ class GateFailExitCodeTest(_PipelineTestBase):
 
     def _evidence_runner(self, rc: int):
         def runner(argv, *, cwd, timeout):
-            # real CLI layout: <HEAD-revision>/<func_id>/, drifted from the
-            # job's frozen source_revision
-            package = self.ctx.evidence_output_root / ("h" * 40) / self.ctx.func_id
-            package.mkdir(parents=True, exist_ok=True)
-            for name in ("function-context.json", "static-result.json", "evidence-manifest.json"):
-                (package / name).write_text("{}", encoding="utf-8")
+            self._write_evidence()
             return subprocess.CompletedProcess(argv, rc, "", "")
         return runner
 
@@ -344,48 +350,44 @@ class GateFailExitCodeTest(_PipelineTestBase):
 # --- evidence package layout (issue #9) ---------------------------------------
 
 class EvidenceLayoutTest(_PipelineTestBase):
-    """The evidence CLI writes ``<output>/<HEAD-revision>/<func_id>/`` (three
-    layers; the revision layer is taken from the repo HEAD at run time and can
-    drift from the job's frozen source_revision). The service must discover the
-    actual package instead of assuming a flat ``<func_id>/`` layout, and the
-    package is shared by all runs at the job level."""
-
-    HEAD_REV = "7" * 40  # simulates a repo HEAD different from "rev-abc"
+    """Evidence is accepted only from the Job's exact frozen revision path."""
 
     def _package(self, rev: str) -> Path:
         package = self.ctx.evidence_output_root / rev / self.ctx.func_id
-        package.mkdir(parents=True, exist_ok=True)
-        for name in ("function-context.json", "static-result.json", "evidence-manifest.json"):
-            (package / name).write_text("{}", encoding="utf-8")
-        return package
+        return self._write_evidence(package, revision=rev)
 
     def _runner(self, rc: int = 0):
         def runner(argv, *, cwd, timeout):
-            self._package(self.HEAD_REV)
+            self._package(self.ctx.source_revision)
             return subprocess.CompletedProcess(argv, rc, "", "")
         return runner
 
-    def test_prepare_discovers_drifted_revision_dir(self) -> None:
+    def test_prepare_uses_exact_revision_dir(self) -> None:
         package = prepare_evidence(self.ctx, runner=self._runner())
-        self.assertEqual(package, self.ctx.evidence_output_root / self.HEAD_REV / self.ctx.func_id)
+        self.assertEqual(package, self.ctx.input_dir)
 
-    def test_ctx_input_dir_resolves_after_evidence_exists(self) -> None:
-        prepare_evidence(self.ctx, runner=self._runner())
+    def test_ctx_input_dir_does_not_follow_another_revision(self) -> None:
+        self._package("7" * 40)
         ctx = RunContext.for_run(
             self.settings, job_id=JOB_ID, func_id=self.ctx.func_id,
-            source_revision="rev-abc", run_id="run-2",  # any run resolves the same package
+            source_revision="rev-abc", run_id="run-2",
         )
-        self.assertEqual(ctx.input_dir, self.ctx.evidence_output_root / self.HEAD_REV / self.ctx.func_id)
+        self.assertEqual(ctx.input_dir, self.ctx.evidence_output_root / "rev-abc" / self.ctx.func_id)
 
-    def test_latest_package_wins_when_head_drifts_on_retry(self) -> None:
-        import os
+    def test_retry_does_not_select_newer_wrong_revision(self) -> None:
+        self._package("9" * 40)
+        with self.assertRaises(EvidenceStageError):
+            prepare_evidence(
+                self.ctx,
+                runner=lambda argv, *, cwd, timeout: subprocess.CompletedProcess(argv, 0, "", ""),
+            )
 
-        old = self._package("0" * 40)
-        old_ts = old.stat().st_mtime - 3600
-        os.utime(old / "function-context.json", (old_ts, old_ts))
-        prepare_evidence(self.ctx, runner=self._runner())
-        discovered = discover_input_dir(self.ctx.evidence_output_root, self.ctx.func_id)
-        self.assertEqual(discovered, self.ctx.evidence_output_root / self.HEAD_REV / self.ctx.func_id)
+    def test_revision_mismatch_inside_exact_dir_raises(self) -> None:
+        def runner(argv, *, cwd, timeout):
+            self._write_evidence(revision="wrong-revision")
+            return subprocess.CompletedProcess(argv, 0, "", "")
+        with self.assertRaisesRegex(EvidenceStageError, "source revision mismatch"):
+            prepare_evidence(self.ctx, runner=runner)
 
     def test_no_package_written_raises(self) -> None:
         def runner(argv, *, cwd, timeout):
@@ -428,13 +430,16 @@ class StagedScriptIntegrationTest(unittest.TestCase):
             self.skipTest("no cached evidence package under specs/.evaluator; skipping integration test")
         tmp = tempfile.TemporaryDirectory()
         try:
+            fixture_revision = json.loads(
+                (self.fixture / "function-context.json").read_text(encoding="utf-8")
+            )["source_revision"]
             settings = ServiceSettings.discover(data_root=Path(tmp.name))
             store = SqliteStore(settings)
             jobs = JobRepository(store)
             job = jobs.create_job(
                 CreateJobCommand(
                     func_id=self.func_id,  # type: ignore[arg-type]
-                    source_revision="integration",
+                    source_revision=fixture_revision,
                     run_count=1,
                     job_id="d" * 40,
                 ),
@@ -442,7 +447,7 @@ class StagedScriptIntegrationTest(unittest.TestCase):
             )
             ctx = RunContext.for_run(
                 settings, job_id=job.job_id, func_id=job.func_id,
-                source_revision="integration", run_id="run-1",
+                source_revision=fixture_revision, run_id="run-1",
                 evaluator_version=EVALUATOR_VERSION,
             )
             # copy the cached evidence package into place as the input-dir

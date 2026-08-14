@@ -1,4 +1,4 @@
--- SQLite schema for the semantic evaluation service Job Store (schema_version 1).
+-- SQLite schema for the semantic evaluation service Job Store (schema_version 2).
 -- Loaded idempotently by sqlite_store._run_migrations. PRAGMAs are applied in
 -- code (they are connection-scoped / must run outside a transaction). The
 -- load-bearing constraints are:
@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS schema_meta (
     key   TEXT PRIMARY KEY,
     value TEXT NOT NULL
 );
-INSERT OR IGNORE INTO schema_meta (key, value) VALUES ('schema_version', '1');
+INSERT OR IGNORE INTO schema_meta (key, value) VALUES ('schema_version', '2');
 
 CREATE TABLE IF NOT EXISTS jobs (
     job_id            TEXT PRIMARY KEY,
@@ -82,4 +82,86 @@ CREATE TABLE IF NOT EXISTS dependency_snapshots (
     status    TEXT NOT NULL CHECK (status IN ('frozen', 'stale')),
     created_at TEXT NOT NULL,
     PRIMARY KEY (job_id, repo_name)
+);
+
+CREATE TABLE IF NOT EXISTS evaluation_reports (
+    report_id             TEXT PRIMARY KEY,
+    job_id                TEXT NOT NULL UNIQUE REFERENCES jobs (job_id) ON DELETE RESTRICT,
+    func_id               TEXT NOT NULL,
+    source_revision       TEXT NOT NULL,
+    revision_set_json     TEXT NOT NULL,
+    input_fingerprint     TEXT NOT NULL,
+    evidence_fingerprint  TEXT NOT NULL,
+    evaluator_version     TEXT NOT NULL,
+    protocol_version      TEXT NOT NULL,
+    rubric_version        TEXT NOT NULL,
+    selected_run_id       TEXT NOT NULL,
+    run_count             INTEGER NOT NULL CHECK (run_count >= 1),
+    target_generation     INTEGER NOT NULL CHECK (target_generation >= 0),
+    completed_at          TEXT NOT NULL,
+    archive_path          TEXT NOT NULL,
+    manifest_sha256       TEXT NOT NULL,
+    summary_json          TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_evaluation_reports_func_completed
+    ON evaluation_reports (func_id, completed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_evaluation_reports_func_generation
+    ON evaluation_reports (func_id, target_generation);
+
+CREATE TABLE IF NOT EXISTS function_report_heads (
+    func_id                    TEXT PRIMARY KEY,
+    current_report_id          TEXT REFERENCES evaluation_reports (report_id) ON DELETE RESTRICT,
+    desired_generation         INTEGER NOT NULL DEFAULT 0 CHECK (desired_generation >= 0),
+    desired_revision           TEXT,
+    desired_input_fingerprint  TEXT,
+    freshness                  TEXT NOT NULL DEFAULT 'MISSING' CHECK (freshness IN (
+        'FRESH', 'EXPIRING', 'EXPIRED_TIME', 'STALE_INPUT', 'MISSING'
+    )),
+    stale_reasons_json         TEXT NOT NULL DEFAULT '[]',
+    warn_at                    TEXT,
+    expires_at                 TEXT,
+    refresh_status             TEXT NOT NULL DEFAULT 'IDLE' CHECK (refresh_status IN (
+        'IDLE', 'REFRESHING', 'REFRESH_FAILED'
+    )),
+    active_job_id              TEXT REFERENCES jobs (job_id) ON DELETE SET NULL,
+    last_refresh_error         TEXT,
+    updated_at                 TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_function_report_heads_freshness
+    ON function_report_heads (freshness, refresh_status);
+
+CREATE TABLE IF NOT EXISTS refresh_targets (
+    job_id                   TEXT PRIMARY KEY REFERENCES jobs (job_id) ON DELETE CASCADE,
+    func_id                  TEXT NOT NULL,
+    generation               INTEGER NOT NULL CHECK (generation >= 1),
+    desired_revision         TEXT NOT NULL,
+    revision_set_json        TEXT NOT NULL,
+    provisional_fingerprint  TEXT NOT NULL,
+    input_fingerprint        TEXT,
+    evidence_fingerprint     TEXT,
+    dedupe_key               TEXT NOT NULL,
+    status                   TEXT NOT NULL CHECK (status IN ('ACTIVE', 'COMPLETED', 'FAILED')),
+    created_at               TEXT NOT NULL,
+    updated_at               TEXT NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_refresh_targets_active_dedupe
+    ON refresh_targets (dedupe_key) WHERE status = 'ACTIVE';
+CREATE INDEX IF NOT EXISTS idx_refresh_targets_func_generation
+    ON refresh_targets (func_id, generation DESC);
+
+CREATE TABLE IF NOT EXISTS freshness_policies (
+    scope_type    TEXT NOT NULL CHECK (scope_type IN ('global', 'func')),
+    scope_key     TEXT NOT NULL,
+    max_age_days  INTEGER NOT NULL CHECK (max_age_days > 0),
+    warning_days  INTEGER NOT NULL CHECK (warning_days >= 0 AND warning_days < max_age_days),
+    version       INTEGER NOT NULL CHECK (version >= 1),
+    updated_at    TEXT NOT NULL,
+    PRIMARY KEY (scope_type, scope_key)
+);
+
+CREATE TABLE IF NOT EXISTS report_deltas (
+    report_id          TEXT PRIMARY KEY REFERENCES evaluation_reports (report_id) ON DELETE CASCADE,
+    previous_report_id TEXT REFERENCES evaluation_reports (report_id) ON DELETE SET NULL,
+    summary_json       TEXT NOT NULL,
+    details_path       TEXT
 );

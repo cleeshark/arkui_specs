@@ -65,6 +65,88 @@ class DependencySnapshot:
 
 
 @dataclass(frozen=True)
+class EvaluationReportRecord:
+    """Immutable query index for one archived automated evaluation report."""
+
+    report_id: str
+    job_id: str
+    func_id: str
+    source_revision: str
+    revision_set: dict[str, str]
+    input_fingerprint: str
+    evidence_fingerprint: str
+    evaluator_version: str
+    protocol_version: str
+    rubric_version: str
+    selected_run_id: str
+    run_count: int
+    target_generation: int
+    completed_at: str
+    archive_path: str
+    manifest_sha256: str
+    summary: dict[str, Any]
+
+
+@dataclass(frozen=True)
+class FunctionReportHead:
+    """Mutable projection selecting the current report for one Function."""
+
+    func_id: str
+    current_report_id: str | None
+    desired_generation: int
+    desired_revision: str | None
+    desired_input_fingerprint: str | None
+    freshness: str
+    stale_reasons: tuple[str, ...]
+    warn_at: str | None
+    expires_at: str | None
+    refresh_status: str
+    active_job_id: str | None
+    last_refresh_error: str | None
+    updated_at: str
+
+
+@dataclass(frozen=True)
+class FreshnessPolicy:
+    """Global or FuncID-specific report validity policy."""
+
+    scope_type: str
+    scope_key: str
+    max_age_days: int
+    warning_days: int
+    version: int
+    updated_at: str
+
+
+@dataclass(frozen=True)
+class RefreshTarget:
+    """Frozen target metadata binding a manual refresh Job to one generation."""
+
+    job_id: str
+    func_id: str
+    generation: int
+    desired_revision: str
+    revision_set: dict[str, str]
+    provisional_fingerprint: str
+    input_fingerprint: str | None
+    evidence_fingerprint: str | None
+    dedupe_key: str
+    status: str
+    created_at: str
+    updated_at: str
+
+
+@dataclass(frozen=True)
+class ReportDelta:
+    """Difference between a promoted report and the prior current report."""
+
+    report_id: str
+    previous_report_id: str | None
+    summary: dict[str, Any]
+    details_path: str | None
+
+
+@dataclass(frozen=True)
 class Attempt:
     """A durable checkpoint for one (run, feat, stage) of a job.
 

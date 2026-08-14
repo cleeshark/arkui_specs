@@ -129,6 +129,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--input-dir", type=Path, required=True)
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument(
+        "--evaluation-mode", choices=("golden", "automated"), default="golden"
+    )
+    parser.add_argument("--source-revision")
     return parser
 
 
@@ -137,6 +141,9 @@ def create_semantic_template(
     input_dir: Path,
     run_id: str,
     evaluator_version: str = DEFAULT_EVALUATOR_VERSION,
+    *,
+    source_revision: str | None = None,
+    allow_non_pilot: bool = False,
 ) -> dict[str, Any]:
     rubric, complexity, errors = validate_protocol(EVALUATION_ROOT)
     if errors:
@@ -148,13 +155,23 @@ def create_semantic_template(
         (item for item in manifest.get("pilot_functions", []) if item.get("func_id") == func_id),
         None,
     )
-    if sample is None:
+    if sample is None and not allow_non_pilot:
         raise LookupError(
             f"{func_id} is outside the frozen NEXT-007 Pilot; "
             "general Function templates are not enabled in the MVP framework"
         )
-    source_revision = str(manifest.get("revisions", {}).get("ace_engine", ""))
-    _validate_input_dir(input_dir.resolve(), func_id, source_revision)
+    golden_revision = str(manifest.get("revisions", {}).get("ace_engine", ""))
+    if allow_non_pilot:
+        if not source_revision:
+            raise ValueError("automated evaluation requires an explicit source revision")
+        effective_revision = source_revision
+    else:
+        if source_revision is not None and source_revision != golden_revision:
+            raise ValueError(
+                f"golden evaluation requires source revision {golden_revision}, got {source_revision}"
+            )
+        effective_revision = golden_revision
+    _validate_input_dir(input_dir.resolve(), func_id, effective_revision)
     evaluation = build_evaluation_template(
         manifest,
         EvaluationConfig.discover(),
@@ -162,6 +179,8 @@ def create_semantic_template(
         complexity,
         func_id,
         "skill-framework",
+        source_revision=effective_revision,
+        require_pilot=not allow_non_pilot,
     )
     semantic = evaluation["semantic_result"]
     semantic["evaluator_version"] = evaluator_version
@@ -173,7 +192,7 @@ def create_semantic_template(
         "notes": [
             "NEXT-007 Skill template: complete all 20 Criteria before setting semantic_complete=true.",
             "Blind mode: do not read confirmed Reviews or historical NEXT-007 runs before validating this result.",
-            *_scope_notes(sample),
+            *_scope_notes(sample or {}),
         ],
     }
     return semantic
@@ -189,6 +208,8 @@ def main(argv: list[str] | None = None) -> int:
             args.func_id,
             args.input_dir,
             args.run_id,
+            source_revision=args.source_revision,
+            allow_non_pilot=args.evaluation_mode == "automated",
         )
     except LookupError as exc:
         print(f"ERROR: {exc}", file=sys.stderr)

@@ -33,10 +33,15 @@ from spec_eval.service.store.repositories import (
     ArtifactRepository,
     AttemptRepository,
     DependencySnapshotRepository,
+    EvaluationReportRepository,
     EventRepository,
+    FunctionReportHeadRepository,
     JobRepository,
+    RefreshTargetRepository,
+    ReportDeltaRepository,
 )
 from spec_eval.service.store.sqlite_store import SqliteStore, utc_now
+from spec_eval.service.workspace.models import EvaluationWorkspace
 
 EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.11"
 
@@ -234,9 +239,12 @@ class ArchiveStageTest(unittest.TestCase):
         kwargs = dict(semantic_results=sr, aggregate_outputs=agg, run_ids=["run-1"],
                       selected_run_id="run-1", site_snapshot_path=snap)
         first = archive_stage.write_archive(self.settings, job, **kwargs)
+        before = (first / "aggregate-score-score-result.json").read_bytes()
+        agg["score"].write_text('{"x":2}', encoding="utf-8")
         second = archive_stage.write_archive(self.settings, job, **kwargs)
         self.assertEqual(first, second)
         self.assertTrue((first / "archive-manifest.json").is_file())
+        self.assertEqual((first / "aggregate-score-score-result.json").read_bytes(), before)
 
     def test_namespace_is_under_archives_automated(self) -> None:
         job = _make_job()
@@ -308,7 +316,9 @@ class _DriverTestBase(unittest.TestCase):
         )
         # pre-seed evidence so the real evidence build is skipped
         self.ctx.input_dir.mkdir(parents=True, exist_ok=True)
-        (self.ctx.input_dir / "function-context.json").write_text("{}", encoding="utf-8")
+        evidence = {"func_id": self.job.func_id, "source_revision": self.job.source_revision}
+        for name in ("function-context.json", "static-result.json", "evidence-manifest.json"):
+            (self.ctx.input_dir / name).write_text(json.dumps(evidence), encoding="utf-8")
 
     def tearDown(self) -> None:
         self.store.close()
@@ -356,7 +366,11 @@ class DriverCompletionTest(_DriverTestBase):
             self.job.job_id,
             settings=self.settings, jobs=self.jobs, attempts=self.attempts,
             events=self.events, artifacts=self.artifacts, snapshots=self.snapshots,
-            executor=_FakeExecutor(), runner=runner,
+            executor=_FakeExecutor(),
+            workspace_provider=lambda job: EvaluationWorkspace.control_checkout(
+                self.settings, job.source_revision
+            ),
+            runner=runner,
         )
         self.assertEqual(result.outcome, C.STATUS_COMPLETED)
         job = self.jobs.get_job(self.job.job_id)
@@ -366,6 +380,38 @@ class DriverCompletionTest(_DriverTestBase):
         self.assertTrue((archive_dir / "archive-manifest.json").is_file())
         types = [e.event_type for e in self.events.list_for_job(self.job.job_id)]
         self.assertIn("job_completed", types)
+
+    def test_manual_refresh_pipeline_registers_and_promotes_report(self) -> None:
+        targets = RefreshTargetRepository(self.store)
+        _, created = targets.create_active(
+            job_id=self.job.job_id,
+            func_id=self.job.func_id,
+            desired_revision=self.job.source_revision,
+            revision_set={"ace_engine": self.job.source_revision, "specs": "s" * 40},
+            provisional_fingerprint="sha256:" + "p" * 64,
+            dedupe_key="sha256:" + "d" * 64,
+            stale_reasons=("DEPENDENCY_SNAPSHOT_CHANGED",),
+        )
+        self.assertTrue(created)
+        result = run_job_pipeline(
+            self.job.job_id,
+            settings=self.settings, jobs=self.jobs, attempts=self.attempts,
+            events=self.events, artifacts=self.artifacts, snapshots=self.snapshots,
+            executor=_FakeExecutor(),
+            workspace_provider=lambda job: EvaluationWorkspace.control_checkout(
+                self.settings, job.source_revision
+            ),
+            refresh_targets=targets,
+            runner=_FakeScriptRunner(self._work_items()),
+        )
+        self.assertEqual(result.outcome, C.STATUS_COMPLETED)
+        stored = targets.get(self.job.job_id)
+        self.assertEqual(stored.status, "COMPLETED")  # type: ignore[union-attr]
+        report = EvaluationReportRepository(self.store).get_for_job(self.job.job_id)
+        self.assertIsNotNone(report)
+        head = FunctionReportHeadRepository(self.store).get(self.job.func_id)
+        self.assertEqual(head.current_report_id, report.report_id)  # type: ignore[union-attr]
+        self.assertIsNotNone(ReportDeltaRepository(self.store).get(report.report_id))
 
 
 if __name__ == "__main__":

@@ -11,19 +11,25 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-from .domain.models import CreateJobCommand, Job
+from .domain.models import CreateJobCommand, FreshnessPolicy, Job
+from .freshness import FreshnessManager
+from .function_views import FunctionViewService
 from .executors.base import SemanticExecutor
 from .executors.codex_cli import CodexCliExecutor
 from .pipeline.context import DEFAULT_SKILL_EVALUATOR_VERSION
+from .manual_refresh import ManualRefreshService
 from .scheduler.dispatcher import Dispatcher
 from .scheduler.job_worker import build_runner
 from .settings import ServiceSettings
 from .store.repositories import (
     ArtifactRepository,
     EventRepository,
+    FreshnessPolicyRepository,
+    EvaluationReportRepository,
+    FunctionReportHeadRepository,
     JobRepository,
 )
-from .store.sqlite_store import SqliteStore
+from .store.sqlite_store import SqliteStore, utc_now
 
 
 class SemanticServiceApp:
@@ -39,12 +45,14 @@ class SemanticServiceApp:
         self.settings = settings
         self.token = token
         self.store = SqliteStore(settings)
+        FreshnessPolicyRepository(self.store).ensure_default()
         self.ui_dir = Path(__file__).resolve().parent / "ui"
         self._executor = executor or CodexCliExecutor(
             settings.default_executor_config, schemas_root=settings.schemas_root
         )
         runner = job_runner or build_runner(settings, self.store, self._executor)
         self.dispatcher = Dispatcher(self.store, job_runner=runner, max_workers=max_workers)
+        self.manual_refresh = ManualRefreshService(self)
 
     # --- repositories (fresh handles are cheap; they only reference the store) -
     @property
@@ -78,6 +86,57 @@ class SemanticServiceApp:
         EventRepository(self.store).append(job.job_id, "job_submitted", {})
         self.dispatcher.submit(job.job_id, job.func_id)
         return job
+
+    def refresh_function(
+        self, *, func_id: str, source_revision: str | None = None, run_count: int = 1
+    ):
+        return self.manual_refresh.request(
+            func_id=func_id,
+            source_revision=source_revision or self.default_source_revision(),
+            run_count=run_count,
+        )
+
+    def list_functions(self):
+        return FunctionViewService(self.settings, self.store).list_functions(
+            observed_revision=self.default_source_revision()
+        )
+
+    def get_function(self, func_id: str):
+        return FunctionViewService(self.settings, self.store).get_function(
+            func_id, observed_revision=self.default_source_revision()
+        )
+
+    def function_history(self, func_id: str):
+        return FunctionViewService(self.settings, self.store).history(func_id)
+
+    def freshness_policies(self):
+        return FreshnessPolicyRepository(self.store).list_all()
+
+    def set_freshness_policy(
+        self, *, scope_type: str, scope_key: str, max_age_days: int, warning_days: int
+    ):
+        policies = FreshnessPolicyRepository(self.store)
+        existing = policies.get(scope_type, scope_key)
+        policy = FreshnessPolicy(
+            scope_type=scope_type,
+            scope_key=scope_key,
+            max_age_days=max_age_days,
+            warning_days=warning_days,
+            version=(existing.version + 1) if existing else 1,
+            updated_at=utc_now(),
+        )
+        return FreshnessManager(
+            EvaluationReportRepository(self.store),
+            FunctionReportHeadRepository(self.store),
+            policies,
+        ).set_policy(policy)
+
+    def export_site(self):
+        from .site_export import export_automated_site
+
+        return export_automated_site(
+            self.settings, self.store, observed_revision=self.default_source_revision()
+        )
 
     def list_jobs(self, status: str | None = None) -> list[Job]:
         return self.jobs.list_jobs(status=status)

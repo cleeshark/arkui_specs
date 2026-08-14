@@ -21,9 +21,12 @@ from ..store.repositories import (
     AttemptRepository,
     DependencySnapshotRepository,
     EventRepository,
+    FunctionReportHeadRepository,
     JobRepository,
+    RefreshTargetRepository,
 )
 from ..store.sqlite_store import SqliteStore
+from ..workspace.manager import RevisionWorkspaceManager
 
 
 def build_runner(
@@ -36,17 +39,43 @@ def build_runner(
     """Return a ``run_job(job_id, cancel)`` closure for the dispatcher."""
 
     def run_job(job_id: str, cancel: threading.Event) -> None:
-        run_job_pipeline(
-            job_id,
-            settings=settings,
-            jobs=JobRepository(store),
-            attempts=AttemptRepository(store),
-            events=EventRepository(store),
-            artifacts=ArtifactRepository(store),
-            snapshots=DependencySnapshotRepository(store),
-            executor=executor,
-            cancel=cancel,
-            runner=runner,
-        )
+        workspace_manager = RevisionWorkspaceManager(settings)
+        targets = RefreshTargetRepository(store)
+        raised = False
+        try:
+            run_job_pipeline(
+                job_id,
+                settings=settings,
+                jobs=JobRepository(store),
+                attempts=AttemptRepository(store),
+                events=EventRepository(store),
+                artifacts=ArtifactRepository(store),
+                snapshots=DependencySnapshotRepository(store),
+                executor=executor,
+                workspace_provider=workspace_manager.prepare,
+                refresh_targets=targets,
+                cancel=cancel,
+                runner=runner,
+            )
+        except Exception as exc:
+            raised = True
+            _mark_refresh_failed(store, targets, job_id, str(exc))
+            raise
+        finally:
+            job = JobRepository(store).get_job(job_id)
+            if job.status in {"failed", "cancelled"}:
+                _mark_refresh_failed(store, targets, job_id, job.status)
+            if raised or job.status in {"completed", "failed", "cancelled"}:
+                workspace_manager.release(job_id)
 
     return run_job
+
+
+def _mark_refresh_failed(
+    store: SqliteStore, targets: RefreshTargetRepository, job_id: str, error: str
+) -> None:
+    target = targets.get(job_id)
+    if target is None or target.status != "ACTIVE":
+        return
+    targets.finish(job_id, status="FAILED")
+    FunctionReportHeadRepository(store).mark_refresh_failed(target.func_id, job_id, error)

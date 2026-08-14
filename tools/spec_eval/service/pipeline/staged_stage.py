@@ -55,6 +55,10 @@ def init_staged_run(
         ctx.run_id,
         "--run-dir",
         str(ctx.run_dir),
+        "--evaluation-mode",
+        "automated",
+        "--source-revision",
+        ctx.source_revision,
     ]
     log_dir = ctx.jobs_run_root / "logs"
     cp = _run(argv, cwd=str(ctx.repo_root), runner=runner, timeout=timeout, log_dir=log_dir, name="init")

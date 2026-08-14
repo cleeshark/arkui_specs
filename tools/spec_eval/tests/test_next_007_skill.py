@@ -283,6 +283,61 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
                 "skill:ohos-design-arkui-spec-evaluator@0.1.11",
             )
 
+    def test_automated_template_accepts_explicit_non_pilot_revision(self) -> None:
+        func_id = "01-01-02"  # registered Function, deliberately outside the frozen Pilot
+        source_revision = "a" * 40
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            input_dir = root / "input"
+            evidence_dir = input_dir / "evidence"
+            evidence_dir.mkdir(parents=True)
+            common = {"func_id": func_id, "source_revision": source_revision}
+            (input_dir / "function-context.json").write_text(json.dumps(common), encoding="utf-8")
+            (input_dir / "static-result.json").write_text(
+                json.dumps({**common, "gate": "fail"}), encoding="utf-8"
+            )
+            (input_dir / "evidence-manifest.json").write_text(
+                json.dumps({**common, "shards": [{"path": "dummy.json"}]}), encoding="utf-8"
+            )
+            (evidence_dir / "dummy.json").write_text("{}", encoding="utf-8")
+
+            golden = subprocess.run(
+                [
+                    sys.executable,
+                    str(self.skill_root / "scripts" / "create_pilot_template.py"),
+                    "--func-id", func_id,
+                    "--input-dir", str(input_dir),
+                    "--run-id", "golden-must-stay-strict",
+                    "--output", str(root / "golden.json"),
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(golden.returncode, 2)
+            self.assertIn("outside the frozen NEXT-007 Pilot", golden.stderr)
+
+            output = root / "automated.json"
+            automated = subprocess.run(
+                [
+                    sys.executable,
+                    str(self.skill_root / "scripts" / "create_pilot_template.py"),
+                    "--func-id", func_id,
+                    "--input-dir", str(input_dir),
+                    "--run-id", "automated-run",
+                    "--output", str(output),
+                    "--evaluation-mode", "automated",
+                    "--source-revision", source_revision,
+                ],
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(automated.returncode, 0, automated.stderr)
+            semantic = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(semantic["func_id"], func_id)
+            self.assertEqual(semantic["source_revision"], source_revision)
+
     def test_staged_run_externalizes_context_and_assembles_result(self) -> None:
         source_revision = yaml.safe_load(
             (self.evaluation_root / "golden" / "manifest.yaml").read_text(encoding="utf-8")

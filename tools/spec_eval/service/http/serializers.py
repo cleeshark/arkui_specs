@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from ..domain.models import Artifact, Attempt, DependencySnapshot, Event, Job
+from ..domain.models import Artifact, Attempt, DependencySnapshot, Event, FreshnessPolicy, Job
 
 
 def job_to_dict(job: Job) -> dict[str, Any]:
@@ -73,4 +73,15 @@ def snapshot_to_dict(snap: DependencySnapshot) -> dict[str, Any]:
         "sha": snap.sha,
         "status": snap.status,
         "created_at": snap.created_at,
+    }
+
+
+def freshness_policy_to_dict(policy: FreshnessPolicy) -> dict[str, Any]:
+    return {
+        "scope_type": policy.scope_type,
+        "scope_key": policy.scope_key,
+        "max_age_days": policy.max_age_days,
+        "warning_days": policy.warning_days,
+        "version": policy.version,
+        "updated_at": policy.updated_at,
     }
