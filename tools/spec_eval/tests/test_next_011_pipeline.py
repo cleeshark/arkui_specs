@@ -23,7 +23,7 @@ from pathlib import Path
 from spec_eval.service.domain import states as S
 from spec_eval.service.domain.models import CreateJobCommand
 from spec_eval.service.executors import contract as C
-from spec_eval.service.pipeline.context import RunContext
+from spec_eval.service.pipeline.context import RunContext, discover_input_dir
 from spec_eval.service.pipeline.evidence_stage import EvidenceStageError, prepare_evidence
 from spec_eval.service.pipeline.report_stage import ReportStageError, run_report
 from spec_eval.service.pipeline.semantic_stage import run_job_pipeline, run_semantic
@@ -283,16 +283,18 @@ class GateFailExitCodeTest(_PipelineTestBase):
 
     def _evidence_runner(self, rc: int):
         def runner(argv, *, cwd, timeout):
+            # real CLI layout: <HEAD-revision>/<func_id>/, drifted from the
+            # job's frozen source_revision
+            package = self.ctx.evidence_output_root / ("h" * 40) / self.ctx.func_id
+            package.mkdir(parents=True, exist_ok=True)
             for name in ("function-context.json", "static-result.json", "evidence-manifest.json"):
-                path = self.ctx.input_dir / name
-                path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_text("{}", encoding="utf-8")
+                (package / name).write_text("{}", encoding="utf-8")
             return subprocess.CompletedProcess(argv, rc, "", "")
         return runner
 
     def test_evidence_static_gate_fail_is_not_an_error(self) -> None:
-        prepare_evidence(self.ctx, runner=self._evidence_runner(1))
-        self.assertTrue((self.ctx.input_dir / "static-result.json").is_file())
+        package = prepare_evidence(self.ctx, runner=self._evidence_runner(1))
+        self.assertTrue((package / "static-result.json").is_file())
 
     def test_evidence_spec_eval_error_still_raises(self) -> None:
         with self.assertRaises(EvidenceStageError):
@@ -337,6 +339,59 @@ class GateFailExitCodeTest(_PipelineTestBase):
                 self.ctx, semantic_results=self._semantic_results(), selected_run_id="run-1",
                 runner=self._report_runner(1, write_outputs=False),
             )
+
+
+# --- evidence package layout (issue #9) ---------------------------------------
+
+class EvidenceLayoutTest(_PipelineTestBase):
+    """The evidence CLI writes ``<output>/<HEAD-revision>/<func_id>/`` (three
+    layers; the revision layer is taken from the repo HEAD at run time and can
+    drift from the job's frozen source_revision). The service must discover the
+    actual package instead of assuming a flat ``<func_id>/`` layout, and the
+    package is shared by all runs at the job level."""
+
+    HEAD_REV = "7" * 40  # simulates a repo HEAD different from "rev-abc"
+
+    def _package(self, rev: str) -> Path:
+        package = self.ctx.evidence_output_root / rev / self.ctx.func_id
+        package.mkdir(parents=True, exist_ok=True)
+        for name in ("function-context.json", "static-result.json", "evidence-manifest.json"):
+            (package / name).write_text("{}", encoding="utf-8")
+        return package
+
+    def _runner(self, rc: int = 0):
+        def runner(argv, *, cwd, timeout):
+            self._package(self.HEAD_REV)
+            return subprocess.CompletedProcess(argv, rc, "", "")
+        return runner
+
+    def test_prepare_discovers_drifted_revision_dir(self) -> None:
+        package = prepare_evidence(self.ctx, runner=self._runner())
+        self.assertEqual(package, self.ctx.evidence_output_root / self.HEAD_REV / self.ctx.func_id)
+
+    def test_ctx_input_dir_resolves_after_evidence_exists(self) -> None:
+        prepare_evidence(self.ctx, runner=self._runner())
+        ctx = RunContext.for_run(
+            self.settings, job_id=JOB_ID, func_id=self.ctx.func_id,
+            source_revision="rev-abc", run_id="run-2",  # any run resolves the same package
+        )
+        self.assertEqual(ctx.input_dir, self.ctx.evidence_output_root / self.HEAD_REV / self.ctx.func_id)
+
+    def test_latest_package_wins_when_head_drifts_on_retry(self) -> None:
+        import os
+
+        old = self._package("0" * 40)
+        old_ts = old.stat().st_mtime - 3600
+        os.utime(old / "function-context.json", (old_ts, old_ts))
+        prepare_evidence(self.ctx, runner=self._runner())
+        discovered = discover_input_dir(self.ctx.evidence_output_root, self.ctx.func_id)
+        self.assertEqual(discovered, self.ctx.evidence_output_root / self.HEAD_REV / self.ctx.func_id)
+
+    def test_no_package_written_raises(self) -> None:
+        def runner(argv, *, cwd, timeout):
+            return subprocess.CompletedProcess(argv, 0, "", "")
+        with self.assertRaises(EvidenceStageError):
+            prepare_evidence(self.ctx, runner=runner)
 
 
 # --- real staged-script integration on cached evidence ----------------------
