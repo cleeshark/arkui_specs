@@ -39,6 +39,7 @@ from spec_eval.service.store.repositories import (
     AttemptRepository,
     DependencySnapshotRepository,
     EventRepository,
+    JobStatisticsRepository,
     JobRepository,
 )
 from spec_eval.service.store.sqlite_store import SqliteStore, utc_now
@@ -74,6 +75,7 @@ class _StoreTestBase(unittest.TestCase):
         self.attempts = AttemptRepository(self.store)
         self.artifacts = ArtifactRepository(self.store)
         self.snapshots = DependencySnapshotRepository(self.store)
+        self.statistics = JobStatisticsRepository(self.store)
 
     def tearDown(self) -> None:
         self.store.close()
@@ -118,6 +120,41 @@ class IdempotentCreateTest(_StoreTestBase):
 
 
 class StateTransitionTest(_StoreTestBase):
+    def test_job_statistics_track_lifecycle_and_executor_usage(self) -> None:
+        job = self.jobs.create_job(self._create(), evaluator_version=EVALUATOR_VERSION)
+        initial = self.statistics.get(job.job_id)
+        self.assertIsNone(initial.started_at)
+        self.assertIsNone(initial.finished_at)
+
+        self.jobs.transition_status(job.job_id, S.PREPARING, event_type="enter_preparing")
+        running = self.statistics.get(job.job_id)
+        self.assertIsNotNone(running.started_at)
+        self.statistics.record_executor_result(
+            job.job_id,
+            elapsed_seconds=1.25,
+            token_usage={
+                "input_tokens": 100,
+                "cached_input_tokens": 20,
+                "cache_write_input_tokens": 0,
+                "output_tokens": 30,
+                "reasoning_output_tokens": 5,
+                "total_tokens": 130,
+            },
+            usage_reported=True,
+        )
+        for dst in (
+            S.EVIDENCE, S.SEMANTIC, S.AGGREGATION, S.ARCHIVE,
+            S.SITE_HISTORY, S.COMPLETED,
+        ):
+            self.jobs.transition_status(job.job_id, dst, event_type=f"enter_{dst}")
+
+        completed = self.statistics.get(job.job_id)
+        self.assertIsNotNone(completed.finished_at)
+        self.assertEqual(completed.executor_invocations, 1)
+        self.assertEqual(completed.usage_reported_invocations, 1)
+        self.assertEqual(completed.executor_elapsed_ms, 1250)
+        self.assertEqual(completed.total_tokens, 130)
+
     def test_legal_worker_path(self) -> None:
         job = self.jobs.create_job(self._create(), evaluator_version=EVALUATOR_VERSION)
         job = self.jobs.transition_status(job.job_id, S.PREPARING, event_type="enter_preparing")

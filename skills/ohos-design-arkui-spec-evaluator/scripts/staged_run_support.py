@@ -28,15 +28,18 @@ SCHEMA_V2_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.8",
     "skill:ohos-design-arkui-spec-evaluator@0.1.9",
     "skill:ohos-design-arkui-spec-evaluator@0.1.10",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.11",
     DEFAULT_EVALUATOR_VERSION,
 }
 DEEP_CONTRACT_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.9",
     "skill:ohos-design-arkui-spec-evaluator@0.1.10",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.11",
     DEFAULT_EVALUATOR_VERSION,
 }
 UNVERIFIABLE_GUARD_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.10",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.11",
     DEFAULT_EVALUATOR_VERSION,
 }
 OUTCOME_POLICY_BASIS_CRITERIA = [
@@ -80,6 +83,16 @@ LOCAL_OUTCOMES = {
     "NOT_APPLICABLE",
     "NOT_VERIFIABLE",
 }
+EVIDENCE_TYPES = (
+    "source_citation",
+    "sdk_declaration",
+    "spec_location",
+    "design_location",
+    "static_finding",
+    "registry_entry",
+    "test_evidence",
+    "review_record",
+)
 BREADTHS = {"local", "feat_core", "function_shared"}
 UNIT_FACET_TYPES = {
     "condition",
@@ -146,6 +159,126 @@ def criterion_order(rubric: dict[str, Any]) -> list[str]:
         for dimension in rubric.get("dimensions", [])
         for criterion in dimension.get("criteria", [])
     ]
+
+
+def staged_output_contract(
+    *, source_revision: str, evaluator_version: str = DEFAULT_EVALUATOR_VERSION
+) -> dict[str, Any]:
+    """Return the machine-readable executor contract owned by this Skill version."""
+    rubric, _, errors = protocol()
+    if errors:
+        raise ValueError("cannot build staged output contract: " + "; ".join(errors))
+    rubric_path = EVALUATION_ROOT / "rubric.yaml"
+    criteria = criterion_order(rubric)
+    rubric_evidence_types = tuple(
+        rubric.get("evidence_policy", {}).get("evidence_types", [])
+    )
+    if rubric_evidence_types != EVIDENCE_TYPES:
+        raise ValueError(
+            "cannot build staged output contract: validator evidence types differ from Rubric"
+        )
+    evidence_contract = {
+        "required_fields": [
+            "evidence_id",
+            "type",
+            "path",
+            "source_revision",
+            "content_hash",
+            "description",
+        ],
+        "type_enum": list(rubric_evidence_types),
+        "evidence_id_pattern": EVIDENCE_ID.pattern,
+        "content_hash_pattern": HASH_VALUE.pattern,
+        "rules": [
+            "Use one stable EV- prefixed evidence_id and update every evidence_ids reference when it changes.",
+            "Use the frozen source revision exactly as source_revision.",
+            "content_hash is lowercase SHA-256 with the literal sha256: prefix.",
+            "Select type from type_enum; never omit it or invent a new type.",
+        ],
+        "format_example_only": {
+            "evidence_id": "EV-contract-format-example",
+            "type": "spec_location",
+            "path": "specs/evaluation/rubric.yaml",
+            "source_revision": source_revision,
+            "content_hash": content_hash(rubric_path),
+            "description": "Format example only; do not reuse unless this file proves the fact.",
+        },
+    }
+    return {
+        "schema_version": 1,
+        "staged_schema_version": STAGED_SCHEMA_VERSION,
+        "evaluator_version": evaluator_version,
+        "valid_criterion_ids": criteria,
+        "common": {
+            "local_outcome_enum": sorted(LOCAL_OUTCOMES),
+            "breadth_enum": sorted(BREADTHS),
+            "unit_facet_type_enum": sorted(UNIT_FACET_TYPES),
+            "evidence": evidence_contract,
+        },
+        "observation_payload": {
+            "payload_fields": ["claim_reviews", "observations", "open_questions", "notes"],
+            "claim_reviews": {
+                "required_fields": [
+                    "claim_id",
+                    "status",
+                    "local_outcome",
+                    "reviewed_units",
+                    "unit_reviews",
+                    "criterion_ids",
+                    "evidence_ids",
+                    "defect_keys",
+                    "reason",
+                ],
+                "ordering": "Exactly one row per expected_claim_ids entry, in initialized order.",
+                "criterion_ids": criteria,
+                "defect_keys_rule": {
+                    "required_when_local_outcome": ["CONFLICT", "MISSING"],
+                    "must_be_empty_for_all_other_outcomes": True,
+                },
+            },
+            "observations": {
+                "required_fields": [
+                    "observation_id",
+                    "criterion_ids",
+                    "check_ids",
+                    "claim_ids",
+                    "local_outcome",
+                    "breadth",
+                    "contract_family",
+                    "fact",
+                    "evidence",
+                ],
+                "observation_id_pattern": OBSERVATION_ID.pattern,
+                "criterion_ids": criteria,
+                "defect_ownership_rule": {
+                    "required_fields_when_local_outcome_is_conflict_or_missing": [
+                        "defect_key",
+                        "primary_criterion_id",
+                    ],
+                    "fields_must_be_absent_for_all_other_outcomes": [
+                        "defect_key",
+                        "primary_criterion_id",
+                    ],
+                },
+                "evidence": evidence_contract,
+            },
+        },
+        "aggregation_payload": {
+            "payload_fields": [
+                "cross_feat_contracts_reviewed",
+                "contradiction_bases",
+                "defect_ownership",
+                "outcome_policy_bases",
+                "criterion_results",
+                "notes",
+            ],
+            "criterion_order": criteria,
+            "conclusion_enum": list(rubric.get("semantic_conclusions", [])),
+            "policy_content_status_enum": sorted(POLICY_CONTENT_STATUSES),
+            "policy_evidence_status_enum": sorted(POLICY_EVIDENCE_STATUSES),
+            "policy_conflict_scope_enum": sorted(POLICY_CONFLICT_SCOPES),
+        },
+    }
 
 
 def load_run(run_dir: Path) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -226,16 +359,7 @@ def _validate_evidence(value: Any, label: str, errors: list[str]) -> None:
         errors.append(f"{label}.evidence_id: invalid evidence ID")
     if isinstance(value.get("content_hash"), str) and not HASH_VALUE.fullmatch(value["content_hash"]):
         errors.append(f"{label}.content_hash: expected sha256:<64 lowercase hex digits>")
-    if value.get("type") not in {
-        "source_citation",
-        "sdk_declaration",
-        "spec_location",
-        "design_location",
-        "static_finding",
-        "registry_entry",
-        "test_evidence",
-        "review_record",
-    }:
+    if value.get("type") not in EVIDENCE_TYPES:
         errors.append(f"{label}.type: unsupported evidence type {value.get('type')!r}")
 
 

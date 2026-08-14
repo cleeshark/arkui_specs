@@ -148,7 +148,14 @@ class CodexExecutorTest(unittest.TestCase):
         return out, emit
 
     def test_success_returns_completed_and_writes_result(self) -> None:
-        runner = _FakeRunner(result_doc=_result_doc(self.work.work_item_id), jsonl_lines=['{"type":"message"}'])
+        runner = _FakeRunner(
+            result_doc=_result_doc(self.work.work_item_id),
+            jsonl_lines=[
+                '{"type":"message"}',
+                '{"type":"turn.completed","usage":{"input_tokens":120,'
+                '"cached_input_tokens":20,"output_tokens":30}}',
+            ],
+        )
         ex = self._executor(runner)
         out, emit = self._collected_events()
         result = ex.execute(self.work, emit)
@@ -156,6 +163,18 @@ class CodexExecutorTest(unittest.TestCase):
         self.assertEqual(result.status, C.STATUS_COMPLETED)
         self.assertEqual(result.executor_result_path, self.work.executor_result_path)
         self.assertEqual(result.observation, {"observation_id": self.work.work_item_id})
+        self.assertTrue(result.usage_reported)
+        self.assertEqual(
+            result.token_usage,
+            {
+                "input_tokens": 120,
+                "cached_input_tokens": 20,
+                "cache_write_input_tokens": 0,
+                "output_tokens": 30,
+                "reasoning_output_tokens": 0,
+                "total_tokens": 150,
+            },
+        )
         # JSONL + command events were forwarded
         kinds = [e.kind for e in out]
         self.assertIn("command", kinds)
@@ -200,6 +219,29 @@ class CodexExecutorTest(unittest.TestCase):
         self.assertIn("containing exactly these fields", requirement)
         self.assertIn("service-owned fields", requirement)
         self.assertNotIn("initialized identity, input", requirement)
+
+    def test_repair_prompt_is_bounded_to_candidate_and_machine_contract(self) -> None:
+        work = replace(
+            self.work,
+            input_paths=("/tmp/.Feat-01.json.candidate", "/tmp/Feat-01.json", "/tmp/output-contract.json"),
+            prompt_extras={
+                "mode": "repair_candidate",
+                "result_kind": "staged_observation_payload",
+                "template_path": "/tmp/Feat-01.json",
+                "output_contract_path": "/tmp/output-contract.json",
+                "candidate_path": "/tmp/.Feat-01.json.candidate",
+                "validation_errors": ["evidence_id: invalid evidence ID"],
+                "payload_fields": ["claim_reviews", "observations", "open_questions", "notes"],
+                "service_derived_fields": ["status", "reviewed_claim_ids", "completed_checks"],
+                "machine_contract": {"common": {"evidence": {"evidence_id_pattern": "^EV-"}}},
+            },
+        )
+        runner = _FakeRunner(result_doc=_result_doc(work.work_item_id))
+        self._executor(runner).execute(work, lambda e: None)
+        prompt = json.loads(runner.last_stdin or "{}")
+        self.assertIn("Repair one staged", prompt["task"])
+        self.assertIn("do not redo semantic evaluation", " ".join(prompt["constraints"]))
+        self.assertEqual(prompt["result_contract"]["mode"], "repair_candidate")
 
     def test_nonzero_exit_is_failed(self) -> None:
         runner = _FakeRunner(exit_code=2, write_result=False)
@@ -249,9 +291,19 @@ class CodexExecutorTest(unittest.TestCase):
         self.assertEqual(result.status, C.STATUS_TIMEOUT)
 
     def test_cancelled_is_reported(self) -> None:
-        runner = _FakeRunner(cancelled=True, write_result=False)
+        runner = _FakeRunner(
+            cancelled=True,
+            write_result=False,
+            jsonl_lines=[
+                '{"type":"token_count","info":{"total_token_usage":'
+                '{"input_tokens":42,"cached_input_tokens":8,"output_tokens":9,'
+                '"reasoning_output_tokens":3,"total_tokens":51}}}',
+            ],
+        )
         result = self._executor(runner).execute(self.work, lambda e: None)
         self.assertEqual(result.status, C.STATUS_CANCELLED)
+        self.assertEqual(result.token_usage["total_tokens"], 51)
+        self.assertTrue(result.usage_reported)
 
     def test_describe_masks_model_and_redacts(self) -> None:
         cfg = dict(self.config, model="secret-model")

@@ -52,7 +52,7 @@ memory for that run. They may be resumed after context compaction or handed to a
 session, but they are not confirmed Reviews or a maintained capability baseline.
 
 New staged schema v2 runs are produced by evaluator
-`skill:ohos-design-arkui-spec-evaluator@0.1.11`. Schema-compatible historical 0.1.7 through 0.1.10
+`skill:ohos-design-arkui-spec-evaluator@0.1.12`. Schema-compatible historical 0.1.7 through 0.1.11
 runs remain readable. Schema v2 requires atomic `claim_reviews`, evidence-backed
 required-check mapping, stable defect ownership, and an explicit core-conflict basis for every
 `CONTRADICTED` Criterion. Schema v1 remains readable for historical 0.1.6 runs; new runs must not
@@ -73,6 +73,13 @@ records distinguish present content with partial evidence from absent content, a
 claims from local gaps. The staged validator also allows one owned root defect to support
 Contradicted conclusions in materially affected secondary Criteria while preserving a single
 Critical owner. The frozen semantic-result Schema and Rubric weights remain unchanged.
+
+Evaluator 0.1.12 adds a run-local `output-contract.json` generated from the same Rubric and
+validator constants that enforce the staged checkpoint. It makes evidence types, `EV-` IDs,
+`sha256:` hashes, legal Criterion IDs, payload fields, and conditional defect ownership available
+to automated executors in machine-readable form. The service may perform one bounded mechanical
+repair when a candidate fails only those declared formatting constraints; semantic normalization
+or silent server-side inference remains forbidden.
 
 Do not write automatic output to:
 

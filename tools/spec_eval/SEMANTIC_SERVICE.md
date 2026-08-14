@@ -96,6 +96,12 @@ report head.
 
 Static UI is served at `/` and `/static/*`. It provides manual refresh,
 Function freshness/history, concurrent Job progress, cancel, and retry views.
+Active Jobs show an indeterminate activity animation and a duration counter that
+updates every second. Completed/failed/cancelled Jobs retain their final wall
+duration, cumulative executor time, executor invocation count, and Codex token
+usage in the list and detail views. The statistics cards summarize all persisted
+Jobs; a missing Codex usage event is shown as `not reported`, never estimated as
+an exact count.
 
 Bind `0.0.0.0` only with `--token`; every request must then carry
 `Authorization: Bearer <token>`. The built-in UI has no token input field, so
@@ -147,6 +153,14 @@ after validation succeeds. Observation and aggregation use separate payload
 contracts. A nested `identity`/`input` document or any other extra field is
 rejected without overwriting the initialized template.
 
+Evaluator 0.1.12 also generates `output-contract.json` from the same Rubric and Skill validator
+constants. The service embeds the relevant section into every Codex prompt, including evidence
+types, `EV-`/`sha256:` formats, legal Criterion IDs and conditional defect ownership. If an
+observation candidate fails only the allowlisted mechanical contract checks, the service makes one
+repair call restricted to the candidate, initialized template and machine contract. It does not
+reopen evidence or silently normalize output. Both executor calls retain separate result files and
+are included in Job duration/Token statistics.
+
 The service also audits every structured-output schema object node for
 `additionalProperties: false` and complete `required` coverage before starting
 Codex. A locally invalid output schema therefore fails at service startup
@@ -168,7 +182,16 @@ locks/  logs/  backups/
 
 Large files live on disk. SQLite stores Jobs, attempts, events, artifact paths
 and hashes, dependency snapshots, immutable report indexes, Function heads,
-refresh generations, freshness policies, and Finding-delta summaries.
+refresh generations, freshness policies, Finding-delta summaries, and the
+`job_statistics` projection. The projection contains start/finish timestamps,
+cumulative executor milliseconds, invocation/reporting counts, and integer-only
+input/cached/cache-write/output/reasoning/total token counters. It does not store
+prompts, response text, credentials, rate-limit data, or authentication state.
+
+Codex usage is extracted from JSONL before log redaction. The adapter accepts the
+observed `turn.completed.usage` and `token_count.info.total_token_usage` shapes;
+unknown shapes safely leave usage unreported. JSONL written to events/logs remains
+redacted, so secret-bearing fields are not exposed through the UI.
 
 Archive publication is atomic and content-verified. Once
 `archive-manifest.json` exists, retry reuses the published archive and never
@@ -235,8 +258,8 @@ pretending the export represents one global revision.
 
 - **metrics**: `GET /api/metrics` or `service_cli.py metrics --write <path>
   [--format csv|json]` — status counts, queue/run duration summary, executor
-  errors, artifact/archive bytes, and Finding added/resolved/reclassified
-  deltas.
+  duration/invocations, Token totals and reporting coverage, executor errors,
+  artifact/archive bytes, and Finding added/resolved/reclassified deltas.
 - **cleanup**: `service_cli.py cleanup --retention-days N` — deletes only
   disposable `jobs/<id>/runs/` dirs for terminal jobs older than N days.
   Archives are **never** deleted.

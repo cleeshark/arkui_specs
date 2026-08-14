@@ -10,6 +10,7 @@ import unittest
 from datetime import datetime, timezone
 from pathlib import Path
 
+from spec_eval.service.domain import states as S
 from spec_eval.service.domain.errors import (
     FreshnessPolicyError,
     ReportConflictError,
@@ -300,7 +301,7 @@ class ReportDeltaTest(unittest.TestCase):
 
 
 class SchemaMigrationTest(unittest.TestCase):
-    def test_v1_database_is_upgraded_additively_to_v2(self) -> None:
+    def test_v1_database_is_upgraded_additively_to_v3(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             settings = ServiceSettings.discover(data_root=Path(temporary))
             conn = sqlite3.connect(settings.db_path)
@@ -319,12 +320,54 @@ class SchemaMigrationTest(unittest.TestCase):
                     "SELECT name FROM sqlite_master WHERE type='table'"
                 ).fetchall()
             }
-            self.assertEqual(row[0], "2")
+            self.assertEqual(row[0], "3")
             self.assertTrue(
-                {"evaluation_reports", "function_report_heads", "freshness_policies", "report_deltas"}
+                {
+                    "evaluation_reports", "function_report_heads", "freshness_policies",
+                    "report_deltas", "job_statistics",
+                }
                 <= tables
             )
             store.close()
+
+    def test_v2_database_backfills_job_statistics_from_events(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            settings = ServiceSettings.discover(data_root=Path(temporary))
+            store = SqliteStore(settings)
+            jobs = JobRepository(store)
+            job = jobs.create_job(
+                CreateJobCommand(
+                    func_id="04-01-01",
+                    source_revision="a" * 40,
+                    run_count=1,
+                    job_id="m" * 40,
+                ),
+                evaluator_version="test",
+            )
+            jobs.transition_status(job.job_id, S.PREPARING, event_type="enter_preparing")
+            jobs.transition_status(job.job_id, S.FAILED, event_type="failed")
+            store.close()
+
+            conn = sqlite3.connect(settings.db_path)
+            conn.execute("DROP TABLE job_statistics")
+            conn.execute(
+                "UPDATE schema_meta SET value='2' WHERE key='schema_version'"
+            )
+            conn.commit()
+            conn.close()
+
+            migrated = SqliteStore(settings)
+            row = migrated._conn.execute(
+                "SELECT started_at, finished_at FROM job_statistics WHERE job_id = ?",
+                (job.job_id,),
+            ).fetchone()
+            version = migrated._conn.execute(
+                "SELECT value FROM schema_meta WHERE key='schema_version'"
+            ).fetchone()[0]
+            self.assertEqual(version, "3")
+            self.assertIsNotNone(row[0])
+            self.assertIsNotNone(row[1])
+            migrated.close()
 
     def test_future_database_version_is_not_silently_downgraded(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

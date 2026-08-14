@@ -6,13 +6,22 @@ easy to audit and adjust.
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Any
 
-from ..domain.models import Artifact, Attempt, DependencySnapshot, Event, FreshnessPolicy, Job
+from ..domain.models import (
+    Artifact,
+    Attempt,
+    DependencySnapshot,
+    Event,
+    FreshnessPolicy,
+    Job,
+    JobStatistics,
+)
 
 
-def job_to_dict(job: Job) -> dict[str, Any]:
-    return {
+def job_to_dict(job: Job, statistics: JobStatistics | None = None) -> dict[str, Any]:
+    document = {
         "job_id": job.job_id,
         "func_id": job.func_id,
         "source_revision": job.source_revision,
@@ -26,6 +35,57 @@ def job_to_dict(job: Job) -> dict[str, Any]:
         "created_at": job.created_at,
         "updated_at": job.updated_at,
     }
+    if statistics is not None:
+        document["timing"] = _timing_to_dict(job, statistics)
+        document["usage"] = _usage_to_dict(statistics)
+    return document
+
+
+def _timing_to_dict(job: Job, statistics: JobStatistics) -> dict[str, Any]:
+    now = datetime.now(timezone.utc)
+    created = _parse(job.created_at)
+    started = _parse(statistics.started_at)
+    finished = _parse(statistics.finished_at)
+    queue_end = started or finished or now
+    duration_end = finished or now
+    queue_ms = max(0, int((queue_end - created).total_seconds() * 1000)) if created else 0
+    duration_ms = (
+        max(0, int((duration_end - started).total_seconds() * 1000)) if started else 0
+    )
+    return {
+        "started_at": statistics.started_at,
+        "finished_at": statistics.finished_at,
+        "queue_duration_ms": queue_ms,
+        "duration_ms": duration_ms,
+        "executor_duration_ms": statistics.executor_elapsed_ms,
+    }
+
+
+def _usage_to_dict(statistics: JobStatistics) -> dict[str, Any]:
+    return {
+        "reported": statistics.usage_reported_invocations > 0,
+        "complete": (
+            statistics.executor_invocations > 0
+            and statistics.usage_reported_invocations == statistics.executor_invocations
+        ),
+        "executor_invocations": statistics.executor_invocations,
+        "reported_invocations": statistics.usage_reported_invocations,
+        "input_tokens": statistics.input_tokens,
+        "cached_input_tokens": statistics.cached_input_tokens,
+        "cache_write_input_tokens": statistics.cache_write_input_tokens,
+        "output_tokens": statistics.output_tokens,
+        "reasoning_output_tokens": statistics.reasoning_output_tokens,
+        "total_tokens": statistics.total_tokens,
+    }
+
+
+def _parse(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(value)
+    except ValueError:
+        return None
 
 
 def event_to_dict(event: Event) -> dict[str, Any]:

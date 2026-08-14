@@ -2,8 +2,9 @@
 
 Aggregates job/event/artifact/archive state into a JSON-serializable report and
 a flat CSV. Everything is derived from the DB and the automated-history log;
-no values from token/PII-bearing fields are included. Designed to be cheap
-enough to expose at ``GET /api/metrics`` and to export on a schedule.
+only non-sensitive token counts are included, never credentials or prompts.
+Designed to be cheap enough to expose at ``GET /api/metrics`` and to export on
+a schedule.
 """
 
 from __future__ import annotations
@@ -13,19 +14,23 @@ import io
 import json
 from collections import Counter
 from collections.abc import Iterable
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from .domain import states as S
-from .store.repositories import ArtifactRepository, EventRepository, JobRepository
+from .store.repositories import (
+    ArtifactRepository,
+    EventRepository,
+    JobRepository,
+    JobStatisticsRepository,
+)
 from .store.sqlite_store import SqliteStore
 
 TERMINAL_STATES = S.TERMINAL_STATES
 _ERROR_EVENT_TYPES = {
     "semantic_failed", "aggregation_failed", "worker_crashed", "executor_error",
 }
-_STAGE_ENTER_PREFIX = "enter_"
 
 
 def collect_metrics(store: SqliteStore, *, archives_root: Path) -> dict[str, Any]:
@@ -34,6 +39,7 @@ def collect_metrics(store: SqliteStore, *, archives_root: Path) -> dict[str, Any
     events_repo = EventRepository(store)
     artifacts_repo = ArtifactRepository(store)
     jobs = jobs_repo.list_jobs(limit=100_000)
+    statistics = {item.job_id: item for item in JobStatisticsRepository(store).list_all()}
 
     status_counts: Counter[str] = Counter(j.status for j in jobs)
     durations: list[dict[str, Any]] = []
@@ -43,14 +49,20 @@ def collect_metrics(store: SqliteStore, *, archives_root: Path) -> dict[str, Any
     for job in jobs:
         events = events_repo.list_for_job(job.job_id, limit=10_000)
         executor_errors += sum(1 for e in events if e.event_type in _ERROR_EVENT_TYPES)
-        preparing = next((e for e in events if e.event_type == f"{_STAGE_ENTER_PREFIX}preparing"), None)
-        last = events[-1] if events else None
-        if preparing and last:
-            queue_ms = _ms_between(job.created_at, preparing.created_at)
-            run_ms = _ms_between(preparing.created_at, last.created_at)
+        stat = statistics.get(job.job_id)
+        if stat and stat.started_at:
+            queue_ms = _ms_between(job.created_at, stat.started_at)
+            run_ms = _ms_between(stat.started_at, stat.finished_at or _now())
             if queue_ms is not None and run_ms is not None:
-                durations.append({"job_id": job.job_id, "func_id": job.func_id,
-                                  "status": job.status, "queue_ms": queue_ms, "run_ms": run_ms})
+                durations.append({
+                    "job_id": job.job_id,
+                    "func_id": job.func_id,
+                    "status": job.status,
+                    "queue_ms": queue_ms,
+                    "run_ms": run_ms,
+                    "executor_ms": stat.executor_elapsed_ms,
+                    "total_tokens": stat.total_tokens,
+                })
 
     artifact_bytes = 0
     for job in jobs:
@@ -59,6 +71,8 @@ def collect_metrics(store: SqliteStore, *, archives_root: Path) -> dict[str, Any
 
     archive_bytes, archive_job_count = _archive_bytes(archives_root)
     finding_deltas = _finding_deltas(archives_root)
+    token_usage = _token_usage_summary(statistics.values())
+    executor_invocations = sum(item.executor_invocations for item in statistics.values())
 
     return {
         "job_total": len(jobs),
@@ -72,6 +86,11 @@ def collect_metrics(store: SqliteStore, *, archives_root: Path) -> dict[str, Any
         "durations": durations,
         "duration_summary": _summarize([d["run_ms"] for d in durations]),
         "queue_summary": _summarize([d["queue_ms"] for d in durations]),
+        "executor_duration_summary": _summarize(
+            [item.executor_elapsed_ms for item in statistics.values() if item.executor_invocations]
+        ),
+        "executor_invocations": executor_invocations,
+        "token_usage": token_usage,
         "finding_deltas": finding_deltas,
     }
 
@@ -132,6 +151,42 @@ def _parse(ts: str) -> datetime | None:
         return datetime.fromisoformat(ts)
     except ValueError:
         return None
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+def _token_usage_summary(statistics: Iterable[Any]) -> dict[str, Any]:
+    items = list(statistics)
+    with_executor = [item for item in items if item.executor_invocations > 0]
+    reported = [item for item in with_executor if item.usage_reported_invocations > 0]
+    complete = [
+        item for item in with_executor
+        if item.usage_reported_invocations == item.executor_invocations
+    ]
+    executor_invocations = sum(item.executor_invocations for item in items)
+    reported_invocations = sum(item.usage_reported_invocations for item in items)
+    fields = (
+        "input_tokens",
+        "cached_input_tokens",
+        "cache_write_input_tokens",
+        "output_tokens",
+        "reasoning_output_tokens",
+        "total_tokens",
+    )
+    summary = {name: sum(getattr(item, name) for item in items) for name in fields}
+    summary.update({
+        "reported_jobs": len(reported),
+        "complete_jobs": len(complete),
+        "unreported_jobs_with_executor": len(with_executor) - len(reported),
+        "reported_invocations": reported_invocations,
+        "unreported_invocations": executor_invocations - reported_invocations,
+        "reporting_coverage": (
+            reported_invocations / executor_invocations if executor_invocations else 0.0
+        ),
+    })
+    return summary
 
 
 def _archive_bytes(archives_root: Path) -> tuple[int, int]:

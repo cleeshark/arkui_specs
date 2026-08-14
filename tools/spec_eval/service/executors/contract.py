@@ -69,6 +69,8 @@ class ExecutionResult:
     error: str | None = None
     elapsed_seconds: float = 0.0
     event_count: int = 0
+    token_usage: dict[str, int] = field(default_factory=dict)
+    usage_reported: bool = False
 
     @property
     def succeeded(self) -> bool:

@@ -18,10 +18,15 @@ from spec_eval.service.domain.models import Artifact, CreateJobCommand
 from spec_eval.service.governance import backup_database, cleanup_temp, disk_usage
 from spec_eval.service.metrics import collect_metrics, write_metrics_csv, write_metrics_json
 from spec_eval.service.settings import ServiceSettings
-from spec_eval.service.store.repositories import ArtifactRepository, EventRepository, JobRepository
+from spec_eval.service.store.repositories import (
+    ArtifactRepository,
+    EventRepository,
+    JobRepository,
+    JobStatisticsRepository,
+)
 from spec_eval.service.store.sqlite_store import SqliteStore, utc_now
 
-EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.11"
+EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.12"
 
 
 class _GovTestBase(unittest.TestCase):
@@ -49,6 +54,19 @@ class _GovTestBase(unittest.TestCase):
 class MetricsTest(_GovTestBase):
     def test_status_counts_durations_and_bytes(self) -> None:
         job_id = self._complete_job()
+        JobStatisticsRepository(self.store).record_executor_result(
+            job_id,
+            elapsed_seconds=2.5,
+            token_usage={
+                "input_tokens": 200,
+                "cached_input_tokens": 50,
+                "cache_write_input_tokens": 0,
+                "output_tokens": 40,
+                "reasoning_output_tokens": 10,
+                "total_tokens": 240,
+            },
+            usage_reported=True,
+        )
         ArtifactRepository(self.store).record(
             Artifact(artifact_id="a", job_id=job_id, kind="function_context",
                      path=str(self.settings.data_root / "f.json"), sha256="sha256:" + "0" * 64,
@@ -65,6 +83,10 @@ class MetricsTest(_GovTestBase):
         self.assertEqual(metrics["job_total"], 2)
         self.assertGreaterEqual(metrics["duration_summary"]["count"], 1)  # completed job has durations
         self.assertEqual(metrics["artifact_bytes"], 123)
+        self.assertEqual(metrics["token_usage"]["total_tokens"], 240)
+        self.assertEqual(metrics["token_usage"]["reported_jobs"], 1)
+        self.assertEqual(metrics["token_usage"]["reporting_coverage"], 1.0)
+        self.assertEqual(metrics["executor_invocations"], 1)
 
     def test_finding_deltas_from_automated_history(self) -> None:
         log = self.settings.archives_root / "site-history-automated.jsonl"
@@ -137,7 +159,7 @@ class BackupDiskTest(_GovTestBase):
         conn = sqlite3.connect(str(dest))
         row = conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()
         conn.close()
-        self.assertEqual(row[0], "2")
+        self.assertEqual(row[0], "3")
         # the live DB still works after backup
         self.assertEqual(len(self.jobs.list_jobs()), 1)
 
@@ -156,7 +178,7 @@ class NoPiiTest(_GovTestBase):
         self._complete_job()
         metrics = collect_metrics(self.store, archives_root=self.settings.archives_root)
         text = json.dumps(metrics)
-        for secret in ("token", "secret", "password", "Authorization"):
+        for secret in ("sk-", "api_key", "secret", "password", "Authorization"):
             self.assertNotIn(secret, text)
 
 

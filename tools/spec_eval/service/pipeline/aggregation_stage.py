@@ -22,7 +22,12 @@ from ..domain import states as S
 from ..domain.models import Attempt, make_job_id
 from ..executors import contract as C
 from ..executors.base import SemanticExecutor
-from ..store.repositories import AttemptRepository, EventRepository, JobRepository
+from ..store.repositories import (
+    AttemptRepository,
+    EventRepository,
+    JobRepository,
+    JobStatisticsRepository,
+)
 from ..store.sqlite_store import utc_now
 from ._subprocess import Runner, default_runner
 from .context import RunContext
@@ -31,7 +36,7 @@ from .result_payload import (
     load_template,
     merge_aggregation_payload,
 )
-from .semantic_stage import _DBEmitter
+from .semantic_stage import _DBEmitter, _record_executor_statistics
 from . import staged_stage
 
 
@@ -42,6 +47,7 @@ def run_aggregation(
     jobs: JobRepository,
     attempts: AttemptRepository,
     events: EventRepository,
+    statistics: JobStatisticsRepository | None = None,
     cancel: Any = None,
     runner: Runner = default_runner,
 ) -> tuple[str, Path | None]:
@@ -68,6 +74,7 @@ def run_aggregation(
     events.append(ctx.job_id, "aggregation_started", {"work_item_id": work.work_item_id})
 
     result = executor.execute(work, emit, cancel)
+    _record_executor_statistics(statistics, ctx.job_id, result)
 
     if result.status == C.STATUS_CANCELLED or (cancel is not None and cancel.is_set()):
         return C.STATUS_CANCELLED, None
@@ -171,6 +178,7 @@ def _build_aggregation_input(ctx: RunContext) -> C.WorkItemInput:
     aggregation_path = ctx.run_dir / "aggregation.json"
     for contract_input in (
         aggregation_path,
+        ctx.run_dir / "output-contract.json",
         ctx.run_dir / "work-items.json",
         ctx.skill_scripts_dir.parent / "references" / "staged-run-contract.md",
     ):
@@ -195,7 +203,9 @@ def _build_aggregation_input(ctx: RunContext) -> C.WorkItemInput:
         skill_version=ctx.evaluator_version,
         protocol_version=ctx.protocol_version,
         forbidden_paths=ctx.forbidden_paths,
-        prompt_extras=aggregation_prompt_contract(aggregation_path),
+        prompt_extras=aggregation_prompt_contract(
+            aggregation_path, ctx.run_dir / "output-contract.json"
+        ),
     )
 
 

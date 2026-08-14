@@ -22,6 +22,7 @@ from spec_eval.protocol_validator import JsonSchemaSubsetValidator, validate_str
 from . import contract as C
 from .process import ProcessResult, run_subprocess
 from .redaction import redact_jsonl
+from .usage import TokenUsageAccumulator
 
 DEFAULT_TIMEOUT = 3600.0
 
@@ -94,10 +95,12 @@ class CodexCliExecutor:
         stderr_log = str(result_parent / "codex.stderr.log")
 
         event_count = 0
+        usage = TokenUsageAccumulator()
 
         def line_sink(line: str) -> None:
             nonlocal event_count
             event_count += 1
+            usage.observe(line)
             emit(C.ExecutionEvent(kind="jsonl", message=redact_jsonl(line)))
 
         emit(C.ExecutionEvent(kind="command", message=" ".join(_redacted_argv(argv))))
@@ -114,7 +117,8 @@ class CodexCliExecutor:
         )
 
         if proc_result.cancelled:
-            return C.ExecutionResult(
+            return _execution_result(
+                usage,
                 status=C.STATUS_CANCELLED,
                 exit_code=proc_result.exit_code,
                 error="executor cancelled",
@@ -122,7 +126,8 @@ class CodexCliExecutor:
                 event_count=event_count,
             )
         if proc_result.timed_out:
-            return C.ExecutionResult(
+            return _execution_result(
+                usage,
                 status=C.STATUS_TIMEOUT,
                 exit_code=proc_result.exit_code,
                 error=f"executor timed out after {self._timeout:.0f}s",
@@ -130,7 +135,8 @@ class CodexCliExecutor:
                 event_count=event_count,
             )
         if proc_result.exit_code != 0:
-            return C.ExecutionResult(
+            return _execution_result(
+                usage,
                 status=C.STATUS_FAILED,
                 exit_code=proc_result.exit_code,
                 error=f"codex exited with code {proc_result.exit_code}",
@@ -138,7 +144,7 @@ class CodexCliExecutor:
                 event_count=event_count,
             )
 
-        return self._validate_result(work, proc_result, event_count, started)
+        return self._validate_result(work, proc_result, event_count, started, usage)
 
     # --- internals --------------------------------------------------------
     def _validate_result(
@@ -147,10 +153,12 @@ class CodexCliExecutor:
         proc_result: ProcessResult,
         event_count: int,
         started: float,
+        usage: TokenUsageAccumulator,
     ) -> C.ExecutionResult:
         result_path = Path(work.executor_result_path)
         if not result_path.is_file():
-            return C.ExecutionResult(
+            return _execution_result(
+                usage,
                 status=C.STATUS_FAILED,
                 exit_code=proc_result.exit_code,
                 error=f"codex produced no result file at {work.executor_result_path}",
@@ -160,7 +168,8 @@ class CodexCliExecutor:
         try:
             document = json.loads(result_path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
-            return C.ExecutionResult(
+            return _execution_result(
+                usage,
                 status=C.STATUS_FAILED,
                 exit_code=proc_result.exit_code,
                 error=f"result file is not valid JSON: {exc}",
@@ -170,7 +179,8 @@ class CodexCliExecutor:
         validator = JsonSchemaSubsetValidator(self._schemas_root)
         errors = validator.validate_file(document, self._output_schema_path)
         if errors:
-            return C.ExecutionResult(
+            return _execution_result(
+                usage,
                 status=C.STATUS_FAILED,
                 exit_code=proc_result.exit_code,
                 error="result failed schema validation: " + "; ".join(errors),
@@ -178,7 +188,8 @@ class CodexCliExecutor:
                 event_count=event_count,
             )
         if str(document.get("work_item_id")) != work.work_item_id:
-            return C.ExecutionResult(
+            return _execution_result(
+                usage,
                 status=C.STATUS_FAILED,
                 exit_code=proc_result.exit_code,
                 error="result work_item_id does not match the requested work item",
@@ -190,7 +201,8 @@ class CodexCliExecutor:
             error = document.get("error")
             if not isinstance(error, str) or not error.strip():
                 error = "executor reported failure without an error message"
-            return C.ExecutionResult(
+            return _execution_result(
+                usage,
                 status=C.STATUS_FAILED,
                 exit_code=proc_result.exit_code,
                 executor_result_path=work.executor_result_path,
@@ -199,7 +211,8 @@ class CodexCliExecutor:
                 event_count=event_count,
             )
         if document.get("error") is not None:
-            return C.ExecutionResult(
+            return _execution_result(
+                usage,
                 status=C.STATUS_FAILED,
                 exit_code=proc_result.exit_code,
                 executor_result_path=work.executor_result_path,
@@ -209,7 +222,8 @@ class CodexCliExecutor:
             )
         raw_observation = document.get("observation_json")
         if not isinstance(raw_observation, str):
-            return C.ExecutionResult(
+            return _execution_result(
+                usage,
                 status=C.STATUS_FAILED,
                 exit_code=proc_result.exit_code,
                 executor_result_path=work.executor_result_path,
@@ -220,7 +234,8 @@ class CodexCliExecutor:
         try:
             observation = json.loads(raw_observation)
         except json.JSONDecodeError as exc:
-            return C.ExecutionResult(
+            return _execution_result(
+                usage,
                 status=C.STATUS_FAILED,
                 exit_code=proc_result.exit_code,
                 executor_result_path=work.executor_result_path,
@@ -229,7 +244,8 @@ class CodexCliExecutor:
                 event_count=event_count,
             )
         if not isinstance(observation, dict):
-            return C.ExecutionResult(
+            return _execution_result(
+                usage,
                 status=C.STATUS_FAILED,
                 exit_code=proc_result.exit_code,
                 executor_result_path=work.executor_result_path,
@@ -237,7 +253,8 @@ class CodexCliExecutor:
                 elapsed_seconds=time.monotonic() - started,
                 event_count=event_count,
             )
-        return C.ExecutionResult(
+        return _execution_result(
+            usage,
             status=C.STATUS_COMPLETED,
             exit_code=proc_result.exit_code,
             executor_result_path=work.executor_result_path,
@@ -281,21 +298,45 @@ class CodexCliExecutor:
     @staticmethod
     def _build_prompt(work: C.WorkItemInput) -> str:
         result_contract = dict(work.prompt_extras)
+        repair_mode = result_contract.get("mode") == "repair_candidate"
+        has_machine_contract = bool(
+            result_contract.get("machine_contract", {}).get("payload")
+        )
         payload_fields = result_contract.get("payload_fields", [])
         derived_fields = result_contract.get("service_derived_fields", [])
         result_kind = result_contract.get("result_kind", "staged_payload")
         payload_field_text = json.dumps(payload_fields, ensure_ascii=False)
         derived_field_text = json.dumps(derived_fields, ensure_ascii=False)
+        constraints = [
+            "Follow the declared evaluator Skill and staged-run contract.",
+            "Read only the declared input_paths and frozen source/SDK files.",
+            "Do not read paths in forbidden_paths (confirmed reviews or other runs).",
+            "Do not modify any formal Spec, Design, Registry, source or test file.",
+            "Do not modify the initialized staged template; the service owns and publishes it.",
+            "Write only the structured final result.",
+        ]
+        if has_machine_contract:
+            constraints.insert(
+                -1,
+                "Treat result_contract.machine_contract as normative for nested fields, enums, IDs, hashes and conditional ownership rules.",
+            )
+        if repair_mode:
+            constraints = [
+                "Perform one mechanical repair of the declared invalid candidate.",
+                "Read only candidate_path, template_path and output_contract_path from input_paths.",
+                "Do not reopen source, SDK, Spec, Design or evidence shards and do not redo semantic evaluation.",
+                "Preserve semantic judgments, facts, claim coverage and array ordering.",
+                "Repair every listed validation error plus directly linked evidence ID references.",
+                "Treat result_contract.machine_contract as normative for nested fields, enums, IDs, hashes and conditional ownership rules.",
+                "Return the complete corrected executor-owned payload, not a patch.",
+            ]
         payload = {
-            "task": "Complete exactly one staged semantic evaluation work item.",
-            "constraints": [
-                "Follow the declared evaluator Skill and staged-run contract.",
-                "Read only the declared input_paths and frozen source/SDK files.",
-                "Do not read paths in forbidden_paths (confirmed reviews or other runs).",
-                "Do not modify any formal Spec, Design, Registry, source or test file.",
-                "Do not modify the initialized staged template; the service owns and publishes it.",
-                "Write only the structured final result.",
-            ],
+            "task": (
+                "Repair one staged semantic evaluation candidate after validation failure."
+                if repair_mode else
+                "Complete exactly one staged semantic evaluation work item."
+            ),
+            "constraints": constraints,
             "func_id": work.func_id,
             "run_id": work.run_id,
             "work_item": work.work_item,
@@ -336,3 +377,12 @@ def _redacted_argv(argv: list[str]) -> list[str]:
         else:
             out.append(token)
     return out
+
+
+def _execution_result(usage: TokenUsageAccumulator, **kwargs: Any) -> C.ExecutionResult:
+    """Attach the invocation's usage snapshot to every post-start outcome."""
+    return C.ExecutionResult(
+        token_usage=usage.snapshot(),
+        usage_reported=usage.reported,
+        **kwargs,
+    )

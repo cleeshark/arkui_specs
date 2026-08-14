@@ -1,4 +1,4 @@
--- SQLite schema for the semantic evaluation service Job Store (schema_version 2).
+-- SQLite schema for the semantic evaluation service Job Store (schema_version 3).
 -- Loaded idempotently by sqlite_store._run_migrations. PRAGMAs are applied in
 -- code (they are connection-scoped / must run outside a transaction). The
 -- load-bearing constraints are:
@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS schema_meta (
     key   TEXT PRIMARY KEY,
     value TEXT NOT NULL
 );
-INSERT OR IGNORE INTO schema_meta (key, value) VALUES ('schema_version', '2');
+INSERT OR IGNORE INTO schema_meta (key, value) VALUES ('schema_version', '3');
 
 CREATE TABLE IF NOT EXISTS jobs (
     job_id            TEXT PRIMARY KEY,
@@ -35,6 +35,22 @@ CREATE TABLE IF NOT EXISTS jobs (
 );
 CREATE INDEX IF NOT EXISTS idx_jobs_status        ON jobs (status);
 CREATE INDEX IF NOT EXISTS idx_jobs_func_revision ON jobs (func_id, source_revision);
+
+CREATE TABLE IF NOT EXISTS job_statistics (
+    job_id                       TEXT PRIMARY KEY REFERENCES jobs (job_id) ON DELETE CASCADE,
+    started_at                   TEXT,
+    finished_at                  TEXT,
+    executor_invocations         INTEGER NOT NULL DEFAULT 0 CHECK (executor_invocations >= 0),
+    usage_reported_invocations   INTEGER NOT NULL DEFAULT 0 CHECK (usage_reported_invocations >= 0),
+    executor_elapsed_ms          INTEGER NOT NULL DEFAULT 0 CHECK (executor_elapsed_ms >= 0),
+    input_tokens                 INTEGER NOT NULL DEFAULT 0 CHECK (input_tokens >= 0),
+    cached_input_tokens          INTEGER NOT NULL DEFAULT 0 CHECK (cached_input_tokens >= 0),
+    cache_write_input_tokens     INTEGER NOT NULL DEFAULT 0 CHECK (cache_write_input_tokens >= 0),
+    output_tokens                INTEGER NOT NULL DEFAULT 0 CHECK (output_tokens >= 0),
+    reasoning_output_tokens      INTEGER NOT NULL DEFAULT 0 CHECK (reasoning_output_tokens >= 0),
+    total_tokens                 INTEGER NOT NULL DEFAULT 0 CHECK (total_tokens >= 0),
+    updated_at                   TEXT NOT NULL
+);
 
 CREATE TABLE IF NOT EXISTS attempts (
     attempt_id   TEXT PRIMARY KEY,
@@ -62,6 +78,22 @@ CREATE TABLE IF NOT EXISTS events (
     created_at   TEXT NOT NULL,
     PRIMARY KEY (job_id, seq)
 );
+
+-- Add a statistics projection for jobs created by pre-v3 service versions.
+-- Historical timing is recoverable from lifecycle events; historical Codex
+-- token counts were never persisted and therefore remain explicit zeroes.
+INSERT OR IGNORE INTO job_statistics (
+    job_id, started_at, finished_at, updated_at
+)
+SELECT
+    jobs.job_id,
+    (SELECT MIN(events.created_at) FROM events
+        WHERE events.job_id = jobs.job_id AND events.event_type = 'enter_preparing'),
+    CASE WHEN jobs.status IN ('completed', 'failed', 'cancelled') THEN
+        (SELECT MAX(events.created_at) FROM events WHERE events.job_id = jobs.job_id)
+    ELSE NULL END,
+    jobs.updated_at
+FROM jobs;
 
 CREATE TABLE IF NOT EXISTS artifacts (
     artifact_id TEXT PRIMARY KEY,

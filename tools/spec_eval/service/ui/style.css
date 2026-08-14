@@ -20,6 +20,13 @@ header h1 { margin: 0; font-size: 1.1rem; }
   margin: 1rem 1.5rem; padding: 1rem; }
 .card h2 { margin: 0 0 0.75rem; font-size: 1rem; }
 
+.metric-grid { display: grid; grid-template-columns: repeat(6, minmax(110px, 1fr)); gap: 0.65rem; }
+.metric-grid.compact { grid-template-columns: repeat(4, minmax(120px, 1fr)); margin-bottom: 0.9rem; }
+.metric { border: 1px solid var(--line); border-radius: 7px; padding: 0.65rem 0.75rem;
+  background: linear-gradient(145deg, #fff, #f8fafc); }
+.metric span { display: block; color: var(--muted); font-size: 0.72rem; margin-bottom: 0.25rem; }
+.metric strong { font-size: 1rem; font-variant-numeric: tabular-nums; }
+
 form { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: end; }
 label { display: flex; flex-direction: column; font-size: 0.8rem; color: var(--muted); }
 input { padding: 0.35rem 0.5rem; border: 1px solid var(--line); border-radius: 4px; font-size: 0.9rem; }
@@ -39,10 +46,27 @@ th { color: var(--muted); font-weight: 600; }
 .badge.cancelled { background: var(--muted); }
 .badge.queued, .badge.preparing, .badge.evidence, .badge.semantic { background: var(--accent); }
 .badge.awaiting_executor { background: var(--wait); }
+.badge.aggregation, .badge.archive, .badge.site_history { background: var(--accent); }
 .badge.FRESH { background: var(--ok); }
 .badge.EXPIRING { background: var(--warn); }
 .badge.EXPIRED_TIME, .badge.STALE_INPUT { background: var(--bad); }
 .badge.MISSING { background: var(--muted); }
+
+.progress-wrap { display: flex; align-items: center; min-width: 150px; gap: 0.4rem; }
+.activity-spinner { width: 0.75rem; height: 0.75rem; flex: 0 0 auto; border-radius: 50%;
+  border: 2px solid #bfdbfe; border-top-color: var(--accent);
+  animation: activity-spin 0.8s linear infinite; }
+.activity-track { position: relative; height: 3px; margin-top: 0.32rem; overflow: hidden;
+  border-radius: 999px; background: #dbeafe; }
+.activity-track span { position: absolute; inset: 0; width: 42%; border-radius: inherit;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  animation: activity-sweep 1.35s ease-in-out infinite; }
+.job-active { background: linear-gradient(90deg, rgba(37, 99, 235, 0.035), transparent 55%); }
+.job-duration { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.live-duration { color: var(--accent); font-weight: 600; }
+
+@keyframes activity-spin { to { transform: rotate(360deg); } }
+@keyframes activity-sweep { from { transform: translateX(-120%); } to { transform: translateX(340%); } }
 
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .grid h3 { margin: 0 0 0.5rem; font-size: 0.85rem; color: var(--muted); }
@@ -50,3 +74,13 @@ ul { list-style: none; padding: 0; margin: 0; max-height: 320px; overflow: auto;
 li { padding: 0.35rem 0; border-bottom: 1px solid var(--line); font-size: 0.8rem; }
 pre { background: #f1f5f9; padding: 0.5rem; border-radius: 4px; overflow: auto;
   font-size: 0.78rem; white-space: pre-wrap; }
+
+@media (max-width: 1000px) {
+  .metric-grid { grid-template-columns: repeat(3, minmax(110px, 1fr)); }
+  .metric-grid.compact { grid-template-columns: repeat(2, minmax(120px, 1fr)); }
+  .card { overflow-x: auto; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .activity-spinner, .activity-track span { animation: none; }
+}

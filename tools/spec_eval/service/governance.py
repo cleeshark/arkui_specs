@@ -9,8 +9,8 @@
 * **disk_usage** reports bytes used per data subdir plus free space, so an
   operator can alert before the volume fills.
 
-No token/PII-bearing content is read or copied; backups contain only DB state
-and archive manifests, which already exclude secrets by construction.
+No credentials, prompts or PII are read or copied; backups contain DB state,
+non-sensitive usage counters and archive manifests.
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ from .settings import ServiceSettings
 from .store.repositories import JobRepository
 from .store.sqlite_store import SqliteStore, utc_now
 
-_SCHEMA_VERSION = "2"
+_SCHEMA_VERSION = "3"
 
 
 def cleanup_temp(

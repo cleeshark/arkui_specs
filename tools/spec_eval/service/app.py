@@ -27,6 +27,7 @@ from .store.repositories import (
     FreshnessPolicyRepository,
     EvaluationReportRepository,
     FunctionReportHeadRepository,
+    JobStatisticsRepository,
     JobRepository,
 )
 from .store.sqlite_store import SqliteStore, utc_now
@@ -143,6 +144,9 @@ class SemanticServiceApp:
 
     def get_job(self, job_id: str) -> Job:
         return self.jobs.get_job(job_id)
+
+    def job_statistics(self, job_id: str):
+        return JobStatisticsRepository(self.store).get(job_id)
 
     def list_events(self, job_id: str, since_seq: int = 0):
         self.jobs.get_job(job_id)  # raises JobNotFoundError if absent
