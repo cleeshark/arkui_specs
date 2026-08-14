@@ -107,3 +107,7 @@ append-only and idempotent, so a resumed run skips already-validated work items.
   the job; retry re-runs semantic + aggregation.
 - **archive not reproducible**: re-run the job for the same FuncID + revision;
   deterministic score/report + content-hashed manifest make bytes match.
+- **`spec_eval evidence exited 1` / `score exited 1`**: exit 1 from the
+  spec_eval CLI means a *gate* is `fail` (static findings exist) — this is a
+  normal outcome, outputs are still written, and the job continues. Only
+  exit >= 2 (`SpecEvalError` / gate `error`) fails the stage.
