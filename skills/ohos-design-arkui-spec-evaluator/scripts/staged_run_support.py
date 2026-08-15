@@ -33,6 +33,7 @@ SCHEMA_V2_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.13",
     "skill:ohos-design-arkui-spec-evaluator@0.1.14",
     "skill:ohos-design-arkui-spec-evaluator@0.1.15",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.16",
     DEFAULT_EVALUATOR_VERSION,
 }
 DEEP_CONTRACT_EVALUATOR_VERSIONS = {
@@ -43,6 +44,7 @@ DEEP_CONTRACT_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.13",
     "skill:ohos-design-arkui-spec-evaluator@0.1.14",
     "skill:ohos-design-arkui-spec-evaluator@0.1.15",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.16",
     DEFAULT_EVALUATOR_VERSION,
 }
 UNVERIFIABLE_GUARD_EVALUATOR_VERSIONS = {
@@ -52,12 +54,14 @@ UNVERIFIABLE_GUARD_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.13",
     "skill:ohos-design-arkui-spec-evaluator@0.1.14",
     "skill:ohos-design-arkui-spec-evaluator@0.1.15",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.16",
     DEFAULT_EVALUATOR_VERSION,
 }
 AGGREGATION_MAPPING_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.13",
     "skill:ohos-design-arkui-spec-evaluator@0.1.14",
     "skill:ohos-design-arkui-spec-evaluator@0.1.15",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.16",
     DEFAULT_EVALUATOR_VERSION,
 }
 OUTCOME_POLICY_BASIS_EVALUATOR_VERSIONS = {
@@ -66,12 +70,15 @@ OUTCOME_POLICY_BASIS_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.13",
     "skill:ohos-design-arkui-spec-evaluator@0.1.14",
     "skill:ohos-design-arkui-spec-evaluator@0.1.15",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.16",
     DEFAULT_EVALUATOR_VERSION,
 }
 FINAL_AGGREGATION_CONTRACT_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.15",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.16",
     DEFAULT_EVALUATOR_VERSION,
 }
+CLAIM_REVIEW_QUALITY_EVALUATOR_VERSIONS = {DEFAULT_EVALUATOR_VERSION}
 AGGREGATION_CONTEXT_SCHEMA_VERSION = 1
 SEMANTIC_FINDING_IDENTITY_VERSION = 1
 OUTCOME_POLICY_BASIS_CRITERIA = [
@@ -156,6 +163,19 @@ MODELING_ISSUE_TYPES = {
     "ambiguous_boundary",
 }
 PLACEHOLDER_TEXT = "待评价人"
+LOW_INFORMATION_REVIEW_TEXT = {
+    "supported",
+    "conflict",
+    "missing",
+    "notapplicable",
+    "notverifiable",
+    "支持",
+    "通过",
+    "冲突",
+    "缺失",
+    "不适用",
+    "不可验证",
+}
 OBSERVATION_ID = re.compile(r"^OBS-[A-Za-z0-9._-]+$")
 EVIDENCE_ID = re.compile(r"^EV-[A-Za-z0-9._-]+$")
 HASH_VALUE = re.compile(r"^sha256:[0-9a-f]{64}$")
@@ -408,6 +428,26 @@ def staged_output_contract(
                     "required_when_local_outcome": ["CONFLICT", "MISSING"],
                     "must_be_empty_for_all_other_outcomes": True,
                 },
+                **({
+                    "quality_rule": {
+                        "reason_and_unit_fact_must_be_evidence_specific": True,
+                        "forbidden_outcome_only_text": sorted(LOW_INFORMATION_REVIEW_TEXT),
+                    },
+                    "dangling_evidence_repair": {
+                        "mode": "repair_claim_evidence_references",
+                        "target_identity": "claim_id",
+                        "defined_evidence_only": True,
+                        "allowed_outcome_change": "target Claim/unit to NOT_VERIFIABLE only",
+                        "preserved_fields": [
+                            "observations",
+                            "non-target claim_reviews",
+                            "claim and Criterion mappings",
+                            "reviewed_units and facet types",
+                            "defects",
+                            "array ordering",
+                        ],
+                    },
+                } if evaluator_version == DEFAULT_EVALUATOR_VERSION else {}),
             },
             "observations": {
                 "required_fields": [
@@ -736,6 +776,13 @@ def _validate_evidence(value: Any, label: str, errors: list[str]) -> None:
         errors.append(f"{label}.type: unsupported evidence type {value.get('type')!r}")
 
 
+def _is_low_information_review_text(value: Any) -> bool:
+    if not isinstance(value, str):
+        return False
+    normalized = re.sub(r"[\W_]+", "", value, flags=re.UNICODE).casefold()
+    return normalized in LOW_INFORMATION_REVIEW_TEXT
+
+
 def validate_observation_document(
     document: dict[str, Any],
     item: dict[str, Any],
@@ -759,6 +806,9 @@ def validate_observation_document(
 
     strict = state.get("schema_version") == STAGED_SCHEMA_VERSION
     deep_contract = state.get("evaluator_version") in DEEP_CONTRACT_EVALUATOR_VERSIONS
+    claim_review_quality = (
+        state.get("evaluator_version") in CLAIM_REVIEW_QUALITY_EVALUATOR_VERSIONS
+    )
     rubric, _, protocol_errors = protocol()
     errors.extend(protocol_errors)
     valid_criteria = set(criterion_order(rubric)) if not protocol_errors else set()
@@ -962,6 +1012,8 @@ def validate_observation_document(
             reason = claim_review.get("reason")
             if not isinstance(reason, str) or not reason or PLACEHOLDER_TEXT in reason:
                 errors.append(f"{entry}.reason: replace the initialized placeholder")
+            elif claim_review_quality and _is_low_information_review_text(reason):
+                errors.append(f"{entry}.reason: expected an evidence-specific explanation")
             defect_keys = _validate_string_list(
                 claim_review.get("defect_keys"), f"{entry}.defect_keys", errors
             )
@@ -1010,6 +1062,8 @@ def validate_observation_document(
                     fact = unit.get("fact")
                     if not isinstance(fact, str) or not fact or PLACEHOLDER_TEXT in fact:
                         errors.append(f"{unit_label}.fact: expected a resolved atomic fact")
+                    elif claim_review_quality and _is_low_information_review_text(fact):
+                        errors.append(f"{unit_label}.fact: expected an evidence-specific atomic fact")
                 if unit_ids != reviewed_units:
                     errors.append(
                         f"{entry}.unit_reviews: unit IDs must exactly match reviewed_units in order"

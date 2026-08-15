@@ -52,7 +52,7 @@ memory for that run. They may be resumed after context compaction or handed to a
 session, but they are not confirmed Reviews or a maintained capability baseline.
 
 New staged schema v2 runs are produced by evaluator
-`skill:ohos-design-arkui-spec-evaluator@0.1.16`. Schema-compatible historical 0.1.7 through 0.1.15
+`skill:ohos-design-arkui-spec-evaluator@0.1.17`. Schema-compatible historical 0.1.7 through 0.1.16
 runs remain readable. Schema v2 requires atomic `claim_reviews`, evidence-backed
 required-check mapping, stable defect ownership, and an explicit core-conflict basis for every
 `CONTRADICTED` Criterion. Schema v1 remains readable for historical 0.1.6 runs; new runs must not
@@ -116,6 +116,15 @@ derives each secondary list from the referenced Findings minus the primary Crite
 secondary effect requires an actual Finding in that Criterion. Ambiguous references, duplicate
 identities, or missing Findings are rejected rather than inferred. Existing 0.1.15 runs receive the
 same service-side normalization when their frozen output contract contains `final_contract`.
+
+Evaluator 0.1.17 routes observation validation failures by repair category instead of requiring
+one homogeneous error whitelist. Mechanical contract repair, missing observation evidence
+completion, and dangling Claim evidence re-review each have a one-attempt budget and are followed
+by full validation. Claim evidence re-review is limited to named Claim rows, original scoped frozen
+inputs, and evidence IDs already defined by candidate observations. It may retain a substantiated
+outcome or downgrade the affected Claim/unit to `NOT_VERIFIABLE`; observations, non-target Claims,
+scope mappings, defects, and ordering cannot change. Outcome-only Claim reasons and unit facts are
+rejected for new 0.1.17 runs, while historical 0.1.16 runs remain readable.
 
 Do not write automatic output to:
 

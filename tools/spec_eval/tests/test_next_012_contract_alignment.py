@@ -37,7 +37,7 @@ if str(SKILL_SCRIPTS) not in sys.path:
 from staged_run_support import semantic_finding_id  # noqa: E402
 
 
-EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.16"
+EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.17"
 SOURCE_REVISION = "a" * 40
 
 
@@ -216,6 +216,93 @@ class _Issue16EvidenceRepairExecutor(_PayloadExecutor):
         }]
         if self.change_fact:
             observation["fact"] = "The repair improperly changed the semantic fact."
+        return result
+
+
+class _Issue19ClaimEvidenceRepairExecutor(_PayloadExecutor):
+    """Emit one dangling Claim evidence reference, then re-review only that Claim."""
+
+    def __init__(
+        self,
+        *,
+        downgrade: bool = False,
+        change_outside_target: bool = False,
+        mixed_mechanical_error: bool = False,
+        dangling_reference: bool = True,
+    ) -> None:
+        super().__init__()
+        self.downgrade = downgrade
+        self.change_outside_target = change_outside_target
+        self.mixed_mechanical_error = mixed_mechanical_error
+        self.dangling_reference = dangling_reference
+
+    def execute(self, work: C.WorkItemInput, emit, cancel=None) -> C.ExecutionResult:
+        result = super().execute(work, emit, cancel)
+        payload = result.observation
+        assert payload is not None
+        if work.work_item_id != "feature:Feat-01":
+            return result
+
+        mode = work.prompt_extras.get("mode")
+        rubric_path = Path(work.repo_root) / "specs" / "evaluation" / "rubric.yaml"
+        digest = hashlib.sha256(rubric_path.read_bytes()).hexdigest()
+        evidence_id = (
+            "bad-id"
+            if self.mixed_mechanical_error and mode not in {
+                "repair_candidate",
+                "repair_claim_evidence_references",
+            }
+            else "EV-defined"
+        )
+        observation = payload["observations"][0]
+        observation.update(
+            local_outcome="SUPPORTED",
+            fact="The frozen rubric defines the Criterion evaluated by this synthetic Claim.",
+            evidence=[{
+                "evidence_id": evidence_id,
+                "type": "spec_location",
+                "path": "specs/evaluation/rubric.yaml",
+                "source_revision": SOURCE_REVISION,
+                "content_hash": f"sha256:{digest}",
+                "description": "The frozen rubric defines the evaluated Criterion.",
+            }],
+        )
+        review = payload["claim_reviews"][0]
+        referenced_evidence_id = "EV-q" if self.dangling_reference else "EV-defined"
+        review.update(
+            local_outcome="SUPPORTED",
+            evidence_ids=[referenced_evidence_id],
+            reason="supported",
+        )
+        review["unit_reviews"][0].update(
+            local_outcome="SUPPORTED",
+            evidence_ids=[referenced_evidence_id],
+            fact="supported",
+        )
+
+        if mode == "repair_claim_evidence_references":
+            if self.downgrade:
+                review.update(
+                    local_outcome="NOT_VERIFIABLE",
+                    evidence_ids=[],
+                    reason="The scoped frozen inputs do not substantiate this Claim.",
+                )
+                review["unit_reviews"][0].update(
+                    local_outcome="NOT_VERIFIABLE",
+                    evidence_ids=[],
+                    fact="No defined evidence proves this atomic unit.",
+                )
+            else:
+                review.update(
+                    evidence_ids=["EV-defined"],
+                    reason="The frozen rubric evidence supports the evaluated Claim.",
+                )
+                review["unit_reviews"][0].update(
+                    evidence_ids=["EV-defined"],
+                    fact="The frozen rubric evidence supports this atomic unit.",
+                )
+            if self.change_outside_target:
+                payload["observations"][0]["fact"] = "The repair changed an observation."
         return result
 
 
@@ -721,6 +808,119 @@ class ContractAlignmentIntegrationTest(unittest.TestCase):
         ]
         self.assertEqual(event_types.count("candidate_evidence_repair_started"), 1)
         self.assertEqual(event_types.count("candidate_evidence_repair_failed"), 1)
+
+    def test_issue_19_dangling_claim_evidence_is_repaired_once(self) -> None:
+        executor = _Issue19ClaimEvidenceRepairExecutor()
+        result = run_semantic(
+            self.ctx,
+            executor,
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+            statistics=self.statistics,
+        )
+        self.assertEqual(result.outcome, C.STATUS_COMPLETED, result.error)
+        self.assertEqual(len(executor.prompts), 3)
+        repair_work = executor.prompts[1]
+        self.assertEqual(
+            repair_work.prompt_extras["mode"], "repair_claim_evidence_references"
+        )
+        self.assertEqual(
+            repair_work.prompt_extras["target_claim_ids"],
+            [repair_work.work_item["expected_claim_ids"][0]],
+        )
+        self.assertEqual(
+            repair_work.prompt_extras["available_evidence_ids"], ["EV-defined"]
+        )
+        self.assertTrue(any("/evidence/" in path for path in repair_work.input_paths))
+
+        feature = json.loads(
+            (self.ctx.run_dir / "observations" / "Feat-01.json").read_text(encoding="utf-8")
+        )
+        review = feature["claim_reviews"][0]
+        self.assertEqual(review["evidence_ids"], ["EV-defined"])
+        self.assertEqual(review["unit_reviews"][0]["evidence_ids"], ["EV-defined"])
+        event_types = [event.event_type for event in self.events.list_for_job(self.job.job_id)]
+        self.assertIn("candidate_claim_evidence_repair_started", event_types)
+        self.assertIn("candidate_claim_evidence_repair_completed", event_types)
+
+    def test_issue_19_claim_can_be_downgraded_when_evidence_is_insufficient(self) -> None:
+        executor = _Issue19ClaimEvidenceRepairExecutor(downgrade=True)
+        result = run_semantic(
+            self.ctx,
+            executor,
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+            statistics=self.statistics,
+        )
+        self.assertEqual(result.outcome, C.STATUS_COMPLETED, result.error)
+        feature = json.loads(
+            (self.ctx.run_dir / "observations" / "Feat-01.json").read_text(encoding="utf-8")
+        )
+        review = feature["claim_reviews"][0]
+        self.assertEqual(review["local_outcome"], "NOT_VERIFIABLE")
+        self.assertEqual(review["evidence_ids"], [])
+        self.assertEqual(review["unit_reviews"][0]["local_outcome"], "NOT_VERIFIABLE")
+        self.assertEqual(review["unit_reviews"][0]["evidence_ids"], [])
+
+    def test_issue_19_outcome_only_text_triggers_targeted_claim_rereview(self) -> None:
+        executor = _Issue19ClaimEvidenceRepairExecutor(dangling_reference=False)
+        result = run_semantic(
+            self.ctx,
+            executor,
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+            statistics=self.statistics,
+        )
+        self.assertEqual(result.outcome, C.STATUS_COMPLETED, result.error)
+        self.assertEqual(
+            executor.prompts[1].prompt_extras["mode"],
+            "repair_claim_evidence_references",
+        )
+        repair_errors = executor.prompts[1].prompt_extras["validation_errors"]
+        self.assertTrue(any("evidence-specific explanation" in error for error in repair_errors))
+        self.assertTrue(any("evidence-specific atomic fact" in error for error in repair_errors))
+
+    def test_issue_19_repair_cannot_change_observations(self) -> None:
+        template_path = self.ctx.run_dir / "observations" / "Feat-01.json"
+        executor = _Issue19ClaimEvidenceRepairExecutor(change_outside_target=True)
+        result = run_semantic(
+            self.ctx,
+            executor,
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+            statistics=self.statistics,
+        )
+        self.assertEqual(result.outcome, C.STATUS_FAILED)
+        self.assertIn("outside target Claim reviews", result.error or "")
+        self.assertEqual(len(executor.prompts), 2)
+        self.assertEqual(
+            json.loads(template_path.read_text(encoding="utf-8"))["status"], "pending"
+        )
+
+    def test_issue_19_mixed_repair_categories_run_in_bounded_order(self) -> None:
+        executor = _Issue19ClaimEvidenceRepairExecutor(mixed_mechanical_error=True)
+        result = run_semantic(
+            self.ctx,
+            executor,
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+            statistics=self.statistics,
+        )
+        self.assertEqual(result.outcome, C.STATUS_COMPLETED, result.error)
+        self.assertEqual(len(executor.prompts), 4)
+        self.assertEqual(executor.prompts[1].prompt_extras["mode"], "repair_candidate")
+        self.assertEqual(
+            executor.prompts[2].prompt_extras["mode"],
+            "repair_claim_evidence_references",
+        )
+        event_types = [event.event_type for event in self.events.list_for_job(self.job.job_id)]
+        self.assertEqual(event_types.count("candidate_repair_started"), 1)
+        self.assertEqual(event_types.count("candidate_claim_evidence_repair_started"), 1)
 
     def test_nested_issue_12_shape_is_rejected_without_overwriting_template(self) -> None:
         template_path = self.ctx.run_dir / "observations" / "Feat-01.json"
