@@ -52,7 +52,7 @@ memory for that run. They may be resumed after context compaction or handed to a
 session, but they are not confirmed Reviews or a maintained capability baseline.
 
 New staged schema v2 runs are produced by evaluator
-`skill:ohos-design-arkui-spec-evaluator@0.1.14`. Schema-compatible historical 0.1.7 through 0.1.13
+`skill:ohos-design-arkui-spec-evaluator@0.1.15`. Schema-compatible historical 0.1.7 through 0.1.14
 runs remain readable. Schema v2 requires atomic `claim_reviews`, evidence-backed
 required-check mapping, stable defect ownership, and an explicit core-conflict basis for every
 `CONTRADICTED` Criterion. Schema v1 remains readable for historical 0.1.6 runs; new runs must not
@@ -98,6 +98,15 @@ at least one evidence object; only `NOT_VERIFIABLE` has a minimum of zero. A bou
 completion call may read the original scoped frozen inputs and populate only the named empty
 observation evidence arrays. The service rejects that repair if any outcome, fact, mapping,
 ownership field, non-target evidence, or ordering changes.
+
+Evaluator 0.1.15 publishes `aggregation_payload.final_contract` from the same
+`semantic-result.schema.json` definitions used by final validation. Aggregation candidates are
+validated as in-memory final candidates before publication. Semantic Finding IDs use a stable
+SHA-256 identity over identity version, FuncID, defect key, Criterion ID, and optional Claim ID;
+classification, prose, revision, and run metadata do not change the ID. The service may perform
+one deterministic, model-free repair for the legacy `problem` alias, an evidence-backed N/A reason,
+and canonical Finding/ownership IDs. Conflicting `message` and `problem` values fail rather than
+silently discarding content.
 
 Do not write automatic output to:
 

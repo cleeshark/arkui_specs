@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from staged_run_support import (
+    build_final_candidate,
     load_object,
     load_run,
     update_progress,
@@ -71,6 +72,14 @@ def validate_stage(
             errors.append(str(exc))
         else:
             errors.extend(validate_aggregation_document(aggregation, state, work_items))
+            if stage == "aggregation" and not errors:
+                try:
+                    semantic_template = load_object(run_dir / "semantic-template.json")
+                    final_candidate = build_final_candidate(semantic_template, aggregation)
+                except (KeyError, ValueError) as exc:
+                    errors.append(f"aggregation: cannot build final candidate: {exc}")
+                else:
+                    errors.extend(validate_final_candidate(final_candidate, aggregation))
     else:
         aggregation = {}
     if stage == "final":

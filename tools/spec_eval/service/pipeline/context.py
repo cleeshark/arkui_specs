@@ -14,7 +14,7 @@ from pathlib import Path
 from ..settings import ServiceSettings
 from ..workspace.models import EvaluationWorkspace
 
-DEFAULT_SKILL_EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.14"
+DEFAULT_SKILL_EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.15"
 SKILL_SCRIPTS_REL = Path("skills") / "ohos-design-arkui-spec-evaluator" / "scripts"
 
 
@@ -58,6 +58,10 @@ class RunContext:
     @property
     def assemble_script(self) -> Path:
         return self.skill_scripts_dir / "assemble_semantic_result.py"
+
+    @property
+    def repair_aggregation_contract_script(self) -> Path:
+        return self.skill_scripts_dir / "repair_aggregation_contract.py"
 
     @classmethod
     def for_run(

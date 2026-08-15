@@ -181,6 +181,35 @@ def validate_aggregation_candidate(
     return _validation_result(cp, "validate aggregation candidate")
 
 
+def repair_aggregation_contract_candidate(
+    ctx: RunContext,
+    candidate_path: Path,
+    *,
+    runner: Runner = default_runner,
+    timeout: float = 120.0,
+) -> None:
+    """Apply the Skill-owned deterministic aggregation contract repair in place."""
+    argv = [
+        "python3",
+        str(ctx.repair_aggregation_contract_script),
+        "--candidate",
+        str(candidate_path),
+        "--output",
+        str(candidate_path),
+    ]
+    log_dir = ctx.jobs_run_root / "logs"
+    cp = _run(
+        argv,
+        cwd=str(ctx.repo_root),
+        runner=runner,
+        timeout=timeout,
+        log_dir=log_dir,
+        name="repair-aggregation-contract",
+    )
+    if cp.returncode != 0:
+        raise StagedStageError(_format_failure("repair_aggregation_contract", cp))
+
+
 def build_aggregation_context(
     ctx: RunContext,
     *,
