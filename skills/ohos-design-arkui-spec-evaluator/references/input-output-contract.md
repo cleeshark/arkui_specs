@@ -52,7 +52,7 @@ memory for that run. They may be resumed after context compaction or handed to a
 session, but they are not confirmed Reviews or a maintained capability baseline.
 
 New staged schema v2 runs are produced by evaluator
-`skill:ohos-design-arkui-spec-evaluator@0.1.13`. Schema-compatible historical 0.1.7 through 0.1.12
+`skill:ohos-design-arkui-spec-evaluator@0.1.14`. Schema-compatible historical 0.1.7 through 0.1.13
 runs remain readable. Schema v2 requires atomic `claim_reviews`, evidence-backed
 required-check mapping, stable defect ownership, and an explicit core-conflict basis for every
 `CONTRADICTED` Criterion. Schema v1 remains readable for historical 0.1.6 runs; new runs must not
@@ -91,6 +91,13 @@ The service may make one bounded aggregation reconciliation call when, and only 
 fails exclusively on these mapping-consistency rules. Reconciliation reads the candidate,
 initialized aggregation template, output contract, and aggregation context; it does not reopen
 source, SDK, Spec, Design, Registry, or evidence shards and it never edits published observations.
+
+Evaluator 0.1.14 makes observation evidence cardinality machine-readable from the same constant
+used by the validator. `SUPPORTED`, `CONFLICT`, `MISSING`, and `NOT_APPLICABLE` observations require
+at least one evidence object; only `NOT_VERIFIABLE` has a minimum of zero. A bounded evidence
+completion call may read the original scoped frozen inputs and populate only the named empty
+observation evidence arrays. The service rejects that repair if any outcome, fact, mapping,
+ownership field, non-target evidence, or ordering changes.
 
 Do not write automatic output to:
 

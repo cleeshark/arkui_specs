@@ -243,6 +243,51 @@ class CodexExecutorTest(unittest.TestCase):
         self.assertIn("do not redo semantic evaluation", " ".join(prompt["constraints"]))
         self.assertEqual(prompt["result_contract"]["mode"], "repair_candidate")
 
+    def test_evidence_completion_prompt_reads_only_original_scoped_inputs(self) -> None:
+        work = replace(
+            self.work,
+            input_paths=(
+                "/tmp/.Feat-01.json.candidate",
+                "/tmp/Feat-01.json",
+                "/tmp/output-contract.json",
+                "/tmp/input/evidence/Feat-01.json",
+                "/tmp/specs/Feat-01-spec.md",
+            ),
+            prompt_extras={
+                "mode": "complete_observation_evidence",
+                "result_kind": "staged_observation_payload",
+                "template_path": "/tmp/Feat-01.json",
+                "output_contract_path": "/tmp/output-contract.json",
+                "candidate_path": "/tmp/.Feat-01.json.candidate",
+                "validation_errors": [
+                    "observation[feature:Feat-01].observations[0].evidence: "
+                    "evidence is required for this local outcome"
+                ],
+                "target_observation_indexes": [0],
+                "payload_fields": ["claim_reviews", "observations", "open_questions", "notes"],
+                "service_derived_fields": ["status", "reviewed_claim_ids", "completed_checks"],
+                "machine_contract": {
+                    "payload": {
+                        "observations": {
+                            "evidence_cardinality": {
+                                "minimum_items_by_local_outcome": {"NOT_APPLICABLE": 1}
+                            }
+                        }
+                    }
+                },
+            },
+        )
+        runner = _FakeRunner(result_doc=_result_doc(work.work_item_id))
+        self._executor(runner).execute(work, lambda e: None)
+        prompt = json.loads(runner.last_stdin or "{}")
+        self.assertIn("Complete missing observation evidence", prompt["task"])
+        constraints = " ".join(prompt["constraints"])
+        self.assertIn("original scoped frozen inputs", constraints)
+        self.assertIn("Do not change outcomes, facts", constraints)
+        self.assertEqual(
+            prompt["result_contract"]["mode"], "complete_observation_evidence"
+        )
+
     def test_aggregation_reconciliation_prompt_uses_published_mapping_only(self) -> None:
         work = replace(
             self.work,

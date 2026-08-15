@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import secrets
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -43,6 +44,7 @@ from .evidence_stage import prepare_evidence, validate_evidence_package
 from .result_payload import (
     load_template,
     merge_observation_payload,
+    observation_evidence_repair_prompt_contract,
     observation_prompt_contract,
     repair_prompt_contract,
 )
@@ -73,6 +75,9 @@ _REPAIRABLE_VALIDATION_ERROR_MARKERS = (
     ".content_hash: expected sha256:<64 lowercase hex digits>",
     ".criterion_ids: unknown criteria",
     ".defect_keys: only conflict or missing claims may own defects",
+)
+_MISSING_OBSERVATION_EVIDENCE = re.compile(
+    r"\.observations\[(\d+)\]\.evidence: evidence is required for this local outcome$"
 )
 
 
@@ -238,6 +243,106 @@ def run_semantic(
                         "errors": list(verdict.errors),
                     },
                 )
+            elif (
+                not verdict.ok
+                and work.prompt_extras.get("machine_contract", {}).get("payload")
+                and (target_indexes := _evidence_completion_indexes(verdict.errors))
+            ):
+                events.append(
+                    ctx.job_id,
+                    "candidate_validation_failed",
+                    {
+                        "work_item_id": work.work_item_id,
+                        "repairable": True,
+                        "repair_mode": "complete_observation_evidence",
+                        "errors": list(verdict.errors),
+                    },
+                )
+                repair_work = _build_evidence_repair_work_input(
+                    work, candidate_path, verdict.errors, target_indexes
+                )
+                events.append(
+                    ctx.job_id,
+                    "candidate_evidence_repair_started",
+                    {
+                        "work_item_id": work.work_item_id,
+                        "repair_attempt": 1,
+                        "target_observation_indexes": list(target_indexes),
+                    },
+                )
+                repair_result = executor.execute(repair_work, emit, cancel)
+                _record_executor_statistics(statistics, ctx.job_id, repair_result)
+                if repair_result.status == C.STATUS_CANCELLED or (
+                    cancel is not None and cancel.is_set()
+                ):
+                    return SemanticStageResult(
+                        C.STATUS_CANCELLED,
+                        completed,
+                        "cancelled during observation evidence repair",
+                    )
+                if not repair_result.succeeded:
+                    error = repair_result.error or (
+                        f"evidence repair executor {repair_result.status}"
+                    )
+                    events.append(
+                        ctx.job_id,
+                        "candidate_evidence_repair_failed",
+                        {
+                            "work_item_id": work.work_item_id,
+                            "repair_attempt": 1,
+                            "error": error,
+                        },
+                    )
+                    jobs.transition_status(
+                        ctx.job_id,
+                        S.FAILED,
+                        event_type="semantic_failed",
+                        payload={"work_item_id": work.work_item_id, "error": error},
+                    )
+                    return SemanticStageResult(C.STATUS_FAILED, completed, error)
+                repaired_candidate = merge_observation_payload(
+                    initialized, repair_result.observation
+                )
+                if not _evidence_repair_preserves_semantics(
+                    candidate, repaired_candidate, target_indexes
+                ):
+                    error = (
+                        "observation evidence repair changed fields outside target evidence"
+                    )
+                    events.append(
+                        ctx.job_id,
+                        "candidate_evidence_repair_failed",
+                        {
+                            "work_item_id": work.work_item_id,
+                            "repair_attempt": 1,
+                            "error": error,
+                        },
+                    )
+                    jobs.transition_status(
+                        ctx.job_id,
+                        S.FAILED,
+                        event_type="semantic_failed",
+                        payload={"work_item_id": work.work_item_id, "error": error},
+                    )
+                    return SemanticStageResult(C.STATUS_FAILED, completed, error)
+                candidate = repaired_candidate
+                _write_candidate(candidate_path, candidate)
+                verdict = staged_stage.validate_work_item_candidate(
+                    ctx, work.work_item_id, candidate_path, runner=runner
+                )
+                events.append(
+                    ctx.job_id,
+                    (
+                        "candidate_evidence_repair_completed"
+                        if verdict.ok
+                        else "candidate_evidence_repair_failed"
+                    ),
+                    {
+                        "work_item_id": work.work_item_id,
+                        "repair_attempt": 1,
+                        "errors": list(verdict.errors),
+                    },
+                )
             if not verdict.ok:
                 jobs.transition_status(
                     ctx.job_id, S.FAILED,
@@ -349,6 +454,35 @@ def _build_repair_work_input(
     )
 
 
+def _build_evidence_repair_work_input(
+    work: C.WorkItemInput,
+    candidate_path: Path,
+    validation_errors: tuple[str, ...],
+    target_observation_indexes: tuple[int, ...],
+) -> C.WorkItemInput:
+    template_path = Path(str(work.prompt_extras["template_path"]))
+    output_contract_path = Path(str(work.prompt_extras["output_contract_path"]))
+    result_path = Path(work.executor_result_path)
+    repair_result_path = result_path.with_name(
+        f"{result_path.stem}.evidence-repair-1{result_path.suffix}"
+    )
+    input_paths = list(dict.fromkeys((
+        str(candidate_path),
+        str(template_path),
+        str(output_contract_path),
+        *work.input_paths,
+    )))
+    return replace(
+        work,
+        input_paths=tuple(input_paths),
+        executor_result_path=str(repair_result_path),
+        prompt_extras=observation_evidence_repair_prompt_contract(
+            work.prompt_extras,
+            candidate_path=candidate_path,
+            validation_errors=validation_errors,
+            target_observation_indexes=target_observation_indexes,
+        ),
+    )
 def _repairable_validation_errors(errors: tuple[str, ...]) -> bool:
     if not errors:
         return False
@@ -359,6 +493,47 @@ def _repairable_validation_errors(errors: tuple[str, ...]) -> bool:
             continue
         return False
     return True
+
+
+def _evidence_completion_indexes(errors: tuple[str, ...]) -> tuple[int, ...]:
+    if not errors:
+        return ()
+    indexes: set[int] = set()
+    for error in errors:
+        match = _MISSING_OBSERVATION_EVIDENCE.search(error)
+        if match is None:
+            return ()
+        indexes.add(int(match.group(1)))
+    return tuple(sorted(indexes))
+
+
+def _evidence_repair_preserves_semantics(
+    candidate: dict[str, Any],
+    repaired: dict[str, Any],
+    target_observation_indexes: tuple[int, ...],
+) -> bool:
+    before = json.loads(json.dumps(candidate))
+    after = json.loads(json.dumps(repaired))
+    before_observations = before.get("observations")
+    after_observations = after.get("observations")
+    if not isinstance(before_observations, list) or not isinstance(after_observations, list):
+        return False
+    if len(before_observations) != len(after_observations):
+        return False
+    for index in target_observation_indexes:
+        if index >= len(before_observations):
+            return False
+        before_observation = before_observations[index]
+        after_observation = after_observations[index]
+        if not isinstance(before_observation, dict) or not isinstance(after_observation, dict):
+            return False
+        if before_observation.get("evidence"):
+            return False
+        if not after_observation.get("evidence"):
+            return False
+        before_observation["evidence"] = []
+        after_observation["evidence"] = []
+    return before == after
 
 
 def _write_candidate(path: Path, document: dict[str, Any]) -> None:

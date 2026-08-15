@@ -106,6 +106,31 @@ def repair_prompt_contract(
     return contract
 
 
+def observation_evidence_repair_prompt_contract(
+    base_contract: dict[str, Any],
+    *,
+    candidate_path: Path,
+    validation_errors: Iterable[str],
+    target_observation_indexes: Iterable[int],
+) -> dict[str, Any]:
+    """Describe one evidence-backed repair without allowing semantic drift."""
+    contract = copy.deepcopy(base_contract)
+    contract.update({
+        "mode": "complete_observation_evidence",
+        "candidate_path": str(candidate_path),
+        "validation_errors": list(validation_errors),
+        "target_observation_indexes": list(target_observation_indexes),
+        "repair_constraints": [
+            "Use only the candidate and the original scoped frozen inputs.",
+            "Populate evidence only for the target observation indexes.",
+            "Preserve every outcome, fact, Claim/check/Criterion mapping and array ordering.",
+            "Do not invent evidence or downgrade an outcome to avoid the evidence requirement.",
+            "Return the complete corrected executor-owned payload, not a patch.",
+        ],
+    })
+    return contract
+
+
 def aggregation_reconciliation_prompt_contract(
     base_contract: dict[str, Any],
     *,

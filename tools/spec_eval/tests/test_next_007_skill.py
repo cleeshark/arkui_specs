@@ -38,7 +38,7 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
     def _staged_identity(self) -> dict[str, object]:
         return {
             "schema_version": 2,
-            "evaluator_version": "skill:ohos-design-arkui-spec-evaluator@0.1.13",
+            "evaluator_version": "skill:ohos-design-arkui-spec-evaluator@0.1.14",
             "func_id": "05-01-02",
             "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
             "run_id": "validator-unit-test",
@@ -133,7 +133,7 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
         _, frontmatter, _ = content.split("---", 2)
         metadata = yaml.safe_load(frontmatter)
         self.assertEqual(metadata["name"], "ohos-design-arkui-spec-evaluator")
-        self.assertEqual(metadata["metadata"]["version"], "0.1.13")
+        self.assertEqual(metadata["metadata"]["version"], "0.1.14")
         self.assertEqual(metadata["metadata"]["rubric-version"], "0.3.0")
         self.assertLess(len(content.splitlines()), 500)
         for relative in (
@@ -206,7 +206,7 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             semantic = json.loads(result_path.read_text(encoding="utf-8"))
             self.assertEqual(
                 semantic["evaluator_version"],
-                "skill:ohos-design-arkui-spec-evaluator@0.1.13",
+                "skill:ohos-design-arkui-spec-evaluator@0.1.14",
             )
             expected_ids = [
                 criterion["id"]
@@ -284,7 +284,7 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(
                 json.loads(output.read_text(encoding="utf-8"))["evaluator_version"],
-                "skill:ohos-design-arkui-spec-evaluator@0.1.13",
+                "skill:ohos-design-arkui-spec-evaluator@0.1.14",
             )
 
     def test_machine_output_contract_matches_validator_and_rubric(self) -> None:
@@ -314,6 +314,45 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             evaluator_version="skill:ohos-design-arkui-spec-evaluator@0.1.12",
         )
         self.assertNotIn("mapping_context", historical["aggregation_payload"])
+        previous = staged_output_contract(
+            source_revision=source_revision,
+            evaluator_version="skill:ohos-design-arkui-spec-evaluator@0.1.13",
+        )
+        self.assertIn("mapping_context", previous["aggregation_payload"])
+
+    def test_observation_evidence_cardinality_is_machine_readable_and_enforced(self) -> None:
+        contract = staged_output_contract(source_revision="a" * 40)
+        minimums = contract["observation_payload"]["observations"][
+            "evidence_cardinality"
+        ]["minimum_items_by_local_outcome"]
+        self.assertEqual(minimums, {
+            "CONFLICT": 1,
+            "MISSING": 1,
+            "NOT_APPLICABLE": 1,
+            "NOT_VERIFIABLE": 0,
+            "SUPPORTED": 1,
+        })
+        na_example = contract["observation_payload"]["observations"][
+            "evidence_cardinality"
+        ]["not_applicable_example_only"]
+        self.assertEqual(na_example["local_outcome"], "NOT_APPLICABLE")
+        self.assertEqual(len(na_example["evidence"]), 1)
+
+        for outcome, minimum in minimums.items():
+            with self.subTest(outcome=outcome):
+                document, item, state = self._valid_observation()
+                observation = document["observations"][0]
+                observation["local_outcome"] = outcome
+                observation["evidence"] = []
+                if outcome in {"CONFLICT", "MISSING"}:
+                    observation["defect_key"] = "missing-observation-evidence"
+                    observation["primary_criterion_id"] = "CORRECTNESS-SOURCE-SUPPORT"
+                errors = validate_observation_document(document, item, state)
+                has_cardinality_error = any(
+                    "evidence is required for this local outcome" in error
+                    for error in errors
+                )
+                self.assertEqual(has_cardinality_error, minimum > 0)
 
     def test_aggregation_context_is_deterministic_and_inherits_claim_unit_mapping(self) -> None:
         document, item, state = self._valid_observation()
@@ -689,6 +728,13 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
     def test_staged_v2_019_historical_observation_remains_readable(self) -> None:
         document, item, state = self._valid_observation()
         historical = "skill:ohos-design-arkui-spec-evaluator@0.1.9"
+        state["evaluator_version"] = historical
+        document["evaluator_version"] = historical
+        self.assertEqual(validate_observation_document(document, item, state), [])
+
+    def test_staged_v2_013_historical_observation_remains_readable(self) -> None:
+        document, item, state = self._valid_observation()
+        historical = "skill:ohos-design-arkui-spec-evaluator@0.1.13"
         state["evaluator_version"] = historical
         document["evaluator_version"] = historical
         self.assertEqual(validate_observation_document(document, item, state), [])

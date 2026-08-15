@@ -30,6 +30,7 @@ SCHEMA_V2_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.10",
     "skill:ohos-design-arkui-spec-evaluator@0.1.11",
     "skill:ohos-design-arkui-spec-evaluator@0.1.12",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.13",
     DEFAULT_EVALUATOR_VERSION,
 }
 DEEP_CONTRACT_EVALUATOR_VERSIONS = {
@@ -37,15 +38,20 @@ DEEP_CONTRACT_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.10",
     "skill:ohos-design-arkui-spec-evaluator@0.1.11",
     "skill:ohos-design-arkui-spec-evaluator@0.1.12",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.13",
     DEFAULT_EVALUATOR_VERSION,
 }
 UNVERIFIABLE_GUARD_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.10",
     "skill:ohos-design-arkui-spec-evaluator@0.1.11",
     "skill:ohos-design-arkui-spec-evaluator@0.1.12",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.13",
     DEFAULT_EVALUATOR_VERSION,
 }
-AGGREGATION_MAPPING_EVALUATOR_VERSIONS = {DEFAULT_EVALUATOR_VERSION}
+AGGREGATION_MAPPING_EVALUATOR_VERSIONS = {
+    "skill:ohos-design-arkui-spec-evaluator@0.1.13",
+    DEFAULT_EVALUATOR_VERSION,
+}
 AGGREGATION_CONTEXT_SCHEMA_VERSION = 1
 OUTCOME_POLICY_BASIS_CRITERIA = [
     "SPEC-AC-TESTABILITY",
@@ -87,6 +93,10 @@ LOCAL_OUTCOMES = {
     "MISSING",
     "NOT_APPLICABLE",
     "NOT_VERIFIABLE",
+}
+OBSERVATION_EVIDENCE_MIN_ITEMS = {
+    outcome: 0 if outcome == "NOT_VERIFIABLE" else 1
+    for outcome in sorted(LOCAL_OUTCOMES)
 }
 EVIDENCE_TYPES = (
     "source_citation",
@@ -300,6 +310,31 @@ def staged_output_contract(
                         "defect_key",
                         "primary_criterion_id",
                     ],
+                },
+                "evidence_cardinality": {
+                    "minimum_items_by_local_outcome": dict(
+                        OBSERVATION_EVIDENCE_MIN_ITEMS
+                    ),
+                    "rule": (
+                        "Every observation except NOT_VERIFIABLE carries at least one "
+                        "evidence object. NOT_APPLICABLE cites reproducible evidence that "
+                        "proves the checked unit is inapplicable; fact text is not evidence."
+                    ),
+                    "not_applicable_example_only": {
+                        "local_outcome": "NOT_APPLICABLE",
+                        "fact": (
+                            "The frozen applicability policy proves the checked unit does "
+                            "not apply."
+                        ),
+                        "evidence": [{
+                            **evidence_contract["format_example_only"],
+                            "evidence_id": "EV-not-applicable-format-example",
+                            "description": (
+                                "Example shape only: cite the actual frozen scope or policy "
+                                "that proves the evaluated unit is inapplicable."
+                            ),
+                        }],
+                    },
                 },
                 "evidence": evidence_contract,
             },
@@ -669,7 +704,10 @@ def validate_observation_document(
         if not isinstance(evidence, list):
             errors.append(f"{entry}.evidence: expected a list")
             continue
-        if observation.get("local_outcome") != "NOT_VERIFIABLE" and not evidence:
+        minimum_evidence = OBSERVATION_EVIDENCE_MIN_ITEMS.get(
+            observation.get("local_outcome"), 0
+        )
+        if len(evidence) < minimum_evidence:
             errors.append(f"{entry}.evidence: evidence is required for this local outcome")
         for evidence_index, evidence_item in enumerate(evidence):
             _validate_evidence(evidence_item, f"{entry}.evidence[{evidence_index}]", errors)

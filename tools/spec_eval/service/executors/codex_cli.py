@@ -299,6 +299,9 @@ class CodexCliExecutor:
     def _build_prompt(work: C.WorkItemInput) -> str:
         result_contract = dict(work.prompt_extras)
         repair_mode = result_contract.get("mode") == "repair_candidate"
+        evidence_completion_mode = (
+            result_contract.get("mode") == "complete_observation_evidence"
+        )
         reconciliation_mode = (
             result_contract.get("mode") == "reconcile_aggregation_candidate"
         )
@@ -321,7 +324,7 @@ class CodexCliExecutor:
         if has_machine_contract:
             constraints.insert(
                 -1,
-                "Treat result_contract.machine_contract as normative for nested fields, enums, IDs, hashes and conditional ownership rules.",
+                "Treat result_contract.machine_contract as normative for nested fields, enums, IDs, hashes, evidence cardinality and conditional ownership rules.",
             )
         if repair_mode:
             constraints = [
@@ -331,6 +334,17 @@ class CodexCliExecutor:
                 "Preserve semantic judgments, facts, claim coverage and array ordering.",
                 "Repair every listed validation error plus directly linked evidence ID references.",
                 "Treat result_contract.machine_contract as normative for nested fields, enums, IDs, hashes and conditional ownership rules.",
+                "Return the complete corrected executor-owned payload, not a patch.",
+            ]
+        if evidence_completion_mode:
+            constraints = [
+                "Complete missing observation evidence in the declared invalid candidate.",
+                "Read only candidate_path, template_path, output_contract_path and the original scoped frozen inputs listed in input_paths.",
+                "Use real frozen evidence that proves the existing fact and outcome; do not invent paths, revisions, hashes or descriptions.",
+                "Populate evidence only for result_contract.target_observation_indexes.",
+                "Do not change outcomes, facts, Claim/check/Criterion mappings, defect ownership, non-target evidence or array ordering.",
+                "If the scoped inputs do not prove an existing fact, return status=failed instead of changing the judgment.",
+                "Treat result_contract.machine_contract as normative for evidence fields and cardinality.",
                 "Return the complete corrected executor-owned payload, not a patch.",
             ]
         if reconciliation_mode:
@@ -348,9 +362,12 @@ class CodexCliExecutor:
             "task": (
                 "Repair one staged semantic evaluation candidate after validation failure."
                 if repair_mode else (
+                    "Complete missing observation evidence in one staged semantic evaluation candidate."
+                    if evidence_completion_mode else (
                     "Reconcile one staged aggregation candidate after mapped-unit validation failure."
                     if reconciliation_mode else
                     "Complete exactly one staged semantic evaluation work item."
+                    )
                 )
             ),
             "constraints": constraints,

@@ -845,6 +845,7 @@ python3 specs/tools/spec_eval/service_cli.py serve --port 8790 --max-workers 2
 - 在任务列表、详情和顶部统计卡中查看总历时、Executor 累计耗时、调用次数、Token 消耗与 usage 上报覆盖率。
 - evaluator 0.1.12 起会把 Skill 校验器同源的字段级契约注入 Codex prompt；若 observation 候选仅有 `EV-`、`sha256:`、evidence type、Criterion ID 或 defect ownership 等白名单格式错误，服务最多执行一次不重读证据的机械修复。
 - evaluator 0.1.13 会在聚合前生成 `aggregation-context.json`，固定 observation/Claim/atomic unit 到 Criterion 的映射；若 aggregation 候选仅违反映射结论或 Claim 引用规则，服务最多执行一次只读取候选、模板、输出契约和映射上下文的受限对账，不会重读源码或改写 observation。
+- evaluator 0.1.14 将 observation outcome 对 evidence 最小条数的要求写入机器契约：除 `NOT_VERIFIABLE` 外均至少 1 条，`NOT_APPLICABLE` 也必须引用证明不适用的冻结证据。若候选仅有空 evidence，服务最多执行一次读取原始作用域输入的补证；任何 outcome、fact、映射、ownership 或非目标 evidence 漂移都会被拒绝。
 - 查看全部 Function 的当前报告、版本、分数、Gate、刷新状态和历史数量。
 - 按新鲜度筛选 `FRESH`、`EXPIRING`、`EXPIRED_TIME`、`STALE_INPUT` 和 `MISSING`。
 - 取消活动任务、重试失败任务，并查看单 Function 的历史报告和 Finding delta。

@@ -120,6 +120,11 @@ Allowed `local_outcome` values:
 - `NOT_APPLICABLE`: the unit is proven inapplicable.
 - `NOT_VERIFIABLE`: evidence is unavailable or insufficient.
 
+For evaluator 0.1.14+, apply the machine-readable evidence cardinality table in
+`output-contract.json`: every observation except `NOT_VERIFIABLE` has at least one evidence object.
+This includes `NOT_APPLICABLE`, which cites the frozen scope, API, device-form, build, or lifecycle
+evidence that proves the checked unit is inapplicable. A prose `fact` is not evidence.
+
 Allowed `breadth` values:
 
 - `local`: one claim, branch, or isolated path.
@@ -173,6 +178,13 @@ The exact evidence syntax is:
 When an evidence ID changes, update every observation, Claim, and unit-level `evidence_ids`
 reference. Claim `defect_keys` are required for `CONFLICT` and `MISSING`, and must be empty for
 `SUPPORTED`, `NOT_APPLICABLE`, and `NOT_VERIFIABLE`.
+
+If validation fails only because one or more non-`NOT_VERIFIABLE` observations have empty evidence,
+the service may request one bounded evidence completion pass. That pass reads the failed candidate,
+initialized template, `output-contract.json`, and the original scoped frozen inputs. It may populate
+only the named observation evidence arrays. It cannot change outcomes, facts, Claim/check/Criterion
+mappings, defect ownership, non-target evidence, or ordering; if the scoped inputs do not prove the
+existing fact, it fails instead of inventing evidence or downgrading the outcome.
 
 ## Function-global scope
 

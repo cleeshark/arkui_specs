@@ -13,7 +13,7 @@ metadata:
   stage: design
   domain: arkui
   capability: spec-evaluator
-  version: 0.1.13
+  version: 0.1.14
   status: mvp
   evaluation-unit: function
   rubric-version: 0.3.0
@@ -143,6 +143,13 @@ Before writing nested evidence or defect ownership fields, read the run-local
 `output-contract.json`. Evidence IDs use the `EV-` prefix, hashes use the literal `sha256:` prefix,
 evidence `type` is one of the declared enums, Criterion IDs come only from its frozen list, and
 claim `defect_keys` remain empty unless the local outcome is `CONFLICT` or `MISSING`.
+
+For evaluator 0.1.14+, also apply
+`observation_payload.observations.evidence_cardinality.minimum_items_by_local_outcome` exactly.
+Every observation except `NOT_VERIFIABLE` carries at least one reproducible evidence object.
+`NOT_APPLICABLE` is not an evidence-free explanation: cite the frozen Spec, Design, Registry, SDK,
+or source location that proves the checked unit is inapplicable. A `fact` string does not replace
+evidence.
 
 For each Feature observation:
 
