@@ -73,6 +73,11 @@ def aggregation_prompt_contract(
         "output_contract_path": str(output_contract_path),
         "payload_fields": list(AGGREGATION_PAYLOAD_FIELDS),
         "service_derived_fields": ["status", "source_observation_ids"],
+        "service_normalized_fields": [
+            "criterion_results[].findings[].finding_id",
+            "defect_ownership[].finding_ids",
+            "defect_ownership[].secondary_criterion_ids",
+        ],
         "machine_contract": {
             "valid_criterion_ids": output_contract.get("valid_criterion_ids", []),
             "common": output_contract.get("common", {}),

@@ -52,7 +52,7 @@ memory for that run. They may be resumed after context compaction or handed to a
 session, but they are not confirmed Reviews or a maintained capability baseline.
 
 New staged schema v2 runs are produced by evaluator
-`skill:ohos-design-arkui-spec-evaluator@0.1.15`. Schema-compatible historical 0.1.7 through 0.1.14
+`skill:ohos-design-arkui-spec-evaluator@0.1.16`. Schema-compatible historical 0.1.7 through 0.1.15
 runs remain readable. Schema v2 requires atomic `claim_reviews`, evidence-backed
 required-check mapping, stable defect ownership, and an explicit core-conflict basis for every
 `CONTRADICTED` Criterion. Schema v1 remains readable for historical 0.1.6 runs; new runs must not
@@ -107,6 +107,15 @@ classification, prose, revision, and run metadata do not change the ID. The serv
 one deterministic, model-free repair for the legacy `problem` alias, an evidence-backed N/A reason,
 and canonical Finding/ownership IDs. Conflicting `message` and `problem` values fail rather than
 silently discarding content.
+
+Evaluator 0.1.16 makes canonical Finding IDs and ownership secondary Criteria service-normalized
+fields. The executor supplies only unique provisional Finding correlation keys and uses those keys
+in ownership references; it does not calculate SHA-256 IDs. Before the first aggregation
+validation, the service atomically generates canonical IDs, synchronizes ownership references, and
+derives each secondary list from the referenced Findings minus the primary Criterion. A semantic
+secondary effect requires an actual Finding in that Criterion. Ambiguous references, duplicate
+identities, or missing Findings are rejected rather than inferred. Existing 0.1.15 runs receive the
+same service-side normalization when their frozen output contract contains `final_contract`.
 
 Do not write automatic output to:
 

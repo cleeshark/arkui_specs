@@ -188,7 +188,7 @@ def repair_aggregation_contract_candidate(
     runner: Runner = default_runner,
     timeout: float = 120.0,
 ) -> None:
-    """Apply the Skill-owned deterministic aggregation contract repair in place."""
+    """Apply the Skill-owned deterministic aggregation normalization in place."""
     argv = [
         "python3",
         str(ctx.repair_aggregation_contract_script),

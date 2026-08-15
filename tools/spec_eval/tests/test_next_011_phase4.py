@@ -43,7 +43,7 @@ from spec_eval.service.store.repositories import (
 from spec_eval.service.store.sqlite_store import SqliteStore, utc_now
 from spec_eval.service.workspace.models import EvaluationWorkspace
 
-EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.15"
+EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.16"
 
 
 # --- fakes ------------------------------------------------------------------

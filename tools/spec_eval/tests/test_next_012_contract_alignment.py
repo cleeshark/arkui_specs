@@ -37,7 +37,7 @@ if str(SKILL_SCRIPTS) not in sys.path:
 from staged_run_support import semantic_finding_id  # noqa: E402
 
 
-EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.15"
+EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.16"
 SOURCE_REVISION = "a" * 40
 
 
@@ -446,6 +446,55 @@ class _Issue17AggregationExecutor:
                 "notes": [],
             },
         )
+
+
+class _Issue18AggregationExecutor(_Issue17AggregationExecutor):
+    """Mix canonical-ID drift with a mechanically wrong secondary list."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.last_work: C.WorkItemInput | None = None
+
+    def execute(self, work: C.WorkItemInput, emit, cancel=None) -> C.ExecutionResult:
+        self.last_work = work
+        result = super().execute(work, emit, cancel)
+        payload = result.observation
+        assert payload is not None
+        results = {
+            row["criterion_id"]: row for row in payload["criterion_results"]
+        }
+        primary = results["DESIGN-VERIFICATION-PLAN"]
+        primary_finding = primary["findings"][0]
+        primary_finding["finding_id"] = "finding-primary"
+        primary_finding["message"] = primary_finding.pop("problem")
+
+        secondary = results["DESIGN-IMPLEMENTATION-PATH"]
+        secondary_evidence = {
+            **primary["evidence"][0],
+            "evidence_id": "EV-issue18-secondary",
+            "description": "The same root defect affects the implementation path.",
+        }
+        secondary.update(
+            conclusion="PARTIALLY_SUPPORTED",
+            reason="The implementation path depends on the same incomplete verification root.",
+            evidence=[secondary_evidence],
+            findings=[{
+                "finding_id": "finding-secondary",
+                "criterion_id": "DESIGN-IMPLEMENTATION-PATH",
+                "severity": "Major",
+                "conclusion": "PARTIALLY_SUPPORTED",
+                "message": "The implementation path lacks an executable verification edge.",
+                "recommendation": "Connect the implementation path to executable verification.",
+                "evidence_ids": [secondary_evidence["evidence_id"]],
+            }],
+        )
+        sdk = results["CORRECTNESS-SDK-CONTRACT"]
+        sdk["applicability_reason"] = sdk["reason"]
+        payload["defect_ownership"][0].update(
+            finding_ids=["finding-primary", "finding-secondary"],
+            secondary_criterion_ids=["SPEC-AC-TESTABILITY"],
+        )
+        return result
 
 
 class ContractAlignmentIntegrationTest(unittest.TestCase):
@@ -931,6 +980,60 @@ class ContractAlignmentIntegrationTest(unittest.TestCase):
         ]
         self.assertEqual(event_types.count("aggregation_contract_repair_started"), 1)
         self.assertEqual(event_types.count("aggregation_contract_repair_failed"), 1)
+
+    def test_issue_18_mixed_derived_field_drift_is_normalized_before_validation(self) -> None:
+        semantic = run_semantic(
+            self.ctx,
+            _Issue17ObservationExecutor(),
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+        )
+        self.assertEqual(semantic.outcome, C.STATUS_COMPLETED, semantic.error)
+        self.jobs.transition_status(self.job.job_id, S.AGGREGATION, event_type="test")
+        executor = _Issue18AggregationExecutor()
+        outcome, semantic_result = aggregation_stage.run_aggregation(
+            self.ctx,
+            executor,
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+            statistics=self.statistics,
+        )
+        self.assertEqual(outcome, C.STATUS_COMPLETED)
+        self.assertTrue(semantic_result is not None and semantic_result.is_file())
+        self.assertEqual(executor.calls, 1)
+        self.assertIsNotNone(executor.last_work)
+        self.assertIn(
+            "defect_ownership[].secondary_criterion_ids",
+            executor.last_work.prompt_extras["service_normalized_fields"],
+        )
+
+        aggregation = json.loads(
+            (self.ctx.run_dir / "aggregation.json").read_text(encoding="utf-8")
+        )
+        owner = aggregation["defect_ownership"][0]
+        expected_ids = [
+            semantic_finding_id(
+                func_id=self.job.func_id,
+                defect_key="missing-verification-assets",
+                criterion_id=criterion_id,
+                claim_id=None,
+            )
+            for criterion_id in (
+                "DESIGN-VERIFICATION-PLAN",
+                "DESIGN-IMPLEMENTATION-PATH",
+            )
+        ]
+        self.assertEqual(owner["finding_ids"], expected_ids)
+        self.assertEqual(
+            owner["secondary_criterion_ids"], ["DESIGN-IMPLEMENTATION-PATH"]
+        )
+        event_types = [
+            event.event_type for event in self.events.list_for_job(self.job.job_id)
+        ]
+        self.assertEqual(event_types.count("aggregation_contract_repair_started"), 1)
+        self.assertEqual(event_types.count("aggregation_contract_repair_completed"), 1)
 
     def test_aggregation_payload_passes_real_assemble_and_final_validator(self) -> None:
         semantic = run_semantic(

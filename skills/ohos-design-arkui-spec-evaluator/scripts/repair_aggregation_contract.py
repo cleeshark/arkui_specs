@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Apply the bounded evaluator-owned aggregation final-contract repair."""
+"""Apply evaluator-owned deterministic aggregation final-contract normalization."""
 
 from __future__ import annotations
 
@@ -22,13 +22,11 @@ def main(argv: list[str] | None = None) -> int:
     try:
         candidate = load_object(args.candidate.resolve())
         repaired, changes = repair_aggregation_contract(candidate)
-        if not changes:
-            raise ValueError("candidate contains no eligible final-contract drift")
         write_object(args.output.resolve(), repaired)
     except (OSError, ValueError) as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
-    print(f"aggregation contract repaired: changes={len(changes)} output={args.output.resolve()}")
+    print(f"aggregation contract normalized: changes={len(changes)} output={args.output.resolve()}")
     return 0
 
 
