@@ -192,6 +192,13 @@ The second invocation has its own `aggregation.executor-result.reconcile-1.json`
 and Token accounting. A failed reconciliation leaves the initialized aggregation template
 unchanged.
 
+Evaluator 0.1.14 additionally publishes the validator-owned observation evidence cardinality table
+through `output-contract.json`. Every observation except Not Verifiable requires at least one
+evidence object, including Not Applicable observations that must prove why the checked unit does not
+apply. When this is the only validation failure, the service may perform one evidence completion
+call using the candidate and original scoped frozen inputs. The repaired payload is rejected unless
+all outcomes, facts, mappings, ownership fields, non-target evidence, and ordering are unchanged.
+
 The service also audits every structured-output schema object node for
 `additionalProperties: false` and complete `required` coverage before starting
 Codex. A locally invalid output schema therefore fails at service startup

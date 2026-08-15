@@ -25,7 +25,7 @@ from spec_eval.service.store.repositories import (
 from spec_eval.service.store.sqlite_store import SqliteStore
 
 
-EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.13"
+EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.14"
 SOURCE_REVISION = "a" * 40
 
 
@@ -157,6 +157,53 @@ class _Issue13RepairExecutor(_PayloadExecutor):
             local_outcome="SUPPORTED",
             evidence_ids=[evidence_id],
         )
+        return result
+
+
+class _Issue16EvidenceRepairExecutor(_PayloadExecutor):
+    """Emit one evidence-free N/A observation, then complete only its evidence."""
+
+    def __init__(
+        self, *, change_fact: bool = False, repair_succeeds: bool = True
+    ) -> None:
+        super().__init__()
+        self.change_fact = change_fact
+        self.repair_succeeds = repair_succeeds
+
+    def execute(self, work: C.WorkItemInput, emit, cancel=None) -> C.ExecutionResult:
+        result = super().execute(work, emit, cancel)
+        payload = result.observation
+        assert payload is not None
+        if work.work_item_id != "feature:Feat-01":
+            return result
+
+        observation = payload["observations"][0]
+        observation["local_outcome"] = "NOT_APPLICABLE"
+        observation["fact"] = "The synthetic internal build unit is proven inapplicable."
+        observation["evidence"] = []
+        if work.prompt_extras.get("mode") != "complete_observation_evidence":
+            return result
+        if not self.repair_succeeds:
+            return C.ExecutionResult(
+                status=C.STATUS_FAILED,
+                exit_code=1,
+                error="the frozen inputs do not prove the existing fact",
+            )
+
+        source_path = next(
+            Path(path) for path in work.input_paths
+            if path.endswith("Feat-01-build-gn-structure-spec.md")
+        )
+        observation["evidence"] = [{
+            "evidence_id": "EV-issue16-na-scope",
+            "type": "spec_location",
+            "path": str(source_path),
+            "source_revision": SOURCE_REVISION,
+            "content_hash": "sha256:" + hashlib.sha256(source_path.read_bytes()).hexdigest(),
+            "description": "The frozen Feature scope proves this unit is not applicable.",
+        }]
+        if self.change_fact:
+            observation["fact"] = "The repair improperly changed the semantic fact."
         return result
 
 
@@ -399,6 +446,82 @@ class ContractAlignmentIntegrationTest(unittest.TestCase):
         self.assertIn("candidate_repair_started", event_types)
         self.assertIn("candidate_repair_completed", event_types)
         self.assertEqual(self.statistics.get(self.job.job_id).executor_invocations, 3)
+
+    def test_issue_16_missing_observation_evidence_is_completed_once(self) -> None:
+        executor = _Issue16EvidenceRepairExecutor()
+        result = run_semantic(
+            self.ctx,
+            executor,
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+            statistics=self.statistics,
+        )
+        self.assertEqual(result.outcome, C.STATUS_COMPLETED, result.error)
+        self.assertEqual(len(executor.prompts), 3)
+        repair_work = executor.prompts[1]
+        self.assertEqual(
+            repair_work.prompt_extras["mode"], "complete_observation_evidence"
+        )
+        self.assertEqual(repair_work.prompt_extras["target_observation_indexes"], [0])
+        self.assertTrue(any(
+            path.endswith("Feat-01-build-gn-structure-spec.md")
+            for path in repair_work.input_paths
+        ))
+        self.assertTrue(any("/evidence/" in path for path in repair_work.input_paths))
+
+        feature = json.loads(
+            (self.ctx.run_dir / "observations" / "Feat-01.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(feature["observations"][0]["local_outcome"], "NOT_APPLICABLE")
+        self.assertEqual(
+            feature["observations"][0]["evidence"][0]["evidence_id"],
+            "EV-issue16-na-scope",
+        )
+        event_types = [event.event_type for event in self.events.list_for_job(self.job.job_id)]
+        self.assertIn("candidate_evidence_repair_started", event_types)
+        self.assertIn("candidate_evidence_repair_completed", event_types)
+
+    def test_issue_16_evidence_repair_cannot_change_semantic_fact(self) -> None:
+        template_path = self.ctx.run_dir / "observations" / "Feat-01.json"
+        executor = _Issue16EvidenceRepairExecutor(change_fact=True)
+        result = run_semantic(
+            self.ctx,
+            executor,
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+            statistics=self.statistics,
+        )
+        self.assertEqual(result.outcome, C.STATUS_FAILED)
+        self.assertIn("changed fields outside target evidence", result.error or "")
+        self.assertEqual(len(executor.prompts), 2)
+        self.assertEqual(
+            json.loads(template_path.read_text(encoding="utf-8"))["status"], "pending"
+        )
+
+    def test_issue_16_evidence_repair_failure_is_not_retried(self) -> None:
+        template_path = self.ctx.run_dir / "observations" / "Feat-01.json"
+        executor = _Issue16EvidenceRepairExecutor(repair_succeeds=False)
+        result = run_semantic(
+            self.ctx,
+            executor,
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+            statistics=self.statistics,
+        )
+        self.assertEqual(result.outcome, C.STATUS_FAILED)
+        self.assertIn("do not prove", result.error or "")
+        self.assertEqual(len(executor.prompts), 2)
+        self.assertEqual(
+            json.loads(template_path.read_text(encoding="utf-8"))["status"], "pending"
+        )
+        event_types = [
+            event.event_type for event in self.events.list_for_job(self.job.job_id)
+        ]
+        self.assertEqual(event_types.count("candidate_evidence_repair_started"), 1)
+        self.assertEqual(event_types.count("candidate_evidence_repair_failed"), 1)
 
     def test_nested_issue_12_shape_is_rejected_without_overwriting_template(self) -> None:
         template_path = self.ctx.run_dir / "observations" / "Feat-01.json"

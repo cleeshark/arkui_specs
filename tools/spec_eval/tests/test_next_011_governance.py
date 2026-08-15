@@ -26,7 +26,7 @@ from spec_eval.service.store.repositories import (
 )
 from spec_eval.service.store.sqlite_store import SqliteStore, utc_now
 
-EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.13"
+EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.14"
 
 
 class _GovTestBase(unittest.TestCase):
