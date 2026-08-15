@@ -10,6 +10,7 @@ not a maintained capability baseline.
 ├── run-state.json
 ├── work-items.json
 ├── output-contract.json
+├── aggregation-context.json
 ├── semantic-template.json
 ├── aggregation.json
 ├── observations/
@@ -33,9 +34,10 @@ Do not create `semantic-result.json` manually. Produce it with
 3. Complete its observation file and validate that checkpoint.
 4. Repeat for every Feature.
 5. Complete and validate `function-global`.
-6. Start a clean aggregation phase. Read the observation files, Rubric, and only the evidence
-   slices needed to resolve a remaining doubt.
-7. Complete `aggregation.json`, assemble `semantic-result.json`, and validate the final stage.
+6. Build `aggregation-context.json`, then start a clean aggregation phase. Read the context,
+   observation files, Rubric, and only the evidence slices needed to resolve a remaining doubt.
+7. Complete `aggregation.json`, reconcile mapped outcomes if validation reports only mapping
+   consistency errors, assemble `semantic-result.json`, and validate the final stage.
 
 Never rely on prior conversation memory for a completed work item. Treat its validated observation
 file as the durable handoff after context compaction or a new Agent session.
@@ -211,6 +213,35 @@ The same root defect may support Contradicted conclusions in its primary Criteri
 Criterion listed under `secondary_criterion_ids`. This does not create another owner or another
 Critical Finding. The historical field name `primary_defect_key` in a contradiction basis denotes
 the selected root basis key; `defect_ownership` remains authoritative for primary/secondary roles.
+
+For 0.1.13+ runs, generate the mapping before writing final Criterion results:
+
+```bash
+python3 specs/skills/ohos-design-arkui-spec-evaluator/scripts/build_aggregation_context.py \
+  --run-dir /tmp/spec-evaluator/<FuncID>/<unique-run-id>
+```
+
+Treat `aggregation-context.json` as authoritative for Criterion scope. Observations map through
+their `criterion_ids`; Claims map through `claim_reviews[].criterion_ids`; each atomic unit inherits
+the Criterion mapping of its parent Claim. `criterion_results[].claim_ids` may cite only those
+mapped Claims and cannot define or narrow aggregate scope. Observation `claim_ids` remain local
+fact references and do not independently map a Claim to a Criterion.
+
+Apply the context constraints before publishing a conclusion:
+
+- Any mapped `CONFLICT` or `MISSING` observation, Claim, or atomic unit forbids `SUPPORTED` and
+  `NOT_APPLICABLE`; choose the final adverse conclusion from semantic breadth and the frozen Rubric.
+- If mapped units contain `NOT_VERIFIABLE` and no mapped adverse unit, the Criterion conclusion is
+  `NOT_VERIFIABLE`.
+- Any applicable mapped unit forbids `NOT_APPLICABLE`.
+- Aggregation evidence may explain the result but cannot silently override a published mapped
+  outcome.
+
+If validation fails only these mapping-consistency rules, an automated service may request one
+bounded reconciliation. That pass reads only the failed candidate, initialized aggregation
+template, `output-contract.json`, and `aggregation-context.json`; it preserves unaffected Criteria
+and cannot reopen evidence or rewrite observations. Structural, evidence, ownership, or protocol
+errors are not eligible for this reconciliation.
 
 An aggregation may not conclude `SUPPORTED` or `NOT_APPLICABLE` for a Criterion that has a mapped
 `CONFLICT` or `MISSING` observation. Correct the observation mapping or use the applicable adverse

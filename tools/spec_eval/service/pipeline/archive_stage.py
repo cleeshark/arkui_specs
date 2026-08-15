@@ -43,6 +43,7 @@ def write_archive(
     run_ids: list[str],
     selected_run_id: str,
     site_snapshot_path: Path | None = None,
+    aggregation_contexts: dict[str, Path] | None = None,
 ) -> Path:
     """Atomically write the automated archive and return its directory."""
     target = archive_dir_for(settings, job)
@@ -59,6 +60,8 @@ def write_archive(
 
     for run_id, sr in semantic_results.items():
         copied.append((f"semantic-result-{run_id}.json", sr))
+    for run_id, context_path in (aggregation_contexts or {}).items():
+        copied.append((f"aggregation-context-{run_id}.json", context_path))
     for kind, path in aggregate_outputs.items():
         suffix = path.name
         copied.append((f"aggregate-{kind}-{suffix}", path))

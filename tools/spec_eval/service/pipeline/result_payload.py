@@ -61,11 +61,13 @@ def observation_prompt_contract(
 
 
 def aggregation_prompt_contract(
-    template_path: Path, output_contract_path: Path | None = None
+    template_path: Path,
+    output_contract_path: Path | None = None,
+    aggregation_context_path: Path | None = None,
 ) -> dict[str, Any]:
     output_contract_path = output_contract_path or template_path.parent / "output-contract.json"
     output_contract = _load_optional_output_contract(output_contract_path)
-    return {
+    contract = {
         "result_kind": "staged_aggregation_payload",
         "template_path": str(template_path),
         "output_contract_path": str(output_contract_path),
@@ -77,6 +79,9 @@ def aggregation_prompt_contract(
             "payload": output_contract.get("aggregation_payload", {}),
         },
     }
+    if aggregation_context_path is not None:
+        contract["aggregation_context_path"] = str(aggregation_context_path)
+    return contract
 
 
 def repair_prompt_contract(
@@ -96,6 +101,31 @@ def repair_prompt_contract(
             "Repair only the listed validation errors and linked references affected by those repairs.",
             "Do not reopen source, SDK, Spec, Design or evidence shards.",
             "Return the complete corrected executor-owned payload, not a patch.",
+        ],
+    })
+    return contract
+
+
+def aggregation_reconciliation_prompt_contract(
+    base_contract: dict[str, Any],
+    *,
+    candidate_path: Path,
+    aggregation_context_path: Path,
+    validation_errors: Iterable[str],
+) -> dict[str, Any]:
+    """Describe one bounded semantic reconciliation against published mappings."""
+    contract = copy.deepcopy(base_contract)
+    contract.update({
+        "mode": "reconcile_aggregation_candidate",
+        "candidate_path": str(candidate_path),
+        "aggregation_context_path": str(aggregation_context_path),
+        "validation_errors": list(validation_errors),
+        "reconciliation_constraints": [
+            "Treat aggregation-context.json as the complete authoritative mapped-unit scope.",
+            "Revise only Criteria named by validation_errors and directly linked findings, contradiction bases or defect ownership.",
+            "Do not alter published observations or invent a narrower claim scope through criterion_results[].claim_ids.",
+            "Do not reopen source, SDK, Spec, Design, Registry or evidence shards.",
+            "Return the complete corrected executor-owned aggregation payload, not a patch.",
         ],
     })
     return contract

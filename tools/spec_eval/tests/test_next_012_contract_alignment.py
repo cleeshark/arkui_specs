@@ -25,7 +25,7 @@ from spec_eval.service.store.repositories import (
 from spec_eval.service.store.sqlite_store import SqliteStore
 
 
-EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.12"
+EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.13"
 SOURCE_REVISION = "a" * 40
 
 
@@ -158,6 +158,97 @@ class _Issue13RepairExecutor(_PayloadExecutor):
             evidence_ids=[evidence_id],
         )
         return result
+
+
+ISSUE14_CRITERIA = (
+    "FUNCTION-FEAT-COVERAGE",
+    "FUNCTION-FEAT-DECOMPOSITION",
+    "FUNCTION-FEAT-BOUNDARY",
+)
+
+
+class _Issue14ObservationExecutor(_PayloadExecutor):
+    def execute(self, work: C.WorkItemInput, emit, cancel=None) -> C.ExecutionResult:
+        result = super().execute(work, emit, cancel)
+        if work.work_item_id != "function-global":
+            return result
+        payload = result.observation
+        assert payload is not None
+        payload["observations"][0]["criterion_ids"] = list(ISSUE14_CRITERIA)
+        return result
+
+
+class _Issue14AggregationExecutor:
+    def __init__(self, *, reconciliation_succeeds: bool = True) -> None:
+        self.reconciliation_succeeds = reconciliation_succeeds
+        self.prompts: list[C.WorkItemInput] = []
+
+    def is_available(self) -> bool:
+        return True
+
+    def describe(self) -> dict:
+        return {"type": "fake-issue14-aggregation-executor"}
+
+    def execute(self, work: C.WorkItemInput, emit, cancel=None) -> C.ExecutionResult:
+        self.prompts.append(work)
+        initialized = json.loads(
+            Path(work.prompt_extras["template_path"]).read_text(encoding="utf-8")
+        )
+        context = json.loads(
+            Path(work.prompt_extras["aggregation_context_path"]).read_text(encoding="utf-8")
+        )
+        required = {
+            row["criterion_id"]: row["constraints"]["required_conclusion_when_no_adverse"]
+            for row in context["criterion_mappings"]
+        }
+        reconciling = work.prompt_extras.get("mode") == "reconcile_aggregation_candidate"
+        criterion_results = []
+        for row in initialized["criterion_results"]:
+            completed = dict(row)
+            conclusion = required.get(row["criterion_id"]) or "NOT_VERIFIABLE"
+            if row["criterion_id"] in ISSUE14_CRITERIA and (
+                not reconciling or not self.reconciliation_succeeds
+            ):
+                conclusion = "SUPPORTED"
+            completed.update(
+                conclusion=conclusion,
+                reason=(
+                    "Published mapped units contain unresolved evidence gaps."
+                    if conclusion == "NOT_VERIFIABLE" else
+                    "Synthetic candidate claims complete support."
+                ),
+                missing_evidence=(
+                    "The mapped observation remains NOT_VERIFIABLE."
+                    if conclusion == "NOT_VERIFIABLE" else
+                    "No missing evidence was reported by the synthetic candidate."
+                ),
+                claim_ids=[],
+                evidence=[],
+                findings=[],
+            )
+            criterion_results.append(completed)
+        policy_bases = []
+        for row in initialized["outcome_policy_bases"]:
+            completed = dict(row)
+            completed.update(
+                content_status="PRESENT",
+                evidence_status="UNAVAILABLE",
+                conflict_scope="NONE",
+                reason="Synthetic policy evidence is intentionally unavailable.",
+            )
+            policy_bases.append(completed)
+        return C.ExecutionResult(
+            status=C.STATUS_COMPLETED,
+            exit_code=0,
+            observation={
+                "cross_feat_contracts_reviewed": True,
+                "contradiction_bases": [],
+                "defect_ownership": [],
+                "outcome_policy_bases": policy_bases,
+                "criterion_results": criterion_results,
+                "notes": [],
+            },
+        )
 
 
 class ContractAlignmentIntegrationTest(unittest.TestCase):
@@ -412,6 +503,79 @@ class ContractAlignmentIntegrationTest(unittest.TestCase):
         self.assertEqual(
             candidate["source_observation_ids"], ["feature:Feat-01", "function-global"]
         )
+
+    def test_issue_14_mapped_outcome_drift_is_reconciled_once(self) -> None:
+        semantic = run_semantic(
+            self.ctx,
+            _Issue14ObservationExecutor(),
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+        )
+        self.assertEqual(semantic.outcome, C.STATUS_COMPLETED, semantic.error)
+        self.jobs.transition_status(self.job.job_id, S.AGGREGATION, event_type="test")
+        executor = _Issue14AggregationExecutor()
+        outcome, semantic_result = aggregation_stage.run_aggregation(
+            self.ctx,
+            executor,
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+            statistics=self.statistics,
+        )
+        self.assertEqual(outcome, C.STATUS_COMPLETED)
+        self.assertTrue(semantic_result is not None and semantic_result.is_file())
+        self.assertEqual(len(executor.prompts), 2)
+        first, reconciliation = executor.prompts
+        context_path = self.ctx.run_dir / "aggregation-context.json"
+        self.assertIn(str(context_path), first.input_paths)
+        self.assertEqual(
+            reconciliation.prompt_extras["mode"], "reconcile_aggregation_candidate"
+        )
+        self.assertEqual(len(reconciliation.input_paths), 4)
+        self.assertTrue(
+            reconciliation.executor_result_path.endswith(
+                "aggregation.executor-result.reconcile-1.json"
+            )
+        )
+        aggregation = json.loads(
+            (self.ctx.run_dir / "aggregation.json").read_text(encoding="utf-8")
+        )
+        results = {row["criterion_id"]: row for row in aggregation["criterion_results"]}
+        for criterion_id in ISSUE14_CRITERIA:
+            self.assertEqual(results[criterion_id]["conclusion"], "NOT_VERIFIABLE")
+        event_types = [event.event_type for event in self.events.list_for_job(self.job.job_id)]
+        self.assertIn("aggregation_candidate_validation_failed", event_types)
+        self.assertIn("aggregation_reconciliation_started", event_types)
+        self.assertIn("aggregation_reconciliation_completed", event_types)
+        self.assertEqual(self.statistics.get(self.job.job_id).executor_invocations, 2)
+
+    def test_issue_14_failed_reconciliation_stops_after_one_round(self) -> None:
+        semantic = run_semantic(
+            self.ctx,
+            _Issue14ObservationExecutor(),
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+        )
+        self.assertEqual(semantic.outcome, C.STATUS_COMPLETED, semantic.error)
+        aggregation_path = self.ctx.run_dir / "aggregation.json"
+        before = aggregation_path.read_bytes()
+        self.jobs.transition_status(self.job.job_id, S.AGGREGATION, event_type="test")
+        executor = _Issue14AggregationExecutor(reconciliation_succeeds=False)
+        outcome, semantic_result = aggregation_stage.run_aggregation(
+            self.ctx,
+            executor,
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+            statistics=self.statistics,
+        )
+        self.assertEqual(outcome, C.STATUS_FAILED)
+        self.assertIsNone(semantic_result)
+        self.assertEqual(len(executor.prompts), 2)
+        self.assertEqual(aggregation_path.read_bytes(), before)
+        self.assertEqual(self.statistics.get(self.job.job_id).executor_invocations, 2)
 
     def test_aggregation_payload_passes_real_assemble_and_final_validator(self) -> None:
         semantic = run_semantic(

@@ -161,6 +161,19 @@ repair call restricted to the candidate, initialized template and machine contra
 reopen evidence or silently normalize output. Both executor calls retain separate result files and
 are included in Job duration/Token statistics.
 
+Evaluator 0.1.13 additionally generates `aggregation-context.json` after all observations pass.
+The file records each observation document hash and the authoritative observation, Claim, and
+atomic-unit mapping for every Criterion. Aggregation `claim_ids` are citations only and cannot
+narrow that scope. Mapped `CONFLICT`/`MISSING` units forbid Supported/Not Applicable, and a sole
+mapped Not Verifiable gap requires Not Verifiable. If an aggregation candidate fails only these
+mapping-consistency checks, the service performs at most one bounded reconciliation call. Its four
+inputs are the candidate, initialized aggregation template, `output-contract.json`, and
+`aggregation-context.json`; source, SDK, Spec, Design, Registry, evidence shards, and published
+observations are outside scope. Structural or evidence validation failures are not reconciled.
+The second invocation has its own `aggregation.executor-result.reconcile-1.json`, events, duration,
+and Token accounting. A failed reconciliation leaves the initialized aggregation template
+unchanged.
+
 The service also audits every structured-output schema object node for
 `additionalProperties: false` and complete `required` coverage before starting
 Codex. A locally invalid output schema therefore fails at service startup
@@ -196,6 +209,9 @@ redacted, so secret-bearing fields are not exposed through the UI.
 Archive publication is atomic and content-verified. Once
 `archive-manifest.json` exists, retry reuses the published archive and never
 replaces its bytes.
+
+Successful 0.1.13 archives also retain `aggregation-context-<run_id>.json` beside each semantic
+result so a historical Criterion conclusion can be audited against the exact published mapping.
 
 ## Lifecycle & recovery
 
@@ -272,7 +288,9 @@ pretending the export represents one global revision.
   Fix and the scheduler re-checks availability.
 - **`failed` during aggregation**: the frozen state matrix has no
   `aggregation → awaiting_executor` edge, so an unavailable executor there fails
-  the job; retry re-runs semantic + aggregation.
+  the job; retry re-runs semantic + aggregation. For 0.1.13 mapping failures, inspect
+  `aggregation-context.json` and the `aggregation_reconciliation_*` events. Only mapping-consistency
+  errors receive one reconciliation attempt; other validator errors fail directly.
 - **archive not reproducible**: re-run the job for the same FuncID + revision;
   deterministic score/report + content-hashed manifest make bytes match.
 - **refresh returns `deduplicated: true`**: an equivalent active refresh already

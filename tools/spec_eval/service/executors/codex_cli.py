@@ -299,6 +299,9 @@ class CodexCliExecutor:
     def _build_prompt(work: C.WorkItemInput) -> str:
         result_contract = dict(work.prompt_extras)
         repair_mode = result_contract.get("mode") == "repair_candidate"
+        reconciliation_mode = (
+            result_contract.get("mode") == "reconcile_aggregation_candidate"
+        )
         has_machine_contract = bool(
             result_contract.get("machine_contract", {}).get("payload")
         )
@@ -330,11 +333,25 @@ class CodexCliExecutor:
                 "Treat result_contract.machine_contract as normative for nested fields, enums, IDs, hashes and conditional ownership rules.",
                 "Return the complete corrected executor-owned payload, not a patch.",
             ]
+        if reconciliation_mode:
+            constraints = [
+                "Reconcile one aggregation candidate with the published mapped-unit outcomes.",
+                "Read only candidate_path, template_path, output_contract_path and aggregation_context_path from input_paths.",
+                "Treat aggregation-context.json as authoritative for Criterion scope and mapped outcomes.",
+                "Do not reopen source, SDK, Spec, Design, Registry or evidence shards and do not redo observation evaluation.",
+                "Preserve unaffected Criteria, semantic facts, evidence arrays and ordering.",
+                "Revise every Criterion named by validation_errors and any directly linked findings, contradiction bases or defect ownership.",
+                "Treat criterion_results[].claim_ids as citations only; they may not override or narrow the mapped scope.",
+                "Return the complete corrected executor-owned aggregation payload, not a patch.",
+            ]
         payload = {
             "task": (
                 "Repair one staged semantic evaluation candidate after validation failure."
-                if repair_mode else
-                "Complete exactly one staged semantic evaluation work item."
+                if repair_mode else (
+                    "Reconcile one staged aggregation candidate after mapped-unit validation failure."
+                    if reconciliation_mode else
+                    "Complete exactly one staged semantic evaluation work item."
+                )
             ),
             "constraints": constraints,
             "func_id": work.func_id,
