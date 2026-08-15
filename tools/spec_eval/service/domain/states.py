@@ -50,6 +50,15 @@ ACTIVE_STATES = frozenset({
 })
 """Non-terminal worker-owned states. On crash recovery each is reset to queued."""
 
+CANCELLABLE_WORKER_STATES = frozenset({PREPARING, EVIDENCE, SEMANTIC, AGGREGATION})
+"""States whose active worker must cooperatively finish a cancellation request."""
+
+IMMEDIATE_CANCEL_STATES = frozenset({QUEUED, AWAITING_EXECUTOR})
+"""States with no executing worker; cancellation can be persisted immediately."""
+
+QUIESCENT_STATES = TERMINAL_STATES | frozenset({AWAITING_EXECUTOR})
+"""States in which a dispatcher worker may release its in-memory registration."""
+
 RESUMABLE_STATES = frozenset({QUEUED, FAILED, CANCELLED, AWAITING_EXECUTOR})
 """States a recovered job may legitimately land in (never completed)."""
 
@@ -103,7 +112,7 @@ TRANSITIONS: dict[str, frozenset[str]] = {
     EVIDENCE: frozenset({SEMANTIC, FAILED, CANCELLED}),
     SEMANTIC: frozenset({AGGREGATION, FAILED, CANCELLED, AWAITING_EXECUTOR}),
     AWAITING_EXECUTOR: frozenset({SEMANTIC, CANCELLED}),
-    AGGREGATION: frozenset({ARCHIVE, FAILED}),
+    AGGREGATION: frozenset({ARCHIVE, FAILED, CANCELLED}),
     ARCHIVE: frozenset({SITE_HISTORY, FAILED}),
     SITE_HISTORY: frozenset({COMPLETED, FAILED}),
     COMPLETED: frozenset(),  # terminal, read-only

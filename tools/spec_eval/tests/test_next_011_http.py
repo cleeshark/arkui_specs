@@ -12,12 +12,14 @@ from __future__ import annotations
 import json
 import tempfile
 import threading
+import time
 import unittest
 import urllib.error
 import urllib.request
 from pathlib import Path
 
 from spec_eval.service.app import SemanticServiceApp
+from spec_eval.service.domain import states as S
 from spec_eval.service.domain.models import Artifact
 from spec_eval.service.http.routes import route_request
 from spec_eval.service.http.server import make_server
@@ -97,11 +99,68 @@ class EventsTest(_HttpTestBase):
 
 
 class CancelRetryTest(_HttpTestBase):
-    def test_cancel_running_job(self) -> None:
+    def test_cancel_queued_job_immediately(self) -> None:
         _, job = self._req("POST", "/api/jobs", {"func_id": "04-01-01"})
         status, body = self._req("POST", f"/api/jobs/{job['job_id']}/cancel")
         self.assertEqual(status, 200)
         self.assertTrue(body["cancelled"])
+        self.assertEqual(body["outcome"], "cancelled")
+        self.assertEqual(JobRepository(self.app.store).get_job(job["job_id"]).status, S.CANCELLED)
+
+    def test_cancel_active_job_reports_request_accepted(self) -> None:
+        _, job = self._req("POST", "/api/jobs", {"func_id": "04-01-01"})
+        jobs = JobRepository(self.app.store)
+        jobs.transition_status(job["job_id"], S.PREPARING, event_type="enter_preparing")
+        jobs.transition_status(job["job_id"], S.EVIDENCE, event_type="enter_evidence")
+        jobs.transition_status(job["job_id"], S.SEMANTIC, event_type="enter_semantic")
+
+        status, body = self._req("POST", f"/api/jobs/{job['job_id']}/cancel")
+
+        self.assertEqual(status, 202)
+        self.assertFalse(body["cancelled"])
+        self.assertEqual(body["outcome"], "cancellation_requested")
+        self.assertEqual(jobs.get_job(job["job_id"]).status, S.SEMANTIC)
+
+        status, body = self._req("POST", f"/api/jobs/{job['job_id']}/cancel")
+        self.assertEqual(status, 202)
+        self.assertEqual(body["outcome"], "cancellation_already_requested")
+
+    def test_cancel_unknown_job_is_404(self) -> None:
+        status, body = self._req("POST", "/api/jobs/no-such-job/cancel")
+        self.assertEqual(status, 404)
+        self.assertEqual(body["outcome"], "not_found")
+
+    def test_cancel_completed_job_reports_terminal_state(self) -> None:
+        _, job = self._req("POST", "/api/jobs", {"func_id": "04-01-01"})
+        jobs = JobRepository(self.app.store)
+        jobs.transition_status(job["job_id"], S.PREPARING, event_type="enter_preparing")
+        jobs.transition_status(job["job_id"], S.EVIDENCE, event_type="enter_evidence")
+        jobs.transition_status(job["job_id"], S.SEMANTIC, event_type="enter_semantic")
+        jobs.transition_status(job["job_id"], S.AGGREGATION, event_type="enter_aggregation")
+        jobs.transition_status(job["job_id"], S.ARCHIVE, event_type="enter_archive")
+        jobs.transition_status(job["job_id"], S.SITE_HISTORY, event_type="enter_site_history")
+        jobs.transition_status(job["job_id"], S.COMPLETED, event_type="job_completed")
+
+        status, body = self._req("POST", f"/api/jobs/{job['job_id']}/cancel")
+
+        self.assertEqual(status, 409)
+        self.assertEqual(body["outcome"], "already_terminal")
+        self.assertEqual(body["status"], S.COMPLETED)
+
+    def test_cancel_archive_job_reports_stage_not_cancellable(self) -> None:
+        _, job = self._req("POST", "/api/jobs", {"func_id": "04-01-01"})
+        jobs = JobRepository(self.app.store)
+        jobs.transition_status(job["job_id"], S.PREPARING, event_type="enter_preparing")
+        jobs.transition_status(job["job_id"], S.EVIDENCE, event_type="enter_evidence")
+        jobs.transition_status(job["job_id"], S.SEMANTIC, event_type="enter_semantic")
+        jobs.transition_status(job["job_id"], S.AGGREGATION, event_type="enter_aggregation")
+        jobs.transition_status(job["job_id"], S.ARCHIVE, event_type="enter_archive")
+
+        status, body = self._req("POST", f"/api/jobs/{job['job_id']}/cancel")
+
+        self.assertEqual(status, 409)
+        self.assertEqual(body["outcome"], "stage_not_cancellable")
+        self.assertEqual(body["status"], S.ARCHIVE)
 
     def test_retry_cancelled_job(self) -> None:
         _, job = self._req("POST", "/api/jobs", {"func_id": "04-01-01"})
@@ -190,9 +249,95 @@ class StaticUITest(_HttpTestBase):
         self.assertEqual(css_status, 200)
         self.assertIn("@keyframes activity-spin", css)
 
+    def test_ui_reports_cancel_and_retry_action_errors(self) -> None:
+        status, body = self._req("GET", "/")
+        self.assertEqual(status, 200)
+        self.assertIn('id="action-error"', body)
+        js_status, js = self._req("GET", "/static/app.js")
+        self.assertEqual(js_status, 200)
+        self.assertIn("runJobAction", js)
+        self.assertIn("if (!res.ok)", js)
+
+    def test_ui_contains_independent_function_and_job_pagination(self) -> None:
+        status, body = self._req("GET", "/")
+        self.assertEqual(status, 200)
+        for prefix in ("functions", "jobs"):
+            self.assertIn(f'id="{prefix}-page-size"', body)
+            self.assertIn(f'id="{prefix}-page-prev"', body)
+            self.assertIn(f'id="{prefix}-page-next"', body)
+            self.assertIn(f'id="{prefix}-page-info"', body)
+        self.assertEqual(body.count('<option value="10">10</option>'), 2)
+        self.assertEqual(body.count('<option value="50">50</option>'), 2)
+        self.assertEqual(body.count('<option value="100">100</option>'), 2)
+
+    def test_ui_paginates_filtered_results_and_resets_pages_from_controls(self) -> None:
+        js_status, js = self._req("GET", "/static/app.js")
+        self.assertEqual(js_status, 200)
+        self.assertIn("function paginate(items, page, pageSize)", js)
+        self.assertIn("let functionsPage = 1", js)
+        self.assertIn("let jobsPage = 1", js)
+        self.assertIn("functionsPage = 1", js)
+        self.assertIn("jobsPage = 1", js)
+        self.assertIn('functionsPageSize.addEventListener("change"', js)
+        self.assertIn('jobsPageSize.addEventListener("change"', js)
+        self.assertIn('functionsPagePrev.addEventListener("click"', js)
+        self.assertIn('functionsPageNext.addEventListener("click"', js)
+        self.assertIn('jobsPagePrev.addEventListener("click"', js)
+        self.assertIn('jobsPageNext.addEventListener("click"', js)
+
     def test_static_traversal_rejected(self) -> None:
         status, _ = self._req("GET", "/static/../../etc/passwd")
         self.assertEqual(status, 404)
+
+
+class CancelLifecycleEndToEndTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.settings = ServiceSettings.discover(data_root=Path(self.tmp.name))
+
+        def blocking_runner(job_id: str, cancel: threading.Event) -> None:
+            jobs = JobRepository(self.app.store)
+            jobs.transition_status(job_id, S.PREPARING, event_type="enter_preparing")
+            jobs.transition_status(job_id, S.EVIDENCE, event_type="enter_evidence")
+            jobs.transition_status(job_id, S.SEMANTIC, event_type="enter_semantic")
+            while not cancel.is_set():
+                time.sleep(0.01)
+
+        self.app = SemanticServiceApp(
+            self.settings, max_workers=1, job_runner=blocking_runner, token=None
+        )
+        self.app.start()
+
+    def tearDown(self) -> None:
+        self.app.stop()
+        self.tmp.cleanup()
+
+    def _req(self, method: str, path: str, body=None) -> tuple[int, object]:
+        raw_body = b"" if body is None else json.dumps(body).encode("utf-8")
+        resp = route_request(method, path, raw_body, {}, self.app)
+        return resp.status, json.loads(resp.body.decode("utf-8"))
+
+    def test_cancel_reaches_terminal_state_and_second_request_is_truthful(self) -> None:
+        _, job = self._req("POST", "/api/jobs", {"func_id": "04-01-01"})
+        jobs = JobRepository(self.app.store)
+        deadline = time.monotonic() + 3.0
+        while jobs.get_job(job["job_id"]).status != S.SEMANTIC and time.monotonic() < deadline:
+            time.sleep(0.01)
+        self.assertEqual(jobs.get_job(job["job_id"]).status, S.SEMANTIC)
+
+        status, body = self._req("POST", f"/api/jobs/{job['job_id']}/cancel")
+        self.assertEqual(status, 202)
+        self.assertEqual(body["outcome"], "cancellation_requested")
+
+        deadline = time.monotonic() + 3.0
+        while jobs.get_job(job["job_id"]).status != S.CANCELLED and time.monotonic() < deadline:
+            time.sleep(0.01)
+        self.assertEqual(jobs.get_job(job["job_id"]).status, S.CANCELLED)
+
+        status, body = self._req("POST", f"/api/jobs/{job['job_id']}/cancel")
+        self.assertEqual(status, 409)
+        self.assertEqual(body["outcome"], "already_terminal")
+        self.assertEqual(body["status"], S.CANCELLED)
 
 
 class EndToEndServerTest(unittest.TestCase):
