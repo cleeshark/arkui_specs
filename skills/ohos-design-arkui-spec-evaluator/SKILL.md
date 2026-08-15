@@ -13,7 +13,7 @@ metadata:
   stage: design
   domain: arkui
   capability: spec-evaluator
-  version: 0.1.16
+  version: 0.1.17
   status: mvp
   evaluation-unit: function
   rubric-version: 0.3.0
@@ -150,6 +150,14 @@ Every observation except `NOT_VERIFIABLE` carries at least one reproducible evid
 `NOT_APPLICABLE` is not an evidence-free explanation: cite the frozen Spec, Design, Registry, SDK,
 or source location that proves the checked unit is inapplicable. A `fact` string does not replace
 evidence.
+
+For evaluator 0.1.17+, every Claim `reason` and atomic unit `fact` must state the evidence-specific
+proposition rather than repeat only the outcome token such as `supported`. Evidence IDs referenced
+by Claim and unit rows must be defined by an observation in the same work item. If the service
+rejects dangling references, it may request one bounded re-review of only the named Claim rows
+against the original scoped frozen inputs. Reuse only defined evidence IDs; when none proves the
+current judgment, downgrade only the affected Claim or unit to `NOT_VERIFIABLE` and explain the
+gap. Do not add observations, create defects, upgrade outcomes, or alter non-target Claims.
 
 For each Feature observation:
 

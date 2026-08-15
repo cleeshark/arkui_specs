@@ -288,6 +288,43 @@ class CodexExecutorTest(unittest.TestCase):
             prompt["result_contract"]["mode"], "complete_observation_evidence"
         )
 
+    def test_claim_evidence_repair_prompt_is_targeted_and_evidence_bounded(self) -> None:
+        work = replace(
+            self.work,
+            input_paths=(
+                "/tmp/.Feat-01.json.candidate",
+                "/tmp/Feat-01.json",
+                "/tmp/output-contract.json",
+                "/tmp/input/evidence/Feat-01.json",
+                "/tmp/specs/Feat-01-spec.md",
+            ),
+            prompt_extras={
+                "mode": "repair_claim_evidence_references",
+                "result_kind": "staged_observation_payload",
+                "template_path": "/tmp/Feat-01.json",
+                "output_contract_path": "/tmp/output-contract.json",
+                "candidate_path": "/tmp/.Feat-01.json.candidate",
+                "validation_errors": [
+                    "observation[feature:Feat-01].claim_reviews[51].evidence_ids: "
+                    "unknown evidence ['EV-q']"
+                ],
+                "target_claim_ids": ["Feat-01/R-33"],
+                "available_evidence_ids": ["EV-defined"],
+                "payload_fields": ["claim_reviews", "observations", "open_questions", "notes"],
+                "service_derived_fields": ["status", "reviewed_claim_ids", "completed_checks"],
+                "machine_contract": {"payload": {"claim_reviews": {}}},
+            },
+        )
+        runner = _FakeRunner(result_doc=_result_doc(work.work_item_id))
+        self._executor(runner).execute(work, lambda e: None)
+        prompt = json.loads(runner.last_stdin or "{}")
+        self.assertIn("Repair dangling Claim evidence references", prompt["task"])
+        constraints = " ".join(prompt["constraints"])
+        self.assertIn("target_claim_ids", constraints)
+        self.assertIn("available_evidence_ids", constraints)
+        self.assertIn("NOT_VERIFIABLE", constraints)
+        self.assertIn("Preserve every non-target Claim", constraints)
+
     def test_aggregation_reconciliation_prompt_uses_published_mapping_only(self) -> None:
         work = replace(
             self.work,

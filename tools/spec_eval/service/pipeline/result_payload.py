@@ -136,6 +136,35 @@ def observation_evidence_repair_prompt_contract(
     return contract
 
 
+def claim_evidence_repair_prompt_contract(
+    base_contract: dict[str, Any],
+    *,
+    candidate_path: Path,
+    validation_errors: Iterable[str],
+    target_claim_ids: Iterable[str],
+    available_evidence_ids: Iterable[str],
+) -> dict[str, Any]:
+    """Describe one bounded Claim evidence re-review against frozen inputs."""
+    contract = copy.deepcopy(base_contract)
+    contract.update({
+        "mode": "repair_claim_evidence_references",
+        "candidate_path": str(candidate_path),
+        "validation_errors": list(validation_errors),
+        "target_claim_ids": list(target_claim_ids),
+        "available_evidence_ids": list(available_evidence_ids),
+        "repair_constraints": [
+            "Use only the candidate and the original scoped frozen inputs.",
+            "Re-review only the named Claim rows and their atomic unit reviews.",
+            "Reference only evidence IDs already defined by candidate observations.",
+            "Replace outcome-only reason or fact text with an evidence-specific explanation.",
+            "If existing evidence cannot support the current outcome, downgrade only the affected Claim or unit to NOT_VERIFIABLE and explain the evidence gap.",
+            "Do not add evidence, create defects, upgrade outcomes, or change Claim/Criteria/unit scope and ordering.",
+            "Return the complete corrected executor-owned payload, not a patch.",
+        ],
+    })
+    return contract
+
+
 def aggregation_reconciliation_prompt_contract(
     base_contract: dict[str, Any],
     *,

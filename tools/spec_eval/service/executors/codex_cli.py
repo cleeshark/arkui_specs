@@ -302,6 +302,9 @@ class CodexCliExecutor:
         evidence_completion_mode = (
             result_contract.get("mode") == "complete_observation_evidence"
         )
+        claim_evidence_repair_mode = (
+            result_contract.get("mode") == "repair_claim_evidence_references"
+        )
         reconciliation_mode = (
             result_contract.get("mode") == "reconcile_aggregation_candidate"
         )
@@ -347,6 +350,17 @@ class CodexCliExecutor:
                 "Treat result_contract.machine_contract as normative for evidence fields and cardinality.",
                 "Return the complete corrected executor-owned payload, not a patch.",
             ]
+        if claim_evidence_repair_mode:
+            constraints = [
+                "Re-review only the Claim rows named by result_contract.target_claim_ids after dangling evidence references were rejected.",
+                "Read only candidate_path, template_path, output_contract_path and the original scoped frozen inputs listed in input_paths.",
+                "Use only evidence IDs listed by result_contract.available_evidence_ids and verify that the frozen evidence supports the retained outcome.",
+                "Replace outcome-only reason or fact text with an evidence-specific explanation for each target Claim and unit.",
+                "If existing evidence cannot support the current outcome, downgrade only the affected Claim or unit to NOT_VERIFIABLE, clear its evidence IDs and explain the evidence gap.",
+                "Do not add or modify observations, create defects, upgrade outcomes, or change Claim IDs, Criterion mappings, reviewed units, facet types or array ordering.",
+                "Preserve every non-target Claim row exactly.",
+                "Return the complete corrected executor-owned payload, not a patch.",
+            ]
         if reconciliation_mode:
             constraints = [
                 "Reconcile one aggregation candidate with the published mapped-unit outcomes.",
@@ -364,9 +378,12 @@ class CodexCliExecutor:
                 if repair_mode else (
                     "Complete missing observation evidence in one staged semantic evaluation candidate."
                     if evidence_completion_mode else (
-                    "Reconcile one staged aggregation candidate after mapped-unit validation failure."
-                    if reconciliation_mode else
-                    "Complete exactly one staged semantic evaluation work item."
+                    "Repair dangling Claim evidence references in one staged semantic evaluation candidate."
+                    if claim_evidence_repair_mode else (
+                        "Reconcile one staged aggregation candidate after mapped-unit validation failure."
+                        if reconciliation_mode else
+                        "Complete exactly one staged semantic evaluation work item."
+                        )
                     )
                 )
             ),

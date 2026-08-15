@@ -186,6 +186,15 @@ only the named observation evidence arrays. It cannot change outcomes, facts, Cl
 mappings, defect ownership, non-target evidence, or ordering; if the scoped inputs do not prove the
 existing fact, it fails instead of inventing evidence or downgrading the outcome.
 
+For evaluator 0.1.17+, Claim `reason` and unit `fact` values must contain an evidence-specific
+explanation; an outcome token by itself is not a completed review. Dangling Claim or unit
+`evidence_ids` may trigger one bounded Claim re-review. The pass reads the candidate and original
+scoped frozen inputs, targets only the named Claim IDs, and may reference only evidence already
+defined by candidate observations. It may preserve the existing outcome with corrected references,
+or conservatively downgrade an affected Claim/unit to `NOT_VERIFIABLE` with empty references and a
+specific explanation. Observations, non-target Claims, mappings, reviewed units, facet types,
+defects, and ordering remain unchanged, and the complete candidate is validated again.
+
 ## Function-global scope
 
 The `function-global` observation reviews:

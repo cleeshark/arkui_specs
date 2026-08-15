@@ -218,6 +218,15 @@ from actual owned Findings, and performs the existing unambiguous alias/N/A norm
 repairable and non-repairable errors can no longer suppress the deterministic pass. Remaining
 structural errors still fail, while mapping-only errors continue into bounded reconciliation.
 
+Evaluator 0.1.17 replaces the observation-side homogeneous repair gate with a bounded category
+router. Mechanical contract drift, missing observation evidence, and dangling Claim/unit evidence
+references each receive at most one dedicated repair attempt before full revalidation. The Claim
+evidence mode reopens only the original scoped frozen inputs, targets stable Claim IDs, may reuse
+only evidence IDs already defined by observations, and is rejected if it changes observations,
+non-target Claims, mappings, defects, or ordering. If no defined evidence supports the current
+judgment, only a conservative target-level downgrade to `NOT_VERIFIABLE` is permitted. New runs
+also reject outcome-only Claim reasons and unit facts such as `supported`.
+
 The service also audits every structured-output schema object node for
 `additionalProperties: false` and complete `required` coverage before starting
 Codex. A locally invalid output schema therefore fails at service startup
