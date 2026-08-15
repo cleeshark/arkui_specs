@@ -32,6 +32,7 @@ SCHEMA_V2_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.12",
     "skill:ohos-design-arkui-spec-evaluator@0.1.13",
     "skill:ohos-design-arkui-spec-evaluator@0.1.14",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.15",
     DEFAULT_EVALUATOR_VERSION,
 }
 DEEP_CONTRACT_EVALUATOR_VERSIONS = {
@@ -41,6 +42,7 @@ DEEP_CONTRACT_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.12",
     "skill:ohos-design-arkui-spec-evaluator@0.1.13",
     "skill:ohos-design-arkui-spec-evaluator@0.1.14",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.15",
     DEFAULT_EVALUATOR_VERSION,
 }
 UNVERIFIABLE_GUARD_EVALUATOR_VERSIONS = {
@@ -49,11 +51,13 @@ UNVERIFIABLE_GUARD_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.12",
     "skill:ohos-design-arkui-spec-evaluator@0.1.13",
     "skill:ohos-design-arkui-spec-evaluator@0.1.14",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.15",
     DEFAULT_EVALUATOR_VERSION,
 }
 AGGREGATION_MAPPING_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.13",
     "skill:ohos-design-arkui-spec-evaluator@0.1.14",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.15",
     DEFAULT_EVALUATOR_VERSION,
 }
 OUTCOME_POLICY_BASIS_EVALUATOR_VERSIONS = {
@@ -61,9 +65,13 @@ OUTCOME_POLICY_BASIS_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.12",
     "skill:ohos-design-arkui-spec-evaluator@0.1.13",
     "skill:ohos-design-arkui-spec-evaluator@0.1.14",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.15",
     DEFAULT_EVALUATOR_VERSION,
 }
-FINAL_AGGREGATION_CONTRACT_EVALUATOR_VERSIONS = {DEFAULT_EVALUATOR_VERSION}
+FINAL_AGGREGATION_CONTRACT_EVALUATOR_VERSIONS = {
+    "skill:ohos-design-arkui-spec-evaluator@0.1.15",
+    DEFAULT_EVALUATOR_VERSION,
+}
 AGGREGATION_CONTEXT_SCHEMA_VERSION = 1
 SEMANTIC_FINDING_IDENTITY_VERSION = 1
 OUTCOME_POLICY_BASIS_CRITERIA = [
@@ -297,7 +305,7 @@ def staged_output_contract(
             EVALUATION_ROOT / "schemas" / "semantic-result.schema.json"
         )
         schema_defs = semantic_schema.get("$defs", {})
-        aggregation_payload["final_contract"] = {
+        final_contract = {
             "semantic_finding_schema": copy.deepcopy(schema_defs["semantic_finding"]),
             "criterion_result_schema": copy.deepcopy(schema_defs["criterion_result"]),
             "conditional_fields": {
@@ -331,6 +339,44 @@ def staged_output_contract(
                 ),
             },
         }
+        if evaluator_version == DEFAULT_EVALUATOR_VERSION:
+            final_contract["finding_identity"].update({
+                "executor_input": {
+                    "role": "provisional_correlation_key",
+                    "requirements": ["non-empty string", "unique within aggregation"],
+                    "canonical_hash_required": False,
+                },
+                "published_output": {
+                    "service_derived": True,
+                    "pattern": schema_defs["semantic_finding"]["properties"][
+                        "finding_id"
+                    ]["pattern"],
+                },
+                "rule": (
+                    "The executor supplies only a unique provisional correlation key. The "
+                    "service publishes SEM- plus the first 24 lowercase hex characters of "
+                    "SHA-256 over canonical JSON of the declared identity fields. "
+                    "Classification and prose fields do not participate in identity."
+                ),
+            })
+            final_contract["defect_ownership"] = {
+                "finding_ids": {
+                    "executor_input": "References provisional Finding correlation keys.",
+                    "published_output": "Rewritten to service-canonical Finding IDs.",
+                },
+                "secondary_criterion_ids": {
+                    "service_derived": True,
+                    "formula": (
+                        "sorted(unique Criterion IDs of Findings referenced by finding_ids "
+                        "minus primary_criterion_id)"
+                    ),
+                    "semantic_rule": (
+                        "A secondary Criterion must be represented by an actual Finding "
+                        "owned by the same defect record."
+                    ),
+                },
+            }
+        aggregation_payload["final_contract"] = final_contract
     return {
         "schema_version": 1,
         "staged_schema_version": STAGED_SCHEMA_VERSION,
@@ -1399,7 +1445,7 @@ def validate_aggregation_document(
 def repair_aggregation_contract(
     document: dict[str, Any],
 ) -> tuple[dict[str, Any], list[str]]:
-    """Apply the evaluator 0.1.15 deterministic final-contract repair once.
+    """Apply deterministic final-contract normalization once.
 
     The repair is deliberately structural: it does not change conclusions,
     classification, evidence, recommendations, or explanatory prose.
@@ -1484,7 +1530,7 @@ def repair_aggregation_contract(
                 criterion_id=criterion_id,
                 claim_id=claim_id,
             )
-            if new_id in canonical_ids and new_id != old_id:
+            if new_id in canonical_ids:
                 raise ValueError(f"{label}: deterministic Finding ID collision {new_id}")
             canonical_ids.add(new_id)
             if old_id != new_id:
@@ -1499,6 +1545,53 @@ def repair_aggregation_contract(
         if updated != record["finding_ids"]:
             record["finding_ids"] = updated
             changes.append(f"defect_ownership[{owner_index}].finding_ids synchronized")
+
+    findings_by_id: dict[str, dict[str, Any]] = {}
+    for result in results:
+        if not isinstance(result, dict) or not isinstance(result.get("findings"), list):
+            continue
+        for finding in result["findings"]:
+            if not isinstance(finding, dict):
+                continue
+            finding_id = finding.get("finding_id")
+            if not isinstance(finding_id, str):
+                continue
+            if finding_id in findings_by_id:
+                raise ValueError(f"duplicate Finding correlation key {finding_id}")
+            findings_by_id[finding_id] = finding
+
+    for owner_index, record in enumerate(ownership):
+        if not isinstance(record, dict):
+            continue
+        primary = record.get("primary_criterion_id")
+        finding_ids = record.get("finding_ids")
+        if not isinstance(primary, str) or not isinstance(finding_ids, list):
+            continue
+        owned_findings = [
+            findings_by_id.get(finding_id)
+            for finding_id in finding_ids
+            if isinstance(finding_id, str)
+        ]
+        if len(owned_findings) != len(finding_ids) or any(
+            finding is None for finding in owned_findings
+        ):
+            continue
+        if any(
+            not isinstance(finding, dict)
+            or not isinstance(finding.get("criterion_id"), str)
+            for finding in owned_findings
+        ):
+            continue
+        expected_secondary = sorted({
+            finding["criterion_id"]
+            for finding in owned_findings
+            if isinstance(finding, dict) and finding["criterion_id"] != primary
+        })
+        if record.get("secondary_criterion_ids") != expected_secondary:
+            record["secondary_criterion_ids"] = expected_secondary
+            changes.append(
+                f"defect_ownership[{owner_index}].secondary_criterion_ids derived"
+            )
     return repaired, changes
 
 

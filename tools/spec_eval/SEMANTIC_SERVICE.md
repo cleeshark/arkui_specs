@@ -209,6 +209,15 @@ Different simultaneous `message` and `problem` values fail without publishing th
 repair is observable through `aggregation_contract_repair_started`, `_completed`, and `_failed`
 events and remains separate from 0.1.13 mapping reconciliation.
 
+Evaluator 0.1.16 moves canonical Finding IDs and ownership secondary Criteria fully behind the
+service boundary. Executor Finding IDs are unique provisional correlation keys; the service does
+not trust or require model-generated hashes. Before the first aggregation validation it always
+runs one deterministic normalization for any frozen contract containing `final_contract`, including
+in-flight 0.1.15 runs. The pass canonicalizes Finding and ownership IDs, derives secondary Criteria
+from actual owned Findings, and performs the existing unambiguous alias/N/A normalization. Mixed
+repairable and non-repairable errors can no longer suppress the deterministic pass. Remaining
+structural errors still fail, while mapping-only errors continue into bounded reconciliation.
+
 The service also audits every structured-output schema object node for
 `additionalProperties: false` and complete `required` coverage before starting
 Codex. A locally invalid output schema therefore fails at service startup
@@ -325,7 +334,7 @@ pretending the export represents one global revision.
   `aggregation → awaiting_executor` edge, so an unavailable executor there fails
   the job; retry re-runs semantic + aggregation. For 0.1.13 mapping failures, inspect
   `aggregation-context.json` and the `aggregation_reconciliation_*` events. Only mapping-consistency
-  errors receive one reconciliation attempt. For 0.1.15 final-contract drift, inspect the
+  errors receive one reconciliation attempt. For 0.1.15+ final-contract normalization, inspect the
   `aggregation_contract_repair_*` events; ambiguous aliases and unrepaired structural errors fail
   before assemble.
 - **archive not reproducible**: re-run the job for the same FuncID + revision;

@@ -269,6 +269,15 @@ evidence-backed N/A `reason` to `applicability_reason`, and rewrite Finding IDs 
 `defect_ownership[].finding_ids` references. Any ambiguous alias or remaining structural error
 fails validation.
 
+For evaluator 0.1.16+, Finding IDs in executor output are provisional correlation keys. They must
+be non-empty and unique within the aggregation, but the executor does not calculate the final
+SHA-256 value. Before the first validation, the service canonicalizes Finding IDs and ownership
+references and derives `secondary_criterion_ids` as the sorted unique Criterion IDs of the owned
+Findings minus `primary_criterion_id`. Therefore, a secondary Criterion named for semantic reasons
+must also have an actual Finding referenced by the same ownership record; the service never creates
+that Finding by inference. This normalization runs independently of other validation errors, then
+the remaining errors are evaluated or routed to mapping reconciliation.
+
 An aggregation may not conclude `SUPPORTED` or `NOT_APPLICABLE` for a Criterion that has a mapped
 `CONFLICT` or `MISSING` observation. Correct the observation mapping or use the applicable adverse
 aggregate conclusion.

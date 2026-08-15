@@ -13,7 +13,7 @@ metadata:
   stage: design
   domain: arkui
   capability: spec-evaluator
-  version: 0.1.15
+  version: 0.1.16
   status: mvp
   evaluation-unit: function
   rubric-version: 0.3.0
@@ -376,18 +376,25 @@ Contradicted Criteria use the same root as evidence without becoming duplicate o
 
 For evaluator 0.1.15+, read `aggregation_payload.final_contract` from
 `output-contract.json` before producing Findings. Its Finding and Criterion-result schemas are
-copied from the final semantic-result Schema. Finding IDs are service-canonical identities:
-`SEM-` plus the first 24 lowercase hexadecimal characters of SHA-256 over canonical JSON containing
-`identity_version`, `func_id`, `defect_key`, `criterion_id`, and optional `claim_id`. Do not derive
-IDs from severity, conclusion, message, recommendation, revision, or run ID. Use `message`, not the
-legacy `problem` alias, and include `applicability_reason` for every `NOT_APPLICABLE` result.
+copied from the final semantic-result Schema. Use `message`, not the legacy `problem` alias, and
+include `applicability_reason` for every `NOT_APPLICABLE` result.
 
-Before publishing aggregation, the validator builds the in-memory final candidate and applies the
-same schema and protocol checks used after assembly. The service may make one deterministic,
-model-free repair that migrates an unambiguous `problem` value to `message`, copies an existing
-evidence-backed N/A `reason` to `applicability_reason`, and rewrites Finding IDs plus ownership
-references to their canonical values. Different simultaneous `message` and `problem` values fail;
-classification, prose, evidence, and conclusions are never inferred or rewritten.
+For evaluator 0.1.16+, give each Finding a non-empty unique provisional correlation key and use
+that same key in `defect_ownership[].finding_ids`; do not calculate or guess the final hash. Before
+validation, the service replaces those keys with canonical `SEM-` IDs derived from
+`identity_version`, `func_id`, `defect_key`, `criterion_id`, and optional `claim_id`. It also derives
+`secondary_criterion_ids` exactly from the Criterion IDs of Findings referenced by the ownership
+record, excluding its primary Criterion. If one root defect affects another Criterion, emit an
+actual Finding for that Criterion under the same ownership record; a secondary name alone is not a
+semantic Finding.
+
+Before publishing aggregation, the service performs one deterministic, model-free normalization,
+then the validator builds the in-memory final candidate and applies the same schema and protocol
+checks used after assembly. Normalization migrates an unambiguous `problem` value to `message`,
+copies an existing evidence-backed N/A `reason` to `applicability_reason`, canonicalizes Finding and
+ownership IDs, and derives secondary Criteria. Different simultaneous `message` and `problem`
+values, ambiguous ownership, or identity collisions fail; classification, prose, evidence,
+conclusions, and missing secondary Findings are never inferred or rewritten.
 
 When the service reports only 0.1.13 mapped-outcome or mapped-Claim citation errors, it may perform
 one bounded reconciliation against the candidate, initialized template, `output-contract.json`,

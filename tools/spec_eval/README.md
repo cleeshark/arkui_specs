@@ -847,6 +847,7 @@ python3 specs/tools/spec_eval/service_cli.py serve --port 8790 --max-workers 2
 - evaluator 0.1.13 会在聚合前生成 `aggregation-context.json`，固定 observation/Claim/atomic unit 到 Criterion 的映射；若 aggregation 候选仅违反映射结论或 Claim 引用规则，服务最多执行一次只读取候选、模板、输出契约和映射上下文的受限对账，不会重读源码或改写 observation。
 - evaluator 0.1.14 将 observation outcome 对 evidence 最小条数的要求写入机器契约：除 `NOT_VERIFIABLE` 外均至少 1 条，`NOT_APPLICABLE` 也必须引用证明不适用的冻结证据。若候选仅有空 evidence，服务最多执行一次读取原始作用域输入的补证；任何 outcome、fact、映射、ownership 或非目标 evidence 漂移都会被拒绝。
 - evaluator 0.1.15 将最终 Finding/criterion-result Schema 同源发布到聚合机器契约，并在发布 aggregation 前构建内存 final candidate 执行最终校验。服务可进行一次不调用模型的确定性结构修复：无歧义地迁移 `problem` 到 `message`、补齐已有证据支持的 N/A 原因，并按 FuncID/defect/Criterion/Claim 稳定身份重写 Finding ID 与 ownership 引用；冲突别名或其他语义漂移会直接失败。
+- evaluator 0.1.16 将 Finding ID 和 `secondary_criterion_ids` 明确为服务端归一化字段：模型只提供唯一临时 Finding 关联键，不再计算或猜测 SHA-256；服务在首次聚合校验前固定执行一次 canonical ID、ownership 引用和 secondary 集合归一化，再处理剩余校验或进入 mapping reconciliation。secondary 语义影响必须由同一 ownership 下的实际 Finding 表达，服务不会自动生成语义 Finding。
 - 查看全部 Function 的当前报告、版本、分数、Gate、刷新状态和历史数量。
 - 按新鲜度筛选 `FRESH`、`EXPIRING`、`EXPIRED_TIME`、`STALE_INPUT` 和 `MISSING`。
 - 取消活动任务、重试失败任务，并查看单 Function 的历史报告和 Finding delta。

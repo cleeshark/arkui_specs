@@ -49,15 +49,6 @@ _RECONCILABLE_AGGREGATION_ERROR_MARKERS = (
     ": mapped applicable units ",
 )
 
-_REPAIRABLE_AGGREGATION_CONTRACT_ERROR_MARKERS = (
-    "expected deterministic ID SEM-",
-    "missing required property 'message'",
-    ".problem: additional property is not allowed",
-    "missing required property 'applicability_reason'",
-    ": N/A requires a reason and reproducible evidence",
-)
-
-
 def run_aggregation(
     ctx: RunContext,
     executor: SemanticExecutor,
@@ -84,6 +75,9 @@ def run_aggregation(
         output_contract = load_template(output_contract_path) if output_contract_path.is_file() else {}
         mapping_context_required = bool(
             output_contract.get("aggregation_payload", {}).get("mapping_context")
+        )
+        contract_normalization_required = bool(
+            output_contract.get("aggregation_payload", {}).get("final_contract")
         )
         aggregation_context_path = (
             staged_stage.build_aggregation_context(ctx, runner=runner)
@@ -132,15 +126,14 @@ def run_aggregation(
         candidate_path.write_text(
             json.dumps(candidate, ensure_ascii=False, indent=2), encoding="utf-8"
         )
-        verdict = staged_stage.validate_aggregation_candidate(ctx, candidate_path, runner=runner)
-        if not verdict.ok and _repairable_aggregation_contract_errors(verdict.errors):
+        if contract_normalization_required:
             events.append(
                 ctx.job_id,
                 "aggregation_contract_repair_started",
                 {
                     "work_item_id": work.work_item_id,
                     "repair_attempt": 1,
-                    "errors": list(verdict.errors),
+                    "mode": "deterministic_normalization",
                 },
             )
             try:
@@ -164,9 +157,10 @@ def run_aggregation(
                     payload={"work_item_id": work.work_item_id, "error": str(exc)},
                 )
                 return C.STATUS_FAILED, None
-            verdict = staged_stage.validate_aggregation_candidate(
-                ctx, candidate_path, runner=runner
-            )
+        verdict = staged_stage.validate_aggregation_candidate(
+            ctx, candidate_path, runner=runner
+        )
+        if contract_normalization_required:
             repair_resolved_contract = verdict.ok or (
                 aggregation_context_path is not None
                 and _reconcilable_aggregation_errors(verdict.errors)
@@ -401,13 +395,6 @@ def _build_aggregation_reconciliation_input(
 def _reconcilable_aggregation_errors(errors: tuple[str, ...]) -> bool:
     return bool(errors) and all(
         any(marker in error for marker in _RECONCILABLE_AGGREGATION_ERROR_MARKERS)
-        for error in errors
-    )
-
-
-def _repairable_aggregation_contract_errors(errors: tuple[str, ...]) -> bool:
-    return bool(errors) and all(
-        any(marker in error for marker in _REPAIRABLE_AGGREGATION_CONTRACT_ERROR_MARKERS)
         for error in errors
     )
 
