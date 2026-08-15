@@ -11,6 +11,13 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
+from spec_eval.stability import (
+    MINIMUM_RUN_COUNT,
+    StabilityInputError,
+    build_insufficient_stability_result_from_paths,
+    write_stability_result,
+)
+
 from ._subprocess import Runner, default_runner, write_logs
 from .context import RunContext
 
@@ -44,7 +51,24 @@ def run_report(
     log_dir = ctx.job_root / "logs"
 
     _score(ctx, runner, log_dir, static, evidence, selected_sr, score_path, analysis_path, timeout)
-    _stability(ctx, runner, log_dir, static, evidence, semantic_results, selected_run_id, stability_path, timeout)
+    if len(semantic_results) < MINIMUM_RUN_COUNT:
+        try:
+            insufficient = build_insufficient_stability_result_from_paths(
+                static_result_path=static,
+                evidence_manifest_path=evidence,
+                semantic_result_paths=list(semantic_results.values()),
+                selected_run_id=selected_run_id,
+            )
+            write_stability_result(stability_path, insufficient)
+        except (OSError, StabilityInputError) as exc:
+            raise ReportStageError(
+                f"cannot build insufficient-runs stability result: {exc}"
+            ) from exc
+    else:
+        _stability(
+            ctx, runner, log_dir, static, evidence, semantic_results,
+            selected_run_id, stability_path, timeout,
+        )
     _report(ctx, runner, log_dir, static, selected_sr, score_path, analysis_path, stability_path, report_json, report_md, timeout)
 
     for name, path in (

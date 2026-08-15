@@ -341,7 +341,8 @@ pretending the export represents one global revision.
   Fix and the scheduler re-checks availability.
 - **`failed` during aggregation**: the frozen state matrix has no
   `aggregation → awaiting_executor` edge, so an unavailable executor there fails
-  the job; retry re-runs semantic + aggregation. For 0.1.13 mapping failures, inspect
+  the job; retry reuses an existing final-validated semantic result, otherwise it
+  re-runs aggregation. For 0.1.13 mapping failures, inspect
   `aggregation-context.json` and the `aggregation_reconciliation_*` events. Only mapping-consistency
   errors receive one reconciliation attempt. For 0.1.15+ final-contract normalization, inspect the
   `aggregation_contract_repair_*` events; ambiguous aliases and unrepaired structural errors fail

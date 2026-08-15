@@ -13,6 +13,8 @@ from tempfile import TemporaryDirectory
 from spec_eval.protocol_validator import validate_protocol
 from spec_eval.stability import (
     StabilityInputError,
+    build_insufficient_stability_result,
+    build_insufficient_stability_result_from_paths,
     build_stability_result,
     build_stability_result_from_paths,
 )
@@ -128,6 +130,7 @@ class Next008StabilityTest(unittest.TestCase):
 
     def test_calculates_deterministic_raw_statistics_without_replacing_selected_run(self) -> None:
         result = self.build()
+        self.assertEqual(result["status"], "complete")
         scores = [item["raw_score"] for item in result["runs"]]
         expected_mean = round(sum(scores) / len(scores), 2)
         expected_stddev = round(math.sqrt(sum((score - expected_mean) ** 2 for score in scores) / 3), 2)
@@ -188,6 +191,51 @@ class Next008StabilityTest(unittest.TestCase):
             self.build(runs)
         with self.assertRaisesRegex(StabilityInputError, "selected_run_id"):
             self.build(self.semantic_runs(), selected_run_id="missing")
+
+    def test_strict_stability_still_rejects_fewer_than_three_runs(self) -> None:
+        runs = [self.semantic("run-a")]
+        with self.assertRaisesRegex(StabilityInputError, "at least 3"):
+            self.build(runs, selected_run_id="run-a")
+
+    def test_builds_identity_complete_insufficient_runs_companion(self) -> None:
+        runs = [self.semantic("run-a"), self.semantic("run-b")]
+        result = build_insufficient_stability_result(
+            static_result=self.static_result(),
+            evidence_manifest=self.evidence_manifest(),
+            semantic_results=runs,
+            selected_run_id="run-b",
+            input_artifacts=self.artifacts(runs),
+        )
+        self.assertEqual(result["status"], "insufficient_runs")
+        self.assertEqual(result["func_id"], self.static_result()["func_id"])
+        self.assertEqual(result["source_revision"], self.static_result()["source_revision"])
+        self.assertEqual(result["provided_run_count"], 2)
+        self.assertEqual(result["required_run_count"], 3)
+        self.assertEqual(result["score_statistics"], {"status": "not_computed", "count": 2})
+        self.assertEqual(result["consensus_summary"], {"status": "not_computed"})
+        self.assertEqual(result["selected_run"]["run_id"], "run-b")
+        self.assertEqual(result["outlier_run_ids"], [])
+
+    def test_insufficient_runs_path_builder_hashes_inputs(self) -> None:
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            static_path = root / "static-result.json"
+            evidence_path = root / "evidence-manifest.json"
+            semantic_path = root / "semantic-result.json"
+            static_path.write_text(json.dumps(self.static_result()) + "\n", encoding="utf-8")
+            evidence_path.write_text(json.dumps(self.evidence_manifest()) + "\n", encoding="utf-8")
+            semantic_path.write_text(json.dumps(self.semantic("run-a")) + "\n", encoding="utf-8")
+            result = build_insufficient_stability_result_from_paths(
+                static_result_path=static_path,
+                evidence_manifest_path=evidence_path,
+                semantic_result_paths=[semantic_path],
+                selected_run_id="run-a",
+            )
+            self.assertEqual(result["status"], "insufficient_runs")
+            self.assertEqual(
+                result["selected_run"]["semantic_result"]["content_hash"],
+                "sha256:" + hashlib.sha256(semantic_path.read_bytes()).hexdigest(),
+            )
 
     def test_path_entrypoint_and_cli_write_hashed_stability_result(self) -> None:
         with TemporaryDirectory() as temporary:

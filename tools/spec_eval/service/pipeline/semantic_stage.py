@@ -960,10 +960,35 @@ def run_job_pipeline(
     if job.status == S.AGGREGATION:
         from . import report_stage, site_history_stage, archive_stage
         report_ctx = ctx_for(selected_run_id)
-        aggregate_outputs = report_stage.run_report(
-            report_ctx, semantic_results=semantic_results,
-            selected_run_id=selected_run_id, runner=runner,
-        )
+        try:
+            aggregate_outputs = report_stage.run_report(
+                report_ctx, semantic_results=semantic_results,
+                selected_run_id=selected_run_id, runner=runner,
+            )
+        except report_stage.ReportStageError as exc:
+            jobs.transition_status(
+                job_id,
+                S.FAILED,
+                event_type="report_failed",
+                payload={"error": str(exc)},
+            )
+            return SemanticStageResult(C.STATUS_FAILED, 0, str(exc))
+        try:
+            stability_result = json.loads(
+                aggregate_outputs["stability"].read_text(encoding="utf-8")
+            )
+        except (OSError, json.JSONDecodeError):
+            stability_result = {}
+        if stability_result.get("status") == "insufficient_runs":
+            events.append(
+                job_id,
+                "stability_insufficient_runs",
+                {
+                    "provided": stability_result.get("provided_run_count"),
+                    "required": stability_result.get("required_run_count"),
+                    "selected_run_id": selected_run_id,
+                },
+            )
         pending_delta = None
         if refresh_targets is not None and refresh_targets.get(job_id) is not None:
             existing_report = EvaluationReportRepository(refresh_targets.store).get_for_job(job_id)

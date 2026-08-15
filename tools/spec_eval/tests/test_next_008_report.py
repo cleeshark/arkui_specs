@@ -77,7 +77,8 @@ class Next008ReportTest(unittest.TestCase):
             "function_shared_risk": {"risk_level": "None", "finding_count": 0},
         }
         stability = {
-            "schema_version": 1, "stability_version": "spec-eval-stability@0.1.0",
+            "schema_version": 1, "stability_version": "spec-eval-stability@0.1.1",
+            "status": "complete",
             "func_id": "05-01-01", "source_revision": "abc123",
             "selected_run": {"run_id": semantic["run_id"]},
             "runs": [{"run_id": semantic["run_id"], "raw_score": score["raw_score"]}],
@@ -115,6 +116,32 @@ class Next008ReportTest(unittest.TestCase):
                 analysis_result=values[3], stability_result=values[4], rubric=self.rubric,
                 complexity_rules=self.complexity, schemas_root=self.schemas_root,
             )
+
+    def test_insufficient_runs_render_as_na_instead_of_zero_statistics(self) -> None:
+        values = list(self.inputs())
+        values[4] = {
+            "schema_version": 1,
+            "stability_version": "spec-eval-stability@0.1.1",
+            "status": "insufficient_runs",
+            "func_id": "05-01-01",
+            "source_revision": "abc123",
+            "provided_run_count": 1,
+            "required_run_count": 3,
+            "selected_run": {"run_id": values[1]["run_id"]},
+            "score_statistics": {"status": "not_computed", "count": 1},
+            "consensus_summary": {"status": "not_computed"},
+            "criterion_consensus": [],
+            "outlier_run_ids": [],
+        }
+        _, markdown = build_function_report(
+            static_result=values[0], semantic_result=values[1], score_result=values[2],
+            analysis_result=values[3], stability_result=values[4], rubric=self.rubric,
+            complexity_rules=self.complexity, schemas_root=self.schemas_root,
+        )
+        self.assertIn("Status: **N/A — insufficient runs**", markdown)
+        self.assertIn("Runs provided: 1", markdown)
+        self.assertIn("Criterion consensus: N/A", markdown)
+        self.assertNotIn("Criterion consensus: 0/0", markdown)
 
     def test_writes_json_and_markdown(self) -> None:
         values = self.inputs()

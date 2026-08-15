@@ -126,7 +126,17 @@ class _FakeScriptRunner:
             # write the semantic-result.json the assembler would produce
             run_dir = _argv_value(argv, "--run-dir")
             if run_dir:
-                Path(run_dir, "semantic-result.json").write_text("{}", encoding="utf-8")
+                aggregation = json.loads(
+                    Path(run_dir, "aggregation.json").read_text(encoding="utf-8")
+                )
+                Path(run_dir, "semantic-result.json").write_text(
+                    json.dumps({
+                        "func_id": aggregation["func_id"],
+                        "source_revision": aggregation["source_revision"],
+                        "run_id": aggregation["run_id"],
+                    }),
+                    encoding="utf-8",
+                )
             return subprocess.CompletedProcess(argv, 0, "", "")
         # spec_eval score/stability/report: write dummy outputs to --*/write paths
         for flag in ("--write", "--analysis-write", "--json-write", "--markdown-write"):
@@ -172,23 +182,51 @@ class ReportStageTest(unittest.TestCase):
             source_revision=job.source_revision, run_id="run-1", evaluator_version=EVALUATOR_VERSION,
         )
         self.ctx.input_dir.mkdir(parents=True, exist_ok=True)
-        (self.ctx.input_dir / "static-result.json").write_text("{}", encoding="utf-8")
-        (self.ctx.input_dir / "evidence-manifest.json").write_text("{}", encoding="utf-8")
+        identity = {"func_id": self.ctx.func_id, "source_revision": self.ctx.source_revision}
+        (self.ctx.input_dir / "static-result.json").write_text(
+            json.dumps(identity), encoding="utf-8"
+        )
+        (self.ctx.input_dir / "evidence-manifest.json").write_text(
+            json.dumps(identity), encoding="utf-8"
+        )
         self.semantic_result = self.ctx.run_dir / "semantic-result.json"
         self.semantic_result.parent.mkdir(parents=True, exist_ok=True)
-        self.semantic_result.write_text("{}", encoding="utf-8")
+        self.semantic_result.write_text(
+            json.dumps({**identity, "run_id": "run-1"}), encoding="utf-8"
+        )
 
     def tearDown(self) -> None:
         self.store.close()
         self.tmp.cleanup()
 
     def test_orchestrates_score_stability_report(self) -> None:
+        runner = _FakeScriptRunner([])
         outputs = report_stage.run_report(
             self.ctx, semantic_results={"run-1": self.semantic_result},
-            selected_run_id="run-1", runner=_FakeScriptRunner([]),
+            selected_run_id="run-1", runner=runner,
         )
         for key in ("score", "analysis", "stability", "report_json", "report_md"):
             self.assertTrue(outputs[key].is_file(), key)
+        stability = json.loads(outputs["stability"].read_text(encoding="utf-8"))
+        self.assertEqual(stability["status"], "insufficient_runs")
+        self.assertFalse(any(" stability " in f" {' '.join(call)} " for call in runner.calls))
+
+    def test_three_runs_use_strict_stability_command(self) -> None:
+        semantic_results = {"run-1": self.semantic_result}
+        identity = {"func_id": self.ctx.func_id, "source_revision": self.ctx.source_revision}
+        for run_id in ("run-2", "run-3"):
+            path = self.ctx.run_dir.parent / run_id / "semantic-result.json"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps({**identity, "run_id": run_id}), encoding="utf-8")
+            semantic_results[run_id] = path
+        runner = _FakeScriptRunner([])
+        report_stage.run_report(
+            self.ctx,
+            semantic_results=semantic_results,
+            selected_run_id="run-1",
+            runner=runner,
+        )
+        self.assertTrue(any(" stability " in f" {' '.join(call)} " for call in runner.calls))
 
     def test_unknown_selected_run_raises(self) -> None:
         with self.assertRaises(report_stage.ReportStageError):
@@ -425,6 +463,65 @@ class AggregationStageTest(_DriverTestBase):
         # aggregation checkpoint recorded
         self.assertTrue(self.attempts.list_for_job(self.job.job_id, stage=S.STAGE_AGGREGATION))
 
+    def test_reuses_existing_validated_semantic_result_without_executor(self) -> None:
+        self.jobs.transition_status(self.job.job_id, S.PREPARING, event_type="x")
+        self.jobs.transition_status(self.job.job_id, S.EVIDENCE, event_type="x")
+        self.jobs.transition_status(self.job.job_id, S.SEMANTIC, event_type="x")
+        runner = _FakeScriptRunner([])
+        first_executor = _FakeExecutor()
+        first_outcome, first_result = aggregation_stage.run_aggregation(
+            self.ctx, first_executor, jobs=self.jobs, attempts=self.attempts,
+            events=self.events, runner=runner,
+        )
+        self.assertEqual(first_outcome, C.STATUS_COMPLETED)
+        retry_executor = _FakeExecutor(fail_aggregation=True)
+        retry_outcome, retry_result = aggregation_stage.run_aggregation(
+            self.ctx, retry_executor, jobs=self.jobs, attempts=self.attempts,
+            events=self.events, runner=runner,
+        )
+        self.assertEqual(retry_outcome, C.STATUS_COMPLETED)
+        self.assertEqual(retry_result, first_result)
+        self.assertEqual(retry_executor.calls, [])
+        event_types = [event.event_type for event in self.events.list_for_job(self.job.job_id)]
+        self.assertIn("aggregation_reused", event_types)
+
+    def test_invalid_existing_semantic_result_is_reaggregated(self) -> None:
+        self.jobs.transition_status(self.job.job_id, S.PREPARING, event_type="x")
+        self.jobs.transition_status(self.job.job_id, S.EVIDENCE, event_type="x")
+        self.jobs.transition_status(self.job.job_id, S.SEMANTIC, event_type="x")
+        initial_runner = _FakeScriptRunner([])
+        aggregation_stage.run_aggregation(
+            self.ctx, _FakeExecutor(), jobs=self.jobs, attempts=self.attempts,
+            events=self.events, runner=initial_runner,
+        )
+        fallback_runner = _FakeScriptRunner([])
+        rejected_once = False
+
+        def runner(argv, *, cwd, timeout):
+            nonlocal rejected_once
+            joined = " ".join(argv)
+            if (
+                "validate_staged_run.py" in joined
+                and "--stage final" in joined
+                and not rejected_once
+            ):
+                rejected_once = True
+                return subprocess.CompletedProcess(
+                    argv, 1, "", "ERROR: semantic-result.json is stale"
+                )
+            return fallback_runner(argv, cwd=cwd, timeout=timeout)
+
+        retry_executor = _FakeExecutor()
+        outcome, result = aggregation_stage.run_aggregation(
+            self.ctx, retry_executor, jobs=self.jobs, attempts=self.attempts,
+            events=self.events, runner=runner,
+        )
+        self.assertEqual(outcome, C.STATUS_COMPLETED)
+        self.assertTrue(result is not None and result.is_file())
+        self.assertEqual(retry_executor.calls, ["aggregation:final"])
+        event_types = [event.event_type for event in self.events.list_for_job(self.job.job_id)]
+        self.assertIn("aggregation_reuse_rejected", event_types)
+
     def test_aggregation_failure_fails_job(self) -> None:
         self.jobs.transition_status(self.job.job_id, S.PREPARING, event_type="x")
         self.jobs.transition_status(self.job.job_id, S.EVIDENCE, event_type="x")
@@ -456,8 +553,40 @@ class DriverCompletionTest(_DriverTestBase):
         # archive exists in the automated namespace
         archive_dir = self.settings.archives_root / job.source_revision / job.func_id / job.job_id
         self.assertTrue((archive_dir / "archive-manifest.json").is_file())
+        archived_stability = json.loads(
+            (archive_dir / "aggregate-stability-stability-result.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(archived_stability["status"], "insufficient_runs")
         types = [e.event_type for e in self.events.list_for_job(self.job.job_id)]
         self.assertIn("job_completed", types)
+        self.assertIn("stability_insufficient_runs", types)
+
+    def test_report_failure_is_recorded_without_worker_crash_semantics(self) -> None:
+        base_runner = _FakeScriptRunner(self._work_items())
+
+        def runner(argv, *, cwd, timeout):
+            joined = " ".join(argv)
+            if "cli.py report" in joined:
+                return subprocess.CompletedProcess(argv, 2, "", "injected report failure")
+            return base_runner(argv, cwd=cwd, timeout=timeout)
+
+        result = run_job_pipeline(
+            self.job.job_id,
+            settings=self.settings, jobs=self.jobs, attempts=self.attempts,
+            events=self.events, artifacts=self.artifacts, snapshots=self.snapshots,
+            executor=_FakeExecutor(),
+            workspace_provider=lambda job: EvaluationWorkspace.control_checkout(
+                self.settings, job.source_revision
+            ),
+            runner=runner,
+        )
+        self.assertEqual(result.outcome, C.STATUS_FAILED)
+        self.assertEqual(self.jobs.get_job(self.job.job_id).status, S.FAILED)
+        event_types = [event.event_type for event in self.events.list_for_job(self.job.job_id)]
+        self.assertIn("report_failed", event_types)
+        self.assertNotIn("worker_crashed", event_types)
 
     def test_manual_refresh_pipeline_registers_and_promotes_report(self) -> None:
         targets = RefreshTargetRepository(self.store)

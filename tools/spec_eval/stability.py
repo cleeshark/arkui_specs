@@ -20,7 +20,7 @@ from spec_eval.score import (
 
 
 STABILITY_SCHEMA_VERSION = 1
-STABILITY_VERSION = "spec-eval-stability@0.1.0"
+STABILITY_VERSION = "spec-eval-stability@0.1.1"
 MINIMUM_RUN_COUNT = 3
 CONSENSUS_NUMERATOR = 2
 CONSENSUS_DENOMINATOR = 3
@@ -141,10 +141,12 @@ def _validate_run_set(
     evidence_manifest: dict[str, Any],
     semantic_results: list[dict[str, Any]],
     selected_run_id: str,
+    *,
+    minimum_run_count: int = MINIMUM_RUN_COUNT,
 ) -> tuple[str, str, str, list[dict[str, Any]]]:
-    if len(semantic_results) < MINIMUM_RUN_COUNT:
+    if len(semantic_results) < minimum_run_count:
         raise StabilityInputError(
-            f"at least {MINIMUM_RUN_COUNT} semantic results are required for stability analysis"
+            f"at least {minimum_run_count} semantic results are required for stability analysis"
         )
     run_ids = [item.get("run_id") for item in semantic_results]
     if any(not isinstance(run_id, str) or not run_id for run_id in run_ids):
@@ -408,6 +410,7 @@ def build_stability_result(
     return {
         "schema_version": STABILITY_SCHEMA_VERSION,
         "stability_version": STABILITY_VERSION,
+        "status": "complete",
         "func_id": func_id,
         "source_revision": source_revision,
         "versions": {
@@ -462,6 +465,84 @@ def build_stability_result(
     }
 
 
+def build_insufficient_stability_result(
+    *,
+    static_result: dict[str, Any],
+    evidence_manifest: dict[str, Any],
+    semantic_results: list[dict[str, Any]],
+    selected_run_id: str,
+    input_artifacts: dict[str, Any],
+) -> dict[str, Any]:
+    """Build an explicit N/A companion when stability cannot be computed.
+
+    This is intentionally separate from :func:`build_stability_result`: the
+    standalone stability analysis remains strict and still requires at least
+    three runs. The service report pipeline uses this deterministic companion
+    so a valid one- or two-run evaluation can complete without pretending that
+    cross-run statistics were calculated.
+    """
+
+    provided_run_count = len(semantic_results)
+    if provided_run_count >= MINIMUM_RUN_COUNT:
+        raise StabilityInputError(
+            "insufficient-runs companion is only valid below the stability minimum: "
+            f"provided={provided_run_count} required={MINIMUM_RUN_COUNT}"
+        )
+    func_id, source_revision, _, ordered_semantic = _validate_run_set(
+        static_result,
+        evidence_manifest,
+        semantic_results,
+        selected_run_id,
+        minimum_run_count=1,
+    )
+    run_ids = [item["run_id"] for item in ordered_semantic]
+    artifacts = _validate_artifacts(input_artifacts, set(run_ids))
+    artifact_by_run = {
+        item["run_id"]: {
+            "path": item["path"],
+            "content_hash": item["content_hash"],
+        }
+        for item in artifacts["semantic_results"]
+    }
+    reason = (
+        f"At least {MINIMUM_RUN_COUNT} semantic results are required for "
+        "stability analysis."
+    )
+    return {
+        "schema_version": STABILITY_SCHEMA_VERSION,
+        "stability_version": STABILITY_VERSION,
+        "status": "insufficient_runs",
+        "func_id": func_id,
+        "source_revision": source_revision,
+        "provided_run_count": provided_run_count,
+        "required_run_count": MINIMUM_RUN_COUNT,
+        "policy": {"minimum_run_count": MINIMUM_RUN_COUNT},
+        "input_artifacts": artifacts,
+        "score_statistics": {
+            "status": "not_computed",
+            "count": provided_run_count,
+        },
+        "consensus_summary": {"status": "not_computed"},
+        "criterion_consensus": [],
+        "runs": [
+            {
+                "run_id": run_id,
+                "semantic_result": artifact_by_run[run_id],
+            }
+            for run_id in run_ids
+        ],
+        "outlier_run_ids": [],
+        "selected_run": {
+            "run_id": selected_run_id,
+            "selection_method": "explicit",
+            "semantic_result": artifact_by_run[selected_run_id],
+            "consensus_does_not_override_selection": True,
+        },
+        "assessment": {"status": "not_computed"},
+        "reason": reason,
+    }
+
+
 def build_stability_result_from_paths(
     *,
     static_result_path: Path,
@@ -494,6 +575,45 @@ def build_stability_result_from_paths(
         rubric=rubric,
         complexity_rules=complexity,
         schemas_root=evaluation_root / "schemas",
+        input_artifacts={
+            "static_result": {
+                "path": static_result_path.as_posix(),
+                "content_hash": _hash_file(static_result_path),
+            },
+            "evidence_manifest": {
+                "path": evidence_manifest_path.as_posix(),
+                "content_hash": _hash_file(evidence_manifest_path),
+            },
+            "semantic_results": semantic_artifacts,
+        },
+    )
+
+
+def build_insufficient_stability_result_from_paths(
+    *,
+    static_result_path: Path,
+    evidence_manifest_path: Path,
+    semantic_result_paths: list[Path],
+    selected_run_id: str,
+) -> dict[str, Any]:
+    """Build the service-only insufficient-runs companion from frozen paths."""
+
+    static_result = _load_json_object(static_result_path)
+    evidence_manifest = _load_json_object(evidence_manifest_path)
+    semantic_results = [_load_json_object(path) for path in semantic_result_paths]
+    semantic_artifacts = [
+        {
+            "run_id": semantic.get("run_id"),
+            "path": path.as_posix(),
+            "content_hash": _hash_file(path),
+        }
+        for path, semantic in zip(semantic_result_paths, semantic_results)
+    ]
+    return build_insufficient_stability_result(
+        static_result=static_result,
+        evidence_manifest=evidence_manifest,
+        semantic_results=semantic_results,
+        selected_run_id=selected_run_id,
         input_artifacts={
             "static_result": {
                 "path": static_result_path.as_posix(),
