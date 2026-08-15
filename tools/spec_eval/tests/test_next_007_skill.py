@@ -20,6 +20,7 @@ if str(SKILL_SCRIPTS) not in sys.path:
 from staged_run_support import (  # noqa: E402
     EVIDENCE_TYPES,
     OUTCOME_POLICY_BASIS_CRITERIA,
+    build_aggregation_context,
     staged_output_contract,
     validate_aggregation_document,
     validate_observation_document,
@@ -37,7 +38,7 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
     def _staged_identity(self) -> dict[str, object]:
         return {
             "schema_version": 2,
-            "evaluator_version": "skill:ohos-design-arkui-spec-evaluator@0.1.12",
+            "evaluator_version": "skill:ohos-design-arkui-spec-evaluator@0.1.13",
             "func_id": "05-01-02",
             "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
             "run_id": "validator-unit-test",
@@ -132,7 +133,7 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
         _, frontmatter, _ = content.split("---", 2)
         metadata = yaml.safe_load(frontmatter)
         self.assertEqual(metadata["name"], "ohos-design-arkui-spec-evaluator")
-        self.assertEqual(metadata["metadata"]["version"], "0.1.12")
+        self.assertEqual(metadata["metadata"]["version"], "0.1.13")
         self.assertEqual(metadata["metadata"]["rubric-version"], "0.3.0")
         self.assertLess(len(content.splitlines()), 500)
         for relative in (
@@ -144,6 +145,7 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             "scripts/show_next_work_item.py",
             "scripts/validate_staged_run.py",
             "scripts/assemble_semantic_result.py",
+            "scripts/build_aggregation_context.py",
             "scripts/staged_run_support.py",
             "scripts/validate_semantic_result.py",
             "evals/evals.json",
@@ -204,7 +206,7 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             semantic = json.loads(result_path.read_text(encoding="utf-8"))
             self.assertEqual(
                 semantic["evaluator_version"],
-                "skill:ohos-design-arkui-spec-evaluator@0.1.12",
+                "skill:ohos-design-arkui-spec-evaluator@0.1.13",
             )
             expected_ids = [
                 criterion["id"]
@@ -282,7 +284,7 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(
                 json.loads(output.read_text(encoding="utf-8"))["evaluator_version"],
-                "skill:ohos-design-arkui-spec-evaluator@0.1.12",
+                "skill:ohos-design-arkui-spec-evaluator@0.1.13",
             )
 
     def test_machine_output_contract_matches_validator_and_rubric(self) -> None:
@@ -303,6 +305,87 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
         example = evidence["format_example_only"]
         self.assertEqual(example["source_revision"], source_revision)
         self.assertTrue(example["content_hash"].startswith("sha256:"))
+        mapping_contract = contract["aggregation_payload"]["mapping_context"]
+        self.assertEqual(mapping_contract["schema_version"], 1)
+        self.assertIn("claim_reviews[].criterion_ids", mapping_contract["mapping_authority"]["claims"])
+        self.assertTrue(any("NOT_VERIFIABLE" in rule for rule in mapping_contract["mixed_outcome_policy"]))
+        historical = staged_output_contract(
+            source_revision=source_revision,
+            evaluator_version="skill:ohos-design-arkui-spec-evaluator@0.1.12",
+        )
+        self.assertNotIn("mapping_context", historical["aggregation_payload"])
+
+    def test_aggregation_context_is_deterministic_and_inherits_claim_unit_mapping(self) -> None:
+        document, item, state = self._valid_observation()
+        document["observations"][0]["criterion_ids"] *= 2
+        document["claim_reviews"][0]["criterion_ids"] *= 2
+        document["claim_reviews"][0]["local_outcome"] = "CONFLICT"
+        document["claim_reviews"][0]["unit_reviews"][0]["local_outcome"] = "CONFLICT"
+        document["claim_reviews"][0]["defect_keys"] = ["unit-defect"]
+        with TemporaryDirectory() as temporary:
+            observation_path = Path(temporary) / "observation.json"
+            observation_path.write_text(json.dumps(document), encoding="utf-8")
+            item["output_path"] = str(observation_path)
+            work_items = {"items": [item]}
+            first = build_aggregation_context(state, work_items)
+            second = build_aggregation_context(state, work_items)
+        self.assertEqual(first, second)
+        mapping = next(
+            row
+            for row in first["criterion_mappings"]
+            if row["criterion_id"] == "CORRECTNESS-SOURCE-SUPPORT"
+        )
+        self.assertEqual(len(mapping["observations"]), 1)
+        self.assertEqual(len(mapping["claims"]), 2)
+        self.assertEqual(len(mapping["atomic_units"]), 4)
+        self.assertIn("Feat-01/AC-1", mapping["mapped_claim_ids"])
+        self.assertTrue(mapping["constraints"]["adverse_unit_refs"])
+        self.assertEqual(
+            mapping["constraints"]["forbidden_conclusions"],
+            ["SUPPORTED", "NOT_APPLICABLE"],
+        )
+
+    def test_aggregation_context_does_not_treat_observation_claim_refs_as_claim_mapping(self) -> None:
+        document, item, state = self._valid_observation()
+        document["claim_reviews"][1]["criterion_ids"] = ["SPEC-SCOPE-BOUNDARY"]
+        with TemporaryDirectory() as temporary:
+            observation_path = Path(temporary) / "observation.json"
+            observation_path.write_text(json.dumps(document), encoding="utf-8")
+            item["output_path"] = str(observation_path)
+            context = build_aggregation_context(state, {"items": [item]})
+        source_mapping = next(
+            row
+            for row in context["criterion_mappings"]
+            if row["criterion_id"] == "CORRECTNESS-SOURCE-SUPPORT"
+        )
+        self.assertEqual(
+            source_mapping["observations"][0]["claim_ids"], item["expected_claim_ids"]
+        )
+        self.assertEqual(source_mapping["mapped_claim_ids"], ["Feat-01/AC-1"])
+
+    def test_aggregation_rejects_claim_cited_only_by_observation_mapping(self) -> None:
+        document, item, state = self._valid_observation()
+        document["claim_reviews"][1]["criterion_ids"] = ["SPEC-SCOPE-BOUNDARY"]
+        results = self._criterion_results()
+        results[0]["claim_ids"] = ["Feat-01/AC-2"]
+        with TemporaryDirectory() as temporary:
+            observation_path = Path(temporary) / "observation.json"
+            observation_path.write_text(json.dumps(document), encoding="utf-8")
+            item["output_path"] = str(observation_path)
+            aggregation = {
+                **state,
+                "status": "complete",
+                "source_observation_ids": [item["id"]],
+                "cross_feat_contracts_reviewed": True,
+                "criterion_results": results,
+                "contradiction_bases": [],
+                "defect_ownership": [],
+                "outcome_policy_bases": self._valid_policy_bases(),
+            }
+            errors = validate_aggregation_document(
+                aggregation, state, {"items": [item]}
+            )
+        self.assertTrue(any("claim_ids: not mapped to Criterion" in error for error in errors))
 
     def test_automated_template_accepts_explicit_non_pilot_revision(self) -> None:
         func_id = "01-01-02"  # registered Function, deliberately outside the frozen Pilot
@@ -793,7 +876,43 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
                 "defect_ownership": [],
             }
             errors = validate_aggregation_document(document, state, work_items)
-        self.assertTrue(any("adverse observations may not aggregate to SUPPORTED" in error for error in errors))
+        self.assertTrue(any("mapped adverse units" in error for error in errors))
+
+    def test_staged_v2_013_claim_conflict_blocks_supported_without_adverse_observation(self) -> None:
+        state = self._staged_identity()
+        results = self._criterion_results()
+        criterion_id = results[0]["criterion_id"]
+        with TemporaryDirectory() as temporary:
+            observation_path = Path(temporary) / "observation.json"
+            observation_path.write_text(
+                json.dumps({
+                    "observations": [],
+                    "claim_reviews": [{
+                        "claim_id": "Feat-01/AC-1.1",
+                        "local_outcome": "CONFLICT",
+                        "criterion_ids": [criterion_id],
+                        "defect_keys": ["claim-conflict"],
+                        "unit_reviews": [{
+                            "unit_id": "ownership",
+                            "facet_type": "ownership",
+                            "local_outcome": "CONFLICT",
+                        }],
+                    }],
+                }),
+                encoding="utf-8",
+            )
+            work_items = {"items": [{"id": "feature:Feat-01", "output_path": str(observation_path)}]}
+            document = {
+                **state,
+                "status": "complete",
+                "source_observation_ids": ["feature:Feat-01"],
+                "cross_feat_contracts_reviewed": True,
+                "criterion_results": results,
+                "contradiction_bases": [],
+                "defect_ownership": [],
+            }
+            errors = validate_aggregation_document(document, state, work_items)
+        self.assertTrue(any("claim:feature:Feat-01:Feat-01/AC-1.1=CONFLICT" in error for error in errors))
 
     def test_staged_v2_010_rejects_supported_criterion_with_unverifiable_claim_unit(self) -> None:
         state = self._staged_identity()
@@ -805,9 +924,13 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
                 json.dumps({
                     "observations": [],
                     "claim_reviews": [{
-                        "local_outcome": "PARTIALLY_SUPPORTED",
+                        "claim_id": "Feat-01/AC-1.1",
+                        "local_outcome": "NOT_VERIFIABLE",
                         "criterion_ids": [criterion_id],
-                        "unit_reviews": [{"local_outcome": "NOT_VERIFIABLE"}],
+                        "unit_reviews": [{
+                            "unit_id": "source-proof",
+                            "local_outcome": "NOT_VERIFIABLE",
+                        }],
                     }],
                 }),
                 encoding="utf-8",

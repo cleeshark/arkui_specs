@@ -52,7 +52,7 @@ memory for that run. They may be resumed after context compaction or handed to a
 session, but they are not confirmed Reviews or a maintained capability baseline.
 
 New staged schema v2 runs are produced by evaluator
-`skill:ohos-design-arkui-spec-evaluator@0.1.12`. Schema-compatible historical 0.1.7 through 0.1.11
+`skill:ohos-design-arkui-spec-evaluator@0.1.13`. Schema-compatible historical 0.1.7 through 0.1.12
 runs remain readable. Schema v2 requires atomic `claim_reviews`, evidence-backed
 required-check mapping, stable defect ownership, and an explicit core-conflict basis for every
 `CONTRADICTED` Criterion. Schema v1 remains readable for historical 0.1.6 runs; new runs must not
@@ -80,6 +80,17 @@ validator constants that enforce the staged checkpoint. It makes evidence types,
 to automated executors in machine-readable form. The service may perform one bounded mechanical
 repair when a candidate fails only those declared formatting constraints; semantic normalization
 or silent server-side inference remains forbidden.
+
+Evaluator 0.1.13 adds a deterministic run-local `aggregation-context.json`. It maps observations
+through `observations[].criterion_ids`, maps Claims through `claim_reviews[].criterion_ids`, and
+maps every atomic unit through its parent Claim. `criterion_results[].claim_ids` are citations to
+already mapped Claims; they cannot define or narrow Criterion scope. The validator rejects
+`SUPPORTED` or `NOT_APPLICABLE` when mapped adverse units exist, requires `NOT_VERIFIABLE` when
+that is the only unresolved mapped outcome, and keeps published observation outcomes authoritative.
+The service may make one bounded aggregation reconciliation call when, and only when, validation
+fails exclusively on these mapping-consistency rules. Reconciliation reads the candidate,
+initialized aggregation template, output contract, and aggregation context; it does not reopen
+source, SDK, Spec, Design, Registry, or evidence shards and it never edits published observations.
 
 Do not write automatic output to:
 

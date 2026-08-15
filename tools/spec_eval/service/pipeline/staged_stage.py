@@ -5,6 +5,7 @@ Each function maps to one skill script call:
 * :func:`init_staged_run`      -> ``initialize_staged_run.py``
 * :func:`next_work_item`       -> ``show_next_work_item.py`` (one pending item)
 * :func:`validate_work_item`   -> ``validate_staged_run.py --work-item --update-state``
+* :func:`build_aggregation_context` -> ``build_aggregation_context.py``
 * :func:`assemble_semantic`    -> ``assemble_semantic_result.py``
 
 The wrappers never decide completeness on their own: they forward the script's
@@ -178,6 +179,38 @@ def validate_aggregation_candidate(
         name="validate-aggregation-candidate",
     )
     return _validation_result(cp, "validate aggregation candidate")
+
+
+def build_aggregation_context(
+    ctx: RunContext,
+    *,
+    runner: Runner = default_runner,
+    timeout: float = 120.0,
+) -> Path:
+    """Build the Skill-owned run-derived mapping used by aggregation."""
+    output = ctx.run_dir / "aggregation-context.json"
+    argv = [
+        "python3",
+        str(ctx.build_aggregation_context_script),
+        "--run-dir",
+        str(ctx.run_dir),
+        "--output",
+        str(output),
+    ]
+    log_dir = ctx.jobs_run_root / "logs"
+    cp = _run(
+        argv,
+        cwd=str(ctx.repo_root),
+        runner=runner,
+        timeout=timeout,
+        log_dir=log_dir,
+        name="build-aggregation-context",
+    )
+    if cp.returncode != 0:
+        raise StagedStageError(_format_failure("build_aggregation_context", cp))
+    if not output.is_file():
+        raise StagedStageError(f"build_aggregation_context produced no file at {output}")
+    return output
 
 
 def assemble_semantic(

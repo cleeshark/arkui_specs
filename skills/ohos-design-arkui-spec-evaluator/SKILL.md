@@ -13,7 +13,7 @@ metadata:
   stage: design
   domain: arkui
   capability: spec-evaluator
-  version: 0.1.12
+  version: 0.1.13
   status: mvp
   evaluation-unit: function
   rubric-version: 0.3.0
@@ -198,6 +198,19 @@ Start aggregation only after every observation checkpoint passes. Read compact o
 and Rubric first. Reopen an original shard or static slice only to resolve a specific evidence
 question. Follow exact Criterion order from `rubric.yaml`; do not skip or reorder output.
 
+For evaluator 0.1.13+, first build the deterministic Criterion mapping:
+
+```bash
+python3 specs/skills/ohos-design-arkui-spec-evaluator/scripts/build_aggregation_context.py \
+  --run-dir /tmp/spec-evaluator/<FuncID>/<unique-run-id>
+```
+
+Read `aggregation-context.json` before assigning conclusions. Treat its observation, Claim, and
+atomic-unit mappings as authoritative: observations map by their `criterion_ids`, Claims map by
+`claim_reviews[].criterion_ids`, and units inherit their parent Claim mapping. A final
+`criterion_results[].claim_ids` list is only a citation list and cannot redefine or narrow the
+mapped Criterion scope. Observation `claim_ids` do not independently grant Claim mapping.
+
 The staged observations are the run-local scratch coverage matrix:
 
 - Correctness: one row for every AC and Rule claim. Split compound statements into independently
@@ -246,6 +259,12 @@ multiple Findings with the same aggregate conclusion and severity. Do not merge 
 frontend, version, state, build, or verification defects merely to keep one Finding per Criterion.
 
 `SUPPORTED` means every applicable unit in the Criterion scope is covered and verified. A strong example does not compensate for an omitted Feat, AC, branch, platform, or lifecycle path.
+If any mapped observation, Claim, or atomic unit is `CONFLICT` or `MISSING`, do not conclude
+`SUPPORTED` or `NOT_APPLICABLE`; select Partial, Contradicted, Missing, or Not Verifiable according
+to semantic breadth and the frozen outcome policy. If `NOT_VERIFIABLE` is the only unresolved
+mapped outcome, conclude `NOT_VERIFIABLE`. Any applicable mapped unit also rules out
+`NOT_APPLICABLE`. Aggregation evidence may explain these results but must not silently replace a
+published local outcome.
 Use `PARTIALLY_SUPPORTED` when the Criterion's main body is present and supported but one or more
 units are incomplete, inaccurate, or locally contradicted. Use `CONTRADICTED` only when the core
 capability, primary architecture direction, or Criterion-wide claim conflicts with frozen evidence.
@@ -347,6 +366,13 @@ even when other impact details are merely omitted.
 One root defect may support `contradiction_bases` for both its primary and materially affected
 secondary Criteria. Keep one `defect_ownership` record and at most one Critical Finding; secondary
 Contradicted Criteria use the same root as evidence without becoming duplicate owners.
+
+When the service reports only 0.1.13 mapped-outcome or mapped-Claim citation errors, it may perform
+one bounded reconciliation against the candidate, initialized template, `output-contract.json`,
+and `aggregation-context.json`. Do not use that pass to reopen source or evidence, rewrite
+observations, or repair unrelated structural/protocol errors. Preserve unaffected Criteria and
+revise the linked findings, contradiction bases, and defect ownership together with any changed
+conclusion.
 
 ```bash
 python3 specs/skills/ohos-design-arkui-spec-evaluator/scripts/validate_staged_run.py \

@@ -15,6 +15,7 @@ written by a failed path.
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -32,12 +33,21 @@ from ..store.sqlite_store import utc_now
 from ._subprocess import Runner, default_runner
 from .context import RunContext
 from .result_payload import (
+    aggregation_reconciliation_prompt_contract,
     aggregation_prompt_contract,
     load_template,
     merge_aggregation_payload,
 )
 from .semantic_stage import _DBEmitter, _record_executor_statistics
 from . import staged_stage
+
+
+_RECONCILABLE_AGGREGATION_ERROR_MARKERS = (
+    ".claim_ids: not mapped to Criterion",
+    ": mapped adverse units ",
+    ": mapped NOT_VERIFIABLE units ",
+    ": mapped applicable units ",
+)
 
 
 def run_aggregation(
@@ -62,7 +72,16 @@ def run_aggregation(
     try:
         initialized = load_template(aggregation_path)
         source_observation_ids = _source_observation_ids(ctx.run_dir / "work-items.json")
-    except ValueError as exc:
+        output_contract_path = ctx.run_dir / "output-contract.json"
+        output_contract = load_template(output_contract_path) if output_contract_path.is_file() else {}
+        mapping_context_required = bool(
+            output_contract.get("aggregation_payload", {}).get("mapping_context")
+        )
+        aggregation_context_path = (
+            staged_stage.build_aggregation_context(ctx, runner=runner)
+            if mapping_context_required else None
+        )
+    except (ValueError, staged_stage.StagedStageError) as exc:
         jobs.transition_status(
             ctx.job_id, S.FAILED,
             event_type="aggregation_failed",
@@ -70,7 +89,7 @@ def run_aggregation(
         )
         return C.STATUS_FAILED, None
 
-    work = _build_aggregation_input(ctx)
+    work = _build_aggregation_input(ctx, aggregation_context_path)
     events.append(ctx.job_id, "aggregation_started", {"work_item_id": work.work_item_id})
 
     result = executor.execute(work, emit, cancel)
@@ -106,6 +125,82 @@ def run_aggregation(
             json.dumps(candidate, ensure_ascii=False, indent=2), encoding="utf-8"
         )
         verdict = staged_stage.validate_aggregation_candidate(ctx, candidate_path, runner=runner)
+        if (
+            not verdict.ok
+            and aggregation_context_path is not None
+            and _reconcilable_aggregation_errors(verdict.errors)
+        ):
+            events.append(
+                ctx.job_id,
+                "aggregation_candidate_validation_failed",
+                {
+                    "work_item_id": work.work_item_id,
+                    "reconcilable": True,
+                    "errors": list(verdict.errors),
+                },
+            )
+            reconciliation_work = _build_aggregation_reconciliation_input(
+                work,
+                candidate_path,
+                aggregation_context_path,
+                verdict.errors,
+            )
+            events.append(
+                ctx.job_id,
+                "aggregation_reconciliation_started",
+                {"work_item_id": work.work_item_id, "reconciliation_attempt": 1},
+            )
+            reconciliation_result = executor.execute(reconciliation_work, emit, cancel)
+            _record_executor_statistics(statistics, ctx.job_id, reconciliation_result)
+            if reconciliation_result.status == C.STATUS_CANCELLED or (
+                cancel is not None and cancel.is_set()
+            ):
+                return C.STATUS_CANCELLED, None
+            if not reconciliation_result.succeeded:
+                error = (
+                    reconciliation_result.error
+                    or f"reconciliation executor {reconciliation_result.status}"
+                )
+                events.append(
+                    ctx.job_id,
+                    "aggregation_reconciliation_failed",
+                    {
+                        "work_item_id": work.work_item_id,
+                        "reconciliation_attempt": 1,
+                        "error": error,
+                    },
+                )
+                jobs.transition_status(
+                    ctx.job_id,
+                    S.FAILED,
+                    event_type="aggregation_failed",
+                    payload={"work_item_id": work.work_item_id, "error": error},
+                )
+                return C.STATUS_FAILED, None
+            candidate = merge_aggregation_payload(
+                initialized,
+                reconciliation_result.observation,
+                source_observation_ids=source_observation_ids,
+            )
+            candidate_path.write_text(
+                json.dumps(candidate, ensure_ascii=False, indent=2), encoding="utf-8"
+            )
+            verdict = staged_stage.validate_aggregation_candidate(
+                ctx, candidate_path, runner=runner
+            )
+            events.append(
+                ctx.job_id,
+                (
+                    "aggregation_reconciliation_completed"
+                    if verdict.ok else
+                    "aggregation_reconciliation_failed"
+                ),
+                {
+                    "work_item_id": work.work_item_id,
+                    "reconciliation_attempt": 1,
+                    "errors": list(verdict.errors),
+                },
+            )
         if not verdict.ok:
             jobs.transition_status(
                 ctx.job_id, S.FAILED,
@@ -163,7 +258,9 @@ def run_aggregation(
     return C.STATUS_COMPLETED, semantic_result
 
 
-def _build_aggregation_input(ctx: RunContext) -> C.WorkItemInput:
+def _build_aggregation_input(
+    ctx: RunContext, aggregation_context_path: Path | None = None
+) -> C.WorkItemInput:
     observations_dir = ctx.run_dir / "observations"
     input_paths: list[str] = []
     if observations_dir.is_dir():
@@ -179,10 +276,11 @@ def _build_aggregation_input(ctx: RunContext) -> C.WorkItemInput:
     for contract_input in (
         aggregation_path,
         ctx.run_dir / "output-contract.json",
+        aggregation_context_path,
         ctx.run_dir / "work-items.json",
         ctx.skill_scripts_dir.parent / "references" / "staged-run-contract.md",
     ):
-        if contract_input.is_file():
+        if contract_input is not None and contract_input.is_file():
             input_paths.append(str(contract_input))
     input_paths = list(dict.fromkeys(input_paths))
     return C.WorkItemInput(
@@ -204,8 +302,47 @@ def _build_aggregation_input(ctx: RunContext) -> C.WorkItemInput:
         protocol_version=ctx.protocol_version,
         forbidden_paths=ctx.forbidden_paths,
         prompt_extras=aggregation_prompt_contract(
-            aggregation_path, ctx.run_dir / "output-contract.json"
+            aggregation_path,
+            ctx.run_dir / "output-contract.json",
+            aggregation_context_path,
         ),
+    )
+
+
+def _build_aggregation_reconciliation_input(
+    work: C.WorkItemInput,
+    candidate_path: Path,
+    aggregation_context_path: Path,
+    validation_errors: tuple[str, ...],
+) -> C.WorkItemInput:
+    template_path = Path(str(work.prompt_extras["template_path"]))
+    output_contract_path = Path(str(work.prompt_extras["output_contract_path"]))
+    result_path = Path(work.executor_result_path)
+    reconciliation_result_path = result_path.with_name(
+        f"{result_path.stem}.reconcile-1{result_path.suffix}"
+    )
+    return replace(
+        work,
+        input_paths=(
+            str(candidate_path),
+            str(template_path),
+            str(output_contract_path),
+            str(aggregation_context_path),
+        ),
+        executor_result_path=str(reconciliation_result_path),
+        prompt_extras=aggregation_reconciliation_prompt_contract(
+            work.prompt_extras,
+            candidate_path=candidate_path,
+            aggregation_context_path=aggregation_context_path,
+            validation_errors=validation_errors,
+        ),
+    )
+
+
+def _reconcilable_aggregation_errors(errors: tuple[str, ...]) -> bool:
+    return bool(errors) and all(
+        any(marker in error for marker in _RECONCILABLE_AGGREGATION_ERROR_MARKERS)
+        for error in errors
     )
 
 

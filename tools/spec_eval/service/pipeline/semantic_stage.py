@@ -505,6 +505,11 @@ def run_job_pipeline(
             run_ids=run_ids,
             selected_run_id=selected_run_id,
             site_snapshot_path=snapshot_path,
+            aggregation_contexts={
+                run_id: result_path.parent / "aggregation-context.json"
+                for run_id, result_path in semantic_results.items()
+                if (result_path.parent / "aggregation-context.json").is_file()
+            },
         )
         if refresh_targets is not None:
             target = refresh_targets.get(job_id)

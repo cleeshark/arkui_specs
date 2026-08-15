@@ -14,7 +14,7 @@ from pathlib import Path
 from ..settings import ServiceSettings
 from ..workspace.models import EvaluationWorkspace
 
-DEFAULT_SKILL_EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.12"
+DEFAULT_SKILL_EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.13"
 SKILL_SCRIPTS_REL = Path("skills") / "ohos-design-arkui-spec-evaluator" / "scripts"
 
 
@@ -50,6 +50,10 @@ class RunContext:
     @property
     def validate_script(self) -> Path:
         return self.skill_scripts_dir / "validate_staged_run.py"
+
+    @property
+    def build_aggregation_context_script(self) -> Path:
+        return self.skill_scripts_dir / "build_aggregation_context.py"
 
     @property
     def assemble_script(self) -> Path:

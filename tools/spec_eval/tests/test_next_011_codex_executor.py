@@ -243,6 +243,46 @@ class CodexExecutorTest(unittest.TestCase):
         self.assertIn("do not redo semantic evaluation", " ".join(prompt["constraints"]))
         self.assertEqual(prompt["result_contract"]["mode"], "repair_candidate")
 
+    def test_aggregation_reconciliation_prompt_uses_published_mapping_only(self) -> None:
+        work = replace(
+            self.work,
+            input_paths=(
+                "/tmp/.aggregation.json.candidate",
+                "/tmp/aggregation.json",
+                "/tmp/output-contract.json",
+                "/tmp/aggregation-context.json",
+            ),
+            prompt_extras={
+                "mode": "reconcile_aggregation_candidate",
+                "result_kind": "staged_aggregation_payload",
+                "template_path": "/tmp/aggregation.json",
+                "output_contract_path": "/tmp/output-contract.json",
+                "aggregation_context_path": "/tmp/aggregation-context.json",
+                "candidate_path": "/tmp/.aggregation.json.candidate",
+                "validation_errors": ["mapped NOT_VERIFIABLE units require NOT_VERIFIABLE"],
+                "payload_fields": [
+                    "cross_feat_contracts_reviewed",
+                    "contradiction_bases",
+                    "defect_ownership",
+                    "outcome_policy_bases",
+                    "criterion_results",
+                    "notes",
+                ],
+                "service_derived_fields": ["status", "source_observation_ids"],
+                "machine_contract": {"payload": {"mapping_context": {"schema_version": 1}}},
+            },
+        )
+        runner = _FakeRunner(result_doc=_result_doc(work.work_item_id))
+        self._executor(runner).execute(work, lambda e: None)
+        prompt = json.loads(runner.last_stdin or "{}")
+        self.assertIn("Reconcile one staged aggregation", prompt["task"])
+        constraints = " ".join(prompt["constraints"])
+        self.assertIn("aggregation-context.json as authoritative", constraints)
+        self.assertIn("Do not reopen source", constraints)
+        self.assertEqual(
+            prompt["result_contract"]["mode"], "reconcile_aggregation_candidate"
+        )
+
     def test_nonzero_exit_is_failed(self) -> None:
         runner = _FakeRunner(exit_code=2, write_result=False)
         result = self._executor(runner).execute(self.work, lambda e: None)

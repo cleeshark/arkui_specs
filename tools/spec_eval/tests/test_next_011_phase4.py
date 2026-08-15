@@ -43,7 +43,7 @@ from spec_eval.service.store.repositories import (
 from spec_eval.service.store.sqlite_store import SqliteStore, utc_now
 from spec_eval.service.workspace.models import EvaluationWorkspace
 
-EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.12"
+EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.13"
 
 
 # --- fakes ------------------------------------------------------------------
@@ -238,11 +238,15 @@ class ArchiveStageTest(unittest.TestCase):
         job_root = self.settings.jobs_root / job.job_id
         job_root.mkdir(parents=True)
         sr, agg, snap = self._artifacts(job_root)
+        aggregation_context = job_root / "aggregation-context.json"
+        aggregation_context.write_text('{"schema_version":1}', encoding="utf-8")
         archive_dir = archive_stage.write_archive(
             self.settings, job, semantic_results=sr, aggregate_outputs=agg,
             run_ids=["run-1"], selected_run_id="run-1", site_snapshot_path=snap,
+            aggregation_contexts={"run-1": aggregation_context},
         )
         self.assertTrue(archive_dir.is_dir())
+        self.assertTrue((archive_dir / "aggregation-context-run-1.json").is_file())
         manifest = json.loads((archive_dir / "archive-manifest.json").read_text(encoding="utf-8"))
         self.assertEqual(manifest["namespace"], "automated")
         self.assertEqual(manifest["func_id"], job.func_id)

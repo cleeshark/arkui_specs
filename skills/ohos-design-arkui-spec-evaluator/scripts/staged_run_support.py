@@ -29,19 +29,24 @@ SCHEMA_V2_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.9",
     "skill:ohos-design-arkui-spec-evaluator@0.1.10",
     "skill:ohos-design-arkui-spec-evaluator@0.1.11",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.12",
     DEFAULT_EVALUATOR_VERSION,
 }
 DEEP_CONTRACT_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.9",
     "skill:ohos-design-arkui-spec-evaluator@0.1.10",
     "skill:ohos-design-arkui-spec-evaluator@0.1.11",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.12",
     DEFAULT_EVALUATOR_VERSION,
 }
 UNVERIFIABLE_GUARD_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.10",
     "skill:ohos-design-arkui-spec-evaluator@0.1.11",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.12",
     DEFAULT_EVALUATOR_VERSION,
 }
+AGGREGATION_MAPPING_EVALUATOR_VERSIONS = {DEFAULT_EVALUATOR_VERSION}
+AGGREGATION_CONTEXT_SCHEMA_VERSION = 1
 OUTCOME_POLICY_BASIS_CRITERIA = [
     "SPEC-AC-TESTABILITY",
     "SPEC-TRACEABILITY",
@@ -204,6 +209,42 @@ def staged_output_contract(
             "description": "Format example only; do not reuse unless this file proves the fact.",
         },
     }
+    aggregation_payload = {
+        "payload_fields": [
+            "cross_feat_contracts_reviewed",
+            "contradiction_bases",
+            "defect_ownership",
+            "outcome_policy_bases",
+            "criterion_results",
+            "notes",
+        ],
+        "criterion_order": criteria,
+        "conclusion_enum": list(rubric.get("semantic_conclusions", [])),
+        "policy_content_status_enum": sorted(POLICY_CONTENT_STATUSES),
+        "policy_evidence_status_enum": sorted(POLICY_EVIDENCE_STATUSES),
+        "policy_conflict_scope_enum": sorted(POLICY_CONFLICT_SCOPES),
+    }
+    if evaluator_version in AGGREGATION_MAPPING_EVALUATOR_VERSIONS:
+        aggregation_payload["mapping_context"] = {
+            "schema_version": AGGREGATION_CONTEXT_SCHEMA_VERSION,
+            "path_field": "aggregation_context_path",
+            "mapping_authority": {
+                "observations": "Map each observation through observations[].criterion_ids.",
+                "claims": "Map each claim through claim_reviews[].criterion_ids.",
+                "atomic_units": "Each unit_review inherits the Criterion IDs of its parent claim review.",
+                "criterion_result_claim_ids": (
+                    "criterion_results[].claim_ids may cite only claims already mapped to that "
+                    "Criterion; it never defines or narrows aggregate scope."
+                ),
+            },
+            "mixed_outcome_policy": [
+                "SUPPORTED requires every applicable mapped unit to be verified and no mapped CONFLICT, MISSING or NOT_VERIFIABLE unit.",
+                "When mapped units contain NOT_VERIFIABLE but no CONFLICT or MISSING, conclude NOT_VERIFIABLE.",
+                "When any mapped observation, claim or atomic unit is CONFLICT or MISSING, do not conclude SUPPORTED or NOT_APPLICABLE; apply breadth and the frozen Rubric outcome policy.",
+                "NOT_APPLICABLE is invalid when any mapped unit is applicable.",
+                "New aggregation evidence may explain a conclusion but may not silently override a published mapped outcome.",
+            ],
+        }
     return {
         "schema_version": 1,
         "staged_schema_version": STAGED_SCHEMA_VERSION,
@@ -263,22 +304,197 @@ def staged_output_contract(
                 "evidence": evidence_contract,
             },
         },
-        "aggregation_payload": {
-            "payload_fields": [
-                "cross_feat_contracts_reviewed",
-                "contradiction_bases",
-                "defect_ownership",
-                "outcome_policy_bases",
-                "criterion_results",
-                "notes",
-            ],
-            "criterion_order": criteria,
-            "conclusion_enum": list(rubric.get("semantic_conclusions", [])),
-            "policy_content_status_enum": sorted(POLICY_CONTENT_STATUSES),
-            "policy_evidence_status_enum": sorted(POLICY_EVIDENCE_STATUSES),
-            "policy_conflict_scope_enum": sorted(POLICY_CONFLICT_SCOPES),
-        },
+        "aggregation_payload": aggregation_payload,
     }
+
+
+def build_aggregation_context(
+    state: dict[str, Any], work_items: dict[str, Any]
+) -> dict[str, Any]:
+    """Build the run-derived Criterion mapping consumed by aggregation and validation."""
+    rubric, _, errors = protocol()
+    if errors:
+        raise ValueError("cannot build aggregation context: " + "; ".join(errors))
+    criteria = criterion_order(rubric)
+    allow_not_applicable = {
+        criterion["id"]: bool(criterion.get("allow_not_applicable"))
+        for dimension in rubric.get("dimensions", [])
+        for criterion in dimension.get("criteria", [])
+        if isinstance(criterion, dict) and isinstance(criterion.get("id"), str)
+    }
+    mappings: dict[str, dict[str, Any]] = {
+        criterion_id: {
+            "criterion_id": criterion_id,
+            "allow_not_applicable": allow_not_applicable.get(criterion_id, False),
+            "observations": [],
+            "claims": [],
+            "atomic_units": [],
+            "mapped_claim_ids": [],
+        }
+        for criterion_id in criteria
+    }
+    source_observations: list[dict[str, Any]] = []
+
+    for item in work_items.get("items", []):
+        if not isinstance(item, dict):
+            continue
+        work_item_id = item.get("id")
+        output_path = item.get("output_path")
+        if not isinstance(work_item_id, str) or not isinstance(output_path, str):
+            continue
+        path = Path(output_path)
+        document = load_object(path)
+        source_observations.append({
+            "work_item_id": work_item_id,
+            "path": output_path,
+            "content_hash": content_hash(path),
+        })
+
+        for observation in document.get("observations", []):
+            if not isinstance(observation, dict):
+                continue
+            criterion_ids = list(
+                dict.fromkeys(
+                    criterion_id
+                    for criterion_id in observation.get("criterion_ids", [])
+                    if criterion_id in mappings
+                )
+            )
+            claim_ids = [
+                claim_id
+                for claim_id in observation.get("claim_ids", [])
+                if isinstance(claim_id, str) and claim_id
+            ]
+            entry = {
+                "work_item_id": work_item_id,
+                "observation_id": observation.get("observation_id"),
+                "local_outcome": observation.get("local_outcome"),
+                "breadth": observation.get("breadth"),
+                "contract_family": observation.get("contract_family"),
+                "claim_ids": claim_ids,
+            }
+            for optional in ("defect_key", "primary_criterion_id"):
+                if isinstance(observation.get(optional), str):
+                    entry[optional] = observation[optional]
+            for criterion_id in criterion_ids:
+                mapping = mappings[criterion_id]
+                mapping["observations"].append(copy.deepcopy(entry))
+
+        for claim_review in document.get("claim_reviews", []):
+            if not isinstance(claim_review, dict):
+                continue
+            criterion_ids = list(
+                dict.fromkeys(
+                    criterion_id
+                    for criterion_id in claim_review.get("criterion_ids", [])
+                    if criterion_id in mappings
+                )
+            )
+            claim_id = claim_review.get("claim_id")
+            if not isinstance(claim_id, str) or not claim_id:
+                continue
+            claim_entry = {
+                "work_item_id": work_item_id,
+                "claim_id": claim_id,
+                "local_outcome": claim_review.get("local_outcome"),
+                "defect_keys": [
+                    key
+                    for key in claim_review.get("defect_keys", [])
+                    if isinstance(key, str) and key
+                ],
+            }
+            unit_entries = []
+            for unit in claim_review.get("unit_reviews", []):
+                if not isinstance(unit, dict):
+                    continue
+                unit_entries.append({
+                    "work_item_id": work_item_id,
+                    "claim_id": claim_id,
+                    "unit_id": unit.get("unit_id"),
+                    "facet_type": unit.get("facet_type"),
+                    "local_outcome": unit.get("local_outcome"),
+                })
+            for criterion_id in criterion_ids:
+                mapping = mappings[criterion_id]
+                mapping["claims"].append(copy.deepcopy(claim_entry))
+                mapping["atomic_units"].extend(copy.deepcopy(unit_entries))
+                _extend_unique(mapping["mapped_claim_ids"], [claim_id])
+
+    for mapping in mappings.values():
+        units = [
+            ("observation", entry) for entry in mapping["observations"]
+        ] + [
+            ("claim", entry) for entry in mapping["claims"]
+        ] + [
+            ("atomic_unit", entry) for entry in mapping["atomic_units"]
+        ]
+        counts = {outcome: 0 for outcome in sorted(LOCAL_OUTCOMES)}
+        adverse_refs: list[str] = []
+        unverifiable_refs: list[str] = []
+        applicable_refs: list[str] = []
+        for kind, entry in units:
+            outcome = entry.get("local_outcome")
+            if outcome in counts:
+                counts[outcome] += 1
+            ref = _aggregation_unit_ref(kind, entry)
+            if outcome in {"CONFLICT", "MISSING"}:
+                adverse_refs.append(ref)
+            if outcome == "NOT_VERIFIABLE":
+                unverifiable_refs.append(ref)
+            if outcome in {"SUPPORTED", "CONFLICT", "MISSING", "NOT_VERIFIABLE"}:
+                applicable_refs.append(ref)
+        forbidden: list[str] = []
+        if adverse_refs:
+            forbidden.extend(["SUPPORTED", "NOT_APPLICABLE"])
+        elif unverifiable_refs:
+            forbidden.append("SUPPORTED")
+        if applicable_refs and "NOT_APPLICABLE" not in forbidden:
+            forbidden.append("NOT_APPLICABLE")
+        mapping["outcome_counts"] = counts
+        mapping["constraints"] = {
+            "adverse_unit_refs": adverse_refs,
+            "unverifiable_unit_refs": unverifiable_refs,
+            "applicable_unit_refs": applicable_refs,
+            "forbidden_conclusions": forbidden,
+            "required_conclusion_when_no_adverse": (
+                "NOT_VERIFIABLE" if unverifiable_refs and not adverse_refs else None
+            ),
+        }
+
+    return {
+        "schema_version": AGGREGATION_CONTEXT_SCHEMA_VERSION,
+        "staged_schema_version": state.get("schema_version"),
+        "evaluator_version": state.get("evaluator_version"),
+        "func_id": state.get("func_id"),
+        "source_revision": state.get("source_revision"),
+        "run_id": state.get("run_id"),
+        "source_observations": source_observations,
+        "criterion_mappings": list(mappings.values()),
+    }
+
+
+def _extend_unique(target: list[str], values: list[str]) -> None:
+    for value in values:
+        if value not in target:
+            target.append(value)
+
+
+def _aggregation_unit_ref(kind: str, entry: dict[str, Any]) -> str:
+    work_item_id = entry.get("work_item_id", "unknown")
+    if kind == "observation":
+        identity = entry.get("observation_id", "unknown")
+    elif kind == "claim":
+        identity = entry.get("claim_id", "unknown")
+    else:
+        identity = f"{entry.get('claim_id', 'unknown')}/{entry.get('unit_id', 'unknown')}"
+    return f"{kind}:{work_item_id}:{identity}={entry.get('local_outcome', 'unknown')}"
+
+
+def _format_mapping_refs(value: Any, limit: int = 8) -> str:
+    refs = [item for item in value if isinstance(item, str)] if isinstance(value, list) else []
+    visible = refs[:limit]
+    suffix = f" (+{len(refs) - limit} more)" if len(refs) > limit else ""
+    return f"{visible}{suffix}"
 
 
 def load_run(run_dir: Path) -> tuple[dict[str, Any], dict[str, Any]]:
@@ -753,33 +969,28 @@ def validate_aggregation_document(
     if state.get("schema_version") != STAGED_SCHEMA_VERSION:
         return errors
 
+    try:
+        aggregation_context = build_aggregation_context(state, work_items)
+    except ValueError as exc:
+        errors.append(f"aggregation: cannot build mapped-unit context: {exc}")
+        aggregation_context = {"criterion_mappings": []}
+    mappings_by_id = {
+        mapping.get("criterion_id"): mapping
+        for mapping in aggregation_context.get("criterion_mappings", [])
+        if isinstance(mapping, dict) and isinstance(mapping.get("criterion_id"), str)
+    }
+
     observed_defects: dict[str, str] = {}
     adverse_criteria: set[str] = set()
     unverifiable_criteria: set[str] = set()
-    for item in work_items.get("items", []):
-        output_path = item.get("output_path") if isinstance(item, dict) else None
-        if not isinstance(output_path, str):
-            continue
-        try:
-            observation_document = load_object(Path(output_path))
-        except ValueError as exc:
-            errors.append(f"aggregation: cannot load observation defects from {output_path}: {exc}")
-            continue
-        for observation in observation_document.get("observations", []):
+    for criterion_id, mapping in mappings_by_id.items():
+        for observation in mapping.get("observations", []):
             if not isinstance(observation, dict):
                 continue
             if observation.get("local_outcome") in {"CONFLICT", "MISSING"}:
-                adverse_criteria.update(
-                    criterion_id
-                    for criterion_id in observation.get("criterion_ids", [])
-                    if isinstance(criterion_id, str)
-                )
+                adverse_criteria.add(criterion_id)
             if observation.get("local_outcome") == "NOT_VERIFIABLE":
-                unverifiable_criteria.update(
-                    criterion_id
-                    for criterion_id in observation.get("criterion_ids", [])
-                    if isinstance(criterion_id, str)
-                )
+                unverifiable_criteria.add(criterion_id)
             defect_key = observation.get("defect_key")
             primary = observation.get("primary_criterion_id")
             if not isinstance(defect_key, str):
@@ -790,42 +1001,72 @@ def validate_aggregation_document(
                 )
             elif isinstance(primary, str):
                 observed_defects[defect_key] = primary
-        for claim_review in observation_document.get("claim_reviews", []):
-            if not isinstance(claim_review, dict):
-                continue
-            unit_reviews = claim_review.get("unit_reviews", [])
-            has_unverifiable_unit = any(
-                isinstance(unit, dict) and unit.get("local_outcome") == "NOT_VERIFIABLE"
-                for unit in unit_reviews
-            )
-            if claim_review.get("local_outcome") == "NOT_VERIFIABLE" or has_unverifiable_unit:
-                unverifiable_criteria.update(
-                    criterion_id
-                    for criterion_id in claim_review.get("criterion_ids", [])
-                    if isinstance(criterion_id, str)
-                )
+        if any(
+            isinstance(claim, dict) and claim.get("local_outcome") == "NOT_VERIFIABLE"
+            for claim in mapping.get("claims", [])
+        ) or any(
+            isinstance(unit, dict) and unit.get("local_outcome") == "NOT_VERIFIABLE"
+            for unit in mapping.get("atomic_units", [])
+        ):
+            unverifiable_criteria.add(criterion_id)
 
+    mapping_guard = state.get("evaluator_version") in AGGREGATION_MAPPING_EVALUATOR_VERSIONS
     for result in results:
         if not isinstance(result, dict):
             continue
         criterion_id = result.get("criterion_id")
-        if criterion_id in adverse_criteria and result.get("conclusion") in {
-            "SUPPORTED",
-            "NOT_APPLICABLE",
-        }:
-            errors.append(
-                f"aggregation.criterion_results[{criterion_id}]: adverse observations may not "
-                f"aggregate to {result.get('conclusion')}"
-            )
-        if (
-            state.get("evaluator_version") in UNVERIFIABLE_GUARD_EVALUATOR_VERSIONS
-            and criterion_id in unverifiable_criteria
-            and result.get("conclusion") == "SUPPORTED"
-        ):
-            errors.append(
-                f"aggregation.criterion_results[{criterion_id}]: mapped NOT_VERIFIABLE "
-                "observations or claim units may not aggregate to SUPPORTED"
-            )
+        conclusion = result.get("conclusion")
+        mapping = mappings_by_id.get(criterion_id, {})
+        constraints = mapping.get("constraints", {}) if isinstance(mapping, dict) else {}
+        if mapping_guard:
+            mapped_claim_ids = set(mapping.get("mapped_claim_ids", []))
+            result_claim_ids = result.get("claim_ids")
+            if isinstance(result_claim_ids, list):
+                unmapped_claim_ids = sorted(
+                    claim_id
+                    for claim_id in result_claim_ids
+                    if isinstance(claim_id, str) and claim_id not in mapped_claim_ids
+                )
+                if unmapped_claim_ids:
+                    errors.append(
+                        f"aggregation.criterion_results[{criterion_id}].claim_ids: not mapped to "
+                        f"Criterion: {unmapped_claim_ids}"
+                    )
+            adverse_refs = constraints.get("adverse_unit_refs", [])
+            unverifiable_refs = constraints.get("unverifiable_unit_refs", [])
+            applicable_refs = constraints.get("applicable_unit_refs", [])
+            required = constraints.get("required_conclusion_when_no_adverse")
+            if required and conclusion != required:
+                errors.append(
+                    f"aggregation.criterion_results[{criterion_id}]: mapped NOT_VERIFIABLE units "
+                    f"{_format_mapping_refs(unverifiable_refs)} require {required} when no adverse "
+                    f"unit is mapped, got {conclusion}"
+                )
+            elif adverse_refs and conclusion in {"SUPPORTED", "NOT_APPLICABLE"}:
+                errors.append(
+                    f"aggregation.criterion_results[{criterion_id}]: mapped adverse units "
+                    f"{_format_mapping_refs(adverse_refs)} may not aggregate to {conclusion}"
+                )
+            elif applicable_refs and conclusion == "NOT_APPLICABLE":
+                errors.append(
+                    f"aggregation.criterion_results[{criterion_id}]: mapped applicable units "
+                    f"{_format_mapping_refs(applicable_refs)} may not aggregate to NOT_APPLICABLE"
+                )
+        else:
+            if criterion_id in adverse_criteria and conclusion in {"SUPPORTED", "NOT_APPLICABLE"}:
+                errors.append(
+                    f"aggregation.criterion_results[{criterion_id}]: adverse observations may not "
+                    f"aggregate to {conclusion}"
+                )
+            if (
+                state.get("evaluator_version") in UNVERIFIABLE_GUARD_EVALUATOR_VERSIONS
+                and criterion_id in unverifiable_criteria
+                and conclusion == "SUPPORTED"
+            ):
+                errors.append(
+                    f"aggregation.criterion_results[{criterion_id}]: mapped NOT_VERIFIABLE "
+                    "observations or claim units may not aggregate to SUPPORTED"
+                )
 
     if state.get("evaluator_version") == DEFAULT_EVALUATOR_VERSION:
         policy_bases = document.get("outcome_policy_bases")
