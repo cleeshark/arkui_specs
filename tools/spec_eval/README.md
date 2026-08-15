@@ -156,6 +156,9 @@ python3 specs/tools/spec_eval/cli.py --json stability \
 离群标记只使用 Criterion 共识偏离，不使用分数高低猜测：某个 run 必须是唯一最高偏离者，偏离至少20%的 Criterion，且比次高 run 至少多2项，才标记为 `OUTLIER`。分数统计、共识和离群信息仅作为稳定性元数据；正式发布分始终来自 `--selected-run-id` 明确选择的单次 semantic result，多数投票不会改写其结论。
 
 `stability` 是分析命令，合法生成结果时返回 `0`，不会因为被分析 run 的质量 Gate 为 `fail` 而返回 `1`。
+命令本身保持严格语义：少于三份 semantic result 时返回 `2`，不生成统计结果。语义评价服务
+允许 `run_count=1/2`；这类 Job 在报告阶段生成 `status=insufficient_runs` 的伴随产物，明确将
+range、标准差、Criterion 共识和离群项标记为 N/A，并继续完成报告与归档。
 
 ### 3.6 组装 Function 总报告
 
@@ -914,6 +917,8 @@ detached Git worktree，evidence、评价 Skill、Rubric 和 SDK 读取均来自
 
 - 用户原始 checkout 即使有未提交修改也不会被读取或切换。
 - reservation manifest 在创建 worktree 前写入；进程中断后 retry 复用同一组 revision。
+- 报告阶段失败后 retry 会先校验已有 `semantic-result.json`；final 校验通过时直接复用
+  aggregation 产物，仅重跑确定性报告阶段，校验失败才重新执行 aggregation。
 - Job 进入 `completed`、`failed` 或 `cancelled` 后释放 worktree，但保留 manifest 用于追溯。
 - `--max-workers` 控制 Job 并发数；同一 FuncID 的执行仍受 Function 资源锁约束。
 

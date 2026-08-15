@@ -137,7 +137,17 @@ class FakeScriptRunner:
         if "assemble_semantic_result.py" in joined:
             run_dir = next((a for i, a in enumerate(argv) if i and argv[i - 1] == "--run-dir"), None)
             if run_dir:
-                Path(run_dir, "semantic-result.json").write_text("{}", encoding="utf-8")
+                aggregation = json.loads(
+                    Path(run_dir, "aggregation.json").read_text(encoding="utf-8")
+                )
+                Path(run_dir, "semantic-result.json").write_text(
+                    json.dumps({
+                        "func_id": aggregation["func_id"],
+                        "source_revision": aggregation["source_revision"],
+                        "run_id": aggregation["run_id"],
+                    }),
+                    encoding="utf-8",
+                )
             return subprocess.CompletedProcess(argv, 0, "", "")
         # spec_eval score/stability/report: write dummy outputs to the */write paths
         for flag in ("--write", "--analysis-write", "--json-write", "--markdown-write"):
@@ -405,9 +415,13 @@ class GateFailExitCodeTest(_PipelineTestBase):
         return runner
 
     def _semantic_results(self) -> dict[str, Path]:
+        self.ctx.input_dir.mkdir(parents=True, exist_ok=True)
+        identity = {"func_id": self.ctx.func_id, "source_revision": self.ctx.source_revision}
+        for name in ("static-result.json", "evidence-manifest.json"):
+            (self.ctx.input_dir / name).write_text(json.dumps(identity), encoding="utf-8")
         sr = self.ctx.run_dir / "semantic-result.json"
         sr.parent.mkdir(parents=True, exist_ok=True)
-        sr.write_text("{}", encoding="utf-8")
+        sr.write_text(json.dumps({**identity, "run_id": "run-1"}), encoding="utf-8")
         return {"run-1": sr}
 
     def test_report_effective_gate_fail_is_not_an_error(self) -> None:

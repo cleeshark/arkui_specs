@@ -174,7 +174,33 @@ def render_markdown_report(
         )
     shared = analysis.get("function_shared_risk", {})
     lines.extend(["", "### Function-shared risk", "", f"- Risk level: **{shared.get('risk_level', 'None')}**", f"- Findings: {shared.get('finding_count', 0)}"])
-    lines.extend(["", "## Stability", "", f"- Runs: {stability.get('score_statistics', {}).get('count', 0)}", f"- Raw score range: {stability.get('score_statistics', {}).get('range', 0)}", f"- Population standard deviation: {stability.get('score_statistics', {}).get('population_stddev', 0)}", f"- Criterion consensus: {stability.get('consensus_summary', {}).get('consensus_count', 0)}/{stability.get('consensus_summary', {}).get('criterion_count', 0)}", f"- Outlier runs: {', '.join(stability.get('outlier_run_ids', [])) or 'none'}"])
+    if stability.get("status") == "insufficient_runs":
+        lines.extend([
+            "",
+            "## Stability",
+            "",
+            "- Status: **N/A — insufficient runs**",
+            f"- Runs provided: {stability.get('provided_run_count', 0)}",
+            f"- Runs required: {stability.get('required_run_count', 0)}",
+            "- Raw score range: N/A",
+            "- Population standard deviation: N/A",
+            "- Criterion consensus: N/A",
+            "- Outlier runs: N/A",
+        ])
+    else:
+        lines.extend([
+            "",
+            "## Stability",
+            "",
+            f"- Runs: {stability.get('score_statistics', {}).get('count', 0)}",
+            f"- Raw score range: {stability.get('score_statistics', {}).get('range', 0)}",
+            "- Population standard deviation: "
+            f"{stability.get('score_statistics', {}).get('population_stddev', 0)}",
+            "- Criterion consensus: "
+            f"{stability.get('consensus_summary', {}).get('consensus_count', 0)}/"
+            f"{stability.get('consensus_summary', {}).get('criterion_count', 0)}",
+            f"- Outlier runs: {', '.join(stability.get('outlier_run_ids', [])) or 'none'}",
+        ])
     lines.extend(["", "## Protocol and traceability", "", f"- Rubric: `{report['protocol']['rubric_version']}`", f"- Complexity rules: `{report['protocol']['complexity_rules_version']}`", f"- Aggregator: `{score['aggregator_version']}`"])
     lines.append("- Machine-readable analysis and stability inputs remain companion artifacts; they are intentionally outside the frozen JSON report schema.")
     return "\n".join(lines) + "\n"

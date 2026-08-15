@@ -67,7 +67,32 @@ def run_aggregation(
     """
     emit = _DBEmitter(events, ctx.job_id)
     aggregation_path = ctx.run_dir / "aggregation.json"
+    semantic_result_path = ctx.run_dir / "semantic-result.json"
     candidate_path = ctx.run_dir / ".aggregation.json.candidate"
+
+    if semantic_result_path.is_file():
+        try:
+            reused_verdict = staged_stage.validate_final(ctx, runner=runner)
+            reuse_errors = reused_verdict.errors
+        except staged_stage.StagedStageError as exc:
+            reused_verdict = None
+            reuse_errors = (str(exc),)
+        if reused_verdict is not None and reused_verdict.ok:
+            events.append(
+                ctx.job_id,
+                "aggregation_reused",
+                {"semantic_result": str(semantic_result_path)},
+            )
+            return C.STATUS_COMPLETED, semantic_result_path
+        events.append(
+            ctx.job_id,
+            "aggregation_reuse_rejected",
+            {
+                "semantic_result": str(semantic_result_path),
+                "errors": list(reuse_errors),
+            },
+        )
+
     try:
         initialized = load_template(aggregation_path)
         source_observation_ids = _source_observation_ids(ctx.run_dir / "work-items.json")

@@ -29,7 +29,8 @@ from .store.sqlite_store import SqliteStore
 
 TERMINAL_STATES = S.TERMINAL_STATES
 _ERROR_EVENT_TYPES = {
-    "semantic_failed", "aggregation_failed", "worker_crashed", "executor_error",
+    "semantic_failed", "aggregation_failed", "report_failed", "worker_crashed",
+    "executor_error",
 }
 
 
