@@ -199,6 +199,16 @@ apply. When this is the only validation failure, the service may perform one evi
 call using the candidate and original scoped frozen inputs. The repaired payload is rejected unless
 all outcomes, facts, mappings, ownership fields, non-target evidence, and ordering are unchanged.
 
+Evaluator 0.1.15 additionally publishes the final Finding and Criterion-result definitions from
+`semantic-result.schema.json` in `output-contract.json`. Every aggregation candidate is assembled
+in memory and final-validated before replacing the initialized template. The service performs at
+most one deterministic, model-free contract repair: an unambiguous `problem` alias becomes
+`message`, an existing evidence-backed N/A reason becomes `applicability_reason`, and Finding IDs
+plus ownership references are rewritten from stable FuncID/defect/Criterion/Claim identity.
+Different simultaneous `message` and `problem` values fail without publishing the candidate. The
+repair is observable through `aggregation_contract_repair_started`, `_completed`, and `_failed`
+events and remains separate from 0.1.13 mapping reconciliation.
+
 The service also audits every structured-output schema object node for
 `additionalProperties: false` and complete `required` coverage before starting
 Codex. A locally invalid output schema therefore fails at service startup
@@ -315,7 +325,9 @@ pretending the export represents one global revision.
   `aggregation → awaiting_executor` edge, so an unavailable executor there fails
   the job; retry re-runs semantic + aggregation. For 0.1.13 mapping failures, inspect
   `aggregation-context.json` and the `aggregation_reconciliation_*` events. Only mapping-consistency
-  errors receive one reconciliation attempt; other validator errors fail directly.
+  errors receive one reconciliation attempt. For 0.1.15 final-contract drift, inspect the
+  `aggregation_contract_repair_*` events; ambiguous aliases and unrepaired structural errors fail
+  before assemble.
 - **archive not reproducible**: re-run the job for the same FuncID + revision;
   deterministic score/report + content-hashed manifest make bytes match.
 - **refresh returns `deduplicated: true`**: an equivalent active refresh already

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -24,8 +25,19 @@ from spec_eval.service.store.repositories import (
 )
 from spec_eval.service.store.sqlite_store import SqliteStore
 
+SKILL_SCRIPTS = (
+    Path(__file__).resolve().parents[3]
+    / "skills"
+    / "ohos-design-arkui-spec-evaluator"
+    / "scripts"
+)
+if str(SKILL_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(SKILL_SCRIPTS))
 
-EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.14"
+from staged_run_support import semantic_finding_id  # noqa: E402
+
+
+EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.15"
 SOURCE_REVISION = "a" * 40
 
 
@@ -291,6 +303,144 @@ class _Issue14AggregationExecutor:
                 "cross_feat_contracts_reviewed": True,
                 "contradiction_bases": [],
                 "defect_ownership": [],
+                "outcome_policy_bases": policy_bases,
+                "criterion_results": criterion_results,
+                "notes": [],
+            },
+        )
+
+
+class _Issue17ObservationExecutor(_PayloadExecutor):
+    """Publish one evidence-backed verification-plan conflict for ownership."""
+
+    def execute(self, work: C.WorkItemInput, emit, cancel=None) -> C.ExecutionResult:
+        result = super().execute(work, emit, cancel)
+        if work.work_item_id != "function-global":
+            return result
+        payload = result.observation
+        assert payload is not None
+        rubric_path = Path(work.repo_root) / "specs" / "evaluation" / "rubric.yaml"
+        observation = payload["observations"][0]
+        observation.update(
+            criterion_ids=["DESIGN-VERIFICATION-PLAN"],
+            local_outcome="CONFLICT",
+            fact="The verification plan omits executable target and case mappings.",
+            defect_key="missing-verification-assets",
+            primary_criterion_id="DESIGN-VERIFICATION-PLAN",
+            evidence=[{
+                "evidence_id": "EV-issue17-observation",
+                "type": "design_location",
+                "path": "specs/evaluation/rubric.yaml",
+                "source_revision": SOURCE_REVISION,
+                "content_hash": "sha256:" + hashlib.sha256(rubric_path.read_bytes()).hexdigest(),
+                "description": "Synthetic frozen evidence for the verification-plan defect.",
+            }],
+        )
+        return result
+
+
+class _Issue17AggregationExecutor:
+    """Emit the exact issue #17 final-contract drift."""
+
+    def __init__(self, *, conflicting_message: bool = False) -> None:
+        self.conflicting_message = conflicting_message
+        self.calls = 0
+
+    def is_available(self) -> bool:
+        return True
+
+    def describe(self) -> dict:
+        return {"type": "fake-issue17-aggregation-executor"}
+
+    def execute(self, work: C.WorkItemInput, emit, cancel=None) -> C.ExecutionResult:
+        self.calls += 1
+        initialized = json.loads(
+            Path(work.prompt_extras["template_path"]).read_text(encoding="utf-8")
+        )
+        evidence = {
+            "evidence_id": "EV-issue17-contract",
+            "type": "design_location",
+            "path": "specs/01-architecture/01-architecture-design/01-build-system/design.md",
+            "source_revision": SOURCE_REVISION,
+            "content_hash": "sha256:" + "1" * 64,
+            "description": "The frozen design lacks executable verification mappings.",
+        }
+        criterion_results = []
+        for row in initialized["criterion_results"]:
+            completed = dict(row)
+            completed.update(
+                conclusion="NOT_VERIFIABLE",
+                reason="Synthetic evidence is intentionally unavailable.",
+                missing_evidence="The synthetic fixture does not provide this evidence.",
+                claim_ids=[],
+                evidence=[],
+                findings=[],
+            )
+            if row["criterion_id"] == "DESIGN-VERIFICATION-PLAN":
+                finding = {
+                    "finding_id": "SEM-01-01-01-DVP-001",
+                    "criterion_id": "DESIGN-VERIFICATION-PLAN",
+                    "severity": "Major",
+                    "conclusion": "PARTIALLY_SUPPORTED",
+                    "problem": "The plan lacks executable target, binary and case mappings.",
+                    "recommendation": "Add target-to-binary-to-case mappings with pass criteria.",
+                    "evidence_ids": [evidence["evidence_id"]],
+                }
+                if self.conflicting_message:
+                    finding["message"] = "A different message must not be discarded."
+                completed.update(
+                    conclusion="PARTIALLY_SUPPORTED",
+                    reason="The plan has direction but lacks executable mappings.",
+                    evidence=[evidence],
+                    findings=[finding],
+                )
+            elif row["criterion_id"] == "CORRECTNESS-SDK-CONTRACT":
+                completed.update(
+                    applicability="NOT_APPLICABLE",
+                    conclusion="NOT_APPLICABLE",
+                    reason=(
+                        "The Function changes no public SDK, NDK, API-level or ABI contract."
+                    ),
+                    evidence=[{
+                        **evidence,
+                        "evidence_id": "EV-issue17-sdk-na",
+                        "type": "spec_location",
+                        "description": "The frozen scope proves that no SDK contract is changed.",
+                    }],
+                    findings=[],
+                )
+                completed.pop("applicability_reason", None)
+            criterion_results.append(completed)
+
+        policy_bases = []
+        for row in initialized["outcome_policy_bases"]:
+            completed = dict(row)
+            completed.update(
+                content_status="PRESENT",
+                evidence_status="UNAVAILABLE",
+                conflict_scope="NONE",
+                reason="Synthetic policy evidence is intentionally unavailable.",
+            )
+            if row["criterion_id"] == "DESIGN-VERIFICATION-PLAN":
+                completed.update(
+                    evidence_status="PARTIAL",
+                    conflict_scope="LOCAL",
+                    reason="The plan exists but lacks executable verification assets.",
+                )
+            policy_bases.append(completed)
+
+        return C.ExecutionResult(
+            status=C.STATUS_COMPLETED,
+            exit_code=0,
+            observation={
+                "cross_feat_contracts_reviewed": True,
+                "contradiction_bases": [],
+                "defect_ownership": [{
+                    "defect_key": "missing-verification-assets",
+                    "primary_criterion_id": "DESIGN-VERIFICATION-PLAN",
+                    "finding_ids": ["SEM-01-01-01-DVP-001"],
+                    "secondary_criterion_ids": [],
+                }],
                 "outcome_policy_bases": policy_bases,
                 "criterion_results": criterion_results,
                 "notes": [],
@@ -699,6 +849,88 @@ class ContractAlignmentIntegrationTest(unittest.TestCase):
         self.assertEqual(len(executor.prompts), 2)
         self.assertEqual(aggregation_path.read_bytes(), before)
         self.assertEqual(self.statistics.get(self.job.job_id).executor_invocations, 2)
+
+    def test_issue_17_final_contract_drift_is_repaired_before_assemble(self) -> None:
+        semantic = run_semantic(
+            self.ctx,
+            _Issue17ObservationExecutor(),
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+        )
+        self.assertEqual(semantic.outcome, C.STATUS_COMPLETED, semantic.error)
+        self.jobs.transition_status(self.job.job_id, S.AGGREGATION, event_type="test")
+        executor = _Issue17AggregationExecutor()
+        outcome, semantic_result = aggregation_stage.run_aggregation(
+            self.ctx,
+            executor,
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+            statistics=self.statistics,
+        )
+        self.assertEqual(outcome, C.STATUS_COMPLETED)
+        self.assertTrue(semantic_result is not None and semantic_result.is_file())
+        self.assertEqual(executor.calls, 1)
+
+        aggregation = json.loads(
+            (self.ctx.run_dir / "aggregation.json").read_text(encoding="utf-8")
+        )
+        results = {row["criterion_id"]: row for row in aggregation["criterion_results"]}
+        finding = results["DESIGN-VERIFICATION-PLAN"]["findings"][0]
+        expected_id = semantic_finding_id(
+            func_id=self.job.func_id,
+            defect_key="missing-verification-assets",
+            criterion_id="DESIGN-VERIFICATION-PLAN",
+            claim_id=None,
+        )
+        self.assertEqual(finding["finding_id"], expected_id)
+        self.assertEqual(
+            finding["message"],
+            "The plan lacks executable target, binary and case mappings.",
+        )
+        self.assertNotIn("problem", finding)
+        self.assertEqual(
+            aggregation["defect_ownership"][0]["finding_ids"], [expected_id]
+        )
+        sdk = results["CORRECTNESS-SDK-CONTRACT"]
+        self.assertEqual(sdk["applicability_reason"], sdk["reason"])
+        event_types = [
+            event.event_type for event in self.events.list_for_job(self.job.job_id)
+        ]
+        self.assertIn("aggregation_contract_repair_started", event_types)
+        self.assertIn("aggregation_contract_repair_completed", event_types)
+
+    def test_issue_17_conflicting_problem_alias_is_not_silently_discarded(self) -> None:
+        semantic = run_semantic(
+            self.ctx,
+            _Issue17ObservationExecutor(),
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+        )
+        self.assertEqual(semantic.outcome, C.STATUS_COMPLETED, semantic.error)
+        aggregation_path = self.ctx.run_dir / "aggregation.json"
+        before = aggregation_path.read_bytes()
+        self.jobs.transition_status(self.job.job_id, S.AGGREGATION, event_type="test")
+        executor = _Issue17AggregationExecutor(conflicting_message=True)
+        outcome, semantic_result = aggregation_stage.run_aggregation(
+            self.ctx,
+            executor,
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+            statistics=self.statistics,
+        )
+        self.assertEqual(outcome, C.STATUS_FAILED)
+        self.assertIsNone(semantic_result)
+        self.assertEqual(executor.calls, 1)
+        self.assertEqual(aggregation_path.read_bytes(), before)
+        event_types = [
+            event.event_type for event in self.events.list_for_job(self.job.job_id)
+        ]
+        self.assertEqual(event_types.count("aggregation_contract_repair_started"), 1)
+        self.assertEqual(event_types.count("aggregation_contract_repair_failed"), 1)
 
     def test_aggregation_payload_passes_real_assemble_and_final_validator(self) -> None:
         semantic = run_semantic(

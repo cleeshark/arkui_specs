@@ -255,6 +255,20 @@ template, `output-contract.json`, and `aggregation-context.json`; it preserves u
 and cannot reopen evidence or rewrite observations. Structural, evidence, ownership, or protocol
 errors are not eligible for this reconciliation.
 
+For evaluator 0.1.15+, `output-contract.json` also contains
+`aggregation_payload.final_contract`, sourced directly from the final semantic-result Schema.
+Before aggregation is published, the staged validator builds the final candidate in memory and
+runs final schema and protocol validation. Finding identity is deterministic:
+`SEM-` plus 24 lowercase SHA-256 hex characters over canonical JSON containing identity version,
+FuncID, defect key, Criterion ID, and optional Claim ID. Classification and prose do not participate
+in identity.
+
+An automated service may apply one model-free structural repair before mapping reconciliation. It
+may migrate `problem` to `message` only when no different message exists, copy a non-empty
+evidence-backed N/A `reason` to `applicability_reason`, and rewrite Finding IDs together with their
+`defect_ownership[].finding_ids` references. Any ambiguous alias or remaining structural error
+fails validation.
+
 An aggregation may not conclude `SUPPORTED` or `NOT_APPLICABLE` for a Criterion that has a mapped
 `CONFLICT` or `MISSING` observation. Correct the observation mapping or use the applicable adverse
 aggregate conclusion.
@@ -288,7 +302,7 @@ Contradicted for a core conflict. A core conflict takes precedence over omission
     {
       "defect_key": "divider-graphic-2d-dependency",
       "primary_criterion_id": "COMPATIBILITY-SYSTEM-IMPACT",
-      "finding_ids": ["SEM-example-1", "SEM-example-2"],
+      "finding_ids": ["SEM-24a4230aa84b7ed2ab73b933", "SEM-e47b9212ec60385b4b72572d"],
       "secondary_criterion_ids": ["DESIGN-IMPLEMENTATION-PATH"]
     }
   ],

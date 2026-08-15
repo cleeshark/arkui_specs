@@ -48,7 +48,7 @@ from spec_eval.protocol_validator import validate_protocol  # noqa: E402
 EVALUATION_ROOT = SPECS_ROOT / "evaluation"
 MANIFEST_PATH = EVALUATION_ROOT / "golden" / "manifest.yaml"
 REVIEWS_ROOT = (EVALUATION_ROOT / "reviews").resolve()
-DEFAULT_EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.14"
+DEFAULT_EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.15"
 
 
 def _load_object(path: Path) -> dict[str, Any]:

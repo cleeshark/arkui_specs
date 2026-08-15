@@ -31,6 +31,7 @@ SCHEMA_V2_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.11",
     "skill:ohos-design-arkui-spec-evaluator@0.1.12",
     "skill:ohos-design-arkui-spec-evaluator@0.1.13",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.14",
     DEFAULT_EVALUATOR_VERSION,
 }
 DEEP_CONTRACT_EVALUATOR_VERSIONS = {
@@ -39,6 +40,7 @@ DEEP_CONTRACT_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.11",
     "skill:ohos-design-arkui-spec-evaluator@0.1.12",
     "skill:ohos-design-arkui-spec-evaluator@0.1.13",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.14",
     DEFAULT_EVALUATOR_VERSION,
 }
 UNVERIFIABLE_GUARD_EVALUATOR_VERSIONS = {
@@ -46,13 +48,24 @@ UNVERIFIABLE_GUARD_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.11",
     "skill:ohos-design-arkui-spec-evaluator@0.1.12",
     "skill:ohos-design-arkui-spec-evaluator@0.1.13",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.14",
     DEFAULT_EVALUATOR_VERSION,
 }
 AGGREGATION_MAPPING_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.13",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.14",
     DEFAULT_EVALUATOR_VERSION,
 }
+OUTCOME_POLICY_BASIS_EVALUATOR_VERSIONS = {
+    "skill:ohos-design-arkui-spec-evaluator@0.1.11",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.12",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.13",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.14",
+    DEFAULT_EVALUATOR_VERSION,
+}
+FINAL_AGGREGATION_CONTRACT_EVALUATOR_VERSIONS = {DEFAULT_EVALUATOR_VERSION}
 AGGREGATION_CONTEXT_SCHEMA_VERSION = 1
+SEMANTIC_FINDING_IDENTITY_VERSION = 1
 OUTCOME_POLICY_BASIS_CRITERIA = [
     "SPEC-AC-TESTABILITY",
     "SPEC-TRACEABILITY",
@@ -139,6 +152,30 @@ OBSERVATION_ID = re.compile(r"^OBS-[A-Za-z0-9._-]+$")
 EVIDENCE_ID = re.compile(r"^EV-[A-Za-z0-9._-]+$")
 HASH_VALUE = re.compile(r"^sha256:[0-9a-f]{64}$")
 DEFECT_KEY = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
+
+
+def semantic_finding_id(
+    *,
+    func_id: str,
+    defect_key: str,
+    criterion_id: str,
+    claim_id: str | None,
+) -> str:
+    """Return the stable semantic Finding identity for one owned defect projection."""
+    identity = {
+        "identity_version": SEMANTIC_FINDING_IDENTITY_VERSION,
+        "func_id": func_id,
+        "defect_key": defect_key,
+        "criterion_id": criterion_id,
+        "claim_id": claim_id,
+    }
+    encoded = json.dumps(
+        identity,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return "SEM-" + hashlib.sha256(encoded).hexdigest()[:24]
 
 
 def load_object(path: Path) -> dict[str, Any]:
@@ -254,6 +291,45 @@ def staged_output_contract(
                 "NOT_APPLICABLE is invalid when any mapped unit is applicable.",
                 "New aggregation evidence may explain a conclusion but may not silently override a published mapped outcome.",
             ],
+        }
+    if evaluator_version in FINAL_AGGREGATION_CONTRACT_EVALUATOR_VERSIONS:
+        semantic_schema = load_object(
+            EVALUATION_ROOT / "schemas" / "semantic-result.schema.json"
+        )
+        schema_defs = semantic_schema.get("$defs", {})
+        aggregation_payload["final_contract"] = {
+            "semantic_finding_schema": copy.deepcopy(schema_defs["semantic_finding"]),
+            "criterion_result_schema": copy.deepcopy(schema_defs["criterion_result"]),
+            "conditional_fields": {
+                "NOT_APPLICABLE": {
+                    "required": ["applicability_reason"],
+                    "evidence_min_items": 1,
+                },
+                "NOT_VERIFIABLE": {"required": ["missing_evidence"]},
+            },
+            "finding_identity": {
+                "identity_version": SEMANTIC_FINDING_IDENTITY_VERSION,
+                "prefix": "SEM-",
+                "hex_length": 24,
+                "hash": "sha256",
+                "canonical_json": {
+                    "sort_keys": True,
+                    "separators": [",", ":"],
+                    "ensure_ascii": False,
+                },
+                "fields": [
+                    "identity_version",
+                    "func_id",
+                    "defect_key",
+                    "criterion_id",
+                    "claim_id",
+                ],
+                "rule": (
+                    "SEM- + first 24 lowercase hex characters of SHA-256 over canonical "
+                    "JSON of the declared identity fields. Classification and prose fields "
+                    "do not participate in identity."
+                ),
+            },
         }
     return {
         "schema_version": 1,
@@ -1106,7 +1182,7 @@ def validate_aggregation_document(
                     "observations or claim units may not aggregate to SUPPORTED"
                 )
 
-    if state.get("evaluator_version") == DEFAULT_EVALUATOR_VERSION:
+    if state.get("evaluator_version") in OUTCOME_POLICY_BASIS_EVALUATOR_VERSIONS:
         policy_bases = document.get("outcome_policy_bases")
         if not isinstance(policy_bases, list):
             errors.append("aggregation.outcome_policy_bases: expected a list")
@@ -1239,6 +1315,31 @@ def validate_aggregation_document(
                 f"got {owners}"
             )
 
+    if state.get("evaluator_version") in FINAL_AGGREGATION_CONTRACT_EVALUATOR_VERSIONS:
+        func_id = document.get("func_id")
+        if isinstance(func_id, str):
+            for finding_id, finding in findings_by_id.items():
+                owners = finding_owners.get(finding_id, [])
+                if len(owners) != 1:
+                    continue
+                criterion_id = finding.get("criterion_id")
+                claim_id = finding.get("claim_id")
+                if not isinstance(criterion_id, str) or (
+                    claim_id is not None and not isinstance(claim_id, str)
+                ):
+                    continue
+                expected_id = semantic_finding_id(
+                    func_id=func_id,
+                    defect_key=owners[0],
+                    criterion_id=criterion_id,
+                    claim_id=claim_id,
+                )
+                if finding_id != expected_id:
+                    errors.append(
+                        f"aggregation.finding_id {finding_id}: expected deterministic ID "
+                        f"{expected_id}"
+                    )
+
     bases = document.get("contradiction_bases")
     if not isinstance(bases, list):
         errors.append("aggregation.contradiction_bases: expected a list")
@@ -1293,6 +1394,112 @@ def validate_aggregation_document(
             f"exactly once in Criterion order; expected {contradicted_criteria}, got {basis_criteria}"
         )
     return errors
+
+
+def repair_aggregation_contract(
+    document: dict[str, Any],
+) -> tuple[dict[str, Any], list[str]]:
+    """Apply the evaluator 0.1.15 deterministic final-contract repair once.
+
+    The repair is deliberately structural: it does not change conclusions,
+    classification, evidence, recommendations, or explanatory prose.
+    """
+    repaired = copy.deepcopy(document)
+    changes: list[str] = []
+    ownership = repaired.get("defect_ownership")
+    results = repaired.get("criterion_results")
+    if not isinstance(ownership, list) or not isinstance(results, list):
+        raise ValueError("aggregation contract repair requires ownership and Criterion lists")
+
+    owner_by_finding_id: dict[str, str] = {}
+    for record in ownership:
+        if not isinstance(record, dict):
+            continue
+        defect_key = record.get("defect_key")
+        finding_ids = record.get("finding_ids")
+        if not isinstance(defect_key, str) or not isinstance(finding_ids, list):
+            continue
+        for finding_id in finding_ids:
+            if not isinstance(finding_id, str):
+                continue
+            previous = owner_by_finding_id.get(finding_id)
+            if previous is not None and previous != defect_key:
+                raise ValueError(
+                    f"Finding {finding_id} has conflicting owners {previous!r} and {defect_key!r}"
+                )
+            owner_by_finding_id[finding_id] = defect_key
+
+    func_id = repaired.get("func_id")
+    if not isinstance(func_id, str) or not func_id:
+        raise ValueError("aggregation contract repair requires func_id")
+    rewritten_ids: dict[str, str] = {}
+    canonical_ids: set[str] = set()
+    for result_index, result in enumerate(results):
+        if not isinstance(result, dict):
+            continue
+        if (
+            result.get("conclusion") == "NOT_APPLICABLE"
+            and not str(result.get("applicability_reason", "")).strip()
+            and str(result.get("reason", "")).strip()
+            and isinstance(result.get("evidence"), list)
+            and result["evidence"]
+        ):
+            result["applicability_reason"] = result["reason"]
+            changes.append(
+                f"criterion_results[{result_index}].applicability_reason copied from reason"
+            )
+        findings = result.get("findings")
+        if not isinstance(findings, list):
+            continue
+        for finding_index, finding in enumerate(findings):
+            if not isinstance(finding, dict):
+                continue
+            label = f"criterion_results[{result_index}].findings[{finding_index}]"
+            problem = finding.get("problem")
+            message = finding.get("message")
+            if problem is not None:
+                if not isinstance(problem, str) or not problem:
+                    raise ValueError(f"{label}.problem must be a non-empty string")
+                if message is not None and message != problem:
+                    raise ValueError(
+                        f"{label} contains different message and problem values"
+                    )
+                if message is None:
+                    finding["message"] = problem
+                    changes.append(f"{label}.problem migrated to message")
+                else:
+                    changes.append(f"{label}.problem alias removed")
+                finding.pop("problem", None)
+            old_id = finding.get("finding_id")
+            defect_key = owner_by_finding_id.get(old_id) if isinstance(old_id, str) else None
+            criterion_id = finding.get("criterion_id")
+            claim_id = finding.get("claim_id")
+            if defect_key is None or not isinstance(criterion_id, str):
+                continue
+            if claim_id is not None and not isinstance(claim_id, str):
+                continue
+            new_id = semantic_finding_id(
+                func_id=func_id,
+                defect_key=defect_key,
+                criterion_id=criterion_id,
+                claim_id=claim_id,
+            )
+            if new_id in canonical_ids and new_id != old_id:
+                raise ValueError(f"{label}: deterministic Finding ID collision {new_id}")
+            canonical_ids.add(new_id)
+            if old_id != new_id:
+                finding["finding_id"] = new_id
+                rewritten_ids[old_id] = new_id
+                changes.append(f"{label}.finding_id rewritten to {new_id}")
+
+    for owner_index, record in enumerate(ownership):
+        if not isinstance(record, dict) or not isinstance(record.get("finding_ids"), list):
+            continue
+        updated = [rewritten_ids.get(finding_id, finding_id) for finding_id in record["finding_ids"]]
+        if updated != record["finding_ids"]:
+            record["finding_ids"] = updated
+            changes.append(f"defect_ownership[{owner_index}].finding_ids synchronized")
+    return repaired, changes
 
 
 def build_final_candidate(

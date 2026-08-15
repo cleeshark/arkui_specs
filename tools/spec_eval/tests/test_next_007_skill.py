@@ -21,6 +21,8 @@ from staged_run_support import (  # noqa: E402
     EVIDENCE_TYPES,
     OUTCOME_POLICY_BASIS_CRITERIA,
     build_aggregation_context,
+    repair_aggregation_contract,
+    semantic_finding_id,
     staged_output_contract,
     validate_aggregation_document,
     validate_observation_document,
@@ -38,7 +40,7 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
     def _staged_identity(self) -> dict[str, object]:
         return {
             "schema_version": 2,
-            "evaluator_version": "skill:ohos-design-arkui-spec-evaluator@0.1.14",
+            "evaluator_version": "skill:ohos-design-arkui-spec-evaluator@0.1.15",
             "func_id": "05-01-02",
             "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
             "run_id": "validator-unit-test",
@@ -133,7 +135,7 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
         _, frontmatter, _ = content.split("---", 2)
         metadata = yaml.safe_load(frontmatter)
         self.assertEqual(metadata["name"], "ohos-design-arkui-spec-evaluator")
-        self.assertEqual(metadata["metadata"]["version"], "0.1.14")
+        self.assertEqual(metadata["metadata"]["version"], "0.1.15")
         self.assertEqual(metadata["metadata"]["rubric-version"], "0.3.0")
         self.assertLess(len(content.splitlines()), 500)
         for relative in (
@@ -206,7 +208,7 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             semantic = json.loads(result_path.read_text(encoding="utf-8"))
             self.assertEqual(
                 semantic["evaluator_version"],
-                "skill:ohos-design-arkui-spec-evaluator@0.1.14",
+                "skill:ohos-design-arkui-spec-evaluator@0.1.15",
             )
             expected_ids = [
                 criterion["id"]
@@ -284,7 +286,7 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(
                 json.loads(output.read_text(encoding="utf-8"))["evaluator_version"],
-                "skill:ohos-design-arkui-spec-evaluator@0.1.14",
+                "skill:ohos-design-arkui-spec-evaluator@0.1.15",
             )
 
     def test_machine_output_contract_matches_validator_and_rubric(self) -> None:
@@ -353,6 +355,89 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
                     for error in errors
                 )
                 self.assertEqual(has_cardinality_error, minimum > 0)
+
+    def test_aggregation_final_contract_is_machine_readable_and_same_source(self) -> None:
+        contract = staged_output_contract(source_revision="a" * 40)
+        final_contract = contract["aggregation_payload"]["final_contract"]
+        schema = json.loads(
+            (self.evaluation_root / "schemas" / "semantic-result.schema.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(
+            final_contract["semantic_finding_schema"],
+            schema["$defs"]["semantic_finding"],
+        )
+        self.assertEqual(
+            final_contract["criterion_result_schema"],
+            schema["$defs"]["criterion_result"],
+        )
+        self.assertEqual(final_contract["finding_identity"]["prefix"], "SEM-")
+        self.assertEqual(final_contract["finding_identity"]["hex_length"], 24)
+        self.assertEqual(
+            final_contract["conditional_fields"]["NOT_APPLICABLE"]["required"],
+            ["applicability_reason"],
+        )
+        historical = staged_output_contract(
+            source_revision="a" * 40,
+            evaluator_version="skill:ohos-design-arkui-spec-evaluator@0.1.14",
+        )
+        self.assertNotIn("final_contract", historical["aggregation_payload"])
+
+    def test_semantic_finding_id_is_stable_across_classification_changes(self) -> None:
+        finding_id = semantic_finding_id(
+            func_id="01-01-01",
+            defect_key="missing-verification-assets",
+            criterion_id="DESIGN-VERIFICATION-PLAN",
+            claim_id=None,
+        )
+        self.assertRegex(finding_id, r"^SEM-[0-9a-f]{24}$")
+        self.assertEqual(
+            finding_id,
+            semantic_finding_id(
+                func_id="01-01-01",
+                defect_key="missing-verification-assets",
+                criterion_id="DESIGN-VERIFICATION-PLAN",
+                claim_id=None,
+            ),
+        )
+        self.assertNotEqual(
+            finding_id,
+            semantic_finding_id(
+                func_id="01-01-01",
+                defect_key="missing-verification-assets",
+                criterion_id="DESIGN-VERIFICATION-PLAN",
+                claim_id="DESIGN/R-1",
+            ),
+        )
+
+    def test_matching_problem_alias_is_removed_without_changing_message(self) -> None:
+        finding_id = semantic_finding_id(
+            func_id="01-01-01",
+            defect_key="same-alias",
+            criterion_id="DESIGN-VERIFICATION-PLAN",
+            claim_id=None,
+        )
+        repaired, changes = repair_aggregation_contract({
+            "func_id": "01-01-01",
+            "defect_ownership": [{
+                "defect_key": "same-alias",
+                "finding_ids": [finding_id],
+            }],
+            "criterion_results": [{
+                "criterion_id": "DESIGN-VERIFICATION-PLAN",
+                "findings": [{
+                    "finding_id": finding_id,
+                    "criterion_id": "DESIGN-VERIFICATION-PLAN",
+                    "message": "Keep this exact message.",
+                    "problem": "Keep this exact message.",
+                }],
+            }],
+        })
+        finding = repaired["criterion_results"][0]["findings"][0]
+        self.assertEqual(finding["message"], "Keep this exact message.")
+        self.assertNotIn("problem", finding)
+        self.assertTrue(any("problem alias removed" in change for change in changes))
 
     def test_aggregation_context_is_deterministic_and_inherits_claim_unit_mapping(self) -> None:
         document, item, state = self._valid_observation()
@@ -845,16 +930,28 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
         results = self._criterion_results()
         primary = results[0]["criterion_id"]
         secondary = results[1]["criterion_id"]
+        primary_finding_id = semantic_finding_id(
+            func_id=state["func_id"],
+            defect_key="shared-secondary-root",
+            criterion_id=primary,
+            claim_id=None,
+        )
+        secondary_finding_id = semantic_finding_id(
+            func_id=state["func_id"],
+            defect_key="shared-secondary-root",
+            criterion_id=secondary,
+            claim_id=None,
+        )
         next(item for item in results if item["criterion_id"] == primary)["conclusion"] = "PARTIALLY_SUPPORTED"
         next(item for item in results if item["criterion_id"] == secondary)["conclusion"] = "CONTRADICTED"
         results[0]["findings"] = [{
-            "finding_id": "SEM-secondary-root-primary",
+            "finding_id": primary_finding_id,
             "criterion_id": primary,
             "severity": "Major",
             "evidence_ids": [],
         }]
         results[1]["findings"] = [{
-            "finding_id": "SEM-secondary-root-impact",
+            "finding_id": secondary_finding_id,
             "criterion_id": secondary,
             "severity": "Major",
             "evidence_ids": [],
@@ -888,7 +985,7 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
                 "defect_ownership": [{
                     "defect_key": "shared-secondary-root",
                     "primary_criterion_id": primary,
-                    "finding_ids": ["SEM-secondary-root-primary", "SEM-secondary-root-impact"],
+                    "finding_ids": [primary_finding_id, secondary_finding_id],
                     "secondary_criterion_ids": [secondary],
                 }],
                 "outcome_policy_bases": self._valid_policy_bases(),
@@ -1043,11 +1140,23 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
         results = self._criterion_results()
         first_id = results[0]["criterion_id"]
         second_id = results[1]["criterion_id"]
+        first_finding_id = semantic_finding_id(
+            func_id=state["func_id"],
+            defect_key="shared-root-defect",
+            criterion_id=first_id,
+            claim_id=None,
+        )
+        second_finding_id = semantic_finding_id(
+            func_id=state["func_id"],
+            defect_key="shared-root-defect",
+            criterion_id=second_id,
+            claim_id=None,
+        )
         results[0]["findings"] = [
-            {"finding_id": "SEM-unit-a", "criterion_id": first_id, "severity": "Critical", "evidence_ids": []}
+            {"finding_id": first_finding_id, "criterion_id": first_id, "severity": "Critical", "evidence_ids": []}
         ]
         results[1]["findings"] = [
-            {"finding_id": "SEM-unit-b", "criterion_id": second_id, "severity": "Critical", "evidence_ids": []}
+            {"finding_id": second_finding_id, "criterion_id": second_id, "severity": "Critical", "evidence_ids": []}
         ]
         with TemporaryDirectory() as temporary:
             observation_path = Path(temporary) / "observation.json"
@@ -1070,7 +1179,7 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
                 "defect_ownership": [{
                     "defect_key": "shared-root-defect",
                     "primary_criterion_id": first_id,
-                    "finding_ids": ["SEM-unit-a", "SEM-unit-b"],
+                    "finding_ids": [first_finding_id, second_finding_id],
                     "secondary_criterion_ids": [second_id],
                 }],
             }

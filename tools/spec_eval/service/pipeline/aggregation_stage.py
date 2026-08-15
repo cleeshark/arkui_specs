@@ -49,6 +49,14 @@ _RECONCILABLE_AGGREGATION_ERROR_MARKERS = (
     ": mapped applicable units ",
 )
 
+_REPAIRABLE_AGGREGATION_CONTRACT_ERROR_MARKERS = (
+    "expected deterministic ID SEM-",
+    "missing required property 'message'",
+    ".problem: additional property is not allowed",
+    "missing required property 'applicability_reason'",
+    ": N/A requires a reason and reproducible evidence",
+)
+
 
 def run_aggregation(
     ctx: RunContext,
@@ -125,6 +133,57 @@ def run_aggregation(
             json.dumps(candidate, ensure_ascii=False, indent=2), encoding="utf-8"
         )
         verdict = staged_stage.validate_aggregation_candidate(ctx, candidate_path, runner=runner)
+        if not verdict.ok and _repairable_aggregation_contract_errors(verdict.errors):
+            events.append(
+                ctx.job_id,
+                "aggregation_contract_repair_started",
+                {
+                    "work_item_id": work.work_item_id,
+                    "repair_attempt": 1,
+                    "errors": list(verdict.errors),
+                },
+            )
+            try:
+                staged_stage.repair_aggregation_contract_candidate(
+                    ctx, candidate_path, runner=runner
+                )
+            except staged_stage.StagedStageError as exc:
+                events.append(
+                    ctx.job_id,
+                    "aggregation_contract_repair_failed",
+                    {
+                        "work_item_id": work.work_item_id,
+                        "repair_attempt": 1,
+                        "error": str(exc),
+                    },
+                )
+                jobs.transition_status(
+                    ctx.job_id,
+                    S.FAILED,
+                    event_type="aggregation_failed",
+                    payload={"work_item_id": work.work_item_id, "error": str(exc)},
+                )
+                return C.STATUS_FAILED, None
+            verdict = staged_stage.validate_aggregation_candidate(
+                ctx, candidate_path, runner=runner
+            )
+            repair_resolved_contract = verdict.ok or (
+                aggregation_context_path is not None
+                and _reconcilable_aggregation_errors(verdict.errors)
+            )
+            events.append(
+                ctx.job_id,
+                (
+                    "aggregation_contract_repair_completed"
+                    if repair_resolved_contract else
+                    "aggregation_contract_repair_failed"
+                ),
+                {
+                    "work_item_id": work.work_item_id,
+                    "repair_attempt": 1,
+                    "errors": list(verdict.errors),
+                },
+            )
         if (
             not verdict.ok
             and aggregation_context_path is not None
@@ -342,6 +401,13 @@ def _build_aggregation_reconciliation_input(
 def _reconcilable_aggregation_errors(errors: tuple[str, ...]) -> bool:
     return bool(errors) and all(
         any(marker in error for marker in _RECONCILABLE_AGGREGATION_ERROR_MARKERS)
+        for error in errors
+    )
+
+
+def _repairable_aggregation_contract_errors(errors: tuple[str, ...]) -> bool:
+    return bool(errors) and all(
+        any(marker in error for marker in _REPAIRABLE_AGGREGATION_CONTRACT_ERROR_MARKERS)
         for error in errors
     )
 
