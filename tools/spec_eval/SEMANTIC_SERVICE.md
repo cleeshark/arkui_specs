@@ -89,19 +89,37 @@ report head.
 | GET    | `/api/jobs[?status=]` | list jobs |
 | GET    | `/api/jobs/{id}` | job detail |
 | GET    | `/api/jobs/{id}/events?since_seq=` | monotonic event log |
-| POST   | `/api/jobs/{id}/cancel` | cooperative cancel |
+| POST   | `/api/jobs/{id}/cancel` | state-aware immediate/cooperative cancel |
 | POST   | `/api/jobs/{id}/retry` | failed/cancelled → queued |
 | GET    | `/api/jobs/{id}/artifacts/{kind}` | artifact download (path-traversal guarded) |
 | GET    | `/api/metrics` | operational metrics |
 
 Static UI is served at `/` and `/static/*`. It provides manual refresh,
 Function freshness/history, concurrent Job progress, cancel, and retry views.
+Function reports and Jobs are paginated independently after their respective
+freshness/status filters are applied. Both tables show 10 rows by default and
+offer 10, 50, or 100 rows per page; polling preserves the current page and
+clamps it when refreshed data no longer has that page.
 Active Jobs show an indeterminate activity animation and a duration counter that
 updates every second. Completed/failed/cancelled Jobs retain their final wall
 duration, cumulative executor time, executor invocation count, and Codex token
 usage in the list and detail views. The statistics cards summarize all persisted
 Jobs; a missing Codex usage event is shown as `not reported`, never estimated as
 an exact count.
+
+Cancellation responses distinguish lifecycle outcomes instead of reporting a
+process signal as a completed state transition:
+
+- HTTP 200 `cancelled`: `queued` or `awaiting_executor` was persisted directly.
+- HTTP 202 `cancellation_requested`: an active worker received a cooperative flag.
+- HTTP 409 `already_terminal` / `stage_not_cancellable`: the request cannot change the Job.
+- HTTP 404 `not_found`: the Job does not exist.
+
+Semantic and aggregation workers must persist `cancelled` before releasing their
+workspace and cancellation registration. A worker that returns while its Job is
+still active is failed with `worker_returned_nonterminal`, preventing live zombie
+Jobs. Startup recovery remains a second line of defence and resets interrupted
+worker-owned states to `queued`.
 
 Bind `0.0.0.0` only with `--token`; every request must then carry
 `Authorization: Bearer <token>`. The built-in UI has no token input field, so

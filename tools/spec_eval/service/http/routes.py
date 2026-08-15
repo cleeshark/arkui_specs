@@ -132,9 +132,19 @@ def _route_jobs(method: str, rest: list[str], query: dict[str, str], body: bytes
 
     # /api/jobs/{id}/cancel
     if action == "cancel" and len(rest) == 2 and method == "POST":
-        if not app.cancel(job_id):
-            return _error(409, "job not running or already cancelled")
-        return Response.json(200, {"job_id": job_id, "cancelled": True})
+        result = app.cancel(job_id)
+        payload = {
+            "job_id": job_id,
+            "cancelled": result.outcome == "cancelled",
+            "outcome": result.outcome,
+            "status": result.status,
+            "message": result.message,
+        }
+        if result.accepted:
+            status = 202 if result.outcome.startswith("cancellation_") else 200
+            return Response.json(status, payload)
+        payload["error"] = result.message
+        return Response.json(404 if result.outcome == "not_found" else 409, payload)
 
     # /api/jobs/{id}/retry
     if action == "retry" and len(rest) == 2 and method == "POST":

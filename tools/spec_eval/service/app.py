@@ -18,7 +18,7 @@ from .executors.base import SemanticExecutor
 from .executors.codex_cli import CodexCliExecutor
 from .pipeline.context import DEFAULT_SKILL_EVALUATOR_VERSION
 from .manual_refresh import ManualRefreshService
-from .scheduler.dispatcher import Dispatcher
+from .scheduler.dispatcher import CancelResult, Dispatcher
 from .scheduler.job_worker import build_runner
 from .settings import ServiceSettings
 from .store.repositories import (
@@ -152,7 +152,7 @@ class SemanticServiceApp:
         self.jobs.get_job(job_id)  # raises JobNotFoundError if absent
         return EventRepository(self.store).list_for_job(job_id, since_seq=since_seq)
 
-    def cancel(self, job_id: str) -> bool:
+    def cancel(self, job_id: str) -> CancelResult:
         return self.dispatcher.cancel(job_id)
 
     def retry(self, job_id: str) -> str:

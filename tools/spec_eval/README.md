@@ -892,6 +892,16 @@ curl -sX POST http://127.0.0.1:8790/api/jobs/<job_id>/retry
 curl -s  http://127.0.0.1:8790/api/jobs/<job_id>/artifacts/score-result -o score.json
 ```
 
+取消接口按 Job 生命周期返回结构化结果：`queued`/`awaiting_executor` 立即落为
+`cancelled` 并返回 HTTP 200；semantic/aggregation 等活动 worker 返回 HTTP 202
+`cancellation_requested`，由 worker 在退出前持久化终态；已完成或不可取消阶段返回
+HTTP 409，并携带准确的 `outcome`、`status` 和 `error`。内置 UI 会展示 Cancel/Retry
+失败信息，不再静默吞掉 409/5xx。
+
+内置 UI 的 Function reports 和 Jobs 表格分别独立分页。分页在新鲜度/状态筛选之后执行，
+默认每页 10 条，可切换为 10/50/100 条；筛选条件或每页条数变化时回到第一页，后台轮询
+刷新时保留当前页，数据减少导致页码越界时自动回退到最后一个有效页。
+
 ### 14.3 Revision 隔离和并行约束
 
 手动刷新提交时会解析并记录 `ace_engine`、`specs`、`sdk-js`、`sdk_c` 四个仓库的精确

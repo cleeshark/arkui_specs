@@ -12,6 +12,8 @@ from __future__ import annotations
 import threading
 from typing import Callable
 
+from ..domain import states as S
+from ..executors import contract as C
 from ..executors.base import SemanticExecutor
 from ..pipeline._subprocess import Runner, default_runner
 from ..pipeline.semantic_stage import run_job_pipeline
@@ -42,12 +44,13 @@ def build_runner(
     def run_job(job_id: str, cancel: threading.Event) -> None:
         workspace_manager = RevisionWorkspaceManager(settings)
         targets = RefreshTargetRepository(store)
+        jobs = JobRepository(store)
         raised = False
         try:
-            run_job_pipeline(
+            result = run_job_pipeline(
                 job_id,
                 settings=settings,
-                jobs=JobRepository(store),
+                jobs=jobs,
                 attempts=AttemptRepository(store),
                 events=EventRepository(store),
                 artifacts=ArtifactRepository(store),
@@ -59,12 +62,16 @@ def build_runner(
                 cancel=cancel,
                 runner=runner,
             )
+            if result.outcome == C.STATUS_CANCELLED:
+                current = jobs.get_job(job_id)
+                if current.status not in S.TERMINAL_STATES:
+                    jobs.cancel(job_id, reason=result.error or "cancelled by user")
         except Exception as exc:
             raised = True
             _mark_refresh_failed(store, targets, job_id, str(exc))
             raise
         finally:
-            job = JobRepository(store).get_job(job_id)
+            job = jobs.get_job(job_id)
             if job.status in {"failed", "cancelled"}:
                 _mark_refresh_failed(store, targets, job_id, job.status)
             if raised or job.status in {"completed", "failed", "cancelled"}:

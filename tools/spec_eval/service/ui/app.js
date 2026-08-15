@@ -6,18 +6,54 @@ const METRICS_POLL_MS = 10000;
 const ACTIVE_STATES = new Set(["preparing", "evidence", "semantic", "aggregation", "archive", "site_history"]);
 let selectedJob = null;
 let lastMetricsAt = 0;
+let latestJobs = [];
+let latestFunctions = [];
+let jobsPage = 1;
+let jobsPageSizeValue = 10;
+let functionsPage = 1;
+let functionsPageSizeValue = 10;
 
 const status = (document.getElementById("status"));
 const filter = (document.getElementById("filter"));
 const tbody = document.querySelector("#jobs tbody");
 const functionBody = document.querySelector("#functions tbody");
 const freshnessFilter = document.getElementById("freshness-filter");
+const functionsPageSize = document.getElementById("functions-page-size");
+const functionsPagePrev = document.getElementById("functions-page-prev");
+const functionsPageNext = document.getElementById("functions-page-next");
+const functionsPageInfo = document.getElementById("functions-page-info");
+const jobsPageSize = document.getElementById("jobs-page-size");
+const jobsPagePrev = document.getElementById("jobs-page-prev");
+const jobsPageNext = document.getElementById("jobs-page-next");
+const jobsPageInfo = document.getElementById("jobs-page-info");
 const form = document.getElementById("create-form");
 const createError = document.getElementById("create-error");
+const actionError = document.getElementById("action-error");
 
 function esc(s) {
   return String(s == null ? "" : s).replace(/[&<>"]/g, (c) =>
     ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
+}
+
+function paginate(items, page, pageSize) {
+  const total = items.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const currentPage = Math.min(Math.max(1, page), totalPages);
+  const offset = (currentPage - 1) * pageSize;
+  return {
+    items: items.slice(offset, offset + pageSize),
+    page: currentPage,
+    totalPages,
+    total,
+    start: total ? offset + 1 : 0,
+    end: Math.min(offset + pageSize, total),
+  };
+}
+
+function updatePagination(result, info, previous, next) {
+  info.textContent = `Page ${result.page} of ${result.totalPages} · ${result.start}–${result.end} of ${result.total}`;
+  previous.disabled = result.page <= 1;
+  next.disabled = result.page >= result.totalPages;
 }
 
 async function api(method, path, body) {
@@ -34,7 +70,10 @@ async function api(method, path, body) {
 }
 
 function rowActions(job) {
-  const cancel = (job.status === "queued" || job.status === "preparing" || job.status === "evidence" || job.status === "semantic" || job.status === "awaiting_executor")
+  const cancel = (
+    job.status === "queued" || job.status === "preparing" || job.status === "evidence" ||
+    job.status === "semantic" || job.status === "aggregation" || job.status === "awaiting_executor"
+  )
     ? `<button data-act="cancel" data-id="${esc(job.job_id)}">cancel</button>` : "";
   const retry = (job.status === "failed" || job.status === "cancelled")
     ? `<button data-act="retry" data-id="${esc(job.job_id)}">retry</button>` : "";
@@ -84,12 +123,14 @@ function tokenHtml(job) {
   return `<span title="${esc(title)}">${formatNumber(usage.total_tokens)}${suffix}</span>`;
 }
 
-function renderJobs(jobs) {
+function renderJobs(jobs = latestJobs) {
   const f = filter.value;
-  const visible = f ? jobs.filter((j) => j.status === f) : jobs;
+  const filtered = f ? jobs.filter((j) => j.status === f) : jobs;
+  const paged = paginate(filtered, jobsPage, jobsPageSizeValue);
+  jobsPage = paged.page;
   const running = jobs.filter((j) => ACTIVE_STATES.has(j.status)).length;
   status.textContent = `${jobs.length} job(s) · ${running} running`;
-  tbody.innerHTML = visible.map((job) => `
+  tbody.innerHTML = paged.items.map((job) => `
     <tr data-id="${esc(job.job_id)}" class="${ACTIVE_STATES.has(job.status) ? "job-active" : ""}">
       <td>${esc(job.func_id)}</td>
       <td class="badge ${esc(job.status)}">${esc(job.status)}</td>
@@ -99,6 +140,7 @@ function renderJobs(jobs) {
       <td class="muted">${esc(job.updated_at)}</td>
       <td>${rowActions(job)} <button data-act="detail" data-id="${esc(job.job_id)}">detail</button></td>
     </tr>`).join("") || `<tr><td class="muted" colspan="7">no jobs</td></tr>`;
+  updatePagination(paged, jobsPageInfo, jobsPagePrev, jobsPageNext);
 }
 
 function renderMetrics(metrics) {
@@ -138,10 +180,12 @@ function tickDurations() {
   });
 }
 
-function renderFunctions(functions) {
+function renderFunctions(functions = latestFunctions) {
   const wanted = freshnessFilter.value;
-  const visible = wanted ? functions.filter((item) => item.freshness === wanted) : functions;
-  functionBody.innerHTML = visible.map((item) => {
+  const filtered = wanted ? functions.filter((item) => item.freshness === wanted) : functions;
+  const paged = paginate(filtered, functionsPage, functionsPageSizeValue);
+  functionsPage = paged.page;
+  functionBody.innerHTML = paged.items.map((item) => {
     const report = item.current_report;
     const summary = report && report.summary || {};
     const refresh = item.refresh_status === "REFRESHING"
@@ -157,6 +201,7 @@ function renderFunctions(functions) {
       <td><button data-act="function-detail" data-id="${esc(item.func_id)}">${esc(item.history_count)}</button></td>
     </tr>`;
   }).join("") || `<tr><td class="muted" colspan="7">no functions</td></tr>`;
+  updatePagination(paged, functionsPageInfo, functionsPagePrev, functionsPageNext);
 }
 
 async function refresh() {
@@ -164,8 +209,12 @@ async function refresh() {
     api("GET", "/api/jobs"), api("GET", "/api/functions")
   ]);
   if (jobsResult.ok && Array.isArray(jobsResult.json)) {
-    renderJobs(jobsResult.json);
-    if (functionsResult.ok && Array.isArray(functionsResult.json)) renderFunctions(functionsResult.json);
+    latestJobs = jobsResult.json;
+    renderJobs();
+    if (functionsResult.ok && Array.isArray(functionsResult.json)) {
+      latestFunctions = functionsResult.json;
+      renderFunctions();
+    }
     if (selectedJob) loadDetail(selectedJob);
     refreshMetrics();
   } else {
@@ -226,18 +275,69 @@ form.addEventListener("submit", async (e) => {
   else { createError.textContent = (json && json.error) || "create failed"; createError.hidden = false; }
 });
 
+async function runJobAction(button, action, id) {
+  actionError.hidden = true;
+  button.disabled = true;
+  try {
+    const res = await api("POST", `/api/jobs/${encodeURIComponent(id)}/${action}`);
+    if (!res.ok) {
+      actionError.textContent = (res.json && (res.json.error || res.json.message)) ||
+        `${action} failed (${res.status})`;
+      actionError.hidden = false;
+    }
+    await refresh();
+  } catch (error) {
+    actionError.textContent = `${action} request failed: ${error && error.message ? error.message : error}`;
+    actionError.hidden = false;
+  } finally {
+    button.disabled = false;
+  }
+}
+
 document.addEventListener("click", async (e) => {
   const t = e.target;
   if (!t.dataset || !t.dataset.act) return;
   const id = t.dataset.id;
-  if (t.dataset.act === "cancel") { await api("POST", `/api/jobs/${encodeURIComponent(id)}/cancel`); refresh(); }
-  if (t.dataset.act === "retry") { await api("POST", `/api/jobs/${encodeURIComponent(id)}/retry`); refresh(); }
+  if (t.dataset.act === "cancel") { await runJobAction(t, "cancel", id); }
+  if (t.dataset.act === "retry") { await runJobAction(t, "retry", id); }
   if (t.dataset.act === "detail") { loadDetail(id); }
   if (t.dataset.act === "function-detail") { loadFunctionDetail(id); }
 });
 
-filter.addEventListener("change", refresh);
-freshnessFilter.addEventListener("change", refresh);
+filter.addEventListener("change", () => {
+  jobsPage = 1;
+  renderJobs();
+});
+freshnessFilter.addEventListener("change", () => {
+  functionsPage = 1;
+  renderFunctions();
+});
+functionsPageSize.addEventListener("change", () => {
+  functionsPageSizeValue = Number(functionsPageSize.value);
+  functionsPage = 1;
+  renderFunctions();
+});
+jobsPageSize.addEventListener("change", () => {
+  jobsPageSizeValue = Number(jobsPageSize.value);
+  jobsPage = 1;
+  renderJobs();
+});
+functionsPagePrev.addEventListener("click", () => {
+  functionsPage -= 1;
+  renderFunctions();
+});
+functionsPageNext.addEventListener("click", () => {
+  functionsPage += 1;
+  renderFunctions();
+});
+jobsPagePrev.addEventListener("click", () => {
+  jobsPage -= 1;
+  renderJobs();
+});
+jobsPageNext.addEventListener("click", () => {
+  jobsPage += 1;
+  renderJobs();
+});
 refresh();
 setInterval(refresh, POLL_MS);
 setInterval(tickDurations, 1000);

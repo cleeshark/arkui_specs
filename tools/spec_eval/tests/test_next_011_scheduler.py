@@ -14,12 +14,20 @@ import threading
 import time
 import unittest
 from pathlib import Path
+from unittest.mock import ANY, patch
 
 from spec_eval.service.domain import states as S
 from spec_eval.service.domain.models import CreateJobCommand
+from spec_eval.service.executors import contract as C
+from spec_eval.service.pipeline.semantic_stage import SemanticStageResult
 from spec_eval.service.scheduler.dispatcher import Dispatcher
+from spec_eval.service.scheduler.job_worker import build_runner
 from spec_eval.service.settings import ServiceSettings
-from spec_eval.service.store.repositories import JobRepository
+from spec_eval.service.store.repositories import (
+    EventRepository,
+    JobRepository,
+    JobStatisticsRepository,
+)
 from spec_eval.service.store.sqlite_store import SqliteStore
 
 
@@ -58,6 +66,12 @@ class _CountingRunner:
                 JobRepository(self.store).transition_status(
                     job_id, S.FAILED, event_type="fake_fail", payload={"reason": "injected"}
                 )
+            elif JobRepository(self.store).get_job(job_id).status == S.SEMANTIC:
+                jobs = JobRepository(self.store)
+                jobs.transition_status(job_id, S.AGGREGATION, event_type="enter_aggregation")
+                jobs.transition_status(job_id, S.ARCHIVE, event_type="enter_archive")
+                jobs.transition_status(job_id, S.SITE_HISTORY, event_type="enter_site_history")
+                jobs.transition_status(job_id, S.COMPLETED, event_type="job_completed")
         finally:
             with self._guard:
                 self.active -= 1
@@ -151,7 +165,7 @@ class ConcurrencyTest(_SchedulerTestBase):
 
 
 class CancellationTest(_SchedulerTestBase):
-    def test_cancel_is_observed_by_runner(self) -> None:
+    def test_cancel_is_observed_and_persisted_by_runner(self) -> None:
         a = self._create("04-01-01", job_id="a" * 40)
         runner = _CountingRunner(self.store, hold=1.0)
         d = Dispatcher(self.store, job_runner=runner, max_workers=1)
@@ -159,12 +173,132 @@ class CancellationTest(_SchedulerTestBase):
         try:
             d.submit(a, "04-01-01")
             time.sleep(0.1)  # let the worker start
-            self.assertTrue(d.cancel(a))
+            result = d.cancel(a)
+            self.assertTrue(result.accepted)
+            self.assertEqual(result.outcome, "cancellation_requested")
             self._wait_idle(d)
             time.sleep(0.05)
             self.assertIn(a, runner.cancelled)
+            self.assertEqual(self.jobs.get_job(a).status, S.CANCELLED)
+            self.assertIn(
+                "cancelled",
+                [event.event_type for event in EventRepository(self.store).list_for_job(a)],
+            )
+            self.assertIsNotNone(JobStatisticsRepository(self.store).get(a).finished_at)
+            self.assertNotIn(a, d._cancels.active())
         finally:
             d.shutdown()
+
+    def test_queued_job_is_cancelled_before_worker_start(self) -> None:
+        a = self._create("04-01-01", job_id="a" * 40)
+        runner = _CountingRunner(self.store, hold=0.1)
+        d = Dispatcher(self.store, job_runner=runner, max_workers=1)
+        d.submit(a, "04-01-01")
+
+        result = d.cancel(a)
+
+        self.assertTrue(result.accepted)
+        self.assertEqual(result.outcome, "cancelled")
+        self.assertEqual(self.jobs.get_job(a).status, S.CANCELLED)
+        d.start()
+        try:
+            self._wait_idle(d)
+            time.sleep(0.05)
+            self.assertNotIn(a, runner.started)
+        finally:
+            d.shutdown()
+
+    def test_awaiting_executor_job_is_cancelled_without_registry_entry(self) -> None:
+        a = self._create("04-01-01", job_id="a" * 40)
+        self.jobs.transition_status(a, S.PREPARING, event_type="enter_preparing")
+        self.jobs.transition_status(a, S.EVIDENCE, event_type="enter_evidence")
+        self.jobs.transition_status(a, S.SEMANTIC, event_type="enter_semantic")
+        self.jobs.transition_status(a, S.AWAITING_EXECUTOR, event_type="awaiting_executor")
+        d = Dispatcher(self.store, job_runner=lambda job_id, cancel: None, max_workers=1)
+
+        result = d.cancel(a)
+
+        self.assertTrue(result.accepted)
+        self.assertEqual(result.outcome, "cancelled")
+        self.assertEqual(self.jobs.get_job(a).status, S.CANCELLED)
+
+    def test_runner_returning_nonterminal_job_is_failed(self) -> None:
+        a = self._create("04-01-01", job_id="a" * 40)
+
+        def incomplete_runner(job_id: str, cancel: threading.Event) -> None:
+            jobs = JobRepository(self.store)
+            jobs.transition_status(job_id, S.PREPARING, event_type="enter_preparing")
+            jobs.transition_status(job_id, S.EVIDENCE, event_type="enter_evidence")
+            jobs.transition_status(job_id, S.SEMANTIC, event_type="enter_semantic")
+
+        d = Dispatcher(self.store, job_runner=incomplete_runner, max_workers=1)
+        d.start()
+        try:
+            self._wait_idle(d)
+            time.sleep(0.05)
+            self.assertEqual(self.jobs.get_job(a).status, S.FAILED)
+            self.assertIn(
+                "worker_returned_nonterminal",
+                [event.event_type for event in EventRepository(self.store).list_for_job(a)],
+            )
+        finally:
+            d.shutdown()
+
+    def test_job_cancelled_while_waiting_for_func_lock_never_enters_runner(self) -> None:
+        a = self._create("04-01-01", job_id="a" * 40)
+        b = self._create("04-01-01", job_id="b" * 40)
+        runner = _CountingRunner(self.store, hold=0.5)
+        d = Dispatcher(self.store, job_runner=runner, max_workers=2)
+        d.start()
+        try:
+            deadline = time.monotonic() + 3.0
+            while not runner.started and time.monotonic() < deadline:
+                time.sleep(0.01)
+            self.assertTrue(runner.started)
+            running = runner.started[0]
+            waiting = b if running == a else a
+
+            result = d.cancel(waiting)
+
+            self.assertTrue(result.accepted)
+            self._wait_idle(d)
+            time.sleep(0.05)
+            self.assertNotIn(waiting, runner.started)
+            self.assertEqual(self.jobs.get_job(waiting).status, S.CANCELLED)
+        finally:
+            d.shutdown()
+
+
+class JobWorkerCancellationTest(_SchedulerTestBase):
+    def test_aggregation_cancelled_outcome_is_persisted_before_cleanup(self) -> None:
+        a = self._create("04-01-01", job_id="a" * 40)
+        self.jobs.transition_status(a, S.PREPARING, event_type="enter_preparing")
+        self.jobs.transition_status(a, S.EVIDENCE, event_type="enter_evidence")
+        self.jobs.transition_status(a, S.SEMANTIC, event_type="enter_semantic")
+        self.jobs.transition_status(a, S.AGGREGATION, event_type="enter_aggregation")
+        runner = build_runner(self.settings, self.store, object())
+
+        with (
+            patch(
+                "spec_eval.service.scheduler.job_worker.run_job_pipeline",
+                return_value=SemanticStageResult(C.STATUS_CANCELLED, 0, "cancelled by user"),
+            ),
+            patch(
+                "spec_eval.service.scheduler.job_worker._mark_refresh_failed"
+            ) as mark_refresh_failed,
+            patch(
+                "spec_eval.service.scheduler.job_worker.RevisionWorkspaceManager.release"
+            ) as release_workspace,
+        ):
+            runner(a, threading.Event())
+
+        self.assertEqual(self.jobs.get_job(a).status, S.CANCELLED)
+        self.assertIn(
+            "cancelled",
+            [event.event_type for event in EventRepository(self.store).list_for_job(a)],
+        )
+        mark_refresh_failed.assert_called_once_with(self.store, ANY, a, S.CANCELLED)
+        release_workspace.assert_called_once_with(a)
 
 
 class RetryTest(_SchedulerTestBase):

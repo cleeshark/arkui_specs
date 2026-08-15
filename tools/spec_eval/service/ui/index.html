@@ -10,6 +10,7 @@
     <h1>Semantic Evaluation Service</h1>
     <span id="status" class="muted">connecting…</span>
   </header>
+  <p id="action-error" class="error action-message" role="alert" hidden></p>
 
   <section class="card">
     <h2>Manual Function refresh</h2>
@@ -45,10 +46,26 @@
         <option value="MISSING">MISSING</option>
       </select>
     </h2>
-    <table id="functions">
-      <thead><tr><th>FuncID</th><th>Title</th><th>Freshness</th><th>Report revision</th><th>Score / Gate</th><th>Refresh</th><th>History</th></tr></thead>
-      <tbody></tbody>
-    </table>
+    <div class="table-scroll">
+      <table id="functions">
+        <thead><tr><th>FuncID</th><th>Title</th><th>Freshness</th><th>Report revision</th><th>Score / Gate</th><th>Refresh</th><th>History</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <nav class="pagination" aria-label="Function reports pagination">
+      <label>Rows per page
+        <select id="functions-page-size">
+          <option value="10">10</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
+      </label>
+      <span id="functions-page-info" class="page-info muted" aria-live="polite"></span>
+      <div class="page-actions">
+        <button id="functions-page-prev" type="button">Previous</button>
+        <button id="functions-page-next" type="button">Next</button>
+      </div>
+    </nav>
   </section>
 
   <section class="card">
@@ -66,10 +83,26 @@
       <option value="failed">failed</option>
       <option value="cancelled">cancelled</option>
     </select></h2>
-    <table id="jobs">
-      <thead><tr><th>FuncID</th><th>Status</th><th>Progress</th><th>Duration</th><th>Tokens</th><th>Updated</th><th>Actions</th></tr></thead>
-      <tbody></tbody>
-    </table>
+    <div class="table-scroll">
+      <table id="jobs">
+        <thead><tr><th>FuncID</th><th>Status</th><th>Progress</th><th>Duration</th><th>Tokens</th><th>Updated</th><th>Actions</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <nav class="pagination" aria-label="Jobs pagination">
+      <label>Rows per page
+        <select id="jobs-page-size">
+          <option value="10">10</option>
+          <option value="50">50</option>
+          <option value="100">100</option>
+        </select>
+      </label>
+      <span id="jobs-page-info" class="page-info muted" aria-live="polite"></span>
+      <div class="page-actions">
+        <button id="jobs-page-prev" type="button">Previous</button>
+        <button id="jobs-page-next" type="button">Next</button>
+      </div>
+    </nav>
   </section>
 
   <section class="card" id="detail" hidden>

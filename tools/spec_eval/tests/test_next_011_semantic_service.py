@@ -177,6 +177,7 @@ class StateTransitionTest(_StoreTestBase):
         # only failed/cancelled may go back to queued
         self.assertTrue(S.can_transition(S.FAILED, S.QUEUED))
         self.assertTrue(S.can_transition(S.CANCELLED, S.QUEUED))
+        self.assertTrue(S.can_transition(S.AGGREGATION, S.CANCELLED))
 
     def test_transition_unknown_job_raises(self) -> None:
         with self.assertRaises(JobNotFoundError):
