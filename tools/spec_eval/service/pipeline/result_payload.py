@@ -171,6 +171,7 @@ def aggregation_reconciliation_prompt_contract(
     candidate_path: Path,
     aggregation_context_path: Path,
     validation_errors: Iterable[str],
+    target_criterion_ids: Iterable[str] = (),
 ) -> dict[str, Any]:
     """Describe one bounded semantic reconciliation against published mappings."""
     contract = copy.deepcopy(base_contract)
@@ -179,9 +180,13 @@ def aggregation_reconciliation_prompt_contract(
         "candidate_path": str(candidate_path),
         "aggregation_context_path": str(aggregation_context_path),
         "validation_errors": list(validation_errors),
+        "target_criterion_ids": list(target_criterion_ids),
         "reconciliation_constraints": [
             "Treat aggregation-context.json as the complete authoritative mapped-unit scope.",
             "Revise only Criteria named by validation_errors and directly linked findings, contradiction bases or defect ownership.",
+            "For Finding-cardinality errors, add at least one evidence-backed Finding to each target Criterion without changing its conclusion.",
+            "Use only evidence IDs already present in the target Criterion and defect keys already present in aggregation-context.json; never invent a defect key.",
+            "Synchronize every new Finding with exactly one defect_ownership record and preserve canonical Finding identity requirements.",
             "Do not alter published observations or invent a narrower claim scope through criterion_results[].claim_ids.",
             "Do not reopen source, SDK, Spec, Design, Registry or evidence shards.",
             "Return the complete corrected executor-owned aggregation payload, not a patch.",

@@ -15,6 +15,7 @@ written by a failed path.
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import replace
 from pathlib import Path
 from typing import Any
@@ -47,7 +48,15 @@ _RECONCILABLE_AGGREGATION_ERROR_MARKERS = (
     ": mapped adverse units ",
     ": mapped NOT_VERIFIABLE units ",
     ": mapped applicable units ",
+    ": PARTIALLY_SUPPORTED requires an evidence-backed finding",
+    ": CONTRADICTED requires an evidence-backed finding",
+    ": MISSING requires an evidence-backed finding",
 )
+_FINDING_CARDINALITY_ERROR = re.compile(
+    r"(?:criterion_results\[)?([A-Z][A-Z0-9-]+)\]?: "
+    r"(?:PARTIALLY_SUPPORTED|CONTRADICTED|MISSING) requires an evidence-backed finding"
+)
+
 
 def run_aggregation(
     ctx: RunContext,
@@ -117,10 +126,30 @@ def run_aggregation(
         return C.STATUS_FAILED, None
 
     work = _build_aggregation_input(ctx, aggregation_context_path)
-    events.append(ctx.job_id, "aggregation_started", {"work_item_id": work.work_item_id})
-
-    result = executor.execute(work, emit, cancel)
-    _record_executor_statistics(statistics, ctx.job_id, result)
+    reusable_result, reuse_error = _load_completed_executor_result(
+        Path(work.executor_result_path), work.work_item_id
+    )
+    if reusable_result is not None:
+        events.append(
+            ctx.job_id,
+            "aggregation_executor_result_reused",
+            {"work_item_id": work.work_item_id, "path": work.executor_result_path},
+        )
+        result = reusable_result
+    else:
+        if reuse_error is not None:
+            events.append(
+                ctx.job_id,
+                "aggregation_executor_result_rejected",
+                {
+                    "work_item_id": work.work_item_id,
+                    "path": work.executor_result_path,
+                    "error": reuse_error,
+                },
+            )
+        events.append(ctx.job_id, "aggregation_started", {"work_item_id": work.work_item_id})
+        result = executor.execute(work, emit, cancel)
+        _record_executor_statistics(statistics, ctx.job_id, result)
 
     if result.status == C.STATUS_CANCELLED or (cancel is not None and cancel.is_set()):
         return C.STATUS_CANCELLED, None
@@ -222,6 +251,7 @@ def run_aggregation(
                 candidate_path,
                 aggregation_context_path,
                 verdict.errors,
+                target_criterion_ids=_reconciliation_target_criteria(verdict.errors),
             )
             events.append(
                 ctx.job_id,
@@ -392,6 +422,8 @@ def _build_aggregation_reconciliation_input(
     candidate_path: Path,
     aggregation_context_path: Path,
     validation_errors: tuple[str, ...],
+    *,
+    target_criterion_ids: tuple[str, ...] = (),
 ) -> C.WorkItemInput:
     template_path = Path(str(work.prompt_extras["template_path"]))
     output_contract_path = Path(str(work.prompt_extras["output_contract_path"]))
@@ -413,6 +445,7 @@ def _build_aggregation_reconciliation_input(
             candidate_path=candidate_path,
             aggregation_context_path=aggregation_context_path,
             validation_errors=validation_errors,
+            target_criterion_ids=target_criterion_ids,
         ),
     )
 
@@ -422,6 +455,52 @@ def _reconcilable_aggregation_errors(errors: tuple[str, ...]) -> bool:
         any(marker in error for marker in _RECONCILABLE_AGGREGATION_ERROR_MARKERS)
         for error in errors
     )
+
+
+def _reconciliation_target_criteria(errors: tuple[str, ...]) -> tuple[str, ...]:
+    """Extract deterministic Criterion targets from bounded reconciliation errors."""
+    targets = {
+        match.group(1)
+        for error in errors
+        for match in (_FINDING_CARDINALITY_ERROR.search(error),)
+        if match is not None
+    }
+    return tuple(sorted(targets))
+
+
+def _load_completed_executor_result(
+    path: Path, expected_work_item_id: str
+) -> tuple[C.ExecutionResult | None, str | None]:
+    """Recover a completed executor payload left by a failed aggregation attempt."""
+    if not path.is_file():
+        return None, None
+    try:
+        document = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return None, f"cannot read executor result: {exc}"
+    if not isinstance(document, dict):
+        return None, "executor result must be a JSON object"
+    if document.get("work_item_id") != expected_work_item_id:
+        return None, "executor result work_item_id does not match aggregation"
+    if document.get("status") != C.STATUS_COMPLETED:
+        return None, f"executor result status is {document.get('status')!r}"
+    if document.get("error") is not None:
+        return None, "completed executor result must set error to null"
+    raw_observation = document.get("observation_json")
+    if not isinstance(raw_observation, str):
+        return None, "completed executor result has no observation_json"
+    try:
+        observation = json.loads(raw_observation)
+    except json.JSONDecodeError as exc:
+        return None, f"observation_json is not valid JSON: {exc}"
+    if not isinstance(observation, dict):
+        return None, "observation_json must decode to an object"
+    return C.ExecutionResult(
+        status=C.STATUS_COMPLETED,
+        exit_code=0,
+        executor_result_path=str(path),
+        observation=observation,
+    ), None
 
 
 def _source_observation_ids(work_items_path: Path) -> list[str]:

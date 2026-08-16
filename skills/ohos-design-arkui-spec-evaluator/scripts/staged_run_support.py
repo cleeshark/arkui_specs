@@ -18,7 +18,11 @@ TOOLS_ROOT = SPECS_ROOT / "tools"
 if str(TOOLS_ROOT) not in sys.path:
     sys.path.insert(0, str(TOOLS_ROOT))
 
-from spec_eval.protocol_validator import validate_protocol, validate_semantic_result  # noqa: E402
+from spec_eval.protocol_validator import (  # noqa: E402
+    FINDING_REQUIRED_CONCLUSIONS,
+    validate_protocol,
+    validate_semantic_result,
+)
 
 
 STAGED_SCHEMA_VERSION = 2
@@ -334,6 +338,16 @@ def staged_output_contract(
                     "evidence_min_items": 1,
                 },
                 "NOT_VERIFIABLE": {"required": ["missing_evidence"]},
+                "FINDING_CARDINALITY": {
+                    "required_for_conclusions": sorted(FINDING_REQUIRED_CONCLUSIONS),
+                    "findings_min_items": 1,
+                    "evidence_backed": True,
+                    "rule": (
+                        "Every PARTIALLY_SUPPORTED, CONTRADICTED or MISSING Criterion "
+                        "must contain at least one Finding whose evidence_ids reference "
+                        "that Criterion's evidence."
+                    ),
+                },
             },
             "finding_identity": {
                 "identity_version": SEMANTIC_FINDING_IDENTITY_VERSION,
@@ -1155,6 +1169,16 @@ def validate_aggregation_document(
             continue
         if PLACEHOLDER_TEXT in str(result.get("reason", "")):
             errors.append(f"{label}.reason: replace the template placeholder")
+        conclusion = result.get("conclusion")
+        findings = result.get("findings", [])
+        if conclusion in FINDING_REQUIRED_CONCLUSIONS and not findings:
+            errors.append(
+                f"{result.get('criterion_id')}: {conclusion} requires an evidence-backed finding"
+            )
+        if conclusion in {"SUPPORTED", "NOT_APPLICABLE"} and findings:
+            errors.append(
+                f"{result.get('criterion_id')}: {conclusion} must not contain defect findings"
+            )
         if result.get("conclusion") == "CONTRADICTED" and isinstance(
             result.get("criterion_id"), str
         ):
@@ -1164,7 +1188,7 @@ def validate_aggregation_document(
             for evidence in result.get("evidence", [])
             if isinstance(evidence, dict)
         }
-        for finding_index, finding in enumerate(result.get("findings", [])):
+        for finding_index, finding in enumerate(findings):
             if not isinstance(finding, dict):
                 continue
             finding_id = finding.get("finding_id")
@@ -1179,6 +1203,11 @@ def validate_aggregation_document(
                 errors.append(
                     f"{label}.findings[{finding_index}].evidence_ids: not present in Criterion "
                     f"evidence: {missing}"
+                )
+            if conclusion in FINDING_REQUIRED_CONCLUSIONS and not finding.get("evidence_ids"):
+                errors.append(
+                    f"{label}.findings[{finding_index}].evidence_ids: at least one evidence ID "
+                    "is required for an evidence-backed Finding"
                 )
     if state.get("schema_version") != STAGED_SCHEMA_VERSION:
         return errors

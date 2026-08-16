@@ -23,6 +23,15 @@ class ProtocolValidationError(ValueError):
     """Raised when a protocol document or result violates the frozen contract."""
 
 
+# Criterion-level adverse conclusions must carry at least one actionable,
+# evidence-backed Finding. Keep this set shared by the protocol validator and
+# the staged aggregation contract so model-facing and machine-facing rules
+# cannot drift apart.
+FINDING_REQUIRED_CONCLUSIONS = frozenset(
+    {"PARTIALLY_SUPPORTED", "CONTRADICTED", "MISSING"}
+)
+
+
 def _number(value: Any) -> Decimal:
     return Decimal(str(value))
 
@@ -799,7 +808,7 @@ def validate_semantic_result(
                     f"got {sorted(actual_types)}"
                 )
         findings = result.get("findings", [])
-        if conclusion in {"PARTIALLY_SUPPORTED", "CONTRADICTED", "MISSING"} and not findings:
+        if conclusion in FINDING_REQUIRED_CONCLUSIONS and not findings:
             errors.append(f"{criterion_id}: {conclusion} requires an evidence-backed finding")
         if conclusion in {"SUPPORTED", "NOT_APPLICABLE"} and findings:
             errors.append(f"{criterion_id}: {conclusion} must not contain defect findings")
@@ -824,6 +833,8 @@ def validate_semantic_result(
                 errors.append(f"{finding_id}: finding criterion_id does not match its result")
             if finding.get("conclusion") != conclusion:
                 errors.append(f"{finding_id}: finding conclusion does not match its criterion result")
+            if conclusion in FINDING_REQUIRED_CONCLUSIONS and not finding.get("evidence_ids"):
+                errors.append(f"{finding_id}: {conclusion} finding requires evidence_ids")
             missing_refs = set(finding.get("evidence_ids", [])) - evidence_ids
             if missing_refs:
                 errors.append(f"{finding_id}: unresolved evidence IDs {sorted(missing_refs)}")

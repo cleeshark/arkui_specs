@@ -404,6 +404,18 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             final_contract["conditional_fields"]["NOT_APPLICABLE"]["required"],
             ["applicability_reason"],
         )
+        self.assertEqual(
+            final_contract["conditional_fields"]["FINDING_CARDINALITY"][
+                "required_for_conclusions"
+            ],
+            ["CONTRADICTED", "MISSING", "PARTIALLY_SUPPORTED"],
+        )
+        self.assertEqual(
+            final_contract["conditional_fields"]["FINDING_CARDINALITY"][
+                "findings_min_items"
+            ],
+            1,
+        )
         historical = staged_output_contract(
             source_revision="a" * 40,
             evaluator_version="skill:ohos-design-arkui-spec-evaluator@0.1.14",
@@ -415,6 +427,51 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
         )["aggregation_payload"]["final_contract"]
         self.assertNotIn("executor_input", evaluator_015["finding_identity"])
         self.assertNotIn("defect_ownership", evaluator_015)
+
+    def test_adverse_criterion_conclusions_require_findings(self) -> None:
+        for conclusion in ("PARTIALLY_SUPPORTED", "CONTRADICTED", "MISSING"):
+            with self.subTest(conclusion=conclusion):
+                state = self._staged_identity()
+                results = self._criterion_results()
+                result = results[0]
+                result["conclusion"] = conclusion
+                document = {
+                    **state,
+                    "status": "complete",
+                    "source_observation_ids": [],
+                    "cross_feat_contracts_reviewed": True,
+                    "criterion_results": results,
+                    "defect_ownership": [],
+                    "contradiction_bases": [],
+                }
+                errors = validate_aggregation_document(document, state, {"items": []})
+                self.assertIn(
+                    f"{result['criterion_id']}: {conclusion} requires an evidence-backed finding",
+                    errors,
+                )
+
+    def test_supported_and_not_applicable_cannot_contain_findings(self) -> None:
+        for conclusion in ("SUPPORTED", "NOT_APPLICABLE"):
+            with self.subTest(conclusion=conclusion):
+                state = self._staged_identity()
+                results = self._criterion_results()
+                result = results[0]
+                result["conclusion"] = conclusion
+                result["findings"] = [{"finding_id": "SEM-" + "0" * 24}]
+                document = {
+                    **state,
+                    "status": "complete",
+                    "source_observation_ids": [],
+                    "cross_feat_contracts_reviewed": True,
+                    "criterion_results": results,
+                    "defect_ownership": [],
+                    "contradiction_bases": [],
+                }
+                errors = validate_aggregation_document(document, state, {"items": []})
+                self.assertIn(
+                    f"{result['criterion_id']}: {conclusion} must not contain defect findings",
+                    errors,
+                )
 
     def test_semantic_finding_id_is_stable_across_classification_changes(self) -> None:
         finding_id = semantic_finding_id(
@@ -1023,21 +1080,56 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
         state = self._staged_identity()
         results = self._criterion_results()
         criterion_id = "SPEC-AC-TESTABILITY"
-        next(item for item in results if item["criterion_id"] == criterion_id)["conclusion"] = "PARTIALLY_SUPPORTED"
+        result = next(item for item in results if item["criterion_id"] == criterion_id)
+        result["conclusion"] = "PARTIALLY_SUPPORTED"
+        result["evidence"] = [{"evidence_id": "EV-policy"}]
+        result["findings"] = [{
+            "finding_id": semantic_finding_id(
+                func_id=state["func_id"],
+                defect_key="policy-partial-support",
+                criterion_id=criterion_id,
+                claim_id=None,
+            ),
+            "criterion_id": criterion_id,
+            "severity": "Minor",
+            "conclusion": "PARTIALLY_SUPPORTED",
+            "message": "The policy evidence is only partial.",
+            "recommendation": "Complete the remaining policy evidence.",
+            "evidence_ids": ["EV-policy"],
+        }]
         bases = self._valid_policy_bases()
         next(item for item in bases if item["criterion_id"] == criterion_id)["evidence_status"] = "PARTIAL"
         with TemporaryDirectory() as temporary:
+            observation_path = Path(temporary) / "function-global.json"
+            observation_path.write_text(json.dumps({
+                "observations": [{
+                    "observation_id": "OBS-policy",
+                    "criterion_ids": [criterion_id],
+                    "local_outcome": "CONFLICT",
+                    "defect_key": "policy-partial-support",
+                    "primary_criterion_id": criterion_id,
+                }],
+                "claim_reviews": [],
+            }), encoding="utf-8")
+            finding_id = result["findings"][0]["finding_id"]
             document = {
                 **state,
                 "status": "complete",
-                "source_observation_ids": [],
+                "source_observation_ids": ["function-global"],
                 "cross_feat_contracts_reviewed": True,
                 "criterion_results": results,
                 "contradiction_bases": [],
-                "defect_ownership": [],
+                "defect_ownership": [{
+                    "defect_key": "policy-partial-support",
+                    "primary_criterion_id": criterion_id,
+                    "secondary_criterion_ids": [],
+                    "finding_ids": [finding_id],
+                }],
                 "outcome_policy_bases": bases,
             }
-            errors = validate_aggregation_document(document, state, {"items": []})
+            errors = validate_aggregation_document(document, state, {
+                "items": [{"id": "function-global", "output_path": str(observation_path)}]
+            })
         self.assertEqual(errors, [])
 
     def test_staged_v2_011_allows_secondary_criterion_contradiction_basis(self) -> None:
@@ -1059,17 +1151,19 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
         )
         next(item for item in results if item["criterion_id"] == primary)["conclusion"] = "PARTIALLY_SUPPORTED"
         next(item for item in results if item["criterion_id"] == secondary)["conclusion"] = "CONTRADICTED"
+        results[0]["evidence"] = [{"evidence_id": "EV-shared-primary"}]
+        results[1]["evidence"] = [{"evidence_id": "EV-shared-secondary"}]
         results[0]["findings"] = [{
             "finding_id": primary_finding_id,
             "criterion_id": primary,
             "severity": "Major",
-            "evidence_ids": [],
+            "evidence_ids": ["EV-shared-primary"],
         }]
         results[1]["findings"] = [{
             "finding_id": secondary_finding_id,
             "criterion_id": secondary,
             "severity": "Major",
-            "evidence_ids": [],
+            "evidence_ids": ["EV-shared-secondary"],
         }]
         with TemporaryDirectory() as temporary:
             observation_path = Path(temporary) / "observation.json"

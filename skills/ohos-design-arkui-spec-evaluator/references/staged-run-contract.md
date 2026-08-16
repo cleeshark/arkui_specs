@@ -223,6 +223,9 @@ In `aggregation.json`:
 - Add one `contradiction_bases` record for every and only every `CONTRADICTED` Criterion.
 - Complete every initialized `outcome_policy_bases` record in fixed order. These records remain
   run-local and are not copied into `semantic-result.json`.
+- Every `PARTIALLY_SUPPORTED`, `CONTRADICTED`, or `MISSING` Criterion must contain at least one
+  evidence-backed Finding. The Finding conclusion must match the Criterion conclusion, and each
+  `evidence_ids` entry must reference evidence already attached to that Criterion.
 
 Aggregate from observation substance rather than counts. Several independent `feat_core` conflicts
 across Feats, or one materially false `function_shared` assertion, can make a Criterion
@@ -263,6 +266,11 @@ bounded reconciliation. That pass reads only the failed candidate, initialized a
 template, `output-contract.json`, and `aggregation-context.json`; it preserves unaffected Criteria
 and cannot reopen evidence or rewrite observations. Structural, evidence, ownership, or protocol
 errors are not eligible for this reconciliation.
+
+The service may also use this bounded reconciliation for a conclusion-level Finding-cardinality
+error. In that case, it may add the missing evidence-backed Finding and synchronize its existing
+defect ownership, but it may not change the conclusion, invent a defect key, or widen evidence
+scope. If no validated defect key can own the Finding, the aggregation remains failed.
 
 For evaluator 0.1.15+, `output-contract.json` also contains
 `aggregation_payload.final_contract`, sourced directly from the final semantic-result Schema.

@@ -227,6 +227,19 @@ non-target Claims, mappings, defects, or ordering. If no defined evidence suppor
 judgment, only a conservative target-level downgrade to `NOT_VERIFIABLE` is permitted. New runs
 also reject outcome-only Claim reasons and unit facts such as `supported`.
 
+The aggregation contract also requires conclusion-level Finding cardinality. Every Criterion whose
+conclusion is `PARTIALLY_SUPPORTED`, `CONTRADICTED`, or `MISSING` must contain at least one
+evidence-backed Finding, and each Finding must cite evidence belonging to that Criterion. The
+staged aggregation validator reports this rule before final assembly, so the failure is explicit
+and can enter the existing single bounded reconciliation attempt. Reconciliation receives the
+target Criterion IDs, may add Findings only from the target Criterion's existing evidence and
+defect keys already present in `aggregation-context.json`, and must synchronize
+`defect_ownership.finding_ids` without changing conclusions, scope, observations, or ordering.
+If no valid defect key is available, the candidate remains failed. A completed
+`aggregation.executor-result.json` is reused on retry only when its work-item ID, status, error,
+and observation payload pass structural checks; malformed or incomplete results are rejected and
+the executor is invoked again.
+
 The service also audits every structured-output schema object node for
 `additionalProperties: false` and complete `required` coverage before starting
 Codex. A locally invalid output schema therefore fails at service startup

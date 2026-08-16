@@ -518,9 +518,42 @@ class AggregationStageTest(_DriverTestBase):
         )
         self.assertEqual(outcome, C.STATUS_COMPLETED)
         self.assertTrue(result is not None and result.is_file())
-        self.assertEqual(retry_executor.calls, ["aggregation:final"])
+        self.assertEqual(retry_executor.calls, [])
         event_types = [event.event_type for event in self.events.list_for_job(self.job.job_id)]
         self.assertIn("aggregation_reuse_rejected", event_types)
+        self.assertIn("aggregation_executor_result_reused", event_types)
+
+    def test_invalid_cached_executor_result_is_rejected_and_reexecuted(self) -> None:
+        self.jobs.transition_status(self.job.job_id, S.PREPARING, event_type="x")
+        self.jobs.transition_status(self.job.job_id, S.EVIDENCE, event_type="x")
+        self.jobs.transition_status(self.job.job_id, S.SEMANTIC, event_type="x")
+        runner = _FakeScriptRunner([])
+        first_outcome, _ = aggregation_stage.run_aggregation(
+            self.ctx, _FakeExecutor(), jobs=self.jobs, attempts=self.attempts,
+            events=self.events, runner=runner,
+        )
+        self.assertEqual(first_outcome, C.STATUS_COMPLETED)
+        (self.ctx.run_dir / "semantic-result.json").unlink()
+        result_path = self.ctx.run_dir / "aggregation.executor-result.json"
+        result_path.write_text(
+            json.dumps({
+                "schema_version": 2,
+                "work_item_id": "aggregation:wrong",
+                "status": "completed",
+                "observation_json": "{}",
+                "error": None,
+            }),
+            encoding="utf-8",
+        )
+        retry_executor = _FakeExecutor()
+        retry_outcome, _ = aggregation_stage.run_aggregation(
+            self.ctx, retry_executor, jobs=self.jobs, attempts=self.attempts,
+            events=self.events, runner=runner,
+        )
+        self.assertEqual(retry_outcome, C.STATUS_COMPLETED)
+        self.assertEqual(retry_executor.calls, ["aggregation:final"])
+        event_types = [event.event_type for event in self.events.list_for_job(self.job.job_id)]
+        self.assertIn("aggregation_executor_result_rejected", event_types)
 
     def test_aggregation_failure_fails_job(self) -> None:
         self.jobs.transition_status(self.job.job_id, S.PREPARING, event_type="x")
