@@ -13,7 +13,7 @@ metadata:
   stage: design
   domain: arkui
   capability: spec-evaluator
-  version: 0.1.18
+  version: 0.1.19
   status: mvp
   evaluation-unit: function
   rubric-version: 0.3.0
@@ -157,6 +157,12 @@ Claim and atomic unit it supports. The reason/fact must name what was checked, w
 missing, and why that gap is insufficient for a defensible judgment. Read the declared evidence
 shards and relevant Spec/Design/source or SDK inputs before concluding NV; an uninspected scope is
 an incomplete evaluation, not a verification result.
+
+For evaluator 0.1.19+, express those three NV signals explicitly without relying on one fixed
+sentence. Inspection/review/search wording may identify the checked scope; missing/absence/without
+or a bounded `no ... source/content/evidence` phrase may identify the gap; and active, passive or
+causal wording such as `cannot verify`, `cannot be verified`, `prevents verifying` or
+`unable to determine` may identify the consequence. Generic negation alone is not a gap.
 
 For evaluator 0.1.17+, every Claim `reason` and atomic unit `fact` must state the evidence-specific
 proposition rather than repeat only the outcome token such as `supported`. Evidence IDs referenced

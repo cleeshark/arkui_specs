@@ -204,6 +204,13 @@ degenerate output only when inspection evidence has also collapsed and an indepe
 as repetitive prose, zero decisive outcomes, or abnormally sparse observations corroborates the
 failure. The service performs at most one complete quality retry from the original inputs.
 
+For evaluator 0.1.19+, the three NV prose signals accept bounded expression families including
+inspection/review/search wording, explicit absence or omitted-content wording, and active, passive
+or causal verification consequences. This broadens valid natural language without accepting a
+generic negation as evidence of a gap. A bounded Claim evidence repair that merges but leaves the
+targeted validator errors unresolved receives one independent full-work-item retry, the same
+one-attempt fallback budget used when a bounded repair is rejected by its guard.
+
 ## Function-global scope
 
 The `function-global` observation reviews:

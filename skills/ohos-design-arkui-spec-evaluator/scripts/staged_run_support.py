@@ -90,9 +90,14 @@ FINAL_AGGREGATION_CONTRACT_EVALUATOR_VERSIONS = {
 }
 CLAIM_REVIEW_QUALITY_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.17",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.18",
     DEFAULT_EVALUATOR_VERSION,
 }
-NV_INSPECTION_EVIDENCE_EVALUATOR_VERSIONS = {DEFAULT_EVALUATOR_VERSION}
+NV_INSPECTION_EVIDENCE_EVALUATOR_VERSIONS = {
+    "skill:ohos-design-arkui-spec-evaluator@0.1.18",
+    DEFAULT_EVALUATOR_VERSION,
+}
+NV_EXPRESSION_FAMILY_EVALUATOR_VERSIONS = {DEFAULT_EVALUATOR_VERSION}
 AGGREGATION_CONTEXT_SCHEMA_VERSION = 1
 SEMANTIC_FINDING_IDENTITY_VERSION = 1
 OUTCOME_POLICY_BASIS_CRITERIA = [
@@ -465,6 +470,26 @@ def staged_output_contract(
                                 "Name the checked scope, the missing evidence, and why the gap "
                                 "is insufficient for a defensible judgment."
                             ),
+                            **({
+                                "not_verifiable_required_signals": [
+                                    "checked_scope",
+                                    "missing_evidence",
+                                    "verification_consequence",
+                                ],
+                                "not_verifiable_expression_examples": {
+                                    "checked_scope": [
+                                        "checked", "inspection", "reviewed", "searched",
+                                    ],
+                                    "missing_evidence": [
+                                        "missing", "absence", "without", "does not include",
+                                        "no relevant source content",
+                                    ],
+                                    "verification_consequence": [
+                                        "cannot verify", "cannot be verified",
+                                        "prevents verifying", "unable to determine",
+                                    ],
+                                },
+                            } if evaluator_version in NV_EXPRESSION_FAMILY_EVALUATOR_VERSIONS else {}),
                         } if evaluator_version in NV_INSPECTION_EVIDENCE_EVALUATOR_VERSIONS else {}),
                     },
                     "dangling_evidence_repair": {
@@ -824,11 +849,51 @@ def _is_low_information_review_text(value: Any) -> bool:
     return normalized in LOW_INFORMATION_REVIEW_TEXT
 
 
-def _has_unverifiable_gap_explanation(value: Any) -> bool:
+_NV_CHECKED_PATTERNS = (
+    re.compile(
+        r"\b(?:check(?:ed|ing)?|inspect(?:ed|ing|ion)?|review(?:ed|ing)?|"
+        r"examin(?:e|ed|ing|ation)|search(?:ed|ing)?|scan(?:ned|ning)?)\b"
+    ),
+)
+_NV_MISSING_PATTERNS = (
+    re.compile(r"\b(?:missing|absent|absence|unavailable|insufficient|lacks?|lacking)\b"),
+    re.compile(r"\bnot\s+(?:present|found|available|included)\b"),
+    re.compile(r"\bwithout(?:\s+the)?\b"),
+    re.compile(r"\b(?:does|do|did)\s+not\s+(?:include|contain|provide|cover)\b"),
+    re.compile(
+        r"\bno\b[^.;:\n]{0,120}\b(?:evidence|proof|source|content|implementation|"
+        r"record|test|coverage|artifact|file|path|data)\b"
+    ),
+)
+_NV_CONSEQUENCE_PATTERNS = (
+    re.compile(
+        r"\b(?:cannot|can\s+not|unable\s+to)\s+(?:\w+\s+){0,3}"
+        r"verif(?:y|ied|iable)\b"
+    ),
+    re.compile(r"\bnot\s+verifiable\b"),
+    re.compile(
+        r"\b(?:cannot|can\s+not|unable\s+to)\s+(?:\w+\s+){0,3}"
+        r"determin(?:e|ed)\b"
+    ),
+    re.compile(
+        r"\bprevent(?:s|ed|ing)?\s+(?:\w+\s+){0,3}"
+        r"(?:verif(?:y|ying|ication)|determin(?:e|ing|ation))\b"
+    ),
+    re.compile(r"\binsufficient\s+to\b"),
+)
+
+
+def _matches_any_pattern(value: str, patterns: tuple[re.Pattern[str], ...]) -> bool:
+    return any(pattern.search(value) is not None for pattern in patterns)
+
+
+def _has_unverifiable_gap_explanation(
+    value: Any, *, expression_families: bool = False
+) -> bool:
     """Require NV prose to name both the inspected scope and the evidence gap."""
     if not isinstance(value, str) or len(value.strip()) < 24:
         return False
-    normalized = value.casefold()
+    normalized = re.sub(r"\s+", " ", value.casefold())
     checked_terms = ("checked", "inspected", "reviewed", "examined", "检查", "审查")
     missing_terms = (
         "missing", "absent", "unavailable", "insufficient", "not present",
@@ -838,10 +903,25 @@ def _has_unverifiable_gap_explanation(value: Any) -> bool:
         "cannot verify", "not verifiable", "insufficient to", "cannot determine",
         "无法验证", "不能验证", "不足以", "无法判断",
     )
+    if not expression_families:
+        return (
+            any(term in normalized for term in checked_terms)
+            and any(term in normalized for term in missing_terms)
+            and any(term in normalized for term in consequence_terms)
+        )
     return (
-        any(term in normalized for term in checked_terms)
-        and any(term in normalized for term in missing_terms)
-        and any(term in normalized for term in consequence_terms)
+        (
+            _matches_any_pattern(normalized, _NV_CHECKED_PATTERNS)
+            or any(term in normalized for term in ("检查", "审查"))
+        )
+        and (
+            _matches_any_pattern(normalized, _NV_MISSING_PATTERNS)
+            or any(term in normalized for term in ("缺少", "缺失", "不足", "不可用"))
+        )
+        and (
+            _matches_any_pattern(normalized, _NV_CONSEQUENCE_PATTERNS)
+            or any(term in normalized for term in ("无法验证", "不能验证", "不足以", "无法判断"))
+        )
     )
 
 
@@ -879,6 +959,9 @@ def validate_observation_document(
     )
     nv_inspection_required = (
         state.get("evaluator_version") in NV_INSPECTION_EVIDENCE_EVALUATOR_VERSIONS
+    )
+    nv_expression_families = (
+        state.get("evaluator_version") in NV_EXPRESSION_FAMILY_EVALUATOR_VERSIONS
     )
     rubric, _, protocol_errors = protocol()
     errors.extend(protocol_errors)
@@ -1119,7 +1202,9 @@ def validate_observation_document(
             elif (
                 local_outcome == "NOT_VERIFIABLE"
                 and nv_inspection_required
-                and not _has_unverifiable_gap_explanation(reason)
+                and not _has_unverifiable_gap_explanation(
+                    reason, expression_families=nv_expression_families
+                )
             ):
                 errors.append(
                     f"{entry}.reason: expected checked scope, missing evidence and insufficiency explanation"
@@ -1191,7 +1276,9 @@ def validate_observation_document(
                     elif (
                         unit_outcome == "NOT_VERIFIABLE"
                         and nv_inspection_required
-                        and not _has_unverifiable_gap_explanation(fact)
+                        and not _has_unverifiable_gap_explanation(
+                            fact, expression_families=nv_expression_families
+                        )
                     ):
                         errors.append(
                             f"{unit_label}.fact: expected checked scope, missing evidence and insufficiency explanation"

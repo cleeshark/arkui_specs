@@ -347,7 +347,17 @@ class CodexExecutorTest(unittest.TestCase):
                 "available_evidence_ids": ["EV-defined"],
                 "payload_fields": ["claim_reviews"],
                 "service_derived_fields": ["status", "reviewed_claim_ids", "completed_checks"],
-                "machine_contract": {"payload": {"claim_reviews": {}}},
+                "machine_contract": {
+                    "payload": {
+                        "claim_reviews": {
+                            "quality_rule": {
+                                "not_verifiable_expression_examples": {
+                                    "checked_scope": ["inspection"]
+                                }
+                            }
+                        }
+                    }
+                },
             },
         )
         runner = _FakeRunner(result_doc=_result_doc(work.work_item_id))
@@ -364,6 +374,7 @@ class CodexExecutorTest(unittest.TestCase):
             prompt["output"]["requirement"],
         )
         self.assertIn("NOT_VERIFIABLE", constraints)
+        self.assertIn("cannot be verified", constraints)
         self.assertIn("the service merges the returned rows", constraints)
 
     def test_aggregation_reconciliation_prompt_uses_published_mapping_only(self) -> None:
@@ -422,7 +433,17 @@ class CodexExecutorTest(unittest.TestCase):
                 "service_derived_fields": ["status", "reviewed_claim_ids", "completed_checks"],
                 "quality_metrics": {"not_verifiable_claim_ratio": 0.7},
                 "quality_reason_codes": ["HIGH_NOT_VERIFIABLE_RATIO"],
-                "machine_contract": {"payload": {"claim_reviews": {}}},
+                "machine_contract": {
+                    "payload": {
+                        "claim_reviews": {
+                            "quality_rule": {
+                                "not_verifiable_expression_examples": {
+                                    "checked_scope": ["inspection"]
+                                }
+                            }
+                        }
+                    }
+                },
             },
         )
         runner = _FakeRunner(result_doc=_result_doc(work.work_item_id))
@@ -432,6 +453,7 @@ class CodexExecutorTest(unittest.TestCase):
         constraints = " ".join(prompt["constraints"])
         self.assertIn("evidence shards", constraints)
         self.assertIn("review_record inspection evidence", constraints)
+        self.assertIn("cannot be verified", constraints)
 
     def test_repair_rejection_retry_prompt_requires_independent_payload(self) -> None:
         work = replace(
@@ -446,16 +468,27 @@ class CodexExecutorTest(unittest.TestCase):
                 "rejection_reason_codes": [
                     "Claim evidence repair changed fields outside target Claim reviews"
                 ],
-                "machine_contract": {"payload": {"claim_reviews": {}}},
+                "machine_contract": {
+                    "payload": {
+                        "claim_reviews": {
+                            "quality_rule": {
+                                "not_verifiable_expression_examples": {
+                                    "checked_scope": ["inspection"]
+                                }
+                            }
+                        }
+                    }
+                },
             },
         )
         runner = _FakeRunner(result_doc=_result_doc(work.work_item_id))
         self._executor(runner).execute(work, lambda event: None)
         prompt = json.loads(runner.last_stdin or "{}")
-        self.assertIn("bounded repair was rejected", prompt["task"])
+        self.assertIn("bounded repair did not produce a valid candidate", prompt["task"])
         constraints = " ".join(prompt["constraints"])
         self.assertIn("evidence shards", constraints)
         self.assertIn("review_record inspection evidence", constraints)
+        self.assertIn("cannot be verified", constraints)
         self.assertIn("independent complete payload", constraints)
 
     def test_nonzero_exit_is_failed(self) -> None:
