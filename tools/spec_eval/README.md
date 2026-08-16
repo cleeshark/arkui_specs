@@ -852,6 +852,7 @@ python3 specs/tools/spec_eval/service_cli.py serve --port 8790 --max-workers 2
 - evaluator 0.1.15 将最终 Finding/criterion-result Schema 同源发布到聚合机器契约，并在发布 aggregation 前构建内存 final candidate 执行最终校验。服务可进行一次不调用模型的确定性结构修复：无歧义地迁移 `problem` 到 `message`、补齐已有证据支持的 N/A 原因，并按 FuncID/defect/Criterion/Claim 稳定身份重写 Finding ID 与 ownership 引用；冲突别名或其他语义漂移会直接失败。
 - evaluator 0.1.16 将 Finding ID 和 `secondary_criterion_ids` 明确为服务端归一化字段：模型只提供唯一临时 Finding 关联键，不再计算或猜测 SHA-256；服务在首次聚合校验前固定执行一次 canonical ID、ownership 引用和 secondary 集合归一化，再处理剩余校验或进入 mapping reconciliation。secondary 语义影响必须由同一 ownership 下的实际 Finding 表达，服务不会自动生成语义 Finding。
 - evaluator 0.1.17 将观察侧校验失败改为有界的分类修复路由：机械契约、空 observation evidence、Claim/unit 悬空 evidence 引用分别最多修复一次并重新执行完整校验。悬空引用修复只重审目标 Claim，可读取原始冻结输入、引用 observation 已定义的 Evidence；若证据不足只能将目标 Claim/unit 保守降级为 `NOT_VERIFIABLE`。服务拒绝 observation、非目标 Claim、映射、defect 或顺序漂移，并对新运行拒绝 `supported` 等仅重复 outcome 的 reason/fact。
+- evaluator 0.1.18 为 `NOT_VERIFIABLE` 增加最低检查证据义务：observation 必须包含 `review_record`，NV Claim/unit 必须引用该记录并说明检查范围、缺失证据和不足原因。服务在普通 repair 前组合检查 NV 比例、检查证据覆盖、重复文本、有效结论和 observation 密度；疑似退化时从原始冻结输入完整重试一次，仍退化则以独立 `executor_quality_failed` 事件失败。Codex 稳定 JSONL 事件中的工具/命令数和已访问输入路径计数进入 schema v4 Job statistics；未知事件格式明确标记 telemetry unavailable，不作为单独失败依据。
 - 查看全部 Function 的当前报告、版本、分数、Gate、刷新状态和历史数量。
 - 按新鲜度筛选 `FRESH`、`EXPIRING`、`EXPIRED_TIME`、`STALE_INPUT` 和 `MISSING`。
 - 取消活动任务、重试失败任务，并查看单 Function 的历史报告和 Finding delta。

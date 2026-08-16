@@ -191,7 +191,12 @@ def _job_statistics_from_row(row: sqlite3.Row) -> JobStatistics:
         finished_at=row["finished_at"],
         executor_invocations=int(row["executor_invocations"]),
         usage_reported_invocations=int(row["usage_reported_invocations"]),
+        telemetry_reported_invocations=int(row["telemetry_reported_invocations"]),
         executor_elapsed_ms=int(row["executor_elapsed_ms"]),
+        executor_tool_calls=int(row["executor_tool_calls"]),
+        executor_command_calls=int(row["executor_command_calls"]),
+        input_paths_accessed=int(row["input_paths_accessed"]),
+        evidence_paths_accessed=int(row["evidence_paths_accessed"]),
         input_tokens=int(row["input_tokens"]),
         cached_input_tokens=int(row["cached_input_tokens"]),
         cache_write_input_tokens=int(row["cache_write_input_tokens"]),
@@ -445,6 +450,8 @@ class JobStatisticsRepository:
         elapsed_seconds: float,
         token_usage: dict[str, int] | None,
         usage_reported: bool,
+        telemetry: dict[str, int] | None = None,
+        telemetry_reported: bool = False,
     ) -> JobStatistics:
         usage = token_usage or {}
         values = []
@@ -456,13 +463,32 @@ class JobStatisticsRepository:
                 else 0
             )
         elapsed_ms = max(0, int(round(float(elapsed_seconds) * 1000.0)))
+        telemetry_values = []
+        telemetry = telemetry or {}
+        for name in (
+            "tool_calls",
+            "command_calls",
+            "input_paths_accessed",
+            "evidence_paths_accessed",
+        ):
+            raw = telemetry.get(name, 0)
+            telemetry_values.append(
+                raw
+                if isinstance(raw, int) and not isinstance(raw, bool) and raw >= 0
+                else 0
+            )
         with self.store._tx(immediate=True):
             self.get(job_id)
             now = utc_now()
             self._conn.execute(
                 "UPDATE job_statistics SET executor_invocations = executor_invocations + 1, "
                 "usage_reported_invocations = usage_reported_invocations + ?, "
+                "telemetry_reported_invocations = telemetry_reported_invocations + ?, "
                 "executor_elapsed_ms = executor_elapsed_ms + ?, "
+                "executor_tool_calls = executor_tool_calls + ?, "
+                "executor_command_calls = executor_command_calls + ?, "
+                "input_paths_accessed = input_paths_accessed + ?, "
+                "evidence_paths_accessed = evidence_paths_accessed + ?, "
                 "input_tokens = input_tokens + ?, cached_input_tokens = cached_input_tokens + ?, "
                 "cache_write_input_tokens = cache_write_input_tokens + ?, "
                 "output_tokens = output_tokens + ?, "
@@ -470,7 +496,9 @@ class JobStatisticsRepository:
                 "total_tokens = total_tokens + ?, updated_at = ? WHERE job_id = ?",
                 (
                     1 if usage_reported else 0,
+                    1 if telemetry_reported else 0,
                     elapsed_ms,
+                    *telemetry_values,
                     *values,
                     now,
                     job_id,

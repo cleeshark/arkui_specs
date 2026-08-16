@@ -64,6 +64,7 @@ class CreateListDetailTest(_HttpTestBase):
         self.assertEqual(job["status"], "queued")
         self.assertEqual(job["timing"]["duration_ms"], 0)
         self.assertFalse(job["usage"]["reported"])
+        self.assertFalse(job["executor_telemetry"]["reported"])
         job_id = job["job_id"]
 
         status, jobs = self._req("GET", "/api/jobs")
@@ -75,6 +76,7 @@ class CreateListDetailTest(_HttpTestBase):
         self.assertEqual(detail["job_id"], job_id)
         self.assertIn("executor_duration_ms", detail["timing"])
         self.assertIn("total_tokens", detail["usage"])
+        self.assertIn("command_calls", detail["executor_telemetry"])
 
     def test_invalid_func_id_rejected(self) -> None:
         status, body = self._req("POST", "/api/jobs", {"func_id": "bad"})

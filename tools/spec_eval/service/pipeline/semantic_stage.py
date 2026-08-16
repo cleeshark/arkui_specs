@@ -47,8 +47,10 @@ from .result_payload import (
     merge_observation_payload,
     observation_evidence_repair_prompt_contract,
     observation_prompt_contract,
+    quality_retry_prompt_contract,
     repair_prompt_contract,
 )
+from .observation_quality import assess_observation_quality
 from . import staged_stage
 from ..freshness import DEPENDENCY_SNAPSHOT_CHANGED
 from ..report_registry import ReportRegistry, fingerprint_named_documents
@@ -84,9 +86,16 @@ _CLAIM_REVIEW_REPAIR_ERROR = re.compile(
     r"\.claim_reviews\[(\d+)\](?:"
     r"(?:\.unit_reviews\[\d+\])?\.evidence_ids: unknown evidence|"
     r"\.reason: expected an evidence-specific explanation|"
-    r"\.unit_reviews\[\d+\]\.fact: expected an evidence-specific atomic fact"
+    r"\.reason: expected checked scope, missing evidence and insufficiency explanation|"
+    r"\.unit_reviews\[\d+\]\.fact: expected an evidence-specific atomic fact|"
+    r"\.unit_reviews\[\d+\]\.fact: expected checked scope, missing evidence and insufficiency explanation|"
+    r"(?:\.unit_reviews\[\d+\])?\.evidence_ids: inspection evidence is required for NOT_VERIFIABLE|"
+    r"(?:\.unit_reviews\[\d+\])?\.evidence_ids: NOT_VERIFIABLE must reference review_record inspection evidence"
     r")"
 )
+_EXECUTOR_QUALITY_EVALUATOR_VERSIONS = {
+    "skill:ohos-design-arkui-spec-evaluator@0.1.18"
+}
 
 
 # --- executor event -> DB event bridge (capped) -----------------------------
@@ -171,6 +180,89 @@ def run_semantic(
                 payload={"work_item_id": work.work_item_id, "status": result.status, "error": result.error},
             )
             return SemanticStageResult(C.STATUS_FAILED, completed, result.error or f"executor {result.status}")
+
+        if ctx.evaluator_version in _EXECUTOR_QUALITY_EVALUATOR_VERSIONS:
+            quality = assess_observation_quality(result.observation)
+            if quality.suspected:
+                events.append(
+                    ctx.job_id,
+                    "executor_quality_retry_started",
+                    {
+                        "work_item_id": work.work_item_id,
+                        "quality_retry": 1,
+                        "initial_quality": quality.payload(),
+                        "initial_executor_telemetry": _executor_telemetry_payload(result),
+                    },
+                )
+                quality_retry_work = _build_quality_retry_work_input(work, quality)
+                retry_result = executor.execute(quality_retry_work, emit, cancel)
+                _record_executor_statistics(statistics, ctx.job_id, retry_result)
+                if retry_result.status == C.STATUS_CANCELLED or (
+                    cancel is not None and cancel.is_set()
+                ):
+                    return SemanticStageResult(
+                        C.STATUS_CANCELLED, completed, "cancelled during executor quality retry"
+                    )
+                if retry_result.status == C.STATUS_AWAITING:
+                    jobs.transition_status(
+                        ctx.job_id,
+                        S.AWAITING_EXECUTOR,
+                        event_type="awaiting_executor",
+                        payload={
+                            "work_item_id": work.work_item_id,
+                            "phase": "executor_quality_retry",
+                            "error": retry_result.error,
+                        },
+                    )
+                    return SemanticStageResult(C.STATUS_AWAITING, completed, retry_result.error)
+                if not retry_result.succeeded:
+                    error = retry_result.error or f"quality retry executor {retry_result.status}"
+                    jobs.transition_status(
+                        ctx.job_id,
+                        S.FAILED,
+                        event_type="executor_quality_failed",
+                        payload={
+                            "work_item_id": work.work_item_id,
+                            "quality_retry": 1,
+                            "initial_quality": quality.payload(),
+                            "initial_executor_telemetry": _executor_telemetry_payload(result),
+                            "retry_executor_telemetry": _executor_telemetry_payload(retry_result),
+                            "retry_status": retry_result.status,
+                            "error": error,
+                        },
+                    )
+                    return SemanticStageResult(C.STATUS_FAILED, completed, error)
+                retry_quality = assess_observation_quality(retry_result.observation)
+                if retry_quality.suspected:
+                    error = "degenerate output suspected after one executor quality retry"
+                    jobs.transition_status(
+                        ctx.job_id,
+                        S.FAILED,
+                        event_type="executor_quality_failed",
+                        payload={
+                            "work_item_id": work.work_item_id,
+                            "quality_retry": 1,
+                            "initial_quality": quality.payload(),
+                            "retry_quality": retry_quality.payload(),
+                            "initial_executor_telemetry": _executor_telemetry_payload(result),
+                            "retry_executor_telemetry": _executor_telemetry_payload(retry_result),
+                            "error": error,
+                        },
+                    )
+                    return SemanticStageResult(C.STATUS_FAILED, completed, error)
+                events.append(
+                    ctx.job_id,
+                    "executor_quality_retry_completed",
+                    {
+                        "work_item_id": work.work_item_id,
+                        "quality_retry": 1,
+                        "initial_quality": quality.payload(),
+                        "retry_quality": retry_quality.payload(),
+                        "initial_executor_telemetry": _executor_telemetry_payload(result),
+                        "retry_executor_telemetry": _executor_telemetry_payload(retry_result),
+                    },
+                )
+                result = retry_result
 
         candidate_path = output_path.with_name(f".{output_path.name}.candidate")
         try:
@@ -428,7 +520,12 @@ def run_semantic(
                         initialized, repair_result.observation
                     )
                     if not _claim_evidence_repair_preserves_scope(
-                        candidate, repaired_candidate, target_claim_ids
+                        candidate,
+                        repaired_candidate,
+                        target_claim_ids,
+                        require_nv_inspection=(
+                            ctx.evaluator_version in _EXECUTOR_QUALITY_EVALUATOR_VERSIONS
+                        ),
                     ):
                         error = (
                             "Claim evidence repair changed fields outside target Claim reviews"
@@ -584,6 +681,25 @@ def _build_repair_work_input(
     )
 
 
+def _build_quality_retry_work_input(
+    work: C.WorkItemInput,
+    quality: Any,
+) -> C.WorkItemInput:
+    result_path = Path(work.executor_result_path)
+    retry_result_path = result_path.with_name(
+        f"{result_path.stem}.quality-retry-1{result_path.suffix}"
+    )
+    return replace(
+        work,
+        executor_result_path=str(retry_result_path),
+        prompt_extras=quality_retry_prompt_contract(
+            work.prompt_extras,
+            quality_metrics=quality.metrics,
+            reason_codes=quality.reason_codes,
+        ),
+    )
+
+
 def _build_evidence_repair_work_input(
     work: C.WorkItemInput,
     candidate_path: Path,
@@ -714,6 +830,24 @@ def _available_evidence_ids(candidate: dict[str, Any]) -> tuple[str, ...]:
     return tuple(sorted(evidence_ids))
 
 
+def _inspection_evidence_ids(candidate: dict[str, Any]) -> set[str]:
+    evidence_ids: set[str] = set()
+    observations = candidate.get("observations")
+    if not isinstance(observations, list):
+        return evidence_ids
+    for observation in observations:
+        if not isinstance(observation, dict) or not isinstance(observation.get("evidence"), list):
+            continue
+        for evidence in observation["evidence"]:
+            if (
+                isinstance(evidence, dict)
+                and evidence.get("type") == "review_record"
+                and isinstance(evidence.get("evidence_id"), str)
+            ):
+                evidence_ids.add(evidence["evidence_id"])
+    return evidence_ids
+
+
 def _evidence_repair_preserves_semantics(
     candidate: dict[str, Any],
     repaired: dict[str, Any],
@@ -747,6 +881,8 @@ def _claim_evidence_repair_preserves_scope(
     candidate: dict[str, Any],
     repaired: dict[str, Any],
     target_claim_ids: tuple[str, ...],
+    *,
+    require_nv_inspection: bool = False,
 ) -> bool:
     before = json.loads(json.dumps(candidate))
     after = json.loads(json.dumps(repaired))
@@ -764,6 +900,7 @@ def _claim_evidence_repair_preserves_scope(
     target_ids = set(target_claim_ids)
     seen_targets: set[str] = set()
     available_evidence_ids = set(_available_evidence_ids(candidate))
+    inspection_evidence_ids = _inspection_evidence_ids(candidate)
     for before_review, after_review in zip(before_reviews, after_reviews):
         if not isinstance(before_review, dict) or not isinstance(after_review, dict):
             return False
@@ -800,7 +937,9 @@ def _claim_evidence_repair_preserves_scope(
         if not set(after_defects) <= set(before_defects):
             return False
         if after_review.get("local_outcome") == "NOT_VERIFIABLE":
-            if after_evidence or after_defects:
+            if after_defects:
+                return False
+            if require_nv_inspection and not set(after_evidence) & inspection_evidence_ids:
                 return False
 
         before_units = before_review.get("unit_reviews")
@@ -823,7 +962,11 @@ def _claim_evidence_repair_preserves_scope(
                 or not set(unit_evidence) <= available_evidence_ids
             ):
                 return False
-            if after_unit.get("local_outcome") == "NOT_VERIFIABLE" and unit_evidence:
+            if (
+                after_unit.get("local_outcome") == "NOT_VERIFIABLE"
+                and require_nv_inspection
+                and not set(unit_evidence) & inspection_evidence_ids
+            ):
                 return False
     return seen_targets == target_ids
 
@@ -1067,7 +1210,16 @@ def _record_executor_statistics(
         elapsed_seconds=result.elapsed_seconds,
         token_usage=result.token_usage,
         usage_reported=result.usage_reported,
+        telemetry=result.telemetry,
+        telemetry_reported=result.telemetry_reported,
     )
+
+
+def _executor_telemetry_payload(result: C.ExecutionResult) -> dict[str, Any]:
+    return {
+        "reported": result.telemetry_reported,
+        **result.telemetry,
+    }
 
 
 def _freeze_snapshots(

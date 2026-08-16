@@ -26,7 +26,7 @@ from .settings import ServiceSettings
 from .store.repositories import JobRepository
 from .store.sqlite_store import SqliteStore, utc_now
 
-_SCHEMA_VERSION = "3"
+_SCHEMA_VERSION = "4"
 
 
 def cleanup_temp(

@@ -52,7 +52,7 @@ memory for that run. They may be resumed after context compaction or handed to a
 session, but they are not confirmed Reviews or a maintained capability baseline.
 
 New staged schema v2 runs are produced by evaluator
-`skill:ohos-design-arkui-spec-evaluator@0.1.17`. Schema-compatible historical 0.1.7 through 0.1.16
+`skill:ohos-design-arkui-spec-evaluator@0.1.18`. Schema-compatible historical 0.1.7 through 0.1.17
 runs remain readable. Schema v2 requires atomic `claim_reviews`, evidence-backed
 required-check mapping, stable defect ownership, and an explicit core-conflict basis for every
 `CONTRADICTED` Criterion. Schema v1 remains readable for historical 0.1.6 runs; new runs must not
@@ -125,6 +125,14 @@ inputs, and evidence IDs already defined by candidate observations. It may retai
 outcome or downgrade the affected Claim/unit to `NOT_VERIFIABLE`; observations, non-target Claims,
 scope mappings, defects, and ordering cannot change. Outcome-only Claim reasons and unit facts are
 rejected for new 0.1.17 runs, while historical 0.1.16 runs remain readable.
+
+Evaluator 0.1.18 removes the evidence-free `NOT_VERIFIABLE` escape hatch. Every NV observation
+must carry `review_record` inspection evidence, and every NV Claim and atomic unit must reference
+that evidence while explaining the checked scope, missing evidence, and why the gap is
+insufficient. Before ordinary contract repair, the semantic service applies a deterministic
+multi-signal degeneration check. A suspected NV flood gets one independent full-work-item retry
+from the original frozen inputs; a second degenerate result fails as `executor_quality_failed`.
+Historical 0.1.17 staged runs retain their original evidence cardinality when resumed.
 
 Do not write automatic output to:
 

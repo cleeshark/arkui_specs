@@ -27,7 +27,15 @@ from typing import Any, Iterator
 from ..domain import states as S
 from ..settings import ServiceSettings
 
-_SCHEMA_VERSION = "3"
+_SCHEMA_VERSION = "4"
+
+_V4_STATISTICS_COLUMNS = {
+    "telemetry_reported_invocations": "INTEGER NOT NULL DEFAULT 0 CHECK (telemetry_reported_invocations >= 0)",
+    "executor_tool_calls": "INTEGER NOT NULL DEFAULT 0 CHECK (executor_tool_calls >= 0)",
+    "executor_command_calls": "INTEGER NOT NULL DEFAULT 0 CHECK (executor_command_calls >= 0)",
+    "input_paths_accessed": "INTEGER NOT NULL DEFAULT 0 CHECK (input_paths_accessed >= 0)",
+    "evidence_paths_accessed": "INTEGER NOT NULL DEFAULT 0 CHECK (evidence_paths_accessed >= 0)",
+}
 
 
 def utc_now() -> str:
@@ -82,9 +90,21 @@ class SqliteStore:
                 "SELECT value FROM schema_meta WHERE key = 'schema_version'"
             ).fetchone()
             version = row["value"] if row is not None else None
-            if version in {"1", "2"}:
-                # v2/v3 are additive: schema.sql has already created/backfilled
-                # the new tables before the version marker is advanced.
+            if version in {"1", "2", "3"}:
+                # v2-v4 are additive. CREATE TABLE IF NOT EXISTS cannot add the
+                # v4 telemetry counters to an existing v3 table, so add only
+                # the missing columns before advancing the marker.
+                columns = {
+                    column["name"]
+                    for column in self._conn.execute(
+                        "PRAGMA table_info(job_statistics)"
+                    ).fetchall()
+                }
+                for name, declaration in _V4_STATISTICS_COLUMNS.items():
+                    if name not in columns:
+                        self._conn.execute(
+                            f"ALTER TABLE job_statistics ADD COLUMN {name} {declaration}"
+                        )
                 self._conn.execute(
                     "UPDATE schema_meta SET value = ? WHERE key = 'schema_version'",
                     (_SCHEMA_VERSION,),

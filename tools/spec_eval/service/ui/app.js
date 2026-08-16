@@ -248,11 +248,14 @@ async function loadDetail(jobId) {
   document.getElementById("detail-title").textContent = `Job ${jobRes.json.func_id} (${jobRes.json.status})`;
   const timing = jobRes.json.timing || {};
   const usage = jobRes.json.usage || {};
+  const telemetry = jobRes.json.executor_telemetry || {};
   document.getElementById("detail-stats").innerHTML = `
     <div class="metric"><span>Duration</span><strong>${durationHtml(jobRes.json)}</strong></div>
     <div class="metric"><span>Executor time</span><strong>${formatDuration(Number(timing.executor_duration_ms || 0))}</strong></div>
     <div class="metric"><span>Total tokens</span><strong>${usage.reported ? formatNumber(usage.total_tokens) : "not reported"}</strong></div>
-    <div class="metric"><span>Input / Output</span><strong>${usage.reported ? `${formatNumber(usage.input_tokens)} / ${formatNumber(usage.output_tokens)}` : "—"}</strong></div>`;
+    <div class="metric"><span>Input / Output</span><strong>${usage.reported ? `${formatNumber(usage.input_tokens)} / ${formatNumber(usage.output_tokens)}` : "—"}</strong></div>
+    <div class="metric"><span>Tool / command calls</span><strong>${telemetry.reported ? `${formatNumber(telemetry.tool_calls)} / ${formatNumber(telemetry.command_calls)}` : "not reported"}</strong></div>
+    <div class="metric"><span>Input / evidence paths</span><strong>${telemetry.reported ? `${formatNumber(telemetry.input_paths_accessed)} / ${formatNumber(telemetry.evidence_paths_accessed)}` : "—"}</strong></div>`;
   document.getElementById("detail-state").textContent = JSON.stringify(jobRes.json, null, 2);
   const events = Array.isArray(evRes.json) ? evRes.json : [];
   document.getElementById("events").innerHTML = events.slice(-40).reverse().map((e) =>

@@ -164,6 +164,7 @@ class CodexExecutorTest(unittest.TestCase):
         self.assertEqual(result.executor_result_path, self.work.executor_result_path)
         self.assertEqual(result.observation, {"observation_id": self.work.work_item_id})
         self.assertTrue(result.usage_reported)
+        self.assertTrue(result.telemetry_reported)
         self.assertEqual(
             result.token_usage,
             {
@@ -179,6 +180,40 @@ class CodexExecutorTest(unittest.TestCase):
         kinds = [e.kind for e in out]
         self.assertIn("command", kinds)
         self.assertIn("jsonl", kinds)
+
+    def test_stable_codex_item_events_report_tool_and_input_path_counts(self) -> None:
+        evidence_path = Path(self.tmp.name) / "input" / "evidence" / "Feat-01.json"
+        evidence_path.parent.mkdir(parents=True)
+        evidence_path.write_text("{}", encoding="utf-8")
+        work = replace(self.work, input_paths=(str(evidence_path),))
+        runner = _FakeRunner(
+            result_doc=_result_doc(work.work_item_id),
+            jsonl_lines=[
+                '{"type":"thread.started"}',
+                json.dumps({
+                    "type": "item.completed",
+                    "item": {
+                        "type": "command_execution",
+                        "command": f"sed -n '1,40p' {evidence_path}",
+                    },
+                }),
+            ],
+        )
+        result = self._executor(runner).execute(work, lambda event: None)
+        self.assertTrue(result.telemetry_reported)
+        self.assertEqual(result.telemetry["tool_calls"], 1)
+        self.assertEqual(result.telemetry["command_calls"], 1)
+        self.assertEqual(result.telemetry["input_paths_accessed"], 1)
+        self.assertEqual(result.telemetry["evidence_paths_accessed"], 1)
+
+    def test_unknown_jsonl_shape_leaves_telemetry_unavailable(self) -> None:
+        runner = _FakeRunner(
+            result_doc=_result_doc(self.work.work_item_id),
+            jsonl_lines=['{"type":"future.unknown","tool":"shell"}'],
+        )
+        result = self._executor(runner).execute(self.work, lambda event: None)
+        self.assertFalse(result.telemetry_reported)
+        self.assertEqual(result.telemetry["command_calls"], 0)
 
     def test_argv_uses_readonly_sandbox_ephemeral_and_stdin(self) -> None:
         runner = _FakeRunner(result_doc=_result_doc(self.work.work_item_id))
@@ -369,6 +404,28 @@ class CodexExecutorTest(unittest.TestCase):
             prompt["result_contract"]["target_criterion_ids"],
             ["DESIGN-VERIFICATION-PLAN"],
         )
+
+    def test_quality_retry_prompt_requires_full_evidence_reinspection(self) -> None:
+        work = replace(
+            self.work,
+            input_paths=("/tmp/evidence/Feat-01.json", "/tmp/specs/Feat-01-spec.md"),
+            prompt_extras={
+                "mode": "retry_degenerate_observation",
+                "result_kind": "staged_observation_payload",
+                "payload_fields": ["claim_reviews", "observations", "open_questions", "notes"],
+                "service_derived_fields": ["status", "reviewed_claim_ids", "completed_checks"],
+                "quality_metrics": {"not_verifiable_claim_ratio": 0.7},
+                "quality_reason_codes": ["HIGH_NOT_VERIFIABLE_RATIO"],
+                "machine_contract": {"payload": {"claim_reviews": {}}},
+            },
+        )
+        runner = _FakeRunner(result_doc=_result_doc(work.work_item_id))
+        self._executor(runner).execute(work, lambda event: None)
+        prompt = json.loads(runner.last_stdin or "{}")
+        self.assertIn("quality rejection", prompt["task"])
+        constraints = " ".join(prompt["constraints"])
+        self.assertIn("evidence shards", constraints)
+        self.assertIn("review_record inspection evidence", constraints)
 
     def test_nonzero_exit_is_failed(self) -> None:
         runner = _FakeRunner(exit_code=2, write_result=False)

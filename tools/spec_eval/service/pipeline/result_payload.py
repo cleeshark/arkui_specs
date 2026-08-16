@@ -157,9 +157,32 @@ def claim_evidence_repair_prompt_contract(
             "Re-review only the named Claim rows and their atomic unit reviews.",
             "Reference only evidence IDs already defined by candidate observations.",
             "Replace outcome-only reason or fact text with an evidence-specific explanation.",
-            "If existing evidence cannot support the current outcome, downgrade only the affected Claim or unit to NOT_VERIFIABLE and explain the evidence gap.",
+            "If existing evidence cannot support the current outcome, downgrade only the affected Claim or unit to NOT_VERIFIABLE, retain or reference review_record inspection evidence, and explain the checked scope, missing evidence and why it is insufficient.",
             "Do not add evidence, create defects, upgrade outcomes, or change Claim/Criteria/unit scope and ordering.",
             "Return the complete corrected executor-owned payload, not a patch.",
+        ],
+    })
+    return contract
+
+
+def quality_retry_prompt_contract(
+    base_contract: dict[str, Any],
+    *,
+    quality_metrics: dict[str, int | float],
+    reason_codes: Iterable[str],
+) -> dict[str, Any]:
+    """Request one complete re-evaluation after deterministic quality rejection."""
+    contract = copy.deepcopy(base_contract)
+    contract.update({
+        "mode": "retry_degenerate_observation",
+        "quality_metrics": dict(quality_metrics),
+        "quality_reason_codes": list(reason_codes),
+        "quality_retry_constraints": [
+            "Re-evaluate the complete original work item from the original scoped frozen inputs.",
+            "Read the declared evidence shards, Spec/Design and relevant frozen source or SDK inputs before judging claims.",
+            "For every NOT_VERIFIABLE result, create review_record inspection evidence and reference it from the Claim and atomic unit.",
+            "State the checked scope, missing evidence and why the gap is insufficient for a defensible judgment.",
+            "Do not copy or repair the rejected candidate; produce an independent complete payload.",
         ],
     })
     return contract

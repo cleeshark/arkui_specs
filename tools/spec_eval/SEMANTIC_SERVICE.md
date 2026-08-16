@@ -227,6 +227,16 @@ non-target Claims, mappings, defects, or ordering. If no defined evidence suppor
 judgment, only a conservative target-level downgrade to `NOT_VERIFIABLE` is permitted. New runs
 also reject outcome-only Claim reasons and unit facts such as `supported`.
 
+Evaluator 0.1.18 requires inspection evidence even for `NOT_VERIFIABLE`: each NV observation owns
+a `review_record`, and NV Claims/atomic units reference it with an explicit checked-scope and
+missing-evidence explanation. Before ordinary candidate repair, the service evaluates a
+deterministic combination of NV ratio, inspection coverage, empty references, repeated prose,
+decisive outcomes, and observation density. Suspected degeneration re-runs the complete work item
+once from the original scoped frozen inputs using a separate
+`*.executor-result.quality-retry-1.json`; a second failure emits `executor_quality_failed` with
+reason codes, metrics, and available executor telemetry. Database schema v4 persists non-sensitive
+tool-call, command-call, and accessed-input counts parsed from recognized Codex JSONL events.
+
 The aggregation contract also requires conclusion-level Finding cardinality. Every Criterion whose
 conclusion is `PARTIALLY_SUPPORTED`, `CONTRADICTED`, or `MISSING` must contain at least one
 evidence-backed Finding, and each Finding must cite evidence belonging to that Criterion. The

@@ -191,9 +191,18 @@ explanation; an outcome token by itself is not a completed review. Dangling Clai
 `evidence_ids` may trigger one bounded Claim re-review. The pass reads the candidate and original
 scoped frozen inputs, targets only the named Claim IDs, and may reference only evidence already
 defined by candidate observations. It may preserve the existing outcome with corrected references,
-or conservatively downgrade an affected Claim/unit to `NOT_VERIFIABLE` with empty references and a
-specific explanation. Observations, non-target Claims, mappings, reviewed units, facet types,
+or conservatively downgrade an affected Claim/unit to `NOT_VERIFIABLE` with inspection references
+and a specific explanation. Observations, non-target Claims, mappings, reviewed units, facet types,
 defects, and ordering remain unchanged, and the complete candidate is validated again.
+
+For evaluator 0.1.18+, `NOT_VERIFIABLE` is no longer evidence-free. The observation includes at
+least one `review_record` for the frozen scope that was inspected, and each NV Claim and atomic unit
+references that record. Their reason/fact names the checked scope, missing evidence, and why the
+gap is insufficient. Claim evidence repair retains or selects inspection evidence when
+downgrading; it may not clear all references. A high-NV candidate is rejected as suspected
+degenerate output only when inspection evidence has also collapsed and an independent signal such
+as repetitive prose, zero decisive outcomes, or abnormally sparse observations corroborates the
+failure. The service performs at most one complete quality retry from the original inputs.
 
 ## Function-global scope
 
