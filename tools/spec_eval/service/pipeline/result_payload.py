@@ -20,6 +20,12 @@ OBSERVATION_PAYLOAD_FIELDS = (
     "notes",
 )
 
+# issue #23: the Claim evidence repair executor returns an incremental payload
+# (only the corrected rows for target_claim_ids); the service merges them back.
+CLAIM_EVIDENCE_REPAIR_PAYLOAD_FIELDS = (
+    "claim_reviews",
+)
+
 AGGREGATION_PAYLOAD_FIELDS = (
     "cross_feat_contracts_reviewed",
     "contradiction_bases",
@@ -144,23 +150,37 @@ def claim_evidence_repair_prompt_contract(
     target_claim_ids: Iterable[str],
     available_evidence_ids: Iterable[str],
 ) -> dict[str, Any]:
-    """Describe one bounded Claim evidence re-review against frozen inputs."""
+    """Describe one bounded incremental Claim evidence re-review.
+
+    Issue #23: the transport contract is incremental by design. The executor
+    returns only the corrected complete rows for ``target_claim_ids`` and the
+    service merges them into the candidate, so a high-quality repair can no
+    longer be rejected for imperfect verbatim echo of unchanged rows.
+    """
     contract = copy.deepcopy(base_contract)
     contract.update({
         "mode": "repair_claim_evidence_references",
+        "result_kind": "staged_claim_evidence_repair_payload",
+        "payload_fields": list(CLAIM_EVIDENCE_REPAIR_PAYLOAD_FIELDS),
         "candidate_path": str(candidate_path),
         "validation_errors": list(validation_errors),
         "target_claim_ids": list(target_claim_ids),
         "available_evidence_ids": list(available_evidence_ids),
         "repair_constraints": [
             "Use only the candidate and the original scoped frozen inputs.",
-            "Re-review only the named Claim rows and their atomic unit reviews.",
-            "Reference only evidence IDs already defined by candidate observations.",
+            "Re-review only the Claim rows named by target_claim_ids and their atomic unit reviews.",
+            "Reference only evidence IDs listed in available_evidence_ids.",
             "Replace outcome-only reason or fact text with an evidence-specific explanation.",
             "If existing evidence cannot support the current outcome, downgrade only the affected Claim or unit to NOT_VERIFIABLE, retain or reference review_record inspection evidence, and explain the checked scope, missing evidence and why it is insufficient.",
             "Do not add evidence, create defects, upgrade outcomes, or change Claim/Criteria/unit scope and ordering.",
-            "Return the complete corrected executor-owned payload, not a patch.",
+            "Return an incremental payload, not the full document: exactly one complete corrected Claim review row per target_claim_ids entry, each keyed by its unchanged claim_id.",
+            "Do not include non-target Claim rows, observations, open_questions or notes; the service merges the returned rows back into the candidate.",
         ],
+        "payload_example": {
+            "claim_reviews": [
+                "<one complete corrected Claim review row per target_claim_ids entry>"
+            ]
+        },
     })
     return contract
 
@@ -178,6 +198,33 @@ def quality_retry_prompt_contract(
         "quality_metrics": dict(quality_metrics),
         "quality_reason_codes": list(reason_codes),
         "quality_retry_constraints": [
+            "Re-evaluate the complete original work item from the original scoped frozen inputs.",
+            "Read the declared evidence shards, Spec/Design and relevant frozen source or SDK inputs before judging claims.",
+            "For every NOT_VERIFIABLE result, create review_record inspection evidence and reference it from the Claim and atomic unit.",
+            "State the checked scope, missing evidence and why the gap is insufficient for a defensible judgment.",
+            "Do not copy or repair the rejected candidate; produce an independent complete payload.",
+        ],
+    })
+    return contract
+
+
+def repair_rejection_retry_prompt_contract(
+    base_contract: dict[str, Any],
+    *,
+    rejection_stage: str,
+    reason_codes: Iterable[str],
+) -> dict[str, Any]:
+    """Request one complete re-evaluation after a bounded repair was rejected.
+
+    Issue #23 fallback: when a repair result is rejected by the scope guard,
+    the job degrades to one full re-evaluation instead of failing outright.
+    """
+    contract = copy.deepcopy(base_contract)
+    contract.update({
+        "mode": "retry_after_repair_rejection",
+        "rejection_stage": rejection_stage,
+        "rejection_reason_codes": list(reason_codes),
+        "repair_retry_constraints": [
             "Re-evaluate the complete original work item from the original scoped frozen inputs.",
             "Read the declared evidence shards, Spec/Design and relevant frozen source or SDK inputs before judging claims.",
             "For every NOT_VERIFIABLE result, create review_record inspection evidence and reference it from the Claim and atomic unit.",
@@ -239,6 +286,68 @@ def merge_observation_payload(
     candidate["reviewed_claim_ids"] = _claim_review_ids(payload["claim_reviews"])
     candidate["completed_checks"] = _mapped_check_ids(payload["observations"])
     return candidate
+
+
+def merge_claim_evidence_repair_payload(
+    candidate: dict[str, Any],
+    payload: dict[str, Any] | None,
+    target_claim_ids: tuple[str, ...],
+) -> dict[str, Any]:
+    """Merge one incremental Claim evidence repair into the current candidate.
+
+    The executor returns only the corrected complete rows for
+    ``target_claim_ids``; the service replaces those rows in place so every
+    non-target row and every field outside ``claim_reviews`` stays identical
+    by construction. Raises ``ValueError`` when the returned rows do not match
+    the incremental transport contract.
+    """
+    _require_exact_payload(
+        payload, CLAIM_EVIDENCE_REPAIR_PAYLOAD_FIELDS, "claim evidence repair"
+    )
+    assert payload is not None
+    rows = payload["claim_reviews"]
+    if not isinstance(rows, list) or not rows:
+        raise ValueError("claim evidence repair payload has no claim_reviews array")
+    target_ids = tuple(target_claim_ids)
+    if not target_ids:
+        raise ValueError("claim evidence repair has no target Claim IDs")
+    if len(rows) != len(target_ids):
+        raise ValueError(
+            f"claim evidence repair returned {len(rows)} rows for "
+            f"{len(target_ids)} target Claim IDs"
+        )
+    row_ids: list[str] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            raise ValueError("claim evidence repair row is not an object")
+        claim_id = row.get("claim_id")
+        if not isinstance(claim_id, str) or not claim_id:
+            raise ValueError("claim evidence repair row has no Claim ID")
+        row_ids.append(claim_id)
+    if len(set(row_ids)) != len(row_ids) or set(row_ids) != set(target_ids):
+        raise ValueError(
+            "claim evidence repair rows do not match the target Claim IDs: "
+            f"expected {sorted(set(target_ids))}, got {sorted(set(row_ids))}"
+        )
+    replacements = dict(zip(row_ids, (copy.deepcopy(row) for row in rows)))
+    merged = copy.deepcopy(candidate)
+    claim_reviews = merged.get("claim_reviews")
+    if not isinstance(claim_reviews, list):
+        raise ValueError("claim evidence repair requires candidate claim_reviews")
+    replaced: set[str] = set()
+    for index, review in enumerate(claim_reviews):
+        if not isinstance(review, dict):
+            continue
+        claim_id = review.get("claim_id")
+        if claim_id in replacements:
+            claim_reviews[index] = replacements[claim_id]
+            replaced.add(claim_id)
+    if replaced != set(target_ids):
+        raise ValueError(
+            "candidate is missing target Claim rows: "
+            f"{sorted(set(target_ids) - replaced)}"
+        )
+    return merged
 
 
 def merge_aggregation_payload(

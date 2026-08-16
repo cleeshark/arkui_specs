@@ -14,7 +14,10 @@ from spec_eval.service.domain.models import CreateJobCommand
 from spec_eval.service.executors import contract as C
 from spec_eval.service.pipeline import aggregation_stage, staged_stage
 from spec_eval.service.pipeline.context import RunContext
-from spec_eval.service.pipeline.result_payload import merge_aggregation_payload
+from spec_eval.service.pipeline.result_payload import (
+    merge_aggregation_payload,
+    merge_claim_evidence_repair_payload,
+)
 from spec_eval.service.pipeline.observation_quality import assess_observation_quality
 from spec_eval.service.pipeline.semantic_stage import run_semantic
 from spec_eval.service.settings import ServiceSettings
@@ -345,8 +348,21 @@ class _Issue19ClaimEvidenceRepairExecutor(_PayloadExecutor):
                     evidence_ids=["EV-defined"],
                     fact="The frozen rubric evidence supports this atomic unit.",
                 )
+            target_ids = set(work.prompt_extras["target_claim_ids"])
+            repaired = {
+                "claim_reviews": [
+                    json.loads(json.dumps(row))
+                    for row in payload["claim_reviews"]
+                    if isinstance(row, dict) and row.get("claim_id") in target_ids
+                ]
+            }
             if self.change_outside_target:
-                payload["observations"][0]["fact"] = "The repair changed an observation."
+                # issue #23 incident shape: the transport contract is violated by
+                # echoing extra payload fields alongside the corrected rows.
+                repaired["observations"] = []
+            return C.ExecutionResult(
+                status=C.STATUS_COMPLETED, exit_code=0, observation=repaired
+            )
         return result
 
 
@@ -712,7 +728,9 @@ class _Issue21AggregationExecutor(_Issue17AggregationExecutor):
         return result
 
 
-class ContractAlignmentIntegrationTest(unittest.TestCase):
+class _StagedRunIntegrationTest(unittest.TestCase):
+    """Shared one-run staged fixture; subclasses choose the Claim fixture."""
+
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()
         self.settings = ServiceSettings.discover(data_root=Path(self.tmp.name))
@@ -789,6 +807,7 @@ class ContractAlignmentIntegrationTest(unittest.TestCase):
             json.dumps({"claims": [{"claim_id": "DESIGN/R-1"}]}), encoding="utf-8"
         )
 
+class ContractAlignmentIntegrationTest(_StagedRunIntegrationTest):
     def test_payload_passes_real_initializer_and_validator(self) -> None:
         executor = _PayloadExecutor()
         result = run_semantic(
@@ -908,8 +927,9 @@ class ContractAlignmentIntegrationTest(unittest.TestCase):
             statistics=self.statistics,
         )
         self.assertEqual(result.outcome, C.STATUS_FAILED)
-        self.assertIn("changed fields outside target evidence", result.error or "")
-        self.assertEqual(len(executor.prompts), 2)
+        event_types = [event.event_type for event in self.events.list_for_job(self.job.job_id)]
+        self.assertIn("candidate_evidence_repair_rejected", event_types)
+        self.assertGreaterEqual(event_types.count("repair_rejection_retry_started"), 1)
         self.assertEqual(
             json.loads(template_path.read_text(encoding="utf-8"))["status"], "pending"
         )
@@ -1024,8 +1044,14 @@ class ContractAlignmentIntegrationTest(unittest.TestCase):
             statistics=self.statistics,
         )
         self.assertEqual(result.outcome, C.STATUS_FAILED)
-        self.assertIn("outside target Claim reviews", result.error or "")
-        self.assertEqual(len(executor.prompts), 2)
+        event_types = [event.event_type for event in self.events.list_for_job(self.job.job_id)]
+        self.assertIn("candidate_claim_evidence_repair_rejected", event_types)
+        rejected = next(
+            event for event in self.events.list_for_job(self.job.job_id)
+            if event.event_type == "candidate_claim_evidence_repair_rejected"
+        )
+        self.assertIn("incremental contract", rejected.payload["error"])
+        self.assertEqual(event_types.count("repair_rejection_retry_started"), 1)
         self.assertEqual(
             json.loads(template_path.read_text(encoding="utf-8"))["status"], "pending"
         )
@@ -1567,6 +1593,364 @@ class ContractAlignmentIntegrationTest(unittest.TestCase):
         )
         self.assertEqual(aggregation["source_revision"], SOURCE_REVISION)
         self.assertEqual(aggregation["status"], "complete")
+
+
+class _Issue23IncrementalRepairExecutor(_PayloadExecutor):
+    """Break one Claim of a multi-Claim candidate, then repair incrementally."""
+
+    def __init__(
+        self,
+        *,
+        transport: str = "valid",
+        fallback_recovers: bool = True,
+    ) -> None:
+        super().__init__()
+        self.transport = transport
+        self.fallback_recovers = fallback_recovers
+
+    def execute(self, work: C.WorkItemInput, emit, cancel=None) -> C.ExecutionResult:
+        result = super().execute(work, emit, cancel)
+        payload = result.observation
+        assert payload is not None
+        if work.work_item_id != "feature:Feat-01":
+            return result
+        mode = work.prompt_extras.get("mode")
+        if mode == "retry_after_repair_rejection" and self.fallback_recovers:
+            return result  # one clean independent complete payload
+        if mode != "repair_claim_evidence_references":
+            review = payload["claim_reviews"][0]
+            review.update(
+                local_outcome="SUPPORTED",
+                evidence_ids=["EV-inspection"],
+                reason="supported",
+            )
+            review["unit_reviews"][0].update(
+                local_outcome="SUPPORTED",
+                evidence_ids=["EV-inspection"],
+                fact="supported",
+            )
+            return result
+
+        target_ids = list(work.prompt_extras["target_claim_ids"])
+        rows = [
+            json.loads(json.dumps(row))
+            for row in payload["claim_reviews"]
+            if row.get("claim_id") in set(target_ids)
+        ]
+        for row in rows:
+            row.update(
+                local_outcome="SUPPORTED",
+                evidence_ids=["EV-inspection"],
+                reason="The frozen rubric evidence supports the evaluated Claim.",
+            )
+            row["unit_reviews"][0].update(
+                local_outcome="SUPPORTED",
+                evidence_ids=["EV-inspection"],
+                fact="The frozen rubric evidence supports this atomic unit.",
+            )
+        repaired: dict = {"claim_reviews": rows}
+        if self.transport == "echo_full_payload":
+            # the exact issue #23 incident shape: incremental rows plus the
+            # remaining payload fields echoed back as empties.
+            repaired = {
+                "claim_reviews": rows,
+                "observations": [],
+                "open_questions": [],
+                "notes": [],
+            }
+        elif self.transport == "extra_claim_row":
+            extra = json.loads(json.dumps(rows[0]))
+            extra["claim_id"] = rows[0]["claim_id"] + "-extra"
+            repaired = {"claim_reviews": rows + [extra]}
+        elif self.transport == "missing_target_row":
+            repaired = {"claim_reviews": []}
+        elif self.transport == "duplicate_row":
+            repaired = {"claim_reviews": rows + [json.loads(json.dumps(rows[0]))]}
+        elif self.transport == "scope_violation":
+            for row in rows:
+                row["criterion_ids"] = ["DESIGN-EXCEPTION-RECOVERY"]
+        return C.ExecutionResult(
+            status=C.STATUS_COMPLETED, exit_code=0, observation=repaired
+        )
+
+
+class Issue23IncrementalRepairTest(_StagedRunIntegrationTest):
+    """issue #23: incremental Claim evidence repair transport and fallback."""
+
+    def _write_input_fixture(self) -> None:
+        super()._write_input_fixture()
+        (self.ctx.input_dir / "evidence" / "Feat-01.json").write_text(
+            json.dumps({
+                "claims": [
+                    {"claim_id": "Feat-01/AC-1"},
+                    {"claim_id": "Feat-01/AC-2"},
+                ]
+            }),
+            encoding="utf-8",
+        )
+
+    def test_incremental_rows_merge_and_keep_non_targets_untouched(self) -> None:
+        executor = _Issue23IncrementalRepairExecutor()
+        result = run_semantic(
+            self.ctx,
+            executor,
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+            statistics=self.statistics,
+        )
+        self.assertEqual(result.outcome, C.STATUS_COMPLETED, result.error)
+        self.assertEqual(len(executor.prompts), 3)
+        repair_work = executor.prompts[1]
+        self.assertEqual(
+            repair_work.prompt_extras["mode"], "repair_claim_evidence_references"
+        )
+        self.assertEqual(repair_work.prompt_extras["payload_fields"], ["claim_reviews"])
+        self.assertEqual(
+            repair_work.prompt_extras["result_kind"],
+            "staged_claim_evidence_repair_payload",
+        )
+        self.assertEqual(
+            repair_work.prompt_extras["target_claim_ids"], ["Feat-01/AC-1"]
+        )
+
+        feature = json.loads(
+            (self.ctx.run_dir / "observations" / "Feat-01.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(
+            [row["claim_id"] for row in feature["claim_reviews"]],
+            ["Feat-01/AC-1", "Feat-01/AC-2"],
+        )
+        repaired = feature["claim_reviews"][0]
+        self.assertEqual(repaired["local_outcome"], "SUPPORTED")
+        self.assertEqual(repaired["evidence_ids"], ["EV-inspection"])
+        self.assertEqual(
+            repaired["reason"], "The frozen rubric evidence supports the evaluated Claim."
+        )
+        non_target = feature["claim_reviews"][1]
+        self.assertEqual(non_target["local_outcome"], "NOT_VERIFIABLE")
+        self.assertEqual(non_target["evidence_ids"], ["EV-inspection"])
+        self.assertIn("implementation proof is missing", non_target["reason"])
+        self.assertEqual(len(feature["observations"]), 1)
+
+        event_types = [event.event_type for event in self.events.list_for_job(self.job.job_id)]
+        self.assertIn("candidate_claim_evidence_repair_started", event_types)
+        self.assertIn("candidate_claim_evidence_repair_completed", event_types)
+        self.assertNotIn("candidate_claim_evidence_repair_rejected", event_types)
+        self.assertNotIn("repair_rejection_retry_started", event_types)
+        self.assertEqual(self.statistics.get(self.job.job_id).executor_invocations, 3)
+
+    def test_issue_23_full_payload_echo_is_rejected_with_recovery(self) -> None:
+        executor = _Issue23IncrementalRepairExecutor(
+            transport="echo_full_payload", fallback_recovers=True
+        )
+        result = run_semantic(
+            self.ctx,
+            executor,
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+            statistics=self.statistics,
+        )
+        self.assertEqual(result.outcome, C.STATUS_COMPLETED, result.error)
+        self.assertEqual(len(executor.prompts), 4)
+        retry = executor.prompts[2]
+        self.assertEqual(retry.prompt_extras["mode"], "retry_after_repair_rejection")
+        self.assertEqual(retry.prompt_extras["rejection_stage"], "claim_evidence")
+        self.assertTrue(
+            retry.executor_result_path.endswith(".repair-rejection-retry-1.json")
+        )
+        self.assertEqual(retry.input_paths, executor.prompts[0].input_paths)
+        event_types = [event.event_type for event in self.events.list_for_job(self.job.job_id)]
+        self.assertEqual(event_types.count("candidate_claim_evidence_repair_rejected"), 1)
+        self.assertEqual(event_types.count("repair_rejection_retry_started"), 1)
+        self.assertEqual(event_types.count("repair_rejection_retry_completed"), 1)
+        self.assertEqual(self.statistics.get(self.job.job_id).executor_invocations, 4)
+
+        feature = json.loads(
+            (self.ctx.run_dir / "observations" / "Feat-01.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(feature["status"], "complete")
+        self.assertEqual(feature["claim_reviews"][0]["local_outcome"], "NOT_VERIFIABLE")
+
+    def test_issue_23_transport_mismatch_without_recovery_fails_the_job(self) -> None:
+        template_path = self.ctx.run_dir / "observations" / "Feat-01.json"
+        before = template_path.read_bytes()
+        executor = _Issue23IncrementalRepairExecutor(
+            transport="missing_target_row", fallback_recovers=False
+        )
+        result = run_semantic(
+            self.ctx,
+            executor,
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+            statistics=self.statistics,
+        )
+        self.assertEqual(result.outcome, C.STATUS_FAILED)
+        event_types = [event.event_type for event in self.events.list_for_job(self.job.job_id)]
+        self.assertEqual(event_types.count("candidate_claim_evidence_repair_rejected"), 1)
+        self.assertEqual(event_types.count("repair_rejection_retry_started"), 1)
+        self.assertEqual(event_types.count("repair_rejection_retry_failed"), 1)
+        self.assertNotIn("repair_rejection_retry_completed", event_types)
+        self.assertEqual(template_path.read_bytes(), before)
+        self.assertEqual(self.statistics.get(self.job.job_id).executor_invocations, 3)
+
+    def test_issue_23_extra_claim_row_is_rejected_by_the_merge_contract(self) -> None:
+        executor = _Issue23IncrementalRepairExecutor(transport="extra_claim_row")
+        result = run_semantic(
+            self.ctx,
+            executor,
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+            statistics=self.statistics,
+        )
+        self.assertEqual(result.outcome, C.STATUS_COMPLETED, result.error)
+        rejected = [
+            event for event in self.events.list_for_job(self.job.job_id)
+            if event.event_type == "candidate_claim_evidence_repair_rejected"
+        ]
+        self.assertEqual(len(rejected), 1)
+        self.assertIn("2 rows for 1 target Claim IDs", rejected[0].payload["error"])
+
+    def test_issue_23_duplicate_claim_row_is_rejected_by_the_merge_contract(self) -> None:
+        executor = _Issue23IncrementalRepairExecutor(transport="duplicate_row")
+        result = run_semantic(
+            self.ctx,
+            executor,
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+            statistics=self.statistics,
+        )
+        self.assertEqual(result.outcome, C.STATUS_COMPLETED, result.error)
+        rejected = [
+            event for event in self.events.list_for_job(self.job.job_id)
+            if event.event_type == "candidate_claim_evidence_repair_rejected"
+        ]
+        self.assertEqual(len(rejected), 1)
+        self.assertIn("2 rows for 1 target Claim IDs", rejected[0].payload["error"])
+
+    def test_issue_23_scope_violation_rows_are_still_rejected(self) -> None:
+        executor = _Issue23IncrementalRepairExecutor(
+            transport="scope_violation", fallback_recovers=True
+        )
+        result = run_semantic(
+            self.ctx,
+            executor,
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+            statistics=self.statistics,
+        )
+        self.assertEqual(result.outcome, C.STATUS_COMPLETED, result.error)
+        rejected = [
+            event for event in self.events.list_for_job(self.job.job_id)
+            if event.event_type == "candidate_claim_evidence_repair_rejected"
+        ]
+        self.assertEqual(len(rejected), 1)
+        self.assertIn(
+            "outside target Claim reviews", rejected[0].payload["error"]
+        )
+        feature = json.loads(
+            (self.ctx.run_dir / "observations" / "Feat-01.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(
+            feature["claim_reviews"][0]["criterion_ids"],
+            ["CORRECTNESS-SOURCE-SUPPORT"],
+        )
+
+
+class ClaimEvidenceRepairMergeTest(unittest.TestCase):
+    """Unit tests for the issue #23 incremental merge contract."""
+
+    def _candidate(self) -> dict:
+        return {
+            "status": "complete",
+            "claim_reviews": [
+                {"claim_id": "Feat-01/AC-1", "local_outcome": "SUPPORTED", "reason": "r1"},
+                {"claim_id": "Feat-01/AC-2", "local_outcome": "NOT_VERIFIABLE", "reason": "r2"},
+            ],
+            "observations": [{"observation_id": "OBS-1"}],
+            "open_questions": [],
+            "notes": [],
+        }
+
+    def test_replaces_only_target_rows_and_preserves_order(self) -> None:
+        candidate = self._candidate()
+        merged = merge_claim_evidence_repair_payload(
+            candidate,
+            {"claim_reviews": [{"claim_id": "Feat-01/AC-2", "local_outcome": "SUPPORTED"}]},
+            ("Feat-01/AC-2",),
+        )
+        self.assertEqual(
+            [row["claim_id"] for row in merged["claim_reviews"]],
+            ["Feat-01/AC-1", "Feat-01/AC-2"],
+        )
+        self.assertEqual(merged["claim_reviews"][1]["local_outcome"], "SUPPORTED")
+        self.assertEqual(merged["claim_reviews"][0], candidate["claim_reviews"][0])
+        self.assertEqual(merged["observations"], [{"observation_id": "OBS-1"}])
+        # the input candidate is not mutated
+        self.assertEqual(candidate["claim_reviews"][1]["local_outcome"], "NOT_VERIFIABLE")
+
+    def test_row_count_mismatch_is_rejected(self) -> None:
+        with self.assertRaises(ValueError):
+            merge_claim_evidence_repair_payload(
+                self._candidate(),
+                {"claim_reviews": [{"claim_id": "Feat-01/AC-1"}]},
+                ("Feat-01/AC-1", "Feat-01/AC-2"),
+            )
+
+    def test_unknown_claim_id_is_rejected(self) -> None:
+        with self.assertRaises(ValueError):
+            merge_claim_evidence_repair_payload(
+                self._candidate(),
+                {"claim_reviews": [{"claim_id": "Feat-01/AC-9"}]},
+                ("Feat-01/AC-1",),
+            )
+
+    def test_duplicate_rows_are_rejected(self) -> None:
+        row = {"claim_id": "Feat-01/AC-1", "local_outcome": "SUPPORTED"}
+        with self.assertRaises(ValueError):
+            merge_claim_evidence_repair_payload(
+                self._candidate(),
+                {"claim_reviews": [row, dict(row)]},
+                ("Feat-01/AC-1",),
+            )
+
+    def test_extra_payload_fields_are_rejected(self) -> None:
+        with self.assertRaises(ValueError):
+            merge_claim_evidence_repair_payload(
+                self._candidate(),
+                {
+                    "claim_reviews": [{"claim_id": "Feat-01/AC-1"}],
+                    "observations": [],
+                },
+                ("Feat-01/AC-1",),
+            )
+
+    def test_empty_rows_or_targets_are_rejected(self) -> None:
+        with self.assertRaises(ValueError):
+            merge_claim_evidence_repair_payload(
+                self._candidate(), {"claim_reviews": []}, ("Feat-01/AC-1",)
+            )
+        with self.assertRaises(ValueError):
+            merge_claim_evidence_repair_payload(
+                self._candidate(),
+                {"claim_reviews": [{"claim_id": "Feat-01/AC-1"}]},
+                (),
+            )
+
+    def test_missing_candidate_target_row_is_rejected(self) -> None:
+        candidate = self._candidate()
+        candidate["claim_reviews"] = [candidate["claim_reviews"][0]]
+        with self.assertRaises(ValueError):
+            merge_claim_evidence_repair_payload(
+                candidate,
+                {"claim_reviews": [{"claim_id": "Feat-01/AC-2"}]},
+                ("Feat-01/AC-2",),
+            )
 
 
 if __name__ == "__main__":

@@ -335,7 +335,7 @@ class CodexExecutorTest(unittest.TestCase):
             ),
             prompt_extras={
                 "mode": "repair_claim_evidence_references",
-                "result_kind": "staged_observation_payload",
+                "result_kind": "staged_claim_evidence_repair_payload",
                 "template_path": "/tmp/Feat-01.json",
                 "output_contract_path": "/tmp/output-contract.json",
                 "candidate_path": "/tmp/.Feat-01.json.candidate",
@@ -345,7 +345,7 @@ class CodexExecutorTest(unittest.TestCase):
                 ],
                 "target_claim_ids": ["Feat-01/R-33"],
                 "available_evidence_ids": ["EV-defined"],
-                "payload_fields": ["claim_reviews", "observations", "open_questions", "notes"],
+                "payload_fields": ["claim_reviews"],
                 "service_derived_fields": ["status", "reviewed_claim_ids", "completed_checks"],
                 "machine_contract": {"payload": {"claim_reviews": {}}},
             },
@@ -357,8 +357,14 @@ class CodexExecutorTest(unittest.TestCase):
         constraints = " ".join(prompt["constraints"])
         self.assertIn("target_claim_ids", constraints)
         self.assertIn("available_evidence_ids", constraints)
+        self.assertIn("incremental payload", constraints)
+        self.assertIn("Do not include non-target Claim rows", constraints)
+        self.assertIn(
+            'exactly these fields: ["claim_reviews"]',
+            prompt["output"]["requirement"],
+        )
         self.assertIn("NOT_VERIFIABLE", constraints)
-        self.assertIn("Preserve every non-target Claim", constraints)
+        self.assertIn("the service merges the returned rows", constraints)
 
     def test_aggregation_reconciliation_prompt_uses_published_mapping_only(self) -> None:
         work = replace(
@@ -426,6 +432,31 @@ class CodexExecutorTest(unittest.TestCase):
         constraints = " ".join(prompt["constraints"])
         self.assertIn("evidence shards", constraints)
         self.assertIn("review_record inspection evidence", constraints)
+
+    def test_repair_rejection_retry_prompt_requires_independent_payload(self) -> None:
+        work = replace(
+            self.work,
+            input_paths=("/tmp/evidence/Feat-01.json", "/tmp/specs/Feat-01-spec.md"),
+            prompt_extras={
+                "mode": "retry_after_repair_rejection",
+                "result_kind": "staged_observation_payload",
+                "payload_fields": ["claim_reviews", "observations", "open_questions", "notes"],
+                "service_derived_fields": ["status", "reviewed_claim_ids", "completed_checks"],
+                "rejection_stage": "claim_evidence",
+                "rejection_reason_codes": [
+                    "Claim evidence repair changed fields outside target Claim reviews"
+                ],
+                "machine_contract": {"payload": {"claim_reviews": {}}},
+            },
+        )
+        runner = _FakeRunner(result_doc=_result_doc(work.work_item_id))
+        self._executor(runner).execute(work, lambda event: None)
+        prompt = json.loads(runner.last_stdin or "{}")
+        self.assertIn("bounded repair was rejected", prompt["task"])
+        constraints = " ".join(prompt["constraints"])
+        self.assertIn("evidence shards", constraints)
+        self.assertIn("review_record inspection evidence", constraints)
+        self.assertIn("independent complete payload", constraints)
 
     def test_nonzero_exit_is_failed(self) -> None:
         runner = _FakeRunner(exit_code=2, write_result=False)

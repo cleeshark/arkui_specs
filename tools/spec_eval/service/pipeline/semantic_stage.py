@@ -44,11 +44,13 @@ from .evidence_stage import prepare_evidence, validate_evidence_package
 from .result_payload import (
     claim_evidence_repair_prompt_contract,
     load_template,
+    merge_claim_evidence_repair_payload,
     merge_observation_payload,
     observation_evidence_repair_prompt_contract,
     observation_prompt_contract,
     quality_retry_prompt_contract,
     repair_prompt_contract,
+    repair_rejection_retry_prompt_contract,
 )
 from .observation_quality import assess_observation_quality
 from . import staged_stage
@@ -71,6 +73,20 @@ class SemanticStageResult:
     outcome: str  # C.STATUS_COMPLETED | C.STATUS_AWAITING | C.STATUS_FAILED | C.STATUS_CANCELLED
     completed_items: int
     error: str | None = None
+
+
+@dataclass(frozen=True)
+class _RepairRejectionFallback:
+    """Outcome of the one complete re-evaluation after a repair was rejected.
+
+    ``terminal`` is non-None when the caller must return it (cancelled,
+    awaiting executor or failed); otherwise ``candidate``/``verdict`` restart
+    the bounded repair loop with the rebuilt full evaluation.
+    """
+
+    terminal: SemanticStageResult | None
+    candidate: dict[str, Any]
+    verdict: Any
 
 
 _REPAIRABLE_VALIDATION_ERROR_MARKERS = (
@@ -412,25 +428,40 @@ def run_semantic(
                     if not _evidence_repair_preserves_semantics(
                         candidate, repaired_candidate, target_indexes
                     ):
-                        error = (
-                            "observation evidence repair changed fields outside target evidence"
+                        rejection_error = (
+                            "observation evidence repair changed fields outside "
+                            "target evidence"
                         )
                         events.append(
                             ctx.job_id,
-                            "candidate_evidence_repair_failed",
+                            "candidate_evidence_repair_rejected",
                             {
                                 "work_item_id": work.work_item_id,
                                 "repair_attempt": 1,
-                                "error": error,
+                                "error": rejection_error,
                             },
                         )
-                        jobs.transition_status(
-                            ctx.job_id,
-                            S.FAILED,
-                            event_type="semantic_failed",
-                            payload={"work_item_id": work.work_item_id, "error": error},
+                        fallback = _run_repair_rejection_fallback(
+                            ctx,
+                            jobs,
+                            events,
+                            statistics,
+                            executor,
+                            emit,
+                            cancel,
+                            work=work,
+                            initialized=initialized,
+                            candidate_path=candidate_path,
+                            completed=completed,
+                            runner=runner,
+                            rejection_stage="observation_evidence",
+                            reason=rejection_error,
                         )
-                        return SemanticStageResult(C.STATUS_FAILED, completed, error)
+                        if fallback.terminal is not None:
+                            return fallback.terminal
+                        candidate = fallback.candidate
+                        verdict = fallback.verdict
+                        continue
                     candidate = repaired_candidate
                     _write_candidate(candidate_path, candidate)
                     verdict = staged_stage.validate_work_item_candidate(
@@ -516,36 +547,62 @@ def run_semantic(
                             payload={"work_item_id": work.work_item_id, "error": error},
                         )
                         return SemanticStageResult(C.STATUS_FAILED, completed, error)
-                    repaired_candidate = merge_observation_payload(
-                        initialized, repair_result.observation
-                    )
-                    if not _claim_evidence_repair_preserves_scope(
-                        candidate,
-                        repaired_candidate,
-                        target_claim_ids,
-                        require_nv_inspection=(
-                            ctx.evaluator_version in _EXECUTOR_QUALITY_EVALUATOR_VERSIONS
-                        ),
-                    ):
-                        error = (
-                            "Claim evidence repair changed fields outside target Claim reviews"
+                    try:
+                        repaired_candidate = merge_claim_evidence_repair_payload(
+                            candidate, repair_result.observation, target_claim_ids
                         )
+                    except ValueError as exc:
+                        repaired_candidate = None
+                        rejection_error = (
+                            "Claim evidence repair payload violates the incremental "
+                            f"contract: {exc}"
+                        )
+                    else:
+                        rejection_error = None
+                        if not _claim_evidence_repair_preserves_scope(
+                            candidate,
+                            repaired_candidate,
+                            target_claim_ids,
+                            require_nv_inspection=(
+                                ctx.evaluator_version in _EXECUTOR_QUALITY_EVALUATOR_VERSIONS
+                            ),
+                        ):
+                            rejection_error = (
+                                "Claim evidence repair changed fields outside "
+                                "target Claim reviews"
+                            )
+                            repaired_candidate = None
+                    if rejection_error is not None:
                         events.append(
                             ctx.job_id,
-                            "candidate_claim_evidence_repair_failed",
+                            "candidate_claim_evidence_repair_rejected",
                             {
                                 "work_item_id": work.work_item_id,
                                 "repair_attempt": 1,
-                                "error": error,
+                                "error": rejection_error,
                             },
                         )
-                        jobs.transition_status(
-                            ctx.job_id,
-                            S.FAILED,
-                            event_type="semantic_failed",
-                            payload={"work_item_id": work.work_item_id, "error": error},
+                        fallback = _run_repair_rejection_fallback(
+                            ctx,
+                            jobs,
+                            events,
+                            statistics,
+                            executor,
+                            emit,
+                            cancel,
+                            work=work,
+                            initialized=initialized,
+                            candidate_path=candidate_path,
+                            completed=completed,
+                            runner=runner,
+                            rejection_stage="claim_evidence",
+                            reason=rejection_error,
                         )
-                        return SemanticStageResult(C.STATUS_FAILED, completed, error)
+                        if fallback.terminal is not None:
+                            return fallback.terminal
+                        candidate = fallback.candidate
+                        verdict = fallback.verdict
+                        continue
                     candidate = repaired_candidate
                     _write_candidate(candidate_path, candidate)
                     verdict = staged_stage.validate_work_item_candidate(
@@ -698,6 +755,166 @@ def _build_quality_retry_work_input(
             reason_codes=quality.reason_codes,
         ),
     )
+
+
+def _build_repair_rejection_retry_work_input(
+    work: C.WorkItemInput,
+    *,
+    rejection_stage: str,
+    reason: str,
+) -> C.WorkItemInput:
+    result_path = Path(work.executor_result_path)
+    retry_result_path = result_path.with_name(
+        f"{result_path.stem}.repair-rejection-retry-1{result_path.suffix}"
+    )
+    return replace(
+        work,
+        executor_result_path=str(retry_result_path),
+        prompt_extras=repair_rejection_retry_prompt_contract(
+            work.prompt_extras,
+            rejection_stage=rejection_stage,
+            reason_codes=(reason,),
+        ),
+    )
+
+
+def _run_repair_rejection_fallback(
+    ctx: RunContext,
+    jobs: JobRepository,
+    events: EventRepository,
+    statistics: JobStatisticsRepository | None,
+    executor: SemanticExecutor,
+    emit: Any,
+    cancel: Any,
+    *,
+    work: C.WorkItemInput,
+    initialized: dict[str, Any],
+    candidate_path: Path,
+    completed: int,
+    runner: Runner,
+    rejection_stage: str,
+    reason: str,
+) -> _RepairRejectionFallback:
+    """Degrade one rejected bounded repair to a single complete re-evaluation.
+
+    Issue #23: a high-quality repair must not void the whole job because of a
+    transport mismatch. The fallback re-evaluates the original work item once;
+    if that executor call fails or its output still does not validate, the job
+    fails without a second fallback attempt.
+    """
+    events.append(
+        ctx.job_id,
+        "repair_rejection_retry_started",
+        {
+            "work_item_id": work.work_item_id,
+            "rejection_stage": rejection_stage,
+            "reason": reason,
+        },
+    )
+    retry_work = _build_repair_rejection_retry_work_input(
+        work, rejection_stage=rejection_stage, reason=reason
+    )
+    retry_result = executor.execute(retry_work, emit, cancel)
+    _record_executor_statistics(statistics, ctx.job_id, retry_result)
+    if retry_result.status == C.STATUS_CANCELLED or (
+        cancel is not None and cancel.is_set()
+    ):
+        return _RepairRejectionFallback(
+            SemanticStageResult(
+                C.STATUS_CANCELLED, completed, "cancelled during repair rejection retry"
+            ),
+            {},
+            None,
+        )
+    if retry_result.status == C.STATUS_AWAITING:
+        jobs.transition_status(
+            ctx.job_id,
+            S.AWAITING_EXECUTOR,
+            event_type="awaiting_executor",
+            payload={
+                "work_item_id": work.work_item_id,
+                "phase": "repair_rejection_retry",
+                "error": retry_result.error,
+            },
+        )
+        return _RepairRejectionFallback(
+            SemanticStageResult(C.STATUS_AWAITING, completed, retry_result.error),
+            {},
+            None,
+        )
+    if not retry_result.succeeded:
+        error = retry_result.error or (
+            f"repair rejection retry executor {retry_result.status}"
+        )
+        events.append(
+            ctx.job_id,
+            "repair_rejection_retry_failed",
+            {
+                "work_item_id": work.work_item_id,
+                "rejection_stage": rejection_stage,
+                "error": error,
+            },
+        )
+        jobs.transition_status(
+            ctx.job_id,
+            S.FAILED,
+            event_type="semantic_failed",
+            payload={
+                "work_item_id": work.work_item_id,
+                "phase": "repair_rejection_retry",
+                "error": error,
+            },
+        )
+        return _RepairRejectionFallback(
+            SemanticStageResult(C.STATUS_FAILED, completed, error), {}, None
+        )
+    if ctx.evaluator_version in _EXECUTOR_QUALITY_EVALUATOR_VERSIONS:
+        retry_quality = assess_observation_quality(retry_result.observation)
+        if retry_quality.suspected:
+            error = "degenerate output after repair rejection fallback retry"
+            events.append(
+                ctx.job_id,
+                "repair_rejection_retry_failed",
+                {
+                    "work_item_id": work.work_item_id,
+                    "rejection_stage": rejection_stage,
+                    "retry_quality": retry_quality.payload(),
+                    "error": error,
+                },
+            )
+            jobs.transition_status(
+                ctx.job_id,
+                S.FAILED,
+                event_type="executor_quality_failed",
+                payload={
+                    "work_item_id": work.work_item_id,
+                    "phase": "repair_rejection_retry",
+                    "retry_quality": retry_quality.payload(),
+                    "error": error,
+                },
+            )
+            return _RepairRejectionFallback(
+                SemanticStageResult(C.STATUS_FAILED, completed, error), {}, None
+            )
+    candidate = merge_observation_payload(initialized, retry_result.observation)
+    _write_candidate(candidate_path, candidate)
+    verdict = staged_stage.validate_work_item_candidate(
+        ctx, work.work_item_id, candidate_path, runner=runner
+    )
+    events.append(
+        ctx.job_id,
+        (
+            "repair_rejection_retry_completed"
+            if verdict.ok else
+            "repair_rejection_retry_failed"
+        ),
+        {
+            "work_item_id": work.work_item_id,
+            "rejection_stage": rejection_stage,
+            "errors": list(verdict.errors),
+        },
+    )
+    return _RepairRejectionFallback(None, candidate, verdict)
 
 
 def _build_evidence_repair_work_input(
