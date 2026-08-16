@@ -172,6 +172,7 @@ def claim_evidence_repair_prompt_contract(
             "Reference only evidence IDs listed in available_evidence_ids.",
             "Replace outcome-only reason or fact text with an evidence-specific explanation.",
             "If existing evidence cannot support the current outcome, downgrade only the affected Claim or unit to NOT_VERIFIABLE, retain or reference review_record inspection evidence, and explain the checked scope, missing evidence and why it is insufficient.",
+            "Express all three NOT_VERIFIABLE signals explicitly. Accepted wording includes checked/inspection/reviewed/searched for scope, missing/absence/without/does not include/no relevant source content for the gap, and cannot verify/cannot be verified/prevents verifying/unable to determine for the consequence.",
             "Do not add evidence, create defects, upgrade outcomes, or change Claim/Criteria/unit scope and ordering.",
             "Return an incremental payload, not the full document: exactly one complete corrected Claim review row per target_claim_ids entry, each keyed by its unchanged claim_id.",
             "Do not include non-target Claim rows, observations, open_questions or notes; the service merges the returned rows back into the candidate.",
@@ -202,6 +203,7 @@ def quality_retry_prompt_contract(
             "Read the declared evidence shards, Spec/Design and relevant frozen source or SDK inputs before judging claims.",
             "For every NOT_VERIFIABLE result, create review_record inspection evidence and reference it from the Claim and atomic unit.",
             "State the checked scope, missing evidence and why the gap is insufficient for a defensible judgment.",
+            "Use explicit language for all three signals; passive and near-synonym forms such as inspection, absence, cannot be verified and prevents verifying are valid.",
             "Do not copy or repair the rejected candidate; produce an independent complete payload.",
         ],
     })
@@ -214,10 +216,11 @@ def repair_rejection_retry_prompt_contract(
     rejection_stage: str,
     reason_codes: Iterable[str],
 ) -> dict[str, Any]:
-    """Request one complete re-evaluation after a bounded repair was rejected.
+    """Request one complete re-evaluation after a bounded repair was unsuccessful.
 
-    Issue #23 fallback: when a repair result is rejected by the scope guard,
-    the job degrades to one full re-evaluation instead of failing outright.
+    Issues #23/#24 fallback: when a repair is rejected by its scope guard or a
+    Claim repair merges while leaving targeted validation errors, the job
+    degrades to one full re-evaluation instead of failing outright.
     """
     contract = copy.deepcopy(base_contract)
     contract.update({
@@ -229,6 +232,7 @@ def repair_rejection_retry_prompt_contract(
             "Read the declared evidence shards, Spec/Design and relevant frozen source or SDK inputs before judging claims.",
             "For every NOT_VERIFIABLE result, create review_record inspection evidence and reference it from the Claim and atomic unit.",
             "State the checked scope, missing evidence and why the gap is insufficient for a defensible judgment.",
+            "Use explicit language for all three signals; passive and near-synonym forms such as inspection, absence, cannot be verified and prevents verifying are valid.",
             "Do not copy or repair the rejected candidate; produce an independent complete payload.",
         ],
     })

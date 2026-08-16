@@ -321,6 +321,15 @@ class CodexCliExecutor:
         has_machine_contract = bool(
             result_contract.get("machine_contract", {}).get("payload")
         )
+        claim_quality_rule = (
+            result_contract.get("machine_contract", {})
+            .get("payload", {})
+            .get("claim_reviews", {})
+            .get("quality_rule", {})
+        )
+        has_nv_expression_contract = bool(
+            claim_quality_rule.get("not_verifiable_expression_examples")
+        )
         payload_fields = result_contract.get("payload_fields", [])
         derived_fields = result_contract.get("service_derived_fields", [])
         result_kind = result_contract.get("result_kind", "staged_payload")
@@ -384,7 +393,7 @@ class CodexCliExecutor:
             ]
         if repair_rejection_retry_mode:
             constraints = [
-                "Re-evaluate the complete original work item after a bounded repair result was rejected by the scope guard.",
+                "Re-evaluate the complete original work item after a bounded repair was rejected by its guard or left targeted validation errors.",
                 "Read the declared evidence shards, Spec/Design and relevant frozen source or SDK inputs before judging any Claim.",
                 "Do not read paths in forbidden_paths and do not modify formal inputs.",
                 "For every NOT_VERIFIABLE observation, Claim and atomic unit, create and reference review_record inspection evidence.",
@@ -404,6 +413,16 @@ class CodexCliExecutor:
                 "Treat criterion_results[].claim_ids as citations only; they may not override or narrow the mapped scope.",
                 "Return the complete corrected executor-owned aggregation payload, not a patch.",
             ]
+        if (
+            has_nv_expression_contract
+            and not repair_mode
+            and not evidence_completion_mode
+            and not reconciliation_mode
+        ):
+            constraints.insert(
+                -1,
+                "For every NOT_VERIFIABLE reason and unit fact, state all three signals explicitly: the checked scope, the missing evidence, and the verification consequence. Valid wording includes inspection/reviewed/searched, missing/absence/without/does not include/no relevant source content, and cannot verify/cannot be verified/prevents verifying/unable to determine.",
+            )
         payload = {
             "task": (
                 "Repair one staged semantic evaluation candidate after validation failure."
@@ -414,7 +433,7 @@ class CodexCliExecutor:
                     if claim_evidence_repair_mode else (
                         "Reconcile one staged aggregation candidate after mapped-unit validation failure."
                         if reconciliation_mode else (
-                            "Re-evaluate one complete staged semantic work item after a bounded repair was rejected."
+                            "Re-evaluate one complete staged semantic work item after a bounded repair did not produce a valid candidate."
                             if repair_rejection_retry_mode else (
                             "Re-evaluate one complete staged semantic work item after executor quality rejection."
                             if quality_retry_mode else

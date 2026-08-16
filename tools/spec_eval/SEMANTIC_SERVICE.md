@@ -237,6 +237,13 @@ once from the original scoped frozen inputs using a separate
 reason codes, metrics, and available executor telemetry. Database schema v4 persists non-sensitive
 tool-call, command-call, and accessed-input counts parsed from recognized Codex JSONL events.
 
+Evaluator 0.1.19 preserves the three-part NV explanation requirement while accepting bounded
+natural-language families such as `inspection`, `absence`, `cannot be verified`, and
+`prevents verifying`. Generic negation does not satisfy the gap requirement. If a Claim evidence
+repair merges successfully but targeted validation errors remain, the worker uses the same
+one-time independent full-work-item fallback as a guard rejection; a second fallback for that
+repair mode is not allowed.
+
 The aggregation contract also requires conclusion-level Finding cardinality. Every Criterion whose
 conclusion is `PARTIALLY_SUPPORTED`, `CONTRADICTED`, or `MISSING` must contain at least one
 evidence-backed Finding, and each Finding must cite evidence belonging to that Criterion. The

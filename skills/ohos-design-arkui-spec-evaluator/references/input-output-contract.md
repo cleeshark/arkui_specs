@@ -52,7 +52,7 @@ memory for that run. They may be resumed after context compaction or handed to a
 session, but they are not confirmed Reviews or a maintained capability baseline.
 
 New staged schema v2 runs are produced by evaluator
-`skill:ohos-design-arkui-spec-evaluator@0.1.18`. Schema-compatible historical 0.1.7 through 0.1.17
+`skill:ohos-design-arkui-spec-evaluator@0.1.19`. Schema-compatible historical 0.1.7 through 0.1.18
 runs remain readable. Schema v2 requires atomic `claim_reviews`, evidence-backed
 required-check mapping, stable defect ownership, and an explicit core-conflict basis for every
 `CONTRADICTED` Criterion. Schema v1 remains readable for historical 0.1.6 runs; new runs must not
@@ -133,6 +133,14 @@ insufficient. Before ordinary contract repair, the semantic service applies a de
 multi-signal degeneration check. A suspected NV flood gets one independent full-work-item retry
 from the original frozen inputs; a second degenerate result fails as `executor_quality_failed`.
 Historical 0.1.17 staged runs retain their original evidence cardinality when resumed.
+
+Evaluator 0.1.19 keeps the same three-signal NV obligation while accepting bounded grammatical
+families rather than only exact substrings. It recognizes inspection nouns and verbs, explicit
+absence/without/does-not-include forms, bounded `no ... source/content/evidence` gaps, and active,
+passive or causal verification consequences. A generic `no` remains insufficient. Historical
+0.1.18 runs retain their original wording matcher. If a Claim evidence repair merges but its
+targeted validation errors remain, the service performs the same single independent full-work-item
+fallback used for guard rejection; the fallback is never repeated for that mode.
 
 Do not write automatic output to:
 

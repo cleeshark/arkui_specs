@@ -853,6 +853,7 @@ python3 specs/tools/spec_eval/service_cli.py serve --port 8790 --max-workers 2
 - evaluator 0.1.16 将 Finding ID 和 `secondary_criterion_ids` 明确为服务端归一化字段：模型只提供唯一临时 Finding 关联键，不再计算或猜测 SHA-256；服务在首次聚合校验前固定执行一次 canonical ID、ownership 引用和 secondary 集合归一化，再处理剩余校验或进入 mapping reconciliation。secondary 语义影响必须由同一 ownership 下的实际 Finding 表达，服务不会自动生成语义 Finding。
 - evaluator 0.1.17 将观察侧校验失败改为有界的分类修复路由：机械契约、空 observation evidence、Claim/unit 悬空 evidence 引用分别最多修复一次并重新执行完整校验。悬空引用修复只重审目标 Claim，可读取原始冻结输入、引用 observation 已定义的 Evidence；若证据不足只能将目标 Claim/unit 保守降级为 `NOT_VERIFIABLE`。服务拒绝 observation、非目标 Claim、映射、defect 或顺序漂移，并对新运行拒绝 `supported` 等仅重复 outcome 的 reason/fact。
 - evaluator 0.1.18 为 `NOT_VERIFIABLE` 增加最低检查证据义务：observation 必须包含 `review_record`，NV Claim/unit 必须引用该记录并说明检查范围、缺失证据和不足原因。服务在普通 repair 前组合检查 NV 比例、检查证据覆盖、重复文本、有效结论和 observation 密度；疑似退化时从原始冻结输入完整重试一次，仍退化则以独立 `executor_quality_failed` 事件失败。Codex 稳定 JSONL 事件中的工具/命令数和已访问输入路径计数进入 schema v4 Job statistics；未知事件格式明确标记 telemetry unavailable，不作为单独失败依据。
+- evaluator 0.1.19 保留 NV 的三类实质信号要求，同时接受 `inspection/absence/cannot be verified/prevents verifying` 等有边界的近义和被动表达；普通 `no` 否定不能单独充当证据缺口。Claim evidence repair 成功合入但目标错误仍残留时，复用 guard rejection 的一次完整 work-item 重评，且同一修复模式不重复降级。
 - 查看全部 Function 的当前报告、版本、分数、Gate、刷新状态和历史数量。
 - 按新鲜度筛选 `FRESH`、`EXPIRING`、`EXPIRED_TIME`、`STALE_INPUT` 和 `MISSING`。
 - 取消活动任务、重试失败任务，并查看单 Function 的历史报告和 Finding delta。

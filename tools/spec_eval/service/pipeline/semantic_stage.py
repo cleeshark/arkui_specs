@@ -110,7 +110,8 @@ _CLAIM_REVIEW_REPAIR_ERROR = re.compile(
     r")"
 )
 _EXECUTOR_QUALITY_EVALUATOR_VERSIONS = {
-    "skill:ohos-design-arkui-spec-evaluator@0.1.18"
+    "skill:ohos-design-arkui-spec-evaluator@0.1.18",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.19",
 }
 
 
@@ -624,6 +625,31 @@ def run_semantic(
                             "errors": list(verdict.errors),
                         },
                     )
+                    if not claim_evidence_resolved:
+                        residual_count = len(_claim_review_repair_indexes(verdict.errors))
+                        fallback = _run_repair_rejection_fallback(
+                            ctx,
+                            jobs,
+                            events,
+                            statistics,
+                            executor,
+                            emit,
+                            cancel,
+                            work=work,
+                            initialized=initialized,
+                            candidate_path=candidate_path,
+                            completed=completed,
+                            runner=runner,
+                            rejection_stage="claim_evidence_validation",
+                            reason=(
+                                "Claim evidence repair merged but validation still "
+                                f"reported {residual_count} targeted errors"
+                            ),
+                        )
+                        if fallback.terminal is not None:
+                            return fallback.terminal
+                        candidate = fallback.candidate
+                        verdict = fallback.verdict
                     continue
 
                 break
@@ -795,12 +821,13 @@ def _run_repair_rejection_fallback(
     rejection_stage: str,
     reason: str,
 ) -> _RepairRejectionFallback:
-    """Degrade one rejected bounded repair to a single complete re-evaluation.
+    """Degrade one unsuccessful bounded repair to a complete re-evaluation.
 
-    Issue #23: a high-quality repair must not void the whole job because of a
-    transport mismatch. The fallback re-evaluates the original work item once;
-    if that executor call fails or its output still does not validate, the job
-    fails without a second fallback attempt.
+    Issues #23/#24: a repair may be rejected by its transport/scope guard, or a
+    Claim repair may merge successfully while leaving targeted validation
+    errors. Both cases re-evaluate the original work item once; if that executor
+    call fails or its output still does not validate, the job fails without a
+    second fallback for the same repair mode.
     """
     events.append(
         ctx.job_id,

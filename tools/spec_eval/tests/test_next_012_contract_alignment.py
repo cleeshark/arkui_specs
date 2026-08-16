@@ -41,7 +41,7 @@ if str(SKILL_SCRIPTS) not in sys.path:
 from staged_run_support import semantic_finding_id  # noqa: E402
 
 
-EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.18"
+EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.19"
 SOURCE_REVISION = "a" * 40
 
 
@@ -199,7 +199,10 @@ class _Issue16EvidenceRepairExecutor(_PayloadExecutor):
     """Emit one evidence-free N/A observation, then complete only its evidence."""
 
     def __init__(
-        self, *, change_fact: bool = False, repair_succeeds: bool = True
+        self,
+        *,
+        change_fact: bool = False,
+        repair_succeeds: bool = True,
     ) -> None:
         super().__init__()
         self.change_fact = change_fact
@@ -211,7 +214,6 @@ class _Issue16EvidenceRepairExecutor(_PayloadExecutor):
         assert payload is not None
         if work.work_item_id != "feature:Feat-01":
             return result
-
         observation = payload["observations"][0]
         observation["local_outcome"] = "NOT_APPLICABLE"
         observation["fact"] = "The synthetic internal build unit is proven inapplicable."
@@ -235,7 +237,6 @@ class _Issue16EvidenceRepairExecutor(_PayloadExecutor):
                 exit_code=1,
                 error="the frozen inputs do not prove the existing fact",
             )
-
         source_path = next(
             Path(path) for path in work.input_paths
             if path.endswith("Feat-01-build-gn-structure-spec.md")
@@ -1648,6 +1649,24 @@ class _Issue23IncrementalRepairExecutor(_PayloadExecutor):
                 evidence_ids=["EV-inspection"],
                 fact="The frozen rubric evidence supports this atomic unit.",
             )
+        if self.transport == "validation_residual":
+            for row in rows:
+                row.update(
+                    local_outcome="NOT_VERIFIABLE",
+                    evidence_ids=["EV-inspection"],
+                    reason=(
+                        "Inspection covered the frozen rubric and found missing source "
+                        "content for this Claim."
+                    ),
+                )
+                row["unit_reviews"][0].update(
+                    local_outcome="NOT_VERIFIABLE",
+                    evidence_ids=["EV-inspection"],
+                    fact=(
+                        "Inspection covered the frozen rubric and found missing source "
+                        "content for this atomic unit."
+                    ),
+                )
         repaired: dict = {"claim_reviews": rows}
         if self.transport == "echo_full_payload":
             # the exact issue #23 incident shape: incremental rows plus the
@@ -1772,6 +1791,53 @@ class Issue23IncrementalRepairTest(_StagedRunIntegrationTest):
         )
         self.assertEqual(feature["status"], "complete")
         self.assertEqual(feature["claim_reviews"][0]["local_outcome"], "NOT_VERIFIABLE")
+
+    def test_issue_24_validation_residual_triggers_one_full_retry(self) -> None:
+        executor = _Issue23IncrementalRepairExecutor(transport="validation_residual")
+        result = run_semantic(
+            self.ctx,
+            executor,
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+            statistics=self.statistics,
+        )
+        self.assertEqual(result.outcome, C.STATUS_COMPLETED, result.error)
+        self.assertEqual(len(executor.prompts), 4)
+        retry = executor.prompts[2]
+        self.assertEqual(retry.prompt_extras["mode"], "retry_after_repair_rejection")
+        self.assertEqual(
+            retry.prompt_extras["rejection_stage"], "claim_evidence_validation"
+        )
+        event_types = [event.event_type for event in self.events.list_for_job(self.job.job_id)]
+        self.assertEqual(event_types.count("candidate_claim_evidence_repair_failed"), 1)
+        self.assertNotIn("candidate_claim_evidence_repair_rejected", event_types)
+        self.assertEqual(event_types.count("repair_rejection_retry_started"), 1)
+        self.assertEqual(event_types.count("repair_rejection_retry_completed"), 1)
+        self.assertEqual(self.statistics.get(self.job.job_id).executor_invocations, 4)
+
+    def test_issue_24_validation_residual_retry_does_not_loop(self) -> None:
+        template_path = self.ctx.run_dir / "observations" / "Feat-01.json"
+        executor = _Issue23IncrementalRepairExecutor(
+            transport="validation_residual", fallback_recovers=False
+        )
+        result = run_semantic(
+            self.ctx,
+            executor,
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+            statistics=self.statistics,
+        )
+        self.assertEqual(result.outcome, C.STATUS_FAILED)
+        self.assertEqual(len(executor.prompts), 3)
+        event_types = [event.event_type for event in self.events.list_for_job(self.job.job_id)]
+        self.assertEqual(event_types.count("repair_rejection_retry_started"), 1)
+        self.assertEqual(event_types.count("repair_rejection_retry_failed"), 1)
+        self.assertEqual(event_types.count("candidate_claim_evidence_repair_started"), 1)
+        self.assertEqual(
+            json.loads(template_path.read_text(encoding="utf-8"))["status"], "pending"
+        )
 
     def test_issue_23_transport_mismatch_without_recovery_fails_the_job(self) -> None:
         template_path = self.ctx.run_dir / "observations" / "Feat-01.json"
