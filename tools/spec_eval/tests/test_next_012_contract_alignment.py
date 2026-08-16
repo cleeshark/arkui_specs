@@ -584,6 +584,51 @@ class _Issue18AggregationExecutor(_Issue17AggregationExecutor):
         return result
 
 
+class _Issue21AggregationExecutor(_Issue17AggregationExecutor):
+    """Leave one adverse Criterion without a Finding, then repair it in reconciliation."""
+
+    def __init__(self, *, invalid_defect_key: bool = False) -> None:
+        super().__init__()
+        self.invalid_defect_key = invalid_defect_key
+        self.prompts: list[C.WorkItemInput] = []
+
+    def execute(self, work: C.WorkItemInput, emit, cancel=None) -> C.ExecutionResult:
+        self.prompts.append(work)
+        result = super().execute(work, emit, cancel)
+        payload = result.observation
+        assert payload is not None
+        target = next(
+            row for row in payload["criterion_results"]
+            if row["criterion_id"] == "DESIGN-VERIFICATION-PLAN"
+        )
+        if work.prompt_extras.get("mode") != "reconcile_aggregation_candidate":
+            target["findings"] = []
+            payload["defect_ownership"] = []
+            return result
+
+        defect_key = (
+            "invented-defect" if self.invalid_defect_key else "missing-verification-assets"
+        )
+        canonical_id = semantic_finding_id(
+            func_id=work.func_id,
+            defect_key=defect_key,
+            criterion_id="DESIGN-VERIFICATION-PLAN",
+            claim_id=None,
+        )
+        finding = target["findings"][0]
+        if "problem" in finding:
+            finding["message"] = finding.pop("problem")
+        finding["finding_id"] = canonical_id
+        sdk = next(
+            row for row in payload["criterion_results"]
+            if row["criterion_id"] == "CORRECTNESS-SDK-CONTRACT"
+        )
+        sdk["applicability_reason"] = sdk["reason"]
+        payload["defect_ownership"][0]["defect_key"] = defect_key
+        payload["defect_ownership"][0]["finding_ids"] = [canonical_id]
+        return result
+
+
 class ContractAlignmentIntegrationTest(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()
@@ -1098,6 +1143,75 @@ class ContractAlignmentIntegrationTest(unittest.TestCase):
         self.assertEqual(len(executor.prompts), 2)
         self.assertEqual(aggregation_path.read_bytes(), before)
         self.assertEqual(self.statistics.get(self.job.job_id).executor_invocations, 2)
+
+    def test_issue_21_finding_cardinality_is_reconciled_with_ownership(self) -> None:
+        semantic = run_semantic(
+            self.ctx,
+            _Issue17ObservationExecutor(),
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+        )
+        self.assertEqual(semantic.outcome, C.STATUS_COMPLETED, semantic.error)
+        self.jobs.transition_status(self.job.job_id, S.AGGREGATION, event_type="test")
+        executor = _Issue21AggregationExecutor()
+        outcome, semantic_result = aggregation_stage.run_aggregation(
+            self.ctx,
+            executor,
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+            statistics=self.statistics,
+        )
+        self.assertEqual(outcome, C.STATUS_COMPLETED)
+        self.assertTrue(semantic_result is not None and semantic_result.is_file())
+        self.assertEqual(len(executor.prompts), 2)
+        reconciliation = executor.prompts[1]
+        self.assertEqual(
+            reconciliation.prompt_extras["target_criterion_ids"],
+            ["DESIGN-VERIFICATION-PLAN"],
+        )
+        aggregation = json.loads(
+            (self.ctx.run_dir / "aggregation.json").read_text(encoding="utf-8")
+        )
+        target = next(
+            row for row in aggregation["criterion_results"]
+            if row["criterion_id"] == "DESIGN-VERIFICATION-PLAN"
+        )
+        self.assertEqual(target["conclusion"], "PARTIALLY_SUPPORTED")
+        self.assertEqual(len(target["findings"]), 1)
+        self.assertEqual(
+            aggregation["defect_ownership"][0]["finding_ids"],
+            [target["findings"][0]["finding_id"]],
+        )
+        event_types = [event.event_type for event in self.events.list_for_job(self.job.job_id)]
+        self.assertIn("aggregation_reconciliation_started", event_types)
+        self.assertIn("aggregation_reconciliation_completed", event_types)
+
+    def test_issue_21_reconciliation_rejects_invented_defect_key(self) -> None:
+        semantic = run_semantic(
+            self.ctx,
+            _Issue17ObservationExecutor(),
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+        )
+        self.assertEqual(semantic.outcome, C.STATUS_COMPLETED, semantic.error)
+        self.jobs.transition_status(self.job.job_id, S.AGGREGATION, event_type="test")
+        executor = _Issue21AggregationExecutor(invalid_defect_key=True)
+        outcome, semantic_result = aggregation_stage.run_aggregation(
+            self.ctx,
+            executor,
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+            statistics=self.statistics,
+        )
+        self.assertEqual(outcome, C.STATUS_FAILED)
+        self.assertIsNone(semantic_result)
+        self.assertEqual(len(executor.prompts), 2)
+        event_types = [event.event_type for event in self.events.list_for_job(self.job.job_id)]
+        self.assertIn("aggregation_reconciliation_failed", event_types)
 
     def test_issue_17_final_contract_drift_is_repaired_before_assemble(self) -> None:
         semantic = run_semantic(

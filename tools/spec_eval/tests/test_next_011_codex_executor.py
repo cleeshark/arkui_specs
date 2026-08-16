@@ -342,6 +342,7 @@ class CodexExecutorTest(unittest.TestCase):
                 "aggregation_context_path": "/tmp/aggregation-context.json",
                 "candidate_path": "/tmp/.aggregation.json.candidate",
                 "validation_errors": ["mapped NOT_VERIFIABLE units require NOT_VERIFIABLE"],
+                "target_criterion_ids": ["DESIGN-VERIFICATION-PLAN"],
                 "payload_fields": [
                     "cross_feat_contracts_reviewed",
                     "contradiction_bases",
@@ -363,6 +364,10 @@ class CodexExecutorTest(unittest.TestCase):
         self.assertIn("Do not reopen source", constraints)
         self.assertEqual(
             prompt["result_contract"]["mode"], "reconcile_aggregation_candidate"
+        )
+        self.assertEqual(
+            prompt["result_contract"]["target_criterion_ids"],
+            ["DESIGN-VERIFICATION-PLAN"],
         )
 
     def test_nonzero_exit_is_failed(self) -> None:

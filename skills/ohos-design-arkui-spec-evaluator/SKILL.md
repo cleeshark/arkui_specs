@@ -269,6 +269,11 @@ For every Criterion:
 5. Aggregate exactly one Criterion conclusion: `SUPPORTED`, `PARTIALLY_SUPPORTED`, `CONTRADICTED`, `MISSING`, `NOT_APPLICABLE`, or `NOT_VERIFIABLE`.
 6. Record concise reasoning, reproducible evidence, and evidence-backed findings.
 
+`PARTIALLY_SUPPORTED`, `CONTRADICTED`, and `MISSING` are Finding-bearing conclusions: each must
+contain at least one actionable Finding whose `conclusion` matches the Criterion and whose
+`evidence_ids` refer to evidence already attached to that Criterion. `SUPPORTED` and
+`NOT_APPLICABLE` must not contain defect Findings.
+
 Emit one Finding for each independently actionable defect. A Criterion may therefore contain
 multiple Findings with the same aggregate conclusion and severity. Do not merge unrelated AC,
 frontend, version, state, build, or verification defects merely to keep one Finding per Criterion.
