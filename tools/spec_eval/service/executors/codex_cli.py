@@ -312,6 +312,9 @@ class CodexCliExecutor:
         quality_retry_mode = (
             result_contract.get("mode") == "retry_degenerate_observation"
         )
+        repair_rejection_retry_mode = (
+            result_contract.get("mode") == "retry_after_repair_rejection"
+        )
         reconciliation_mode = (
             result_contract.get("mode") == "reconcile_aggregation_candidate"
         )
@@ -365,8 +368,8 @@ class CodexCliExecutor:
                 "Replace outcome-only reason or fact text with an evidence-specific explanation for each target Claim and unit.",
                 "If existing evidence cannot support the current outcome, downgrade only the affected Claim or unit to NOT_VERIFIABLE, retain or reference review_record inspection evidence, and explain the checked scope, missing evidence and why it is insufficient.",
                 "Do not add or modify observations, create defects, upgrade outcomes, or change Claim IDs, Criterion mappings, reviewed units, facet types or array ordering.",
-                "Preserve every non-target Claim row exactly.",
-                "Return the complete corrected executor-owned payload, not a patch.",
+                "Return an incremental payload, not the full document: exactly one complete corrected Claim review row per result_contract.target_claim_ids entry, each keyed by its unchanged claim_id.",
+                "Do not include non-target Claim rows, observations, open_questions or notes; the service merges the returned rows back into the candidate.",
             ]
         if quality_retry_mode:
             constraints = [
@@ -376,6 +379,17 @@ class CodexCliExecutor:
                 "For every NOT_VERIFIABLE observation, Claim and atomic unit, create and reference review_record inspection evidence.",
                 "Every NOT_VERIFIABLE reason or fact must name the checked scope, the missing evidence and why it is insufficient to verify the unit.",
                 "Do not copy or patch the rejected output; produce an independent complete payload from the original scoped inputs.",
+                "Treat result_contract.machine_contract as normative for nested fields, enums, IDs, hashes, evidence cardinality and ownership rules.",
+                "Return the complete executor-owned payload, not a patch.",
+            ]
+        if repair_rejection_retry_mode:
+            constraints = [
+                "Re-evaluate the complete original work item after a bounded repair result was rejected by the scope guard.",
+                "Read the declared evidence shards, Spec/Design and relevant frozen source or SDK inputs before judging any Claim.",
+                "Do not read paths in forbidden_paths and do not modify formal inputs.",
+                "For every NOT_VERIFIABLE observation, Claim and atomic unit, create and reference review_record inspection evidence.",
+                "Every NOT_VERIFIABLE reason or fact must name the checked scope, the missing evidence and why it is insufficient to verify the unit.",
+                "Do not copy or patch the rejected candidate; produce an independent complete payload from the original scoped inputs.",
                 "Treat result_contract.machine_contract as normative for nested fields, enums, IDs, hashes, evidence cardinality and ownership rules.",
                 "Return the complete executor-owned payload, not a patch.",
             ]
@@ -400,9 +414,12 @@ class CodexCliExecutor:
                     if claim_evidence_repair_mode else (
                         "Reconcile one staged aggregation candidate after mapped-unit validation failure."
                         if reconciliation_mode else (
+                            "Re-evaluate one complete staged semantic work item after a bounded repair was rejected."
+                            if repair_rejection_retry_mode else (
                             "Re-evaluate one complete staged semantic work item after executor quality rejection."
                             if quality_retry_mode else
                             "Complete exactly one staged semantic evaluation work item."
+                            )
                         )
                         )
                     )
