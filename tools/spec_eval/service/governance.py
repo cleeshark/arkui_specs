@@ -136,3 +136,53 @@ def _parse(ts: str) -> datetime | None:
         return datetime.fromisoformat(ts)
     except ValueError:
         return None
+
+
+def purge_all(
+    settings: ServiceSettings,
+    *,
+    export_first: bool = False,
+) -> dict[str, Any]:
+    """Delete all service runtime data for a cold protocol restart (0.2.0, D1).
+
+    Clears every runtime data subdirectory (db, jobs, archives, locks, logs,
+    backups, workspaces, exports) so the next start rebuilds an empty schema.
+    With ``export_first`` a DB backup snapshot is taken before anything is
+    removed. Idempotent: re-running on an already purged root is a no-op.
+
+    Never touches the repository itself: ``evaluation/reviews/`` (confirmed
+    human baselines), static baselines and any code stay untouched.
+    """
+    if export_first and settings.db_path.is_file():
+        backup_database(settings)
+
+    removed: dict[str, int] = {}
+    for name in (
+        "jobs", "archives", "locks", "logs", "backups", "workspaces", "exports",
+    ):
+        path = settings.data_root / name
+        # empty skeleton directories are left alone so a repeated purge is a
+        # true no-op
+        if path.is_dir() and any(path.iterdir()):
+            shutil.rmtree(path)
+            removed[name] = 1
+        else:
+            removed[name] = 0
+    db_removed = 0
+    for suffix in ("", "-wal", "-shm"):
+        db_side = Path(str(settings.db_path) + suffix)
+        if db_side.exists():
+            db_side.unlink()
+            db_removed = 1
+    removed["db"] = db_removed
+    # Recreate the empty skeleton the settings object expects to exist.
+    for name in (
+        "db", "jobs", "archives", "locks", "logs", "backups", "workspaces",
+        "exports",
+    ):
+        (settings.data_root / name).mkdir(parents=True, exist_ok=True)
+    return {
+        "data_root": str(settings.data_root),
+        "exported": bool(export_first),
+        "removed": removed,
+    }

@@ -8,6 +8,7 @@ metrics, clean disposable run dirs, and back up the DB.
     python3 specs/tools/spec_eval/service_cli.py metrics --write metrics.json
     python3 specs/tools/spec_eval/service_cli.py cleanup --retention-days 14
     python3 specs/tools/spec_eval/service_cli.py backup
+    python3 specs/tools/spec_eval/service_cli.py purge --yes [--export]
 
 Binds 127.0.0.1 by default. Pass --host 0.0.0.0 only together with --token.
 """
@@ -45,6 +46,15 @@ def build_parser() -> argparse.ArgumentParser:
     cleanup.add_argument("--retention-days", type=int, default=14)
 
     sub.add_parser("backup", help="checkpoint WAL, copy the DB, verify it restores")
+
+    purge = sub.add_parser(
+        "purge",
+        help="delete all service runtime data for a cold restart (protocol 0.2.0)",
+    )
+    purge.add_argument("--yes", action="store_true", help="required confirmation flag")
+    purge.add_argument(
+        "--export", action="store_true", help="take a DB backup snapshot first"
+    )
     return parser
 
 
@@ -61,6 +71,8 @@ def main(argv: list[str] | None = None) -> int:
         return _cleanup(settings, args)
     if action == "backup":
         return _backup(settings)
+    if action == "purge":
+        return _purge(settings, args)
     return 2
 
 
@@ -126,6 +138,26 @@ def _backup(settings: ServiceSettings) -> int:
     finally:
         app.stop()
     print(f"backup verified at {dest}", flush=True)
+    return 0
+
+
+def _purge(settings, args) -> int:
+    from spec_eval.service.governance import purge_all
+
+    if not args.yes:
+        print(
+            "refusing to purge without --yes; this deletes all runtime data "
+            "(jobs, archives, reports, workspaces, DB)",
+            file=sys.stderr,
+        )
+        return 2
+    summary = purge_all(settings, export_first=args.export)
+    removed = [name for name, count in summary["removed"].items() if count]
+    print(
+        f"purged {summary['data_root']} (removed: {', '.join(removed) or 'nothing'}; "
+        f"exported={summary['exported']})",
+        flush=True,
+    )
     return 0
 
 
