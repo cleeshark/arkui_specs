@@ -80,9 +80,20 @@ function rowActions(job) {
   return `${cancel}${retry}`;
 }
 
+function archivedPath(job) {
+  if (job.status !== "completed") return "";
+  const note = String((job.progress || {}).note || "");
+  const prefix = "archived at ";
+  return note.startsWith(prefix) ? note.slice(prefix.length).trim() : "";
+}
+
 function progressHtml(job) {
   const p = job.progress || {};
-  const note = p.note ? ` · ${esc(p.note)}` : "";
+  const archive = archivedPath(job);
+  const note = archive
+    ? ` · <button type="button" class="archive-link" data-act="copy-archive"
+        data-path="${esc(archive)}" aria-label="Copy archive path">link</button>`
+    : p.note ? ` · ${esc(p.note)}` : "";
   const active = ACTIVE_STATES.has(job.status);
   return `<div class="progress-wrap ${active ? "active" : ""}">
     ${active ? '<span class="activity-spinner" aria-hidden="true"></span>' : ""}
@@ -297,9 +308,36 @@ async function runJobAction(button, action, id) {
   }
 }
 
+async function copyArchivePath(button) {
+  const path = button.dataset.path || "";
+  if (!path) return;
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(path);
+    } else {
+      const textarea = document.createElement("textarea");
+      textarea.value = path;
+      textarea.setAttribute("readonly", "");
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.select();
+      const copied = document.execCommand("copy");
+      textarea.remove();
+      if (!copied) throw new Error("clipboard unavailable");
+    }
+    button.textContent = "copied";
+    window.setTimeout(() => { button.textContent = "link"; }, 1200);
+  } catch (error) {
+    actionError.textContent = `copy failed: ${error && error.message ? error.message : error}`;
+    actionError.hidden = false;
+  }
+}
+
 document.addEventListener("click", async (e) => {
   const t = e.target;
   if (!t.dataset || !t.dataset.act) return;
+  if (t.dataset.act === "copy-archive") { await copyArchivePath(t); return; }
   const id = t.dataset.id;
   if (t.dataset.act === "cancel") { await runJobAction(t, "cancel", id); }
   if (t.dataset.act === "retry") { await runJobAction(t, "retry", id); }
