@@ -40,7 +40,7 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
     def _staged_identity(self) -> dict[str, object]:
         return {
             "schema_version": 2,
-            "evaluator_version": "skill:ohos-design-arkui-spec-evaluator@0.1.17",
+            "evaluator_version": "skill:ohos-design-arkui-spec-evaluator@0.1.18",
             "func_id": "05-01-02",
             "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
             "run_id": "validator-unit-test",
@@ -135,7 +135,7 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
         _, frontmatter, _ = content.split("---", 2)
         metadata = yaml.safe_load(frontmatter)
         self.assertEqual(metadata["name"], "ohos-design-arkui-spec-evaluator")
-        self.assertEqual(metadata["metadata"]["version"], "0.1.17")
+        self.assertEqual(metadata["metadata"]["version"], "0.1.18")
         self.assertEqual(metadata["metadata"]["rubric-version"], "0.3.0")
         self.assertLess(len(content.splitlines()), 500)
         for relative in (
@@ -208,7 +208,7 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             semantic = json.loads(result_path.read_text(encoding="utf-8"))
             self.assertEqual(
                 semantic["evaluator_version"],
-                "skill:ohos-design-arkui-spec-evaluator@0.1.17",
+                "skill:ohos-design-arkui-spec-evaluator@0.1.18",
             )
             expected_ids = [
                 criterion["id"]
@@ -286,7 +286,7 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(
                 json.loads(output.read_text(encoding="utf-8"))["evaluator_version"],
-                "skill:ohos-design-arkui-spec-evaluator@0.1.17",
+                "skill:ohos-design-arkui-spec-evaluator@0.1.18",
             )
 
     def test_machine_output_contract_matches_validator_and_rubric(self) -> None:
@@ -337,6 +337,19 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             "dangling_evidence_repair",
             issue_18["observation_payload"]["claim_reviews"],
         )
+        issue_19 = staged_output_contract(
+            source_revision=source_revision,
+            evaluator_version="skill:ohos-design-arkui-spec-evaluator@0.1.17",
+        )
+        self.assertIn(
+            "dangling_evidence_repair",
+            issue_19["observation_payload"]["claim_reviews"],
+        )
+        self.assertEqual(
+            issue_19["observation_payload"]["observations"]["evidence_cardinality"]
+            ["minimum_items_by_local_outcome"]["NOT_VERIFIABLE"],
+            0,
+        )
 
     def test_observation_evidence_cardinality_is_machine_readable_and_enforced(self) -> None:
         contract = staged_output_contract(source_revision="a" * 40)
@@ -347,7 +360,7 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             "CONFLICT": 1,
             "MISSING": 1,
             "NOT_APPLICABLE": 1,
-            "NOT_VERIFIABLE": 0,
+            "NOT_VERIFIABLE": 1,
             "SUPPORTED": 1,
         })
         na_example = contract["observation_payload"]["observations"][
@@ -950,6 +963,61 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
         document["evaluator_version"] = historical
         document["claim_reviews"][0]["reason"] = "supported"
         document["claim_reviews"][0]["unit_reviews"][0]["fact"] = "SUPPORTED"
+        self.assertEqual(validate_observation_document(document, item, state), [])
+
+    def test_staged_v2_0118_not_verifiable_requires_inspection_evidence(self) -> None:
+        document, item, state = self._valid_observation()
+        document["observations"][0]["local_outcome"] = "NOT_VERIFIABLE"
+        document["observations"][0]["evidence"] = []
+        for review in document["claim_reviews"]:
+            review["local_outcome"] = "NOT_VERIFIABLE"
+            review["evidence_ids"] = []
+            review["reason"] = (
+                "Checked the frozen source scope; implementation proof is missing and is "
+                "insufficient to verify this Claim."
+            )
+            for unit in review["unit_reviews"]:
+                unit["local_outcome"] = "NOT_VERIFIABLE"
+                unit["evidence_ids"] = []
+                unit["fact"] = (
+                    "Checked the frozen source scope; atomic proof is missing and is "
+                    "insufficient to verify this unit."
+                )
+        errors = validate_observation_document(document, item, state)
+        self.assertTrue(any("review_record inspection evidence" in error for error in errors))
+        self.assertTrue(any("inspection evidence is required" in error for error in errors))
+
+    def test_staged_v2_0118_not_verifiable_accepts_review_record(self) -> None:
+        document, item, state = self._valid_observation()
+        document["observations"][0]["local_outcome"] = "NOT_VERIFIABLE"
+        document["observations"][0]["evidence"][0]["type"] = "review_record"
+        for review in document["claim_reviews"]:
+            review["local_outcome"] = "NOT_VERIFIABLE"
+            review["reason"] = (
+                "Checked the frozen source scope; implementation proof is missing and is "
+                "insufficient to verify this Claim."
+            )
+            for unit in review["unit_reviews"]:
+                unit["local_outcome"] = "NOT_VERIFIABLE"
+                unit["fact"] = (
+                    "Checked the frozen source scope; atomic proof is missing and is "
+                    "insufficient to verify this unit."
+                )
+        self.assertEqual(validate_observation_document(document, item, state), [])
+
+    def test_staged_v2_0117_empty_not_verifiable_evidence_remains_readable(self) -> None:
+        document, item, state = self._valid_observation()
+        historical = "skill:ohos-design-arkui-spec-evaluator@0.1.17"
+        state["evaluator_version"] = historical
+        document["evaluator_version"] = historical
+        document["observations"][0]["local_outcome"] = "NOT_VERIFIABLE"
+        document["observations"][0]["evidence"] = []
+        for review in document["claim_reviews"]:
+            review["local_outcome"] = "NOT_VERIFIABLE"
+            review["evidence_ids"] = []
+            for unit in review["unit_reviews"]:
+                unit["local_outcome"] = "NOT_VERIFIABLE"
+                unit["evidence_ids"] = []
         self.assertEqual(validate_observation_document(document, item, state), [])
 
     def test_staged_v2_rejects_unmapped_required_check(self) -> None:

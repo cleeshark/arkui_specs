@@ -15,6 +15,7 @@ from spec_eval.service.executors import contract as C
 from spec_eval.service.pipeline import aggregation_stage, staged_stage
 from spec_eval.service.pipeline.context import RunContext
 from spec_eval.service.pipeline.result_payload import merge_aggregation_payload
+from spec_eval.service.pipeline.observation_quality import assess_observation_quality
 from spec_eval.service.pipeline.semantic_stage import run_semantic
 from spec_eval.service.settings import ServiceSettings
 from spec_eval.service.store.repositories import (
@@ -37,7 +38,7 @@ if str(SKILL_SCRIPTS) not in sys.path:
 from staged_run_support import semantic_finding_id  # noqa: E402
 
 
-EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.17"
+EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.18"
 SOURCE_REVISION = "a" * 40
 
 
@@ -64,6 +65,19 @@ class _PayloadExecutor:
         else:
             expected_claims = list(work.work_item["expected_claim_ids"])
             required_checks = list(work.work_item["required_checks"])
+            rubric_path = Path(work.repo_root) / "specs" / "evaluation" / "rubric.yaml"
+            inspection_id = "EV-inspection"
+            inspection_evidence = {
+                "evidence_id": inspection_id,
+                "type": "review_record",
+                "path": "specs/evaluation/rubric.yaml",
+                "source_revision": SOURCE_REVISION,
+                "content_hash": "sha256:" + hashlib.sha256(rubric_path.read_bytes()).hexdigest(),
+                "description": (
+                    "The evaluator inspected the frozen rubric scope and recorded the "
+                    "implementation evidence that remains unavailable."
+                ),
+            }
             payload = {
                 "claim_reviews": [
                     {
@@ -75,13 +89,19 @@ class _PayloadExecutor:
                             "unit_id": "frozen-evidence",
                             "facet_type": "traceability",
                             "local_outcome": "NOT_VERIFIABLE",
-                            "evidence_ids": [],
-                            "fact": "The synthetic fixture deliberately provides no source proof.",
+                            "evidence_ids": [inspection_id],
+                            "fact": (
+                                "Checked the frozen rubric scope; implementation proof is missing "
+                                "and is insufficient to verify this atomic unit."
+                            ),
                         }],
                         "criterion_ids": ["CORRECTNESS-SOURCE-SUPPORT"],
-                        "evidence_ids": [],
+                        "evidence_ids": [inspection_id],
                         "defect_keys": [],
-                        "reason": "The synthetic fixture is intentionally not verifiable.",
+                        "reason": (
+                            "Checked the frozen rubric scope; implementation proof is missing "
+                            "and is insufficient to verify this Claim."
+                        ),
                     }
                     for claim_id in expected_claims
                 ],
@@ -96,7 +116,7 @@ class _PayloadExecutor:
                     ),
                     "contract_family": "synthetic-contract",
                     "fact": "The staged payload was completed against the initialized flat contract.",
-                    "evidence": [],
+                    "evidence": [inspection_evidence],
                 }],
                 "open_questions": [],
                 "notes": [],
@@ -193,6 +213,17 @@ class _Issue16EvidenceRepairExecutor(_PayloadExecutor):
         observation["local_outcome"] = "NOT_APPLICABLE"
         observation["fact"] = "The synthetic internal build unit is proven inapplicable."
         observation["evidence"] = []
+        review = payload["claim_reviews"][0]
+        review.update(
+            local_outcome="NOT_APPLICABLE",
+            evidence_ids=["EV-issue16-na-scope"],
+            reason="The frozen Feature scope proves the synthetic unit is inapplicable.",
+        )
+        review["unit_reviews"][0].update(
+            local_outcome="NOT_APPLICABLE",
+            evidence_ids=["EV-issue16-na-scope"],
+            fact="The frozen Feature scope proves this atomic unit is inapplicable.",
+        )
         if work.prompt_extras.get("mode") != "complete_observation_evidence":
             return result
         if not self.repair_succeeds:
@@ -265,6 +296,13 @@ class _Issue19ClaimEvidenceRepairExecutor(_PayloadExecutor):
                 "source_revision": SOURCE_REVISION,
                 "content_hash": f"sha256:{digest}",
                 "description": "The frozen rubric defines the evaluated Criterion.",
+            }, {
+                "evidence_id": "EV-inspection",
+                "type": "review_record",
+                "path": "specs/evaluation/rubric.yaml",
+                "source_revision": SOURCE_REVISION,
+                "content_hash": f"sha256:{digest}",
+                "description": "The evaluator inspected the frozen rubric before Claim re-review.",
             }],
         )
         review = payload["claim_reviews"][0]
@@ -284,13 +322,19 @@ class _Issue19ClaimEvidenceRepairExecutor(_PayloadExecutor):
             if self.downgrade:
                 review.update(
                     local_outcome="NOT_VERIFIABLE",
-                    evidence_ids=[],
-                    reason="The scoped frozen inputs do not substantiate this Claim.",
+                    evidence_ids=["EV-inspection"],
+                    reason=(
+                        "Checked the frozen rubric scope; implementation proof is missing and "
+                        "is insufficient to verify this Claim."
+                    ),
                 )
                 review["unit_reviews"][0].update(
                     local_outcome="NOT_VERIFIABLE",
-                    evidence_ids=[],
-                    fact="No defined evidence proves this atomic unit.",
+                    evidence_ids=["EV-inspection"],
+                    fact=(
+                        "Checked the frozen rubric scope; atomic implementation proof is missing "
+                        "and is insufficient to verify this unit."
+                    ),
                 )
             else:
                 review.update(
@@ -303,6 +347,44 @@ class _Issue19ClaimEvidenceRepairExecutor(_PayloadExecutor):
                 )
             if self.change_outside_target:
                 payload["observations"][0]["fact"] = "The repair changed an observation."
+        return result
+
+
+class _Issue22DegenerateExecutor(_PayloadExecutor):
+    """Emit an NV flood, then optionally recover during one full quality retry."""
+
+    def __init__(self, *, retry_recovers: bool = True) -> None:
+        super().__init__()
+        self.retry_recovers = retry_recovers
+
+    def execute(self, work: C.WorkItemInput, emit, cancel=None) -> C.ExecutionResult:
+        result = super().execute(work, emit, cancel)
+        if work.work_item_id != "feature:Feat-01":
+            return result
+        if (
+            work.prompt_extras.get("mode") == "retry_degenerate_observation"
+            and self.retry_recovers
+        ):
+            return result
+        payload = result.observation
+        assert payload is not None
+        prototype = payload["claim_reviews"][0]
+        payload["claim_reviews"] = []
+        for index in range(12):
+            claim = json.loads(json.dumps(prototype))
+            claim["claim_id"] = f"Feat-01/AC-{index + 1}"
+            claim["evidence_ids"] = []
+            claim["reason"] = "Scoped inputs do not provide enough resolved evidence."
+            claim["unit_reviews"][0]["evidence_ids"] = []
+            claim["unit_reviews"][0]["fact"] = (
+                "Scoped inputs do not provide enough resolved evidence."
+            )
+            payload["claim_reviews"].append(claim)
+        payload["observations"] = [{
+            **payload["observations"][0],
+            "claim_ids": [row["claim_id"] for row in payload["claim_reviews"]],
+            "evidence": [],
+        }]
         return result
 
 
@@ -408,6 +490,7 @@ class _Issue17ObservationExecutor(_PayloadExecutor):
         assert payload is not None
         rubric_path = Path(work.repo_root) / "specs" / "evaluation" / "rubric.yaml"
         observation = payload["observations"][0]
+        inspection_evidence = observation["evidence"][0]
         observation.update(
             criterion_ids=["DESIGN-VERIFICATION-PLAN"],
             local_outcome="CONFLICT",
@@ -421,7 +504,7 @@ class _Issue17ObservationExecutor(_PayloadExecutor):
                 "source_revision": SOURCE_REVISION,
                 "content_hash": "sha256:" + hashlib.sha256(rubric_path.read_bytes()).hexdigest(),
                 "description": "Synthetic frozen evidence for the verification-plan defect.",
-            }],
+            }, inspection_evidence],
         )
         return result
 
@@ -875,7 +958,8 @@ class ContractAlignmentIntegrationTest(unittest.TestCase):
             [repair_work.work_item["expected_claim_ids"][0]],
         )
         self.assertEqual(
-            repair_work.prompt_extras["available_evidence_ids"], ["EV-defined"]
+            repair_work.prompt_extras["available_evidence_ids"],
+            ["EV-defined", "EV-inspection"],
         )
         self.assertTrue(any("/evidence/" in path for path in repair_work.input_paths))
 
@@ -905,9 +989,9 @@ class ContractAlignmentIntegrationTest(unittest.TestCase):
         )
         review = feature["claim_reviews"][0]
         self.assertEqual(review["local_outcome"], "NOT_VERIFIABLE")
-        self.assertEqual(review["evidence_ids"], [])
+        self.assertEqual(review["evidence_ids"], ["EV-inspection"])
         self.assertEqual(review["unit_reviews"][0]["local_outcome"], "NOT_VERIFIABLE")
-        self.assertEqual(review["unit_reviews"][0]["evidence_ids"], [])
+        self.assertEqual(review["unit_reviews"][0]["evidence_ids"], ["EV-inspection"])
 
     def test_issue_19_outcome_only_text_triggers_targeted_claim_rereview(self) -> None:
         executor = _Issue19ClaimEvidenceRepairExecutor(dangling_reference=False)
@@ -966,6 +1050,85 @@ class ContractAlignmentIntegrationTest(unittest.TestCase):
         event_types = [event.event_type for event in self.events.list_for_job(self.job.job_id)]
         self.assertEqual(event_types.count("candidate_repair_started"), 1)
         self.assertEqual(event_types.count("candidate_claim_evidence_repair_started"), 1)
+
+    def test_issue_22_degenerate_observation_is_retried_as_full_work_item(self) -> None:
+        executor = _Issue22DegenerateExecutor()
+        result = run_semantic(
+            self.ctx,
+            executor,
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+            statistics=self.statistics,
+        )
+        self.assertEqual(result.outcome, C.STATUS_COMPLETED, result.error)
+        self.assertEqual(len(executor.prompts), 3)
+        retry = executor.prompts[1]
+        self.assertEqual(retry.prompt_extras["mode"], "retry_degenerate_observation")
+        self.assertTrue(retry.executor_result_path.endswith(".quality-retry-1.json"))
+        self.assertEqual(retry.input_paths, executor.prompts[0].input_paths)
+        event_types = [event.event_type for event in self.events.list_for_job(self.job.job_id)]
+        self.assertEqual(event_types.count("executor_quality_retry_started"), 1)
+        self.assertEqual(event_types.count("executor_quality_retry_completed"), 1)
+        self.assertNotIn("executor_quality_failed", event_types)
+        self.assertEqual(self.statistics.get(self.job.job_id).executor_invocations, 3)
+
+    def test_issue_22_second_degenerate_output_has_independent_failure_type(self) -> None:
+        template_path = self.ctx.run_dir / "observations" / "Feat-01.json"
+        before = template_path.read_bytes()
+        executor = _Issue22DegenerateExecutor(retry_recovers=False)
+        result = run_semantic(
+            self.ctx,
+            executor,
+            jobs=self.jobs,
+            attempts=self.attempts,
+            events=self.events,
+            statistics=self.statistics,
+        )
+        self.assertEqual(result.outcome, C.STATUS_FAILED)
+        self.assertIn("degenerate output suspected", result.error or "")
+        self.assertEqual(len(executor.prompts), 2)
+        self.assertEqual(template_path.read_bytes(), before)
+        failures = [
+            event for event in self.events.list_for_job(self.job.job_id)
+            if event.event_type == "executor_quality_failed"
+        ]
+        self.assertEqual(len(failures), 1)
+        retry_quality = failures[0].payload["retry_quality"]
+        self.assertIn("HIGH_NOT_VERIFIABLE_RATIO", retry_quality["reason_codes"])
+
+    def test_issue_22_high_nv_with_inspection_evidence_is_not_degenerate(self) -> None:
+        executor = _Issue22DegenerateExecutor()
+        work = next(
+            item for item in json.loads(
+                (self.ctx.run_dir / "work-items.json").read_text(encoding="utf-8")
+            )["items"]
+            if item["id"] == "feature:Feat-01"
+        )
+        synthetic = C.WorkItemInput(
+            job_id=self.job.job_id,
+            func_id=self.job.func_id,
+            run_id="run-1",
+            work_item_id=work["id"],
+            work_item=work,
+            run_dir=str(self.ctx.run_dir),
+            input_paths=tuple(work["input_paths"]),
+            executor_result_path="unused.json",
+            repo_root=str(self.ctx.repo_root),
+            skill_version=EVALUATOR_VERSION,
+            protocol_version=self.ctx.protocol_version,
+        )
+        payload = executor.execute(synthetic, lambda event: None).observation
+        assert payload is not None
+        inspection = payload["observations"][0]["evidence"] = [{
+            "evidence_id": "EV-inspection",
+            "type": "review_record",
+        }]
+        self.assertTrue(inspection)
+        for review in payload["claim_reviews"]:
+            review["evidence_ids"] = ["EV-inspection"]
+            review["unit_reviews"][0]["evidence_ids"] = ["EV-inspection"]
+        self.assertFalse(assess_observation_quality(payload).suspected)
 
     def test_nested_issue_12_shape_is_rejected_without_overwriting_template(self) -> None:
         template_path = self.ctx.run_dir / "observations" / "Feat-01.json"

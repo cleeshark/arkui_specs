@@ -198,7 +198,12 @@ class JobStatistics:
     finished_at: str | None
     executor_invocations: int
     usage_reported_invocations: int
+    telemetry_reported_invocations: int
     executor_elapsed_ms: int
+    executor_tool_calls: int
+    executor_command_calls: int
+    input_paths_accessed: int
+    evidence_paths_accessed: int
     input_tokens: int
     cached_input_tokens: int
     cache_write_input_tokens: int

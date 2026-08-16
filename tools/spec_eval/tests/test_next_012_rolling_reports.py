@@ -301,7 +301,7 @@ class ReportDeltaTest(unittest.TestCase):
 
 
 class SchemaMigrationTest(unittest.TestCase):
-    def test_v1_database_is_upgraded_additively_to_v3(self) -> None:
+    def test_v1_database_is_upgraded_additively_to_v4(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             settings = ServiceSettings.discover(data_root=Path(temporary))
             conn = sqlite3.connect(settings.db_path)
@@ -320,7 +320,7 @@ class SchemaMigrationTest(unittest.TestCase):
                     "SELECT name FROM sqlite_master WHERE type='table'"
                 ).fetchall()
             }
-            self.assertEqual(row[0], "3")
+            self.assertEqual(row[0], "4")
             self.assertTrue(
                 {
                     "evaluation_reports", "function_report_heads", "freshness_policies",
@@ -364,9 +364,40 @@ class SchemaMigrationTest(unittest.TestCase):
             version = migrated._conn.execute(
                 "SELECT value FROM schema_meta WHERE key='schema_version'"
             ).fetchone()[0]
-            self.assertEqual(version, "3")
+            self.assertEqual(version, "4")
             self.assertIsNotNone(row[0])
             self.assertIsNotNone(row[1])
+            migrated.close()
+
+    def test_v3_database_adds_executor_telemetry_columns(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            settings = ServiceSettings.discover(data_root=Path(temporary))
+            store = SqliteStore(settings)
+            store.close()
+            conn = sqlite3.connect(settings.db_path)
+            for column in (
+                "telemetry_reported_invocations",
+                "executor_tool_calls",
+                "executor_command_calls",
+                "input_paths_accessed",
+                "evidence_paths_accessed",
+            ):
+                conn.execute(f"ALTER TABLE job_statistics DROP COLUMN {column}")
+            conn.execute("UPDATE schema_meta SET value='3' WHERE key='schema_version'")
+            conn.commit()
+            conn.close()
+
+            migrated = SqliteStore(settings)
+            columns = {
+                row[1]
+                for row in migrated._conn.execute("PRAGMA table_info(job_statistics)")
+            }
+            version = migrated._conn.execute(
+                "SELECT value FROM schema_meta WHERE key='schema_version'"
+            ).fetchone()[0]
+            self.assertEqual(version, "4")
+            self.assertIn("executor_command_calls", columns)
+            self.assertIn("evidence_paths_accessed", columns)
             migrated.close()
 
     def test_future_database_version_is_not_silently_downgraded(self) -> None:

@@ -141,6 +141,13 @@ class StateTransitionTest(_StoreTestBase):
                 "total_tokens": 130,
             },
             usage_reported=True,
+            telemetry={
+                "tool_calls": 7,
+                "command_calls": 5,
+                "input_paths_accessed": 4,
+                "evidence_paths_accessed": 2,
+            },
+            telemetry_reported=True,
         )
         for dst in (
             S.EVIDENCE, S.SEMANTIC, S.AGGREGATION, S.ARCHIVE,
@@ -152,7 +159,12 @@ class StateTransitionTest(_StoreTestBase):
         self.assertIsNotNone(completed.finished_at)
         self.assertEqual(completed.executor_invocations, 1)
         self.assertEqual(completed.usage_reported_invocations, 1)
+        self.assertEqual(completed.telemetry_reported_invocations, 1)
         self.assertEqual(completed.executor_elapsed_ms, 1250)
+        self.assertEqual(completed.executor_tool_calls, 7)
+        self.assertEqual(completed.executor_command_calls, 5)
+        self.assertEqual(completed.input_paths_accessed, 4)
+        self.assertEqual(completed.evidence_paths_accessed, 2)
         self.assertEqual(completed.total_tokens, 130)
 
     def test_legal_worker_path(self) -> None:

@@ -29,7 +29,7 @@ from .store.sqlite_store import SqliteStore
 
 TERMINAL_STATES = S.TERMINAL_STATES
 _ERROR_EVENT_TYPES = {
-    "semantic_failed", "aggregation_failed", "report_failed", "worker_crashed",
+    "semantic_failed", "executor_quality_failed", "aggregation_failed", "report_failed", "worker_crashed",
     "executor_error",
 }
 
@@ -73,6 +73,7 @@ def collect_metrics(store: SqliteStore, *, archives_root: Path) -> dict[str, Any
     archive_bytes, archive_job_count = _archive_bytes(archives_root)
     finding_deltas = _finding_deltas(archives_root)
     token_usage = _token_usage_summary(statistics.values())
+    executor_telemetry = _executor_telemetry_summary(statistics.values())
     executor_invocations = sum(item.executor_invocations for item in statistics.values())
 
     return {
@@ -92,6 +93,7 @@ def collect_metrics(store: SqliteStore, *, archives_root: Path) -> dict[str, Any
         ),
         "executor_invocations": executor_invocations,
         "token_usage": token_usage,
+        "executor_telemetry": executor_telemetry,
         "finding_deltas": finding_deltas,
     }
 
@@ -188,6 +190,23 @@ def _token_usage_summary(statistics: Iterable[Any]) -> dict[str, Any]:
         ),
     })
     return summary
+
+
+def _executor_telemetry_summary(statistics: Iterable[Any]) -> dict[str, Any]:
+    items = list(statistics)
+    executor_invocations = sum(item.executor_invocations for item in items)
+    reported_invocations = sum(item.telemetry_reported_invocations for item in items)
+    return {
+        "reported_invocations": reported_invocations,
+        "unreported_invocations": executor_invocations - reported_invocations,
+        "reporting_coverage": (
+            reported_invocations / executor_invocations if executor_invocations else 0.0
+        ),
+        "tool_calls": sum(item.executor_tool_calls for item in items),
+        "command_calls": sum(item.executor_command_calls for item in items),
+        "input_paths_accessed": sum(item.input_paths_accessed for item in items),
+        "evidence_paths_accessed": sum(item.evidence_paths_accessed for item in items),
+    }
 
 
 def _archive_bytes(archives_root: Path) -> tuple[int, int]:

@@ -19,7 +19,7 @@ STATUS_TIMEOUT = "timeout"
 STATUS_CANCELLED = "cancelled"
 STATUS_AWAITING = "awaiting_executor"
 
-EXECUTOR_VERSION = "codex-cli-0.3"
+EXECUTOR_VERSION = "codex-cli-0.4"
 PROTOCOL_VERSION = "0.2.0"
 
 
@@ -71,6 +71,8 @@ class ExecutionResult:
     event_count: int = 0
     token_usage: dict[str, int] = field(default_factory=dict)
     usage_reported: bool = False
+    telemetry: dict[str, int] = field(default_factory=dict)
+    telemetry_reported: bool = False
 
     @property
     def succeeded(self) -> bool:

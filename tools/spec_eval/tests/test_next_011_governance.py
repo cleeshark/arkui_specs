@@ -26,7 +26,7 @@ from spec_eval.service.store.repositories import (
 )
 from spec_eval.service.store.sqlite_store import SqliteStore, utc_now
 
-EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.17"
+EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.18"
 
 
 class _GovTestBase(unittest.TestCase):
@@ -66,6 +66,13 @@ class MetricsTest(_GovTestBase):
                 "total_tokens": 240,
             },
             usage_reported=True,
+            telemetry={
+                "tool_calls": 9,
+                "command_calls": 6,
+                "input_paths_accessed": 5,
+                "evidence_paths_accessed": 3,
+            },
+            telemetry_reported=True,
         )
         ArtifactRepository(self.store).record(
             Artifact(artifact_id="a", job_id=job_id, kind="function_context",
@@ -87,6 +94,9 @@ class MetricsTest(_GovTestBase):
         self.assertEqual(metrics["token_usage"]["reported_jobs"], 1)
         self.assertEqual(metrics["token_usage"]["reporting_coverage"], 1.0)
         self.assertEqual(metrics["executor_invocations"], 1)
+        self.assertEqual(metrics["executor_telemetry"]["command_calls"], 6)
+        self.assertEqual(metrics["executor_telemetry"]["evidence_paths_accessed"], 3)
+        self.assertEqual(metrics["executor_telemetry"]["reporting_coverage"], 1.0)
 
     def test_finding_deltas_from_automated_history(self) -> None:
         log = self.settings.archives_root / "site-history-automated.jsonl"
@@ -159,7 +169,7 @@ class BackupDiskTest(_GovTestBase):
         conn = sqlite3.connect(str(dest))
         row = conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()
         conn.close()
-        self.assertEqual(row[0], "3")
+        self.assertEqual(row[0], "4")
         # the live DB still works after backup
         self.assertEqual(len(self.jobs.list_jobs()), 1)
 

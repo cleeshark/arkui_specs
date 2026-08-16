@@ -1,4 +1,4 @@
--- SQLite schema for the semantic evaluation service Job Store (schema_version 3).
+-- SQLite schema for the semantic evaluation service Job Store (schema_version 4).
 -- Loaded idempotently by sqlite_store._run_migrations. PRAGMAs are applied in
 -- code (they are connection-scoped / must run outside a transaction). The
 -- load-bearing constraints are:
@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS schema_meta (
     key   TEXT PRIMARY KEY,
     value TEXT NOT NULL
 );
-INSERT OR IGNORE INTO schema_meta (key, value) VALUES ('schema_version', '3');
+INSERT OR IGNORE INTO schema_meta (key, value) VALUES ('schema_version', '4');
 
 CREATE TABLE IF NOT EXISTS jobs (
     job_id            TEXT PRIMARY KEY,
@@ -42,7 +42,12 @@ CREATE TABLE IF NOT EXISTS job_statistics (
     finished_at                  TEXT,
     executor_invocations         INTEGER NOT NULL DEFAULT 0 CHECK (executor_invocations >= 0),
     usage_reported_invocations   INTEGER NOT NULL DEFAULT 0 CHECK (usage_reported_invocations >= 0),
+    telemetry_reported_invocations INTEGER NOT NULL DEFAULT 0 CHECK (telemetry_reported_invocations >= 0),
     executor_elapsed_ms          INTEGER NOT NULL DEFAULT 0 CHECK (executor_elapsed_ms >= 0),
+    executor_tool_calls          INTEGER NOT NULL DEFAULT 0 CHECK (executor_tool_calls >= 0),
+    executor_command_calls       INTEGER NOT NULL DEFAULT 0 CHECK (executor_command_calls >= 0),
+    input_paths_accessed         INTEGER NOT NULL DEFAULT 0 CHECK (input_paths_accessed >= 0),
+    evidence_paths_accessed      INTEGER NOT NULL DEFAULT 0 CHECK (evidence_paths_accessed >= 0),
     input_tokens                 INTEGER NOT NULL DEFAULT 0 CHECK (input_tokens >= 0),
     cached_input_tokens          INTEGER NOT NULL DEFAULT 0 CHECK (cached_input_tokens >= 0),
     cache_write_input_tokens     INTEGER NOT NULL DEFAULT 0 CHECK (cache_write_input_tokens >= 0),

@@ -38,6 +38,7 @@ SCHEMA_V2_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.14",
     "skill:ohos-design-arkui-spec-evaluator@0.1.15",
     "skill:ohos-design-arkui-spec-evaluator@0.1.16",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.17",
     DEFAULT_EVALUATOR_VERSION,
 }
 DEEP_CONTRACT_EVALUATOR_VERSIONS = {
@@ -49,6 +50,7 @@ DEEP_CONTRACT_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.14",
     "skill:ohos-design-arkui-spec-evaluator@0.1.15",
     "skill:ohos-design-arkui-spec-evaluator@0.1.16",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.17",
     DEFAULT_EVALUATOR_VERSION,
 }
 UNVERIFIABLE_GUARD_EVALUATOR_VERSIONS = {
@@ -59,6 +61,7 @@ UNVERIFIABLE_GUARD_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.14",
     "skill:ohos-design-arkui-spec-evaluator@0.1.15",
     "skill:ohos-design-arkui-spec-evaluator@0.1.16",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.17",
     DEFAULT_EVALUATOR_VERSION,
 }
 AGGREGATION_MAPPING_EVALUATOR_VERSIONS = {
@@ -66,6 +69,7 @@ AGGREGATION_MAPPING_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.14",
     "skill:ohos-design-arkui-spec-evaluator@0.1.15",
     "skill:ohos-design-arkui-spec-evaluator@0.1.16",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.17",
     DEFAULT_EVALUATOR_VERSION,
 }
 OUTCOME_POLICY_BASIS_EVALUATOR_VERSIONS = {
@@ -75,14 +79,20 @@ OUTCOME_POLICY_BASIS_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.14",
     "skill:ohos-design-arkui-spec-evaluator@0.1.15",
     "skill:ohos-design-arkui-spec-evaluator@0.1.16",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.17",
     DEFAULT_EVALUATOR_VERSION,
 }
 FINAL_AGGREGATION_CONTRACT_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.15",
     "skill:ohos-design-arkui-spec-evaluator@0.1.16",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.17",
     DEFAULT_EVALUATOR_VERSION,
 }
-CLAIM_REVIEW_QUALITY_EVALUATOR_VERSIONS = {DEFAULT_EVALUATOR_VERSION}
+CLAIM_REVIEW_QUALITY_EVALUATOR_VERSIONS = {
+    "skill:ohos-design-arkui-spec-evaluator@0.1.17",
+    DEFAULT_EVALUATOR_VERSION,
+}
+NV_INSPECTION_EVIDENCE_EVALUATOR_VERSIONS = {DEFAULT_EVALUATOR_VERSION}
 AGGREGATION_CONTEXT_SCHEMA_VERSION = 1
 SEMANTIC_FINDING_IDENTITY_VERSION = 1
 OUTCOME_POLICY_BASIS_CRITERIA = [
@@ -126,9 +136,12 @@ LOCAL_OUTCOMES = {
     "NOT_APPLICABLE",
     "NOT_VERIFIABLE",
 }
-OBSERVATION_EVIDENCE_MIN_ITEMS = {
+LEGACY_OBSERVATION_EVIDENCE_MIN_ITEMS = {
     outcome: 0 if outcome == "NOT_VERIFIABLE" else 1
     for outcome in sorted(LOCAL_OUTCOMES)
+}
+OBSERVATION_EVIDENCE_MIN_ITEMS = {
+    outcome: 1 for outcome in sorted(LOCAL_OUTCOMES)
 }
 EVIDENCE_TYPES = (
     "source_citation",
@@ -446,6 +459,13 @@ def staged_output_contract(
                     "quality_rule": {
                         "reason_and_unit_fact_must_be_evidence_specific": True,
                         "forbidden_outcome_only_text": sorted(LOW_INFORMATION_REVIEW_TEXT),
+                        **({
+                            "not_verifiable_requires_review_record": True,
+                            "not_verifiable_explanation": (
+                                "Name the checked scope, the missing evidence, and why the gap "
+                                "is insufficient for a defensible judgment."
+                            ),
+                        } if evaluator_version in NV_INSPECTION_EVIDENCE_EVALUATOR_VERSIONS else {}),
                     },
                     "dangling_evidence_repair": {
                         "mode": "repair_claim_evidence_references",
@@ -461,7 +481,7 @@ def staged_output_contract(
                             "array ordering",
                         ],
                     },
-                } if evaluator_version == DEFAULT_EVALUATOR_VERSION else {}),
+                } if evaluator_version in CLAIM_REVIEW_QUALITY_EVALUATOR_VERSIONS else {}),
             },
             "observations": {
                 "required_fields": [
@@ -489,9 +509,16 @@ def staged_output_contract(
                 },
                 "evidence_cardinality": {
                     "minimum_items_by_local_outcome": dict(
-                        OBSERVATION_EVIDENCE_MIN_ITEMS
+                        _observation_evidence_minimums(evaluator_version)
                     ),
                     "rule": (
+                        "Every observation carries at least one evidence object. "
+                        "NOT_VERIFIABLE cites review_record inspection evidence for the "
+                        "scope that was checked but remained insufficient. NOT_APPLICABLE "
+                        "cites reproducible evidence that proves the checked unit is "
+                        "inapplicable; fact text is not evidence."
+                        if evaluator_version in NV_INSPECTION_EVIDENCE_EVALUATOR_VERSIONS
+                        else
                         "Every observation except NOT_VERIFIABLE carries at least one "
                         "evidence object. NOT_APPLICABLE cites reproducible evidence that "
                         "proves the checked unit is inapplicable; fact text is not evidence."
@@ -797,6 +824,33 @@ def _is_low_information_review_text(value: Any) -> bool:
     return normalized in LOW_INFORMATION_REVIEW_TEXT
 
 
+def _has_unverifiable_gap_explanation(value: Any) -> bool:
+    """Require NV prose to name both the inspected scope and the evidence gap."""
+    if not isinstance(value, str) or len(value.strip()) < 24:
+        return False
+    normalized = value.casefold()
+    checked_terms = ("checked", "inspected", "reviewed", "examined", "检查", "审查")
+    missing_terms = (
+        "missing", "absent", "unavailable", "insufficient", "not present",
+        "缺少", "缺失", "不足", "不可用",
+    )
+    consequence_terms = (
+        "cannot verify", "not verifiable", "insufficient to", "cannot determine",
+        "无法验证", "不能验证", "不足以", "无法判断",
+    )
+    return (
+        any(term in normalized for term in checked_terms)
+        and any(term in normalized for term in missing_terms)
+        and any(term in normalized for term in consequence_terms)
+    )
+
+
+def _observation_evidence_minimums(evaluator_version: Any) -> dict[str, int]:
+    if evaluator_version in NV_INSPECTION_EVIDENCE_EVALUATOR_VERSIONS:
+        return OBSERVATION_EVIDENCE_MIN_ITEMS
+    return LEGACY_OBSERVATION_EVIDENCE_MIN_ITEMS
+
+
 def validate_observation_document(
     document: dict[str, Any],
     item: dict[str, Any],
@@ -822,6 +876,9 @@ def validate_observation_document(
     deep_contract = state.get("evaluator_version") in DEEP_CONTRACT_EVALUATOR_VERSIONS
     claim_review_quality = (
         state.get("evaluator_version") in CLAIM_REVIEW_QUALITY_EVALUATOR_VERSIONS
+    )
+    nv_inspection_required = (
+        state.get("evaluator_version") in NV_INSPECTION_EVIDENCE_EVALUATOR_VERSIONS
     )
     rubric, _, protocol_errors = protocol()
     errors.extend(protocol_errors)
@@ -854,6 +911,7 @@ def validate_observation_document(
     covered_claims: set[str] = set()
     mapped_checks: set[str] = set()
     available_evidence_ids: set[str] = set()
+    evidence_types_by_id: dict[str, str] = {}
     available_defect_keys: set[str] = set()
     for index, observation in enumerate(observations):
         entry = f"{label}.observations[{index}]"
@@ -890,7 +948,9 @@ def validate_observation_document(
         if not isinstance(evidence, list):
             errors.append(f"{entry}.evidence: expected a list")
             continue
-        minimum_evidence = OBSERVATION_EVIDENCE_MIN_ITEMS.get(
+        minimum_evidence = _observation_evidence_minimums(
+            state.get("evaluator_version")
+        ).get(
             observation.get("local_outcome"), 0
         )
         if len(evidence) < minimum_evidence:
@@ -899,6 +959,20 @@ def validate_observation_document(
             _validate_evidence(evidence_item, f"{entry}.evidence[{evidence_index}]", errors)
             if isinstance(evidence_item, dict) and isinstance(evidence_item.get("evidence_id"), str):
                 available_evidence_ids.add(evidence_item["evidence_id"])
+                if isinstance(evidence_item.get("type"), str):
+                    evidence_types_by_id[evidence_item["evidence_id"]] = evidence_item["type"]
+        if (
+            nv_inspection_required
+            and observation.get("local_outcome") == "NOT_VERIFIABLE"
+            and not any(
+                isinstance(evidence_item, dict)
+                and evidence_item.get("type") == "review_record"
+                for evidence_item in evidence
+            )
+        ):
+            errors.append(
+                f"{entry}.evidence: NOT_VERIFIABLE requires review_record inspection evidence"
+            )
         if strict:
             check_ids = _validate_string_list(
                 observation.get("check_ids"), f"{entry}.check_ids", errors
@@ -1021,13 +1095,35 @@ def validate_observation_document(
             missing_evidence = sorted(set(evidence_ids) - available_evidence_ids)
             if missing_evidence:
                 errors.append(f"{entry}.evidence_ids: unknown evidence {missing_evidence}")
-            if local_outcome != "NOT_VERIFIABLE" and not evidence_ids:
+            inspection_evidence = {
+                evidence_id
+                for evidence_id in evidence_ids
+                if evidence_types_by_id.get(evidence_id) == "review_record"
+            }
+            if local_outcome == "NOT_VERIFIABLE" and nv_inspection_required:
+                if not evidence_ids:
+                    errors.append(
+                        f"{entry}.evidence_ids: inspection evidence is required for NOT_VERIFIABLE"
+                    )
+                elif not inspection_evidence:
+                    errors.append(
+                        f"{entry}.evidence_ids: NOT_VERIFIABLE must reference review_record inspection evidence"
+                    )
+            elif local_outcome != "NOT_VERIFIABLE" and not evidence_ids:
                 errors.append(f"{entry}.evidence_ids: evidence is required for this outcome")
             reason = claim_review.get("reason")
             if not isinstance(reason, str) or not reason or PLACEHOLDER_TEXT in reason:
                 errors.append(f"{entry}.reason: replace the initialized placeholder")
             elif claim_review_quality and _is_low_information_review_text(reason):
                 errors.append(f"{entry}.reason: expected an evidence-specific explanation")
+            elif (
+                local_outcome == "NOT_VERIFIABLE"
+                and nv_inspection_required
+                and not _has_unverifiable_gap_explanation(reason)
+            ):
+                errors.append(
+                    f"{entry}.reason: expected checked scope, missing evidence and insufficiency explanation"
+                )
             defect_keys = _validate_string_list(
                 claim_review.get("defect_keys"), f"{entry}.defect_keys", errors
             )
@@ -1071,13 +1167,35 @@ def validate_observation_document(
                         errors.append(
                             f"{unit_label}.evidence_ids: unknown evidence {unknown_unit_evidence}"
                         )
-                    if unit_outcome != "NOT_VERIFIABLE" and not unit_evidence:
+                    unit_inspection_evidence = {
+                        evidence_id
+                        for evidence_id in unit_evidence
+                        if evidence_types_by_id.get(evidence_id) == "review_record"
+                    }
+                    if unit_outcome == "NOT_VERIFIABLE" and nv_inspection_required:
+                        if not unit_evidence:
+                            errors.append(
+                                f"{unit_label}.evidence_ids: inspection evidence is required for NOT_VERIFIABLE"
+                            )
+                        elif not unit_inspection_evidence:
+                            errors.append(
+                                f"{unit_label}.evidence_ids: NOT_VERIFIABLE must reference review_record inspection evidence"
+                            )
+                    elif unit_outcome != "NOT_VERIFIABLE" and not unit_evidence:
                         errors.append(f"{unit_label}.evidence_ids: evidence is required")
                     fact = unit.get("fact")
                     if not isinstance(fact, str) or not fact or PLACEHOLDER_TEXT in fact:
                         errors.append(f"{unit_label}.fact: expected a resolved atomic fact")
                     elif claim_review_quality and _is_low_information_review_text(fact):
                         errors.append(f"{unit_label}.fact: expected an evidence-specific atomic fact")
+                    elif (
+                        unit_outcome == "NOT_VERIFIABLE"
+                        and nv_inspection_required
+                        and not _has_unverifiable_gap_explanation(fact)
+                    ):
+                        errors.append(
+                            f"{unit_label}.fact: expected checked scope, missing evidence and insufficiency explanation"
+                        )
                 if unit_ids != reviewed_units:
                     errors.append(
                         f"{entry}.unit_reviews: unit IDs must exactly match reviewed_units in order"

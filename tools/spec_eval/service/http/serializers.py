@@ -38,6 +38,7 @@ def job_to_dict(job: Job, statistics: JobStatistics | None = None) -> dict[str, 
     if statistics is not None:
         document["timing"] = _timing_to_dict(job, statistics)
         document["usage"] = _usage_to_dict(statistics)
+        document["executor_telemetry"] = _telemetry_to_dict(statistics)
     return document
 
 
@@ -76,6 +77,21 @@ def _usage_to_dict(statistics: JobStatistics) -> dict[str, Any]:
         "output_tokens": statistics.output_tokens,
         "reasoning_output_tokens": statistics.reasoning_output_tokens,
         "total_tokens": statistics.total_tokens,
+    }
+
+
+def _telemetry_to_dict(statistics: JobStatistics) -> dict[str, Any]:
+    return {
+        "reported": statistics.telemetry_reported_invocations > 0,
+        "complete": (
+            statistics.executor_invocations > 0
+            and statistics.telemetry_reported_invocations == statistics.executor_invocations
+        ),
+        "reported_invocations": statistics.telemetry_reported_invocations,
+        "tool_calls": statistics.executor_tool_calls,
+        "command_calls": statistics.executor_command_calls,
+        "input_paths_accessed": statistics.input_paths_accessed,
+        "evidence_paths_accessed": statistics.evidence_paths_accessed,
     }
 
 
