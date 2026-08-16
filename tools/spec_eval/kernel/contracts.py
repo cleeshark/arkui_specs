@@ -131,7 +131,14 @@ LOW_INFORMATION_REVIEW_TEXT = frozenset({
 # Judgment payload field names (executor-owned). The published documents keep
 # the historical shape consumed by aggregation-context, score and the frozen
 # semantic-result schema; only the transport payload is new.
+#
+# Evidence namespace (design v3, review §3.4): declarations live at the
+# payload top level with work-item-scoped local keys; claim/unit/observation
+# rows reference them through ``evidence_refs``. The normalizer converts
+# local keys to canonical evidence IDs at publish time, so aggregation and
+# every downstream consumer only ever see canonical IDs.
 OBSERVATION_JUDGMENT_FIELDS = (
+    "evidence_declarations",
     "claim_reviews",
     "observations",
     "open_questions",
@@ -140,7 +147,7 @@ OBSERVATION_JUDGMENT_FIELDS = (
 CLAIM_JUDGMENT_FIELDS = (
     "claim_id",
     "local_outcome",
-    "evidence_ids",
+    "evidence_refs",
     "reason",
     "verification_gap",
     "defect_keys",
@@ -150,7 +157,7 @@ UNIT_JUDGMENT_FIELDS = (
     "unit_id",
     "facet_type",
     "local_outcome",
-    "evidence_ids",
+    "evidence_refs",
     "fact",
     "verification_gap",
 )
@@ -176,7 +183,7 @@ OBSERVATION_JUDGMENT_ENTRY_FIELDS = (
     "fact",
     "defect_key",
     "primary_criterion_id",
-    "evidence",
+    "evidence_refs",
 )
 
 AGGREGATION_JUDGMENT_FIELDS = (

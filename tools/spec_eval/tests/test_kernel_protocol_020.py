@@ -85,11 +85,30 @@ def _judgment(evidence_path: str, *, nv_first: bool = True) -> dict:
     first_outcome = "NOT_VERIFIABLE" if nv_first else "SUPPORTED"
     first_evidence = "e2" if nv_first else "e1"
     return {
+        "evidence_declarations": [
+            {
+                "key": "e1",
+                "type": "spec_location",
+                "path": evidence_path,
+                "lines": "1-1",
+                "description": "Synthetic frozen evidence.",
+            },
+            {
+                "key": "e2",
+                "type": "review_record",
+                "path": evidence_path,
+                "lines": None,
+                "description": (
+                    "The evaluator inspected the frozen inputs before "
+                    "recording this verification gap."
+                ),
+            },
+        ],
         "claim_reviews": [
             {
                 "claim_id": "Feat-01/AC-1",
                 "local_outcome": first_outcome,
-                "evidence_ids": [first_evidence],
+                "evidence_refs": [first_evidence],
                 "reason": (
                     "Checked the frozen spec scope; the implementation source is "
                     "missing and the claim cannot be verified."
@@ -102,7 +121,7 @@ def _judgment(evidence_path: str, *, nv_first: bool = True) -> dict:
                     "unit_id": "u1",
                     "facet_type": "traceability",
                     "local_outcome": first_outcome,
-                    "evidence_ids": [first_evidence],
+                    "evidence_refs": [first_evidence],
                     "fact": (
                         "Checked the frozen spec scope; the atomic proof is missing."
                         if nv_first else
@@ -114,7 +133,7 @@ def _judgment(evidence_path: str, *, nv_first: bool = True) -> dict:
             {
                 "claim_id": "Feat-01/AC-2",
                 "local_outcome": "SUPPORTED",
-                "evidence_ids": ["e1"],
+                "evidence_refs": ["e1"],
                 "reason": "The frozen evidence content supports the evaluated claim.",
                 "verification_gap": None,
                 "defect_keys": [],
@@ -122,7 +141,7 @@ def _judgment(evidence_path: str, *, nv_first: bool = True) -> dict:
                     "unit_id": "u1",
                     "facet_type": "traceability",
                     "local_outcome": "SUPPORTED",
-                    "evidence_ids": ["e1"],
+                    "evidence_refs": ["e1"],
                     "fact": "The frozen evidence content supports this atomic unit.",
                     "verification_gap": None,
                 }],
@@ -138,25 +157,7 @@ def _judgment(evidence_path: str, *, nv_first: bool = True) -> dict:
             "fact": "The frozen evidence covers both claims.",
             "defect_key": None,
             "primary_criterion_id": None,
-            "evidence": [
-                {
-                    "key": "e1",
-                    "type": "spec_location",
-                    "path": evidence_path,
-                    "lines": "1-1",
-                    "description": "Synthetic frozen evidence.",
-                },
-                {
-                    "key": "e2",
-                    "type": "review_record",
-                    "path": evidence_path,
-                    "lines": None,
-                    "description": (
-                        "The evaluator inspected the frozen inputs before "
-                        "recording this verification gap."
-                    ),
-                },
-            ],
+            "evidence_refs": ["e1", "e2"],
         }],
         "open_questions": [],
         "notes": [],
@@ -286,7 +287,7 @@ class NormalizeObservationTest(unittest.TestCase):
         judgment = _judgment(self.evidence_rel)
         judgment["claim_reviews"].append({
             "claim_id": "Feat-01/AC-9", "local_outcome": "SUPPORTED",
-            "evidence_ids": [], "reason": "extra", "verification_gap": None,
+            "evidence_refs": [], "reason": "extra", "verification_gap": None,
             "defect_keys": [], "unit_reviews": [],
         })
         result = normalize_observation(self.template, judgment, repo_root=self.root)
@@ -691,8 +692,8 @@ class EnvelopeV3ParseTest(unittest.TestCase):
             "schema_version": 3,
             "work_item_id": "feature:Feat-01",
             "status": "completed",
-            "payload": {"claim_reviews": [], "observations": [],
-                        "open_questions": [], "notes": []},
+            "payload": {"evidence_declarations": [], "claim_reviews": [],
+                        "observations": [], "open_questions": [], "notes": []},
             "notes": [],
             "error": None,
         })

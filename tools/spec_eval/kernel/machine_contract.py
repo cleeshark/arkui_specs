@@ -26,12 +26,15 @@ def _common() -> dict[str, Any]:
             "and references, defect descriptions and NOT_VERIFIABLE gaps.",
             "Do not echo document identity, ordering, derived fields or hashes; the "
             "service owns them.",
+            "Declare every piece of evidence exactly once in the top-level "
+            "evidence_declarations array with a unique local key (e1, e2, ...); "
+            "claim, unit and observation rows reference declarations through "
+            "evidence_refs. The service converts local keys to canonical EV- IDs "
+            "at publish time; never emit EV- IDs yourself.",
             "verification_gap is required (non-null) exactly when local_outcome is "
             "NOT_VERIFIABLE, both at claim and unit level; null otherwise.",
             "Every NOT_VERIFIABLE observation, claim and unit must reference "
             "review_record inspection evidence.",
-            "Reference evidence only with keys you declared in this payload or IDs "
-            "listed in evidence_catalog; never invent EV- IDs.",
         ],
     }
 

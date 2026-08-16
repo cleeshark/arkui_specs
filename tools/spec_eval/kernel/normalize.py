@@ -114,63 +114,56 @@ def normalize_observation(
         ))
     required_checks = _strings(template.get("required_checks"))
 
-    # 1. evidence declarations -> stable IDs + verified content hashes
+    # 1. top-level evidence declarations -> stable IDs + verified content
+    #    hashes (design v3 / review §3.4: local keys are work-item scoped and
+    #    live at the payload top level; publish converts them to canonical IDs)
     published: dict[str, Any] = copy.deepcopy(template)
     source_revision = str(template.get("source_revision", ""))
     evidence_by_key: dict[str, dict[str, Any]] = {}
-    observations: list[dict[str, Any]] = []
-    for obs_index, entry in enumerate(_rows(judgment.get("observations"))):
-        evidence_rows: list[dict[str, Any]] = []
-        for declaration in _rows(entry.get("evidence")):
-            key = declaration.get("key")
-            path_text = declaration.get("path")
-            if not isinstance(key, str) or not isinstance(path_text, str):
-                fatal.append(TypedError(
-                    "EVIDENCE_PATH_UNREADABLE",
-                    f"$.observations[{obs_index}].evidence",
-                    entity_type="evidence", actual=str(declaration.get("key", "")),
-                    repairability=FATAL_INPUT,
-                ))
-                continue
-            if key in evidence_by_key:
-                evidence_rows.append(evidence_by_key[key])
-                continue
-            hash_value = _content_hash(repo_root / path_text)
-            if hash_value is None:
-                fatal.append(TypedError(
-                    "EVIDENCE_PATH_UNREADABLE",
-                    f"$.observations[{obs_index}].evidence[?].path",
-                    entity_type="evidence", entity_id=key,
-                    expected="readable path under the frozen workspace",
-                    actual=path_text, repairability=FATAL_INPUT,
-                ))
-                continue
-            evidence_id = f"EV-{len(evidence_by_key) + 1}"
-            row = {
-                "evidence_id": evidence_id,
-                "type": declaration.get("type"),
-                "path": path_text,
-                "source_revision": source_revision,
-                "content_hash": hash_value,
-                "description": declaration.get("description", ""),
-            }
-            evidence_by_key[key] = row
-            evidence_rows.append(row)
-        outcome = entry.get("local_outcome")
-        observations.append({
-            "observation_id": f"OBS-{obs_index + 1}",
-            "criterion_ids": _strings(entry.get("criterion_ids")),
-            "check_ids": _strings(entry.get("check_ids")),
-            "claim_ids": _strings(entry.get("claim_ids")),
-            "local_outcome": outcome,
-            "breadth": entry.get("breadth"),
-            "contract_family": entry.get("contract_family", ""),
-            "fact": entry.get("fact", ""),
-            "defect_key": entry.get("defect_key"),
-            "primary_criterion_id": entry.get("primary_criterion_id"),
-            "evidence": evidence_rows,
-        })
-        changes.append(f"observation[{obs_index}]: evidence IDs assigned and hashes verified")
+    declaration_order: list[str] = []
+    for decl_index, declaration in enumerate(_rows(judgment.get("evidence_declarations"))):
+        key = declaration.get("key")
+        path_text = declaration.get("path")
+        if not isinstance(key, str) or not isinstance(path_text, str):
+            fatal.append(TypedError(
+                "EVIDENCE_PATH_UNREADABLE",
+                f"$.evidence_declarations[{decl_index}]",
+                entity_type="evidence", actual=str(declaration.get("key", "")),
+                repairability=FATAL_INPUT,
+            ))
+            continue
+        if key in evidence_by_key:
+            fatal.append(TypedError(
+                "EVIDENCE_PATH_UNREADABLE",
+                f"$.evidence_declarations[{decl_index}].key",
+                entity_type="evidence", entity_id=key,
+                expected="unique declaration key", actual="duplicate",
+                repairability=FATAL_INPUT,
+            ))
+            continue
+        hash_value = _content_hash(repo_root / path_text)
+        if hash_value is None:
+            fatal.append(TypedError(
+                "EVIDENCE_PATH_UNREADABLE",
+                f"$.evidence_declarations[{decl_index}].path",
+                entity_type="evidence", entity_id=key,
+                expected="readable path under the frozen workspace",
+                actual=path_text, repairability=FATAL_INPUT,
+            ))
+            continue
+        row = {
+            "evidence_id": f"EV-{len(evidence_by_key) + 1}",
+            "type": declaration.get("type"),
+            "path": path_text,
+            "source_revision": source_revision,
+            "content_hash": hash_value,
+            "description": declaration.get("description", ""),
+        }
+        evidence_by_key[key] = row
+        declaration_order.append(key)
+    changes.append(
+        "evidence_declarations: canonical IDs assigned and hashes verified"
+    )
 
     def _resolve_evidence_ids(raw: Any) -> list[str]:
         resolved: list[str] = []
@@ -183,6 +176,46 @@ def normalize_observation(
                 # validator reports anything not defined in this document
                 resolved.append(item)
         return resolved
+
+    # 2. published observations: each carries the declared evidence rows it
+    #    references; claim-only references attach to the first observation so
+    #    the published invariant (claim evidence defined by observations) holds
+    observations: list[dict[str, Any]] = []
+    for obs_index, entry in enumerate(_rows(judgment.get("observations"))):
+        evidence_rows = [
+            evidence_by_key[key]
+            for key in _strings(entry.get("evidence_refs"))
+            if key in evidence_by_key
+        ]
+        observations.append({
+            "observation_id": f"OBS-{obs_index + 1}",
+            "criterion_ids": _strings(entry.get("criterion_ids")),
+            "check_ids": _strings(entry.get("check_ids")),
+            "claim_ids": _strings(entry.get("claim_ids")),
+            "local_outcome": entry.get("local_outcome"),
+            "breadth": entry.get("breadth"),
+            "contract_family": entry.get("contract_family", ""),
+            "fact": entry.get("fact", ""),
+            "defect_key": entry.get("defect_key"),
+            "primary_criterion_id": entry.get("primary_criterion_id"),
+            "evidence": evidence_rows,
+        })
+    claim_referenced_keys: list[str] = []
+    for row in _rows(judgment.get("claim_reviews")):
+        claim_referenced_keys.extend(_strings(row.get("evidence_refs")))
+        for unit in _rows(row.get("unit_reviews")):
+            claim_referenced_keys.extend(_strings(unit.get("evidence_refs")))
+    obs_referenced_keys: set[str] = {
+        key
+        for entry in _rows(judgment.get("observations"))
+        for key in _strings(entry.get("evidence_refs"))
+    }
+    if observations:
+        for key in declaration_order:
+            if key in obs_referenced_keys:
+                continue
+            if key in claim_referenced_keys and evidence_by_key[key] not in observations[0]["evidence"]:
+                observations[0]["evidence"].append(evidence_by_key[key])
 
     criteria_by_claim: dict[str, list[str]] = {}
     for entry in observations:
@@ -223,12 +256,12 @@ def normalize_observation(
                 "unit_id": unit.get("unit_id"),
                 "facet_type": unit.get("facet_type"),
                 "local_outcome": unit.get("local_outcome"),
-                "evidence_ids": _resolve_evidence_ids(unit.get("evidence_ids")),
+                "evidence_ids": _resolve_evidence_ids(unit.get("evidence_refs")),
                 "fact": unit.get("fact", ""),
                 "verification_gap": unit.get("verification_gap"),
             } for unit in units],
             "criterion_ids": criteria_by_claim.get(claim_id, []),
-            "evidence_ids": _resolve_evidence_ids(row.get("evidence_ids")),
+            "evidence_ids": _resolve_evidence_ids(row.get("evidence_refs")),
             "defect_keys": _strings(row.get("defect_keys")),
             "reason": row.get("reason", ""),
             "verification_gap": (

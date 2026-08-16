@@ -75,7 +75,7 @@ def _observation_defs() -> dict:
             "unit_id": _non_empty_string(),
             "facet_type": _enum(*K.UNIT_FACET_TYPES),
             "local_outcome": outcome,
-            "evidence_ids": {"type": "array", "items": _evidence_key_ref()},
+            "evidence_refs": {"type": "array", "items": _evidence_key_ref()},
             "fact": {"type": "string"},
             "verification_gap": {"$ref": "#/$defs/verificationGap"},
         },
@@ -87,7 +87,7 @@ def _observation_defs() -> dict:
         "properties": {
             "claim_id": _non_empty_string(),
             "local_outcome": outcome,
-            "evidence_ids": {"type": "array", "items": _evidence_key_ref()},
+            "evidence_refs": {"type": "array", "items": _evidence_key_ref()},
             "reason": {"type": "string"},
             "verification_gap": {"$ref": "#/$defs/verificationGap"},
             "defect_keys": {"type": "array", "items": {"type": "string"}},
@@ -110,9 +110,8 @@ def _observation_defs() -> dict:
             "fact": _non_empty_string(),
             "defect_key": {"type": ["string", "null"]},
             "primary_criterion_id": {"type": ["string", "null"]},
-            "evidence": {
-                "type": "array",
-                "items": {"$ref": "#/$defs/evidenceDeclaration"},
+            "evidence_refs": {
+                "type": "array", "items": _evidence_key_ref(), "minItems": 1,
             },
         },
         "required": list(K.OBSERVATION_JUDGMENT_ENTRY_FIELDS),
@@ -121,6 +120,10 @@ def _observation_defs() -> dict:
     payload = {
         "type": ["object", "null"],
         "properties": {
+            "evidence_declarations": {
+                "type": "array",
+                "items": {"$ref": "#/$defs/evidenceDeclaration"},
+            },
             "claim_reviews": {
                 "type": "array", "items": {"$ref": "#/$defs/claimJudgment"},
             },
