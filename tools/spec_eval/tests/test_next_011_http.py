@@ -112,16 +112,16 @@ class CancelRetryTest(_HttpTestBase):
     def test_cancel_active_job_reports_request_accepted(self) -> None:
         _, job = self._req("POST", "/api/jobs", {"func_id": "04-01-01"})
         jobs = JobRepository(self.app.store)
-        jobs.transition_status(job["job_id"], S.PREPARING, event_type="enter_preparing")
-        jobs.transition_status(job["job_id"], S.EVIDENCE, event_type="enter_evidence")
-        jobs.transition_status(job["job_id"], S.SEMANTIC, event_type="enter_semantic")
+        jobs.transition_status(job["job_id"], S.RUNNING, event_type="enter_running")
+        jobs.transition_status(job["job_id"], S.RUNNING, stage=S.STAGE_EVIDENCE, event_type="enter_evidence")
+        jobs.transition_status(job["job_id"], S.RUNNING, stage=S.STAGE_OBSERVATION, event_type="enter_observation")
 
         status, body = self._req("POST", f"/api/jobs/{job['job_id']}/cancel")
 
         self.assertEqual(status, 202)
         self.assertFalse(body["cancelled"])
         self.assertEqual(body["outcome"], "cancellation_requested")
-        self.assertEqual(jobs.get_job(job["job_id"]).status, S.SEMANTIC)
+        self.assertEqual(jobs.get_job(job["job_id"]).status, S.RUNNING)
 
         status, body = self._req("POST", f"/api/jobs/{job['job_id']}/cancel")
         self.assertEqual(status, 202)
@@ -135,12 +135,12 @@ class CancelRetryTest(_HttpTestBase):
     def test_cancel_completed_job_reports_terminal_state(self) -> None:
         _, job = self._req("POST", "/api/jobs", {"func_id": "04-01-01"})
         jobs = JobRepository(self.app.store)
-        jobs.transition_status(job["job_id"], S.PREPARING, event_type="enter_preparing")
-        jobs.transition_status(job["job_id"], S.EVIDENCE, event_type="enter_evidence")
-        jobs.transition_status(job["job_id"], S.SEMANTIC, event_type="enter_semantic")
-        jobs.transition_status(job["job_id"], S.AGGREGATION, event_type="enter_aggregation")
-        jobs.transition_status(job["job_id"], S.ARCHIVE, event_type="enter_archive")
-        jobs.transition_status(job["job_id"], S.SITE_HISTORY, event_type="enter_site_history")
+        jobs.transition_status(job["job_id"], S.RUNNING, event_type="enter_running")
+        jobs.transition_status(job["job_id"], S.RUNNING, stage=S.STAGE_EVIDENCE, event_type="enter_evidence")
+        jobs.transition_status(job["job_id"], S.RUNNING, stage=S.STAGE_OBSERVATION, event_type="enter_observation")
+        jobs.transition_status(job["job_id"], S.RUNNING, stage=S.STAGE_AGGREGATION, event_type="enter_aggregation")
+        jobs.transition_status(job["job_id"], S.RUNNING, stage=S.STAGE_ARCHIVE, event_type="enter_archive")
+        jobs.transition_status(job["job_id"], S.RUNNING, stage=S.STAGE_ARCHIVE, event_type="enter_site_history")
         jobs.transition_status(job["job_id"], S.COMPLETED, event_type="job_completed")
 
         status, body = self._req("POST", f"/api/jobs/{job['job_id']}/cancel")
@@ -152,17 +152,18 @@ class CancelRetryTest(_HttpTestBase):
     def test_cancel_archive_job_reports_stage_not_cancellable(self) -> None:
         _, job = self._req("POST", "/api/jobs", {"func_id": "04-01-01"})
         jobs = JobRepository(self.app.store)
-        jobs.transition_status(job["job_id"], S.PREPARING, event_type="enter_preparing")
-        jobs.transition_status(job["job_id"], S.EVIDENCE, event_type="enter_evidence")
-        jobs.transition_status(job["job_id"], S.SEMANTIC, event_type="enter_semantic")
-        jobs.transition_status(job["job_id"], S.AGGREGATION, event_type="enter_aggregation")
-        jobs.transition_status(job["job_id"], S.ARCHIVE, event_type="enter_archive")
+        jobs.transition_status(job["job_id"], S.RUNNING, event_type="enter_running")
+        jobs.transition_status(job["job_id"], S.RUNNING, stage=S.STAGE_EVIDENCE, event_type="enter_evidence")
+        jobs.transition_status(job["job_id"], S.RUNNING, stage=S.STAGE_OBSERVATION, event_type="enter_observation")
+        jobs.transition_status(job["job_id"], S.RUNNING, stage=S.STAGE_AGGREGATION, event_type="enter_aggregation")
+        jobs.transition_status(job["job_id"], S.RUNNING, stage=S.STAGE_ARCHIVE, event_type="enter_archive")
 
         status, body = self._req("POST", f"/api/jobs/{job['job_id']}/cancel")
 
         self.assertEqual(status, 409)
         self.assertEqual(body["outcome"], "stage_not_cancellable")
-        self.assertEqual(body["status"], S.ARCHIVE)
+        self.assertEqual(body["status"], S.RUNNING)
+        self.assertIn("archive", body["message"])
 
     def test_retry_cancelled_job(self) -> None:
         _, job = self._req("POST", "/api/jobs", {"func_id": "04-01-01"})
@@ -299,9 +300,16 @@ class CancelLifecycleEndToEndTest(unittest.TestCase):
 
         def blocking_runner(job_id: str, cancel: threading.Event) -> None:
             jobs = JobRepository(self.app.store)
-            jobs.transition_status(job_id, S.PREPARING, event_type="enter_preparing")
-            jobs.transition_status(job_id, S.EVIDENCE, event_type="enter_evidence")
-            jobs.transition_status(job_id, S.SEMANTIC, event_type="enter_semantic")
+            jobs.transition_status(job_id, S.RUNNING, event_type="enter_running")
+            jobs.transition_status(
+                job_id, S.RUNNING, stage=S.STAGE_PREPARING, event_type="enter_preparing"
+            )
+            jobs.transition_status(
+                job_id, S.RUNNING, stage=S.STAGE_EVIDENCE, event_type="enter_evidence"
+            )
+            jobs.transition_status(
+                job_id, S.RUNNING, stage=S.STAGE_OBSERVATION, event_type="enter_observation"
+            )
             while not cancel.is_set():
                 time.sleep(0.01)
 
@@ -323,9 +331,12 @@ class CancelLifecycleEndToEndTest(unittest.TestCase):
         _, job = self._req("POST", "/api/jobs", {"func_id": "04-01-01"})
         jobs = JobRepository(self.app.store)
         deadline = time.monotonic() + 3.0
-        while jobs.get_job(job["job_id"]).status != S.SEMANTIC and time.monotonic() < deadline:
+        while (
+            jobs.get_job(job["job_id"]).stage != S.STAGE_OBSERVATION
+            and time.monotonic() < deadline
+        ):
             time.sleep(0.01)
-        self.assertEqual(jobs.get_job(job["job_id"]).status, S.SEMANTIC)
+        self.assertEqual(jobs.get_job(job["job_id"]).status, S.RUNNING)
 
         status, body = self._req("POST", f"/api/jobs/{job['job_id']}/cancel")
         self.assertEqual(status, 202)

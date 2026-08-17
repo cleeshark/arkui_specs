@@ -175,6 +175,7 @@ def _make_job(job_id: str = "p" * 40, func_id: str = "04-01-01", run_count: int 
     return Job(
         job_id=job_id, func_id=func_id, source_revision="rev-" + func_id,
         run_count=run_count, selected_run_ids=(), status=S.COMPLETED,
+        stage=S.STAGE_PROJECTION,
         progress=default_progress(S.COMPLETED), executor_config={},
         protocol_version="0.1.0", evaluator_version=EVALUATOR_VERSION,
         created_at=now, updated_at=now,
@@ -363,10 +364,16 @@ class SiteHistoryStageTest(unittest.TestCase):
         doc = json.loads(snap.read_text(encoding="utf-8"))
         self.assertEqual(doc["namespace"], "automated")
         self.assertEqual(doc["finding_summary"]["total"], 1)
-        # automated history log under data_root (never the confirmed path)
+        # protocol 0.2.0 S3: the JSONL append moved to projection (projector);
+        # verify append_automated_history separately
+        site_history_stage.append_automated_history(self.settings, snap)
         auto_log = site_history_stage.automated_history_path(self.settings)
         self.assertTrue(auto_log.is_file())
         self.assertTrue(str(auto_log).startswith(str(self.settings.data_root)))
+        # idempotency: second call does not duplicate
+        self.assertFalse(site_history_stage.append_automated_history(self.settings, snap))
+        lines = auto_log.read_text(encoding="utf-8").strip().splitlines()
+        self.assertEqual(len(lines), 1)
         # confirmed review/history file is byte-for-byte unchanged
         if self.confirmed_hash_before is not None:
             self.assertEqual(
@@ -466,9 +473,9 @@ class _DriverTestBase(unittest.TestCase):
 
 class AggregationStageTest(_DriverTestBase):
     def test_orchestration_produces_semantic_result(self) -> None:
-        self.jobs.transition_status(self.job.job_id, S.PREPARING, event_type="x")
-        self.jobs.transition_status(self.job.job_id, S.EVIDENCE, event_type="x")
-        self.jobs.transition_status(self.job.job_id, S.SEMANTIC, event_type="x")
+        self.jobs.transition_status(self.job.job_id, S.RUNNING, stage=S.STAGE_PREPARING, event_type="x")
+        self.jobs.transition_status(self.job.job_id, S.RUNNING, stage=S.STAGE_EVIDENCE, event_type="x")
+        self.jobs.transition_status(self.job.job_id, S.RUNNING, stage=S.STAGE_OBSERVATION, event_type="x")
         outcome, sr = aggregation_stage.run_aggregation(
             self.ctx, _FakeExecutor(), jobs=self.jobs, attempts=self.attempts,
             events=self.events, runner=_FakeScriptRunner([]),
@@ -476,12 +483,12 @@ class AggregationStageTest(_DriverTestBase):
         self.assertEqual(outcome, C.STATUS_COMPLETED)
         self.assertTrue(sr is not None and sr.is_file())
         # aggregation checkpoint recorded
-        self.assertTrue(self.attempts.list_for_job(self.job.job_id, stage=S.STAGE_AGGREGATION))
+        self.assertTrue(self.attempts.list_for_job(self.job.job_id, stage=S.ATTEMPT_STAGE_AGGREGATION))
 
     def test_reuses_existing_validated_semantic_result_without_executor(self) -> None:
-        self.jobs.transition_status(self.job.job_id, S.PREPARING, event_type="x")
-        self.jobs.transition_status(self.job.job_id, S.EVIDENCE, event_type="x")
-        self.jobs.transition_status(self.job.job_id, S.SEMANTIC, event_type="x")
+        self.jobs.transition_status(self.job.job_id, S.RUNNING, stage=S.STAGE_PREPARING, event_type="x")
+        self.jobs.transition_status(self.job.job_id, S.RUNNING, stage=S.STAGE_EVIDENCE, event_type="x")
+        self.jobs.transition_status(self.job.job_id, S.RUNNING, stage=S.STAGE_OBSERVATION, event_type="x")
         runner = _FakeScriptRunner([])
         first_executor = _FakeExecutor()
         first_outcome, first_result = aggregation_stage.run_aggregation(
@@ -501,9 +508,9 @@ class AggregationStageTest(_DriverTestBase):
         self.assertIn("aggregation_reused", event_types)
 
     def test_invalid_existing_semantic_result_is_reaggregated(self) -> None:
-        self.jobs.transition_status(self.job.job_id, S.PREPARING, event_type="x")
-        self.jobs.transition_status(self.job.job_id, S.EVIDENCE, event_type="x")
-        self.jobs.transition_status(self.job.job_id, S.SEMANTIC, event_type="x")
+        self.jobs.transition_status(self.job.job_id, S.RUNNING, stage=S.STAGE_PREPARING, event_type="x")
+        self.jobs.transition_status(self.job.job_id, S.RUNNING, stage=S.STAGE_EVIDENCE, event_type="x")
+        self.jobs.transition_status(self.job.job_id, S.RUNNING, stage=S.STAGE_OBSERVATION, event_type="x")
         initial_runner = _FakeScriptRunner([])
         aggregation_stage.run_aggregation(
             self.ctx, _FakeExecutor(), jobs=self.jobs, attempts=self.attempts,
@@ -539,9 +546,9 @@ class AggregationStageTest(_DriverTestBase):
         self.assertIn("aggregation_reused_document", event_types)
 
     def test_invalid_cached_executor_result_is_rejected_and_reexecuted(self) -> None:
-        self.jobs.transition_status(self.job.job_id, S.PREPARING, event_type="x")
-        self.jobs.transition_status(self.job.job_id, S.EVIDENCE, event_type="x")
-        self.jobs.transition_status(self.job.job_id, S.SEMANTIC, event_type="x")
+        self.jobs.transition_status(self.job.job_id, S.RUNNING, stage=S.STAGE_PREPARING, event_type="x")
+        self.jobs.transition_status(self.job.job_id, S.RUNNING, stage=S.STAGE_EVIDENCE, event_type="x")
+        self.jobs.transition_status(self.job.job_id, S.RUNNING, stage=S.STAGE_OBSERVATION, event_type="x")
         runner = _FakeScriptRunner([])
         first_outcome, _ = aggregation_stage.run_aggregation(
             self.ctx, _FakeExecutor(), jobs=self.jobs, attempts=self.attempts,
@@ -575,9 +582,9 @@ class AggregationStageTest(_DriverTestBase):
         self.assertNotIn("aggregation_executor_result_rejected", event_types)
 
     def test_aggregation_failure_fails_job(self) -> None:
-        self.jobs.transition_status(self.job.job_id, S.PREPARING, event_type="x")
-        self.jobs.transition_status(self.job.job_id, S.EVIDENCE, event_type="x")
-        self.jobs.transition_status(self.job.job_id, S.SEMANTIC, event_type="x")
+        self.jobs.transition_status(self.job.job_id, S.RUNNING, stage=S.STAGE_PREPARING, event_type="x")
+        self.jobs.transition_status(self.job.job_id, S.RUNNING, stage=S.STAGE_EVIDENCE, event_type="x")
+        self.jobs.transition_status(self.job.job_id, S.RUNNING, stage=S.STAGE_OBSERVATION, event_type="x")
         outcome, sr = aggregation_stage.run_aggregation(
             self.ctx, _FakeExecutor(fail_aggregation=True), jobs=self.jobs, attempts=self.attempts,
             events=self.events, runner=_FakeScriptRunner([]),

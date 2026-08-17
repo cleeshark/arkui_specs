@@ -181,6 +181,7 @@ class Job:
     run_count: int
     selected_run_ids: tuple[str, ...]
     status: str
+    stage: str
     progress: dict[str, Any]
     executor_config: dict[str, Any]
     protocol_version: str

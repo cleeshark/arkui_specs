@@ -192,7 +192,7 @@ def run_semantic(
                     job_id=ctx.job_id,
                     run_id=ctx.run_id,
                     feat_id=_item.get("feat_id"),
-                    stage=S.STAGE_SEMANTIC,
+                    stage=S.ATTEMPT_STAGE_OBSERVATION,
                     status=S.ATTEMPT_COMPLETED,
                     started_at=utc_now(),
                     finished_at=utc_now(),
@@ -320,15 +320,19 @@ def run_job_pipeline(
             workspace=workspace,
         )
 
-    # preparing (once): freeze dependency revisions
+    # preparing (once): freeze dependency revisions. The persisted stage is
+    # kept on the queued -> running transition so crash recovery resumes at
+    # the interrupted stage instead of restarting the pipeline.
     if job.status == S.QUEUED:
-        jobs.transition_status(job_id, S.PREPARING, event_type="enter_preparing")
+        jobs.transition_status(job_id, S.RUNNING, event_type="enter_preparing")
         _freeze_snapshots(job_id, workspace, snapshots, events)
 
     # evidence (once): build the shared package unless already present
     job = jobs.get_job(job_id)
-    if job.status == S.PREPARING:
-        jobs.transition_status(job_id, S.EVIDENCE, event_type="enter_evidence")
+    if job.status == S.RUNNING and job.stage == S.STAGE_PREPARING:
+        jobs.transition_status(
+            job_id, S.RUNNING, stage=S.STAGE_EVIDENCE, event_type="enter_evidence"
+        )
         first_ctx = ctx_for(run_ids[0])
         if not (first_ctx.input_dir / "function-context.json").is_file():
             prepare_evidence(first_ctx, runner=runner)
@@ -351,10 +355,13 @@ def run_job_pipeline(
                     stale_reasons=(DEPENDENCY_SNAPSHOT_CHANGED,),
                 )
 
-    # semantic phase: observations for every run
+    # observation phase: judgments for every run
     job = jobs.get_job(job_id)
-    if job.status == S.EVIDENCE:
-        jobs.transition_status(job_id, S.SEMANTIC, event_type="enter_semantic")
+    if job.status == S.RUNNING and job.stage == S.STAGE_EVIDENCE:
+        jobs.transition_status(
+            job_id, S.RUNNING, stage=S.STAGE_OBSERVATION,
+            event_type="enter_observation",
+        )
     for run_id in run_ids:
         if cancel is not None and cancel.is_set():
             return SemanticStageResult(C.STATUS_CANCELLED, 0, "cancelled")
@@ -368,8 +375,11 @@ def run_job_pipeline(
 
     # aggregation phase: assemble a validated semantic-result for every run
     job = jobs.get_job(job_id)
-    if job.status == S.SEMANTIC:
-        jobs.transition_status(job_id, S.AGGREGATION, event_type="enter_aggregation")
+    if job.status == S.RUNNING and job.stage == S.STAGE_OBSERVATION:
+        jobs.transition_status(
+            job_id, S.RUNNING, stage=S.STAGE_AGGREGATION,
+            event_type="enter_aggregation",
+        )
     semantic_results: dict[str, Path] = {}
     for run_id in run_ids:
         if cancel is not None and cancel.is_set():
@@ -386,8 +396,11 @@ def run_job_pipeline(
 
     # deterministic report (score/stability/report) on the selected run
     job = jobs.get_job(job_id)
-    if job.status == S.AGGREGATION:
-        from . import report_stage, site_history_stage, archive_stage
+    if job.status == S.RUNNING and job.stage == S.STAGE_AGGREGATION:
+        from . import report_stage, site_history_stage, archive_stage, projector
+        jobs.transition_status(
+            job_id, S.RUNNING, stage=S.STAGE_REPORT, event_type="enter_report"
+        )
         report_ctx = ctx_for(selected_run_id)
         try:
             aggregate_outputs = report_stage.run_report(
@@ -436,7 +449,9 @@ def run_job_pipeline(
             selected_run_id=selected_run_id, run_ids=run_ids,
         )
         # archive (automated namespace) then advance to terminal
-        jobs.transition_status(job_id, S.ARCHIVE, event_type="enter_archive")
+        jobs.transition_status(
+            job_id, S.RUNNING, stage=S.STAGE_ARCHIVE, event_type="enter_archive"
+        )
         archive_dir = archive_stage.write_archive(
             settings, resolved_job,
             semantic_results=semantic_results,
@@ -450,28 +465,28 @@ def run_job_pipeline(
                 if (result_path.parent / "aggregation-context.json").is_file()
             },
         )
-        if refresh_targets is not None:
-            target = refresh_targets.get(job_id)
-            if target is not None:
-                _register_rolling_report(
-                    settings=settings,
-                    job=resolved_job,
-                    target=target,
-                    archive_dir=archive_dir,
-                    aggregate_dir=report_ctx.aggregate_dir,
-                    selected_run_id=selected_run_id,
-                    refresh_targets=refresh_targets,
-                    events=events,
-                    pending_delta=pending_delta,
-                )
         events.append(job_id, "job_archived", {"archive_dir": str(archive_dir)})
-        jobs.transition_status(job_id, S.SITE_HISTORY, event_type="enter_site_history")
+        # design v3 R6/D2: the synchronous critical path ends at the archive.
+        # The job is completed here; site-history projection and rolling-report
+        # registration run asynchronously through the projection outbox and
+        # can never regress the completed job to failed.
         jobs.transition_status(job_id, S.COMPLETED, event_type="job_completed")
         progress = default_progress(S.COMPLETED)
         progress["completed_checkpoints"] = [f"{rid}:semantic+aggregation" for rid in run_ids]
         progress["note"] = f"archived at {archive_dir}"
         jobs.update_progress(job_id, progress)
         events.append(job_id, "job_completed", {"archive_dir": str(archive_dir)})
+        projector.enqueue_projection(
+            settings,
+            job=resolved_job,
+            report_id=f"report-{job_id}",
+            archive_dir=archive_dir,
+            aggregate_dir=report_ctx.aggregate_dir,
+            selected_run_id=selected_run_id,
+            pending_delta=pending_delta,
+            events=events,
+        )
+        projector.run_projection(settings, job=resolved_job, events=events, runner=runner)
 
     return SemanticStageResult(C.STATUS_COMPLETED, len(semantic_results))
 

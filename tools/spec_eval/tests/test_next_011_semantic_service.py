@@ -126,7 +126,7 @@ class StateTransitionTest(_StoreTestBase):
         self.assertIsNone(initial.started_at)
         self.assertIsNone(initial.finished_at)
 
-        self.jobs.transition_status(job.job_id, S.PREPARING, event_type="enter_preparing")
+        self.jobs.transition_status(job.job_id, S.RUNNING, stage=S.STAGE_PREPARING, event_type="enter_preparing")
         running = self.statistics.get(job.job_id)
         self.assertIsNotNone(running.started_at)
         self.statistics.record_executor_result(
@@ -149,11 +149,10 @@ class StateTransitionTest(_StoreTestBase):
             },
             telemetry_reported=True,
         )
-        for dst in (
-            S.EVIDENCE, S.SEMANTIC, S.AGGREGATION, S.ARCHIVE,
-            S.SITE_HISTORY, S.COMPLETED,
-        ):
-            self.jobs.transition_status(job.job_id, dst, event_type=f"enter_{dst}")
+        for stage in (S.STAGE_EVIDENCE, S.STAGE_OBSERVATION, S.STAGE_AGGREGATION,
+                      S.STAGE_REPORT, S.STAGE_ARCHIVE):
+            self.jobs.transition_status(job.job_id, S.RUNNING, stage=stage, event_type=f"enter_{stage}")
+        self.jobs.transition_status(job.job_id, S.COMPLETED, event_type="job_completed")
 
         completed = self.statistics.get(job.job_id)
         self.assertIsNotNone(completed.finished_at)
@@ -169,10 +168,12 @@ class StateTransitionTest(_StoreTestBase):
 
     def test_legal_worker_path(self) -> None:
         job = self.jobs.create_job(self._create(), evaluator_version=EVALUATOR_VERSION)
-        job = self.jobs.transition_status(job.job_id, S.PREPARING, event_type="enter_preparing")
-        self.assertEqual(job.status, S.PREPARING)
-        job = self.jobs.transition_status(job.job_id, S.EVIDENCE, event_type="enter_evidence")
-        self.assertEqual(job.status, S.EVIDENCE)
+        job = self.jobs.transition_status(job.job_id, S.RUNNING, stage=S.STAGE_PREPARING, event_type="enter_preparing")
+        self.assertEqual(job.status, S.RUNNING)
+        self.assertEqual(job.stage, S.STAGE_PREPARING)
+        job = self.jobs.transition_status(job.job_id, S.RUNNING, stage=S.STAGE_EVIDENCE, event_type="enter_evidence")
+        self.assertEqual(job.status, S.RUNNING)
+        self.assertEqual(job.stage, S.STAGE_EVIDENCE)
 
     def test_matrix_rejects_illegal_move(self) -> None:
         # completed is terminal: no outbound edges
@@ -184,16 +185,19 @@ class StateTransitionTest(_StoreTestBase):
             S.transition(S.COMPLETED, S.QUEUED)
 
     def test_backward_edge_only_via_retry(self) -> None:
-        # aggregation has no direct backward edge to queued (only -> archive/failed)
-        self.assertFalse(S.can_transition(S.AGGREGATION, S.QUEUED))
+        # running has no direct backward edge to queued
+        self.assertFalse(S.can_transition(S.RUNNING, S.QUEUED))
         # only failed/cancelled may go back to queued
         self.assertTrue(S.can_transition(S.FAILED, S.QUEUED))
         self.assertTrue(S.can_transition(S.CANCELLED, S.QUEUED))
-        self.assertTrue(S.can_transition(S.AGGREGATION, S.CANCELLED))
+        self.assertTrue(S.can_transition(S.RUNNING, S.CANCELLED))
+        # running -> running advances the stage; waiting resumes
+        self.assertTrue(S.can_transition(S.RUNNING, S.RUNNING))
+        self.assertTrue(S.can_transition(S.WAITING, S.RUNNING))
 
     def test_transition_unknown_job_raises(self) -> None:
         with self.assertRaises(JobNotFoundError):
-            self.jobs.transition_status("nope", S.PREPARING, event_type="x")
+            self.jobs.transition_status("nope", S.RUNNING, event_type="x")
 
     def test_repo_transition_rejects_illegal(self) -> None:
         job = self.jobs.create_job(self._create(), evaluator_version=EVALUATOR_VERSION)
@@ -235,7 +239,7 @@ class EventSeqConcurrencyTest(_StoreTestBase):
 class CancelPreservesAttemptsTest(_StoreTestBase):
     def test_cancel_keeps_history(self) -> None:
         job = self.jobs.create_job(self._create(), evaluator_version=EVALUATOR_VERSION)
-        self.jobs.transition_status(job.job_id, S.PREPARING, event_type="enter_preparing")
+        self.jobs.transition_status(job.job_id, S.RUNNING, stage=S.STAGE_PREPARING, event_type="enter_preparing")
         att = self.attempts.record_checkpoint(_attempt(job.job_id))
         self.events.append(job.job_id, "note", {"k": "v"})
 
@@ -249,7 +253,7 @@ class CancelPreservesAttemptsTest(_StoreTestBase):
         self.assertIn("note", ev_types)
         self.assertIn("cancelled", ev_types)
         cancelled_ev = next(e for e in self.events.list_for_job(job.job_id) if e.event_type == "cancelled")
-        self.assertEqual(cancelled_ev.payload["from"], S.PREPARING)
+        self.assertEqual(cancelled_ev.payload["from"], S.RUNNING)
         self.assertEqual(cancelled_ev.payload["to"], S.CANCELLED)
         self.assertEqual(cancelled_ev.payload["reason"], "user")
         self.assertEqual(att.attempt_id, self.attempts.list_for_job(job.job_id)[0].attempt_id)
@@ -300,12 +304,12 @@ class CheckpointIdempotencyTest(_StoreTestBase):
         job = self.jobs.create_job(self._create(), evaluator_version=EVALUATOR_VERSION)
         a = Attempt(
             attempt_id=make_job_id(), job_id=job.job_id, run_id="run-1", feat_id="Feat-01",
-            stage=S.STAGE_SEMANTIC, status=S.ATTEMPT_COMPLETED, started_at=utc_now(),
+            stage=S.ATTEMPT_STAGE_OBSERVATION, status=S.ATTEMPT_COMPLETED, started_at=utc_now(),
             finished_at=utc_now(), exit_code=0, artifact_dir=None,
         )
         self.attempts.record_checkpoint(a)
         # None <-> "" round-trips: stored None comes back as None
-        got = self.attempts.get_checkpoint(job.job_id, "run-1", "Feat-01", S.STAGE_SEMANTIC)
+        got = self.attempts.get_checkpoint(job.job_id, "run-1", "Feat-01", S.ATTEMPT_STAGE_OBSERVATION)
         assert got is not None
         self.assertEqual(got.run_id, "run-1")
         self.assertEqual(got.feat_id, "Feat-01")
@@ -340,7 +344,7 @@ class CrashRecoveryTest(unittest.TestCase):
         store.close()
 
         # 2) simulate a worker that died mid-stage: force status to 'evidence'
-        self._raw("UPDATE jobs SET status = 'evidence' WHERE job_id = ?", (job.job_id,))
+        self._raw("UPDATE jobs SET status = 'running', stage = 'evidence' WHERE job_id = ?", (job.job_id,))
 
         # 3) reopen the store; __init__ runs recover_active_jobs()
         store2 = SqliteStore(self.settings)
@@ -358,13 +362,15 @@ class CrashRecoveryTest(unittest.TestCase):
             e for e in events2.list_for_job(job.job_id) if e.event_type == "recovery_reset"
         ]
         self.assertEqual(len(reset_events), 1)
-        self.assertEqual(reset_events[0].payload["prior_status"], "evidence")
+        self.assertEqual(reset_events[0].payload["prior_status"], "running")
 
         # 6) the durable checkpoint survived the crash
         self.assertEqual(len(attempts2.list_for_job(job.job_id)), 1)
         store2.close()
 
-    def test_awaiting_executor_is_not_reset(self) -> None:
+    def test_waiting_job_resumes_to_queued(self) -> None:
+        # design v3 R6: waiting is recovered to queued (the audit §7.1
+        # dead-end awaiting_executor state is gone)
         store = SqliteStore(self.settings)
         jobs = JobRepository(store)
         job = jobs.create_job(
@@ -372,11 +378,11 @@ class CrashRecoveryTest(unittest.TestCase):
             evaluator_version=EVALUATOR_VERSION,
         )
         store.close()
-        # force into scheduler-owned waiting state
-        self._raw("UPDATE jobs SET status = 'awaiting_executor' WHERE job_id = ?", (job.job_id,))
+        self._raw("UPDATE jobs SET status = 'waiting' WHERE job_id = ?", (job.job_id,))
         store2 = SqliteStore(self.settings)
         jobs2 = JobRepository(store2)
-        self.assertEqual(jobs2.get_job(job.job_id).status, S.AWAITING_EXECUTOR)
+        resumed = jobs2.get_job(job.job_id)
+        self.assertEqual(resumed.status, S.QUEUED)
         store2.close()
 
     def test_terminal_jobs_are_not_reset(self) -> None:

@@ -16,6 +16,9 @@ CREATE TABLE IF NOT EXISTS schema_meta (
 );
 INSERT OR IGNORE INTO schema_meta (key, value) VALUES ('schema_version', '4');
 
+-- schema v6 (protocol 0.2.0 S3, design R6): six-state lifecycle + stage.
+-- v6 REBUILDS the jobs table (the CHECK cannot be ALTERed); the store
+-- migration maps the 0.1.x eleven-state values onto the new model.
 CREATE TABLE IF NOT EXISTS jobs (
     job_id            TEXT PRIMARY KEY,
     func_id           TEXT NOT NULL,
@@ -23,8 +26,11 @@ CREATE TABLE IF NOT EXISTS jobs (
     run_count         INTEGER NOT NULL CHECK (run_count >= 1),
     selected_run_ids  TEXT NOT NULL DEFAULT '[]',
     status            TEXT NOT NULL CHECK (status IN (
-        'queued', 'preparing', 'evidence', 'semantic', 'awaiting_executor',
-        'aggregation', 'archive', 'site_history', 'completed', 'failed', 'cancelled'
+        'queued', 'running', 'waiting', 'completed', 'failed', 'cancelled'
+    )),
+    stage             TEXT NOT NULL CHECK (stage IN (
+        'preparing', 'evidence', 'observation', 'aggregation', 'report',
+        'archive', 'projection'
     )),
     progress_json     TEXT NOT NULL,
     executor_config   TEXT NOT NULL,
@@ -202,6 +208,24 @@ CREATE TABLE IF NOT EXISTS report_deltas (
     summary_json       TEXT NOT NULL,
     details_path       TEXT
 );
+
+-- schema v6 (protocol 0.2.0 S3, design R6): asynchronous projection outbox.
+-- One row per completed job; report_id is the idempotency key — a projection
+-- never executes twice for one report and failures never touch the job.
+CREATE TABLE IF NOT EXISTS projection_requests (
+    job_id         TEXT PRIMARY KEY REFERENCES jobs ON DELETE CASCADE,
+    report_id      TEXT NOT NULL,
+    status         TEXT NOT NULL CHECK (status IN ('pending', 'running', 'completed', 'failed')),
+    attempts       INTEGER NOT NULL DEFAULT 0,
+    last_error     TEXT,
+    requested_at   TEXT NOT NULL,
+    finished_at    TEXT,
+    archive_dir    TEXT NOT NULL DEFAULT '',
+    aggregate_dir  TEXT NOT NULL DEFAULT '',
+    selected_run_id TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS idx_projection_requests_status
+  ON projection_requests (status);
 
 -- schema v5 (protocol 0.2.0, design R6): per-executor-call invocations
 CREATE TABLE IF NOT EXISTS executor_calls (

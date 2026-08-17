@@ -66,11 +66,12 @@ class _CountingRunner:
                 JobRepository(self.store).transition_status(
                     job_id, S.FAILED, event_type="fake_fail", payload={"reason": "injected"}
                 )
-            elif JobRepository(self.store).get_job(job_id).status == S.SEMANTIC:
+            elif JobRepository(self.store).get_job(job_id).status == S.RUNNING:
                 jobs = JobRepository(self.store)
-                jobs.transition_status(job_id, S.AGGREGATION, event_type="enter_aggregation")
-                jobs.transition_status(job_id, S.ARCHIVE, event_type="enter_archive")
-                jobs.transition_status(job_id, S.SITE_HISTORY, event_type="enter_site_history")
+                for stage in (S.STAGE_AGGREGATION, S.STAGE_REPORT, S.STAGE_ARCHIVE):
+                    jobs.transition_status(
+                        job_id, S.RUNNING, stage=stage, event_type=f"enter_{stage}"
+                    )
                 jobs.transition_status(job_id, S.COMPLETED, event_type="job_completed")
         finally:
             with self._guard:
@@ -79,11 +80,13 @@ class _CountingRunner:
 
     def _advance_to_semantic(self, job_id: str) -> None:
         jobs = JobRepository(self.store)
-        status = jobs.get_job(job_id).status
-        if status == S.QUEUED:
-            jobs.transition_status(job_id, S.PREPARING, event_type="enter_preparing")
-            jobs.transition_status(job_id, S.EVIDENCE, event_type="enter_evidence")
-            jobs.transition_status(job_id, S.SEMANTIC, event_type="enter_semantic")
+        job = jobs.get_job(job_id)
+        if job.status == S.QUEUED:
+            jobs.transition_status(job_id, S.RUNNING, event_type="enter_running")
+        for stage in (S.STAGE_PREPARING, S.STAGE_EVIDENCE, S.STAGE_OBSERVATION):
+            jobs.transition_status(
+                job_id, S.RUNNING, stage=stage, event_type=f"enter_{stage}"
+            )
 
 
 class _SchedulerTestBase(unittest.TestCase):
@@ -210,10 +213,8 @@ class CancellationTest(_SchedulerTestBase):
 
     def test_awaiting_executor_job_is_cancelled_without_registry_entry(self) -> None:
         a = self._create("04-01-01", job_id="a" * 40)
-        self.jobs.transition_status(a, S.PREPARING, event_type="enter_preparing")
-        self.jobs.transition_status(a, S.EVIDENCE, event_type="enter_evidence")
-        self.jobs.transition_status(a, S.SEMANTIC, event_type="enter_semantic")
-        self.jobs.transition_status(a, S.AWAITING_EXECUTOR, event_type="awaiting_executor")
+        self.jobs.transition_status(a, S.RUNNING, event_type="enter_running")
+        self.jobs.transition_status(a, S.WAITING, event_type="awaiting_executor")
         d = Dispatcher(self.store, job_runner=lambda job_id, cancel: None, max_workers=1)
 
         result = d.cancel(a)
@@ -227,9 +228,10 @@ class CancellationTest(_SchedulerTestBase):
 
         def incomplete_runner(job_id: str, cancel: threading.Event) -> None:
             jobs = JobRepository(self.store)
-            jobs.transition_status(job_id, S.PREPARING, event_type="enter_preparing")
-            jobs.transition_status(job_id, S.EVIDENCE, event_type="enter_evidence")
-            jobs.transition_status(job_id, S.SEMANTIC, event_type="enter_semantic")
+            jobs.transition_status(job_id, S.RUNNING, event_type="enter_running")
+            jobs.transition_status(
+                job_id, S.RUNNING, stage=S.STAGE_OBSERVATION, event_type="enter_observation"
+            )
 
         d = Dispatcher(self.store, job_runner=incomplete_runner, max_workers=1)
         d.start()
@@ -272,10 +274,19 @@ class CancellationTest(_SchedulerTestBase):
 class JobWorkerCancellationTest(_SchedulerTestBase):
     def test_aggregation_cancelled_outcome_is_persisted_before_cleanup(self) -> None:
         a = self._create("04-01-01", job_id="a" * 40)
-        self.jobs.transition_status(a, S.PREPARING, event_type="enter_preparing")
-        self.jobs.transition_status(a, S.EVIDENCE, event_type="enter_evidence")
-        self.jobs.transition_status(a, S.SEMANTIC, event_type="enter_semantic")
-        self.jobs.transition_status(a, S.AGGREGATION, event_type="enter_aggregation")
+        self.jobs.transition_status(a, S.RUNNING, event_type="enter_running")
+        self.jobs.transition_status(
+            a, S.RUNNING, stage=S.STAGE_PREPARING, event_type="enter_preparing"
+        )
+        self.jobs.transition_status(
+            a, S.RUNNING, stage=S.STAGE_EVIDENCE, event_type="enter_evidence"
+        )
+        self.jobs.transition_status(
+            a, S.RUNNING, stage=S.STAGE_OBSERVATION, event_type="enter_observation"
+        )
+        self.jobs.transition_status(
+            a, S.RUNNING, stage=S.STAGE_AGGREGATION, event_type="enter_aggregation"
+        )
         runner = build_runner(self.settings, self.store, object())
 
         with (

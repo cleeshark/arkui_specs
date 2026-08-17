@@ -65,7 +65,13 @@ class Dispatcher:
 
     # --- lifecycle --------------------------------------------------------
     def start(self) -> None:
-        """Start workers and enqueue every job currently ``queued``."""
+        """Start workers, enqueue ``queued`` jobs, retry pending projections."""
+        from ..pipeline.projector import run_pending_projections
+
+        try:
+            run_pending_projections(self._store.settings)
+        except Exception:  # noqa: BLE001 - projections must never block startup
+            pass
         jobs = JobRepository(self._store).list_jobs(status=S.QUEUED, limit=10_000)
         for job in jobs:
             self._enqueue(job.job_id, job.func_id)
@@ -110,7 +116,11 @@ class Dispatcher:
                 return self._cancel_race_result(job_id)
             return CancelResult(True, "cancelled", cancelled.status, "job cancelled")
 
-        if job.status in S.CANCELLABLE_WORKER_STATES:
+        if job.status in S.CANCELLABLE_WORKER_STATES and (
+            # archive/report are deterministic closing steps with no executor
+            # left to cooperate; cancelling there races the completion
+            job.stage not in (S.STAGE_ARCHIVE, S.STAGE_REPORT)
+        ):
             already_requested = self._cancels.is_cancelled(job_id)
             if self._cancels.cancel(job_id):
                 if not already_requested:
@@ -148,7 +158,7 @@ class Dispatcher:
             False,
             "stage_not_cancellable",
             job.status,
-            f"job cannot be cancelled while {job.status}",
+            f"job cannot be cancelled while {job.status}/{job.stage}",
         )
 
     def _cancel_race_result(self, job_id: str) -> CancelResult:

@@ -9,6 +9,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from spec_eval.service.domain.errors import SnapshotConflictError
+from spec_eval.service.domain import states as S
 from spec_eval.service.domain.models import CreateJobCommand, DependencySnapshot, Job, default_progress
 from spec_eval.service.settings import ServiceSettings
 from spec_eval.service.store.repositories import DependencySnapshotRepository, JobRepository
@@ -90,6 +91,7 @@ class RevisionWorkspaceManagerTest(unittest.TestCase):
             run_count=1,
             selected_run_ids=(),
             status="queued",
+            stage=S.STAGE_PREPARING,
             progress=default_progress("queued"),
             executor_config={},
             protocol_version="0.1.0",

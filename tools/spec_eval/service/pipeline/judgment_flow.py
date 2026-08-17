@@ -129,7 +129,7 @@ class JudgmentFlow:
         if result.status == C.STATUS_AWAITING:
             self.jobs.transition_status(
                 self.ctx.job_id,
-                S.AWAITING_EXECUTOR,
+                S.WAITING,
                 event_type="awaiting_executor",
                 payload={
                     "work_item_id": work.work_item_id,

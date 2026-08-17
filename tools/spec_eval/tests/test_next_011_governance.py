@@ -46,8 +46,10 @@ class _GovTestBase(unittest.TestCase):
             CreateJobCommand(func_id="04-01-01", source_revision="rev", run_count=1, job_id=job_id),
             evaluator_version=EVALUATOR_VERSION,
         )
-        for dst in (S.PREPARING, S.EVIDENCE, S.SEMANTIC, S.AGGREGATION, S.ARCHIVE, S.SITE_HISTORY, S.COMPLETED):
-            self.jobs.transition_status(job_id, dst, event_type=f"enter_{dst}" if dst != S.COMPLETED else "job_completed")
+        self.jobs.transition_status(job_id, S.RUNNING, event_type="enter_running")
+        for stage in (S.STAGE_PREPARING, S.STAGE_EVIDENCE, S.STAGE_OBSERVATION, S.STAGE_AGGREGATION, S.STAGE_REPORT, S.STAGE_ARCHIVE):
+            self.jobs.transition_status(job_id, S.RUNNING, stage=stage, event_type=f"enter_{stage}")
+        self.jobs.transition_status(job_id, S.COMPLETED, event_type="job_completed")
         return job_id
 
 
@@ -169,7 +171,7 @@ class BackupDiskTest(_GovTestBase):
         conn = sqlite3.connect(str(dest))
         row = conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()
         conn.close()
-        self.assertEqual(row[0], "5")
+        self.assertEqual(row[0], "6")
         # the live DB still works after backup
         self.assertEqual(len(self.jobs.list_jobs()), 1)
 

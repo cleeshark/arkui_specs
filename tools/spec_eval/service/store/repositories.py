@@ -50,6 +50,7 @@ def _job_from_row(row: sqlite3.Row) -> Job:
         run_count=int(row["run_count"]),
         selected_run_ids=tuple(json.loads(row["selected_run_ids"])),
         status=row["status"],
+        stage=row["stage"] if "stage" in row.keys() else "preparing",
         progress=json.loads(row["progress_json"]),
         executor_config=json.loads(row["executor_config"]),
         protocol_version=row["protocol_version"],
@@ -248,9 +249,9 @@ class JobRepository:
             progress = default_progress(S.QUEUED)
             self._conn.execute(
                 "INSERT INTO jobs (job_id, func_id, source_revision, run_count, "
-                "selected_run_ids, status, progress_json, executor_config, "
+                "selected_run_ids, status, stage, progress_json, executor_config, "
                 "protocol_version, evaluator_version, created_at, updated_at) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     job_id,
                     cmd.func_id,
@@ -258,6 +259,7 @@ class JobRepository:
                     cmd.run_count,
                     json.dumps(list(cmd.selected_run_ids)),
                     S.QUEUED,
+                    S.STAGE_PREPARING,
                     json.dumps(progress, ensure_ascii=False),
                     json.dumps(executor_config, ensure_ascii=False),
                     protocol_version,
@@ -332,8 +334,15 @@ class JobRepository:
         *,
         event_type: str,
         payload: dict[str, Any] | None = None,
+        stage: str | None = None,
     ) -> Job:
-        """Validate the transition via the state matrix, update status and log it."""
+        """Validate the transition via the state matrix, update status/stage.
+
+        ``stage`` advances the pipeline stage independently of the lifecycle
+        status (running -> running transitions advance the stage); when
+        omitted the persisted stage is left untouched (failures keep the
+        stage that failed).
+        """
         with self._store._tx(immediate=True):
             row = self._conn.execute(
                 "SELECT * FROM jobs WHERE job_id = ?", (job_id,)
@@ -343,11 +352,18 @@ class JobRepository:
             src = row["status"]
             new = S.transition(src, dst)  # raises IllegalTransitionError if illegal
             now = utc_now()
-            self._conn.execute(
-                "UPDATE jobs SET status = ?, updated_at = ? WHERE job_id = ?",
-                (new, now, job_id),
-            )
-            if new == S.PREPARING:
+            if stage is not None and stage in S.JOB_STAGES:
+                self._conn.execute(
+                    "UPDATE jobs SET status = ?, stage = ?, updated_at = ? "
+                    "WHERE job_id = ?",
+                    (new, stage, now, job_id),
+                )
+            else:
+                self._conn.execute(
+                    "UPDATE jobs SET status = ?, updated_at = ? WHERE job_id = ?",
+                    (new, now, job_id),
+                )
+            if new == S.RUNNING and stage == S.STAGE_PREPARING:
                 self._conn.execute(
                     "UPDATE job_statistics SET started_at = COALESCE(started_at, ?), "
                     "finished_at = NULL, updated_at = ? WHERE job_id = ?",
@@ -584,6 +600,87 @@ class AttemptRepository:
                     (job_id, stage),
                 ).fetchall()
             return [_attempt_from_row(r) for r in rows]
+
+
+class ProjectionRepository:
+    """Asynchronous projection outbox (protocol 0.2.0 S3, design R6/D2).
+
+    One row per completed job; ``report_id`` is the idempotency key. A
+    projection failure is recorded here and never changes the completed
+    job's terminal state.
+    """
+
+    def __init__(self, store: "SqliteStore") -> None:
+        self._store = store
+
+    def enqueue(
+        self,
+        *,
+        job_id: str,
+        report_id: str,
+        archive_dir: str,
+        aggregate_dir: str,
+        selected_run_id: str,
+    ) -> None:
+        now = utc_now()
+        with self._store._tx() as conn:
+            conn.execute(
+                """
+                INSERT OR IGNORE INTO projection_requests (
+                    job_id, report_id, status, attempts, requested_at,
+                    archive_dir, aggregate_dir, selected_run_id
+                ) VALUES (?, ?, 'pending', 0, ?, ?, ?, ?)
+                """,
+                (job_id, report_id, now, archive_dir, aggregate_dir, selected_run_id),
+            )
+
+    def get(self, job_id: str) -> dict[str, Any] | None:
+        with self._store._tx() as conn:
+            row = conn.execute(
+                "SELECT * FROM projection_requests WHERE job_id = ?", (job_id,)
+            ).fetchone()
+        return dict(row) if row is not None else None
+
+    def mark_running(self, job_id: str) -> None:
+        with self._store._tx() as conn:
+            conn.execute(
+                "UPDATE projection_requests SET status = 'running', "
+                "attempts = attempts + 1, last_error = NULL WHERE job_id = ?",
+                (job_id,),
+            )
+
+    def mark_completed(self, job_id: str) -> None:
+        with self._store._tx() as conn:
+            conn.execute(
+                "UPDATE projection_requests SET status = 'completed', "
+                "finished_at = ? WHERE job_id = ?",
+                (utc_now(), job_id),
+            )
+
+    def mark_failed(self, job_id: str, error: str) -> None:
+        with self._store._tx() as conn:
+            conn.execute(
+                "UPDATE projection_requests SET status = 'failed', "
+                "last_error = ?, finished_at = ? WHERE job_id = ?",
+                (error, utc_now(), job_id),
+            )
+
+    def requeue_failed(self, job_id: str) -> None:
+        with self._store._tx() as conn:
+            conn.execute(
+                "UPDATE projection_requests SET status = 'pending', "
+                "last_error = NULL, finished_at = NULL WHERE job_id = ?",
+                (job_id,),
+            )
+
+    def list_by_status(self, status: str) -> list[dict[str, Any]]:
+        with self._store._tx() as conn:
+            rows = conn.execute(
+                "SELECT * FROM projection_requests WHERE status = ? "
+                "ORDER BY requested_at",
+                (status,),
+            ).fetchall()
+        return [dict(row) for row in rows]
 
 
 class ExecutorCallRepository:
