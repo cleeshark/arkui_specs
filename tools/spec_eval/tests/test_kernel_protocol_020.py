@@ -700,7 +700,7 @@ class EnvelopeV3ParseTest(unittest.TestCase):
         self.assertEqual(result.status, C.STATUS_COMPLETED)
         self.assertEqual(result.observation["notes"], [])
 
-    def test_v2_string_still_accepted(self) -> None:
+    def test_v2_string_rejected_after_schema_upgrade(self) -> None:
         from spec_eval.service.executors import contract as C
 
         result = self._run({
@@ -711,8 +711,8 @@ class EnvelopeV3ParseTest(unittest.TestCase):
             "notes": [],
             "error": None,
         })
-        self.assertEqual(result.status, C.STATUS_COMPLETED)
-        self.assertEqual(result.observation, {"claim_reviews": []})
+        self.assertEqual(result.status, C.STATUS_FAILED)
+        self.assertIn("schema", (result.error or "").lower())
 
     def test_completed_without_payload_fails(self) -> None:
         from spec_eval.service.executors import contract as C

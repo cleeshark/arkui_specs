@@ -99,10 +99,10 @@ class FakeExecutor:
             }
         )
         doc = {
-            "schema_version": 2,
+            "schema_version": 3,
             "work_item_id": work.work_item_id,
             "status": "completed",
-            "observation_json": json.dumps(payload),
+            "payload": payload,
             "notes": [],
             "error": None,
         }

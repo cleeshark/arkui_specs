@@ -23,6 +23,27 @@ from spec_eval.service.executors.redaction import redact_jsonl
 from spec_eval.service.settings import ServiceSettings
 
 
+def _write_v3_envelope_schema(directory: str) -> str:
+    """Write a minimal v3 envelope schema for validation tests."""
+    schema = {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "required": ["schema_version", "work_item_id", "status", "payload", "notes", "error"],
+        "properties": {
+            "schema_version": {"type": "integer", "const": 3},
+            "work_item_id": {"type": "string", "minLength": 1},
+            "status": {"type": "string", "enum": ["completed", "failed"]},
+            "payload": {},
+            "notes": {"type": "array", "items": {"type": "string"}},
+            "error": {"type": ["string", "null"]},
+        },
+        "additionalProperties": False,
+    }
+    path = str(Path(directory) / "envelope-observation.schema.json")
+    Path(path).write_text(json.dumps(schema), encoding="utf-8")
+    return path
+
+
 def _result_doc(
     work_item_id: str,
     *,
@@ -31,16 +52,14 @@ def _result_doc(
     error: str | None = None,
 ) -> dict:
     return {
-        "schema_version": 2,
+        "schema_version": 3,
         "work_item_id": work_item_id,
         "status": status,
-        "observation_json": (
-            json.dumps(
-                observation if observation is not None else {"observation_id": work_item_id}
-            )
-            if status == "completed"
-            else None
-        ),
+        "payload": (
+            observation if observation is not None else {"observation_id": work_item_id}
+        )
+        if status == "completed"
+        else None,
         "notes": [],
         "error": error,
     }
@@ -231,6 +250,7 @@ class CodexExecutorTest(unittest.TestCase):
         self.assertEqual(_argv_value(argv, "--output-last-message"), self.work.executor_result_path)
 
     def test_observe_prompt_is_normative_machine_contract(self) -> None:
+        schema_path = _write_v3_envelope_schema(self.tmp.name)
         work = replace(
             self.work,
             input_paths=("/tmp/input/evidence/Feat-01.json", "/tmp/specs/Feat-01-spec.md"),
@@ -244,7 +264,7 @@ class CodexExecutorTest(unittest.TestCase):
                     "open_questions", "notes",
                 ],
                 "service_derived_fields": ["ordering", "stable evidence IDs"],
-                "schema_path": "/tmp/run/envelope-observation.schema.json",
+                "schema_path": schema_path,
                 "template_path": "/tmp/Feat-01.json",
                 "machine_contract": {
                     "expected_claim_ids": ["Feat-01/AC-1"],
@@ -265,13 +285,14 @@ class CodexExecutorTest(unittest.TestCase):
         self.assertIn("evidence_refs", requirement)
         self.assertIn("never emit canonical EV- IDs", requirement)
         self.assertEqual(
-            prompt["output"]["schema"], "/tmp/run/envelope-observation.schema.json"
+            prompt["output"]["schema"], schema_path
         )
         self.assertEqual(
             prompt["machine_contract"]["expected_claim_ids"], ["Feat-01/AC-1"]
         )
 
     def test_correct_prompt_carries_candidate_and_typed_errors(self) -> None:
+        schema_path = _write_v3_envelope_schema(self.tmp.name)
         work = replace(
             self.work,
             input_paths=("/tmp/run/.Feat-01.json.candidate", "/tmp/input/evidence/Feat-01.json"),
@@ -282,7 +303,7 @@ class CodexExecutorTest(unittest.TestCase):
                 "payload_kind": "observation",
                 "payload_fields": ["evidence_declarations", "claim_reviews", "observations"],
                 "service_derived_fields": ["ordering"],
-                "schema_path": "/tmp/run/envelope-observation.schema.json",
+                "schema_path": schema_path,
                 "candidate_path": "/tmp/run/.Feat-01.json.candidate",
                 "typed_errors": [{
                     "code": "GAP_MISSING_FOR_NV",
@@ -324,20 +345,20 @@ class CodexExecutorTest(unittest.TestCase):
         self.assertEqual(result.status, C.STATUS_FAILED)
 
     def test_bad_schema_result_is_failed(self) -> None:
-        bad = {"schema_version": 2, "work_item_id": self.work.work_item_id}  # missing required fields
+        bad = {"schema_version": 2, "work_item_id": self.work.work_item_id}  # wrong version + missing fields
         runner = _FakeRunner(result_doc=bad)
         result = self._executor(runner).execute(self.work, lambda e: None)
         self.assertEqual(result.status, C.STATUS_FAILED)
         self.assertIn("schema", (result.error or "").lower())
 
-    def test_invalid_observation_json_is_failed(self) -> None:
+    def test_invalid_payload_type_is_failed(self) -> None:
         document = _result_doc(self.work.work_item_id)
-        document["observation_json"] = "not-json"
+        document["payload"] = "not-an-object"
         result = self._executor(_FakeRunner(result_doc=document)).execute(
             self.work, lambda e: None
         )
         self.assertEqual(result.status, C.STATUS_FAILED)
-        self.assertIn("observation_json", result.error or "")
+        self.assertIn("payload", result.error or "")
 
     def test_reported_failed_status_is_not_promoted_to_completed(self) -> None:
         document = _result_doc(
