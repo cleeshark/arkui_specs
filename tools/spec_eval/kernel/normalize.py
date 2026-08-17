@@ -1,0 +1,516 @@
+"""Deterministic normalization for evaluator protocol 0.2.0 (design L2).
+
+Everything the model must not own happens here: stable evidence ID
+assignment, content hash computation against frozen files, claim row ordering
+against the initialized template, derived fields, canonical finding IDs,
+secondary criterion derivation, and the expansion of a judgment payload plus
+template into the historical published document shape consumed by
+aggregation-context, score and the frozen semantic-result schema.
+
+The normalizer is idempotent and never mutates its inputs.
+"""
+
+from __future__ import annotations
+
+import copy
+import hashlib
+import json
+import re
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
+
+from . import contracts as K
+from .errors import FATAL_INPUT, TypedError
+
+DEFECT_KEY = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
+SEMANTIC_FINDING_IDENTITY_VERSION = 1
+OUTCOME_POLICY_BASIS_CRITERIA = (
+    "SPEC-AC-TESTABILITY",
+    "SPEC-TRACEABILITY",
+    "DESIGN-IMPACT-COVERAGE",
+    "DESIGN-VERIFICATION-PLAN",
+    "COMPATIBILITY-API-VERSION",
+    "COMPATIBILITY-MULTI-DEVICE",
+)
+
+
+@dataclass(frozen=True)
+class NormalizationResult:
+    """Output of one normalization pass.
+
+    ``fatal`` carries FATAL_INPUT errors (unreadable frozen evidence, damaged
+    templates); ``changes`` are human-readable notes for the SERVICE_
+    NORMALIZATION fixes applied. The document is None only when fatal is set.
+    """
+
+    document: dict[str, Any] | None
+    changes: list[str] = field(default_factory=list)
+    fatal: list[TypedError] = field(default_factory=list)
+    evidence_catalog: list[dict[str, Any]] = field(default_factory=list)
+
+
+def semantic_finding_id(
+    *, func_id: str, defect_key: str, criterion_id: str, claim_id: str | None
+) -> str:
+    """Stable semantic Finding identity for one owned defect projection."""
+    identity = {
+        "identity_version": SEMANTIC_FINDING_IDENTITY_VERSION,
+        "func_id": func_id,
+        "defect_key": defect_key,
+        "criterion_id": criterion_id,
+        "claim_id": claim_id,
+    }
+    encoded = json.dumps(
+        identity, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")
+    return "SEM-" + hashlib.sha256(encoded).hexdigest()[:24]
+
+
+def _content_hash(path: Path) -> str | None:
+    try:
+        digest = hashlib.sha256()
+        with path.open("rb") as stream:
+            for block in iter(lambda: stream.read(1024 * 1024), b""):
+                digest.update(block)
+    except OSError:
+        return None
+    return f"sha256:{digest.hexdigest()}"
+
+
+def _rows(value: Any) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        return []
+    return [row for row in value if isinstance(row, dict)]
+
+
+def _strings(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [item for item in value if isinstance(item, str) and item]
+
+
+def normalize_observation(
+    template: dict[str, Any],
+    judgment: dict[str, Any],
+    *,
+    repo_root: Path,
+) -> NormalizationResult:
+    """Expand one observation judgment payload into the published document.
+
+    ``template`` is the initialized observation template (identity, expected
+    claim IDs, required checks); ``judgment`` is the executor payload
+    (claim_reviews / observations / open_questions / notes); ``repo_root`` is
+    the frozen workspace root used to hash declared evidence paths.
+    """
+    fatal: list[TypedError] = []
+    changes: list[str] = []
+
+    expected_claims = _strings(template.get("expected_claim_ids"))
+    if not expected_claims:
+        fatal.append(TypedError(
+            "TEMPLATE_MISSING_FIELD", "$.expected_claim_ids",
+            repairability=FATAL_INPUT, actual="empty",
+        ))
+    required_checks = _strings(template.get("required_checks"))
+
+    # 1. top-level evidence declarations -> stable IDs + verified content
+    #    hashes (design v3 / review §3.4: local keys are work-item scoped and
+    #    live at the payload top level; publish converts them to canonical IDs)
+    published: dict[str, Any] = copy.deepcopy(template)
+    source_revision = str(template.get("source_revision", ""))
+    evidence_by_key: dict[str, dict[str, Any]] = {}
+    declaration_order: list[str] = []
+    for decl_index, declaration in enumerate(_rows(judgment.get("evidence_declarations"))):
+        key = declaration.get("key")
+        path_text = declaration.get("path")
+        if not isinstance(key, str) or not isinstance(path_text, str):
+            fatal.append(TypedError(
+                "EVIDENCE_PATH_UNREADABLE",
+                f"$.evidence_declarations[{decl_index}]",
+                entity_type="evidence", actual=str(declaration.get("key", "")),
+                repairability=FATAL_INPUT,
+            ))
+            continue
+        if key in evidence_by_key:
+            fatal.append(TypedError(
+                "EVIDENCE_PATH_UNREADABLE",
+                f"$.evidence_declarations[{decl_index}].key",
+                entity_type="evidence", entity_id=key,
+                expected="unique declaration key", actual="duplicate",
+                repairability=FATAL_INPUT,
+            ))
+            continue
+        hash_value = _content_hash(repo_root / path_text)
+        if hash_value is None:
+            fatal.append(TypedError(
+                "EVIDENCE_PATH_UNREADABLE",
+                f"$.evidence_declarations[{decl_index}].path",
+                entity_type="evidence", entity_id=key,
+                expected="readable path under the frozen workspace",
+                actual=path_text, repairability=FATAL_INPUT,
+            ))
+            continue
+        row = {
+            "evidence_id": f"EV-{len(evidence_by_key) + 1}",
+            "type": declaration.get("type"),
+            "path": path_text,
+            "source_revision": source_revision,
+            "content_hash": hash_value,
+            "description": declaration.get("description", ""),
+        }
+        evidence_by_key[key] = row
+        declaration_order.append(key)
+    changes.append(
+        "evidence_declarations: canonical IDs assigned and hashes verified"
+    )
+
+    def _resolve_evidence_ids(raw: Any) -> list[str]:
+        resolved: list[str] = []
+        for item in _strings(raw):
+            row = evidence_by_key.get(item)
+            if row is not None:
+                resolved.append(row["evidence_id"])
+            else:
+                # catalog references (EV-*) and unknown keys pass through; the
+                # validator reports anything not defined in this document
+                resolved.append(item)
+        return resolved
+
+    # 2. published observations: each carries the declared evidence rows it
+    #    references; claim-only references attach to the first observation so
+    #    the published invariant (claim evidence defined by observations) holds
+    observations: list[dict[str, Any]] = []
+    for obs_index, entry in enumerate(_rows(judgment.get("observations"))):
+        evidence_rows = [
+            evidence_by_key[key]
+            for key in _strings(entry.get("evidence_refs"))
+            if key in evidence_by_key
+        ]
+        observations.append({
+            "observation_id": f"OBS-{obs_index + 1}",
+            "criterion_ids": _strings(entry.get("criterion_ids")),
+            "check_ids": _strings(entry.get("check_ids")),
+            "claim_ids": _strings(entry.get("claim_ids")),
+            "local_outcome": entry.get("local_outcome"),
+            "breadth": entry.get("breadth"),
+            "contract_family": entry.get("contract_family", ""),
+            "fact": entry.get("fact", ""),
+            "defect_key": entry.get("defect_key"),
+            "primary_criterion_id": entry.get("primary_criterion_id"),
+            "evidence": evidence_rows,
+        })
+    claim_referenced_keys: list[str] = []
+    for row in _rows(judgment.get("claim_reviews")):
+        claim_referenced_keys.extend(_strings(row.get("evidence_refs")))
+        for unit in _rows(row.get("unit_reviews")):
+            claim_referenced_keys.extend(_strings(unit.get("evidence_refs")))
+    obs_referenced_keys: set[str] = {
+        key
+        for entry in _rows(judgment.get("observations"))
+        for key in _strings(entry.get("evidence_refs"))
+    }
+    if observations:
+        for key in declaration_order:
+            if key in obs_referenced_keys:
+                continue
+            if key in claim_referenced_keys and evidence_by_key[key] not in observations[0]["evidence"]:
+                observations[0]["evidence"].append(evidence_by_key[key])
+
+    criteria_by_claim: dict[str, list[str]] = {}
+    for entry in observations:
+        for claim_id in entry["claim_ids"]:
+            criteria_by_claim.setdefault(claim_id, [])
+            for criterion_id in entry["criterion_ids"]:
+                if criterion_id not in criteria_by_claim[claim_id]:
+                    criteria_by_claim[claim_id].append(criterion_id)
+
+    # 2. claim judgments ordered by the template's expected claim IDs
+    judgments_by_id = {
+        row.get("claim_id"): row
+        for row in _rows(judgment.get("claim_reviews"))
+        if isinstance(row.get("claim_id"), str)
+    }
+    claim_reviews: list[dict[str, Any]] = []
+    for claim_id in expected_claims:
+        row = judgments_by_id.get(claim_id)
+        if row is None:
+            claim_reviews.append({
+                "claim_id": claim_id, "status": "pending",
+                "local_outcome": K.NOT_VERIFIABLE, "reviewed_units": [],
+                "unit_reviews": [], "criterion_ids": [], "evidence_ids": [],
+                "defect_keys": [], "reason": "",
+                "verification_gap": None,
+            })
+            continue
+        units = _rows(row.get("unit_reviews"))
+        claim_reviews.append({
+            "claim_id": claim_id,
+            "status": "complete",
+            "local_outcome": row.get("local_outcome"),
+            "reviewed_units": [
+                unit.get("unit_id") for unit in units
+                if isinstance(unit.get("unit_id"), str)
+            ],
+            "unit_reviews": [{
+                "unit_id": unit.get("unit_id"),
+                "facet_type": unit.get("facet_type"),
+                "local_outcome": unit.get("local_outcome"),
+                "evidence_ids": _resolve_evidence_ids(unit.get("evidence_refs")),
+                "fact": unit.get("fact", ""),
+                "verification_gap": unit.get("verification_gap"),
+            } for unit in units],
+            "criterion_ids": criteria_by_claim.get(claim_id, []),
+            "evidence_ids": _resolve_evidence_ids(row.get("evidence_refs")),
+            "defect_keys": _strings(row.get("defect_keys")),
+            "reason": row.get("reason", ""),
+            "verification_gap": (
+                row.get("verification_gap")
+                if row.get("local_outcome") == K.NOT_VERIFIABLE else None
+            ),
+        })
+    unexpected = sorted(set(judgments_by_id) - set(expected_claims))
+    if unexpected:
+        # unexpected claim judgments are dropped; the validator reports them
+        changes.append(f"claim_reviews: dropped judgments outside expected set: {unexpected}")
+
+    published["claim_reviews"] = claim_reviews
+    published["observations"] = observations
+    published["open_questions"] = copy.deepcopy(judgment.get("open_questions") or [])
+    published["notes"] = copy.deepcopy(judgment.get("notes") or [])
+    published["status"] = "complete"
+    published["reviewed_claim_ids"] = [
+        row["claim_id"] for row in claim_reviews if row.get("status") == "complete"
+    ]
+    published["completed_checks"] = sorted({
+        check for entry in observations for check in entry["check_ids"]
+    })
+    catalog = [
+        {
+            "evidence_id": row["evidence_id"], "type": row["type"],
+            "path": row["path"], "description": row["description"],
+        }
+        for row in evidence_by_key.values()
+    ]
+    if fatal:
+        return NormalizationResult(None, changes, fatal, catalog)
+    return NormalizationResult(published, changes, [], catalog)
+
+
+def normalize_aggregation(
+    template: dict[str, Any],
+    judgment: dict[str, Any],
+    *,
+    source_observation_ids: list[str],
+) -> NormalizationResult:
+    """Expand one aggregation judgment payload into the published document.
+
+    Deterministic only: canonical finding IDs from ownership keys, secondary
+    criterion derivation, applicability_reason copy, criterion order from the
+    template. Conclusions, evidence citations and prose pass through.
+    """
+    changes: list[str] = []
+    fatal: list[TypedError] = []
+    func_id = str(template.get("func_id", ""))
+    if not func_id:
+        fatal.append(TypedError(
+            "TEMPLATE_MISSING_FIELD", "$.func_id", repairability=FATAL_INPUT,
+        ))
+        return NormalizationResult(None, [], fatal)
+
+    ownership_rows = _rows(judgment.get("defect_ownership"))
+    owner_by_finding_key: dict[str, str] = {}
+    for record in ownership_rows:
+        defect_key = record.get("defect_key")
+        for finding_key in _strings(record.get("finding_keys")):
+            previous = owner_by_finding_key.get(finding_key)
+            if previous is not None and previous != defect_key:
+                fatal.append(TypedError(
+                    "DUPLICATE_DEFECT_OWNER", "$.defect_ownership",
+                    entity_type="finding", entity_id=finding_key,
+                    expected="one owner", actual=f"{previous} and {defect_key}",
+                    repairability=FATAL_INPUT,
+                ))
+            else:
+                owner_by_finding_key[finding_key] = str(defect_key)
+
+    template_results = {
+        row.get("criterion_id"): row
+        for row in _rows(template.get("criterion_results"))
+    }
+    judgment_by_criterion = {
+        row.get("criterion_id"): row
+        for row in _rows(judgment.get("criterion_results"))
+    }
+    criterion_results: list[dict[str, Any]] = []
+    canonical_ids: set[str] = set()
+    finding_by_key: dict[str, dict[str, Any]] = {}
+    for criterion_id, template_row in template_results.items():
+        row = judgment_by_criterion.get(criterion_id, {})
+        conclusion = row.get("conclusion")
+        reason = str(row.get("reason", ""))
+        applicability_reason = row.get("applicability_reason")
+        if (
+            conclusion == "NOT_APPLICABLE"
+            and not str(applicability_reason or "").strip()
+            and reason.strip()
+        ):
+            applicability_reason = reason
+            changes.append(f"criterion_results[{criterion_id}].applicability_reason copied")
+        findings: list[dict[str, Any]] = []
+        for finding in _rows(row.get("findings")):
+            finding_key = finding.get("key")
+            defect_key = (
+                owner_by_finding_key.get(finding_key)
+                if isinstance(finding_key, str) else None
+            )
+            claim_id = finding.get("claim_id")
+            finding_id = None
+            if defect_key is not None and isinstance(criterion_id, str):
+                finding_id = semantic_finding_id(
+                    func_id=func_id, defect_key=defect_key,
+                    criterion_id=criterion_id,
+                    claim_id=claim_id if isinstance(claim_id, str) else None,
+                )
+                if finding_id in canonical_ids:
+                    fatal.append(TypedError(
+                        "FINDING_ID_COLLISION",
+                        f"$.criterion_results[{criterion_id}].findings",
+                        entity_type="finding", entity_id=str(finding_key),
+                        actual=finding_id, repairability=FATAL_INPUT,
+                    ))
+                    finding_id = None
+                else:
+                    canonical_ids.add(finding_id)
+            published_finding = {
+                "finding_id": finding_id,
+                "criterion_id": criterion_id,
+                "claim_id": claim_id if isinstance(claim_id, str) else None,
+                "severity": finding.get("severity"),
+                "message": finding.get("message", ""),
+                "evidence_ids": _strings(finding.get("evidence_ids")),
+                "recommendation": finding.get("recommendation"),
+            }
+            findings.append(published_finding)
+            if isinstance(finding_key, str):
+                finding_by_key[finding_key] = published_finding
+        criterion_results.append({
+            "criterion_id": criterion_id,
+            "conclusion": conclusion,
+            "applicability": row.get("applicability", template_row.get("applicability")),
+            "reason": reason,
+            "applicability_reason": applicability_reason,
+            "missing_evidence": row.get("missing_evidence"),
+            "evidence": copy.deepcopy(row.get("evidence") or []),
+            "claim_ids": _strings(row.get("claim_ids")),
+            "findings": findings,
+        })
+        if finding_id is not None or findings:
+            changes.append(
+                f"criterion_results[{criterion_id}]: canonical finding IDs assigned"
+            )
+    extra = sorted(set(judgment_by_criterion) - set(template_results))
+    if extra:
+        changes.append(f"criterion_results: dropped unexpected criteria: {extra}")
+
+    # map canonical finding IDs for ownership and validator lookups
+    findings_by_id: dict[str, dict[str, Any]] = {}
+    for result in criterion_results:
+        for finding in result["findings"]:
+            fid = finding.get("finding_id")
+            if isinstance(fid, str):
+                findings_by_id[fid] = finding
+
+    defect_ownership: list[dict[str, Any]] = []
+    for record in ownership_rows:
+        defect_key = str(record.get("defect_key", ""))
+        primary = record.get("primary_criterion_id")
+        finding_ids = [
+            finding_by_key[key]["finding_id"]
+            for key in _strings(record.get("finding_keys"))
+            if key in finding_by_key and finding_by_key[key].get("finding_id")
+        ]
+        owned = [
+            findings_by_id[fid] for fid in finding_ids if fid in findings_by_id
+        ]
+        expected_secondary = sorted({
+            finding["criterion_id"] for finding in owned
+            if isinstance(finding.get("criterion_id"), str)
+            and finding["criterion_id"] != primary
+        })
+        defect_ownership.append({
+            "defect_key": defect_key,
+            "primary_criterion_id": primary,
+            "finding_ids": finding_ids,
+            "secondary_criterion_ids": expected_secondary,
+            "rationale": record.get("rationale", ""),
+        })
+        changes.append(f"defect_ownership[{defect_key}]: secondary criteria derived")
+
+    policy_template = {
+        row.get("criterion_id"): row
+        for row in _rows(template.get("outcome_policy_bases"))
+    }
+    policy_judgment = {
+        row.get("criterion_id"): row
+        for row in _rows(judgment.get("outcome_policy_bases"))
+    }
+    outcome_policy_bases = []
+    for criterion_id in OUTCOME_POLICY_BASIS_CRITERIA:
+        row = policy_judgment.get(criterion_id, policy_template.get(criterion_id, {}))
+        outcome_policy_bases.append({
+            "criterion_id": criterion_id,
+            "content_status": row.get("content_status"),
+            "evidence_status": row.get("evidence_status"),
+            "conflict_scope": row.get("conflict_scope"),
+            "reason": row.get("reason", ""),
+        })
+
+    published = copy.deepcopy(template)
+    published.update({
+        "status": "complete",
+        "source_observation_ids": list(source_observation_ids),
+        "cross_feat_contracts_reviewed": judgment.get("cross_feat_contracts_reviewed"),
+        "contradiction_bases": copy.deepcopy(judgment.get("contradiction_bases") or []),
+        "defect_ownership": defect_ownership,
+        "outcome_policy_bases": outcome_policy_bases,
+        "criterion_results": criterion_results,
+        "notes": copy.deepcopy(judgment.get("notes") or []),
+    })
+    if fatal:
+        return NormalizationResult(None, changes, fatal)
+    return NormalizationResult(published, changes, [])
+
+
+def assemble_semantic_result(
+    semantic_template: dict[str, Any], aggregation: dict[str, Any]
+) -> dict[str, Any]:
+    """Assemble the final semantic-result document (published shape)."""
+    candidate = copy.deepcopy(semantic_template)
+    results = copy.deepcopy(aggregation["criterion_results"])
+    candidate["criterion_results"] = results
+    candidate["coverage"] = {
+        "expected_criteria": len(results),
+        "evaluated_criteria": len(results),
+        "applicable_criteria": sum(
+            item.get("applicability") == "APPLICABLE" for item in results
+        ),
+        "not_applicable_criteria": sum(
+            item.get("conclusion") == "NOT_APPLICABLE" for item in results
+        ),
+        "not_verifiable_criteria": sum(
+            item.get("conclusion") == "NOT_VERIFIABLE" for item in results
+        ),
+    }
+    notes = list(candidate.get("execution", {}).get("notes", []))
+    notes.append(
+        "Staged execution: Feature and Function-global observations were "
+        "checkpointed before final aggregation."
+    )
+    candidate["execution"] = {
+        "static_complete": True,
+        "evidence_complete": True,
+        "semantic_complete": True,
+        "notes": notes,
+    }
+    return candidate

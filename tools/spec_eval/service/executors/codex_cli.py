@@ -225,38 +225,45 @@ class CodexCliExecutor:
                 event_count=event_count,
             )
         raw_observation = document.get("observation_json")
-        if not isinstance(raw_observation, str):
-            return _execution_result(
-                usage, telemetry,
-                status=C.STATUS_FAILED,
-                exit_code=proc_result.exit_code,
-                executor_result_path=work.executor_result_path,
-                error="completed executor result must contain observation_json",
-                elapsed_seconds=time.monotonic() - started,
-                event_count=event_count,
-            )
-        try:
-            observation = json.loads(raw_observation)
-        except json.JSONDecodeError as exc:
-            return _execution_result(
-                usage, telemetry,
-                status=C.STATUS_FAILED,
-                exit_code=proc_result.exit_code,
-                executor_result_path=work.executor_result_path,
-                error=f"observation_json is not valid JSON: {exc}",
-                elapsed_seconds=time.monotonic() - started,
-                event_count=event_count,
-            )
-        if not isinstance(observation, dict):
-            return _execution_result(
-                usage, telemetry,
-                status=C.STATUS_FAILED,
-                exit_code=proc_result.exit_code,
-                executor_result_path=work.executor_result_path,
-                error="observation_json must decode to an object",
-                elapsed_seconds=time.monotonic() - started,
-                event_count=event_count,
-            )
+        if isinstance(raw_observation, str):
+            try:
+                observation = json.loads(raw_observation)
+            except json.JSONDecodeError as exc:
+                return _execution_result(
+                    usage, telemetry,
+                    status=C.STATUS_FAILED,
+                    exit_code=proc_result.exit_code,
+                    executor_result_path=work.executor_result_path,
+                    error=f"observation_json is not valid JSON: {exc}",
+                    elapsed_seconds=time.monotonic() - started,
+                    event_count=event_count,
+                )
+            if not isinstance(observation, dict):
+                return _execution_result(
+                    usage, telemetry,
+                    status=C.STATUS_FAILED,
+                    exit_code=proc_result.exit_code,
+                    executor_result_path=work.executor_result_path,
+                    error="observation_json must decode to an object",
+                    elapsed_seconds=time.monotonic() - started,
+                    event_count=event_count,
+                )
+        else:
+            # protocol 0.2.0 envelope v3: the payload travels as a real
+            # nested object constrained by the generated strict schema
+            # (kernel.schema_gen), not as a JSON string.
+            observation = document.get("payload")
+            if not isinstance(observation, dict):
+                return _execution_result(
+                    usage, telemetry,
+                    status=C.STATUS_FAILED,
+                    exit_code=proc_result.exit_code,
+                    executor_result_path=work.executor_result_path,
+                    error="completed executor result must contain "
+                          "observation_json (v2) or payload (v3)",
+                    elapsed_seconds=time.monotonic() - started,
+                    event_count=event_count,
+                )
         return _execution_result(
             usage, telemetry,
             status=C.STATUS_COMPLETED,
