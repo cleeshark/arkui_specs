@@ -18,6 +18,7 @@ from ..domain.models import (
     Job,
     JobStatistics,
 )
+from ..domain import states as S
 
 
 def job_to_dict(job: Job, statistics: JobStatistics | None = None) -> dict[str, Any]:
@@ -28,6 +29,8 @@ def job_to_dict(job: Job, statistics: JobStatistics | None = None) -> dict[str, 
         "run_count": job.run_count,
         "selected_run_ids": list(job.selected_run_ids),
         "status": job.status,
+        "stage": job.stage,
+        "pipeline": _pipeline_stepper(job),
         "progress": job.progress,
         "executor_config": job.executor_config,
         "protocol_version": job.protocol_version,
@@ -40,6 +43,50 @@ def job_to_dict(job: Job, statistics: JobStatistics | None = None) -> dict[str, 
         document["usage"] = _usage_to_dict(statistics)
         document["executor_telemetry"] = _telemetry_to_dict(statistics)
     return document
+
+
+def _pipeline_stepper(job: Job) -> list[dict[str, Any]]:
+    """Build a six-segment stepper for the UI (design D4).
+
+    Each segment corresponds to an ordered pipeline stage.  The segment state
+    is derived from the job's lifecycle ``status`` and its current ``stage``:
+
+    - ``"completed"`` — the stage has been passed.
+    - ``"active"``    — the job is currently in this stage.
+    - ``"waiting"``   — the job is paused (WAITING) at this stage.
+    - ``"pending"``   — the stage has not been reached yet.
+    - ``"skipped"``   — the job reached a terminal state before this stage.
+    """
+    current_idx = S.STAGE_SEQUENCE.get(job.stage, 0)
+    segments: list[dict[str, Any]] = []
+    for idx, stage in enumerate(S.STAGES):
+        if job.status in S.TERMINAL_STATES:
+            if job.status == S.COMPLETED:
+                state = "completed"
+            elif idx < current_idx:
+                state = "completed"
+            elif idx == current_idx:
+                state = "failed" if job.status == S.FAILED else "skipped"
+            else:
+                state = "skipped"
+        elif job.status == S.WAITING:
+            if idx < current_idx:
+                state = "completed"
+            elif idx == current_idx:
+                state = "waiting"
+            else:
+                state = "pending"
+        elif job.status == S.RUNNING:
+            if idx < current_idx:
+                state = "completed"
+            elif idx == current_idx:
+                state = "active"
+            else:
+                state = "pending"
+        else:  # queued
+            state = "pending"
+        segments.append({"stage": stage, "state": state})
+    return segments
 
 
 def _timing_to_dict(job: Job, statistics: JobStatistics) -> dict[str, Any]:
