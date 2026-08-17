@@ -51,96 +51,17 @@ For complex or multi-Feat Functions, initialize the full run directory described
 memory for that run. They may be resumed after context compaction or handed to a clean aggregation
 session, but they are not confirmed Reviews or a maintained capability baseline.
 
-New staged schema v2 runs are produced by evaluator
-`skill:ohos-design-arkui-spec-evaluator@0.1.19`. Schema-compatible historical 0.1.7 through 0.1.18
-runs remain readable. Schema v2 requires atomic `claim_reviews`, evidence-backed
-required-check mapping, stable defect ownership, and an explicit core-conflict basis for every
-`CONTRADICTED` Criterion. Schema v1 remains readable for historical 0.1.6 runs; new runs must not
-downgrade or override the initialized evaluator version.
-
-Evaluator 0.1.9 additionally requires atomic `unit_reviews` for each Claim and structured
-`modeling_basis` evidence for Function coverage/decomposition/boundary defects. These additions
-increase review depth without changing the frozen semantic-result Schema or Rubric weights.
-
-Evaluator 0.1.10 additionally rejects `SUPPORTED` aggregation when an applicable Criterion still
-has a mapped `NOT_VERIFIABLE` observation, Claim, or atomic unit. It also requires the evaluator to
-verify parent-entry reachability for side-effect helpers and to keep API inventory omissions from
-being duplicated as scope-boundary deductions without actual boundary ambiguity.
-
-Evaluator 0.1.11 adds run-local `outcome_policy_bases` for AC testability, traceability, Design
-impact, Design verification, API-version compatibility, and multi-device compatibility. These
-records distinguish present content with partial evidence from absent content, and core false
-claims from local gaps. The staged validator also allows one owned root defect to support
-Contradicted conclusions in materially affected secondary Criteria while preserving a single
-Critical owner. The frozen semantic-result Schema and Rubric weights remain unchanged.
-
-Evaluator 0.1.12 adds a run-local `output-contract.json` generated from the same Rubric and
-validator constants that enforce the staged checkpoint. It makes evidence types, `EV-` IDs,
-`sha256:` hashes, legal Criterion IDs, payload fields, and conditional defect ownership available
-to automated executors in machine-readable form. The service may perform one bounded mechanical
-repair when a candidate fails only those declared formatting constraints; semantic normalization
-or silent server-side inference remains forbidden.
-
-Evaluator 0.1.13 adds a deterministic run-local `aggregation-context.json`. It maps observations
-through `observations[].criterion_ids`, maps Claims through `claim_reviews[].criterion_ids`, and
-maps every atomic unit through its parent Claim. `criterion_results[].claim_ids` are citations to
-already mapped Claims; they cannot define or narrow Criterion scope. The validator rejects
-`SUPPORTED` or `NOT_APPLICABLE` when mapped adverse units exist, requires `NOT_VERIFIABLE` when
-that is the only unresolved mapped outcome, and keeps published observation outcomes authoritative.
-The service may make one bounded aggregation reconciliation call when, and only when, validation
-fails exclusively on these mapping-consistency rules. Reconciliation reads the candidate,
-initialized aggregation template, output contract, and aggregation context; it does not reopen
-source, SDK, Spec, Design, Registry, or evidence shards and it never edits published observations.
-
-Evaluator 0.1.14 makes observation evidence cardinality machine-readable from the same constant
-used by the validator. `SUPPORTED`, `CONFLICT`, `MISSING`, and `NOT_APPLICABLE` observations require
-at least one evidence object; only `NOT_VERIFIABLE` has a minimum of zero. A bounded evidence
-completion call may read the original scoped frozen inputs and populate only the named empty
-observation evidence arrays. The service rejects that repair if any outcome, fact, mapping,
-ownership field, non-target evidence, or ordering changes.
-
-Evaluator 0.1.15 publishes `aggregation_payload.final_contract` from the same
-`semantic-result.schema.json` definitions used by final validation. Aggregation candidates are
-validated as in-memory final candidates before publication. Semantic Finding IDs use a stable
-SHA-256 identity over identity version, FuncID, defect key, Criterion ID, and optional Claim ID;
-classification, prose, revision, and run metadata do not change the ID. The service may perform
-one deterministic, model-free repair for the legacy `problem` alias, an evidence-backed N/A reason,
-and canonical Finding/ownership IDs. Conflicting `message` and `problem` values fail rather than
-silently discarding content.
-
-Evaluator 0.1.16 makes canonical Finding IDs and ownership secondary Criteria service-normalized
-fields. The executor supplies only unique provisional Finding correlation keys and uses those keys
-in ownership references; it does not calculate SHA-256 IDs. Before the first aggregation
-validation, the service atomically generates canonical IDs, synchronizes ownership references, and
-derives each secondary list from the referenced Findings minus the primary Criterion. A semantic
-secondary effect requires an actual Finding in that Criterion. Ambiguous references, duplicate
-identities, or missing Findings are rejected rather than inferred. Existing 0.1.15 runs receive the
-same service-side normalization when their frozen output contract contains `final_contract`.
-
-Evaluator 0.1.17 routes observation validation failures by repair category instead of requiring
-one homogeneous error whitelist. Mechanical contract repair, missing observation evidence
-completion, and dangling Claim evidence re-review each have a one-attempt budget and are followed
-by full validation. Claim evidence re-review is limited to named Claim rows, original scoped frozen
-inputs, and evidence IDs already defined by candidate observations. It may retain a substantiated
-outcome or downgrade the affected Claim/unit to `NOT_VERIFIABLE`; observations, non-target Claims,
-scope mappings, defects, and ordering cannot change. Outcome-only Claim reasons and unit facts are
-rejected for new 0.1.17 runs, while historical 0.1.16 runs remain readable.
-
-Evaluator 0.1.18 removes the evidence-free `NOT_VERIFIABLE` escape hatch. Every NV observation
-must carry `review_record` inspection evidence, and every NV Claim and atomic unit must reference
-that evidence while explaining the checked scope, missing evidence, and why the gap is
-insufficient. Before ordinary contract repair, the semantic service applies a deterministic
-multi-signal degeneration check. A suspected NV flood gets one independent full-work-item retry
-from the original frozen inputs; a second degenerate result fails as `executor_quality_failed`.
-Historical 0.1.17 staged runs retain their original evidence cardinality when resumed.
-
-Evaluator 0.1.19 keeps the same three-signal NV obligation while accepting bounded grammatical
-families rather than only exact substrings. It recognizes inspection nouns and verbs, explicit
-absence/without/does-not-include forms, bounded `no ... source/content/evidence` gaps, and active,
-passive or causal verification consequences. A generic `no` remains insufficient. Historical
-0.1.18 runs retain their original wording matcher. If a Claim evidence repair merges but its
-targeted validation errors remain, the service performs the same single independent full-work-item
-fallback used for guard rejection; the fallback is never repeated for that mode.
+Staged schema v2 runs are produced by evaluator
+`skill:ohos-design-arkui-spec-evaluator@0.2.0`. Schema v2 requires atomic `claim_reviews`,
+evidence-backed required-check mapping, stable defect ownership, an explicit core-conflict basis
+for every `CONTRADICTED` Criterion, atomic `unit_reviews` for each Claim, structured
+`modeling_basis` evidence, NOT_VERIFIABLE aggregation guards, run-local `outcome_policy_bases`,
+machine-readable `output-contract.json`, deterministic `aggregation-context.json` mapping,
+observation evidence cardinality enforcement, `final_contract` with canonical Finding identity,
+service-normalized Finding IDs and ownership secondary Criteria, categorized observation repair
+routing, evidence-backed NOT_VERIFIABLE with `review_record` inspection evidence and three-signal
+expression families, and claim-level evidence quality enforcement. The evaluator version must not
+be downgraded or overridden after initialization.
 
 Do not write automatic output to:
 

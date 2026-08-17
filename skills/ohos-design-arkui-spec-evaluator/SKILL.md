@@ -13,7 +13,7 @@ metadata:
   stage: design
   domain: arkui
   capability: spec-evaluator
-  version: 0.1.19
+  version: 0.2.0
   status: mvp
   evaluation-unit: function
   rubric-version: 0.3.0
@@ -144,27 +144,26 @@ Before writing nested evidence or defect ownership fields, read the run-local
 evidence `type` is one of the declared enums, Criterion IDs come only from its frozen list, and
 claim `defect_keys` remain empty unless the local outcome is `CONFLICT` or `MISSING`.
 
-For evaluator 0.1.14+, also apply
-`observation_payload.observations.evidence_cardinality.minimum_items_by_local_outcome` exactly.
+Apply `observation_payload.observations.evidence_cardinality.minimum_items_by_local_outcome` exactly.
 Every observation except `NOT_VERIFIABLE` carries at least one reproducible evidence object.
 `NOT_APPLICABLE` is not an evidence-free explanation: cite the frozen Spec, Design, Registry, SDK,
 or source location that proves the checked unit is inapplicable. A `fact` string does not replace
 evidence.
 
-For evaluator 0.1.18+, `NOT_VERIFIABLE` also carries evidence: add at least one `review_record`
+`NOT_VERIFIABLE` also carries evidence: add at least one `review_record`
 that identifies a frozen input actually inspected, then reference that evidence ID from every NV
 Claim and atomic unit it supports. The reason/fact must name what was checked, what evidence is
 missing, and why that gap is insufficient for a defensible judgment. Read the declared evidence
 shards and relevant Spec/Design/source or SDK inputs before concluding NV; an uninspected scope is
 an incomplete evaluation, not a verification result.
 
-For evaluator 0.1.19+, express those three NV signals explicitly without relying on one fixed
+Express those three NV signals explicitly without relying on one fixed
 sentence. Inspection/review/search wording may identify the checked scope; missing/absence/without
 or a bounded `no ... source/content/evidence` phrase may identify the gap; and active, passive or
 causal wording such as `cannot verify`, `cannot be verified`, `prevents verifying` or
 `unable to determine` may identify the consequence. Generic negation alone is not a gap.
 
-For evaluator 0.1.17+, every Claim `reason` and atomic unit `fact` must state the evidence-specific
+Every Claim `reason` and atomic unit `fact` must state the evidence-specific
 proposition rather than repeat only the outcome token such as `supported`. Evidence IDs referenced
 by Claim and unit rows must be defined by an observation in the same work item. If the service
 rejects dangling references, it may request one bounded re-review of only the named Claim rows
@@ -227,7 +226,7 @@ Start aggregation only after every observation checkpoint passes. Read compact o
 and Rubric first. Reopen an original shard or static slice only to resolve a specific evidence
 question. Follow exact Criterion order from `rubric.yaml`; do not skip or reorder output.
 
-For evaluator 0.1.13+, first build the deterministic Criterion mapping:
+First build the deterministic Criterion mapping:
 
 ```bash
 python3 specs/skills/ohos-design-arkui-spec-evaluator/scripts/build_aggregation_context.py \
@@ -401,12 +400,12 @@ One root defect may support `contradiction_bases` for both its primary and mater
 secondary Criteria. Keep one `defect_ownership` record and at most one Critical Finding; secondary
 Contradicted Criteria use the same root as evidence without becoming duplicate owners.
 
-For evaluator 0.1.15+, read `aggregation_payload.final_contract` from
+Read `aggregation_payload.final_contract` from
 `output-contract.json` before producing Findings. Its Finding and Criterion-result schemas are
 copied from the final semantic-result Schema. Use `message`, not the legacy `problem` alias, and
 include `applicability_reason` for every `NOT_APPLICABLE` result.
 
-For evaluator 0.1.16+, give each Finding a non-empty unique provisional correlation key and use
+Give each Finding a non-empty unique provisional correlation key and use
 that same key in `defect_ownership[].finding_ids`; do not calculate or guess the final hash. Before
 validation, the service replaces those keys with canonical `SEM-` IDs derived from
 `identity_version`, `func_id`, `defect_key`, `criterion_id`, and optional `claim_id`. It also derives

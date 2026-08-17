@@ -135,7 +135,7 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
         _, frontmatter, _ = content.split("---", 2)
         metadata = yaml.safe_load(frontmatter)
         self.assertEqual(metadata["name"], "ohos-design-arkui-spec-evaluator")
-        self.assertEqual(metadata["metadata"]["version"], "0.1.19")
+        self.assertEqual(metadata["metadata"]["version"], "0.2.0")
         self.assertEqual(metadata["metadata"]["rubric-version"], "0.3.0")
         self.assertLess(len(content.splitlines()), 500)
         for relative in (
@@ -328,50 +328,6 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             claim_contract["dangling_evidence_repair"]["mode"],
             "repair_claim_evidence_references",
         )
-        historical = staged_output_contract(
-            source_revision=source_revision,
-            evaluator_version="skill:ohos-design-arkui-spec-evaluator@0.1.12",
-        )
-        self.assertNotIn("mapping_context", historical["aggregation_payload"])
-        previous = staged_output_contract(
-            source_revision=source_revision,
-            evaluator_version="skill:ohos-design-arkui-spec-evaluator@0.1.13",
-        )
-        self.assertIn("mapping_context", previous["aggregation_payload"])
-        issue_18 = staged_output_contract(
-            source_revision=source_revision,
-            evaluator_version="skill:ohos-design-arkui-spec-evaluator@0.1.16",
-        )
-        self.assertNotIn(
-            "dangling_evidence_repair",
-            issue_18["observation_payload"]["claim_reviews"],
-        )
-        issue_19 = staged_output_contract(
-            source_revision=source_revision,
-            evaluator_version="skill:ohos-design-arkui-spec-evaluator@0.1.17",
-        )
-        self.assertIn(
-            "dangling_evidence_repair",
-            issue_19["observation_payload"]["claim_reviews"],
-        )
-        self.assertEqual(
-            issue_19["observation_payload"]["observations"]["evidence_cardinality"]
-            ["minimum_items_by_local_outcome"]["NOT_VERIFIABLE"],
-            0,
-        )
-        issue_22 = staged_output_contract(
-            source_revision=source_revision,
-            evaluator_version="skill:ohos-design-arkui-spec-evaluator@0.1.18",
-        )
-        self.assertTrue(
-            issue_22["observation_payload"]["claim_reviews"]["quality_rule"]
-            ["not_verifiable_requires_review_record"]
-        )
-        self.assertNotIn(
-            "not_verifiable_expression_examples",
-            issue_22["observation_payload"]["claim_reviews"]["quality_rule"],
-        )
-
     def test_observation_evidence_cardinality_is_machine_readable_and_enforced(self) -> None:
         contract = staged_output_contract(source_revision="a" * 40)
         minimums = contract["observation_payload"]["observations"][
@@ -450,18 +406,6 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             ],
             1,
         )
-        historical = staged_output_contract(
-            source_revision="a" * 40,
-            evaluator_version="skill:ohos-design-arkui-spec-evaluator@0.1.14",
-        )
-        self.assertNotIn("final_contract", historical["aggregation_payload"])
-        evaluator_015 = staged_output_contract(
-            source_revision="a" * 40,
-            evaluator_version="skill:ohos-design-arkui-spec-evaluator@0.1.15",
-        )["aggregation_payload"]["final_contract"]
-        self.assertNotIn("executor_input", evaluator_015["finding_identity"])
-        self.assertNotIn("defect_ownership", evaluator_015)
-
     def test_adverse_criterion_conclusions_require_findings(self) -> None:
         for conclusion in ("PARTIALLY_SUPPORTED", "CONTRADICTED", "MISSING"):
             with self.subTest(conclusion=conclusion):
@@ -977,15 +921,6 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
         self.assertTrue(any("reason: expected an evidence-specific explanation" in error for error in errors))
         self.assertTrue(any("fact: expected an evidence-specific atomic fact" in error for error in errors))
 
-    def test_staged_v2_0116_outcome_only_explanations_remain_readable(self) -> None:
-        document, item, state = self._valid_observation()
-        historical = "skill:ohos-design-arkui-spec-evaluator@0.1.16"
-        state["evaluator_version"] = historical
-        document["evaluator_version"] = historical
-        document["claim_reviews"][0]["reason"] = "supported"
-        document["claim_reviews"][0]["unit_reviews"][0]["fact"] = "SUPPORTED"
-        self.assertEqual(validate_observation_document(document, item, state), [])
-
     def test_staged_v2_0118_not_verifiable_requires_inspection_evidence(self) -> None:
         document, item, state = self._valid_observation()
         document["observations"][0]["local_outcome"] = "NOT_VERIFIABLE"
@@ -1068,84 +1003,12 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
                 errors = validate_observation_document(document, item, state)
                 self.assertTrue(any("expected checked scope" in error for error in errors))
 
-    def test_staged_v2_0118_preserves_legacy_nv_wording_rules(self) -> None:
-        document, item, state = self._valid_observation()
-        historical = "skill:ohos-design-arkui-spec-evaluator@0.1.18"
-        state["evaluator_version"] = historical
-        document["evaluator_version"] = historical
-        document["observations"][0]["local_outcome"] = "NOT_VERIFIABLE"
-        document["observations"][0]["evidence"][0]["type"] = "review_record"
-        wording = (
-            "Inspection covered the frozen shard; absence of ArkUI-X source prevents "
-            "verifying the Claim."
-        )
-        for review in document["claim_reviews"]:
-            review["local_outcome"] = "NOT_VERIFIABLE"
-            review["reason"] = wording
-            for unit in review["unit_reviews"]:
-                unit["local_outcome"] = "NOT_VERIFIABLE"
-                unit["fact"] = wording
-        errors = validate_observation_document(document, item, state)
-        self.assertTrue(any("expected checked scope" in error for error in errors))
-
-    def test_staged_v2_0117_empty_not_verifiable_evidence_remains_readable(self) -> None:
-        document, item, state = self._valid_observation()
-        historical = "skill:ohos-design-arkui-spec-evaluator@0.1.17"
-        state["evaluator_version"] = historical
-        document["evaluator_version"] = historical
-        document["observations"][0]["local_outcome"] = "NOT_VERIFIABLE"
-        document["observations"][0]["evidence"] = []
-        for review in document["claim_reviews"]:
-            review["local_outcome"] = "NOT_VERIFIABLE"
-            review["evidence_ids"] = []
-            for unit in review["unit_reviews"]:
-                unit["local_outcome"] = "NOT_VERIFIABLE"
-                unit["evidence_ids"] = []
-        self.assertEqual(validate_observation_document(document, item, state), [])
-
     def test_staged_v2_rejects_unmapped_required_check(self) -> None:
         document, item, state = self._valid_observation()
         document["observations"][0]["check_ids"] = ["claim_source_support"]
         document["completed_checks"] = ["claim_source_support"]
         errors = validate_observation_document(document, item, state)
         self.assertTrue(any("observations.check_ids: missing=['boundary_state']" in error for error in errors))
-
-    def test_staged_v2_rejects_noncanonical_evaluator_version(self) -> None:
-        document, item, state = self._valid_observation()
-        state["evaluator_version"] = "0.1.11"
-        document["evaluator_version"] = "0.1.11"
-        errors = validate_observation_document(document, item, state)
-        self.assertTrue(any("staged schema v2 requires" in error for error in errors))
-
-    def test_staged_v2_017_historical_observation_remains_readable(self) -> None:
-        document, item, state = self._valid_observation()
-        historical = "skill:ohos-design-arkui-spec-evaluator@0.1.7"
-        state["evaluator_version"] = historical
-        document["evaluator_version"] = historical
-        self.assertEqual(validate_observation_document(document, item, state), [])
-
-    def test_staged_v2_018_historical_observation_remains_readable(self) -> None:
-        document, item, state = self._valid_observation()
-        historical = "skill:ohos-design-arkui-spec-evaluator@0.1.8"
-        state["evaluator_version"] = historical
-        document["evaluator_version"] = historical
-        for review in document["claim_reviews"]:
-            review.pop("unit_reviews")
-        self.assertEqual(validate_observation_document(document, item, state), [])
-
-    def test_staged_v2_019_historical_observation_remains_readable(self) -> None:
-        document, item, state = self._valid_observation()
-        historical = "skill:ohos-design-arkui-spec-evaluator@0.1.9"
-        state["evaluator_version"] = historical
-        document["evaluator_version"] = historical
-        self.assertEqual(validate_observation_document(document, item, state), [])
-
-    def test_staged_v2_013_historical_observation_remains_readable(self) -> None:
-        document, item, state = self._valid_observation()
-        historical = "skill:ohos-design-arkui-spec-evaluator@0.1.13"
-        state["evaluator_version"] = historical
-        document["evaluator_version"] = historical
-        self.assertEqual(validate_observation_document(document, item, state), [])
 
     def test_staged_v2_019_requires_atomic_unit_reviews(self) -> None:
         document, item, state = self._valid_observation()
@@ -1169,16 +1032,6 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             review["unit_reviews"][0]["local_outcome"] = "CONFLICT"
         errors = validate_observation_document(document, item, state)
         self.assertTrue(any("modeling_basis: required" in error for error in errors))
-
-    def test_staged_v1_historical_observation_remains_readable(self) -> None:
-        document, item, state = self._valid_observation()
-        state["schema_version"] = 1
-        state["evaluator_version"] = "skill:ohos-design-arkui-spec-evaluator@0.1.6"
-        document["schema_version"] = 1
-        document["evaluator_version"] = state["evaluator_version"]
-        document.pop("claim_reviews")
-        document["observations"][0].pop("check_ids")
-        self.assertEqual(validate_observation_document(document, item, state), [])
 
     def test_staged_v2_requires_basis_for_every_contradicted_criterion(self) -> None:
         state = self._staged_identity()
@@ -1450,36 +1303,6 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             }
             errors = validate_aggregation_document(document, state, work_items)
         self.assertTrue(any("mapped NOT_VERIFIABLE" in error for error in errors))
-
-    def test_staged_v2_019_historical_aggregation_keeps_prior_unverifiable_policy(self) -> None:
-        state = self._staged_identity()
-        historical = "skill:ohos-design-arkui-spec-evaluator@0.1.9"
-        state["evaluator_version"] = historical
-        results = self._criterion_results()
-        criterion_id = results[0]["criterion_id"]
-        with TemporaryDirectory() as temporary:
-            observation_path = Path(temporary) / "observation.json"
-            observation_path.write_text(
-                json.dumps({
-                    "observations": [{
-                        "local_outcome": "NOT_VERIFIABLE",
-                        "criterion_ids": [criterion_id],
-                    }],
-                }),
-                encoding="utf-8",
-            )
-            work_items = {"items": [{"id": "feature:Feat-01", "output_path": str(observation_path)}]}
-            document = {
-                **state,
-                "status": "complete",
-                "source_observation_ids": ["feature:Feat-01"],
-                "cross_feat_contracts_reviewed": True,
-                "criterion_results": results,
-                "contradiction_bases": [],
-                "defect_ownership": [],
-            }
-            errors = validate_aggregation_document(document, state, work_items)
-        self.assertFalse(any("mapped NOT_VERIFIABLE" in error for error in errors))
 
     def test_skill_requires_helper_reachability_ac_assets_adr_facets_and_scope_isolation(self) -> None:
         skill = (self.skill_root / "SKILL.md").read_text(encoding="utf-8")

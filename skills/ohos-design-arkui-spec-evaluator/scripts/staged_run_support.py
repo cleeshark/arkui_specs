@@ -26,95 +26,7 @@ from spec_eval.protocol_validator import (  # noqa: E402
 
 
 STAGED_SCHEMA_VERSION = 2
-SUPPORTED_STAGED_SCHEMA_VERSIONS = {1, STAGED_SCHEMA_VERSION}
-SCHEMA_V2_EVALUATOR_VERSIONS = {
-    "skill:ohos-design-arkui-spec-evaluator@0.1.7",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.8",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.9",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.10",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.11",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.12",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.13",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.14",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.15",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.16",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.17",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.18",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.19",
-    DEFAULT_EVALUATOR_VERSION,
-}
-DEEP_CONTRACT_EVALUATOR_VERSIONS = {
-    "skill:ohos-design-arkui-spec-evaluator@0.1.9",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.10",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.11",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.12",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.13",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.14",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.15",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.16",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.17",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.18",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.19",
-    DEFAULT_EVALUATOR_VERSION,
-}
-UNVERIFIABLE_GUARD_EVALUATOR_VERSIONS = {
-    "skill:ohos-design-arkui-spec-evaluator@0.1.10",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.11",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.12",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.13",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.14",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.15",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.16",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.17",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.18",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.19",
-    DEFAULT_EVALUATOR_VERSION,
-}
-AGGREGATION_MAPPING_EVALUATOR_VERSIONS = {
-    "skill:ohos-design-arkui-spec-evaluator@0.1.13",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.14",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.15",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.16",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.17",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.18",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.19",
-    DEFAULT_EVALUATOR_VERSION,
-}
-OUTCOME_POLICY_BASIS_EVALUATOR_VERSIONS = {
-    "skill:ohos-design-arkui-spec-evaluator@0.1.11",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.12",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.13",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.14",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.15",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.16",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.17",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.18",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.19",
-    DEFAULT_EVALUATOR_VERSION,
-}
-FINAL_AGGREGATION_CONTRACT_EVALUATOR_VERSIONS = {
-    "skill:ohos-design-arkui-spec-evaluator@0.1.15",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.16",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.17",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.18",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.19",
-    DEFAULT_EVALUATOR_VERSION,
-}
-CLAIM_REVIEW_QUALITY_EVALUATOR_VERSIONS = {
-    "skill:ohos-design-arkui-spec-evaluator@0.1.17",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.18",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.19",
-    DEFAULT_EVALUATOR_VERSION,
-}
-NV_INSPECTION_EVIDENCE_EVALUATOR_VERSIONS = {
-    "skill:ohos-design-arkui-spec-evaluator@0.1.18",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.19",
-    DEFAULT_EVALUATOR_VERSION,
-}
-NV_EXPRESSION_FAMILY_EVALUATOR_VERSIONS = {
-    "skill:ohos-design-arkui-spec-evaluator@0.1.19",
-    DEFAULT_EVALUATOR_VERSION,
-}
+SUPPORTED_STAGED_SCHEMA_VERSIONS = {STAGED_SCHEMA_VERSION}
 AGGREGATION_CONTEXT_SCHEMA_VERSION = 1
 SEMANTIC_FINDING_IDENTITY_VERSION = 1
 OUTCOME_POLICY_BASIS_CRITERIA = [
@@ -157,10 +69,6 @@ LOCAL_OUTCOMES = {
     "MISSING",
     "NOT_APPLICABLE",
     "NOT_VERIFIABLE",
-}
-LEGACY_OBSERVATION_EVIDENCE_MIN_ITEMS = {
-    outcome: 0 if outcome == "NOT_VERIFIABLE" else 1
-    for outcome in sorted(LOCAL_OUTCOMES)
 }
 OBSERVATION_EVIDENCE_MIN_ITEMS = {
     outcome: 1 for outcome in sorted(LOCAL_OUTCOMES)
@@ -338,114 +246,111 @@ def staged_output_contract(
         "policy_evidence_status_enum": sorted(POLICY_EVIDENCE_STATUSES),
         "policy_conflict_scope_enum": sorted(POLICY_CONFLICT_SCOPES),
     }
-    if evaluator_version in AGGREGATION_MAPPING_EVALUATOR_VERSIONS:
-        aggregation_payload["mapping_context"] = {
-            "schema_version": AGGREGATION_CONTEXT_SCHEMA_VERSION,
-            "path_field": "aggregation_context_path",
-            "mapping_authority": {
-                "observations": "Map each observation through observations[].criterion_ids.",
-                "claims": "Map each claim through claim_reviews[].criterion_ids.",
-                "atomic_units": "Each unit_review inherits the Criterion IDs of its parent claim review.",
-                "criterion_result_claim_ids": (
-                    "criterion_results[].claim_ids may cite only claims already mapped to that "
-                    "Criterion; it never defines or narrows aggregate scope."
+    aggregation_payload["mapping_context"] = {
+        "schema_version": AGGREGATION_CONTEXT_SCHEMA_VERSION,
+        "path_field": "aggregation_context_path",
+        "mapping_authority": {
+            "observations": "Map each observation through observations[].criterion_ids.",
+            "claims": "Map each claim through claim_reviews[].criterion_ids.",
+            "atomic_units": "Each unit_review inherits the Criterion IDs of its parent claim review.",
+            "criterion_result_claim_ids": (
+                "criterion_results[].claim_ids may cite only claims already mapped to that "
+                "Criterion; it never defines or narrows aggregate scope."
+            ),
+        },
+        "mixed_outcome_policy": [
+            "SUPPORTED requires every applicable mapped unit to be verified and no mapped CONFLICT, MISSING or NOT_VERIFIABLE unit.",
+            "When mapped units contain NOT_VERIFIABLE but no CONFLICT or MISSING, conclude NOT_VERIFIABLE.",
+            "When any mapped observation, claim or atomic unit is CONFLICT or MISSING, do not conclude SUPPORTED or NOT_APPLICABLE; apply breadth and the frozen Rubric outcome policy.",
+            "NOT_APPLICABLE is invalid when any mapped unit is applicable.",
+            "New aggregation evidence may explain a conclusion but may not silently override a published mapped outcome.",
+        ],
+    }
+    semantic_schema = load_object(
+        EVALUATION_ROOT / "schemas" / "semantic-result.schema.json"
+    )
+    schema_defs = semantic_schema.get("$defs", {})
+    final_contract = {
+        "semantic_finding_schema": copy.deepcopy(schema_defs["semantic_finding"]),
+        "criterion_result_schema": copy.deepcopy(schema_defs["criterion_result"]),
+        "conditional_fields": {
+            "NOT_APPLICABLE": {
+                "required": ["applicability_reason"],
+                "evidence_min_items": 1,
+            },
+            "NOT_VERIFIABLE": {"required": ["missing_evidence"]},
+            "FINDING_CARDINALITY": {
+                "required_for_conclusions": sorted(FINDING_REQUIRED_CONCLUSIONS),
+                "findings_min_items": 1,
+                "evidence_backed": True,
+                "rule": (
+                    "Every PARTIALLY_SUPPORTED, CONTRADICTED or MISSING Criterion "
+                    "must contain at least one Finding whose evidence_ids reference "
+                    "that Criterion's evidence."
                 ),
             },
-            "mixed_outcome_policy": [
-                "SUPPORTED requires every applicable mapped unit to be verified and no mapped CONFLICT, MISSING or NOT_VERIFIABLE unit.",
-                "When mapped units contain NOT_VERIFIABLE but no CONFLICT or MISSING, conclude NOT_VERIFIABLE.",
-                "When any mapped observation, claim or atomic unit is CONFLICT or MISSING, do not conclude SUPPORTED or NOT_APPLICABLE; apply breadth and the frozen Rubric outcome policy.",
-                "NOT_APPLICABLE is invalid when any mapped unit is applicable.",
-                "New aggregation evidence may explain a conclusion but may not silently override a published mapped outcome.",
+        },
+        "finding_identity": {
+            "identity_version": SEMANTIC_FINDING_IDENTITY_VERSION,
+            "prefix": "SEM-",
+            "hex_length": 24,
+            "hash": "sha256",
+            "canonical_json": {
+                "sort_keys": True,
+                "separators": [",", ":"],
+                "ensure_ascii": False,
+            },
+            "fields": [
+                "identity_version",
+                "func_id",
+                "defect_key",
+                "criterion_id",
+                "claim_id",
             ],
-        }
-    if evaluator_version in FINAL_AGGREGATION_CONTRACT_EVALUATOR_VERSIONS:
-        semantic_schema = load_object(
-            EVALUATION_ROOT / "schemas" / "semantic-result.schema.json"
-        )
-        schema_defs = semantic_schema.get("$defs", {})
-        final_contract = {
-            "semantic_finding_schema": copy.deepcopy(schema_defs["semantic_finding"]),
-            "criterion_result_schema": copy.deepcopy(schema_defs["criterion_result"]),
-            "conditional_fields": {
-                "NOT_APPLICABLE": {
-                    "required": ["applicability_reason"],
-                    "evidence_min_items": 1,
-                },
-                "NOT_VERIFIABLE": {"required": ["missing_evidence"]},
-                "FINDING_CARDINALITY": {
-                    "required_for_conclusions": sorted(FINDING_REQUIRED_CONCLUSIONS),
-                    "findings_min_items": 1,
-                    "evidence_backed": True,
-                    "rule": (
-                        "Every PARTIALLY_SUPPORTED, CONTRADICTED or MISSING Criterion "
-                        "must contain at least one Finding whose evidence_ids reference "
-                        "that Criterion's evidence."
-                    ),
-                },
-            },
-            "finding_identity": {
-                "identity_version": SEMANTIC_FINDING_IDENTITY_VERSION,
-                "prefix": "SEM-",
-                "hex_length": 24,
-                "hash": "sha256",
-                "canonical_json": {
-                    "sort_keys": True,
-                    "separators": [",", ":"],
-                    "ensure_ascii": False,
-                },
-                "fields": [
-                    "identity_version",
-                    "func_id",
-                    "defect_key",
-                    "criterion_id",
-                    "claim_id",
-                ],
-                "rule": (
-                    "SEM- + first 24 lowercase hex characters of SHA-256 over canonical "
-                    "JSON of the declared identity fields. Classification and prose fields "
-                    "do not participate in identity."
-                ),
-            },
-        }
-        if evaluator_version == DEFAULT_EVALUATOR_VERSION:
-            final_contract["finding_identity"].update({
-                "executor_input": {
-                    "role": "provisional_correlation_key",
-                    "requirements": ["non-empty string", "unique within aggregation"],
-                    "canonical_hash_required": False,
-                },
-                "published_output": {
-                    "service_derived": True,
-                    "pattern": schema_defs["semantic_finding"]["properties"][
-                        "finding_id"
-                    ]["pattern"],
-                },
-                "rule": (
-                    "The executor supplies only a unique provisional correlation key. The "
-                    "service publishes SEM- plus the first 24 lowercase hex characters of "
-                    "SHA-256 over canonical JSON of the declared identity fields. "
-                    "Classification and prose fields do not participate in identity."
-                ),
-            })
-            final_contract["defect_ownership"] = {
-                "finding_ids": {
-                    "executor_input": "References provisional Finding correlation keys.",
-                    "published_output": "Rewritten to service-canonical Finding IDs.",
-                },
-                "secondary_criterion_ids": {
-                    "service_derived": True,
-                    "formula": (
-                        "sorted(unique Criterion IDs of Findings referenced by finding_ids "
-                        "minus primary_criterion_id)"
-                    ),
-                    "semantic_rule": (
-                        "A secondary Criterion must be represented by an actual Finding "
-                        "owned by the same defect record."
-                    ),
-                },
-            }
-        aggregation_payload["final_contract"] = final_contract
+            "rule": (
+                "SEM- + first 24 lowercase hex characters of SHA-256 over canonical "
+                "JSON of the declared identity fields. Classification and prose fields "
+                "do not participate in identity."
+            ),
+        },
+    }
+    final_contract["finding_identity"].update({
+        "executor_input": {
+            "role": "provisional_correlation_key",
+            "requirements": ["non-empty string", "unique within aggregation"],
+            "canonical_hash_required": False,
+        },
+        "published_output": {
+            "service_derived": True,
+            "pattern": schema_defs["semantic_finding"]["properties"][
+                "finding_id"
+            ]["pattern"],
+        },
+        "rule": (
+            "The executor supplies only a unique provisional correlation key. The "
+            "service publishes SEM- plus the first 24 lowercase hex characters of "
+            "SHA-256 over canonical JSON of the declared identity fields. "
+            "Classification and prose fields do not participate in identity."
+        ),
+    })
+    final_contract["defect_ownership"] = {
+        "finding_ids": {
+            "executor_input": "References provisional Finding correlation keys.",
+            "published_output": "Rewritten to service-canonical Finding IDs.",
+        },
+        "secondary_criterion_ids": {
+            "service_derived": True,
+            "formula": (
+                "sorted(unique Criterion IDs of Findings referenced by finding_ids "
+                "minus primary_criterion_id)"
+            ),
+            "semantic_rule": (
+                "A secondary Criterion must be represented by an actual Finding "
+                "owned by the same defect record."
+            ),
+        },
+    }
+    aggregation_payload["final_contract"] = final_contract
     return {
         "schema_version": 1,
         "staged_schema_version": STAGED_SCHEMA_VERSION,
@@ -477,53 +382,47 @@ def staged_output_contract(
                     "required_when_local_outcome": ["CONFLICT", "MISSING"],
                     "must_be_empty_for_all_other_outcomes": True,
                 },
-                **({
-                    "quality_rule": {
-                        "reason_and_unit_fact_must_be_evidence_specific": True,
-                        "forbidden_outcome_only_text": sorted(LOW_INFORMATION_REVIEW_TEXT),
-                        **({
-                            "not_verifiable_requires_review_record": True,
-                            "not_verifiable_explanation": (
-                                "Name the checked scope, the missing evidence, and why the gap "
-                                "is insufficient for a defensible judgment."
-                            ),
-                            **({
-                                "not_verifiable_required_signals": [
-                                    "checked_scope",
-                                    "missing_evidence",
-                                    "verification_consequence",
-                                ],
-                                "not_verifiable_expression_examples": {
-                                    "checked_scope": [
-                                        "checked", "inspection", "reviewed", "searched",
-                                    ],
-                                    "missing_evidence": [
-                                        "missing", "absence", "without", "does not include",
-                                        "no relevant source content",
-                                    ],
-                                    "verification_consequence": [
-                                        "cannot verify", "cannot be verified",
-                                        "prevents verifying", "unable to determine",
-                                    ],
-                                },
-                            } if evaluator_version in NV_EXPRESSION_FAMILY_EVALUATOR_VERSIONS else {}),
-                        } if evaluator_version in NV_INSPECTION_EVIDENCE_EVALUATOR_VERSIONS else {}),
-                    },
-                    "dangling_evidence_repair": {
-                        "mode": "repair_claim_evidence_references",
-                        "target_identity": "claim_id",
-                        "defined_evidence_only": True,
-                        "allowed_outcome_change": "target Claim/unit to NOT_VERIFIABLE only",
-                        "preserved_fields": [
-                            "observations",
-                            "non-target claim_reviews",
-                            "claim and Criterion mappings",
-                            "reviewed_units and facet types",
-                            "defects",
-                            "array ordering",
+                "quality_rule": {
+                    "reason_and_unit_fact_must_be_evidence_specific": True,
+                    "forbidden_outcome_only_text": sorted(LOW_INFORMATION_REVIEW_TEXT),
+                    "not_verifiable_requires_review_record": True,
+                    "not_verifiable_explanation": (
+                        "Name the checked scope, the missing evidence, and why the gap "
+                        "is insufficient for a defensible judgment."
+                    ),
+                    "not_verifiable_required_signals": [
+                        "checked_scope",
+                        "missing_evidence",
+                        "verification_consequence",
+                    ],
+                    "not_verifiable_expression_examples": {
+                        "checked_scope": [
+                            "checked", "inspection", "reviewed", "searched",
+                        ],
+                        "missing_evidence": [
+                            "missing", "absence", "without", "does not include",
+                            "no relevant source content",
+                        ],
+                        "verification_consequence": [
+                            "cannot verify", "cannot be verified",
+                            "prevents verifying", "unable to determine",
                         ],
                     },
-                } if evaluator_version in CLAIM_REVIEW_QUALITY_EVALUATOR_VERSIONS else {}),
+                },
+                "dangling_evidence_repair": {
+                    "mode": "repair_claim_evidence_references",
+                    "target_identity": "claim_id",
+                    "defined_evidence_only": True,
+                    "allowed_outcome_change": "target Claim/unit to NOT_VERIFIABLE only",
+                    "preserved_fields": [
+                        "observations",
+                        "non-target claim_reviews",
+                        "claim and Criterion mappings",
+                        "reviewed_units and facet types",
+                        "defects",
+                        "array ordering",
+                    ],
+                },
             },
             "observations": {
                 "required_fields": [
@@ -551,7 +450,7 @@ def staged_output_contract(
                 },
                 "evidence_cardinality": {
                     "minimum_items_by_local_outcome": dict(
-                        _observation_evidence_minimums(evaluator_version)
+                        OBSERVATION_EVIDENCE_MIN_ITEMS
                     ),
                     "rule": (
                         "Every observation carries at least one evidence object. "
@@ -559,11 +458,6 @@ def staged_output_contract(
                         "scope that was checked but remained insufficient. NOT_APPLICABLE "
                         "cites reproducible evidence that proves the checked unit is "
                         "inapplicable; fact text is not evidence."
-                        if evaluator_version in NV_INSPECTION_EVIDENCE_EVALUATOR_VERSIONS
-                        else
-                        "Every observation except NOT_VERIFIABLE carries at least one "
-                        "evidence object. NOT_APPLICABLE cites reproducible evidence that "
-                        "proves the checked unit is inapplicable; fact text is not evidence."
                     ),
                     "not_applicable_example_only": {
                         "local_outcome": "NOT_APPLICABLE",
@@ -797,14 +691,6 @@ def validate_identity(
     schema_version = state.get("schema_version")
     if schema_version not in SUPPORTED_STAGED_SCHEMA_VERSIONS:
         errors.append(f"run-state.schema_version: unsupported value {schema_version!r}")
-    if (
-        schema_version == STAGED_SCHEMA_VERSION
-        and state.get("evaluator_version") not in SCHEMA_V2_EVALUATOR_VERSIONS
-    ):
-        errors.append(
-            "run-state.evaluator_version: staged schema v2 requires one of "
-            f"{sorted(SCHEMA_V2_EVALUATOR_VERSIONS)!r}"
-        )
 
 
 def validate_input_hashes(state: dict[str, Any]) -> list[str]:
@@ -943,9 +829,7 @@ def _has_unverifiable_gap_explanation(
 
 
 def _observation_evidence_minimums(evaluator_version: Any) -> dict[str, int]:
-    if evaluator_version in NV_INSPECTION_EVIDENCE_EVALUATOR_VERSIONS:
-        return OBSERVATION_EVIDENCE_MIN_ITEMS
-    return LEGACY_OBSERVATION_EVIDENCE_MIN_ITEMS
+    return OBSERVATION_EVIDENCE_MIN_ITEMS
 
 
 def validate_observation_document(
@@ -970,16 +854,10 @@ def validate_observation_document(
         errors.append(f"{label}.status: set to 'complete' after finishing this work item")
 
     strict = state.get("schema_version") == STAGED_SCHEMA_VERSION
-    deep_contract = state.get("evaluator_version") in DEEP_CONTRACT_EVALUATOR_VERSIONS
-    claim_review_quality = (
-        state.get("evaluator_version") in CLAIM_REVIEW_QUALITY_EVALUATOR_VERSIONS
-    )
-    nv_inspection_required = (
-        state.get("evaluator_version") in NV_INSPECTION_EVIDENCE_EVALUATOR_VERSIONS
-    )
-    nv_expression_families = (
-        state.get("evaluator_version") in NV_EXPRESSION_FAMILY_EVALUATOR_VERSIONS
-    )
+    deep_contract = True
+    claim_review_quality = True
+    nv_inspection_required = True
+    nv_expression_families = True
     rubric, _, protocol_errors = protocol()
     errors.extend(protocol_errors)
     valid_criteria = set(criterion_order(rubric)) if not protocol_errors else set()
@@ -1475,7 +1353,7 @@ def validate_aggregation_document(
         ):
             unverifiable_criteria.add(criterion_id)
 
-    mapping_guard = state.get("evaluator_version") in AGGREGATION_MAPPING_EVALUATOR_VERSIONS
+    mapping_guard = True
     for result in results:
         if not isinstance(result, dict):
             continue
@@ -1517,86 +1395,70 @@ def validate_aggregation_document(
                     f"aggregation.criterion_results[{criterion_id}]: mapped applicable units "
                     f"{_format_mapping_refs(applicable_refs)} may not aggregate to NOT_APPLICABLE"
                 )
+
+    policy_bases = document.get("outcome_policy_bases")
+    if not isinstance(policy_bases, list):
+        errors.append("aggregation.outcome_policy_bases: expected a list")
+        policy_bases = []
+    actual_policy_order: list[str] = []
+    results_by_id = {
+        result.get("criterion_id"): result for result in results if isinstance(result, dict)
+    }
+    for index, basis in enumerate(policy_bases):
+        label = f"aggregation.outcome_policy_bases[{index}]"
+        if not isinstance(basis, dict):
+            errors.append(f"{label}: expected an object")
+            continue
+        criterion_id = basis.get("criterion_id")
+        if not isinstance(criterion_id, str) or not criterion_id:
+            errors.append(f"{label}.criterion_id: required")
+            continue
+        actual_policy_order.append(criterion_id)
+        content_status = basis.get("content_status")
+        evidence_status = basis.get("evidence_status")
+        conflict_scope = basis.get("conflict_scope")
+        if content_status not in POLICY_CONTENT_STATUSES:
+            errors.append(f"{label}.content_status: unsupported value")
+        if evidence_status not in POLICY_EVIDENCE_STATUSES:
+            errors.append(f"{label}.evidence_status: unsupported value")
+        if conflict_scope not in POLICY_CONFLICT_SCOPES:
+            errors.append(f"{label}.conflict_scope: unsupported value")
+        reason = basis.get("reason")
+        if not isinstance(reason, str) or not reason or PLACEHOLDER_TEXT in reason:
+            errors.append(f"{label}.reason: replace the template placeholder")
+
+        statuses = {content_status, evidence_status, conflict_scope}
+        has_not_applicable = "NOT_APPLICABLE" in statuses
+        all_not_applicable = (
+            content_status == evidence_status == conflict_scope == "NOT_APPLICABLE"
+        )
+        if has_not_applicable and not all_not_applicable:
+            errors.append(f"{label}: NOT_APPLICABLE must be used by all three status fields")
+            continue
+        if all_not_applicable:
+            expected_conclusion = "NOT_APPLICABLE"
+        elif conflict_scope == "CORE":
+            expected_conclusion = "CONTRADICTED"
+        elif content_status in {"ABSENT", "PLACEHOLDER_ONLY"}:
+            expected_conclusion = "MISSING"
+        elif conflict_scope == "LOCAL":
+            expected_conclusion = "PARTIALLY_SUPPORTED"
+        elif evidence_status == "UNAVAILABLE":
+            expected_conclusion = "NOT_VERIFIABLE"
+        elif evidence_status == "PARTIAL":
+            expected_conclusion = "PARTIALLY_SUPPORTED"
         else:
-            if criterion_id in adverse_criteria and conclusion in {"SUPPORTED", "NOT_APPLICABLE"}:
-                errors.append(
-                    f"aggregation.criterion_results[{criterion_id}]: adverse observations may not "
-                    f"aggregate to {conclusion}"
-                )
-            if (
-                state.get("evaluator_version") in UNVERIFIABLE_GUARD_EVALUATOR_VERSIONS
-                and criterion_id in unverifiable_criteria
-                and conclusion == "SUPPORTED"
-            ):
-                errors.append(
-                    f"aggregation.criterion_results[{criterion_id}]: mapped NOT_VERIFIABLE "
-                    "observations or claim units may not aggregate to SUPPORTED"
-                )
-
-    if state.get("evaluator_version") in OUTCOME_POLICY_BASIS_EVALUATOR_VERSIONS:
-        policy_bases = document.get("outcome_policy_bases")
-        if not isinstance(policy_bases, list):
-            errors.append("aggregation.outcome_policy_bases: expected a list")
-            policy_bases = []
-        actual_policy_order: list[str] = []
-        results_by_id = {
-            result.get("criterion_id"): result for result in results if isinstance(result, dict)
-        }
-        for index, basis in enumerate(policy_bases):
-            label = f"aggregation.outcome_policy_bases[{index}]"
-            if not isinstance(basis, dict):
-                errors.append(f"{label}: expected an object")
-                continue
-            criterion_id = basis.get("criterion_id")
-            if not isinstance(criterion_id, str) or not criterion_id:
-                errors.append(f"{label}.criterion_id: required")
-                continue
-            actual_policy_order.append(criterion_id)
-            content_status = basis.get("content_status")
-            evidence_status = basis.get("evidence_status")
-            conflict_scope = basis.get("conflict_scope")
-            if content_status not in POLICY_CONTENT_STATUSES:
-                errors.append(f"{label}.content_status: unsupported value")
-            if evidence_status not in POLICY_EVIDENCE_STATUSES:
-                errors.append(f"{label}.evidence_status: unsupported value")
-            if conflict_scope not in POLICY_CONFLICT_SCOPES:
-                errors.append(f"{label}.conflict_scope: unsupported value")
-            reason = basis.get("reason")
-            if not isinstance(reason, str) or not reason or PLACEHOLDER_TEXT in reason:
-                errors.append(f"{label}.reason: replace the template placeholder")
-
-            statuses = {content_status, evidence_status, conflict_scope}
-            has_not_applicable = "NOT_APPLICABLE" in statuses
-            all_not_applicable = (
-                content_status == evidence_status == conflict_scope == "NOT_APPLICABLE"
-            )
-            if has_not_applicable and not all_not_applicable:
-                errors.append(f"{label}: NOT_APPLICABLE must be used by all three status fields")
-                continue
-            if all_not_applicable:
-                expected_conclusion = "NOT_APPLICABLE"
-            elif conflict_scope == "CORE":
-                expected_conclusion = "CONTRADICTED"
-            elif content_status in {"ABSENT", "PLACEHOLDER_ONLY"}:
-                expected_conclusion = "MISSING"
-            elif conflict_scope == "LOCAL":
-                expected_conclusion = "PARTIALLY_SUPPORTED"
-            elif evidence_status == "UNAVAILABLE":
-                expected_conclusion = "NOT_VERIFIABLE"
-            elif evidence_status == "PARTIAL":
-                expected_conclusion = "PARTIALLY_SUPPORTED"
-            else:
-                expected_conclusion = "SUPPORTED"
-            actual_conclusion = results_by_id.get(criterion_id, {}).get("conclusion")
-            if actual_conclusion != expected_conclusion:
-                errors.append(
-                    f"{label}: statuses require {expected_conclusion}, got {actual_conclusion}"
-                )
-        if actual_policy_order != OUTCOME_POLICY_BASIS_CRITERIA:
+            expected_conclusion = "SUPPORTED"
+        actual_conclusion = results_by_id.get(criterion_id, {}).get("conclusion")
+        if actual_conclusion != expected_conclusion:
             errors.append(
-                "aggregation.outcome_policy_bases: expected Criterion order "
-                f"{OUTCOME_POLICY_BASIS_CRITERIA}, got {actual_policy_order}"
+                f"{label}: statuses require {expected_conclusion}, got {actual_conclusion}"
             )
+    if actual_policy_order != OUTCOME_POLICY_BASIS_CRITERIA:
+        errors.append(
+            "aggregation.outcome_policy_bases: expected Criterion order "
+            f"{OUTCOME_POLICY_BASIS_CRITERIA}, got {actual_policy_order}"
+        )
 
     ownership = document.get("defect_ownership")
     if not isinstance(ownership, list):
@@ -1666,30 +1528,29 @@ def validate_aggregation_document(
                 f"got {owners}"
             )
 
-    if state.get("evaluator_version") in FINAL_AGGREGATION_CONTRACT_EVALUATOR_VERSIONS:
-        func_id = document.get("func_id")
-        if isinstance(func_id, str):
-            for finding_id, finding in findings_by_id.items():
-                owners = finding_owners.get(finding_id, [])
-                if len(owners) != 1:
-                    continue
-                criterion_id = finding.get("criterion_id")
-                claim_id = finding.get("claim_id")
-                if not isinstance(criterion_id, str) or (
-                    claim_id is not None and not isinstance(claim_id, str)
-                ):
-                    continue
-                expected_id = semantic_finding_id(
-                    func_id=func_id,
-                    defect_key=owners[0],
-                    criterion_id=criterion_id,
-                    claim_id=claim_id,
+    func_id = document.get("func_id")
+    if isinstance(func_id, str):
+        for finding_id, finding in findings_by_id.items():
+            owners = finding_owners.get(finding_id, [])
+            if len(owners) != 1:
+                continue
+            criterion_id = finding.get("criterion_id")
+            claim_id = finding.get("claim_id")
+            if not isinstance(criterion_id, str) or (
+                claim_id is not None and not isinstance(claim_id, str)
+            ):
+                continue
+            expected_id = semantic_finding_id(
+                func_id=func_id,
+                defect_key=owners[0],
+                criterion_id=criterion_id,
+                claim_id=claim_id,
+            )
+            if finding_id != expected_id:
+                errors.append(
+                    f"aggregation.finding_id {finding_id}: expected deterministic ID "
+                    f"{expected_id}"
                 )
-                if finding_id != expected_id:
-                    errors.append(
-                        f"aggregation.finding_id {finding_id}: expected deterministic ID "
-                        f"{expected_id}"
-                    )
 
     bases = document.get("contradiction_bases")
     if not isinstance(bases, list):

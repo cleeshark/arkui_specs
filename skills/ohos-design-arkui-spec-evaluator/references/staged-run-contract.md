@@ -106,7 +106,7 @@ Do not use one blanket `SUPPORTED` observation to close many claims. Each claim 
 actually inspected and cites evidence from an observation. Every required check must appear in at
 least one observation's `check_ids`.
 
-For new 0.1.9+ runs, `unit_reviews` must contain every `reviewed_units` ID exactly once and in the
+`unit_reviews` must contain every `reviewed_units` ID exactly once and in the
 same order. Use these facet types: `condition`, `input`, `data_field`, `state_transition`,
 `observable_result`, `failure_recovery`, `timing_performance`, `compatibility`, `ownership`,
 `traceability`, or `design_claim`. A supported Claim requires all its units supported; a conflict,
@@ -120,7 +120,7 @@ Allowed `local_outcome` values:
 - `NOT_APPLICABLE`: the unit is proven inapplicable.
 - `NOT_VERIFIABLE`: evidence is unavailable or insufficient.
 
-For evaluator 0.1.14+, apply the machine-readable evidence cardinality table in
+Apply the machine-readable evidence cardinality table in
 `output-contract.json`: every observation except `NOT_VERIFIABLE` has at least one evidence object.
 This includes `NOT_APPLICABLE`, which cites the frozen scope, API, device-form, build, or lifecycle
 evidence that proves the checked unit is inapplicable. A prose `fact` is not evidence.
@@ -186,7 +186,7 @@ only the named observation evidence arrays. It cannot change outcomes, facts, Cl
 mappings, defect ownership, non-target evidence, or ordering; if the scoped inputs do not prove the
 existing fact, it fails instead of inventing evidence or downgrading the outcome.
 
-For evaluator 0.1.17+, Claim `reason` and unit `fact` values must contain an evidence-specific
+Claim `reason` and unit `fact` values must contain an evidence-specific
 explanation; an outcome token by itself is not a completed review. Dangling Claim or unit
 `evidence_ids` may trigger one bounded Claim re-review. The pass reads the candidate and original
 scoped frozen inputs, targets only the named Claim IDs, and may reference only evidence already
@@ -195,7 +195,7 @@ or conservatively downgrade an affected Claim/unit to `NOT_VERIFIABLE` with insp
 and a specific explanation. Observations, non-target Claims, mappings, reviewed units, facet types,
 defects, and ordering remain unchanged, and the complete candidate is validated again.
 
-For evaluator 0.1.18+, `NOT_VERIFIABLE` is no longer evidence-free. The observation includes at
+`NOT_VERIFIABLE` is not evidence-free. The observation includes at
 least one `review_record` for the frozen scope that was inspected, and each NV Claim and atomic unit
 references that record. Their reason/fact names the checked scope, missing evidence, and why the
 gap is insufficient. Claim evidence repair retains or selects inspection evidence when
@@ -204,7 +204,7 @@ degenerate output only when inspection evidence has also collapsed and an indepe
 as repetitive prose, zero decisive outcomes, or abnormally sparse observations corroborates the
 failure. The service performs at most one complete quality retry from the original inputs.
 
-For evaluator 0.1.19+, the three NV prose signals accept bounded expression families including
+The three NV prose signals accept bounded expression families including
 inspection/review/search wording, explicit absence or omitted-content wording, and active, passive
 or causal verification consequences. This broadens valid natural language without accepting a
 generic negation as evidence of a gap. A bounded Claim evidence repair that merges but leaves the
@@ -254,7 +254,7 @@ Criterion listed under `secondary_criterion_ids`. This does not create another o
 Critical Finding. The historical field name `primary_defect_key` in a contradiction basis denotes
 the selected root basis key; `defect_ownership` remains authoritative for primary/secondary roles.
 
-For 0.1.13+ runs, generate the mapping before writing final Criterion results:
+Generate the mapping before writing final Criterion results:
 
 ```bash
 python3 specs/skills/ohos-design-arkui-spec-evaluator/scripts/build_aggregation_context.py \
@@ -288,7 +288,7 @@ error. In that case, it may add the missing evidence-backed Finding and synchron
 defect ownership, but it may not change the conclusion, invent a defect key, or widen evidence
 scope. If no validated defect key can own the Finding, the aggregation remains failed.
 
-For evaluator 0.1.15+, `output-contract.json` also contains
+`output-contract.json` also contains
 `aggregation_payload.final_contract`, sourced directly from the final semantic-result Schema.
 Before aggregation is published, the staged validator builds the final candidate in memory and
 runs final schema and protocol validation. Finding identity is deterministic:
@@ -302,7 +302,7 @@ evidence-backed N/A `reason` to `applicability_reason`, and rewrite Finding IDs 
 `defect_ownership[].finding_ids` references. Any ambiguous alias or remaining structural error
 fails validation.
 
-For evaluator 0.1.16+, Finding IDs in executor output are provisional correlation keys. They must
+Finding IDs in executor output are provisional correlation keys. They must
 be non-empty and unique within the aggregation, but the executor does not calculate the final
 SHA-256 value. Before the first validation, the service canonicalizes Finding IDs and ownership
 references and derives `secondary_criterion_ids` as the sorted unique Criterion IDs of the owned
@@ -315,11 +315,11 @@ An aggregation may not conclude `SUPPORTED` or `NOT_APPLICABLE` for a Criterion 
 `CONFLICT` or `MISSING` observation. Correct the observation mapping or use the applicable adverse
 aggregate conclusion.
 
-For 0.1.10+ runs, an applicable Criterion with a mapped `NOT_VERIFIABLE` observation, Claim, or
+An applicable Criterion with a mapped `NOT_VERIFIABLE` observation, Claim, or
 atomic unit may not aggregate to `SUPPORTED`. The unresolved unit remains part of the Criterion
 scope even when other rows are supported.
 
-For 0.1.11+ runs, fill the six initialized policy bases with:
+Fill the six initialized policy bases with:
 
 ```json
 {
