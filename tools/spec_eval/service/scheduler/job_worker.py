@@ -24,6 +24,7 @@ from ..store.repositories import (
     DependencySnapshotRepository,
     EventRepository,
     FunctionReportHeadRepository,
+    ExecutorCallRepository,
     JobStatisticsRepository,
     JobRepository,
     RefreshTargetRepository,
@@ -59,6 +60,7 @@ def build_runner(
                 workspace_provider=workspace_manager.prepare,
                 refresh_targets=targets,
                 statistics=JobStatisticsRepository(store),
+                invocations=ExecutorCallRepository(store),
                 cancel=cancel,
                 runner=runner,
             )

@@ -41,17 +41,7 @@ from ..store.sqlite_store import utc_now
 from ._subprocess import Runner, default_runner
 from .context import RunContext
 from .evidence_stage import prepare_evidence, validate_evidence_package
-from .result_payload import (
-    claim_evidence_repair_prompt_contract,
-    load_template,
-    merge_claim_evidence_repair_payload,
-    merge_observation_payload,
-    observation_evidence_repair_prompt_contract,
-    observation_prompt_contract,
-    quality_retry_prompt_contract,
-    repair_prompt_contract,
-    repair_rejection_retry_prompt_contract,
-)
+from .result_payload import load_template  # noqa: F401  (re-exported helper)
 from .observation_quality import assess_observation_quality
 from . import staged_stage
 from ..freshness import DEPENDENCY_SNAPSHOT_CHANGED
@@ -89,34 +79,6 @@ class _RepairRejectionFallback:
     verdict: Any
 
 
-_REPAIRABLE_VALIDATION_ERROR_MARKERS = (
-    ".evidence_id: invalid evidence ID",
-    ".content_hash: expected sha256:<64 lowercase hex digits>",
-    ".criterion_ids: unknown criteria",
-    ".defect_keys: only conflict or missing claims may own defects",
-)
-_MISSING_OBSERVATION_EVIDENCE = re.compile(
-    r"\.observations\[(\d+)\]\.evidence: evidence is required for this local outcome$"
-)
-_CLAIM_REVIEW_REPAIR_ERROR = re.compile(
-    r"\.claim_reviews\[(\d+)\](?:"
-    r"(?:\.unit_reviews\[\d+\])?\.evidence_ids: unknown evidence|"
-    r"\.reason: expected an evidence-specific explanation|"
-    r"\.reason: expected checked scope, missing evidence and insufficiency explanation|"
-    r"\.unit_reviews\[\d+\]\.fact: expected an evidence-specific atomic fact|"
-    r"\.unit_reviews\[\d+\]\.fact: expected checked scope, missing evidence and insufficiency explanation|"
-    r"(?:\.unit_reviews\[\d+\])?\.evidence_ids: inspection evidence is required for NOT_VERIFIABLE|"
-    r"(?:\.unit_reviews\[\d+\])?\.evidence_ids: NOT_VERIFIABLE must reference review_record inspection evidence"
-    r")"
-)
-_EXECUTOR_QUALITY_EVALUATOR_VERSIONS = {
-    "skill:ohos-design-arkui-spec-evaluator@0.1.18",
-    "skill:ohos-design-arkui-spec-evaluator@0.1.19",
-}
-
-
-# --- executor event -> DB event bridge (capped) -----------------------------
-
 class _DBEmitter:
     """Forward executor events to the events table, capping verbose JSONL."""
 
@@ -147,15 +109,47 @@ def run_semantic(
     attempts: AttemptRepository,
     events: EventRepository,
     statistics: JobStatisticsRepository | None = None,
+    invocations=None,
     cancel: Any = None,
     runner: Runner = default_runner,
 ) -> SemanticStageResult:
-    """Run the staged semantic loop for one run. Resume-safe across interruptions."""
+    """Run the staged observation loop for one run (protocol 0.2.0).
+
+    Resume-safe: validated work items are skipped; a stored invalid candidate
+    resumes at the single correction turn instead of regenerating.
+    """
+    from spec_eval.kernel import staged_state as SS
+    from spec_eval.kernel.normalize import normalize_observation
+    from spec_eval.kernel.validate import validate_observation_document
+    from spec_eval.service.pipeline.judgment_flow import (
+        JudgmentFlow, input_fingerprint,
+    )
+    from .result_payload import observe_observation_prompt_contract
+
     emit = _DBEmitter(events, ctx.job_id)
 
     run_state = ctx.run_dir / "run-state.json"
-    if not run_state.is_file():
+    if (
+        not run_state.is_file()
+        and not (ctx.run_dir / "work-items.json").is_file()
+    ):
         staged_stage.init_staged_run(ctx, runner=runner)
+
+    if not run_state.is_file():
+        # work-items.json exists but run-state.json does not (interrupted init
+        # or synthetic fixtures): synthesize the initial state document
+        run_state.write_text(json.dumps({
+            "validated_work_items": [],
+            "aggregation_validated": False,
+            "semantic_validated": False,
+            "current_phase": "feature_observations",
+        }), encoding="utf-8")
+    output_contract_path = ctx.run_dir / "output-contract.json"
+    output_contract = (
+        json.loads(output_contract_path.read_text(encoding="utf-8"))
+        if output_contract_path.is_file() else {}
+    )
+    valid_criterion_ids = tuple(output_contract.get("valid_criterion_ids", []))
 
     completed = 0
     while True:
@@ -163,561 +157,102 @@ def run_semantic(
             return SemanticStageResult(C.STATUS_CANCELLED, completed, "cancelled")
         item = staged_stage.next_work_item(ctx, runner=runner)
         if item is None:
-            break  # no more observation work items
-
-        try:
-            output_path = Path(str(item["output_path"]))
-            initialized = load_template(output_path)
-        except (KeyError, ValueError) as exc:
-            jobs.transition_status(
-                ctx.job_id, S.FAILED,
-                event_type="semantic_failed",
-                payload={"work_item_id": item.get("id"), "error": f"template preflight: {exc}"},
-            )
-            return SemanticStageResult(C.STATUS_FAILED, completed, f"template preflight: {exc}")
-
-        work = _build_work_input(ctx, item)
-        events.append(ctx.job_id, "work_item_started", {"work_item_id": work.work_item_id})
-        result = executor.execute(work, emit, cancel)
-        _record_executor_statistics(statistics, ctx.job_id, result)
-
-        if result.status == C.STATUS_CANCELLED or (cancel is not None and cancel.is_set()):
-            return SemanticStageResult(C.STATUS_CANCELLED, completed, "cancelled during work item")
-        if result.status == C.STATUS_AWAITING:
-            jobs.transition_status(
-                ctx.job_id, S.AWAITING_EXECUTOR,
-                event_type="awaiting_executor",
-                payload={"work_item_id": work.work_item_id, "error": result.error},
-            )
-            return SemanticStageResult(C.STATUS_AWAITING, completed, result.error)
-        if not result.succeeded:
-            jobs.transition_status(
-                ctx.job_id, S.FAILED,
-                event_type="semantic_failed",
-                payload={"work_item_id": work.work_item_id, "status": result.status, "error": result.error},
-            )
-            return SemanticStageResult(C.STATUS_FAILED, completed, result.error or f"executor {result.status}")
-
-        if ctx.evaluator_version in _EXECUTOR_QUALITY_EVALUATOR_VERSIONS:
-            quality = assess_observation_quality(result.observation)
-            if quality.suspected:
-                events.append(
-                    ctx.job_id,
-                    "executor_quality_retry_started",
-                    {
-                        "work_item_id": work.work_item_id,
-                        "quality_retry": 1,
-                        "initial_quality": quality.payload(),
-                        "initial_executor_telemetry": _executor_telemetry_payload(result),
-                    },
-                )
-                quality_retry_work = _build_quality_retry_work_input(work, quality)
-                retry_result = executor.execute(quality_retry_work, emit, cancel)
-                _record_executor_statistics(statistics, ctx.job_id, retry_result)
-                if retry_result.status == C.STATUS_CANCELLED or (
-                    cancel is not None and cancel.is_set()
-                ):
-                    return SemanticStageResult(
-                        C.STATUS_CANCELLED, completed, "cancelled during executor quality retry"
-                    )
-                if retry_result.status == C.STATUS_AWAITING:
-                    jobs.transition_status(
-                        ctx.job_id,
-                        S.AWAITING_EXECUTOR,
-                        event_type="awaiting_executor",
-                        payload={
-                            "work_item_id": work.work_item_id,
-                            "phase": "executor_quality_retry",
-                            "error": retry_result.error,
-                        },
-                    )
-                    return SemanticStageResult(C.STATUS_AWAITING, completed, retry_result.error)
-                if not retry_result.succeeded:
-                    error = retry_result.error or f"quality retry executor {retry_result.status}"
-                    jobs.transition_status(
-                        ctx.job_id,
-                        S.FAILED,
-                        event_type="executor_quality_failed",
-                        payload={
-                            "work_item_id": work.work_item_id,
-                            "quality_retry": 1,
-                            "initial_quality": quality.payload(),
-                            "initial_executor_telemetry": _executor_telemetry_payload(result),
-                            "retry_executor_telemetry": _executor_telemetry_payload(retry_result),
-                            "retry_status": retry_result.status,
-                            "error": error,
-                        },
-                    )
-                    return SemanticStageResult(C.STATUS_FAILED, completed, error)
-                retry_quality = assess_observation_quality(retry_result.observation)
-                if retry_quality.suspected:
-                    error = "degenerate output suspected after one executor quality retry"
-                    jobs.transition_status(
-                        ctx.job_id,
-                        S.FAILED,
-                        event_type="executor_quality_failed",
-                        payload={
-                            "work_item_id": work.work_item_id,
-                            "quality_retry": 1,
-                            "initial_quality": quality.payload(),
-                            "retry_quality": retry_quality.payload(),
-                            "initial_executor_telemetry": _executor_telemetry_payload(result),
-                            "retry_executor_telemetry": _executor_telemetry_payload(retry_result),
-                            "error": error,
-                        },
-                    )
-                    return SemanticStageResult(C.STATUS_FAILED, completed, error)
-                events.append(
-                    ctx.job_id,
-                    "executor_quality_retry_completed",
-                    {
-                        "work_item_id": work.work_item_id,
-                        "quality_retry": 1,
-                        "initial_quality": quality.payload(),
-                        "retry_quality": retry_quality.payload(),
-                        "initial_executor_telemetry": _executor_telemetry_payload(result),
-                        "retry_executor_telemetry": _executor_telemetry_payload(retry_result),
-                    },
-                )
-                result = retry_result
-
-        candidate_path = output_path.with_name(f".{output_path.name}.candidate")
-        try:
-            candidate = merge_observation_payload(initialized, result.observation)
-            _write_candidate(candidate_path, candidate)
-            verdict = staged_stage.validate_work_item_candidate(
-                ctx, work.work_item_id, candidate_path, runner=runner
-            )
-            repair_modes_attempted: set[str] = set()
-            has_machine_contract = bool(
-                work.prompt_extras.get("machine_contract", {}).get("payload")
-            )
-            while not verdict.ok and has_machine_contract:
-                mechanical_errors = _mechanical_validation_errors(verdict.errors)
-                target_indexes = _evidence_completion_indexes(verdict.errors)
-                target_claim_indexes = _claim_review_repair_indexes(verdict.errors)
-
-                if mechanical_errors and "mechanical" not in repair_modes_attempted:
-                    repair_modes_attempted.add("mechanical")
-                    events.append(
-                        ctx.job_id,
-                        "candidate_validation_failed",
-                        {
-                            "work_item_id": work.work_item_id,
-                            "repairable": True,
-                            "repair_mode": "repair_candidate",
-                            "errors": list(verdict.errors),
-                            "repair_errors": list(mechanical_errors),
-                        },
-                    )
-                    repair_work = _build_repair_work_input(
-                        work, candidate_path, mechanical_errors
-                    )
-                    events.append(
-                        ctx.job_id,
-                        "candidate_repair_started",
-                        {"work_item_id": work.work_item_id, "repair_attempt": 1},
-                    )
-                    repair_result = executor.execute(repair_work, emit, cancel)
-                    _record_executor_statistics(statistics, ctx.job_id, repair_result)
-                    if repair_result.status == C.STATUS_CANCELLED or (
-                        cancel is not None and cancel.is_set()
-                    ):
-                        return SemanticStageResult(
-                            C.STATUS_CANCELLED, completed, "cancelled during candidate repair"
-                        )
-                    if not repair_result.succeeded:
-                        error = repair_result.error or f"repair executor {repair_result.status}"
-                        events.append(
-                            ctx.job_id,
-                            "candidate_repair_failed",
-                            {
-                                "work_item_id": work.work_item_id,
-                                "repair_attempt": 1,
-                                "error": error,
-                            },
-                        )
-                        jobs.transition_status(
-                            ctx.job_id,
-                            S.FAILED,
-                            event_type="semantic_failed",
-                            payload={"work_item_id": work.work_item_id, "error": error},
-                        )
-                        return SemanticStageResult(C.STATUS_FAILED, completed, error)
-                    candidate = merge_observation_payload(
-                        initialized, repair_result.observation
-                    )
-                    _write_candidate(candidate_path, candidate)
-                    verdict = staged_stage.validate_work_item_candidate(
-                        ctx, work.work_item_id, candidate_path, runner=runner
-                    )
-                    mechanical_resolved = not _mechanical_validation_errors(verdict.errors)
-                    events.append(
-                        ctx.job_id,
-                        (
-                            "candidate_repair_completed"
-                            if mechanical_resolved
-                            else "candidate_repair_failed"
-                        ),
-                        {
-                            "work_item_id": work.work_item_id,
-                            "repair_attempt": 1,
-                            "errors": list(verdict.errors),
-                        },
-                    )
-                    continue
-
-                if target_indexes and "observation_evidence" not in repair_modes_attempted:
-                    repair_modes_attempted.add("observation_evidence")
-                    evidence_errors = _observation_evidence_errors(verdict.errors)
-                    events.append(
-                        ctx.job_id,
-                        "candidate_validation_failed",
-                        {
-                            "work_item_id": work.work_item_id,
-                            "repairable": True,
-                            "repair_mode": "complete_observation_evidence",
-                            "errors": list(verdict.errors),
-                            "repair_errors": list(evidence_errors),
-                        },
-                    )
-                    repair_work = _build_evidence_repair_work_input(
-                        work, candidate_path, evidence_errors, target_indexes
-                    )
-                    events.append(
-                        ctx.job_id,
-                        "candidate_evidence_repair_started",
-                        {
-                            "work_item_id": work.work_item_id,
-                            "repair_attempt": 1,
-                            "target_observation_indexes": list(target_indexes),
-                        },
-                    )
-                    repair_result = executor.execute(repair_work, emit, cancel)
-                    _record_executor_statistics(statistics, ctx.job_id, repair_result)
-                    if repair_result.status == C.STATUS_CANCELLED or (
-                        cancel is not None and cancel.is_set()
-                    ):
-                        return SemanticStageResult(
-                            C.STATUS_CANCELLED,
-                            completed,
-                            "cancelled during observation evidence repair",
-                        )
-                    if not repair_result.succeeded:
-                        error = repair_result.error or (
-                            f"evidence repair executor {repair_result.status}"
-                        )
-                        events.append(
-                            ctx.job_id,
-                            "candidate_evidence_repair_failed",
-                            {
-                                "work_item_id": work.work_item_id,
-                                "repair_attempt": 1,
-                                "error": error,
-                            },
-                        )
-                        jobs.transition_status(
-                            ctx.job_id,
-                            S.FAILED,
-                            event_type="semantic_failed",
-                            payload={"work_item_id": work.work_item_id, "error": error},
-                        )
-                        return SemanticStageResult(C.STATUS_FAILED, completed, error)
-                    repaired_candidate = merge_observation_payload(
-                        initialized, repair_result.observation
-                    )
-                    if not _evidence_repair_preserves_semantics(
-                        candidate, repaired_candidate, target_indexes
-                    ):
-                        rejection_error = (
-                            "observation evidence repair changed fields outside "
-                            "target evidence"
-                        )
-                        events.append(
-                            ctx.job_id,
-                            "candidate_evidence_repair_rejected",
-                            {
-                                "work_item_id": work.work_item_id,
-                                "repair_attempt": 1,
-                                "error": rejection_error,
-                            },
-                        )
-                        fallback = _run_repair_rejection_fallback(
-                            ctx,
-                            jobs,
-                            events,
-                            statistics,
-                            executor,
-                            emit,
-                            cancel,
-                            work=work,
-                            initialized=initialized,
-                            candidate_path=candidate_path,
-                            completed=completed,
-                            runner=runner,
-                            rejection_stage="observation_evidence",
-                            reason=rejection_error,
-                        )
-                        if fallback.terminal is not None:
-                            return fallback.terminal
-                        candidate = fallback.candidate
-                        verdict = fallback.verdict
-                        continue
-                    candidate = repaired_candidate
-                    _write_candidate(candidate_path, candidate)
-                    verdict = staged_stage.validate_work_item_candidate(
-                        ctx, work.work_item_id, candidate_path, runner=runner
-                    )
-                    evidence_resolved = not _evidence_completion_indexes(verdict.errors)
-                    events.append(
-                        ctx.job_id,
-                        (
-                            "candidate_evidence_repair_completed"
-                            if evidence_resolved
-                            else "candidate_evidence_repair_failed"
-                        ),
-                        {
-                            "work_item_id": work.work_item_id,
-                            "repair_attempt": 1,
-                            "errors": list(verdict.errors),
-                        },
-                    )
-                    continue
-
-                if target_claim_indexes and "claim_evidence" not in repair_modes_attempted:
-                    repair_modes_attempted.add("claim_evidence")
-                    claim_errors = _claim_review_repair_errors(verdict.errors)
-                    target_claim_ids = _claim_ids_for_indexes(
-                        candidate, target_claim_indexes
-                    )
-                    available_evidence_ids = _available_evidence_ids(candidate)
-                    events.append(
-                        ctx.job_id,
-                        "candidate_validation_failed",
-                        {
-                            "work_item_id": work.work_item_id,
-                            "repairable": True,
-                            "repair_mode": "repair_claim_evidence_references",
-                            "errors": list(verdict.errors),
-                            "repair_errors": list(claim_errors),
-                        },
-                    )
-                    repair_work = _build_claim_evidence_repair_work_input(
-                        work,
-                        candidate_path,
-                        claim_errors,
-                        target_claim_ids,
-                        available_evidence_ids,
-                    )
-                    events.append(
-                        ctx.job_id,
-                        "candidate_claim_evidence_repair_started",
-                        {
-                            "work_item_id": work.work_item_id,
-                            "repair_attempt": 1,
-                            "target_claim_ids": list(target_claim_ids),
-                        },
-                    )
-                    repair_result = executor.execute(repair_work, emit, cancel)
-                    _record_executor_statistics(statistics, ctx.job_id, repair_result)
-                    if repair_result.status == C.STATUS_CANCELLED or (
-                        cancel is not None and cancel.is_set()
-                    ):
-                        return SemanticStageResult(
-                            C.STATUS_CANCELLED,
-                            completed,
-                            "cancelled during Claim evidence repair",
-                        )
-                    if not repair_result.succeeded:
-                        error = repair_result.error or (
-                            f"Claim evidence repair executor {repair_result.status}"
-                        )
-                        events.append(
-                            ctx.job_id,
-                            "candidate_claim_evidence_repair_failed",
-                            {
-                                "work_item_id": work.work_item_id,
-                                "repair_attempt": 1,
-                                "error": error,
-                            },
-                        )
-                        jobs.transition_status(
-                            ctx.job_id,
-                            S.FAILED,
-                            event_type="semantic_failed",
-                            payload={"work_item_id": work.work_item_id, "error": error},
-                        )
-                        return SemanticStageResult(C.STATUS_FAILED, completed, error)
-                    try:
-                        repaired_candidate = merge_claim_evidence_repair_payload(
-                            candidate, repair_result.observation, target_claim_ids
-                        )
-                    except ValueError as exc:
-                        repaired_candidate = None
-                        rejection_error = (
-                            "Claim evidence repair payload violates the incremental "
-                            f"contract: {exc}"
-                        )
-                    else:
-                        rejection_error = None
-                        if not _claim_evidence_repair_preserves_scope(
-                            candidate,
-                            repaired_candidate,
-                            target_claim_ids,
-                            require_nv_inspection=(
-                                ctx.evaluator_version in _EXECUTOR_QUALITY_EVALUATOR_VERSIONS
-                            ),
-                        ):
-                            rejection_error = (
-                                "Claim evidence repair changed fields outside "
-                                "target Claim reviews"
-                            )
-                            repaired_candidate = None
-                    if rejection_error is not None:
-                        events.append(
-                            ctx.job_id,
-                            "candidate_claim_evidence_repair_rejected",
-                            {
-                                "work_item_id": work.work_item_id,
-                                "repair_attempt": 1,
-                                "error": rejection_error,
-                            },
-                        )
-                        fallback = _run_repair_rejection_fallback(
-                            ctx,
-                            jobs,
-                            events,
-                            statistics,
-                            executor,
-                            emit,
-                            cancel,
-                            work=work,
-                            initialized=initialized,
-                            candidate_path=candidate_path,
-                            completed=completed,
-                            runner=runner,
-                            rejection_stage="claim_evidence",
-                            reason=rejection_error,
-                        )
-                        if fallback.terminal is not None:
-                            return fallback.terminal
-                        candidate = fallback.candidate
-                        verdict = fallback.verdict
-                        continue
-                    candidate = repaired_candidate
-                    _write_candidate(candidate_path, candidate)
-                    verdict = staged_stage.validate_work_item_candidate(
-                        ctx, work.work_item_id, candidate_path, runner=runner
-                    )
-                    claim_evidence_resolved = not _claim_review_repair_indexes(
-                        verdict.errors
-                    )
-                    events.append(
-                        ctx.job_id,
-                        (
-                            "candidate_claim_evidence_repair_completed"
-                            if claim_evidence_resolved
-                            else "candidate_claim_evidence_repair_failed"
-                        ),
-                        {
-                            "work_item_id": work.work_item_id,
-                            "repair_attempt": 1,
-                            "errors": list(verdict.errors),
-                        },
-                    )
-                    if not claim_evidence_resolved:
-                        residual_count = len(_claim_review_repair_indexes(verdict.errors))
-                        fallback = _run_repair_rejection_fallback(
-                            ctx,
-                            jobs,
-                            events,
-                            statistics,
-                            executor,
-                            emit,
-                            cancel,
-                            work=work,
-                            initialized=initialized,
-                            candidate_path=candidate_path,
-                            completed=completed,
-                            runner=runner,
-                            rejection_stage="claim_evidence_validation",
-                            reason=(
-                                "Claim evidence repair merged but validation still "
-                                f"reported {residual_count} targeted errors"
-                            ),
-                        )
-                        if fallback.terminal is not None:
-                            return fallback.terminal
-                        candidate = fallback.candidate
-                        verdict = fallback.verdict
-                    continue
-
-                break
-            if not verdict.ok:
-                jobs.transition_status(
-                    ctx.job_id, S.FAILED,
-                    event_type="semantic_failed",
-                    payload={"work_item_id": work.work_item_id, "errors": list(verdict.errors)},
-                )
-                return SemanticStageResult(
-                    C.STATUS_FAILED, completed, "validator: " + "; ".join(verdict.errors)
-                )
-            candidate_path.replace(output_path)
-        except (OSError, KeyError, ValueError, json.JSONDecodeError) as exc:
-            jobs.transition_status(
-                ctx.job_id, S.FAILED,
-                event_type="semantic_failed", payload={
-                    "work_item_id": work.work_item_id,
-                    "error": f"observation candidate: {exc}",
-                },
-            )
-            return SemanticStageResult(
-                C.STATUS_FAILED, completed, f"observation candidate: {exc}"
-            )
-        finally:
-            candidate_path.unlink(missing_ok=True)
-
-        verdict = staged_stage.validate_work_item(ctx, work.work_item_id, runner=runner)
-        if not verdict.ok:
-            jobs.transition_status(
-                ctx.job_id, S.FAILED,
-                event_type="semantic_failed",
-                payload={"work_item_id": work.work_item_id, "errors": list(verdict.errors)},
-            )
-            return SemanticStageResult(
-                C.STATUS_FAILED, completed, "validator: " + "; ".join(verdict.errors)
-            )
-
-        attempts.record_checkpoint(
-            Attempt(
-                attempt_id=make_job_id(),
-                job_id=ctx.job_id,
-                run_id=ctx.run_id,
-                feat_id=item.get("feat_id"),
-                stage=S.STAGE_SEMANTIC,
-                status=S.ATTEMPT_COMPLETED,
-                started_at=utc_now(),
-                finished_at=utc_now(),
-                exit_code=0,
-                artifact_dir=str(ctx.run_dir),
-            )
+            break
+        output_path = Path(str(item["output_path"]))
+        work = _build_work_input(ctx, item, valid_criterion_ids)
+        template = load_template(output_path)
+        fingerprint = input_fingerprint(
+            evaluator_version=ctx.evaluator_version,
+            protocol_version=ctx.protocol_version,
+            input_paths=list(work.input_paths),
+            template_bytes=output_path.read_bytes(),
         )
-        events.append(ctx.job_id, "work_item_completed", {"work_item_id": work.work_item_id})
-        completed += 1
 
-    events.append(ctx.job_id, "observations_complete", {"completed_items": completed})
+        flow = JudgmentFlow(
+            ctx=ctx, executor=executor, jobs=jobs, events=events,
+            statistics=statistics, invocations=invocations, emit=emit,
+            cancel=cancel,
+        )
+        events.append(ctx.job_id, "work_item_started", {
+            "work_item_id": work.work_item_id,
+        })
+
+        def _publish(document: dict[str, Any], _item=item) -> None:
+            run_state_doc2 = json.loads(run_state.read_text(encoding="utf-8"))
+            work_items_doc2 = json.loads(
+                (ctx.run_dir / "work-items.json").read_text(encoding="utf-8")
+            )
+            SS.update_progress(
+                ctx.run_dir, run_state_doc2, work_items_doc2,
+                stage="observations", work_item_id=str(_item["id"]),
+            )
+            attempts.record_checkpoint(
+                Attempt(
+                    attempt_id=make_job_id(),
+                    job_id=ctx.job_id,
+                    run_id=ctx.run_id,
+                    feat_id=_item.get("feat_id"),
+                    stage=S.STAGE_SEMANTIC,
+                    status=S.ATTEMPT_COMPLETED,
+                    started_at=utc_now(),
+                    finished_at=utc_now(),
+                    exit_code=0,
+                    artifact_dir=str(ctx.run_dir),
+                )
+            )
+
+        outcome = flow.run(
+            work=work,
+            output_path=output_path,
+            template=template,
+            normalize=lambda payload, _t=template: normalize_observation(
+                _t, payload, repo_root=ctx.repo_root
+            ),
+            validate=lambda document: validate_observation_document(
+                document,
+                valid_criterion_ids=valid_criterion_ids,
+                required_checks=item.get("required_checks"),
+            ),
+            base_contract=work.prompt_extras,
+            on_publish=_publish,
+            fingerprint=fingerprint,
+            stage_event="work_item_completed",
+        )
+        if outcome.status != C.STATUS_COMPLETED:
+            return SemanticStageResult(
+                outcome.status, completed, outcome.error
+            )
+        completed += 1
+    events.append(ctx.job_id, "observations_complete", {
+        "completed_items": completed,
+    })
     return SemanticStageResult(C.STATUS_COMPLETED, completed)
 
 
-def _build_work_input(ctx: RunContext, item: dict[str, Any]) -> C.WorkItemInput:
+def _build_work_input(
+    ctx: RunContext,
+    item: dict[str, Any],
+    valid_criterion_ids: tuple[str, ...] = (),
+) -> C.WorkItemInput:
+    from spec_eval.kernel.machine_contract import (
+        build_observation_machine_contract,
+    )
+    from .result_payload import observe_observation_prompt_contract
+
     output_path = Path(str(item["output_path"]))
-    executor_result_path = output_path.parent / f"{output_path.stem}.executor-result.json"
+    executor_result_path = (
+        output_path.parent / f"{output_path.stem}.executor-result.json"
+    )
     input_paths = [str(path) for path in item.get("input_paths", [])]
-    input_paths.append(str(output_path))
     staged_contract = ctx.skill_scripts_dir.parent / "references" / "staged-run-contract.md"
     if staged_contract.is_file():
         input_paths.append(str(staged_contract))
     input_paths = list(dict.fromkeys(input_paths))
+    machine_contract = build_observation_machine_contract(
+        expected_claim_ids=item.get("expected_claim_ids", []),
+        required_checks=item.get("required_checks", []),
+        valid_criterion_ids=valid_criterion_ids,
+    )
     return C.WorkItemInput(
         job_id=ctx.job_id,
         func_id=ctx.func_id,
@@ -731,507 +266,12 @@ def _build_work_input(ctx: RunContext, item: dict[str, Any]) -> C.WorkItemInput:
         skill_version=ctx.evaluator_version,
         protocol_version=ctx.protocol_version,
         forbidden_paths=ctx.forbidden_paths,
-        prompt_extras=observation_prompt_contract(
-            output_path, ctx.run_dir / "output-contract.json"
+        prompt_extras=observe_observation_prompt_contract(
+            template_path=output_path,
+            schema_dir=ctx.run_dir,
+            machine_contract=machine_contract,
         ),
     )
-
-
-def _build_repair_work_input(
-    work: C.WorkItemInput,
-    candidate_path: Path,
-    validation_errors: tuple[str, ...],
-) -> C.WorkItemInput:
-    template_path = Path(str(work.prompt_extras["template_path"]))
-    output_contract_path = Path(str(work.prompt_extras["output_contract_path"]))
-    result_path = Path(work.executor_result_path)
-    repair_result_path = result_path.with_name(
-        f"{result_path.stem}.repair-1{result_path.suffix}"
-    )
-    return replace(
-        work,
-        input_paths=(
-            str(candidate_path),
-            str(template_path),
-            str(output_contract_path),
-        ),
-        executor_result_path=str(repair_result_path),
-        prompt_extras=repair_prompt_contract(
-            work.prompt_extras,
-            candidate_path=candidate_path,
-            validation_errors=validation_errors,
-        ),
-    )
-
-
-def _build_quality_retry_work_input(
-    work: C.WorkItemInput,
-    quality: Any,
-) -> C.WorkItemInput:
-    result_path = Path(work.executor_result_path)
-    retry_result_path = result_path.with_name(
-        f"{result_path.stem}.quality-retry-1{result_path.suffix}"
-    )
-    return replace(
-        work,
-        executor_result_path=str(retry_result_path),
-        prompt_extras=quality_retry_prompt_contract(
-            work.prompt_extras,
-            quality_metrics=quality.metrics,
-            reason_codes=quality.reason_codes,
-        ),
-    )
-
-
-def _build_repair_rejection_retry_work_input(
-    work: C.WorkItemInput,
-    *,
-    rejection_stage: str,
-    reason: str,
-) -> C.WorkItemInput:
-    result_path = Path(work.executor_result_path)
-    retry_result_path = result_path.with_name(
-        f"{result_path.stem}.repair-rejection-retry-1{result_path.suffix}"
-    )
-    return replace(
-        work,
-        executor_result_path=str(retry_result_path),
-        prompt_extras=repair_rejection_retry_prompt_contract(
-            work.prompt_extras,
-            rejection_stage=rejection_stage,
-            reason_codes=(reason,),
-        ),
-    )
-
-
-def _run_repair_rejection_fallback(
-    ctx: RunContext,
-    jobs: JobRepository,
-    events: EventRepository,
-    statistics: JobStatisticsRepository | None,
-    executor: SemanticExecutor,
-    emit: Any,
-    cancel: Any,
-    *,
-    work: C.WorkItemInput,
-    initialized: dict[str, Any],
-    candidate_path: Path,
-    completed: int,
-    runner: Runner,
-    rejection_stage: str,
-    reason: str,
-) -> _RepairRejectionFallback:
-    """Degrade one unsuccessful bounded repair to a complete re-evaluation.
-
-    Issues #23/#24: a repair may be rejected by its transport/scope guard, or a
-    Claim repair may merge successfully while leaving targeted validation
-    errors. Both cases re-evaluate the original work item once; if that executor
-    call fails or its output still does not validate, the job fails without a
-    second fallback for the same repair mode.
-    """
-    events.append(
-        ctx.job_id,
-        "repair_rejection_retry_started",
-        {
-            "work_item_id": work.work_item_id,
-            "rejection_stage": rejection_stage,
-            "reason": reason,
-        },
-    )
-    retry_work = _build_repair_rejection_retry_work_input(
-        work, rejection_stage=rejection_stage, reason=reason
-    )
-    retry_result = executor.execute(retry_work, emit, cancel)
-    _record_executor_statistics(statistics, ctx.job_id, retry_result)
-    if retry_result.status == C.STATUS_CANCELLED or (
-        cancel is not None and cancel.is_set()
-    ):
-        return _RepairRejectionFallback(
-            SemanticStageResult(
-                C.STATUS_CANCELLED, completed, "cancelled during repair rejection retry"
-            ),
-            {},
-            None,
-        )
-    if retry_result.status == C.STATUS_AWAITING:
-        jobs.transition_status(
-            ctx.job_id,
-            S.AWAITING_EXECUTOR,
-            event_type="awaiting_executor",
-            payload={
-                "work_item_id": work.work_item_id,
-                "phase": "repair_rejection_retry",
-                "error": retry_result.error,
-            },
-        )
-        return _RepairRejectionFallback(
-            SemanticStageResult(C.STATUS_AWAITING, completed, retry_result.error),
-            {},
-            None,
-        )
-    if not retry_result.succeeded:
-        error = retry_result.error or (
-            f"repair rejection retry executor {retry_result.status}"
-        )
-        events.append(
-            ctx.job_id,
-            "repair_rejection_retry_failed",
-            {
-                "work_item_id": work.work_item_id,
-                "rejection_stage": rejection_stage,
-                "error": error,
-            },
-        )
-        jobs.transition_status(
-            ctx.job_id,
-            S.FAILED,
-            event_type="semantic_failed",
-            payload={
-                "work_item_id": work.work_item_id,
-                "phase": "repair_rejection_retry",
-                "error": error,
-            },
-        )
-        return _RepairRejectionFallback(
-            SemanticStageResult(C.STATUS_FAILED, completed, error), {}, None
-        )
-    if ctx.evaluator_version in _EXECUTOR_QUALITY_EVALUATOR_VERSIONS:
-        retry_quality = assess_observation_quality(retry_result.observation)
-        if retry_quality.suspected:
-            error = "degenerate output after repair rejection fallback retry"
-            events.append(
-                ctx.job_id,
-                "repair_rejection_retry_failed",
-                {
-                    "work_item_id": work.work_item_id,
-                    "rejection_stage": rejection_stage,
-                    "retry_quality": retry_quality.payload(),
-                    "error": error,
-                },
-            )
-            jobs.transition_status(
-                ctx.job_id,
-                S.FAILED,
-                event_type="executor_quality_failed",
-                payload={
-                    "work_item_id": work.work_item_id,
-                    "phase": "repair_rejection_retry",
-                    "retry_quality": retry_quality.payload(),
-                    "error": error,
-                },
-            )
-            return _RepairRejectionFallback(
-                SemanticStageResult(C.STATUS_FAILED, completed, error), {}, None
-            )
-    candidate = merge_observation_payload(initialized, retry_result.observation)
-    _write_candidate(candidate_path, candidate)
-    verdict = staged_stage.validate_work_item_candidate(
-        ctx, work.work_item_id, candidate_path, runner=runner
-    )
-    events.append(
-        ctx.job_id,
-        (
-            "repair_rejection_retry_completed"
-            if verdict.ok else
-            "repair_rejection_retry_failed"
-        ),
-        {
-            "work_item_id": work.work_item_id,
-            "rejection_stage": rejection_stage,
-            "errors": list(verdict.errors),
-        },
-    )
-    return _RepairRejectionFallback(None, candidate, verdict)
-
-
-def _build_evidence_repair_work_input(
-    work: C.WorkItemInput,
-    candidate_path: Path,
-    validation_errors: tuple[str, ...],
-    target_observation_indexes: tuple[int, ...],
-) -> C.WorkItemInput:
-    template_path = Path(str(work.prompt_extras["template_path"]))
-    output_contract_path = Path(str(work.prompt_extras["output_contract_path"]))
-    result_path = Path(work.executor_result_path)
-    repair_result_path = result_path.with_name(
-        f"{result_path.stem}.evidence-repair-1{result_path.suffix}"
-    )
-    input_paths = list(dict.fromkeys((
-        str(candidate_path),
-        str(template_path),
-        str(output_contract_path),
-        *work.input_paths,
-    )))
-    return replace(
-        work,
-        input_paths=tuple(input_paths),
-        executor_result_path=str(repair_result_path),
-        prompt_extras=observation_evidence_repair_prompt_contract(
-            work.prompt_extras,
-            candidate_path=candidate_path,
-            validation_errors=validation_errors,
-            target_observation_indexes=target_observation_indexes,
-        ),
-    )
-
-
-def _build_claim_evidence_repair_work_input(
-    work: C.WorkItemInput,
-    candidate_path: Path,
-    validation_errors: tuple[str, ...],
-    target_claim_ids: tuple[str, ...],
-    available_evidence_ids: tuple[str, ...],
-) -> C.WorkItemInput:
-    template_path = Path(str(work.prompt_extras["template_path"]))
-    output_contract_path = Path(str(work.prompt_extras["output_contract_path"]))
-    result_path = Path(work.executor_result_path)
-    repair_result_path = result_path.with_name(
-        f"{result_path.stem}.claim-evidence-repair-1{result_path.suffix}"
-    )
-    input_paths = list(dict.fromkeys((
-        str(candidate_path),
-        str(template_path),
-        str(output_contract_path),
-        *work.input_paths,
-    )))
-    return replace(
-        work,
-        input_paths=tuple(input_paths),
-        executor_result_path=str(repair_result_path),
-        prompt_extras=claim_evidence_repair_prompt_contract(
-            work.prompt_extras,
-            candidate_path=candidate_path,
-            validation_errors=validation_errors,
-            target_claim_ids=target_claim_ids,
-            available_evidence_ids=available_evidence_ids,
-        ),
-    )
-
-
-def _mechanical_validation_errors(errors: tuple[str, ...]) -> tuple[str, ...]:
-    return tuple(
-        error
-        for error in errors
-        if (".evidence[" in error and ".type:" in error)
-        or any(marker in error for marker in _REPAIRABLE_VALIDATION_ERROR_MARKERS)
-    )
-
-
-def _observation_evidence_errors(errors: tuple[str, ...]) -> tuple[str, ...]:
-    return tuple(error for error in errors if _MISSING_OBSERVATION_EVIDENCE.search(error))
-
-
-def _evidence_completion_indexes(errors: tuple[str, ...]) -> tuple[int, ...]:
-    indexes: set[int] = set()
-    for error in errors:
-        match = _MISSING_OBSERVATION_EVIDENCE.search(error)
-        if match is not None:
-            indexes.add(int(match.group(1)))
-    return tuple(sorted(indexes))
-
-
-def _claim_review_repair_errors(errors: tuple[str, ...]) -> tuple[str, ...]:
-    return tuple(error for error in errors if _CLAIM_REVIEW_REPAIR_ERROR.search(error))
-
-
-def _claim_review_repair_indexes(errors: tuple[str, ...]) -> tuple[int, ...]:
-    indexes: set[int] = set()
-    for error in errors:
-        match = _CLAIM_REVIEW_REPAIR_ERROR.search(error)
-        if match is not None:
-            indexes.add(int(match.group(1)))
-    return tuple(sorted(indexes))
-
-
-def _claim_ids_for_indexes(
-    candidate: dict[str, Any], target_indexes: tuple[int, ...]
-) -> tuple[str, ...]:
-    claim_reviews = candidate.get("claim_reviews")
-    if not isinstance(claim_reviews, list):
-        raise ValueError("Claim evidence repair requires claim_reviews")
-    claim_ids: list[str] = []
-    for index in target_indexes:
-        if index >= len(claim_reviews) or not isinstance(claim_reviews[index], dict):
-            raise ValueError(f"Claim evidence repair target index is invalid: {index}")
-        claim_id = claim_reviews[index].get("claim_id")
-        if not isinstance(claim_id, str) or not claim_id:
-            raise ValueError(f"Claim evidence repair target has no Claim ID: {index}")
-        claim_ids.append(claim_id)
-    return tuple(claim_ids)
-
-
-def _available_evidence_ids(candidate: dict[str, Any]) -> tuple[str, ...]:
-    evidence_ids: set[str] = set()
-    observations = candidate.get("observations")
-    if not isinstance(observations, list):
-        return ()
-    for observation in observations:
-        if not isinstance(observation, dict) or not isinstance(observation.get("evidence"), list):
-            continue
-        for evidence in observation["evidence"]:
-            if isinstance(evidence, dict) and isinstance(evidence.get("evidence_id"), str):
-                evidence_ids.add(evidence["evidence_id"])
-    return tuple(sorted(evidence_ids))
-
-
-def _inspection_evidence_ids(candidate: dict[str, Any]) -> set[str]:
-    evidence_ids: set[str] = set()
-    observations = candidate.get("observations")
-    if not isinstance(observations, list):
-        return evidence_ids
-    for observation in observations:
-        if not isinstance(observation, dict) or not isinstance(observation.get("evidence"), list):
-            continue
-        for evidence in observation["evidence"]:
-            if (
-                isinstance(evidence, dict)
-                and evidence.get("type") == "review_record"
-                and isinstance(evidence.get("evidence_id"), str)
-            ):
-                evidence_ids.add(evidence["evidence_id"])
-    return evidence_ids
-
-
-def _evidence_repair_preserves_semantics(
-    candidate: dict[str, Any],
-    repaired: dict[str, Any],
-    target_observation_indexes: tuple[int, ...],
-) -> bool:
-    before = json.loads(json.dumps(candidate))
-    after = json.loads(json.dumps(repaired))
-    before_observations = before.get("observations")
-    after_observations = after.get("observations")
-    if not isinstance(before_observations, list) or not isinstance(after_observations, list):
-        return False
-    if len(before_observations) != len(after_observations):
-        return False
-    for index in target_observation_indexes:
-        if index >= len(before_observations):
-            return False
-        before_observation = before_observations[index]
-        after_observation = after_observations[index]
-        if not isinstance(before_observation, dict) or not isinstance(after_observation, dict):
-            return False
-        if before_observation.get("evidence"):
-            return False
-        if not after_observation.get("evidence"):
-            return False
-        before_observation["evidence"] = []
-        after_observation["evidence"] = []
-    return before == after
-
-
-def _claim_evidence_repair_preserves_scope(
-    candidate: dict[str, Any],
-    repaired: dict[str, Any],
-    target_claim_ids: tuple[str, ...],
-    *,
-    require_nv_inspection: bool = False,
-) -> bool:
-    before = json.loads(json.dumps(candidate))
-    after = json.loads(json.dumps(repaired))
-    before_reviews = before.get("claim_reviews")
-    after_reviews = after.get("claim_reviews")
-    if not isinstance(before_reviews, list) or not isinstance(after_reviews, list):
-        return False
-    if len(before_reviews) != len(after_reviews):
-        return False
-    before["claim_reviews"] = []
-    after["claim_reviews"] = []
-    if before != after:
-        return False
-
-    target_ids = set(target_claim_ids)
-    seen_targets: set[str] = set()
-    available_evidence_ids = set(_available_evidence_ids(candidate))
-    inspection_evidence_ids = _inspection_evidence_ids(candidate)
-    for before_review, after_review in zip(before_reviews, after_reviews):
-        if not isinstance(before_review, dict) or not isinstance(after_review, dict):
-            return False
-        claim_id = before_review.get("claim_id")
-        if claim_id != after_review.get("claim_id") or not isinstance(claim_id, str):
-            return False
-        if claim_id not in target_ids:
-            if before_review != after_review:
-                return False
-            continue
-        seen_targets.add(claim_id)
-        if _claim_review_scope(before_review) != _claim_review_scope(after_review):
-            return False
-        if not _bounded_outcome_change(
-            before_review.get("local_outcome"), after_review.get("local_outcome")
-        ):
-            return False
-        after_evidence = after_review.get("evidence_ids")
-        if (
-            not isinstance(after_evidence, list)
-            or not all(isinstance(item, str) for item in after_evidence)
-            or not set(after_evidence) <= available_evidence_ids
-        ):
-            return False
-        before_defects = before_review.get("defect_keys")
-        after_defects = after_review.get("defect_keys")
-        if (
-            not isinstance(before_defects, list)
-            or not isinstance(after_defects, list)
-            or not all(isinstance(item, str) for item in before_defects)
-            or not all(isinstance(item, str) for item in after_defects)
-        ):
-            return False
-        if not set(after_defects) <= set(before_defects):
-            return False
-        if after_review.get("local_outcome") == "NOT_VERIFIABLE":
-            if after_defects:
-                return False
-            if require_nv_inspection and not set(after_evidence) & inspection_evidence_ids:
-                return False
-
-        before_units = before_review.get("unit_reviews")
-        after_units = after_review.get("unit_reviews")
-        if not isinstance(before_units, list) or not isinstance(after_units, list):
-            return False
-        if len(before_units) != len(after_units):
-            return False
-        for before_unit, after_unit in zip(before_units, after_units):
-            if not isinstance(before_unit, dict) or not isinstance(after_unit, dict):
-                return False
-            if not _bounded_outcome_change(
-                before_unit.get("local_outcome"), after_unit.get("local_outcome")
-            ):
-                return False
-            unit_evidence = after_unit.get("evidence_ids")
-            if (
-                not isinstance(unit_evidence, list)
-                or not all(isinstance(item, str) for item in unit_evidence)
-                or not set(unit_evidence) <= available_evidence_ids
-            ):
-                return False
-            if (
-                after_unit.get("local_outcome") == "NOT_VERIFIABLE"
-                and require_nv_inspection
-                and not set(unit_evidence) & inspection_evidence_ids
-            ):
-                return False
-    return seen_targets == target_ids
-
-
-def _claim_review_scope(review: dict[str, Any]) -> dict[str, Any]:
-    scope = json.loads(json.dumps(review))
-    for field in ("local_outcome", "evidence_ids", "reason", "defect_keys"):
-        scope.pop(field, None)
-    units = scope.get("unit_reviews")
-    if isinstance(units, list):
-        for unit in units:
-            if not isinstance(unit, dict):
-                continue
-            for field in ("local_outcome", "evidence_ids", "fact"):
-                unit.pop(field, None)
-    return scope
-
-
-def _bounded_outcome_change(before: Any, after: Any) -> bool:
-    return after == before or after == "NOT_VERIFIABLE"
-
 
 def _write_candidate(path: Path, document: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -1239,7 +279,6 @@ def _write_candidate(path: Path, document: dict[str, Any]) -> None:
 
 
 # --- single-job pipeline driver --------------------------------------------
-
 def run_job_pipeline(
     job_id: str,
     *,
@@ -1253,6 +292,7 @@ def run_job_pipeline(
     workspace_provider: Callable[[Job], EvaluationWorkspace],
     refresh_targets: RefreshTargetRepository | None = None,
     statistics: JobStatisticsRepository | None = None,
+    invocations: Any = None,
     cancel: Any = None,
     runner: Runner = default_runner,
 ) -> SemanticStageResult:
@@ -1320,7 +360,8 @@ def run_job_pipeline(
             return SemanticStageResult(C.STATUS_CANCELLED, 0, "cancelled")
         sem = run_semantic(
             ctx_for(run_id), executor, jobs=jobs, attempts=attempts, events=events,
-            statistics=statistics, cancel=cancel, runner=runner,
+            statistics=statistics, invocations=invocations, cancel=cancel,
+            runner=runner,
         )
         if sem.outcome != C.STATUS_COMPLETED:
             return sem
@@ -1336,7 +377,8 @@ def run_job_pipeline(
         from . import aggregation_stage
         outcome, sr = aggregation_stage.run_aggregation(
             ctx_for(run_id), executor, jobs=jobs, attempts=attempts, events=events,
-            statistics=statistics, cancel=cancel, runner=runner,
+            statistics=statistics, invocations=invocations, cancel=cancel,
+            runner=runner,
         )
         if outcome != C.STATUS_COMPLETED:
             return SemanticStageResult(outcome, 0, None)

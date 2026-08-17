@@ -40,7 +40,7 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
     def _staged_identity(self) -> dict[str, object]:
         return {
             "schema_version": 2,
-            "evaluator_version": "skill:ohos-design-arkui-spec-evaluator@0.1.19",
+            "evaluator_version": "skill:ohos-design-arkui-spec-evaluator@0.2.0",
             "func_id": "05-01-02",
             "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
             "run_id": "validator-unit-test",
@@ -208,7 +208,7 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             semantic = json.loads(result_path.read_text(encoding="utf-8"))
             self.assertEqual(
                 semantic["evaluator_version"],
-                "skill:ohos-design-arkui-spec-evaluator@0.1.19",
+                "skill:ohos-design-arkui-spec-evaluator@0.2.0",
             )
             expected_ids = [
                 criterion["id"]
@@ -286,7 +286,7 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(
                 json.loads(output.read_text(encoding="utf-8"))["evaluator_version"],
-                "skill:ohos-design-arkui-spec-evaluator@0.1.19",
+                "skill:ohos-design-arkui-spec-evaluator@0.2.0",
             )
 
     def test_machine_output_contract_matches_validator_and_rubric(self) -> None:

@@ -26,7 +26,7 @@ from .settings import ServiceSettings
 from .store.repositories import JobRepository
 from .store.sqlite_store import SqliteStore, utc_now
 
-_SCHEMA_VERSION = "4"
+_EXPECTED_SCHEMA_VERSION = "5"
 
 
 def cleanup_temp(
@@ -114,7 +114,7 @@ def _verify_backup(dest: Path) -> None:
         row = conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()
     finally:
         conn.close()
-    if row is None or row[0] != _SCHEMA_VERSION:
+    if row is None or row[0] != _EXPECTED_SCHEMA_VERSION:
         raise RuntimeError(f"backup verification failed for {dest}: schema_version={row}")
 
 

@@ -39,8 +39,22 @@ from spec_eval.service.store.repositories import (
 from spec_eval.service.store.sqlite_store import SqliteStore
 from spec_eval.service.workspace.models import EvaluationWorkspace
 
-EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.19"
+EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.2.0"
 JOB_ID = "c" * 40
+
+
+def _policy_judgments() -> list[dict]:
+    from spec_eval.kernel.normalize import OUTCOME_POLICY_BASIS_CRITERIA
+    return [
+        {
+            "criterion_id": criterion_id,
+            "content_status": "PRESENT",
+            "evidence_status": "VERIFIED",
+            "conflict_scope": "NONE",
+            "reason": "Synthetic content and evidence are complete.",
+        }
+        for criterion_id in OUTCOME_POLICY_BASIS_CRITERIA
+    ]
 
 
 # --- fakes ------------------------------------------------------------------
@@ -71,12 +85,13 @@ class FakeExecutor:
                 "cross_feat_contracts_reviewed": True,
                 "contradiction_bases": [],
                 "defect_ownership": [],
-                "outcome_policy_bases": [],
+                "outcome_policy_bases": _policy_judgments(),
                 "criterion_results": [],
                 "notes": [],
             }
             if work.work_item_id == "aggregation:final"
             else {
+                "evidence_declarations": [],
                 "claim_reviews": [],
                 "observations": [],
                 "open_questions": [],

@@ -106,12 +106,9 @@ def normalize_observation(
     fatal: list[TypedError] = []
     changes: list[str] = []
 
+    # empty expected sets are legitimate (synthetic loop fixtures, empty
+    # features); claim-set mismatches are the validator's job
     expected_claims = _strings(template.get("expected_claim_ids"))
-    if not expected_claims:
-        fatal.append(TypedError(
-            "TEMPLATE_MISSING_FIELD", "$.expected_claim_ids",
-            repairability=FATAL_INPUT, actual="empty",
-        ))
     required_checks = _strings(template.get("required_checks"))
 
     # 1. top-level evidence declarations -> stable IDs + verified content

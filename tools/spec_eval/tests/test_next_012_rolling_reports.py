@@ -320,7 +320,7 @@ class SchemaMigrationTest(unittest.TestCase):
                     "SELECT name FROM sqlite_master WHERE type='table'"
                 ).fetchall()
             }
-            self.assertEqual(row[0], "4")
+            self.assertEqual(row[0], "5")
             self.assertTrue(
                 {
                     "evaluation_reports", "function_report_heads", "freshness_policies",
@@ -364,7 +364,7 @@ class SchemaMigrationTest(unittest.TestCase):
             version = migrated._conn.execute(
                 "SELECT value FROM schema_meta WHERE key='schema_version'"
             ).fetchone()[0]
-            self.assertEqual(version, "4")
+            self.assertEqual(version, "5")
             self.assertIsNotNone(row[0])
             self.assertIsNotNone(row[1])
             migrated.close()
@@ -395,7 +395,7 @@ class SchemaMigrationTest(unittest.TestCase):
             version = migrated._conn.execute(
                 "SELECT value FROM schema_meta WHERE key='schema_version'"
             ).fetchone()[0]
-            self.assertEqual(version, "4")
+            self.assertEqual(version, "5")
             self.assertIn("executor_command_calls", columns)
             self.assertIn("evidence_paths_accessed", columns)
             migrated.close()

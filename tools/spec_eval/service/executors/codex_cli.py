@@ -300,157 +300,60 @@ class CodexCliExecutor:
             "--add-dir", str(work.run_dir),
             "--ephemeral",
             "--json",
-            "--output-schema", str(self._output_schema_path),
+            "--output-schema", str(self._schema_path_for(work)),
             "--output-last-message", str(work.executor_result_path),
             "-",  # read prompt from stdin
         ]
         return argv
 
+    def _schema_path_for(self, work: C.WorkItemInput) -> Path:
+        """0.2.0 contracts carry their generated schema; fall back to the
+        executor-configured schema for pre-0.2.0 work items."""
+        schema_path = work.prompt_extras.get("schema_path")
+        if isinstance(schema_path, str) and schema_path:
+            return Path(schema_path)
+        return self._output_schema_path
+
     @staticmethod
     def _build_prompt(work: C.WorkItemInput) -> str:
-        result_contract = dict(work.prompt_extras)
-        repair_mode = result_contract.get("mode") == "repair_candidate"
-        evidence_completion_mode = (
-            result_contract.get("mode") == "complete_observation_evidence"
-        )
-        claim_evidence_repair_mode = (
-            result_contract.get("mode") == "repair_claim_evidence_references"
-        )
-        quality_retry_mode = (
-            result_contract.get("mode") == "retry_degenerate_observation"
-        )
-        repair_rejection_retry_mode = (
-            result_contract.get("mode") == "retry_after_repair_rejection"
-        )
-        reconciliation_mode = (
-            result_contract.get("mode") == "reconcile_aggregation_candidate"
-        )
-        has_machine_contract = bool(
-            result_contract.get("machine_contract", {}).get("payload")
-        )
-        claim_quality_rule = (
-            result_contract.get("machine_contract", {})
-            .get("payload", {})
-            .get("claim_reviews", {})
-            .get("quality_rule", {})
-        )
-        has_nv_expression_contract = bool(
-            claim_quality_rule.get("not_verifiable_expression_examples")
-        )
-        payload_fields = result_contract.get("payload_fields", [])
-        derived_fields = result_contract.get("service_derived_fields", [])
-        result_kind = result_contract.get("result_kind", "staged_payload")
-        payload_field_text = json.dumps(payload_fields, ensure_ascii=False)
-        derived_field_text = json.dumps(derived_fields, ensure_ascii=False)
+        contract = dict(work.prompt_extras)
+        mode = contract.get("mode", "observe")
+        correcting = mode == "correct"
+        machine_contract = contract.get("machine_contract", {})
+        result_kind = contract.get("result_kind", "staged_judgments")
+        payload_fields = contract.get("payload_fields", [])
         constraints = [
-            "Follow the declared evaluator Skill and staged-run contract.",
+            "Follow the declared evaluator Skill and the staged-run contract.",
             "Read only the declared input_paths and frozen source/SDK files.",
             "Do not read paths in forbidden_paths (confirmed reviews or other runs).",
             "Do not modify any formal Spec, Design, Registry, source or test file.",
             "Do not modify the initialized staged template; the service owns and publishes it.",
+            "Provide judgments only; treat result_contract.machine_contract as normative.",
             "Write only the structured final result.",
         ]
-        if has_machine_contract:
-            constraints.insert(
-                -1,
-                "Treat result_contract.machine_contract as normative for nested fields, enums, IDs, hashes, evidence cardinality and conditional ownership rules.",
-            )
-        if repair_mode:
+        if correcting:
             constraints = [
-                "Perform one mechanical repair of the declared invalid candidate.",
-                "Read only candidate_path, template_path and output_contract_path from input_paths.",
-                "Do not reopen source, SDK, Spec, Design or evidence shards and do not redo semantic evaluation.",
-                "Preserve semantic judgments, facts, claim coverage and array ordering.",
-                "Repair every listed validation error plus directly linked evidence ID references.",
-                "Treat result_contract.machine_contract as normative for nested fields, enums, IDs, hashes and conditional ownership rules.",
-                "Return the complete corrected executor-owned payload, not a patch.",
+                "Correct one invalid evaluation candidate.",
+                "Read the candidate at result_contract.candidate_path and every "
+                "entry of result_contract.typed_errors.",
+                "Fix the reported judgments; the typed errors carry code, path, "
+                "entity and expected/actual values.",
+                "Do not change document identity, ordering, derived fields or "
+                "evidence you cannot verify from the frozen inputs.",
+                "Re-declare every piece of evidence you keep or add in "
+                "evidence_declarations; the service re-verifies hashes and "
+                "re-assigns canonical IDs.",
+                "Treat result_contract.machine_contract as normative.",
+                "Write only the structured final result.",
             ]
-        if evidence_completion_mode:
-            constraints = [
-                "Complete missing observation evidence in the declared invalid candidate.",
-                "Read only candidate_path, template_path, output_contract_path and the original scoped frozen inputs listed in input_paths.",
-                "Use real frozen evidence that proves the existing fact and outcome; do not invent paths, revisions, hashes or descriptions.",
-                "Populate evidence only for result_contract.target_observation_indexes.",
-                "Do not change outcomes, facts, Claim/check/Criterion mappings, defect ownership, non-target evidence or array ordering.",
-                "If the scoped inputs do not prove an existing fact, return status=failed instead of changing the judgment.",
-                "Treat result_contract.machine_contract as normative for evidence fields and cardinality.",
-                "Return the complete corrected executor-owned payload, not a patch.",
-            ]
-        if claim_evidence_repair_mode:
-            constraints = [
-                "Re-review only the Claim rows named by result_contract.target_claim_ids after dangling evidence references were rejected.",
-                "Read only candidate_path, template_path, output_contract_path and the original scoped frozen inputs listed in input_paths.",
-                "Use only evidence IDs listed by result_contract.available_evidence_ids and verify that the frozen evidence supports the retained outcome.",
-                "Replace outcome-only reason or fact text with an evidence-specific explanation for each target Claim and unit.",
-                "If existing evidence cannot support the current outcome, downgrade only the affected Claim or unit to NOT_VERIFIABLE, retain or reference review_record inspection evidence, and explain the checked scope, missing evidence and why it is insufficient.",
-                "Do not add or modify observations, create defects, upgrade outcomes, or change Claim IDs, Criterion mappings, reviewed units, facet types or array ordering.",
-                "Return an incremental payload, not the full document: exactly one complete corrected Claim review row per result_contract.target_claim_ids entry, each keyed by its unchanged claim_id.",
-                "Do not include non-target Claim rows, observations, open_questions or notes; the service merges the returned rows back into the candidate.",
-            ]
-        if quality_retry_mode:
-            constraints = [
-                "Re-evaluate the complete original work item after the prior output was rejected as degenerate.",
-                "Read the declared evidence shards, Spec/Design and relevant frozen source or SDK inputs before judging any Claim.",
-                "Do not read paths in forbidden_paths and do not modify formal inputs.",
-                "For every NOT_VERIFIABLE observation, Claim and atomic unit, create and reference review_record inspection evidence.",
-                "Every NOT_VERIFIABLE reason or fact must name the checked scope, the missing evidence and why it is insufficient to verify the unit.",
-                "Do not copy or patch the rejected output; produce an independent complete payload from the original scoped inputs.",
-                "Treat result_contract.machine_contract as normative for nested fields, enums, IDs, hashes, evidence cardinality and ownership rules.",
-                "Return the complete executor-owned payload, not a patch.",
-            ]
-        if repair_rejection_retry_mode:
-            constraints = [
-                "Re-evaluate the complete original work item after a bounded repair was rejected by its guard or left targeted validation errors.",
-                "Read the declared evidence shards, Spec/Design and relevant frozen source or SDK inputs before judging any Claim.",
-                "Do not read paths in forbidden_paths and do not modify formal inputs.",
-                "For every NOT_VERIFIABLE observation, Claim and atomic unit, create and reference review_record inspection evidence.",
-                "Every NOT_VERIFIABLE reason or fact must name the checked scope, the missing evidence and why it is insufficient to verify the unit.",
-                "Do not copy or patch the rejected candidate; produce an independent complete payload from the original scoped inputs.",
-                "Treat result_contract.machine_contract as normative for nested fields, enums, IDs, hashes, evidence cardinality and ownership rules.",
-                "Return the complete executor-owned payload, not a patch.",
-            ]
-        if reconciliation_mode:
-            constraints = [
-                "Reconcile one aggregation candidate with the published mapped-unit outcomes.",
-                "Read only candidate_path, template_path, output_contract_path and aggregation_context_path from input_paths.",
-                "Treat aggregation-context.json as authoritative for Criterion scope and mapped outcomes.",
-                "Do not reopen source, SDK, Spec, Design, Registry or evidence shards and do not redo observation evaluation.",
-                "Preserve unaffected Criteria, semantic facts, evidence arrays and ordering.",
-                "Revise every Criterion named by validation_errors and any directly linked findings, contradiction bases or defect ownership.",
-                "Treat criterion_results[].claim_ids as citations only; they may not override or narrow the mapped scope.",
-                "Return the complete corrected executor-owned aggregation payload, not a patch.",
-            ]
-        if (
-            has_nv_expression_contract
-            and not repair_mode
-            and not evidence_completion_mode
-            and not reconciliation_mode
-        ):
-            constraints.insert(
-                -1,
-                "For every NOT_VERIFIABLE reason and unit fact, state all three signals explicitly: the checked scope, the missing evidence, and the verification consequence. Valid wording includes inspection/reviewed/searched, missing/absence/without/does not include/no relevant source content, and cannot verify/cannot be verified/prevents verifying/unable to determine.",
-            )
+        payload_field_text = json.dumps(payload_fields, ensure_ascii=False)
+        task = (
+            f"Correct one {result_kind} candidate after typed validation failure."
+            if correcting else
+            f"Produce one complete {result_kind} payload for the declared work item."
+        )
         payload = {
-            "task": (
-                "Repair one staged semantic evaluation candidate after validation failure."
-                if repair_mode else (
-                    "Complete missing observation evidence in one staged semantic evaluation candidate."
-                    if evidence_completion_mode else (
-                    "Repair dangling Claim evidence references in one staged semantic evaluation candidate."
-                    if claim_evidence_repair_mode else (
-                        "Reconcile one staged aggregation candidate after mapped-unit validation failure."
-                        if reconciliation_mode else (
-                            "Re-evaluate one complete staged semantic work item after a bounded repair did not produce a valid candidate."
-                            if repair_rejection_retry_mode else (
-                            "Re-evaluate one complete staged semantic work item after executor quality rejection."
-                            if quality_retry_mode else
-                            "Complete exactly one staged semantic evaluation work item."
-                            )
-                        )
-                        )
-                    )
-                )
-            ),
+            "task": task,
             "constraints": constraints,
             "func_id": work.func_id,
             "run_id": work.run_id,
@@ -459,23 +362,22 @@ class CodexCliExecutor:
             "forbidden_paths": list(work.forbidden_paths),
             "skill_version": work.skill_version,
             "protocol_version": work.protocol_version,
-            "result_contract": result_contract,
+            "result_contract": contract,
+            "machine_contract": machine_contract,
             "output": {
                 "path": work.executor_result_path,
-                "schema": "executor-result.schema.json",
+                "schema": contract.get("schema_path"),
                 "requirement": (
-                    "Return every schema field. Use schema_version=2. For a completed "
-                    "work item set status=completed, error=null, notes to a string array, "
-                    f"and observation_json to the JSON serialization of one {result_kind} "
-                    f"object containing exactly these fields: {payload_field_text}. Read the "
-                    "initialized template and staged-run contract from input_paths, but do "
-                    "not copy identity, input paths, expected lists, or other service-owned "
-                    f"fields into the payload. The service derives: {derived_field_text}. "
-                    "Complete every payload field and preserve required array ordering according "
-                    "to the flat staged-run contract. "
-                    "Local NOT_VERIFIABLE outcomes still use envelope status=completed. "
-                    "Use status=failed only when no complete object can be produced; then "
-                    "set observation_json=null and provide a non-empty error."
+                    "Return every envelope field. Use schema_version=3. For a "
+                    "completed work item set status=completed, error=null, and "
+                    f"payload to one {result_kind} object containing exactly "
+                    f"these fields: {payload_field_text}, fully constrained by "
+                    "the declared schema. Local evidence keys (e1, e2, ...) are "
+                    "declared once in evidence_declarations and referenced via "
+                    "evidence_refs; never emit canonical EV- IDs. Local "
+                    "NOT_VERIFIABLE outcomes still use envelope status=completed. "
+                    "Use status=failed only when no complete payload can be "
+                    "produced; then set payload=null and provide a non-empty error."
                 ),
             },
         }
