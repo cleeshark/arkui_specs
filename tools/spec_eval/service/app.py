@@ -15,7 +15,7 @@ from .domain.models import CreateJobCommand, FreshnessPolicy, Job
 from .freshness import FreshnessManager
 from .function_views import FunctionViewService
 from .executors.base import SemanticExecutor
-from .executors.codex_cli import CodexCliExecutor
+from .executors.registry import create_default as _create_default_executor
 from .pipeline.context import DEFAULT_SKILL_EVALUATOR_VERSION
 from .manual_refresh import ManualRefreshService
 from .scheduler.dispatcher import CancelResult, Dispatcher
@@ -48,7 +48,7 @@ class SemanticServiceApp:
         self.store = SqliteStore(settings)
         FreshnessPolicyRepository(self.store).ensure_default()
         self.ui_dir = Path(__file__).resolve().parent / "ui"
-        self._executor = executor or CodexCliExecutor(
+        self._executor = executor or _create_default_executor(
             settings.default_executor_config, schemas_root=settings.schemas_root
         )
         runner = job_runner or build_runner(settings, self.store, self._executor)
