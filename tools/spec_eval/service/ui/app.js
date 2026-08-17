@@ -3,7 +3,7 @@
 
 const POLL_MS = 2000;
 const METRICS_POLL_MS = 10000;
-const ACTIVE_STATES = new Set(["preparing", "evidence", "semantic", "aggregation", "archive", "site_history"]);
+const ACTIVE_STATES = new Set(["running", "waiting"]);
 let selectedJob = null;
 let lastMetricsAt = 0;
 let latestJobs = [];
@@ -71,8 +71,7 @@ async function api(method, path, body) {
 
 function rowActions(job) {
   const cancel = (
-    job.status === "queued" || job.status === "preparing" || job.status === "evidence" ||
-    job.status === "semantic" || job.status === "aggregation" || job.status === "awaiting_executor"
+    job.status === "queued" || job.status === "running" || job.status === "waiting"
   )
     ? `<button data-act="cancel" data-id="${esc(job.job_id)}">cancel</button>` : "";
   const retry = (job.status === "failed" || job.status === "cancelled")
@@ -94,11 +93,12 @@ function progressHtml(job) {
     ? ` · <button type="button" class="archive-link" data-act="copy-archive"
         data-path="${esc(archive)}" aria-label="Copy archive path">link</button>`
     : p.note ? ` · ${esc(p.note)}` : "";
-  const active = ACTIVE_STATES.has(job.status);
+  const running = job.status === "running";
+  const active = running || job.status === "waiting";
   return `<div class="progress-wrap ${active ? "active" : ""}">
-    ${active ? '<span class="activity-spinner" aria-hidden="true"></span>' : ""}
+    ${running ? '<span class="activity-spinner" aria-hidden="true"></span>' : ""}
     <span>${esc(p.stage || "—")}${note}</span>
-  </div>${active ? '<div class="activity-track" aria-label="job running"><span></span></div>' : ""}`;
+  </div>${running ? '<div class="activity-track" aria-label="job running"><span></span></div>' : ""}`;
 }
 
 function formatDuration(ms) {

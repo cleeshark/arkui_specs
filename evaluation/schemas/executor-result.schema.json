@@ -2,24 +2,24 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "executor-result.schema.json",
   "title": "Semantic Executor Final Result",
-  "description": "Strict envelope written by the Codex CLI executor (--output-last-message) for one staged work item. observation_json carries only the serialized executor-owned observation or aggregation payload; the service merges it into the initialized staged template and validates the candidate separately against the staged-run contract.",
+  "description": "Strict envelope written by the Codex CLI executor (--output-last-message) for one staged work item. payload carries the executor-owned observation or aggregation judgments as a nested object constrained by the generated strict schema (kernel.schema_gen); the service normalizes, validates, and merges it into the initialized staged template.",
   "type": "object",
   "required": [
     "schema_version",
     "work_item_id",
     "status",
-    "observation_json",
+    "payload",
     "notes",
     "error"
   ],
   "properties": {
-    "schema_version": { "type": "integer", "const": 2 },
+    "schema_version": { "type": "integer", "const": 3 },
     "work_item_id": { "type": "string", "minLength": 1 },
     "status": {
       "type": "string",
       "enum": ["completed", "failed"]
     },
-    "observation_json": { "type": ["string", "null"] },
+    "payload": {},
     "notes": {
       "type": "array",
       "items": { "type": "string" }

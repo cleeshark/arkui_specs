@@ -181,7 +181,7 @@ class CodexCliExecutor:
                 event_count=event_count,
             )
         validator = JsonSchemaSubsetValidator(self._schemas_root)
-        errors = validator.validate_file(document, self._output_schema_path)
+        errors = validator.validate_file(document, self._schema_path_for(work))
         if errors:
             return _execution_result(
                 usage, telemetry,
