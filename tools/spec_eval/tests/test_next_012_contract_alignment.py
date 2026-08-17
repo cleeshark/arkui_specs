@@ -236,9 +236,9 @@ class _StagedRunIntegrationTest(unittest.TestCase):
         )
         self._write_input_fixture()
         staged_stage.init_staged_run(self.ctx)
-        self.jobs.transition_status(self.job.job_id, S.PREPARING, event_type="test")
-        self.jobs.transition_status(self.job.job_id, S.EVIDENCE, event_type="test")
-        self.jobs.transition_status(self.job.job_id, S.SEMANTIC, event_type="test")
+        self.jobs.transition_status(self.job.job_id, S.RUNNING, stage=S.STAGE_PREPARING, event_type="test")
+        self.jobs.transition_status(self.job.job_id, S.RUNNING, stage=S.STAGE_EVIDENCE, event_type="test")
+        self.jobs.transition_status(self.job.job_id, S.RUNNING, stage=S.STAGE_OBSERVATION, event_type="test")
 
     def tearDown(self) -> None:
         self.store.close()
@@ -402,7 +402,7 @@ class ObservationFlowTest(_StagedRunIntegrationTest):
         )
         self.assertEqual(result.outcome, C.STATUS_AWAITING)
         self.assertEqual(
-            self.jobs.get_job(self.job.job_id).status, S.AWAITING_EXECUTOR
+            self.jobs.get_job(self.job.job_id).status, S.WAITING
         )
         # resume: the stored candidate skips the observe turn entirely
         resume = _JudgmentExecutor()

@@ -137,7 +137,7 @@ def run_aggregation(
                 job_id=ctx.job_id,
                 run_id=ctx.run_id,
                 feat_id=None,
-                stage=S.STAGE_AGGREGATION,
+                stage=S.ATTEMPT_STAGE_AGGREGATION,
                 status=S.ATTEMPT_COMPLETED,
                 started_at=utc_now(),
                 finished_at=utc_now(),

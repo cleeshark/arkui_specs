@@ -268,9 +268,9 @@ class _PipelineTestBase(unittest.TestCase):
 
     def _to_semantic(self) -> None:
         """Advance the fresh job to SEMANTIC via the legal transition chain."""
-        self.jobs.transition_status(JOB_ID, S.PREPARING, event_type="enter_preparing")
-        self.jobs.transition_status(JOB_ID, S.EVIDENCE, event_type="enter_evidence")
-        self.jobs.transition_status(JOB_ID, S.SEMANTIC, event_type="enter_semantic")
+        self.jobs.transition_status(JOB_ID, S.RUNNING, stage=S.STAGE_PREPARING, event_type="enter_preparing")
+        self.jobs.transition_status(JOB_ID, S.RUNNING, stage=S.STAGE_EVIDENCE, event_type="enter_evidence")
+        self.jobs.transition_status(JOB_ID, S.RUNNING, stage=S.STAGE_OBSERVATION, event_type="enter_observation")
 
     def _write_evidence(self, package: Path | None = None, *, revision: str | None = None) -> Path:
         package = package or self.ctx.input_dir
@@ -299,7 +299,7 @@ class RunSemanticTest(_PipelineTestBase):
         self.assertEqual(result.completed_items, 2)
         self.assertEqual(executor.calls, ["feature:Feat-01", "function:global"])
         # one completed checkpoint per work item, all in the semantic stage
-        ckpts = self.attempts.list_for_job(JOB_ID, stage=S.STAGE_SEMANTIC)
+        ckpts = self.attempts.list_for_job(JOB_ID, stage=S.ATTEMPT_STAGE_OBSERVATION)
         self.assertEqual(len(ckpts), 2)
         for ckpt in ckpts:
             self.assertEqual(ckpt.status, S.ATTEMPT_COMPLETED)
@@ -321,7 +321,7 @@ class RunSemanticTest(_PipelineTestBase):
             self.ctx, executor, jobs=self.jobs, attempts=self.attempts, events=self.events, runner=runner
         )
         self.assertEqual(result.outcome, C.STATUS_AWAITING)
-        self.assertEqual(self.jobs.get_job(JOB_ID).status, S.AWAITING_EXECUTOR)
+        self.assertEqual(self.jobs.get_job(JOB_ID).status, S.WAITING)
         # no checkpoint completed while awaiting
         self.assertEqual(len(self.attempts.list_for_job(JOB_ID)), 0)
 
@@ -382,8 +382,8 @@ class RunJobPipelineTest(_PipelineTestBase):
         # -> archive -> site_history -> completed
         self.assertEqual(job.status, S.COMPLETED)
         types = [e.event_type for e in self.events.list_for_job(JOB_ID)]
-        for stage in ("enter_preparing", "enter_evidence", "enter_semantic",
-                      "enter_aggregation", "enter_archive", "enter_site_history",
+        for stage in ("enter_preparing", "enter_evidence", "enter_observation",
+                      "enter_aggregation", "enter_archive",
                       "job_completed"):
             self.assertIn(stage, types)
         # dependency snapshot frozen for at least the ace_engine repo

@@ -301,7 +301,7 @@ class ReportDeltaTest(unittest.TestCase):
 
 
 class SchemaMigrationTest(unittest.TestCase):
-    def test_v1_database_is_upgraded_additively_to_v4(self) -> None:
+    def test_v1_database_is_upgraded_additively_to_v6(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             settings = ServiceSettings.discover(data_root=Path(temporary))
             conn = sqlite3.connect(settings.db_path)
@@ -320,7 +320,7 @@ class SchemaMigrationTest(unittest.TestCase):
                     "SELECT name FROM sqlite_master WHERE type='table'"
                 ).fetchall()
             }
-            self.assertEqual(row[0], "5")
+            self.assertEqual(row[0], "6")
             self.assertTrue(
                 {
                     "evaluation_reports", "function_report_heads", "freshness_policies",
@@ -344,7 +344,7 @@ class SchemaMigrationTest(unittest.TestCase):
                 ),
                 evaluator_version="test",
             )
-            jobs.transition_status(job.job_id, S.PREPARING, event_type="enter_preparing")
+            jobs.transition_status(job.job_id, S.RUNNING, event_type="enter_preparing")
             jobs.transition_status(job.job_id, S.FAILED, event_type="failed")
             store.close()
 
@@ -364,7 +364,7 @@ class SchemaMigrationTest(unittest.TestCase):
             version = migrated._conn.execute(
                 "SELECT value FROM schema_meta WHERE key='schema_version'"
             ).fetchone()[0]
-            self.assertEqual(version, "5")
+            self.assertEqual(version, "6")
             self.assertIsNotNone(row[0])
             self.assertIsNotNone(row[1])
             migrated.close()
@@ -395,7 +395,7 @@ class SchemaMigrationTest(unittest.TestCase):
             version = migrated._conn.execute(
                 "SELECT value FROM schema_meta WHERE key='schema_version'"
             ).fetchone()[0]
-            self.assertEqual(version, "5")
+            self.assertEqual(version, "6")
             self.assertIn("executor_command_calls", columns)
             self.assertIn("evidence_paths_accessed", columns)
             migrated.close()

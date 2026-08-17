@@ -1,6 +1,18 @@
 """Job and Attempt state constants and the allowed transition matrix.
 
-The status tokens and transitions mirror the service plan §4.1 state table.
+Protocol 0.2.0 (design v3 R6, audit §2.3): the Job lifecycle status and the
+execution stage are separate dimensions.
+
+- ``status`` is the six-state lifecycle: queued | running | waiting |
+  completed | failed | cancelled. Only the status participates in the worker
+  transition matrix; ``waiting`` replaces the old ``awaiting_executor`` and is
+  recovered to ``queued`` on restart (no dead-end states, audit §7.1).
+- ``stage`` is the progress dimension persisted next to the status:
+  preparing → evidence → observation → aggregation → report → archive →
+  projection. The synchronous critical path ends at ``archive`` (the job is
+  completed); ``projection`` progress lives on the independent Projection
+  entity and is surfaced through the stage only for display.
+
 ``TRANSITIONS`` is the worker-facing matrix: the only backward edges are
 ``failed -> queued`` and ``cancelled -> queued`` (explicit retry). The crash
 recovery path in the store is a *privileged* startup operation that does NOT go
@@ -10,59 +22,75 @@ never move a job backward by accident.
 
 from __future__ import annotations
 
-# --- Job status tokens (service plan §4.1) ---------------------------------
+# --- Job status tokens (design v3 R6) ---------------------------------------
 
 QUEUED = "queued"
-PREPARING = "preparing"
-EVIDENCE = "evidence"
-SEMANTIC = "semantic"
-AWAITING_EXECUTOR = "awaiting_executor"
-AGGREGATION = "aggregation"
-ARCHIVE = "archive"
-SITE_HISTORY = "site_history"
+RUNNING = "running"
+WAITING = "waiting"
 COMPLETED = "completed"
 FAILED = "failed"
 CANCELLED = "cancelled"
 
 JOB_STATES = frozenset({
-    QUEUED,
-    PREPARING,
-    EVIDENCE,
-    SEMANTIC,
-    AWAITING_EXECUTOR,
-    AGGREGATION,
-    ARCHIVE,
-    SITE_HISTORY,
-    COMPLETED,
-    FAILED,
-    CANCELLED,
+    QUEUED, RUNNING, WAITING, COMPLETED, FAILED, CANCELLED,
 })
-"""All 11 Job status tokens, used by the DB CHECK constraint and the schema enum."""
+"""All six Job status tokens, used by the DB CHECK constraint and the API."""
 
 TERMINAL_STATES = frozenset({COMPLETED, FAILED, CANCELLED})
-ACTIVE_STATES = frozenset({
-    PREPARING,
-    EVIDENCE,
-    SEMANTIC,
-    AGGREGATION,
-    ARCHIVE,
-    SITE_HISTORY,
-})
-"""Non-terminal worker-owned states. On crash recovery each is reset to queued."""
+ACTIVE_STATES = frozenset({RUNNING})
+"""Worker-owned status. On crash recovery each running job is reset to queued."""
 
-CANCELLABLE_WORKER_STATES = frozenset({PREPARING, EVIDENCE, SEMANTIC, AGGREGATION})
-"""States whose active worker must cooperatively finish a cancellation request."""
+WAITING_STATES = frozenset({WAITING})
+"""No executing worker; the executor was unavailable. Recovered to queued."""
 
-IMMEDIATE_CANCEL_STATES = frozenset({QUEUED, AWAITING_EXECUTOR})
-"""States with no executing worker; cancellation can be persisted immediately."""
+CANCELLABLE_WORKER_STATES = frozenset({RUNNING})
+"""Statuses whose active worker must cooperatively finish a cancellation."""
 
-QUIESCENT_STATES = TERMINAL_STATES | frozenset({AWAITING_EXECUTOR})
-"""States in which a dispatcher worker may release its in-memory registration."""
+IMMEDIATE_CANCEL_STATES = frozenset({QUEUED, WAITING})
+"""Statuses with no executing worker; cancellation can persist immediately."""
 
-RESUMABLE_STATES = frozenset({QUEUED, FAILED, CANCELLED, AWAITING_EXECUTOR})
-"""States a recovered job may legitimately land in (never completed)."""
+QUIESCENT_STATES = TERMINAL_STATES | frozenset({WAITING})
+"""Statuses in which a dispatcher worker may release its in-memory registration."""
 
-# --- Attempt status tokens -------------------------------------------------
+RESUMABLE_STATES = frozenset({QUEUED, FAILED, CANCELLED, WAITING})
+"""Statuses a recovered job may legitimately land in (never completed)."""
+
+# --- Stage tokens ------------------------------------------------------------
+# The synchronous critical path ends at ARCHIVE; PROJECTION runs after the job
+# is completed and its progress lives on the Projection entity.
+
+STAGE_PREPARING = "preparing"
+STAGE_EVIDENCE = "evidence"
+STAGE_OBSERVATION = "observation"
+STAGE_AGGREGATION = "aggregation"
+STAGE_REPORT = "report"
+STAGE_ARCHIVE = "archive"
+STAGE_PROJECTION = "projection"
+
+STAGES = (
+    STAGE_PREPARING,
+    STAGE_EVIDENCE,
+    STAGE_OBSERVATION,
+    STAGE_AGGREGATION,
+    STAGE_REPORT,
+    STAGE_ARCHIVE,
+    STAGE_PROJECTION,
+)
+"""Ordered pipeline stages (UI stepper, design D4)."""
+
+STAGE_SEQUENCE: dict[str, int] = {stage: index for index, stage in enumerate(STAGES)}
+
+JOB_STAGES = frozenset(STAGES)
+
+# Legacy attempt-stage tokens (checkpoint labels in the attempts table; they
+# document what produced the checkpoint and are intentionally not renamed).
+ATTEMPT_STAGE_PREPARING = "preparing"
+ATTEMPT_STAGE_EVIDENCE = "evidence"
+ATTEMPT_STAGE_OBSERVATION = "semantic"
+ATTEMPT_STAGE_AGGREGATION = "aggregation"
+ATTEMPT_STAGE_ARCHIVE = "archive"
+
+# --- Attempt status tokens ---------------------------------------------------
 
 ATTEMPT_RUNNING = "running"
 ATTEMPT_COMPLETED = "completed"
@@ -71,51 +99,35 @@ ATTEMPT_CANCELLED = "cancelled"
 
 ATTEMPT_STATES = frozenset({ATTEMPT_RUNNING, ATTEMPT_COMPLETED, ATTEMPT_FAILED, ATTEMPT_CANCELLED})
 
-# --- Attempt stage tokens --------------------------------------------------
-# These mirror the Job active states that produce durable checkpoints. The
-# staged-run validator sub-stages (observations / aggregation / final) live
-# inside the SEMANTIC / AGGREGATION stages and are tracked by feat_id, not as
-# separate attempt stages.
-
-STAGE_PREPARING = PREPARING
-STAGE_EVIDENCE = EVIDENCE
-STAGE_SEMANTIC = SEMANTIC
-STAGE_AGGREGATION = AGGREGATION
-STAGE_ARCHIVE = ARCHIVE
-STAGE_SITE_HISTORY = SITE_HISTORY
-
 ATTEMPT_STAGES = frozenset({
-    STAGE_PREPARING,
-    STAGE_EVIDENCE,
-    STAGE_SEMANTIC,
-    STAGE_AGGREGATION,
-    STAGE_ARCHIVE,
-    STAGE_SITE_HISTORY,
+    ATTEMPT_STAGE_PREPARING,
+    ATTEMPT_STAGE_EVIDENCE,
+    ATTEMPT_STAGE_OBSERVATION,
+    ATTEMPT_STAGE_AGGREGATION,
+    ATTEMPT_STAGE_ARCHIVE,
 })
 
 STAGE_NULLABILITY: dict[str, tuple[bool, bool]] = {
     # stage -> (run_id required, feat_id required)
-    # Job-level stages carry no run/feat; only SEMANTIC (per Feat in a run) has both.
-    STAGE_PREPARING: (False, False),
-    STAGE_EVIDENCE: (False, False),
-    STAGE_SEMANTIC: (True, True),
-    STAGE_AGGREGATION: (False, False),
-    STAGE_ARCHIVE: (False, False),
-    STAGE_SITE_HISTORY: (False, False),
+    # Job-level stages carry no run/feat; only the observation stage (per Feat
+    # in a run) has both.
+    ATTEMPT_STAGE_PREPARING: (False, False),
+    ATTEMPT_STAGE_EVIDENCE: (False, False),
+    ATTEMPT_STAGE_OBSERVATION: (True, True),
+    ATTEMPT_STAGE_AGGREGATION: (False, False),
+    ATTEMPT_STAGE_ARCHIVE: (False, False),
 }
 
-# --- Worker-facing transition matrix (service plan §4.1 "可转移到") ----------
+# --- Worker-facing transition matrix ----------------------------------------
 
 TRANSITIONS: dict[str, frozenset[str]] = {
-    QUEUED: frozenset({PREPARING, CANCELLED}),
-    PREPARING: frozenset({EVIDENCE, FAILED, CANCELLED}),
-    EVIDENCE: frozenset({SEMANTIC, FAILED, CANCELLED}),
-    SEMANTIC: frozenset({AGGREGATION, FAILED, CANCELLED, AWAITING_EXECUTOR}),
-    AWAITING_EXECUTOR: frozenset({SEMANTIC, CANCELLED}),
-    AGGREGATION: frozenset({ARCHIVE, FAILED, CANCELLED}),
-    ARCHIVE: frozenset({SITE_HISTORY, FAILED}),
-    SITE_HISTORY: frozenset({COMPLETED, FAILED}),
-    COMPLETED: frozenset(),  # terminal, read-only
+    QUEUED: frozenset({RUNNING, CANCELLED}),
+    RUNNING: frozenset({RUNNING, WAITING, COMPLETED, FAILED, CANCELLED}),
+    # running -> running advances the stage without a lifecycle change;
+    # running -> waiting pauses on executor unavailability
+    WAITING: frozenset({RUNNING, CANCELLED}),
+    # waiting -> running resumes the paused worker (run_job_pipeline restart)
+    COMPLETED: frozenset(),  # terminal, read-only; projection is independent
     FAILED: frozenset({QUEUED}),  # explicit retry only
     CANCELLED: frozenset({QUEUED}),  # explicit retry only
 }
@@ -138,3 +150,15 @@ def transition(src: str, dst: str) -> str:
     if not can_transition(src, dst):
         raise IllegalTransitionError(src, dst)
     return dst
+
+
+# --- Projection entity status ------------------------------------------------
+
+PROJECTION_PENDING = "pending"
+PROJECTION_RUNNING = "running"
+PROJECTION_COMPLETED = "completed"
+PROJECTION_FAILED = "failed"
+
+PROJECTION_STATES = frozenset({
+    PROJECTION_PENDING, PROJECTION_RUNNING, PROJECTION_COMPLETED, PROJECTION_FAILED,
+})

@@ -62,29 +62,53 @@ def write_site_history_snapshot(
         "finding_summary": _finding_summary(report),
     }
 
+    snapshot["report_id"] = f"report-{snapshot['job_id']}"
     snapshot_path = aggregate_dir / "site-history-snapshot.json"
     _write_atomic(snapshot_path, snapshot)
-
-    _append_automated_history(settings, snapshot)
     return snapshot_path
 
 
-def _append_automated_history(settings: ServiceSettings, snapshot: dict) -> None:
-    """Append one compact record to the automated history log (never the confirmed one)."""
-    record = {
-        "namespace": "automated",
-        "job_id": snapshot["job_id"],
-        "func_id": snapshot["func_id"],
-        "source_revision": snapshot["source_revision"],
-        "selected_run_id": snapshot["selected_run_id"],
-        "created_at": snapshot["created_at"],
-        "finding_summary": snapshot["finding_summary"],
-    }
+def append_automated_history(
+    settings: ServiceSettings,
+    snapshot_path: Path,
+) -> bool:
+    """Append one compact record to the automated history log.
+
+    Idempotent on ``report_id`` (protocol 0.2.0 S3): the projection outbox
+    guarantees at-most-once execution per report, and this guard backstops
+    restart replays. Returns True when a new record was appended.
+    """
+    snapshot = _load_json(snapshot_path)
+    report_id = str(snapshot.get("report_id") or "")
+    if not report_id:
+        return False
     history_path = automated_history_path(settings)
     history_path.parent.mkdir(parents=True, exist_ok=True)
+    existing: set[str] = set()
+    if history_path.is_file():
+        for line in history_path.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                existing.add(str(json.loads(line).get("report_id")))
+            except json.JSONDecodeError:
+                continue
+    if report_id in existing:
+        return False
+    record = {
+        "namespace": "automated",
+        "report_id": report_id,
+        "job_id": snapshot.get("job_id"),
+        "func_id": snapshot.get("func_id"),
+        "source_revision": snapshot.get("source_revision"),
+        "selected_run_id": snapshot.get("selected_run_id"),
+        "created_at": snapshot.get("created_at"),
+        "finding_summary": snapshot.get("finding_summary", {}),
+    }
     line = json.dumps(record, ensure_ascii=False, sort_keys=True)
     with open(history_path, "a", encoding="utf-8") as fh:
         fh.write(line + "\n")
+    return True
 
 
 def _finding_summary(report: dict) -> dict:
