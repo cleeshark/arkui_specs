@@ -8,7 +8,6 @@ import sys
 from pathlib import Path
 
 from staged_run_support import (
-    AGGREGATION_MAPPING_EVALUATOR_VERSIONS,
     build_aggregation_context,
     load_run,
     write_object,
@@ -28,11 +27,6 @@ def main(argv: list[str] | None = None) -> int:
     output = args.output.resolve() if args.output else run_dir / "aggregation-context.json"
     try:
         state, work_items = load_run(run_dir)
-        if state.get("evaluator_version") not in AGGREGATION_MAPPING_EVALUATOR_VERSIONS:
-            raise ValueError(
-                "aggregation context is not defined for evaluator "
-                f"{state.get('evaluator_version')!r}"
-            )
         context = build_aggregation_context(state, work_items)
         write_object(output, context)
     except ValueError as exc:
