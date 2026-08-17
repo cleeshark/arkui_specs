@@ -253,6 +253,19 @@ class CodexExecutorTest(unittest.TestCase):
         schema_path = _write_v3_envelope_schema(self.tmp.name)
         work = replace(
             self.work,
+            work_item={
+                **self.work.work_item,
+                "input_resources": [{
+                    "path": "/tmp/input/evidence/Feat-01.json",
+                    "role": "semantic_input",
+                    "citable": False,
+                }, {
+                    "path": "/tmp/specs/Feat-01-spec.md",
+                    "role": "frozen_evidence",
+                    "citable": True,
+                    "canonical_path": "specs/Feat-01-spec.md",
+                }],
+            },
             input_paths=("/tmp/input/evidence/Feat-01.json", "/tmp/specs/Feat-01-spec.md"),
             prompt_extras={
                 "mode": "observe",
@@ -280,6 +293,9 @@ class CodexExecutorTest(unittest.TestCase):
         self.assertIn("normative", constraints)
         self.assertIn("frozen source/SDK files", constraints)
         self.assertIn("forbidden_paths", constraints)
+        self.assertIn("citable=false", constraints)
+        self.assertIn("canonical repository-relative", constraints)
+        self.assertEqual(prompt["input_resources"][0]["citable"], False)
         requirement = prompt["output"]["requirement"]
         self.assertIn("evidence_declarations", requirement)
         self.assertIn("evidence_refs", requirement)

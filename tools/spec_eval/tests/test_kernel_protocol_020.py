@@ -12,6 +12,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from spec_eval.protocol_validator import (
     JsonSchemaSubsetValidator,
@@ -19,6 +20,10 @@ from spec_eval.protocol_validator import (
 )
 from spec_eval.kernel import contracts as K
 from spec_eval.kernel.errors import SERVICE_NORMALIZATION, TypedError, blocking
+from spec_eval.kernel.evidence_paths import (
+    EvidencePathError,
+    FrozenEvidencePathResolver,
+)
 from spec_eval.kernel.machine_contract import (
     build_aggregation_machine_contract,
     build_observation_machine_contract,
@@ -276,12 +281,46 @@ class NormalizeObservationTest(unittest.TestCase):
             json.dumps(second.document, sort_keys=True),
         )
 
-    def test_unreadable_evidence_is_fatal(self) -> None:
+    def test_missing_evidence_is_correctable(self) -> None:
         judgment = _judgment("missing/file.txt")
         result = normalize_observation(self.template, judgment, repo_root=self.root)
-        self.assertTrue(result.fatal)
-        self.assertEqual(result.fatal[0].code, "EVIDENCE_PATH_UNREADABLE")
+        self.assertEqual(result.fatal, [])
+        self.assertEqual(result.errors[0].code, "EVIDENCE_PATH_NOT_FOUND")
         self.assertIsNone(result.document)
+
+    def test_resolved_but_unreadable_frozen_evidence_is_fatal(self) -> None:
+        judgment = _judgment(self.evidence_rel)
+        with patch("spec_eval.kernel.normalize._content_hash", return_value=None):
+            result = normalize_observation(
+                self.template, judgment, repo_root=self.root
+            )
+        self.assertEqual(result.errors, [])
+        self.assertEqual(
+            {error.code for error in result.fatal},
+            {"FROZEN_EVIDENCE_UNREADABLE"},
+        )
+        self.assertIsNone(result.document)
+
+    def test_duplicate_evidence_key_is_correctable(self) -> None:
+        judgment = _judgment(self.evidence_rel)
+        judgment["evidence_declarations"][1]["key"] = "e1"
+        result = normalize_observation(self.template, judgment, repo_root=self.root)
+        self.assertEqual(result.fatal, [])
+        self.assertEqual(result.errors[0].code, "EVIDENCE_KEY_DUPLICATED")
+        self.assertIsNone(result.document)
+
+    def test_absolute_existing_path_is_rejected_before_hashing(self) -> None:
+        judgment = _judgment(str(self.root / self.evidence_rel))
+        with patch("spec_eval.kernel.normalize._content_hash") as content_hash:
+            result = normalize_observation(
+                self.template, judgment, repo_root=self.root
+            )
+        content_hash.assert_not_called()
+        self.assertEqual(result.fatal, [])
+        self.assertEqual(
+            {error.code for error in result.errors},
+            {"EVIDENCE_PATH_NOT_ALLOWED"},
+        )
 
     def test_unexpected_claims_are_dropped_and_reported(self) -> None:
         judgment = _judgment(self.evidence_rel)
@@ -295,6 +334,80 @@ class NormalizeObservationTest(unittest.TestCase):
         ids = [row["claim_id"] for row in result.document["claim_reviews"]]
         self.assertEqual(ids, ["Feat-01/AC-1", "Feat-01/AC-2"])
         self.assertTrue(any("AC-9" in change for change in result.changes))
+
+
+class EvidencePathResolverTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.oh_root = Path(self.tmp.name) / "oh"
+        self.ace_root = self.oh_root / "foundation" / "arkui" / "ace_engine"
+        self.sdk_js_root = self.oh_root / "interface" / "sdk-js"
+        self.sdk_c_root = self.oh_root / "interface" / "sdk_c"
+        self.job_root = Path(self.tmp.name) / "service-data" / "jobs" / "job-1"
+        files = {
+            self.ace_root / "frameworks/core/example.cpp": "source",
+            self.ace_root / "specs/domain/design.md": "design",
+            self.sdk_js_root / "api/example.d.ts": "sdk-js",
+            self.sdk_c_root / "interfaces/example.h": "sdk-c",
+            self.job_root / "runs/run-1/staged/output-contract.json": "service",
+        }
+        for path, content in files.items():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(content, encoding="utf-8")
+        self.resolver = FrozenEvidencePathResolver(
+            {
+                "ace_engine": self.ace_root,
+                "sdk-js": self.sdk_js_root,
+                "sdk_c": self.sdk_c_root,
+            },
+            forbidden_roots=(self.job_root,),
+        )
+
+    def tearDown(self) -> None:
+        self.tmp.cleanup()
+
+    def test_resolves_all_frozen_repository_namespaces(self) -> None:
+        cases = {
+            "frameworks/core/example.cpp": "ace_engine",
+            "specs/domain/design.md": "ace_engine",
+            "interface/sdk-js/api/example.d.ts": "sdk-js",
+            "interface/sdk_c/interfaces/example.h": "sdk_c",
+        }
+        for path, repository in cases.items():
+            with self.subTest(path=path):
+                result = self.resolver.resolve(path)
+                self.assertEqual(result.canonical_path, path)
+                self.assertEqual(result.repository, repository)
+
+    def test_rejects_absolute_parent_and_service_paths_before_read(self) -> None:
+        paths = (
+            str(self.job_root / "runs/run-1/staged/output-contract.json"),
+            "../service-data/jobs/job-1/secret.txt",
+            "runs/run-1/staged/output-contract.json",
+            "evidence/revision/function-context.json",
+        )
+        for path in paths:
+            with self.subTest(path=path), self.assertRaises(EvidencePathError) as ctx:
+                self.resolver.resolve(path)
+            self.assertEqual(ctx.exception.code, "EVIDENCE_PATH_NOT_ALLOWED")
+
+    def test_rejects_symlink_escape(self) -> None:
+        outside = Path(self.tmp.name) / "outside.txt"
+        outside.write_text("outside", encoding="utf-8")
+        link = self.ace_root / "frameworks/core/escaped.txt"
+        link.symlink_to(outside)
+        with self.assertRaises(EvidencePathError) as ctx:
+            self.resolver.resolve("frameworks/core/escaped.txt")
+        self.assertEqual(ctx.exception.code, "EVIDENCE_PATH_NOT_ALLOWED")
+
+    def test_missing_required_catalog_path_is_fatal_input(self) -> None:
+        resolver = FrozenEvidencePathResolver(
+            {"ace_engine": self.ace_root},
+            required_paths=("specs/domain/missing-design.md",),
+        )
+        with self.assertRaises(EvidencePathError) as ctx:
+            resolver.resolve("specs/domain/missing-design.md")
+        self.assertEqual(ctx.exception.code, "FROZEN_EVIDENCE_UNREADABLE")
 
 
 class ValidateObservationTest(unittest.TestCase):
@@ -586,10 +699,15 @@ class MachineContractTest(unittest.TestCase):
             required_checks=K.FEATURE_REQUIRED_CHECKS,
             valid_criterion_ids=CRITERIA,
             evidence_catalog=[{"evidence_id": "EV-1", "type": "spec_location"}],
+            citable_input_paths=["specs/domain/Feat-01-spec.md"],
         )
         self.assertEqual(contract["expected_claim_ids"], ["Feat-01/AC-1"])
         self.assertEqual(contract["required_checks"], list(K.FEATURE_REQUIRED_CHECKS))
         self.assertEqual(contract["evidence_catalog"][0]["evidence_id"], "EV-1")
+        self.assertEqual(
+            contract["evidence_path_policy"]["citable_input_paths"],
+            ["specs/domain/Feat-01-spec.md"],
+        )
         self.assertIn("verification_gap", " ".join(contract["judgment_rules"]))
 
     def test_aggregation_contract_carries_mapping_rule(self) -> None:
@@ -731,12 +849,13 @@ class EnvelopeV3ParseTest(unittest.TestCase):
 
 class TypedErrorContractTest(unittest.TestCase):
     def test_registry_codes_resolve_repairability(self) -> None:
-        from spec_eval.kernel.errors import (
-            FATAL_INPUT, MODEL_CORRECTION, repairability_of,
-        )
+        from spec_eval.kernel.errors import FATAL_INPUT, MODEL_CORRECTION, repairability_of
 
         self.assertEqual(
-            repairability_of("EVIDENCE_PATH_UNREADABLE"), FATAL_INPUT
+            repairability_of("FROZEN_EVIDENCE_UNREADABLE"), FATAL_INPUT
+        )
+        self.assertEqual(
+            repairability_of("EVIDENCE_PATH_NOT_ALLOWED"), MODEL_CORRECTION
         )
         self.assertEqual(repairability_of("GAP_MISSING_FOR_NV"), MODEL_CORRECTION)
         with self.assertRaises(ValueError):

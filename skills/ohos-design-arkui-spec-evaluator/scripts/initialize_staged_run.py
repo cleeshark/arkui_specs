@@ -57,6 +57,24 @@ def _artifact(path: Path, kind: str) -> dict[str, str]:
     return {"kind": kind, "path": str(path), "content_hash": content_hash(path)}
 
 
+def _input_resource(path: Path, role: str, *, citable: bool) -> dict[str, Any]:
+    """Describe one executor input without making every input evidence."""
+    resolved = path.resolve()
+    resource: dict[str, Any] = {
+        "path": str(resolved),
+        "role": role,
+        "citable": citable,
+    }
+    if citable:
+        try:
+            resource["canonical_path"] = resolved.relative_to(REPO_ROOT).as_posix()
+        except ValueError as exc:
+            raise ValueError(
+                f"citable input is outside the frozen ace_engine repository: {resolved}"
+            ) from exc
+    return resource
+
+
 def _static_summary(findings: list[dict[str, Any]], slice_path: Path) -> dict[str, Any]:
     return {
         "count": len(findings),
@@ -249,19 +267,24 @@ def main(argv: list[str] | None = None) -> int:
             )
             item_id = f"feature:{feat_id}"
             output_path = observations_dir / f"{feat_id}.json"
-            input_paths = [
-                str(input_dir / "function-context.json"),
-                str(spec_path),
-                str(shard_path),
-                str(static_slice_path),
-                str(output_contract_path),
+            input_resources = [
+                _input_resource(
+                    input_dir / "function-context.json", "semantic_input",
+                    citable=False,
+                ),
+                _input_resource(spec_path, "frozen_evidence", citable=True),
+                _input_resource(shard_path, "semantic_input", citable=False),
+                _input_resource(static_slice_path, "semantic_input", citable=False),
+                _input_resource(output_contract_path, "machine_contract", citable=False),
             ]
+            input_paths = [resource["path"] for resource in input_resources]
             item = {
                 "id": item_id,
                 "type": "feature",
                 "feat_id": feat_id,
                 "status": "pending",
                 "input_paths": input_paths,
+                "input_resources": input_resources,
                 "output_path": str(output_path),
                 "expected_claim_ids": claim_ids,
                 "required_checks": FEATURE_REQUIRED_CHECKS,
@@ -298,22 +321,32 @@ def main(argv: list[str] | None = None) -> int:
 
         global_item_id = "function-global"
         global_output = observations_dir / "function-global.json"
-        global_inputs = [
-            str(input_dir / "function-context.json"),
-            str(design_path),
-            str(design_shard_path),
-            str(static_index_path),
-            str(global_slice_path),
-            str(EVALUATION_ROOT / "rubric.yaml"),
-            str(EVALUATION_ROOT / "design_completeness_rules.yaml"),
-            str(output_contract_path),
+        global_resources = [
+            _input_resource(
+                input_dir / "function-context.json", "semantic_input",
+                citable=False,
+            ),
+            _input_resource(design_path, "frozen_evidence", citable=True),
+            _input_resource(design_shard_path, "semantic_input", citable=False),
+            _input_resource(static_index_path, "semantic_input", citable=False),
+            _input_resource(global_slice_path, "semantic_input", citable=False),
+            _input_resource(
+                EVALUATION_ROOT / "rubric.yaml", "evaluation_rule", citable=True,
+            ),
+            _input_resource(
+                EVALUATION_ROOT / "design_completeness_rules.yaml",
+                "evaluation_rule", citable=True,
+            ),
+            _input_resource(output_contract_path, "machine_contract", citable=False),
         ]
+        global_inputs = [resource["path"] for resource in global_resources]
         items.append(
             {
                 "id": global_item_id,
                 "type": "function_global",
                 "status": "pending",
                 "input_paths": global_inputs,
+                "input_resources": global_resources,
                 "output_path": str(global_output),
                 "expected_claim_ids": design_claim_ids,
                 "required_checks": FUNCTION_REQUIRED_CHECKS,

@@ -61,7 +61,7 @@ class JudgmentOutcome:
 
 def input_fingerprint(
     *, evaluator_version: str, protocol_version: str, input_paths: Sequence[str],
-    template_bytes: bytes,
+    template_bytes: bytes, input_resources: Sequence[dict[str, Any]] = (),
 ) -> str:
     """Layered fingerprint base for resume decisions (design v3 R4).
 
@@ -77,6 +77,11 @@ def input_fingerprint(
     for path in input_paths:
         digest.update(path.encode("utf-8"))
         digest.update(b"\n")
+    digest.update(b"\0")
+    digest.update(json.dumps(
+        list(input_resources), ensure_ascii=False, sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8"))
     digest.update(b"\0")
     digest.update(template_bytes)
     return digest.hexdigest()
@@ -261,23 +266,42 @@ class JudgmentFlow:
                         f"{error.code}({error.actual})" for error in normalization.fatal
                     ),
                 )
-            typed = typed_of(normalization.document)
-            if not blocking(typed):
-                publish(normalization.document, normalization.evidence_catalog)
-                return JudgmentOutcome(C.STATUS_COMPLETED, published=True)
-            _write_json(candidate_path, normalization.document)
-            _write_json(errors_path, {
-                "input_fingerprint": fingerprint,
-                "errors": [error.to_dict() for error in typed],
-                "evidence_catalog": normalization.evidence_catalog,
-            })
-            SS.set_work_item_state(
-                self.ctx.run_dir, work.work_item_id, SS.GENERATED_INVALID
-            )
-            self.events.append(self.ctx.job_id, "candidate_invalid", {
-                "work_item_id": work.work_item_id,
-                "errors": [error.to_dict() for error in typed],
-            })
+            if normalization.errors:
+                _write_json(candidate_path, result.observation)
+                _write_json(errors_path, {
+                    "input_fingerprint": fingerprint,
+                    "errors": [
+                        error.to_dict() for error in normalization.errors
+                    ],
+                    "evidence_catalog": normalization.evidence_catalog,
+                })
+                SS.set_work_item_state(
+                    self.ctx.run_dir, work.work_item_id, SS.GENERATED_INVALID
+                )
+                self.events.append(self.ctx.job_id, "candidate_invalid", {
+                    "work_item_id": work.work_item_id,
+                    "errors": [
+                        error.to_dict() for error in normalization.errors
+                    ],
+                })
+            else:
+                typed = typed_of(normalization.document)
+                if not blocking(typed):
+                    publish(normalization.document, normalization.evidence_catalog)
+                    return JudgmentOutcome(C.STATUS_COMPLETED, published=True)
+                _write_json(candidate_path, normalization.document)
+                _write_json(errors_path, {
+                    "input_fingerprint": fingerprint,
+                    "errors": [error.to_dict() for error in typed],
+                    "evidence_catalog": normalization.evidence_catalog,
+                })
+                SS.set_work_item_state(
+                    self.ctx.run_dir, work.work_item_id, SS.GENERATED_INVALID
+                )
+                self.events.append(self.ctx.job_id, "candidate_invalid", {
+                    "work_item_id": work.work_item_id,
+                    "errors": [error.to_dict() for error in typed],
+                })
         else:
             breakpoint_data = json.loads(errors_path.read_text(encoding="utf-8"))
             if breakpoint_data.get("input_fingerprint") != fingerprint:
@@ -334,6 +358,29 @@ class JudgmentFlow:
                 "fatal input: " + "; ".join(
                     f"{error.code}({error.actual})" for error in normalization.fatal
                 ),
+            )
+        if normalization.errors:
+            _write_json(candidate_path, result.observation)
+            _write_json(errors_path, {
+                "input_fingerprint": fingerprint,
+                "errors": [error.to_dict() for error in normalization.errors],
+                "evidence_catalog": normalization.evidence_catalog,
+            })
+            SS.set_work_item_state(
+                self.ctx.run_dir, work.work_item_id,
+                SS.CORRECTION_INVALID_TERMINAL,
+            )
+            return self._fail(
+                "semantic_failed",
+                {
+                    "work_item_id": work.work_item_id,
+                    "state": SS.CORRECTION_INVALID_TERMINAL,
+                    "errors": [
+                        error.to_dict() for error in normalization.errors
+                    ],
+                },
+                "correction output still invalid: "
+                + "; ".join(error.code for error in normalization.errors[:5]),
             )
         typed = typed_of(normalization.document)
         if not blocking(typed):

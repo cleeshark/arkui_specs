@@ -21,7 +21,8 @@ from pathlib import Path
 from typing import Any
 
 from . import contracts as K
-from .errors import FATAL_INPUT, TypedError
+from .errors import FATAL_INPUT, MODEL_CORRECTION, TypedError
+from .evidence_paths import EvidencePathError, FrozenEvidencePathResolver
 
 DEFECT_KEY = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
 SEMANTIC_FINDING_IDENTITY_VERSION = 1
@@ -39,13 +40,15 @@ OUTCOME_POLICY_BASIS_CRITERIA = (
 class NormalizationResult:
     """Output of one normalization pass.
 
-    ``fatal`` carries FATAL_INPUT errors (unreadable frozen evidence, damaged
-    templates); ``changes`` are human-readable notes for the SERVICE_
-    NORMALIZATION fixes applied. The document is None only when fatal is set.
+    ``errors`` carries model-owned declaration errors that must enter the one
+    correction turn. ``fatal`` is reserved for damaged frozen inputs or
+    templates. ``changes`` records SERVICE_NORMALIZATION fixes. The document
+    is None when either errors or fatal is set.
     """
 
     document: dict[str, Any] | None
     changes: list[str] = field(default_factory=list)
+    errors: list[TypedError] = field(default_factory=list)
     fatal: list[TypedError] = field(default_factory=list)
     evidence_catalog: list[dict[str, Any]] = field(default_factory=list)
 
@@ -95,16 +98,20 @@ def normalize_observation(
     judgment: dict[str, Any],
     *,
     repo_root: Path,
+    evidence_resolver: FrozenEvidencePathResolver | None = None,
 ) -> NormalizationResult:
     """Expand one observation judgment payload into the published document.
 
     ``template`` is the initialized observation template (identity, expected
     claim IDs, required checks); ``judgment`` is the executor payload
-    (claim_reviews / observations / open_questions / notes); ``repo_root`` is
-    the frozen workspace root used to hash declared evidence paths.
+    (claim_reviews / observations / open_questions / notes). ``repo_root`` is
+    retained for isolated callers; production supplies ``evidence_resolver``
+    with all frozen repository roots and service-data exclusions.
     """
+    errors: list[TypedError] = []
     fatal: list[TypedError] = []
     changes: list[str] = []
+    resolver = evidence_resolver or FrozenEvidencePathResolver.ace_engine_only(repo_root)
 
     # empty expected sets are legitimate (synthetic loop fixtures, empty
     # features); claim-set mismatches are the validator's job
@@ -117,41 +124,62 @@ def normalize_observation(
     published: dict[str, Any] = copy.deepcopy(template)
     source_revision = str(template.get("source_revision", ""))
     evidence_by_key: dict[str, dict[str, Any]] = {}
+    seen_evidence_keys: set[str] = set()
     declaration_order: list[str] = []
     for decl_index, declaration in enumerate(_rows(judgment.get("evidence_declarations"))):
         key = declaration.get("key")
         path_text = declaration.get("path")
         if not isinstance(key, str) or not isinstance(path_text, str):
-            fatal.append(TypedError(
-                "EVIDENCE_PATH_UNREADABLE",
+            errors.append(TypedError(
+                "EVIDENCE_DECLARATION_INVALID",
                 f"$.evidence_declarations[{decl_index}]",
-                entity_type="evidence", actual=str(declaration.get("key", "")),
-                repairability=FATAL_INPUT,
+                entity_type="evidence",
+                expected="string key and canonical repository-relative path",
+                actual=str(declaration), repairability=MODEL_CORRECTION,
             ))
             continue
-        if key in evidence_by_key:
-            fatal.append(TypedError(
-                "EVIDENCE_PATH_UNREADABLE",
+        if key in seen_evidence_keys:
+            errors.append(TypedError(
+                "EVIDENCE_KEY_DUPLICATED",
                 f"$.evidence_declarations[{decl_index}].key",
                 entity_type="evidence", entity_id=key,
                 expected="unique declaration key", actual="duplicate",
-                repairability=FATAL_INPUT,
+                repairability=MODEL_CORRECTION,
             ))
             continue
-        hash_value = _content_hash(repo_root / path_text)
-        if hash_value is None:
-            fatal.append(TypedError(
-                "EVIDENCE_PATH_UNREADABLE",
+        seen_evidence_keys.add(key)
+        try:
+            resolution = resolver.resolve(path_text)
+        except EvidencePathError as exc:
+            error = TypedError(
+                exc.code,
                 f"$.evidence_declarations[{decl_index}].path",
                 entity_type="evidence", entity_id=key,
-                expected="readable path under the frozen workspace",
+                expected=exc.expected, actual=path_text,
+                repairability=(
+                    FATAL_INPUT if exc.code == "FROZEN_EVIDENCE_UNREADABLE"
+                    else MODEL_CORRECTION
+                ),
+            )
+            if error.repairability == FATAL_INPUT:
+                fatal.append(error)
+            else:
+                errors.append(error)
+            continue
+        hash_value = _content_hash(resolution.absolute_path)
+        if hash_value is None:
+            fatal.append(TypedError(
+                "FROZEN_EVIDENCE_UNREADABLE",
+                f"$.evidence_declarations[{decl_index}].path",
+                entity_type="evidence", entity_id=key,
+                expected="readable file already resolved inside the frozen workspace",
                 actual=path_text, repairability=FATAL_INPUT,
             ))
             continue
         row = {
             "evidence_id": f"EV-{len(evidence_by_key) + 1}",
             "type": declaration.get("type"),
-            "path": path_text,
+            "path": resolution.canonical_path,
             "source_revision": source_revision,
             "content_hash": hash_value,
             "description": declaration.get("description", ""),
@@ -290,8 +318,18 @@ def normalize_observation(
         for row in evidence_by_key.values()
     ]
     if fatal:
-        return NormalizationResult(None, changes, fatal, catalog)
-    return NormalizationResult(published, changes, [], catalog)
+        return NormalizationResult(
+            document=None, changes=changes, errors=errors, fatal=fatal,
+            evidence_catalog=catalog,
+        )
+    if errors:
+        return NormalizationResult(
+            document=None, changes=changes, errors=errors,
+            evidence_catalog=catalog,
+        )
+    return NormalizationResult(
+        document=published, changes=changes, evidence_catalog=catalog,
+    )
 
 
 def normalize_aggregation(
@@ -313,7 +351,7 @@ def normalize_aggregation(
         fatal.append(TypedError(
             "TEMPLATE_MISSING_FIELD", "$.func_id", repairability=FATAL_INPUT,
         ))
-        return NormalizationResult(None, [], fatal)
+        return NormalizationResult(document=None, fatal=fatal)
 
     ownership_rows = _rows(judgment.get("defect_ownership"))
     owner_by_finding_key: dict[str, str] = {}
@@ -475,8 +513,8 @@ def normalize_aggregation(
         "notes": copy.deepcopy(judgment.get("notes") or []),
     })
     if fatal:
-        return NormalizationResult(None, changes, fatal)
-    return NormalizationResult(published, changes, [])
+        return NormalizationResult(document=None, changes=changes, fatal=fatal)
+    return NormalizationResult(document=published, changes=changes)
 
 
 def assemble_semantic_result(
