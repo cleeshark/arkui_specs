@@ -45,6 +45,7 @@ def build_observation_machine_contract(
     required_checks: Iterable[str],
     valid_criterion_ids: Iterable[str],
     evidence_catalog: Iterable[dict[str, Any]] = (),
+    citable_input_paths: Iterable[str] = (),
 ) -> dict[str, Any]:
     """Contract for one observation work item.
 
@@ -77,6 +78,23 @@ def build_observation_machine_contract(
             "minimum_items_by_local_outcome": dict(
                 K.OBSERVATION_EVIDENCE_MIN_ITEMS
             ),
+        },
+        "evidence_path_policy": {
+            "format": "canonical repository-relative POSIX path",
+            "frozen_repository_namespaces": [
+                "ace_engine (frameworks/..., adapter/..., interfaces/..., specs/...)",
+                "sdk-js (interface/sdk-js/...)",
+                "sdk_c (interface/sdk_c/...)",
+            ],
+            "citable_input_paths": list(citable_input_paths),
+            "rules": [
+                "An input resource with citable=false is semantic context only and "
+                "must never be copied into evidence_declarations.",
+                "Never declare an absolute path, a path containing '.' or '..', "
+                "or a service job path such as evidence/... or runs/... .",
+                "Source and SDK files discovered from frozen inputs may be cited "
+                "using their canonical repository-relative path.",
+            ],
         },
         "evidence_catalog": list(evidence_catalog),
     }

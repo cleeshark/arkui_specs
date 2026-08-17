@@ -31,6 +31,9 @@ Do not create `semantic-result.json` manually. Produce it with
 1. Read `run-state.json` and use `show_next_work_item.py` to retrieve only one pending item. Do not
    load the complete `work-items.json` into model context for routine Feature processing.
 2. Load only the selected item's declared `input_paths`.
+   Inspect its `input_resources` metadata before declaring evidence: `citable: false` inputs are
+   disposable semantic context, while `citable: true` inputs provide a `canonical_path` suitable
+   for evidence declaration.
 3. Complete its observation file and validate that checkpoint.
 4. Repeat for every Feature.
 5. Complete and validate `function-global`.
@@ -46,6 +49,11 @@ file as the durable handoff after context compaction or a new Agent session.
 the same constants and frozen Rubric used by the validator. Automated executors must follow it for
 nested fields, enums, patterns, Criterion order, and conditional rules instead of reconstructing
 those details from prose.
+
+Evidence paths are canonical repository-relative POSIX paths in the frozen `ace_engine`,
+`specs`, `sdk-js`, or `sdk_c` checkout. Absolute paths, `.` / `..` segments, symlink escapes and
+service-owned `evidence/` or `runs/` paths are invalid. Service inputs may be read when declared,
+but they do not become citable merely because they appear in `input_paths`.
 
 ## Observation contract
 

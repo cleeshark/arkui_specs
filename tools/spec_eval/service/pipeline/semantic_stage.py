@@ -166,6 +166,7 @@ def run_semantic(
             protocol_version=ctx.protocol_version,
             input_paths=list(work.input_paths),
             template_bytes=output_path.read_bytes(),
+            input_resources=work.work_item.get("input_resources", []),
         )
 
         flow = JudgmentFlow(
@@ -201,12 +202,23 @@ def run_semantic(
                 )
             )
 
+        required_evidence_paths = tuple(
+            str(resource["canonical_path"])
+            for resource in item.get("input_resources", [])
+            if isinstance(resource, dict)
+            and resource.get("citable") is True
+            and resource.get("canonical_path")
+        )
+        evidence_resolver = ctx.evidence_resolver(
+            required_paths=required_evidence_paths
+        )
         outcome = flow.run(
             work=work,
             output_path=output_path,
             template=template,
-            normalize=lambda payload, _t=template: normalize_observation(
-                _t, payload, repo_root=ctx.repo_root
+            normalize=lambda payload, _t=template, _r=evidence_resolver: normalize_observation(
+                _t, payload, repo_root=ctx.repo_root,
+                evidence_resolver=_r,
             ),
             validate=lambda document: validate_observation_document(
                 document,
@@ -243,22 +255,43 @@ def _build_work_input(
     executor_result_path = (
         output_path.parent / f"{output_path.stem}.executor-result.json"
     )
+    work_item = dict(item)
     input_paths = [str(path) for path in item.get("input_paths", [])]
+    input_resources = [
+        dict(resource) for resource in item.get("input_resources", [])
+        if isinstance(resource, dict)
+    ]
+    if not input_resources:
+        input_resources = [
+            {"path": path, "role": "semantic_input", "citable": False}
+            for path in input_paths
+        ]
     staged_contract = ctx.skill_scripts_dir.parent / "references" / "staged-run-contract.md"
     if staged_contract.is_file():
         input_paths.append(str(staged_contract))
+        input_resources.append({
+            "path": str(staged_contract),
+            "role": "executor_contract",
+            "citable": False,
+        })
     input_paths = list(dict.fromkeys(input_paths))
+    work_item["input_resources"] = input_resources
     machine_contract = build_observation_machine_contract(
         expected_claim_ids=item.get("expected_claim_ids", []),
         required_checks=item.get("required_checks", []),
         valid_criterion_ids=valid_criterion_ids,
+        citable_input_paths=(
+            str(resource["canonical_path"])
+            for resource in input_resources
+            if resource.get("citable") is True and resource.get("canonical_path")
+        ),
     )
     return C.WorkItemInput(
         job_id=ctx.job_id,
         func_id=ctx.func_id,
         run_id=ctx.run_id,
         work_item_id=str(item["id"]),
-        work_item=item,
+        work_item=work_item,
         run_dir=str(ctx.run_dir),
         input_paths=tuple(input_paths),
         executor_result_path=str(executor_result_path),

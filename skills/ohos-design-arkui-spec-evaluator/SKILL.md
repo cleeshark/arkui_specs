@@ -139,6 +139,11 @@ global static slice, Rubric, and design rules. Do not preload full `work-items.j
 `static-result.json`, every Feature shard, every Spec, or `report.md` into model context.
 Deterministic initialization has already validated and hashed the complete package.
 
+`input_resources` classifies those paths. A resource with `citable: false` is context for the
+evaluation only and must never be copied into `evidence_declarations`. Evidence declarations use
+the resource's `canonical_path` when present, or another verified canonical path in the frozen
+source/SDK repositories; never use an absolute path or a service `evidence/` / `runs/` path.
+
 Before writing nested evidence or defect ownership fields, read the run-local
 `output-contract.json`. Evidence IDs use the `EV-` prefix, hashes use the literal `sha256:` prefix,
 evidence `type` is one of the declared enums, Criterion IDs come only from its frozen list, and

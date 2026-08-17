@@ -11,6 +11,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from spec_eval.kernel.evidence_paths import FrozenEvidencePathResolver
+
 from ..settings import ServiceSettings
 from ..workspace.models import EvaluationWorkspace
 
@@ -62,6 +64,24 @@ class RunContext:
     @property
     def repair_aggregation_contract_script(self) -> Path:
         return self.skill_scripts_dir / "repair_aggregation_contract.py"
+
+    def evidence_resolver(
+        self, *, required_paths: tuple[str, ...] = ()
+    ) -> FrozenEvidencePathResolver:
+        """Resolver for canonical paths in the four frozen repositories."""
+        oh_root = self.repo_root.parents[2]
+        return FrozenEvidencePathResolver(
+            {
+                "ace_engine": self.repo_root,
+                "sdk-js": oh_root / "interface" / "sdk-js",
+                "sdk_c": oh_root / "interface" / "sdk_c",
+            },
+            forbidden_roots=(
+                self.job_root,
+                self.specs_root / ".evaluator" / "service-data",
+            ),
+            required_paths=required_paths,
+        )
 
     @classmethod
     def for_run(

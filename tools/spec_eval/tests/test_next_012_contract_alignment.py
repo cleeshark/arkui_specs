@@ -56,11 +56,15 @@ class _JudgmentExecutor:
         *,
         break_first: bool = False,
         break_all: bool = False,
+        invalid_global_path_once: bool = False,
     ) -> None:
         self.break_first = break_first
         self.break_all = break_all
+        self.invalid_global_path_once = invalid_global_path_once
+        self._invalid_global_path_emitted = False
         self.calls: list[tuple[str, str]] = []
         self.prompts: list[C.WorkItemInput] = []
+        self.correction_candidates: list[dict] = []
 
     def is_available(self) -> bool:
         return True
@@ -174,15 +178,30 @@ class _JudgmentExecutor:
         is_first_call = not self.calls
         self.calls.append((work.work_item_id, mode))
         self.prompts.append(work)
+        if mode == "correct":
+            candidate_path = Path(str(work.prompt_extras["candidate_path"]))
+            self.correction_candidates.append(
+                json.loads(candidate_path.read_text(encoding="utf-8"))
+            )
         emit(C.ExecutionEvent(kind="command", message="fake"))
         broken = (self.break_first and mode == "observe" and is_first_call) or (
             self.break_all
         )
+        payload = self._payload(work, broken=broken)
+        if (
+            self.invalid_global_path_once
+            and not self._invalid_global_path_emitted
+            and work.work_item_id == "function-global"
+            and mode == "observe"
+        ):
+            self._invalid_global_path_emitted = True
+            for declaration in payload["evidence_declarations"]:
+                declaration["path"] = "runs/run-1/staged/output-contract.json"
         return C.ExecutionResult(
             status=C.STATUS_COMPLETED,
             exit_code=0,
             executor_result_path=work.executor_result_path,
-            observation=self._payload(work, broken=broken),
+            observation=payload,
             elapsed_seconds=0.25,
             token_usage={
                 "input_tokens": 10, "cached_input_tokens": 0,
@@ -194,6 +213,9 @@ class _JudgmentExecutor:
 
 
 def _first_input(work: C.WorkItemInput) -> str:
+    for resource in work.work_item.get("input_resources", []):
+        if resource.get("citable") is True and resource.get("canonical_path"):
+            return str(resource["canonical_path"])
     for path in work.input_paths:
         if path.endswith(".md") or path.endswith(".json"):
             candidate = Path(path)
@@ -301,6 +323,13 @@ class ObservationFlowTest(_StagedRunIntegrationTest):
         self.assertEqual(result.completed_items, 2)
         modes = [mode for _, mode in executor.calls]
         self.assertEqual(modes, ["observe", "observe"])
+        resources = executor.prompts[0].work_item["input_resources"]
+        self.assertTrue(any(resource.get("citable") is True for resource in resources))
+        self.assertTrue(any(resource.get("citable") is False for resource in resources))
+        policy = executor.prompts[0].prompt_extras["machine_contract"][
+            "evidence_path_policy"
+        ]
+        self.assertTrue(policy["citable_input_paths"])
 
         feature = json.loads(
             (self.ctx.run_dir / "observations" / "Feat-01.json")
@@ -355,6 +384,31 @@ class ObservationFlowTest(_StagedRunIntegrationTest):
         calls = self.invocations.list_for_job(self.job.job_id)
         self.assertEqual(
             [call["attempt_type"] for call in calls], ["observe", "correct", "observe"]
+        )
+
+    def test_function_global_service_path_gets_one_correction(self) -> None:
+        executor = _JudgmentExecutor(invalid_global_path_once=True)
+        result = run_semantic(
+            self.ctx, executor,
+            jobs=self.jobs, attempts=self.attempts, events=self.events,
+            statistics=self.statistics, invocations=self.invocations,
+        )
+        self.assertEqual(result.outcome, C.STATUS_COMPLETED, result.error)
+        self.assertEqual(
+            [mode for _, mode in executor.calls],
+            ["observe", "observe", "correct"],
+        )
+        correction = executor.prompts[-1]
+        errors = correction.prompt_extras["typed_errors"]
+        self.assertTrue(errors)
+        self.assertEqual(
+            {error["code"] for error in errors},
+            {"EVIDENCE_PATH_NOT_ALLOWED"},
+        )
+        candidate = executor.correction_candidates[-1]
+        self.assertEqual(
+            candidate["evidence_declarations"][0]["path"],
+            "runs/run-1/staged/output-contract.json",
         )
 
     def test_correction_still_invalid_is_terminal(self) -> None:

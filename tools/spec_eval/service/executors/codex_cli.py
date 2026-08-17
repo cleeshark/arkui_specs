@@ -325,6 +325,10 @@ class CodexCliExecutor:
         constraints = [
             "Follow the declared evaluator Skill and the staged-run contract.",
             "Read only the declared input_paths and frozen source/SDK files.",
+            "Treat input_resources.citable=false files as context only; never "
+            "declare them as evidence.",
+            "Evidence paths must be canonical repository-relative POSIX paths. "
+            "Never emit absolute paths, '..', evidence/... or runs/... service paths.",
             "Do not read paths in forbidden_paths (confirmed reviews or other runs).",
             "Do not modify any formal Spec, Design, Registry, source or test file.",
             "Do not modify the initialized staged template; the service owns and publishes it.",
@@ -343,6 +347,8 @@ class CodexCliExecutor:
                 "Re-declare every piece of evidence you keep or add in "
                 "evidence_declarations; the service re-verifies hashes and "
                 "re-assigns canonical IDs.",
+                "Treat input_resources.citable=false files as context only. "
+                "Replace rejected paths with canonical frozen repository paths.",
                 "Treat result_contract.machine_contract as normative.",
                 "Write only the structured final result.",
             ]
@@ -359,6 +365,7 @@ class CodexCliExecutor:
             "run_id": work.run_id,
             "work_item": work.work_item,
             "input_paths": list(work.input_paths),
+            "input_resources": list(work.work_item.get("input_resources", [])),
             "forbidden_paths": list(work.forbidden_paths),
             "skill_version": work.skill_version,
             "protocol_version": work.protocol_version,

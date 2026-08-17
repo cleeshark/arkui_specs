@@ -748,9 +748,18 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             self.assertEqual(next_payload["work_item"]["id"], "feature:Feat-01")
             self.assertNotIn("function-global", show_next.stdout)
             feature_inputs = work_items["items"][0]["input_paths"]
+            feature_resources = work_items["items"][0]["input_resources"]
             self.assertFalse(any(path.endswith("static-result.json") for path in feature_inputs))
             self.assertFalse(any(path.endswith("report.md") for path in feature_inputs))
             self.assertTrue(any(path.endswith("static-Feat-01.json") for path in feature_inputs))
+            self.assertEqual(
+                [resource["citable"] for resource in feature_resources],
+                [False, True, False, False, False],
+            )
+            self.assertTrue(
+                feature_resources[1]["canonical_path"].startswith("specs/")
+            )
+            self.assertNotIn("canonical_path", feature_resources[2])
 
             for item in work_items["items"]:
                 output = Path(item["output_path"])

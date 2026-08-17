@@ -109,7 +109,13 @@ Use one of the protocol evidence types:
 - `test_evidence`
 - `review_record`
 
-Every evidence item includes a stable evidence ID, repository-relative path, frozen source revision, SHA-256 content hash, and a description of what it proves. Add line numbers when they improve navigation, but do not reject otherwise stable evidence solely because it omits a line number.
+Every evidence item includes a stable evidence ID, canonical repository-relative POSIX path,
+frozen source revision, SHA-256 content hash, and a description of what it proves. Canonical paths
+use `frameworks/...`, `adapter/...`, `interfaces/...`, `specs/...`, `interface/sdk-js/...`, or
+`interface/sdk_c/...` as appropriate. Absolute paths, parent traversal, symlink escapes, and
+service-owned job paths such as `evidence/...` or `runs/...` are not evidence. Add line numbers
+when they improve navigation, but do not reject otherwise stable evidence solely because it omits
+a line number.
 
 Evidence descriptions must state the supported fact. A file path alone is not evidence reasoning.
 
