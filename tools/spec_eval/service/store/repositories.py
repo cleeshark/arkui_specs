@@ -586,6 +586,70 @@ class AttemptRepository:
             return [_attempt_from_row(r) for r in rows]
 
 
+class ExecutorCallRepository:
+    """Per-executor-call invocations (protocol 0.2.0, design R6).
+
+    One row per executor call (observe/correct) with executor identity,
+    duration and normalized usage/telemetry payloads. The legacy ``attempts``
+    table remains the stage-level checkpoint record.
+    """
+
+    def __init__(self, store: "SqliteStore") -> None:
+        self._store = store
+
+    def record_call(
+        self,
+        *,
+        job_id: str,
+        run_id: str | None,
+        work_item_id: str,
+        attempt_type: str,
+        executor: str,
+        status: str,
+        duration_ms: int,
+        usage: dict[str, Any],
+        telemetry: dict[str, Any],
+    ) -> int:
+        now = utc_now()
+        with self._store._tx() as conn:
+            cursor = conn.execute(
+                """
+                INSERT INTO executor_calls (
+                    job_id, run_id, work_item_id, attempt_type, executor,
+                    status, started_at, duration_ms, usage_json, telemetry_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    job_id, run_id or "", work_item_id, attempt_type, executor,
+                    status, now, max(0, int(duration_ms)),
+                    json.dumps(usage, ensure_ascii=False, sort_keys=True),
+                    json.dumps(telemetry, ensure_ascii=False, sort_keys=True),
+                ),
+            )
+            return int(cursor.lastrowid or 0)
+
+    def list_for_job(self, job_id: str) -> list[dict[str, Any]]:
+        with self._store._tx() as conn:
+            rows = conn.execute(
+                """
+                SELECT call_id, run_id, work_item_id, attempt_type, executor,
+                       status, started_at, duration_ms, usage_json, telemetry_json
+                FROM executor_calls WHERE job_id = ? ORDER BY call_id
+                """,
+                (job_id,),
+            ).fetchall()
+        result: list[dict[str, Any]] = []
+        for row in rows:
+            item = dict(row)
+            for key in ("usage_json", "telemetry_json"):
+                try:
+                    item[key[:-5]] = json.loads(item.pop(key) or "{}")
+                except json.JSONDecodeError:
+                    item[key[:-5]] = {}
+            result.append(item)
+        return result
+
+
 class EventRepository:
     """events table access; append produces a monotonic seq."""
 

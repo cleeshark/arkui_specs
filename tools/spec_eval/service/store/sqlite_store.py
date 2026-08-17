@@ -27,7 +27,7 @@ from typing import Any, Iterator
 from ..domain import states as S
 from ..settings import ServiceSettings
 
-_SCHEMA_VERSION = "4"
+_SCHEMA_VERSION = "5"
 
 _V4_STATISTICS_COLUMNS = {
     "telemetry_reported_invocations": "INTEGER NOT NULL DEFAULT 0 CHECK (telemetry_reported_invocations >= 0)",
@@ -105,6 +105,15 @@ class SqliteStore:
                         self._conn.execute(
                             f"ALTER TABLE job_statistics ADD COLUMN {name} {declaration}"
                         )
+                self._conn.execute(
+                    "UPDATE schema_meta SET value = ? WHERE key = 'schema_version'",
+                    (_SCHEMA_VERSION,),
+                )
+                version = _SCHEMA_VERSION
+            if version in {"4"}:
+                # v5 (protocol 0.2.0, design R6) is additive: executor_calls is
+                # created by the idempotent schema.sql above; only the marker
+                # advances.
                 self._conn.execute(
                     "UPDATE schema_meta SET value = ? WHERE key = 'schema_version'",
                     (_SCHEMA_VERSION,),

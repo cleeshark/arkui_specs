@@ -202,3 +202,21 @@ CREATE TABLE IF NOT EXISTS report_deltas (
     summary_json       TEXT NOT NULL,
     details_path       TEXT
 );
+
+-- schema v5 (protocol 0.2.0, design R6): per-executor-call invocations
+CREATE TABLE IF NOT EXISTS executor_calls (
+  call_id      INTEGER PRIMARY KEY AUTOINCREMENT,
+  job_id       TEXT NOT NULL REFERENCES jobs ON DELETE CASCADE,
+  run_id       TEXT NOT NULL DEFAULT '',
+  work_item_id TEXT NOT NULL,
+  attempt_type TEXT NOT NULL CHECK (attempt_type IN ('observe', 'correct')),
+  executor     TEXT NOT NULL,
+  status       TEXT NOT NULL,
+  started_at   TEXT NOT NULL,
+  duration_ms  INTEGER NOT NULL DEFAULT 0,
+  usage_json   TEXT NOT NULL DEFAULT '{}',
+  telemetry_json TEXT NOT NULL DEFAULT '{}'
+);
+CREATE INDEX IF NOT EXISTS idx_executor_calls_job ON executor_calls (job_id);
+CREATE INDEX IF NOT EXISTS idx_executor_calls_work_item
+  ON executor_calls (job_id, run_id, work_item_id);

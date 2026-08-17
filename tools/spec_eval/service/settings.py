@@ -41,7 +41,9 @@ class ServiceSettings:
     repo_root: Path
     specs_root: Path
     schemas_root: Path
-    protocol_version: str = "0.1.0"
+    # service API version recorded on jobs (design v3 R5: independent from the
+    # evaluator contract version and the executor envelope schema version)
+    protocol_version: str = "0.2.0"
     service_version: str = "0.1.0"
     default_executor_config: dict[str, Any] = field(default_factory=_default_executor_config)
 

@@ -230,266 +230,87 @@ class CodexExecutorTest(unittest.TestCase):
         self.assertEqual(_argv_value(argv, "--add-dir"), self.work.run_dir)
         self.assertEqual(_argv_value(argv, "--output-last-message"), self.work.executor_result_path)
 
-    def test_prompt_requests_only_executor_owned_payload_fields(self) -> None:
+    def test_observe_prompt_is_normative_machine_contract(self) -> None:
         work = replace(
             self.work,
+            input_paths=("/tmp/input/evidence/Feat-01.json", "/tmp/specs/Feat-01-spec.md"),
             prompt_extras={
-                "result_kind": "staged_observation_payload",
-                "template_path": "/tmp/Feat-01.json",
+                "mode": "observe",
+                "evaluation_protocol_version": "0.2.0",
+                "result_kind": "staged_observation_judgments",
+                "payload_kind": "observation",
                 "payload_fields": [
-                    "claim_reviews", "observations", "open_questions", "notes"
+                    "evidence_declarations", "claim_reviews", "observations",
+                    "open_questions", "notes",
                 ],
-                "service_derived_fields": [
-                    "status", "reviewed_claim_ids", "completed_checks"
-                ],
+                "service_derived_fields": ["ordering", "stable evidence IDs"],
+                "schema_path": "/tmp/run/envelope-observation.schema.json",
+                "template_path": "/tmp/Feat-01.json",
+                "machine_contract": {
+                    "expected_claim_ids": ["Feat-01/AC-1"],
+                    "judgment_rules": ["evidence via declarations and refs"],
+                },
             },
         )
         runner = _FakeRunner(result_doc=_result_doc(work.work_item_id))
         self._executor(runner).execute(work, lambda e: None)
         prompt = json.loads(runner.last_stdin or "{}")
-        self.assertEqual(
-            prompt["result_contract"]["result_kind"], "staged_observation_payload"
-        )
+        self.assertIn("Produce one complete staged_observation_judgments payload", prompt["task"])
+        constraints = " ".join(prompt["constraints"])
+        self.assertIn("normative", constraints)
+        self.assertIn("frozen source/SDK files", constraints)
+        self.assertIn("forbidden_paths", constraints)
         requirement = prompt["output"]["requirement"]
-        self.assertIn("containing exactly these fields", requirement)
-        self.assertIn("service-owned fields", requirement)
-        self.assertNotIn("initialized identity, input", requirement)
-
-    def test_repair_prompt_is_bounded_to_candidate_and_machine_contract(self) -> None:
-        work = replace(
-            self.work,
-            input_paths=("/tmp/.Feat-01.json.candidate", "/tmp/Feat-01.json", "/tmp/output-contract.json"),
-            prompt_extras={
-                "mode": "repair_candidate",
-                "result_kind": "staged_observation_payload",
-                "template_path": "/tmp/Feat-01.json",
-                "output_contract_path": "/tmp/output-contract.json",
-                "candidate_path": "/tmp/.Feat-01.json.candidate",
-                "validation_errors": ["evidence_id: invalid evidence ID"],
-                "payload_fields": ["claim_reviews", "observations", "open_questions", "notes"],
-                "service_derived_fields": ["status", "reviewed_claim_ids", "completed_checks"],
-                "machine_contract": {"common": {"evidence": {"evidence_id_pattern": "^EV-"}}},
-            },
-        )
-        runner = _FakeRunner(result_doc=_result_doc(work.work_item_id))
-        self._executor(runner).execute(work, lambda e: None)
-        prompt = json.loads(runner.last_stdin or "{}")
-        self.assertIn("Repair one staged", prompt["task"])
-        self.assertIn("do not redo semantic evaluation", " ".join(prompt["constraints"]))
-        self.assertEqual(prompt["result_contract"]["mode"], "repair_candidate")
-
-    def test_evidence_completion_prompt_reads_only_original_scoped_inputs(self) -> None:
-        work = replace(
-            self.work,
-            input_paths=(
-                "/tmp/.Feat-01.json.candidate",
-                "/tmp/Feat-01.json",
-                "/tmp/output-contract.json",
-                "/tmp/input/evidence/Feat-01.json",
-                "/tmp/specs/Feat-01-spec.md",
-            ),
-            prompt_extras={
-                "mode": "complete_observation_evidence",
-                "result_kind": "staged_observation_payload",
-                "template_path": "/tmp/Feat-01.json",
-                "output_contract_path": "/tmp/output-contract.json",
-                "candidate_path": "/tmp/.Feat-01.json.candidate",
-                "validation_errors": [
-                    "observation[feature:Feat-01].observations[0].evidence: "
-                    "evidence is required for this local outcome"
-                ],
-                "target_observation_indexes": [0],
-                "payload_fields": ["claim_reviews", "observations", "open_questions", "notes"],
-                "service_derived_fields": ["status", "reviewed_claim_ids", "completed_checks"],
-                "machine_contract": {
-                    "payload": {
-                        "observations": {
-                            "evidence_cardinality": {
-                                "minimum_items_by_local_outcome": {"NOT_APPLICABLE": 1}
-                            }
-                        }
-                    }
-                },
-            },
-        )
-        runner = _FakeRunner(result_doc=_result_doc(work.work_item_id))
-        self._executor(runner).execute(work, lambda e: None)
-        prompt = json.loads(runner.last_stdin or "{}")
-        self.assertIn("Complete missing observation evidence", prompt["task"])
-        constraints = " ".join(prompt["constraints"])
-        self.assertIn("original scoped frozen inputs", constraints)
-        self.assertIn("Do not change outcomes, facts", constraints)
+        self.assertIn("evidence_declarations", requirement)
+        self.assertIn("evidence_refs", requirement)
+        self.assertIn("never emit canonical EV- IDs", requirement)
         self.assertEqual(
-            prompt["result_contract"]["mode"], "complete_observation_evidence"
-        )
-
-    def test_claim_evidence_repair_prompt_is_targeted_and_evidence_bounded(self) -> None:
-        work = replace(
-            self.work,
-            input_paths=(
-                "/tmp/.Feat-01.json.candidate",
-                "/tmp/Feat-01.json",
-                "/tmp/output-contract.json",
-                "/tmp/input/evidence/Feat-01.json",
-                "/tmp/specs/Feat-01-spec.md",
-            ),
-            prompt_extras={
-                "mode": "repair_claim_evidence_references",
-                "result_kind": "staged_claim_evidence_repair_payload",
-                "template_path": "/tmp/Feat-01.json",
-                "output_contract_path": "/tmp/output-contract.json",
-                "candidate_path": "/tmp/.Feat-01.json.candidate",
-                "validation_errors": [
-                    "observation[feature:Feat-01].claim_reviews[51].evidence_ids: "
-                    "unknown evidence ['EV-q']"
-                ],
-                "target_claim_ids": ["Feat-01/R-33"],
-                "available_evidence_ids": ["EV-defined"],
-                "payload_fields": ["claim_reviews"],
-                "service_derived_fields": ["status", "reviewed_claim_ids", "completed_checks"],
-                "machine_contract": {
-                    "payload": {
-                        "claim_reviews": {
-                            "quality_rule": {
-                                "not_verifiable_expression_examples": {
-                                    "checked_scope": ["inspection"]
-                                }
-                            }
-                        }
-                    }
-                },
-            },
-        )
-        runner = _FakeRunner(result_doc=_result_doc(work.work_item_id))
-        self._executor(runner).execute(work, lambda e: None)
-        prompt = json.loads(runner.last_stdin or "{}")
-        self.assertIn("Repair dangling Claim evidence references", prompt["task"])
-        constraints = " ".join(prompt["constraints"])
-        self.assertIn("target_claim_ids", constraints)
-        self.assertIn("available_evidence_ids", constraints)
-        self.assertIn("incremental payload", constraints)
-        self.assertIn("Do not include non-target Claim rows", constraints)
-        self.assertIn(
-            'exactly these fields: ["claim_reviews"]',
-            prompt["output"]["requirement"],
-        )
-        self.assertIn("NOT_VERIFIABLE", constraints)
-        self.assertIn("cannot be verified", constraints)
-        self.assertIn("the service merges the returned rows", constraints)
-
-    def test_aggregation_reconciliation_prompt_uses_published_mapping_only(self) -> None:
-        work = replace(
-            self.work,
-            input_paths=(
-                "/tmp/.aggregation.json.candidate",
-                "/tmp/aggregation.json",
-                "/tmp/output-contract.json",
-                "/tmp/aggregation-context.json",
-            ),
-            prompt_extras={
-                "mode": "reconcile_aggregation_candidate",
-                "result_kind": "staged_aggregation_payload",
-                "template_path": "/tmp/aggregation.json",
-                "output_contract_path": "/tmp/output-contract.json",
-                "aggregation_context_path": "/tmp/aggregation-context.json",
-                "candidate_path": "/tmp/.aggregation.json.candidate",
-                "validation_errors": ["mapped NOT_VERIFIABLE units require NOT_VERIFIABLE"],
-                "target_criterion_ids": ["DESIGN-VERIFICATION-PLAN"],
-                "payload_fields": [
-                    "cross_feat_contracts_reviewed",
-                    "contradiction_bases",
-                    "defect_ownership",
-                    "outcome_policy_bases",
-                    "criterion_results",
-                    "notes",
-                ],
-                "service_derived_fields": ["status", "source_observation_ids"],
-                "machine_contract": {"payload": {"mapping_context": {"schema_version": 1}}},
-            },
-        )
-        runner = _FakeRunner(result_doc=_result_doc(work.work_item_id))
-        self._executor(runner).execute(work, lambda e: None)
-        prompt = json.loads(runner.last_stdin or "{}")
-        self.assertIn("Reconcile one staged aggregation", prompt["task"])
-        constraints = " ".join(prompt["constraints"])
-        self.assertIn("aggregation-context.json as authoritative", constraints)
-        self.assertIn("Do not reopen source", constraints)
-        self.assertEqual(
-            prompt["result_contract"]["mode"], "reconcile_aggregation_candidate"
+            prompt["output"]["schema"], "/tmp/run/envelope-observation.schema.json"
         )
         self.assertEqual(
-            prompt["result_contract"]["target_criterion_ids"],
-            ["DESIGN-VERIFICATION-PLAN"],
+            prompt["machine_contract"]["expected_claim_ids"], ["Feat-01/AC-1"]
         )
 
-    def test_quality_retry_prompt_requires_full_evidence_reinspection(self) -> None:
+    def test_correct_prompt_carries_candidate_and_typed_errors(self) -> None:
         work = replace(
             self.work,
-            input_paths=("/tmp/evidence/Feat-01.json", "/tmp/specs/Feat-01-spec.md"),
+            input_paths=("/tmp/run/.Feat-01.json.candidate", "/tmp/input/evidence/Feat-01.json"),
             prompt_extras={
-                "mode": "retry_degenerate_observation",
-                "result_kind": "staged_observation_payload",
-                "payload_fields": ["claim_reviews", "observations", "open_questions", "notes"],
-                "service_derived_fields": ["status", "reviewed_claim_ids", "completed_checks"],
-                "quality_metrics": {"not_verifiable_claim_ratio": 0.7},
-                "quality_reason_codes": ["HIGH_NOT_VERIFIABLE_RATIO"],
-                "machine_contract": {
-                    "payload": {
-                        "claim_reviews": {
-                            "quality_rule": {
-                                "not_verifiable_expression_examples": {
-                                    "checked_scope": ["inspection"]
-                                }
-                            }
-                        }
-                    }
-                },
+                "mode": "correct",
+                "evaluation_protocol_version": "0.2.0",
+                "result_kind": "staged_observation_judgments",
+                "payload_kind": "observation",
+                "payload_fields": ["evidence_declarations", "claim_reviews", "observations"],
+                "service_derived_fields": ["ordering"],
+                "schema_path": "/tmp/run/envelope-observation.schema.json",
+                "candidate_path": "/tmp/run/.Feat-01.json.candidate",
+                "typed_errors": [{
+                    "code": "GAP_MISSING_FOR_NV",
+                    "path": "claim_reviews[0].verification_gap",
+                    "entity_type": "claim",
+                    "entity_id": "Feat-01/AC-1",
+                    "repairability": "MODEL_CORRECTION",
+                }],
+                "correction_constraints": ["Fix the reported judgments."],
+                "machine_contract": {"expected_claim_ids": ["Feat-01/AC-1"]},
             },
         )
         runner = _FakeRunner(result_doc=_result_doc(work.work_item_id))
-        self._executor(runner).execute(work, lambda event: None)
+        self._executor(runner).execute(work, lambda e: None)
         prompt = json.loads(runner.last_stdin or "{}")
-        self.assertIn("quality rejection", prompt["task"])
+        self.assertIn("Correct one staged_observation_judgments candidate", prompt["task"])
         constraints = " ".join(prompt["constraints"])
-        self.assertIn("evidence shards", constraints)
-        self.assertIn("review_record inspection evidence", constraints)
-        self.assertIn("cannot be verified", constraints)
-
-    def test_repair_rejection_retry_prompt_requires_independent_payload(self) -> None:
-        work = replace(
-            self.work,
-            input_paths=("/tmp/evidence/Feat-01.json", "/tmp/specs/Feat-01-spec.md"),
-            prompt_extras={
-                "mode": "retry_after_repair_rejection",
-                "result_kind": "staged_observation_payload",
-                "payload_fields": ["claim_reviews", "observations", "open_questions", "notes"],
-                "service_derived_fields": ["status", "reviewed_claim_ids", "completed_checks"],
-                "rejection_stage": "claim_evidence",
-                "rejection_reason_codes": [
-                    "Claim evidence repair changed fields outside target Claim reviews"
-                ],
-                "machine_contract": {
-                    "payload": {
-                        "claim_reviews": {
-                            "quality_rule": {
-                                "not_verifiable_expression_examples": {
-                                    "checked_scope": ["inspection"]
-                                }
-                            }
-                        }
-                    }
-                },
-            },
+        self.assertIn("candidate_path", constraints)
+        self.assertIn("typed_errors", constraints)
+        self.assertIn("Re-declare every piece of evidence", constraints)
+        contract = prompt["result_contract"]
+        self.assertEqual(
+            contract["candidate_path"], "/tmp/run/.Feat-01.json.candidate"
         )
-        runner = _FakeRunner(result_doc=_result_doc(work.work_item_id))
-        self._executor(runner).execute(work, lambda event: None)
-        prompt = json.loads(runner.last_stdin or "{}")
-        self.assertIn("bounded repair did not produce a valid candidate", prompt["task"])
-        constraints = " ".join(prompt["constraints"])
-        self.assertIn("evidence shards", constraints)
-        self.assertIn("review_record inspection evidence", constraints)
-        self.assertIn("cannot be verified", constraints)
-        self.assertIn("independent complete payload", constraints)
+        self.assertEqual(
+            contract["typed_errors"][0]["code"], "GAP_MISSING_FOR_NV"
+        )
+
 
     def test_nonzero_exit_is_failed(self) -> None:
         runner = _FakeRunner(exit_code=2, write_result=False)

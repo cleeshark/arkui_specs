@@ -14,7 +14,7 @@ from pathlib import Path
 from ..settings import ServiceSettings
 from ..workspace.models import EvaluationWorkspace
 
-DEFAULT_SKILL_EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.19"
+DEFAULT_SKILL_EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.2.0"
 SKILL_SCRIPTS_REL = Path("skills") / "ohos-design-arkui-spec-evaluator" / "scripts"
 
 

@@ -56,12 +56,21 @@ def validate_observation_document(
     document: dict[str, Any],
     *,
     valid_criterion_ids: Iterable[str],
+    required_checks: Iterable[str] | None = None,
 ) -> list[TypedError]:
-    """Validate one published observation document against protocol 0.2.0."""
+    """Validate one published observation document against protocol 0.2.0.
+
+    ``required_checks`` comes from the work item; when omitted the document's
+    own field is used (CLI checks on published documents).
+    """
     errors: list[TypedError] = []
     label = "observation"
     expected_claims = _strings(document.get("expected_claim_ids"))
-    required_checks = _strings(document.get("required_checks"))
+    required_checks = (
+        list(required_checks)
+        if required_checks is not None
+        else _strings(document.get("required_checks"))
+    )
     known_criteria = set(valid_criterion_ids)
 
     claim_rows = _rows(document.get("claim_reviews"))
@@ -601,7 +610,9 @@ def validate_aggregation_document(
             expected_conclusion = "PARTIALLY_SUPPORTED"
         else:
             expected_conclusion = "SUPPORTED"
-        actual_conclusion = results_by_id.get(criterion_id, {}).get("conclusion")
+        if criterion_id not in results_by_id:
+            continue
+        actual_conclusion = results_by_id[criterion_id].get("conclusion")
         if actual_conclusion != expected_conclusion:
             errors.append(_err(
                 "POLICY_BASIS_INVALID", row_label,

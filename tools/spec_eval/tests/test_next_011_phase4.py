@@ -43,7 +43,21 @@ from spec_eval.service.store.repositories import (
 from spec_eval.service.store.sqlite_store import SqliteStore, utc_now
 from spec_eval.service.workspace.models import EvaluationWorkspace
 
-EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.1.19"
+EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.2.0"
+
+
+def _policy_judgments() -> list[dict]:
+    from spec_eval.kernel.normalize import OUTCOME_POLICY_BASIS_CRITERIA
+    return [
+        {
+            "criterion_id": criterion_id,
+            "content_status": "PRESENT",
+            "evidence_status": "VERIFIED",
+            "conflict_scope": "NONE",
+            "reason": "Synthetic content and evidence are complete.",
+        }
+        for criterion_id in OUTCOME_POLICY_BASIS_CRITERIA
+    ]
 
 
 # --- fakes ------------------------------------------------------------------
@@ -71,12 +85,13 @@ class _FakeExecutor:
                 "cross_feat_contracts_reviewed": True,
                 "contradiction_bases": [],
                 "defect_ownership": [],
-                "outcome_policy_bases": [],
+                "outcome_policy_bases": _policy_judgments(),
                 "criterion_results": [],
                 "notes": [],
             }
             if work.work_item_id == "aggregation:final"
             else {
+                "evidence_declarations": [],
                 "claim_reviews": [],
                 "observations": [],
                 "open_questions": [],
@@ -521,7 +536,7 @@ class AggregationStageTest(_DriverTestBase):
         self.assertEqual(retry_executor.calls, [])
         event_types = [event.event_type for event in self.events.list_for_job(self.job.job_id)]
         self.assertIn("aggregation_reuse_rejected", event_types)
-        self.assertIn("aggregation_executor_result_reused", event_types)
+        self.assertIn("aggregation_reused_document", event_types)
 
     def test_invalid_cached_executor_result_is_rejected_and_reexecuted(self) -> None:
         self.jobs.transition_status(self.job.job_id, S.PREPARING, event_type="x")
@@ -550,10 +565,14 @@ class AggregationStageTest(_DriverTestBase):
             self.ctx, retry_executor, jobs=self.jobs, attempts=self.attempts,
             events=self.events, runner=runner,
         )
+        # 0.2.0 (design D2): the stale executor-result cache is irrelevant;
+        # the already-validated published aggregation document is re-assembled
+        # without any new executor call
         self.assertEqual(retry_outcome, C.STATUS_COMPLETED)
-        self.assertEqual(retry_executor.calls, ["aggregation:final"])
+        self.assertEqual(retry_executor.calls, [])
         event_types = [event.event_type for event in self.events.list_for_job(self.job.job_id)]
-        self.assertIn("aggregation_executor_result_rejected", event_types)
+        self.assertIn("aggregation_reused_document", event_types)
+        self.assertNotIn("aggregation_executor_result_rejected", event_types)
 
     def test_aggregation_failure_fails_job(self) -> None:
         self.jobs.transition_status(self.job.job_id, S.PREPARING, event_type="x")

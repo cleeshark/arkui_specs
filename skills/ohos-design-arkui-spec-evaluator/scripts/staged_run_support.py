@@ -39,6 +39,8 @@ SCHEMA_V2_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.15",
     "skill:ohos-design-arkui-spec-evaluator@0.1.16",
     "skill:ohos-design-arkui-spec-evaluator@0.1.17",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.18",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.19",
     DEFAULT_EVALUATOR_VERSION,
 }
 DEEP_CONTRACT_EVALUATOR_VERSIONS = {
@@ -51,6 +53,8 @@ DEEP_CONTRACT_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.15",
     "skill:ohos-design-arkui-spec-evaluator@0.1.16",
     "skill:ohos-design-arkui-spec-evaluator@0.1.17",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.18",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.19",
     DEFAULT_EVALUATOR_VERSION,
 }
 UNVERIFIABLE_GUARD_EVALUATOR_VERSIONS = {
@@ -62,6 +66,8 @@ UNVERIFIABLE_GUARD_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.15",
     "skill:ohos-design-arkui-spec-evaluator@0.1.16",
     "skill:ohos-design-arkui-spec-evaluator@0.1.17",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.18",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.19",
     DEFAULT_EVALUATOR_VERSION,
 }
 AGGREGATION_MAPPING_EVALUATOR_VERSIONS = {
@@ -70,6 +76,8 @@ AGGREGATION_MAPPING_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.15",
     "skill:ohos-design-arkui-spec-evaluator@0.1.16",
     "skill:ohos-design-arkui-spec-evaluator@0.1.17",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.18",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.19",
     DEFAULT_EVALUATOR_VERSION,
 }
 OUTCOME_POLICY_BASIS_EVALUATOR_VERSIONS = {
@@ -80,24 +88,33 @@ OUTCOME_POLICY_BASIS_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.15",
     "skill:ohos-design-arkui-spec-evaluator@0.1.16",
     "skill:ohos-design-arkui-spec-evaluator@0.1.17",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.18",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.19",
     DEFAULT_EVALUATOR_VERSION,
 }
 FINAL_AGGREGATION_CONTRACT_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.15",
     "skill:ohos-design-arkui-spec-evaluator@0.1.16",
     "skill:ohos-design-arkui-spec-evaluator@0.1.17",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.18",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.19",
     DEFAULT_EVALUATOR_VERSION,
 }
 CLAIM_REVIEW_QUALITY_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.17",
     "skill:ohos-design-arkui-spec-evaluator@0.1.18",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.19",
     DEFAULT_EVALUATOR_VERSION,
 }
 NV_INSPECTION_EVIDENCE_EVALUATOR_VERSIONS = {
     "skill:ohos-design-arkui-spec-evaluator@0.1.18",
+    "skill:ohos-design-arkui-spec-evaluator@0.1.19",
     DEFAULT_EVALUATOR_VERSION,
 }
-NV_EXPRESSION_FAMILY_EVALUATOR_VERSIONS = {DEFAULT_EVALUATOR_VERSION}
+NV_EXPRESSION_FAMILY_EVALUATOR_VERSIONS = {
+    "skill:ohos-design-arkui-spec-evaluator@0.1.19",
+    DEFAULT_EVALUATOR_VERSION,
+}
 AGGREGATION_CONTEXT_SCHEMA_VERSION = 1
 SEMANTIC_FINDING_IDENTITY_VERSION = 1
 OUTCOME_POLICY_BASIS_CRITERIA = [

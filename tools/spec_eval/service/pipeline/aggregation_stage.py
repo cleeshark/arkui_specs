@@ -1,25 +1,27 @@
-"""Aggregation stage (TASK-011-07): produce a validated ``semantic-result.json``.
+"""Aggregation stage (protocol 0.2.0): produce a validated ``semantic-result.json``.
 
-After all observation work items are validated, this stage asks the executor to
-complete ``aggregation.json`` (the function-global model judgment: criterion
-conclusions, defect ownership, contradiction bases, outcome policies), then runs
-``assemble_semantic_result.py`` to freeze ``semantic-result.json`` and validates
-the ``final`` stage. The executor returns only mutable aggregation fields; the
-service merges them into the initialized flat template and retains identity.
+After all observation work items are validated, this stage asks the executor
+for one aggregation judgment payload (envelope v3, strict schema), expands it
+into the published ``aggregation.json`` through the kernel normalizer, typed-
+validates it against the aggregation context, then runs
+``assemble_semantic_result.py`` to freeze ``semantic-result.json`` and
+validates the ``final`` stage. The single generic correction turn (design R3)
+replaces the 0.1.x reconciliation mode.
 
 Anti-fake-completion: a missing/invalid aggregation body, an assemble failure,
-or a failed final validator all fail the job — ``semantic-result.json`` is never
-written by a failed path.
+or a failed final validator all fail the job — ``semantic-result.json`` is
+never written by a failed path.
 """
 
 from __future__ import annotations
 
 import json
-import re
-from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
+from spec_eval.kernel.errors import blocking
+from spec_eval.kernel.normalize import normalize_aggregation
+from spec_eval.kernel.validate import validate_aggregation_document
 from ..domain import states as S
 from ..domain.models import Attempt, make_job_id
 from ..executors import contract as C
@@ -33,29 +35,13 @@ from ..store.repositories import (
 from ..store.sqlite_store import utc_now
 from ._subprocess import Runner, default_runner
 from .context import RunContext
+from .judgment_flow import JudgmentFlow, input_fingerprint
 from .result_payload import (
-    aggregation_reconciliation_prompt_contract,
-    aggregation_prompt_contract,
     load_template,
-    merge_aggregation_payload,
+    observe_aggregation_prompt_contract,
 )
-from .semantic_stage import _DBEmitter, _record_executor_statistics
+from .semantic_stage import _DBEmitter
 from . import staged_stage
-
-
-_RECONCILABLE_AGGREGATION_ERROR_MARKERS = (
-    ".claim_ids: not mapped to Criterion",
-    ": mapped adverse units ",
-    ": mapped NOT_VERIFIABLE units ",
-    ": mapped applicable units ",
-    ": PARTIALLY_SUPPORTED requires an evidence-backed finding",
-    ": CONTRADICTED requires an evidence-backed finding",
-    ": MISSING requires an evidence-backed finding",
-)
-_FINDING_CARDINALITY_ERROR = re.compile(
-    r"(?:criterion_results\[)?([A-Z][A-Z0-9-]+)\]?: "
-    r"(?:PARTIALLY_SUPPORTED|CONTRADICTED|MISSING) requires an evidence-backed finding"
-)
 
 
 def run_aggregation(
@@ -66,18 +52,17 @@ def run_aggregation(
     attempts: AttemptRepository,
     events: EventRepository,
     statistics: JobStatisticsRepository | None = None,
+    invocations: Any = None,
     cancel: Any = None,
     runner: Runner = default_runner,
 ) -> tuple[str, Path | None]:
-    """Complete aggregation + assemble + validate-final.
+    """Complete aggregation + assemble + validate-final (0.2.0 flow).
 
-    Returns ``(outcome, semantic_result_path)``. ``outcome`` is one of the
-    ``C.STATUS_*`` tokens; ``semantic_result_path`` is set only on success.
+    Returns ``(outcome, semantic_result_path)``.
     """
     emit = _DBEmitter(events, ctx.job_id)
     aggregation_path = ctx.run_dir / "aggregation.json"
     semantic_result_path = ctx.run_dir / "semantic-result.json"
-    candidate_path = ctx.run_dir / ".aggregation.json.candidate"
 
     if semantic_result_path.is_file():
         try:
@@ -88,34 +73,30 @@ def run_aggregation(
             reuse_errors = (str(exc),)
         if reused_verdict is not None and reused_verdict.ok:
             events.append(
-                ctx.job_id,
-                "aggregation_reused",
+                ctx.job_id, "aggregation_reused",
                 {"semantic_result": str(semantic_result_path)},
             )
             return C.STATUS_COMPLETED, semantic_result_path
-        events.append(
-            ctx.job_id,
-            "aggregation_reuse_rejected",
-            {
-                "semantic_result": str(semantic_result_path),
-                "errors": list(reuse_errors),
-            },
-        )
+        events.append(ctx.job_id, "aggregation_reuse_rejected", {
+            "semantic_result": str(semantic_result_path),
+            "errors": list(reuse_errors),
+        })
 
     try:
-        initialized = load_template(aggregation_path)
-        source_observation_ids = _source_observation_ids(ctx.run_dir / "work-items.json")
-        output_contract_path = ctx.run_dir / "output-contract.json"
-        output_contract = load_template(output_contract_path) if output_contract_path.is_file() else {}
-        mapping_context_required = bool(
-            output_contract.get("aggregation_payload", {}).get("mapping_context")
+        template = load_template(aggregation_path)
+        source_observation_ids = _source_observation_ids(
+            ctx.run_dir / "work-items.json"
         )
-        contract_normalization_required = bool(
-            output_contract.get("aggregation_payload", {}).get("final_contract")
+        output_contract = (
+            load_template(ctx.run_dir / "output-contract.json")
+            if (ctx.run_dir / "output-contract.json").is_file() else {}
+        )
+        mapping_required = bool(
+            output_contract.get("aggregation_payload", {}).get("mapping_context")
         )
         aggregation_context_path = (
             staged_stage.build_aggregation_context(ctx, runner=runner)
-            if mapping_context_required else None
+            if mapping_required else None
         )
     except (ValueError, staged_stage.StagedStageError) as exc:
         jobs.transition_status(
@@ -125,250 +106,128 @@ def run_aggregation(
         )
         return C.STATUS_FAILED, None
 
-    work = _build_aggregation_input(ctx, aggregation_context_path)
-    reusable_result, reuse_error = _load_completed_executor_result(
-        Path(work.executor_result_path), work.work_item_id
-    )
-    if reusable_result is not None:
-        events.append(
-            ctx.job_id,
-            "aggregation_executor_result_reused",
-            {"work_item_id": work.work_item_id, "path": work.executor_result_path},
-        )
-        result = reusable_result
-    else:
-        if reuse_error is not None:
-            events.append(
-                ctx.job_id,
-                "aggregation_executor_result_rejected",
-                {
-                    "work_item_id": work.work_item_id,
-                    "path": work.executor_result_path,
-                    "error": reuse_error,
-                },
-            )
-        events.append(ctx.job_id, "aggregation_started", {"work_item_id": work.work_item_id})
-        result = executor.execute(work, emit, cancel)
-        _record_executor_statistics(statistics, ctx.job_id, result)
+    aggregation_context = None
+    if aggregation_context_path is not None and aggregation_context_path.is_file():
+        aggregation_context = load_template(aggregation_context_path)
+    criterion_order = _criterion_order(output_contract)
+    valid_criterion_ids = tuple(output_contract.get("valid_criterion_ids", []))
 
-    if result.status == C.STATUS_CANCELLED or (cancel is not None and cancel.is_set()):
-        return C.STATUS_CANCELLED, None
-    if result.status == C.STATUS_AWAITING:
-        # The frozen matrix only allows AGGREGATION -> {ARCHIVE, FAILED} (no
-        # awaiting_executor edge), so an unavailable executor during aggregation
-        # fails the job; an explicit retry re-runs semantic + aggregation.
-        jobs.transition_status(
-            ctx.job_id, S.FAILED,
-            event_type="aggregation_failed",
-            payload={"work_item_id": work.work_item_id, "error": f"executor unavailable: {result.error}"},
+    def _validate_existing(document: dict[str, Any]) -> list:
+        return validate_aggregation_document(
+            document,
+            criterion_order=criterion_order,
+            aggregation_context=aggregation_context,
         )
-        return C.STATUS_FAILED, None
-    if not result.succeeded:
-        jobs.transition_status(
-            ctx.job_id, S.FAILED,
-            event_type="aggregation_failed",
-            payload={"work_item_id": work.work_item_id, "status": result.status, "error": result.error},
-        )
-        return C.STATUS_FAILED, None
 
-    try:
-        candidate = merge_aggregation_payload(
-            initialized,
-            result.observation,
-            source_observation_ids=source_observation_ids,
-        )
-        candidate_path.write_text(
-            json.dumps(candidate, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
-        if contract_normalization_required:
-            events.append(
-                ctx.job_id,
-                "aggregation_contract_repair_started",
-                {
-                    "work_item_id": work.work_item_id,
-                    "repair_attempt": 1,
-                    "mode": "deterministic_normalization",
-                },
-            )
-            try:
-                staged_stage.repair_aggregation_contract_candidate(
-                    ctx, candidate_path, runner=runner
-                )
-            except staged_stage.StagedStageError as exc:
-                events.append(
-                    ctx.job_id,
-                    "aggregation_contract_repair_failed",
-                    {
-                        "work_item_id": work.work_item_id,
-                        "repair_attempt": 1,
-                        "error": str(exc),
-                    },
-                )
-                jobs.transition_status(
-                    ctx.job_id,
-                    S.FAILED,
-                    event_type="aggregation_failed",
-                    payload={"work_item_id": work.work_item_id, "error": str(exc)},
-                )
-                return C.STATUS_FAILED, None
-        verdict = staged_stage.validate_aggregation_candidate(
-            ctx, candidate_path, runner=runner
-        )
-        if contract_normalization_required:
-            repair_resolved_contract = verdict.ok or (
-                aggregation_context_path is not None
-                and _reconcilable_aggregation_errors(verdict.errors)
-            )
-            events.append(
-                ctx.job_id,
-                (
-                    "aggregation_contract_repair_completed"
-                    if repair_resolved_contract else
-                    "aggregation_contract_repair_failed"
-                ),
-                {
-                    "work_item_id": work.work_item_id,
-                    "repair_attempt": 1,
-                    "errors": list(verdict.errors),
-                },
-            )
-        if (
-            not verdict.ok
-            and aggregation_context_path is not None
-            and _reconcilable_aggregation_errors(verdict.errors)
-        ):
-            events.append(
-                ctx.job_id,
-                "aggregation_candidate_validation_failed",
-                {
-                    "work_item_id": work.work_item_id,
-                    "reconcilable": True,
-                    "errors": list(verdict.errors),
-                },
-            )
-            reconciliation_work = _build_aggregation_reconciliation_input(
-                work,
-                candidate_path,
-                aggregation_context_path,
-                verdict.errors,
-                target_criterion_ids=_reconciliation_target_criteria(verdict.errors),
-            )
-            events.append(
-                ctx.job_id,
-                "aggregation_reconciliation_started",
-                {"work_item_id": work.work_item_id, "reconciliation_attempt": 1},
-            )
-            reconciliation_result = executor.execute(reconciliation_work, emit, cancel)
-            _record_executor_statistics(statistics, ctx.job_id, reconciliation_result)
-            if reconciliation_result.status == C.STATUS_CANCELLED or (
-                cancel is not None and cancel.is_set()
-            ):
-                return C.STATUS_CANCELLED, None
-            if not reconciliation_result.succeeded:
-                error = (
-                    reconciliation_result.error
-                    or f"reconciliation executor {reconciliation_result.status}"
-                )
-                events.append(
-                    ctx.job_id,
-                    "aggregation_reconciliation_failed",
-                    {
-                        "work_item_id": work.work_item_id,
-                        "reconciliation_attempt": 1,
-                        "error": error,
-                    },
-                )
-                jobs.transition_status(
-                    ctx.job_id,
-                    S.FAILED,
-                    event_type="aggregation_failed",
-                    payload={"work_item_id": work.work_item_id, "error": error},
-                )
-                return C.STATUS_FAILED, None
-            candidate = merge_aggregation_payload(
-                initialized,
-                reconciliation_result.observation,
-                source_observation_ids=source_observation_ids,
-            )
-            candidate_path.write_text(
-                json.dumps(candidate, ensure_ascii=False, indent=2), encoding="utf-8"
-            )
-            verdict = staged_stage.validate_aggregation_candidate(
-                ctx, candidate_path, runner=runner
-            )
-            events.append(
-                ctx.job_id,
-                (
-                    "aggregation_reconciliation_completed"
-                    if verdict.ok else
-                    "aggregation_reconciliation_failed"
-                ),
-                {
-                    "work_item_id": work.work_item_id,
-                    "reconciliation_attempt": 1,
-                    "errors": list(verdict.errors),
-                },
-            )
+    final_status: dict[str, Any] = {"ok": True, "errors": []}
+
+    def _publish(document: dict[str, Any]) -> None:
+        try:
+            staged_stage.assemble_semantic(ctx, runner=runner)
+            verdict = staged_stage.validate_final(ctx, runner=runner)
+        except staged_stage.StagedStageError as exc:
+            final_status.update(ok=False, errors=[str(exc)])
+            return
         if not verdict.ok:
-            jobs.transition_status(
-                ctx.job_id, S.FAILED,
-                event_type="aggregation_failed",
-                payload={"errors": list(verdict.errors)},
+            final_status.update(ok=False, errors=list(verdict.errors))
+            return
+        attempts.record_checkpoint(
+            Attempt(
+                attempt_id=make_job_id(),
+                job_id=ctx.job_id,
+                run_id=ctx.run_id,
+                feat_id=None,
+                stage=S.STAGE_AGGREGATION,
+                status=S.ATTEMPT_COMPLETED,
+                started_at=utc_now(),
+                finished_at=utc_now(),
+                exit_code=0,
+                artifact_dir=str(ctx.run_dir),
             )
-            return C.STATUS_FAILED, None
-        candidate_path.replace(aggregation_path)
-    except (OSError, KeyError, ValueError, json.JSONDecodeError) as exc:
-        jobs.transition_status(
-            ctx.job_id, S.FAILED,
-            event_type="aggregation_failed",
-            payload={"error": f"aggregation write: {exc}"},
         )
-        return C.STATUS_FAILED, None
-    finally:
-        candidate_path.unlink(missing_ok=True)
 
-    try:
-        semantic_result = staged_stage.assemble_semantic(ctx, runner=runner)
-    except staged_stage.StagedStageError as exc:
-        jobs.transition_status(
-            ctx.job_id, S.FAILED,
-            event_type="aggregation_failed",
-            payload={"error": f"assemble: {exc}"},
-        )
-        return C.STATUS_FAILED, None
+    # design D2 artifact reuse: an already-validated aggregation document is
+    # re-assembled without a new executor call (a stale semantic-result or a
+    # stale executor-result cache never invalidates the published judgment)
+    if aggregation_path.is_file():
+        existing = load_template(aggregation_path)
+        if existing.get("status") == "complete" and not blocking(
+            _validate_existing(existing)
+        ):
+            _publish(existing)
+            if final_status["ok"]:
+                events.append(ctx.job_id, "aggregation_reused_document", {
+                    "aggregation": str(aggregation_path),
+                })
+                return C.STATUS_COMPLETED, semantic_result_path
+            final_status.update(ok=True, errors=[])
+            events.append(ctx.job_id, "aggregation_reuse_rejected_document", {
+                "errors": list(final_status["errors"]),
+            })
 
-    verdict = staged_stage.validate_final(ctx, runner=runner)
-    if not verdict.ok:
-        jobs.transition_status(
-            ctx.job_id, S.FAILED,
-            event_type="aggregation_failed",
-            payload={"errors": list(verdict.errors)},
-        )
-        return C.STATUS_FAILED, None
-
-    attempts.record_checkpoint(
-        Attempt(
-            attempt_id=make_job_id(),
-            job_id=ctx.job_id,
-            run_id=ctx.run_id,
-            feat_id=None,
-            stage=S.STAGE_AGGREGATION,
-            status=S.ATTEMPT_COMPLETED,
-            started_at=utc_now(),
-            finished_at=utc_now(),
-            exit_code=0,
-            artifact_dir=str(ctx.run_dir),
-        )
+    work = _build_aggregation_input(
+        ctx, aggregation_context_path, valid_criterion_ids
     )
-    events.append(
-        ctx.job_id, "aggregation_completed", {"semantic_result": str(semantic_result)}
+
+    def _normalize(payload: dict[str, Any]) -> Any:
+        return normalize_aggregation(
+            template, payload, source_observation_ids=source_observation_ids
+        )
+
+    def _validate(document: dict[str, Any]) -> list:
+        return validate_aggregation_document(
+            document,
+            criterion_order=criterion_order,
+            aggregation_context=aggregation_context,
+        )
+
+
+    flow = JudgmentFlow(
+        ctx=ctx, executor=executor, jobs=jobs, events=events,
+        statistics=statistics, invocations=invocations, emit=emit,
+        cancel=cancel,
     )
-    return C.STATUS_COMPLETED, semantic_result
+    events.append(ctx.job_id, "work_item_started", {
+        "work_item_id": work.work_item_id,
+    })
+    fingerprint = input_fingerprint(
+        evaluator_version=ctx.evaluator_version,
+        protocol_version=ctx.protocol_version,
+        input_paths=list(work.input_paths),
+        template_bytes=aggregation_path.read_bytes(),
+    )
+    outcome = flow.run(
+        work=work,
+        output_path=aggregation_path,
+        template=template,
+        normalize=_normalize,
+        validate=_validate,
+        base_contract=work.prompt_extras,
+        on_publish=_publish,
+        fingerprint=fingerprint,
+        stage_event="aggregation_completed",
+    )
+    if outcome.status != C.STATUS_COMPLETED:
+        return outcome.status, None
+    if not final_status["ok"]:
+        jobs.transition_status(
+            ctx.job_id, S.FAILED,
+            event_type="aggregation_failed",
+            payload={"errors": final_status["errors"]},
+        )
+        return C.STATUS_FAILED, None
+    return C.STATUS_COMPLETED, semantic_result_path
 
 
 def _build_aggregation_input(
-    ctx: RunContext, aggregation_context_path: Path | None = None
+    ctx: RunContext,
+    aggregation_context_path: Path | None,
+    valid_criterion_ids: tuple[str, ...] = (),
 ) -> C.WorkItemInput:
+    from spec_eval.kernel.machine_contract import (
+        build_aggregation_machine_contract,
+    )
+
     observations_dir = ctx.run_dir / "observations"
     input_paths: list[str] = []
     if observations_dir.is_dir():
@@ -391,6 +250,13 @@ def _build_aggregation_input(
         if contract_input is not None and contract_input.is_file():
             input_paths.append(str(contract_input))
     input_paths = list(dict.fromkeys(input_paths))
+    machine_contract = build_aggregation_machine_contract(
+        valid_criterion_ids=valid_criterion_ids,
+        aggregation_context_path=(
+            str(aggregation_context_path)
+            if aggregation_context_path is not None else None
+        ),
+    )
     return C.WorkItemInput(
         job_id=ctx.job_id,
         func_id=ctx.func_id,
@@ -409,105 +275,28 @@ def _build_aggregation_input(
         skill_version=ctx.evaluator_version,
         protocol_version=ctx.protocol_version,
         forbidden_paths=ctx.forbidden_paths,
-        prompt_extras=aggregation_prompt_contract(
-            aggregation_path,
-            ctx.run_dir / "output-contract.json",
-            aggregation_context_path,
+        prompt_extras=observe_aggregation_prompt_contract(
+            template_path=aggregation_path,
+            schema_dir=ctx.run_dir,
+            machine_contract=machine_contract,
         ),
     )
 
 
-def _build_aggregation_reconciliation_input(
-    work: C.WorkItemInput,
-    candidate_path: Path,
-    aggregation_context_path: Path,
-    validation_errors: tuple[str, ...],
-    *,
-    target_criterion_ids: tuple[str, ...] = (),
-) -> C.WorkItemInput:
-    template_path = Path(str(work.prompt_extras["template_path"]))
-    output_contract_path = Path(str(work.prompt_extras["output_contract_path"]))
-    result_path = Path(work.executor_result_path)
-    reconciliation_result_path = result_path.with_name(
-        f"{result_path.stem}.reconcile-1{result_path.suffix}"
-    )
-    return replace(
-        work,
-        input_paths=(
-            str(candidate_path),
-            str(template_path),
-            str(output_contract_path),
-            str(aggregation_context_path),
-        ),
-        executor_result_path=str(reconciliation_result_path),
-        prompt_extras=aggregation_reconciliation_prompt_contract(
-            work.prompt_extras,
-            candidate_path=candidate_path,
-            aggregation_context_path=aggregation_context_path,
-            validation_errors=validation_errors,
-            target_criterion_ids=target_criterion_ids,
-        ),
-    )
-
-
-def _reconcilable_aggregation_errors(errors: tuple[str, ...]) -> bool:
-    return bool(errors) and all(
-        any(marker in error for marker in _RECONCILABLE_AGGREGATION_ERROR_MARKERS)
-        for error in errors
-    )
-
-
-def _reconciliation_target_criteria(errors: tuple[str, ...]) -> tuple[str, ...]:
-    """Extract deterministic Criterion targets from bounded reconciliation errors."""
-    targets = {
-        match.group(1)
-        for error in errors
-        for match in (_FINDING_CARDINALITY_ERROR.search(error),)
-        if match is not None
-    }
-    return tuple(sorted(targets))
-
-
-def _load_completed_executor_result(
-    path: Path, expected_work_item_id: str
-) -> tuple[C.ExecutionResult | None, str | None]:
-    """Recover a completed executor payload left by a failed aggregation attempt."""
-    if not path.is_file():
-        return None, None
-    try:
-        document = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
-        return None, f"cannot read executor result: {exc}"
-    if not isinstance(document, dict):
-        return None, "executor result must be a JSON object"
-    if document.get("work_item_id") != expected_work_item_id:
-        return None, "executor result work_item_id does not match aggregation"
-    if document.get("status") != C.STATUS_COMPLETED:
-        return None, f"executor result status is {document.get('status')!r}"
-    if document.get("error") is not None:
-        return None, "completed executor result must set error to null"
-    raw_observation = document.get("observation_json")
-    if not isinstance(raw_observation, str):
-        return None, "completed executor result has no observation_json"
-    try:
-        observation = json.loads(raw_observation)
-    except json.JSONDecodeError as exc:
-        return None, f"observation_json is not valid JSON: {exc}"
-    if not isinstance(observation, dict):
-        return None, "observation_json must decode to an object"
-    return C.ExecutionResult(
-        status=C.STATUS_COMPLETED,
-        exit_code=0,
-        executor_result_path=str(path),
-        observation=observation,
-    ), None
+def _criterion_order(output_contract: dict[str, Any]) -> list[str]:
+    order = output_contract.get("aggregation_payload", {}).get("criterion_order")
+    if isinstance(order, list):
+        return [str(item) for item in order]
+    return [str(item) for item in output_contract.get("valid_criterion_ids", [])]
 
 
 def _source_observation_ids(work_items_path: Path) -> list[str]:
     try:
         document = json.loads(work_items_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
-        raise ValueError(f"cannot load work items {work_items_path}: {exc}") from exc
+        raise ValueError(
+            f"cannot load work items {work_items_path}: {exc}"
+        ) from exc
     items = document.get("items") if isinstance(document, dict) else None
     if not isinstance(items, list):
         raise ValueError(f"work items document has no items list: {work_items_path}")
@@ -515,6 +304,8 @@ def _source_observation_ids(work_items_path: Path) -> list[str]:
     for item in items:
         item_id = item.get("id") if isinstance(item, dict) else None
         if not isinstance(item_id, str) or not item_id:
-            raise ValueError(f"work items contain an invalid id: {work_items_path}")
+            raise ValueError(
+                f"work items contain an invalid id: {work_items_path}"
+            )
         result.append(item_id)
     return result
