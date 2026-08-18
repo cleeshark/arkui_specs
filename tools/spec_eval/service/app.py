@@ -57,6 +57,10 @@ class SemanticServiceApp:
         self.dispatcher = Dispatcher(self.store, job_runner=runner, max_workers=max_workers)
         self.manual_refresh = ManualRefreshService(self)
 
+    @property
+    def executor_config(self) -> dict:
+        return self._executor_config
+
     # --- repositories (fresh handles are cheap; they only reference the store) -
     @property
     def jobs(self) -> JobRepository:
