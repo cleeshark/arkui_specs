@@ -172,10 +172,10 @@ def _aggregation_defs() -> dict:
             "applicability_reason": {"type": ["string", "null"]},
             "missing_evidence": {"type": ["string", "null"]},
             "claim_ids": {
-                "type": "array", "items": _non_empty_string(), "uniqueItems": True,
+                "type": "array", "items": _non_empty_string(),
             },
             "evidence_ids": {
-                "type": "array", "items": _non_empty_string(), "uniqueItems": True,
+                "type": "array", "items": _non_empty_string(),
             },
             "findings": {"type": "array", "items": {"$ref": "#/$defs/findingJudgment"}},
         },

@@ -17,7 +17,11 @@ import time
 from pathlib import Path
 from typing import Any, Callable
 
-from spec_eval.protocol_validator import JsonSchemaSubsetValidator, validate_strict_output_schema
+from spec_eval.kernel.schema_gen import build_envelope_schema
+from spec_eval.protocol_validator import (
+    JsonSchemaSubsetValidator,
+    validate_strict_output_schema,
+)
 
 from . import contract as C
 from .process import ProcessResult, run_subprocess
@@ -46,6 +50,7 @@ class CodexCliExecutor:
         schema_name = str(config.get("output_schema", "executor-result.schema.json"))
         self._output_schema_path = self._schemas_root / schema_name
         self._validate_output_schema()
+        self._validate_generated_output_schemas()
         self._runner = runner
         self._available: bool | None = None
 
@@ -82,6 +87,9 @@ class CodexCliExecutor:
         emit: C.EventSink,
         cancel: threading.Event | None = None,
     ) -> C.ExecutionResult:
+        schema_error = self._work_schema_error(work)
+        if schema_error is not None:
+            return C.ExecutionResult(status=C.STATUS_FAILED, error=schema_error)
         if not self.is_available():
             return C.ExecutionResult(
                 status=C.STATUS_AWAITING,
@@ -263,6 +271,35 @@ class CodexCliExecutor:
                 f"executor output schema is not strict: {self._output_schema_path}: "
                 + "; ".join(errors)
             )
+
+    def _validate_generated_output_schemas(self) -> None:
+        """Reject observation- or aggregation-only incompatibility at startup."""
+        for payload_kind in ("observation", "aggregation"):
+            errors = validate_strict_output_schema(
+                build_envelope_schema(payload_kind)
+            )
+            if errors:
+                raise ValueError(
+                    f"generated {payload_kind} output schema is not compatible: "
+                    + "; ".join(errors)
+                )
+
+    def _work_schema_error(self, work: C.WorkItemInput) -> str | None:
+        """Validate the exact run-local schema before starting Codex."""
+        schema_path = self._schema_path_for(work)
+        try:
+            schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            return f"cannot load work output schema {schema_path}: {exc}"
+        if not isinstance(schema, dict):
+            return f"work output schema is not an object: {schema_path}"
+        errors = validate_strict_output_schema(schema)
+        if errors:
+            return (
+                f"work output schema is not compatible: {schema_path}: "
+                + "; ".join(errors)
+            )
+        return None
 
     def _build_argv(self, work: C.WorkItemInput) -> list[str]:
         argv = [self._command, "exec"]

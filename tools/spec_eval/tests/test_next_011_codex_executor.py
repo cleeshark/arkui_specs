@@ -16,6 +16,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from spec_eval.protocol_validator import JsonSchemaSubsetValidator, validate_strict_output_schema
+from spec_eval.kernel.schema_gen import build_envelope_schema
 from spec_eval.service.executors import contract as C
 from spec_eval.service.executors.codex_cli import CodexCliExecutor
 from spec_eval.service.executors.process import ProcessResult
@@ -487,6 +488,43 @@ class CodexExecutorTest(unittest.TestCase):
                 schemas_root=schemas_root,
                 runner=_FakeRunner(),
             )
+
+    def test_generated_aggregation_schema_is_checked_at_executor_startup(self) -> None:
+        original = build_envelope_schema
+
+        def generated(kind: str) -> dict:
+            schema = original(kind)
+            if kind == "aggregation":
+                schema["uniqueItems"] = True
+            return schema
+
+        with patch(
+            "spec_eval.service.executors.codex_cli.build_envelope_schema",
+            side_effect=generated,
+        ):
+            with self.assertRaisesRegex(
+                ValueError, "generated aggregation output schema is not compatible"
+            ):
+                CodexCliExecutor(
+                    self.config,
+                    schemas_root=self.settings.schemas_root,
+                    runner=_FakeRunner(),
+                )
+
+    def test_invalid_work_schema_is_rejected_without_starting_runner(self) -> None:
+        schema_path = Path(_write_v3_envelope_schema(self.tmp.name))
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        schema["uniqueItems"] = True
+        schema_path.write_text(json.dumps(schema), encoding="utf-8")
+        work = replace(
+            self.work,
+            prompt_extras={"schema_path": str(schema_path)},
+        )
+        runner = _FakeRunner(result_doc=_result_doc(work.work_item_id))
+        result = self._executor(runner).execute(work, lambda event: None)
+        self.assertEqual(result.status, C.STATUS_FAILED)
+        self.assertIn("uniqueItems", result.error or "")
+        self.assertIsNone(runner.last_argv)
 
 
 class StrictOutputSchemaTest(unittest.TestCase):

@@ -190,6 +190,19 @@ class SchemaGenerationTest(unittest.TestCase):
             self.assertEqual(
                 validate_strict_output_schema(schema), [], kind
             )
+            self.assertNotIn("uniqueItems", json.dumps(schema), kind)
+
+    def test_openai_profile_rejects_unique_items_but_keeps_min_items(self) -> None:
+        schema = build_envelope_schema("observation")
+        self.assertIn("minItems", json.dumps(schema))
+        self.assertEqual(validate_strict_output_schema(schema), [])
+        schema["$defs"]["observationJudgment"]["properties"][
+            "claim_ids"
+        ]["uniqueItems"] = True
+        errors = validate_strict_output_schema(schema)
+        self.assertTrue(
+            any("claim_ids.uniqueItems" in error for error in errors), errors
+        )
 
     def test_schema_enums_match_contracts(self) -> None:
         schema = build_envelope_schema("observation")
@@ -796,6 +809,28 @@ class NormalizeAggregationTest(unittest.TestCase):
         self.assertEqual(
             {error.code for error in result.errors},
             {"CRITERION_EVIDENCE_UNKNOWN"},
+        )
+
+    def test_duplicate_aggregation_references_are_stably_deduplicated(self) -> None:
+        judgment = self._judgment()
+        row = judgment["criterion_results"][0]
+        evidence_id = row["evidence_ids"][0]
+        row["claim_ids"] = ["Feat-01/AC-1", "Feat-01/AC-1"]
+        row["evidence_ids"] = [evidence_id, evidence_id]
+        row["findings"][0]["evidence_ids"] = [evidence_id, evidence_id]
+        result = self._normalize(judgment)
+        self.assertEqual(result.errors, [])
+        published = result.document["criterion_results"][0]
+        self.assertEqual(published["claim_ids"], ["Feat-01/AC-1"])
+        self.assertEqual(
+            [item["evidence_id"] for item in published["evidence"]],
+            [evidence_id],
+        )
+        self.assertEqual(
+            published["findings"][0]["evidence_ids"], [evidence_id]
+        )
+        self.assertEqual(
+            sum("deduplicated" in change for change in result.changes), 3
         )
 
     def test_normalize_preserves_dimension_and_omits_nullable_reason(self) -> None:
