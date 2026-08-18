@@ -111,6 +111,13 @@ def validate_observation_document(
     for obs_index, entry in enumerate(observations):
         obs_label = f"{label}.observations[{obs_index}]"
         outcome = entry.get("local_outcome")
+        observation_claim_ids = _strings(entry.get("claim_ids"))
+        if expected_claims and not observation_claim_ids:
+            errors.append(_err(
+                "OBSERVATION_CLAIM_IDS_EMPTY", f"{obs_label}.claim_ids",
+                entity_type="observation", entity_id=str(entry.get("observation_id")),
+                expected="at least one expected claim ID",
+            ))
         evidence_count = len(_rows(entry.get("evidence")))
         minimum = K.OBSERVATION_EVIDENCE_MIN_ITEMS.get(outcome)
         if minimum is not None and evidence_count < minimum:
@@ -138,7 +145,7 @@ def validate_observation_document(
                 entity_type="observation", entity_id=str(entry.get("observation_id")),
                 actual=str(unknown_criteria),
             ))
-        for claim_id in _strings(entry.get("claim_ids")):
+        for claim_id in observation_claim_ids:
             if claim_id not in expected_claims:
                 errors.append(_err(
                     "OBSERVATION_CLAIM_UNEXPECTED", f"{obs_label}.claim_ids",
@@ -178,6 +185,15 @@ def validate_observation_document(
                 entity_type="observation", entity_id=str(entry.get("observation_id")),
                 expected="null for non-adverse outcome", actual=str(defect_key),
             ))
+
+    if expected_claims and observed_claims != set(expected_claims):
+        errors.append(_err(
+            "OBSERVATION_CLAIM_COVERAGE_INCOMPLETE", f"{label}.observations.claim_ids",
+            entity_type="document",
+            expected=f"exactly {expected_claims}",
+            actual=f"missing={sorted(set(expected_claims) - observed_claims)} "
+            f"extra={sorted(observed_claims - set(expected_claims))}",
+        ))
 
     mapped_checks: set[str] = set()
     for entry in observations:

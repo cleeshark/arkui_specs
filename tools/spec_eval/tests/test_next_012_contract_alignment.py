@@ -57,11 +57,14 @@ class _JudgmentExecutor:
         break_first: bool = False,
         break_all: bool = False,
         invalid_global_path_once: bool = False,
+        empty_observation_claims_once: bool = False,
     ) -> None:
         self.break_first = break_first
         self.break_all = break_all
         self.invalid_global_path_once = invalid_global_path_once
+        self.empty_observation_claims_once = empty_observation_claims_once
         self._invalid_global_path_emitted = False
+        self._empty_observation_claims_emitted = False
         self.calls: list[tuple[str, str]] = []
         self.prompts: list[C.WorkItemInput] = []
         self.correction_candidates: list[dict] = []
@@ -188,6 +191,14 @@ class _JudgmentExecutor:
             self.break_all
         )
         payload = self._payload(work, broken=broken)
+        if (
+            self.empty_observation_claims_once
+            and not self._empty_observation_claims_emitted
+            and work.work_item_id == "feature:Feat-01"
+            and mode == "observe"
+        ):
+            self._empty_observation_claims_emitted = True
+            payload["observations"][0]["claim_ids"] = []
         if (
             self.invalid_global_path_once
             and not self._invalid_global_path_emitted
@@ -385,6 +396,26 @@ class ObservationFlowTest(_StagedRunIntegrationTest):
         self.assertEqual(
             [call["attempt_type"] for call in calls], ["observe", "correct", "observe"]
         )
+
+    def test_empty_observation_claim_ids_gets_corrected_before_aggregation(self) -> None:
+        executor = _JudgmentExecutor(empty_observation_claims_once=True)
+        result = run_semantic(
+            self.ctx, executor,
+            jobs=self.jobs, attempts=self.attempts, events=self.events,
+            statistics=self.statistics, invocations=self.invocations,
+        )
+        self.assertEqual(result.outcome, C.STATUS_COMPLETED, result.error)
+        self.assertEqual(
+            [mode for _, mode in executor.calls], ["observe", "correct", "observe"]
+        )
+        typed = executor.prompts[1].prompt_extras["typed_errors"]
+        self.assertTrue(any(
+            error["code"] == "OBSERVATION_CLAIM_IDS_EMPTY" for error in typed
+        ), typed)
+        event_types = [
+            event.event_type for event in self.events.list_for_job(self.job.job_id)
+        ]
+        self.assertIn("candidate_invalid", event_types)
 
     def test_function_global_service_path_gets_one_correction(self) -> None:
         executor = _JudgmentExecutor(invalid_global_path_once=True)
