@@ -654,9 +654,26 @@ def validate_strict_output_schema(schema: dict[str, Any]) -> list[str]:
 
     errors: list[str] = []
 
+    # Conservative compatibility profile for schemas passed to Codex/OpenAI
+    # Structured Outputs. Every keyword here is already exercised by the
+    # repository's successful observation schema or static executor envelope.
+    # New keywords must be reviewed before joining this allowlist; in
+    # particular, production rejected ``uniqueItems`` as invalid_json_schema.
+    allowed_keywords = frozenset({
+        "$schema", "$id", "$defs", "$ref", "title", "description",
+        "type", "properties", "required", "additionalProperties",
+        "const", "enum", "items", "minItems", "minLength", "pattern",
+    })
+
     def walk(node: Any, path: str) -> None:
         if not isinstance(node, dict):
             return
+        unsupported = sorted(set(node) - allowed_keywords)
+        for keyword in unsupported:
+            errors.append(
+                f"{path}.{keyword}: keyword is not in the approved "
+                "OpenAI Structured Outputs compatibility profile"
+            )
         declared_type = node.get("type")
         is_object = declared_type == "object" or (
             isinstance(declared_type, list) and "object" in declared_type
@@ -689,16 +706,7 @@ def validate_strict_output_schema(schema: dict[str, Any]) -> list[str]:
         items = node.get("items")
         if isinstance(items, dict):
             walk(items, f"{path}.items")
-        prefix_items = node.get("prefixItems")
-        if isinstance(prefix_items, list):
-            for index, child in enumerate(prefix_items):
-                walk(child, f"{path}.prefixItems[{index}]")
-        for keyword in ("anyOf", "oneOf", "allOf"):
-            branches = node.get(keyword)
-            if isinstance(branches, list):
-                for index, child in enumerate(branches):
-                    walk(child, f"{path}.{keyword}[{index}]")
-        for keyword in ("$defs", "definitions"):
+        for keyword in ("$defs",):
             definitions = node.get(keyword)
             if isinstance(definitions, dict):
                 for key, child in definitions.items():

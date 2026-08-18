@@ -102,6 +102,11 @@ def _strings(value: Any) -> list[str]:
     return [item for item in value if isinstance(item, str) and item]
 
 
+def _unique_strings(value: Any) -> list[str]:
+    """Return non-empty strings once, preserving the model's first-seen order."""
+    return list(dict.fromkeys(_strings(value)))
+
+
 def normalize_observation(
     template: dict[str, Any],
     judgment: dict[str, Any],
@@ -423,7 +428,12 @@ def normalize_aggregation(
             for evidence in _rows(context_row.get("evidence_catalog"))
             if isinstance(evidence.get("evidence_id"), str)
         }
-        requested_evidence_ids = _strings(row.get("evidence_ids"))
+        raw_evidence_ids = _strings(row.get("evidence_ids"))
+        requested_evidence_ids = _unique_strings(row.get("evidence_ids"))
+        if requested_evidence_ids != raw_evidence_ids:
+            changes.append(
+                f"criterion_results[{criterion_id}].evidence_ids deduplicated"
+            )
         unknown_evidence = sorted(
             set(requested_evidence_ids) - set(criterion_catalog)
         )
@@ -468,6 +478,13 @@ def normalize_aggregation(
                     finding_id = None
                 else:
                     canonical_ids.add(finding_id)
+            raw_finding_evidence_ids = _strings(finding.get("evidence_ids"))
+            finding_evidence_ids = _unique_strings(finding.get("evidence_ids"))
+            if finding_evidence_ids != raw_finding_evidence_ids:
+                changes.append(
+                    f"criterion_results[{criterion_id}].findings[{finding_key}]."
+                    "evidence_ids deduplicated"
+                )
             published_finding = {
                 "finding_id": finding_id,
                 "criterion_id": criterion_id,
@@ -476,7 +493,7 @@ def normalize_aggregation(
                 ),
                 "conclusion": conclusion,
                 "message": finding.get("message", ""),
-                "evidence_ids": _strings(finding.get("evidence_ids")),
+                "evidence_ids": finding_evidence_ids,
                 "recommendation": finding.get("recommendation"),
             }
             if isinstance(claim_id, str) and claim_id:
@@ -484,6 +501,10 @@ def normalize_aggregation(
             findings.append(published_finding)
             if isinstance(finding_key, str):
                 finding_by_key[finding_key] = published_finding
+        raw_claim_ids = _strings(row.get("claim_ids"))
+        claim_ids = _unique_strings(row.get("claim_ids"))
+        if claim_ids != raw_claim_ids:
+            changes.append(f"criterion_results[{criterion_id}].claim_ids deduplicated")
         criterion_result = {
             "criterion_id": criterion_id,
             "dimension_id": template_row.get("dimension_id"),
@@ -491,7 +512,7 @@ def normalize_aggregation(
             "applicability": row.get("applicability", template_row.get("applicability")),
             "reason": reason,
             "evidence": criterion_evidence,
-            "claim_ids": _strings(row.get("claim_ids")),
+            "claim_ids": claim_ids,
             "findings": findings,
         }
         if isinstance(applicability_reason, str) and applicability_reason.strip():

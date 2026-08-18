@@ -193,8 +193,11 @@ the executor is invoked again.
 
 The service also audits every structured-output schema object node for
 `additionalProperties: false` and complete `required` coverage before starting
-Codex. A locally invalid output schema therefore fails at service startup
-without consuming a model request.
+Codex. It also applies a conservative OpenAI Structured Outputs keyword
+compatibility profile to both generated observation and aggregation schemas at
+service startup, then rechecks the exact run-local schema before each executor
+call. A locally invalid or unsupported output schema therefore fails without
+consuming a model request.
 
 ## Data directory (`--data-root`, default `specs/.evaluator/service-data/`)
 
