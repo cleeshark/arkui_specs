@@ -98,10 +98,54 @@ POLICY_CONTENT_STATUSES = ("PRESENT", "PLACEHOLDER_ONLY", "ABSENT", "NOT_APPLICA
 POLICY_EVIDENCE_STATUSES = ("VERIFIED", "PARTIAL", "UNAVAILABLE", "NOT_APPLICABLE")
 POLICY_CONFLICT_SCOPES = ("NONE", "LOCAL", "CORE", "NOT_APPLICABLE")
 
+# The policy basis is the model-owned semantic input for the six fixed policy
+# criteria.  The conclusion is derived by the service so the model cannot
+# produce two inconsistent representations of the same judgment.
+POLICY_CONCLUSION_RULES = (
+    ("all statuses are NOT_APPLICABLE", "NOT_APPLICABLE"),
+    ("conflict_scope is CORE", "CONTRADICTED"),
+    ("content_status is ABSENT or PLACEHOLDER_ONLY", "MISSING"),
+    ("conflict_scope is LOCAL", "PARTIALLY_SUPPORTED"),
+    ("evidence_status is UNAVAILABLE", "NOT_VERIFIABLE"),
+    ("evidence_status is PARTIAL", "PARTIALLY_SUPPORTED"),
+    ("otherwise", "SUPPORTED"),
+)
+
+
+def expected_policy_conclusion(
+    content_status: str,
+    evidence_status: str,
+    conflict_scope: str,
+) -> str | None:
+    """Derive a policy conclusion from its three atomic status fields.
+
+    ``None`` means that the basis is not structurally valid yet (for example,
+    a mixed ``NOT_APPLICABLE`` tuple); the typed validator owns that error.
+    Keeping this function in the declarative contract makes schema prompts,
+    normalization and validation use the same precedence table.
+    """
+    statuses = {content_status, evidence_status, conflict_scope}
+    if "NOT_APPLICABLE" in statuses and len(statuses) > 1:
+        return None
+    if statuses == {"NOT_APPLICABLE"}:
+        return "NOT_APPLICABLE"
+    if conflict_scope == "CORE":
+        return "CONTRADICTED"
+    if content_status in {"ABSENT", "PLACEHOLDER_ONLY"}:
+        return "MISSING"
+    if conflict_scope == "LOCAL":
+        return "PARTIALLY_SUPPORTED"
+    if evidence_status == "UNAVAILABLE":
+        return "NOT_VERIFIABLE"
+    if evidence_status == "PARTIAL":
+        return "PARTIALLY_SUPPORTED"
+    return "SUPPORTED"
+
 SEMANTIC_CONCLUSIONS = (
     "SUPPORTED",
     "PARTIALLY_SUPPORTED",
     "CONTRADICTED",
+    "MISSING",
     "NOT_APPLICABLE",
     "NOT_VERIFIABLE",
 )

@@ -398,6 +398,14 @@ def normalize_aggregation(
         row.get("criterion_id"): row
         for row in _rows((aggregation_context or {}).get("criterion_mappings"))
     }
+    policy_template = {
+        row.get("criterion_id"): row
+        for row in _rows(template.get("outcome_policy_bases"))
+    }
+    policy_judgment = {
+        row.get("criterion_id"): row
+        for row in _rows(judgment.get("outcome_policy_bases"))
+    }
     inherited_catalog: list[dict[str, Any]] = []
     inherited_ids: set[str] = set()
     for context_row in context_by_criterion.values():
@@ -434,6 +442,18 @@ def normalize_aggregation(
             changes.append(
                 f"criterion_results[{criterion_id}].evidence_ids deduplicated"
             )
+        # A finding's valid evidence reference is also criterion evidence. The
+        # model may omit the parent reference, so close the relation here in a
+        # stable order instead of sending a representational mismatch to the
+        # correction turn.
+        for finding in _rows(row.get("findings")):
+            for evidence_id in _unique_strings(finding.get("evidence_ids")):
+                if evidence_id in criterion_catalog and evidence_id not in requested_evidence_ids:
+                    requested_evidence_ids.append(evidence_id)
+                    changes.append(
+                        f"criterion_results[{criterion_id}].evidence_ids closed over "
+                        f"finding evidence {evidence_id}"
+                    )
         unknown_evidence = sorted(
             set(requested_evidence_ids) - set(criterion_catalog)
         )
@@ -505,6 +525,24 @@ def normalize_aggregation(
         claim_ids = _unique_strings(row.get("claim_ids"))
         if claim_ids != raw_claim_ids:
             changes.append(f"criterion_results[{criterion_id}].claim_ids deduplicated")
+        conclusion_basis = policy_judgment.get(
+            criterion_id, policy_template.get(criterion_id, {})
+        )
+        if criterion_id in OUTCOME_POLICY_BASIS_CRITERIA:
+            derived_conclusion = K.expected_policy_conclusion(
+                conclusion_basis.get("content_status"),
+                conclusion_basis.get("evidence_status"),
+                conclusion_basis.get("conflict_scope"),
+            )
+            if derived_conclusion is not None:
+                if conclusion != derived_conclusion:
+                    changes.append(
+                        f"criterion_results[{criterion_id}].conclusion derived from "
+                        "outcome_policy_bases"
+                    )
+                conclusion = derived_conclusion
+                for finding in findings:
+                    finding["conclusion"] = conclusion
         criterion_result = {
             "criterion_id": criterion_id,
             "dimension_id": template_row.get("dimension_id"),
@@ -563,14 +601,6 @@ def normalize_aggregation(
         })
         changes.append(f"defect_ownership[{defect_key}]: secondary criteria derived")
 
-    policy_template = {
-        row.get("criterion_id"): row
-        for row in _rows(template.get("outcome_policy_bases"))
-    }
-    policy_judgment = {
-        row.get("criterion_id"): row
-        for row in _rows(judgment.get("outcome_policy_bases"))
-    }
     outcome_policy_bases = []
     for criterion_id in OUTCOME_POLICY_BASIS_CRITERIA:
         row = policy_judgment.get(criterion_id, policy_template.get(criterion_id, {}))

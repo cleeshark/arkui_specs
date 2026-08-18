@@ -645,28 +645,16 @@ def validate_aggregation_document(
                 "REASON_PLACEHOLDER", f"{row_label}.reason",
                 entity_type="policy_basis", entity_id=criterion_id,
             ))
-        statuses = {content_status, evidence_status, conflict_scope}
-        if "NOT_APPLICABLE" in statuses and len(statuses) > 1:
+        expected_conclusion = K.expected_policy_conclusion(
+            content_status, evidence_status, conflict_scope,
+        )
+        if expected_conclusion is None:
             errors.append(_err(
                 "POLICY_BASIS_INVALID", row_label,
                 entity_type="policy_basis", entity_id=criterion_id,
                 expected="NOT_APPLICABLE on all three status fields",
             ))
             continue
-        if statuses == {"NOT_APPLICABLE"}:
-            expected_conclusion = "NOT_APPLICABLE"
-        elif conflict_scope == "CORE":
-            expected_conclusion = "CONTRADICTED"
-        elif content_status in {"ABSENT", "PLACEHOLDER_ONLY"}:
-            expected_conclusion = "MISSING"
-        elif conflict_scope == "LOCAL":
-            expected_conclusion = "PARTIALLY_SUPPORTED"
-        elif evidence_status == "UNAVAILABLE":
-            expected_conclusion = "NOT_VERIFIABLE"
-        elif evidence_status == "PARTIAL":
-            expected_conclusion = "PARTIALLY_SUPPORTED"
-        else:
-            expected_conclusion = "SUPPORTED"
         if criterion_id not in results_by_id:
             continue
         actual_conclusion = results_by_id[criterion_id].get("conclusion")
@@ -674,7 +662,13 @@ def validate_aggregation_document(
             errors.append(_err(
                 "POLICY_BASIS_INVALID", row_label,
                 entity_type="policy_basis", entity_id=criterion_id,
-                expected=f"statuses require {expected_conclusion}",
+                expected=(
+                    f"conclusion={expected_conclusion} derived from "
+                    f"content_status={content_status}, "
+                    f"evidence_status={evidence_status}, "
+                    f"conflict_scope={conflict_scope}; "
+                    "correct the policy basis to change the conclusion"
+                ),
                 actual=str(actual_conclusion),
             ))
 
