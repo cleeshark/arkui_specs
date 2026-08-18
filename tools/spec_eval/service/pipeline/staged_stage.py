@@ -151,6 +151,37 @@ def validate_work_item_candidate(
     return _validation_result(cp, "validate observation candidate")
 
 
+def validate_observation_checkpoints(
+    ctx: RunContext,
+    *,
+    runner: Runner = default_runner,
+    timeout: float = 120.0,
+) -> ValidationResult:
+    """Recheck every persisted observation before starting aggregation.
+
+    This is a read-only, cheap defense against stale or externally modified
+    observation artifacts.  It intentionally does not update staged state.
+    """
+    argv = [
+        "python3",
+        str(ctx.validate_script),
+        "--run-dir",
+        str(ctx.run_dir),
+        "--stage",
+        "observations",
+    ]
+    log_dir = ctx.jobs_run_root / "logs"
+    cp = _run(
+        argv,
+        cwd=str(ctx.repo_root),
+        runner=runner,
+        timeout=timeout,
+        log_dir=log_dir,
+        name="validate-observation-checkpoints",
+    )
+    return _validation_result(cp, "validate observation checkpoints")
+
+
 def validate_aggregation_candidate(
     ctx: RunContext,
     candidate_path: Path,

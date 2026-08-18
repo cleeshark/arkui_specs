@@ -128,7 +128,8 @@ def _judgment(evidence_path: str, *, nv_first: bool = True) -> dict:
                     "local_outcome": first_outcome,
                     "evidence_refs": [first_evidence],
                     "fact": (
-                        "Checked the frozen spec scope; the atomic proof is missing."
+                        "Checked the frozen spec scope; the atomic proof is missing "
+                        "and is insufficient to verify this unit."
                         if nv_first else
                         "The frozen evidence content supports this atomic unit."
                     ),
@@ -468,6 +469,39 @@ class ValidateObservationTest(unittest.TestCase):
         document = copy.deepcopy(self.document)
         document["claim_reviews"][1]["reason"] = "supported"
         self.assertIn("REASON_LOW_INFORMATION", self._codes(document))
+
+    def test_supported_claim_requires_atomic_unit_review(self) -> None:
+        document = copy.deepcopy(self.document)
+        document["claim_reviews"][1]["reviewed_units"] = []
+        document["claim_reviews"][1]["unit_reviews"] = []
+        codes = self._codes(document)
+        self.assertIn("UNIT_ROW_INVALID", codes)
+
+    def test_unit_review_ids_must_match_reviewed_units(self) -> None:
+        document = copy.deepcopy(self.document)
+        document["claim_reviews"][1]["reviewed_units"] = ["different-unit"]
+        self.assertIn("UNIT_ROW_INVALID", self._codes(document))
+
+    def test_not_verifiable_prose_requires_three_signals(self) -> None:
+        document = copy.deepcopy(self.document)
+        review = document["claim_reviews"][0]
+        review["reason"] = "The source is missing."
+        review["unit_reviews"][0]["fact"] = "The source is missing."
+        codes = self._codes(document)
+        self.assertEqual(codes.count("NV_EXPLANATION_INSUFFICIENT"), 2)
+
+    def test_not_verifiable_prose_accepts_three_signals(self) -> None:
+        document = copy.deepcopy(self.document)
+        review = document["claim_reviews"][0]
+        review["reason"] = (
+            "Checked the frozen scope; implementation evidence is missing and is "
+            "insufficient to verify this claim."
+        )
+        review["unit_reviews"][0]["fact"] = (
+            "Checked the frozen scope; atomic evidence is missing and is "
+            "insufficient to verify this unit."
+        )
+        self.assertNotIn("NV_EXPLANATION_INSUFFICIENT", self._codes(document))
 
     def test_unknown_criterion(self) -> None:
         document = copy.deepcopy(self.document)
