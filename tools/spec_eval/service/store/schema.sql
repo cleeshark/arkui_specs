@@ -1,4 +1,4 @@
--- SQLite schema for the semantic evaluation service Job Store (schema_version 4).
+-- SQLite schema for the semantic evaluation service Job Store (schema_version 6).
 -- Loaded idempotently by sqlite_store._run_migrations. PRAGMAs are applied in
 -- code (they are connection-scoped / must run outside a transaction). The
 -- load-bearing constraints are:
@@ -14,11 +14,9 @@ CREATE TABLE IF NOT EXISTS schema_meta (
     key   TEXT PRIMARY KEY,
     value TEXT NOT NULL
 );
-INSERT OR IGNORE INTO schema_meta (key, value) VALUES ('schema_version', '4');
+INSERT OR IGNORE INTO schema_meta (key, value) VALUES ('schema_version', '6');
 
 -- schema v6 (protocol 0.2.0 S3, design R6): six-state lifecycle + stage.
--- v6 REBUILDS the jobs table (the CHECK cannot be ALTERed); the store
--- migration maps the 0.1.x eleven-state values onto the new model.
 CREATE TABLE IF NOT EXISTS jobs (
     job_id            TEXT PRIMARY KEY,
     func_id           TEXT NOT NULL,

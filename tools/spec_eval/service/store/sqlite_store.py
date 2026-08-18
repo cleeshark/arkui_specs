@@ -29,15 +29,6 @@ from ..settings import ServiceSettings
 
 _SCHEMA_VERSION = "6"
 
-_V4_STATISTICS_COLUMNS = {
-    "telemetry_reported_invocations": "INTEGER NOT NULL DEFAULT 0 CHECK (telemetry_reported_invocations >= 0)",
-    "executor_tool_calls": "INTEGER NOT NULL DEFAULT 0 CHECK (executor_tool_calls >= 0)",
-    "executor_command_calls": "INTEGER NOT NULL DEFAULT 0 CHECK (executor_command_calls >= 0)",
-    "input_paths_accessed": "INTEGER NOT NULL DEFAULT 0 CHECK (input_paths_accessed >= 0)",
-    "evidence_paths_accessed": "INTEGER NOT NULL DEFAULT 0 CHECK (evidence_paths_accessed >= 0)",
-}
-
-
 def utc_now() -> str:
     """Current UTC timestamp as an ISO-8601 string (seconds precision)."""
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -90,119 +81,24 @@ class SqliteStore:
                 "SELECT value FROM schema_meta WHERE key = 'schema_version'"
             ).fetchone()
             version = row["value"] if row is not None else None
-            self._migrate_v6_jobs()
-            if version in {"1", "2", "3", "4"}:
-                # v4 telemetry counters cannot be added by CREATE TABLE IF NOT
-                # EXISTS on an existing table; add only the missing columns.
-                columns = {
-                    column["name"]
-                    for column in self._conn.execute(
-                        "PRAGMA table_info(job_statistics)"
-                    ).fetchall()
-                }
-                for name, declaration in _V4_STATISTICS_COLUMNS.items():
-                    if name not in columns:
-                        self._conn.execute(
-                            f"ALTER TABLE job_statistics ADD COLUMN {name} {declaration}"
-                        )
-            if version is not None and version not in {
-                "1", "2", "3", "4", "5", _SCHEMA_VERSION,
-            }:
-                raise RuntimeError(
-                    f"database has schema version '{version}' which is newer "
-                    f"than the supported version '{_SCHEMA_VERSION}'; upgrade "
-                    f"the service or use a compatible database"
-                )
+            # D1 is a cold-start boundary: historical service databases are
+            # intentionally not migrated or silently relabeled as 0.2.0.
+            # Operators must run `service_cli.py purge --yes` and start empty.
             if version != _SCHEMA_VERSION:
-                self._conn.execute(
-                    "UPDATE schema_meta SET value = ? WHERE key = 'schema_version'",
-                    (_SCHEMA_VERSION,),
+                raise RuntimeError(
+                    f"database has incompatible schema version {version!r}; "
+                    f"expected {_SCHEMA_VERSION!r}; purge the runtime data "
+                    "for a protocol 0.2.0 cold start"
                 )
-
-    def _migrate_v6_jobs(self) -> None:
-        """Rebuild a pre-v6 jobs table onto the six-status + stage model.
-
-        The old eleven-value CHECK cannot be ALTERed, so the table is rebuilt.
-        ``legacy_alter_table`` keeps child foreign keys (attempts, events, ...)
-        pointing at the name ``jobs`` while the legacy copy is swapped out, so
-        no child rows are ever dropped. 0.1.x statuses map onto
-        (running|waiting, stage); completed jobs land on stage ``projection``
-        for a fully-done stepper display.
-        """
-        columns = {
-            column["name"]
-            for column in self._conn.execute("PRAGMA table_info(jobs)").fetchall()
-        }
-        if "stage" in columns:
-            return  # already v6
-        # rebuild without touching child tables: FK enforcement off (outside
-        # any transaction), swap the table, then re-enable enforcement
-        self._conn.commit()
-        self._conn.execute("PRAGMA foreign_keys = OFF")
-        try:
-            jobs_ddl = "\n".join(
-                line for line in (
-                    Path(__file__).resolve().parent / "schema.sql"
-                ).read_text(encoding="utf-8").split("\n")
-                if line.strip()
-            )
-            start = jobs_ddl.index("CREATE TABLE IF NOT EXISTS jobs (")
-            end = jobs_ddl.index(");", start) + 2
-            create_sql = (
-                jobs_ddl[start:end]
-                .replace(
-                    "CREATE TABLE IF NOT EXISTS jobs",
-                    "CREATE TABLE jobs_v6_rebuild", 1,
+            columns = {
+                column["name"]
+                for column in self._conn.execute("PRAGMA table_info(jobs)").fetchall()
+            }
+            if "stage" not in columns:
+                raise RuntimeError(
+                    "database uses a pre-0.2.0 jobs schema; purge the runtime "
+                    "data for a protocol 0.2.0 cold start"
                 )
-            )
-            self._conn.execute("DROP TABLE IF EXISTS jobs_v6_rebuild")
-            self._conn.execute(create_sql)
-            self._conn.execute(
-                """
-                INSERT INTO jobs_v6_rebuild (
-                    job_id, func_id, source_revision, run_count, selected_run_ids,
-                    status, stage, progress_json, executor_config,
-                    protocol_version, evaluator_version, created_at, updated_at
-                )
-                SELECT
-                    job_id, func_id, source_revision, run_count, selected_run_ids,
-                    CASE status
-                        WHEN 'queued' THEN 'queued'
-                        WHEN 'awaiting_executor' THEN 'waiting'
-                        WHEN 'completed' THEN 'completed'
-                        WHEN 'failed' THEN 'failed'
-                        WHEN 'cancelled' THEN 'cancelled'
-                        ELSE 'running'
-                    END,
-                    CASE status
-                        WHEN 'preparing' THEN 'preparing'
-                        WHEN 'evidence' THEN 'evidence'
-                        WHEN 'semantic' THEN 'observation'
-                        WHEN 'aggregation' THEN 'aggregation'
-                        WHEN 'archive' THEN 'archive'
-                        WHEN 'site_history' THEN 'archive'
-                        WHEN 'completed' THEN 'projection'
-                        ELSE 'preparing'
-                    END,
-                    progress_json, executor_config, protocol_version,
-                    evaluator_version, created_at, updated_at
-                FROM jobs
-                """
-            )
-            self._conn.execute("DROP TABLE jobs")
-            self._conn.execute("PRAGMA legacy_alter_table = ON")
-            self._conn.execute("ALTER TABLE jobs_v6_rebuild RENAME TO jobs")
-            self._conn.execute("PRAGMA legacy_alter_table = OFF")
-            self._conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs (status)"
-            )
-            self._conn.execute(
-                "CREATE INDEX IF NOT EXISTS idx_jobs_func_revision "
-                "ON jobs (func_id, source_revision)"
-            )
-            self._conn.commit()
-        finally:
-            self._conn.execute("PRAGMA foreign_keys = ON")
 
     # --- transaction context manager --------------------------------------
     @contextmanager

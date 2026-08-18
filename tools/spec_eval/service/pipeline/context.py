@@ -12,11 +12,12 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from spec_eval.kernel.evidence_paths import FrozenEvidencePathResolver
+from spec_eval.kernel.contracts import EVALUATION_PROTOCOL_VERSION, EVALUATOR_VERSION
 
 from ..settings import ServiceSettings
 from ..workspace.models import EvaluationWorkspace
 
-DEFAULT_SKILL_EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.2.0"
+DEFAULT_SKILL_EVALUATOR_VERSION = EVALUATOR_VERSION
 SKILL_SCRIPTS_REL = Path("skills") / "ohos-design-arkui-spec-evaluator" / "scripts"
 
 
@@ -61,10 +62,6 @@ class RunContext:
     def assemble_script(self) -> Path:
         return self.skill_scripts_dir / "assemble_semantic_result.py"
 
-    @property
-    def repair_aggregation_contract_script(self) -> Path:
-        return self.skill_scripts_dir / "repair_aggregation_contract.py"
-
     def evidence_resolver(
         self, *, required_paths: tuple[str, ...] = ()
     ) -> FrozenEvidencePathResolver:
@@ -95,6 +92,16 @@ class RunContext:
         evaluator_version: str | None = None,
         workspace: EvaluationWorkspace | None = None,
     ) -> "RunContext":
+        if evaluator_version is not None and evaluator_version != DEFAULT_SKILL_EVALUATOR_VERSION:
+            raise ValueError(
+                "unsupported evaluator_version: expected "
+                f"{DEFAULT_SKILL_EVALUATOR_VERSION!r}, got {evaluator_version!r}"
+            )
+        if settings.protocol_version != EVALUATION_PROTOCOL_VERSION:
+            raise ValueError(
+                "unsupported protocol_version: expected "
+                f"{EVALUATION_PROTOCOL_VERSION!r}, got {settings.protocol_version!r}"
+            )
         workspace = workspace or EvaluationWorkspace.control_checkout(settings, source_revision)
         resolved_revision = workspace.revisions["ace_engine"]
         jobs_run_root = settings.jobs_root / job_id / "runs" / run_id

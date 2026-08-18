@@ -224,46 +224,20 @@ class CodexCliExecutor:
                 elapsed_seconds=time.monotonic() - started,
                 event_count=event_count,
             )
-        raw_observation = document.get("observation_json")
-        if isinstance(raw_observation, str):
-            try:
-                observation = json.loads(raw_observation)
-            except json.JSONDecodeError as exc:
-                return _execution_result(
-                    usage, telemetry,
-                    status=C.STATUS_FAILED,
-                    exit_code=proc_result.exit_code,
-                    executor_result_path=work.executor_result_path,
-                    error=f"observation_json is not valid JSON: {exc}",
-                    elapsed_seconds=time.monotonic() - started,
-                    event_count=event_count,
-                )
-            if not isinstance(observation, dict):
-                return _execution_result(
-                    usage, telemetry,
-                    status=C.STATUS_FAILED,
-                    exit_code=proc_result.exit_code,
-                    executor_result_path=work.executor_result_path,
-                    error="observation_json must decode to an object",
-                    elapsed_seconds=time.monotonic() - started,
-                    event_count=event_count,
-                )
-        else:
-            # protocol 0.2.0 envelope v3: the payload travels as a real
-            # nested object constrained by the generated strict schema
-            # (kernel.schema_gen), not as a JSON string.
-            observation = document.get("payload")
-            if not isinstance(observation, dict):
-                return _execution_result(
-                    usage, telemetry,
-                    status=C.STATUS_FAILED,
-                    exit_code=proc_result.exit_code,
-                    executor_result_path=work.executor_result_path,
-                    error="completed executor result must contain "
-                          "observation_json (v2) or payload (v3)",
-                    elapsed_seconds=time.monotonic() - started,
-                    event_count=event_count,
-                )
+        # Protocol 0.2.0 has one transport shape: envelope v3 with a real
+        # nested payload. Historical observation_json (v2) is deliberately
+        # rejected instead of being silently upgraded (D1).
+        observation = document.get("payload")
+        if not isinstance(observation, dict):
+            return _execution_result(
+                usage, telemetry,
+                status=C.STATUS_FAILED,
+                exit_code=proc_result.exit_code,
+                executor_result_path=work.executor_result_path,
+                error="completed executor result must contain a payload object",
+                elapsed_seconds=time.monotonic() - started,
+                event_count=event_count,
+            )
         return _execution_result(
             usage, telemetry,
             status=C.STATUS_COMPLETED,
@@ -307,8 +281,7 @@ class CodexCliExecutor:
         return argv
 
     def _schema_path_for(self, work: C.WorkItemInput) -> Path:
-        """0.2.0 contracts carry their generated schema; fall back to the
-        executor-configured schema for pre-0.2.0 work items."""
+        """Resolve the generated protocol 0.2.0 schema for this work item."""
         schema_path = work.prompt_extras.get("schema_path")
         if isinstance(schema_path, str) and schema_path:
             return Path(schema_path)

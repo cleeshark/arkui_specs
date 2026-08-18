@@ -638,6 +638,33 @@ class NormalizeAggregationTest(unittest.TestCase):
         ]
         self.assertEqual(ids, list(CRITERIA))
 
+    def test_empty_first_criterion_findings_do_not_crash(self) -> None:
+        judgment = self._judgment()
+        judgment["criterion_results"][0]["findings"] = []
+        judgment["criterion_results"][0]["conclusion"] = "SUPPORTED"
+        result = normalize_aggregation(
+            self._template(), judgment, source_observation_ids=[]
+        )
+        self.assertEqual(result.fatal, [])
+        self.assertEqual(result.errors, [])
+        self.assertEqual(result.document["criterion_results"][0]["findings"], [])
+        self.assertFalse(
+            any("CORRECTNESS-SOURCE-SUPPORT" in change for change in result.changes)
+        )
+
+    def test_empty_later_criterion_does_not_inherit_previous_finding(self) -> None:
+        judgment = self._judgment()
+        judgment["criterion_results"][1]["findings"] = []
+        judgment["criterion_results"][1]["conclusion"] = "SUPPORTED"
+        result = normalize_aggregation(
+            self._template(), judgment, source_observation_ids=[]
+        )
+        self.assertEqual(result.fatal, [])
+        self.assertEqual(result.document["criterion_results"][1]["findings"], [])
+        self.assertFalse(
+            any("CORRECTNESS-CROSS-DOC-CONSISTENCY" in change for change in result.changes)
+        )
+
     def test_valid_aggregation_has_no_blocking_errors(self) -> None:
         result = normalize_aggregation(
             self._template(), self._judgment(),
@@ -736,8 +763,26 @@ class PurgeTest(unittest.TestCase):
             for name in ("db", "jobs", "archives", "locks", "logs", "backups",
                          "workspaces", "exports"):
                 self.assertTrue((settings.data_root / name).is_dir(), name)
-            second = purge_all(settings)
-            self.assertEqual(sum(second["removed"].values()), 0)
+
+    def test_legacy_artifact_purge_is_scoped_and_idempotent(self) -> None:
+        from spec_eval.service.governance import purge_legacy_artifacts
+        from spec_eval.service.settings import ServiceSettings
+
+        with tempfile.TemporaryDirectory() as tmp:
+            settings = ServiceSettings.discover(data_root=Path(tmp))
+            old = settings.jobs_root / "j1" / "staged" / "run-state.json"
+            old.parent.mkdir(parents=True)
+            old.write_text(json.dumps({"schema_version": 1}), encoding="utf-8")
+            current = settings.jobs_root / "j1" / "staged" / "current.json"
+            current.write_text(json.dumps({"schema_version": 2}), encoding="utf-8")
+            old_archive = settings.archives_root / "legacy.json"
+            old_archive.parent.mkdir(parents=True, exist_ok=True)
+            old_archive.write_text(json.dumps({"schema_version": 1}), encoding="utf-8")
+            self.assertEqual(len(purge_legacy_artifacts(settings)["removed"]), 2)
+            self.assertFalse(old.exists())
+            self.assertFalse(old_archive.exists())
+            self.assertTrue(current.exists())
+            self.assertEqual(purge_legacy_artifacts(settings)["removed"], [])
 
     def test_purge_export_takes_backup_first(self) -> None:
         from spec_eval.service.governance import purge_all
@@ -749,7 +794,9 @@ class PurgeTest(unittest.TestCase):
             store = SqliteStore(settings)
             store.close()
             self.assertTrue(settings.db_path.is_file())
-            purge_all(settings, export_first=True)
+            summary = purge_all(settings, export_first=True)
+            self.assertTrue(summary["exported"])
+            self.assertTrue(Path(summary["export_path"]).is_file())
             backups = list(settings.backups_root.glob("service-*.sqlite3"))
             # the backup lands under backups/ *before* it is purged, so the
             # snapshot is removed together with the rest by design; the export
@@ -832,6 +879,20 @@ class EnvelopeV3ParseTest(unittest.TestCase):
         self.assertEqual(result.status, C.STATUS_FAILED)
         self.assertIn("schema", (result.error or "").lower())
 
+    def test_v1_envelope_rejected_after_schema_upgrade(self) -> None:
+        from spec_eval.service.executors import contract as C
+
+        result = self._run({
+            "schema_version": 1,
+            "work_item_id": "feature:Feat-01",
+            "status": "completed",
+            "observation_json": "{}",
+            "notes": [],
+            "error": None,
+        })
+        self.assertEqual(result.status, C.STATUS_FAILED)
+        self.assertIn("schema", (result.error or "").lower())
+
     def test_completed_without_payload_fails(self) -> None:
         from spec_eval.service.executors import contract as C
 
@@ -867,6 +928,18 @@ class TypedErrorContractTest(unittest.TestCase):
             TypedError("GAP_MISSING_FOR_NV", "$"),
         ]
         self.assertEqual([e.code for e in blocking(errors)], ["GAP_MISSING_FOR_NV"])
+
+    def test_evaluator_version_is_exactly_020(self) -> None:
+        import sys
+
+        scripts = Path(__file__).resolve().parents[3] / "skills" / "ohos-design-arkui-spec-evaluator" / "scripts"
+        if str(scripts) not in sys.path:
+            sys.path.insert(0, str(scripts))
+        from create_pilot_template import validate_evaluator_version
+
+        validate_evaluator_version("skill:ohos-design-arkui-spec-evaluator@0.2.0")
+        with self.assertRaisesRegex(ValueError, "unsupported evaluator_version"):
+            validate_evaluator_version("skill:ohos-design-arkui-spec-evaluator@0.1.19")
 
 
 if __name__ == "__main__":

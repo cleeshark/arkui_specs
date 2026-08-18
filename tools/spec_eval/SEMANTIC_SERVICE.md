@@ -160,99 +160,30 @@ schemas all read from the same frozen revision envelope.
 --json --output-schema <schema> --output-last-message <result> -` (prompt via
 stdin). `--dangerously-bypass-approvals-and-sandbox` is never used.
 
-The executor uses a strict v2 response envelope. All envelope properties are
-required; `observation_json` carries a serialized executor-owned payload,
-`notes` is an array, and `error` is nullable. Identity, revision, input paths,
-expected claim/check lists and derived completion fields remain owned by the
-initialized staged template. The service freezes that template before invoking Codex, merges only
-the allowlisted mutable payload fields, derives completion fields, validates a
-candidate with the real staged-run validator, and atomically publishes it only
-after validation succeeds. Observation and aggregation use separate payload
-contracts. A nested `identity`/`input` document or any other extra field is
-rejected without overwriting the initialized template.
+The executor uses the strict protocol 0.2.0 envelope v3. All envelope properties are required;
+`payload` is a real nested object and historical `observation_json`/schema v1-v2 responses are
+rejected. Identity, revision, input paths, expected claim/check lists and derived completion fields
+remain owned by the initialized staged template. The service freezes that template before invoking
+Codex, normalizes service-owned IDs/hashes, validates a candidate with the kernel and atomically
+publishes it only after validation succeeds. Observation and aggregation use separate payload
+contracts, and one generic typed correction turn is the only model retry.
 
-Evaluator 0.1.12 also generates `output-contract.json` from the same Rubric and Skill validator
-constants. The service embeds the relevant section into every Codex prompt, including evidence
-types, `EV-`/`sha256:` formats, legal Criterion IDs and conditional defect ownership. If an
-observation candidate fails only the allowlisted mechanical contract checks, the service makes one
-repair call restricted to the candidate, initialized template and machine contract. It does not
-reopen evidence or silently normalize output. Both executor calls retain separate result files and
-are included in Job duration/Token statistics.
+The service generates `output-contract.json` from the kernel contracts and embeds the relevant
+section into every Codex prompt. Typed validation failures use the single generic correction turn;
+there are no version-specific repair calls or legacy fallbacks.
 
-Evaluator 0.1.13 additionally generates `aggregation-context.json` after all observations pass.
-The file records each observation document hash and the authoritative observation, Claim, and
-atomic-unit mapping for every Criterion. Aggregation `claim_ids` are citations only and cannot
-narrow that scope. Mapped `CONFLICT`/`MISSING` units forbid Supported/Not Applicable, and a sole
-mapped Not Verifiable gap requires Not Verifiable. If an aggregation candidate fails only these
-mapping-consistency checks, the service performs at most one bounded reconciliation call. Its four
-inputs are the candidate, initialized aggregation template, `output-contract.json`, and
-`aggregation-context.json`; source, SDK, Spec, Design, Registry, evidence shards, and published
-observations are outside scope. Structural or evidence validation failures are not reconciled.
-The second invocation has its own `aggregation.executor-result.reconcile-1.json`, events, duration,
-and Token accounting. A failed reconciliation leaves the initialized aggregation template
-unchanged.
-
-Evaluator 0.1.14 additionally publishes the validator-owned observation evidence cardinality table
-through `output-contract.json`. Every observation except Not Verifiable requires at least one
-evidence object, including Not Applicable observations that must prove why the checked unit does not
-apply. When this is the only validation failure, the service may perform one evidence completion
-call using the candidate and original scoped frozen inputs. The repaired payload is rejected unless
-all outcomes, facts, mappings, ownership fields, non-target evidence, and ordering are unchanged.
-
-Evaluator 0.1.15 additionally publishes the final Finding and Criterion-result definitions from
-`semantic-result.schema.json` in `output-contract.json`. Every aggregation candidate is assembled
-in memory and final-validated before replacing the initialized template. The service performs at
-most one deterministic, model-free contract repair: an unambiguous `problem` alias becomes
-`message`, an existing evidence-backed N/A reason becomes `applicability_reason`, and Finding IDs
-plus ownership references are rewritten from stable FuncID/defect/Criterion/Claim identity.
-Different simultaneous `message` and `problem` values fail without publishing the candidate. The
-repair is observable through `aggregation_contract_repair_started`, `_completed`, and `_failed`
-events and remains separate from 0.1.13 mapping reconciliation.
-
-Evaluator 0.1.16 moves canonical Finding IDs and ownership secondary Criteria fully behind the
-service boundary. Executor Finding IDs are unique provisional correlation keys; the service does
-not trust or require model-generated hashes. Before the first aggregation validation it always
-runs one deterministic normalization for any frozen contract containing `final_contract`, including
-in-flight 0.1.15 runs. The pass canonicalizes Finding and ownership IDs, derives secondary Criteria
-from actual owned Findings, and performs the existing unambiguous alias/N/A normalization. Mixed
-repairable and non-repairable errors can no longer suppress the deterministic pass. Remaining
-structural errors still fail, while mapping-only errors continue into bounded reconciliation.
-
-Evaluator 0.1.17 replaces the observation-side homogeneous repair gate with a bounded category
-router. Mechanical contract drift, missing observation evidence, and dangling Claim/unit evidence
-references each receive at most one dedicated repair attempt before full revalidation. The Claim
-evidence mode reopens only the original scoped frozen inputs, targets stable Claim IDs, may reuse
-only evidence IDs already defined by observations, and is rejected if it changes observations,
-non-target Claims, mappings, defects, or ordering. If no defined evidence supports the current
-judgment, only a conservative target-level downgrade to `NOT_VERIFIABLE` is permitted. New runs
-also reject outcome-only Claim reasons and unit facts such as `supported`.
-
-Evaluator 0.1.18 requires inspection evidence even for `NOT_VERIFIABLE`: each NV observation owns
-a `review_record`, and NV Claims/atomic units reference it with an explicit checked-scope and
-missing-evidence explanation. Before ordinary candidate repair, the service evaluates a
-deterministic combination of NV ratio, inspection coverage, empty references, repeated prose,
-decisive outcomes, and observation density. Suspected degeneration re-runs the complete work item
-once from the original scoped frozen inputs using a separate
-`*.executor-result.quality-retry-1.json`; a second failure emits `executor_quality_failed` with
-reason codes, metrics, and available executor telemetry. Database schema v4 persists non-sensitive
-tool-call, command-call, and accessed-input counts parsed from recognized Codex JSONL events.
-
-Evaluator 0.1.19 preserves the three-part NV explanation requirement while accepting bounded
-natural-language families such as `inspection`, `absence`, `cannot be verified`, and
-`prevents verifying`. Generic negation does not satisfy the gap requirement. If a Claim evidence
-repair merges successfully but targeted validation errors remain, the worker uses the same
-one-time independent full-work-item fallback as a guard rejection; a second fallback for that
-repair mode is not allowed.
+The service additionally generates `aggregation-context.json` after all observations pass. It
+records the authoritative observation, Claim and atomic-unit mapping for every Criterion. Mapped
+adverse or unverifiable units constrain aggregate conclusions. Evidence cardinality, NV inspection
+quality, Finding cardinality and canonical Finding identity are enforced by the 0.2.0 kernel.
+Validation errors are typed and enter the one generic correction turn; there are no version-specific
+repair modes, reconciliation calls, or historical fallback branches.
 
 The aggregation contract also requires conclusion-level Finding cardinality. Every Criterion whose
 conclusion is `PARTIALLY_SUPPORTED`, `CONTRADICTED`, or `MISSING` must contain at least one
 evidence-backed Finding, and each Finding must cite evidence belonging to that Criterion. The
-staged aggregation validator reports this rule before final assembly, so the failure is explicit
-and can enter the existing single bounded reconciliation attempt. Reconciliation receives the
-target Criterion IDs, may add Findings only from the target Criterion's existing evidence and
-defect keys already present in `aggregation-context.json`, and must synchronize
-`defect_ownership.finding_ids` without changing conclusions, scope, observations, or ordering.
-If no valid defect key is available, the candidate remains failed. A completed
+staged aggregation validator reports this rule before final assembly. If no valid defect key is
+available, the candidate remains failed. A completed
 `aggregation.executor-result.json` is reused on retry only when its work-item ID, status, error,
 and observation payload pass structural checks; malformed or incomplete results are rejected and
 the executor is invoked again.
@@ -293,8 +224,12 @@ Archive publication is atomic and content-verified. Once
 `archive-manifest.json` exists, retry reuses the published archive and never
 replaces its bytes.
 
-Successful 0.1.13 archives also retain `aggregation-context-<run_id>.json` beside each semantic
-result so a historical Criterion conclusion can be audited against the exact published mapping.
+0.2.0 archives retain `aggregation-context-<run_id>.json` beside each semantic result so a
+Criterion conclusion can be audited against the exact published mapping.
+
+`service_cli.py purge --yes` removes the mutable runtime tree for a cold 0.2.0 restart;
+`purge --legacy-artifacts --yes` removes only pre-0.2.0 staged/archive JSON artifacts. Both modes
+are idempotent, and `--export` takes a verified database snapshot before the full purge.
 
 ## Lifecycle & recovery
 
@@ -372,11 +307,8 @@ pretending the export represents one global revision.
 - **`failed` during aggregation**: the frozen state matrix has no
   `aggregation → awaiting_executor` edge, so an unavailable executor there fails
   the job; retry reuses an existing final-validated semantic result, otherwise it
-  re-runs aggregation. For 0.1.13 mapping failures, inspect
-  `aggregation-context.json` and the `aggregation_reconciliation_*` events. Only mapping-consistency
-  errors receive one reconciliation attempt. For 0.1.15+ final-contract normalization, inspect the
-  `aggregation_contract_repair_*` events; ambiguous aliases and unrepaired structural errors fail
-  before assemble.
+  re-runs aggregation. Inspect the preserved candidate and typed-error checkpoint;
+  stale or legacy artifacts are rejected and require a cold-start purge.
 - **archive not reproducible**: re-run the job for the same FuncID + revision;
   deterministic score/report + content-hashed manifest make bytes match.
 - **refresh returns `deduplicated: true`**: an equivalent active refresh already

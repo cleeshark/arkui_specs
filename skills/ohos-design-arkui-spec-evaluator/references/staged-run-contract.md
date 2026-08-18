@@ -285,16 +285,9 @@ Apply the context constraints before publishing a conclusion:
 - Aggregation evidence may explain the result but cannot silently override a published mapped
   outcome.
 
-If validation fails only these mapping-consistency rules, an automated service may request one
-bounded reconciliation. That pass reads only the failed candidate, initialized aggregation
-template, `output-contract.json`, and `aggregation-context.json`; it preserves unaffected Criteria
-and cannot reopen evidence or rewrite observations. Structural, evidence, ownership, or protocol
-errors are not eligible for this reconciliation.
-
-The service may also use this bounded reconciliation for a conclusion-level Finding-cardinality
-error. In that case, it may add the missing evidence-backed Finding and synchronize its existing
-defect ownership, but it may not change the conclusion, invent a defect key, or widen evidence
-scope. If no validated defect key can own the Finding, the aggregation remains failed.
+If validation fails, return the typed protocol errors to the single generic correction turn. There
+is no separate reconciliation or legacy repair contract in protocol 0.2.0; unresolved errors fail
+the work item while preserving the candidate and typed-error checkpoint.
 
 `output-contract.json` also contains
 `aggregation_payload.final_contract`, sourced directly from the final semantic-result Schema.
@@ -304,11 +297,8 @@ runs final schema and protocol validation. Finding identity is deterministic:
 FuncID, defect key, Criterion ID, and optional Claim ID. Classification and prose do not participate
 in identity.
 
-An automated service may apply one model-free structural repair before mapping reconciliation. It
-may migrate `problem` to `message` only when no different message exists, copy a non-empty
-evidence-backed N/A `reason` to `applicability_reason`, and rewrite Finding IDs together with their
-`defect_ownership[].finding_ids` references. Any ambiguous alias or remaining structural error
-fails validation.
+Finding IDs, aliases, and applicability fields are normalized by the 0.2.0 kernel before typed
+validation; the executor is never routed through a legacy repair script.
 
 Finding IDs in executor output are provisional correlation keys. They must
 be non-empty and unique within the aggregation, but the executor does not calculate the final
@@ -317,7 +307,7 @@ references and derives `secondary_criterion_ids` as the sorted unique Criterion 
 Findings minus `primary_criterion_id`. Therefore, a secondary Criterion named for semantic reasons
 must also have an actual Finding referenced by the same ownership record; the service never creates
 that Finding by inference. This normalization runs independently of other validation errors, then
-the remaining errors are evaluated or routed to mapping reconciliation.
+remaining errors enter the single generic correction turn.
 
 An aggregation may not conclude `SUPPORTED` or `NOT_APPLICABLE` for a Criterion that has a mapped
 `CONFLICT` or `MISSING` observation. Correct the observation mapping or use the applicable adverse

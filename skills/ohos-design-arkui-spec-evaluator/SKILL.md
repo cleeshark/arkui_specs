@@ -427,12 +427,9 @@ ownership IDs, and derives secondary Criteria. Different simultaneous `message` 
 values, ambiguous ownership, or identity collisions fail; classification, prose, evidence,
 conclusions, and missing secondary Findings are never inferred or rewritten.
 
-When the service reports only 0.1.13 mapped-outcome or mapped-Claim citation errors, it may perform
-one bounded reconciliation against the candidate, initialized template, `output-contract.json`,
-and `aggregation-context.json`. Do not use that pass to reopen source or evidence, rewrite
-observations, or repair unrelated structural/protocol errors. Preserve unaffected Criteria and
-revise the linked findings, contradiction bases, and defect ownership together with any changed
-conclusion.
+If aggregation validation fails, return the typed protocol errors for the single generic correction
+turn. Protocol 0.2.0 has no separate reconciliation or legacy repair contract; unresolved errors
+fail the work item while preserving its candidate and typed-error checkpoint.
 
 ```bash
 python3 specs/skills/ohos-design-arkui-spec-evaluator/scripts/validate_staged_run.py \

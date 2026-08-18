@@ -440,7 +440,7 @@ def normalize_aggregation(
             "claim_ids": _strings(row.get("claim_ids")),
             "findings": findings,
         })
-        if finding_id is not None or findings:
+        if findings:
             changes.append(
                 f"criterion_results[{criterion_id}]: canonical finding IDs assigned"
             )

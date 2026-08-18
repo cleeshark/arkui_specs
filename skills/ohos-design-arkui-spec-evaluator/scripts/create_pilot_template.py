@@ -51,6 +51,15 @@ REVIEWS_ROOT = (EVALUATION_ROOT / "reviews").resolve()
 DEFAULT_EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.2.0"
 
 
+def validate_evaluator_version(value: str) -> None:
+    """Reject version drift; protocol 0.2.0 has no compatibility aliases."""
+    if value != DEFAULT_EVALUATOR_VERSION:
+        raise ValueError(
+            "unsupported evaluator_version: expected "
+            f"{DEFAULT_EVALUATOR_VERSION!r}, got {value!r}"
+        )
+
+
 def _load_object(path: Path) -> dict[str, Any]:
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
@@ -145,6 +154,7 @@ def create_semantic_template(
     source_revision: str | None = None,
     allow_non_pilot: bool = False,
 ) -> dict[str, Any]:
+    validate_evaluator_version(evaluator_version)
     rubric, complexity, errors = validate_protocol(EVALUATION_ROOT)
     if errors:
         raise ValueError("; ".join(errors))

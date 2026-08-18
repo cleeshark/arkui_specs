@@ -6,7 +6,7 @@ into the published ``aggregation.json`` through the kernel normalizer, typed-
 validates it against the aggregation context, then runs
 ``assemble_semantic_result.py`` to freeze ``semantic-result.json`` and
 validates the ``final`` stage. The single generic correction turn (design R3)
-replaces the 0.1.x reconciliation mode.
+uses the single generic typed-correction mode; no legacy reconciliation path exists.
 
 Anti-fake-completion: a missing/invalid aggregation body, an assemble failure,
 or a failed final validator all fail the job — ``semantic-result.json`` is
