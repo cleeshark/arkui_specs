@@ -533,6 +533,7 @@ def validate_aggregation_document(
                     "FINDING_EVIDENCE_UNKNOWN", f"{finding_label}.evidence_ids",
                     entity_type="finding",
                     entity_id=str(finding.get("finding_id") or finding.get("key")),
+                    expected=f"subset of Criterion evidence IDs {sorted(criterion_evidence)}",
                     actual=str(missing),
                 ))
             if (

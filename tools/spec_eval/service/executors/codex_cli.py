@@ -295,6 +295,7 @@ class CodexCliExecutor:
         machine_contract = contract.get("machine_contract", {})
         result_kind = contract.get("result_kind", "staged_judgments")
         payload_fields = contract.get("payload_fields", [])
+        declares_evidence = "evidence_declarations" in payload_fields
         constraints = [
             "Follow the declared evaluator Skill and the staged-run contract.",
             "Read only the declared input_paths and frozen source/SDK files.",
@@ -309,6 +310,15 @@ class CodexCliExecutor:
             "Write only the structured final result.",
         ]
         if correcting:
+            evidence_correction = (
+                "Re-declare every piece of evidence you keep or add in "
+                "evidence_declarations; the service re-verifies hashes and "
+                "re-assigns canonical IDs."
+                if declares_evidence else
+                "Do not declare evidence or use local evidence keys. Use only "
+                "canonical evidence IDs listed for each Criterion in "
+                "aggregation-context.json."
+            )
             constraints = [
                 "Correct one invalid evaluation candidate.",
                 "Read the candidate at result_contract.candidate_path and every "
@@ -317,15 +327,23 @@ class CodexCliExecutor:
                 "entity and expected/actual values.",
                 "Do not change document identity, ordering, derived fields or "
                 "evidence you cannot verify from the frozen inputs.",
-                "Re-declare every piece of evidence you keep or add in "
-                "evidence_declarations; the service re-verifies hashes and "
-                "re-assigns canonical IDs.",
+                evidence_correction,
                 "Treat input_resources.citable=false files as context only. "
                 "Replace rejected paths with canonical frozen repository paths.",
                 "Treat result_contract.machine_contract as normative.",
                 "Write only the structured final result.",
             ]
         payload_field_text = json.dumps(payload_fields, ensure_ascii=False)
+        evidence_requirement = (
+            "Local evidence keys (e1, e2, ...) are declared once in "
+            "evidence_declarations and referenced via evidence_refs; never emit "
+            "canonical EV- IDs."
+            if declares_evidence else
+            "For aggregation, do not emit evidence_declarations, evidence_refs, "
+            "or local evidence keys. criterion_results[].evidence_ids and each "
+            "finding evidence_ids must use canonical EV- IDs listed for that "
+            "Criterion in aggregation-context.json."
+        )
         task = (
             f"Correct one {result_kind} candidate after typed validation failure."
             if correcting else
@@ -352,9 +370,7 @@ class CodexCliExecutor:
                     "completed work item set status=completed, error=null, and "
                     f"payload to one {result_kind} object containing exactly "
                     f"these fields: {payload_field_text}, fully constrained by "
-                    "the declared schema. Local evidence keys (e1, e2, ...) are "
-                    "declared once in evidence_declarations and referenced via "
-                    "evidence_refs; never emit canonical EV- IDs. Local "
+                    f"the declared schema. {evidence_requirement} Local "
                     "NOT_VERIFIABLE outcomes still use envelope status=completed. "
                     "Use status=failed only when no complete payload can be "
                     "produced; then set payload=null and provide a non-empty error."

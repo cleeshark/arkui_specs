@@ -308,8 +308,12 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
         self.assertEqual(example["source_revision"], source_revision)
         self.assertTrue(example["content_hash"].startswith("sha256:"))
         mapping_contract = contract["aggregation_payload"]["mapping_context"]
-        self.assertEqual(mapping_contract["schema_version"], 1)
+        self.assertEqual(mapping_contract["schema_version"], 2)
         self.assertIn("claim_reviews[].criterion_ids", mapping_contract["mapping_authority"]["claims"])
+        self.assertIn(
+            "evidence_catalog",
+            mapping_contract["mapping_authority"]["criterion_evidence_ids"],
+        )
         self.assertTrue(any("NOT_VERIFIABLE" in rule for rule in mapping_contract["mixed_outcome_policy"]))
         claim_contract = contract["observation_payload"]["claim_reviews"]
         self.assertTrue(
@@ -596,11 +600,80 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
         self.assertEqual(len(mapping["claims"]), 2)
         self.assertEqual(len(mapping["atomic_units"]), 4)
         self.assertIn("Feat-01/AC-1", mapping["mapped_claim_ids"])
+        self.assertEqual(first["schema_version"], 2)
+        self.assertEqual(len(mapping["evidence_catalog"]), 1)
+        inherited = mapping["evidence_catalog"][0]
+        self.assertNotEqual(inherited["evidence_id"], "EV-unit")
+        self.assertEqual(inherited["source_evidence_id"], "EV-unit")
+        self.assertEqual(inherited["source_work_item_id"], item["id"])
+        self.assertEqual(mapping["observations"][0]["evidence_ids"], [
+            inherited["evidence_id"]
+        ])
+        self.assertTrue(all(
+            claim["evidence_ids"] == [inherited["evidence_id"]]
+            for claim in mapping["claims"]
+        ))
+        self.assertTrue(all(
+            unit["evidence_ids"] == [inherited["evidence_id"]]
+            for unit in mapping["atomic_units"]
+        ))
         self.assertTrue(mapping["constraints"]["adverse_unit_refs"])
         self.assertEqual(
             mapping["constraints"]["forbidden_conclusions"],
             ["SUPPORTED", "NOT_APPLICABLE"],
         )
+
+    def test_aggregation_context_isolates_duplicate_source_evidence_ids(self) -> None:
+        first_document, first_item, state = self._valid_observation()
+        second_document = json.loads(json.dumps(first_document))
+        second_item = json.loads(json.dumps(first_item))
+        second_item.update({"id": "function-global", "type": "function"})
+        second_document.update({
+            "observation_id": "function-global",
+            "observation_type": "function",
+        })
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            for index, (document, item) in enumerate((
+                (first_document, first_item), (second_document, second_item),
+            )):
+                path = root / f"observation-{index}.json"
+                path.write_text(json.dumps(document), encoding="utf-8")
+                item["output_path"] = str(path)
+            context = build_aggregation_context(
+                state, {"items": [first_item, second_item]}
+            )
+        mapping = next(
+            row for row in context["criterion_mappings"]
+            if row["criterion_id"] == "CORRECTNESS-SOURCE-SUPPORT"
+        )
+        catalog = mapping["evidence_catalog"]
+        self.assertEqual(len(catalog), 2)
+        self.assertEqual(
+            {row["source_evidence_id"] for row in catalog}, {"EV-unit"}
+        )
+        self.assertEqual(
+            {row["source_work_item_id"] for row in catalog},
+            {"feature:Feat-01", "function-global"},
+        )
+        self.assertEqual(len({row["evidence_id"] for row in catalog}), 2)
+        self.assertEqual(
+            [row["evidence_count"] for row in context["source_observations"]],
+            [1, 1],
+        )
+
+    def test_aggregation_context_rejects_inconsistent_source_evidence_id(self) -> None:
+        document, item, state = self._valid_observation()
+        duplicate = json.loads(json.dumps(document["observations"][0]))
+        duplicate["observation_id"] = "OBS-inconsistent"
+        duplicate["evidence"][0]["description"] = "Different evidence row."
+        document["observations"].append(duplicate)
+        with TemporaryDirectory() as temporary:
+            path = Path(temporary) / "observation.json"
+            path.write_text(json.dumps(document), encoding="utf-8")
+            item["output_path"] = str(path)
+            with self.assertRaisesRegex(ValueError, "different evidence rows"):
+                build_aggregation_context(state, {"items": [item]})
 
     def test_aggregation_context_does_not_treat_observation_claim_refs_as_claim_mapping(self) -> None:
         document, item, state = self._valid_observation()

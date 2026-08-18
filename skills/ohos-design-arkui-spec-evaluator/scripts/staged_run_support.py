@@ -27,7 +27,7 @@ from spec_eval.protocol_validator import (  # noqa: E402
 
 STAGED_SCHEMA_VERSION = 2
 SUPPORTED_STAGED_SCHEMA_VERSIONS = {STAGED_SCHEMA_VERSION}
-AGGREGATION_CONTEXT_SCHEMA_VERSION = 1
+AGGREGATION_CONTEXT_SCHEMA_VERSION = 2
 SEMANTIC_FINDING_IDENTITY_VERSION = 1
 OUTCOME_POLICY_BASIS_CRITERIA = [
     "SPEC-AC-TESTABILITY",
@@ -257,13 +257,17 @@ def staged_output_contract(
                 "criterion_results[].claim_ids may cite only claims already mapped to that "
                 "Criterion; it never defines or narrows aggregate scope."
             ),
+            "criterion_evidence_ids": (
+                "criterion_results[].evidence_ids may select only canonical IDs from "
+                "that Criterion's evidence_catalog; Finding evidence_ids must be a subset."
+            ),
         },
         "mixed_outcome_policy": [
             "SUPPORTED requires every applicable mapped unit to be verified and no mapped CONFLICT, MISSING or NOT_VERIFIABLE unit.",
             "When mapped units contain NOT_VERIFIABLE but no CONFLICT or MISSING, conclude NOT_VERIFIABLE.",
             "When any mapped observation, claim or atomic unit is CONFLICT or MISSING, do not conclude SUPPORTED or NOT_APPLICABLE; apply breadth and the frozen Rubric outcome policy.",
             "NOT_APPLICABLE is invalid when any mapped unit is applicable.",
-            "New aggregation evidence may explain a conclusion but may not silently override a published mapped outcome.",
+            "Selected inherited evidence may explain a conclusion but may not silently override a published mapped outcome.",
         ],
     }
     semantic_schema = load_object(
@@ -504,6 +508,7 @@ def build_aggregation_context(
             "claims": [],
             "atomic_units": [],
             "mapped_claim_ids": [],
+            "evidence_catalog": [],
         }
         for criterion_id in criteria
     }
@@ -518,10 +523,14 @@ def build_aggregation_context(
             continue
         path = Path(output_path)
         document = load_object(path)
+        source_evidence, evidence_by_id = _aggregation_evidence_catalog(
+            work_item_id, document
+        )
         source_observations.append({
             "work_item_id": work_item_id,
             "path": output_path,
             "content_hash": content_hash(path),
+            "evidence_count": len(source_evidence),
         })
 
         for observation in document.get("observations", []):
@@ -546,6 +555,14 @@ def build_aggregation_context(
                 "breadth": observation.get("breadth"),
                 "contract_family": observation.get("contract_family"),
                 "claim_ids": claim_ids,
+                "evidence_ids": _aggregation_evidence_refs(
+                    evidence_by_id,
+                    [
+                        evidence.get("evidence_id")
+                        for evidence in observation.get("evidence", [])
+                        if isinstance(evidence, dict)
+                    ],
+                ),
             }
             for optional in ("defect_key", "primary_criterion_id"):
                 if isinstance(observation.get(optional), str):
@@ -553,6 +570,9 @@ def build_aggregation_context(
             for criterion_id in criterion_ids:
                 mapping = mappings[criterion_id]
                 mapping["observations"].append(copy.deepcopy(entry))
+                _extend_aggregation_evidence(
+                    mapping["evidence_catalog"], entry["evidence_ids"], source_evidence
+                )
 
         for claim_review in document.get("claim_reviews", []):
             if not isinstance(claim_review, dict):
@@ -576,6 +596,9 @@ def build_aggregation_context(
                     for key in claim_review.get("defect_keys", [])
                     if isinstance(key, str) and key
                 ],
+                "evidence_ids": _aggregation_evidence_refs(
+                    evidence_by_id, claim_review.get("evidence_ids", [])
+                ),
             }
             unit_entries = []
             for unit in claim_review.get("unit_reviews", []):
@@ -587,12 +610,21 @@ def build_aggregation_context(
                     "unit_id": unit.get("unit_id"),
                     "facet_type": unit.get("facet_type"),
                     "local_outcome": unit.get("local_outcome"),
+                    "evidence_ids": _aggregation_evidence_refs(
+                        evidence_by_id, unit.get("evidence_ids", [])
+                    ),
                 })
             for criterion_id in criterion_ids:
                 mapping = mappings[criterion_id]
                 mapping["claims"].append(copy.deepcopy(claim_entry))
                 mapping["atomic_units"].extend(copy.deepcopy(unit_entries))
                 _extend_unique(mapping["mapped_claim_ids"], [claim_id])
+                referenced_evidence = list(claim_entry["evidence_ids"])
+                for unit_entry in unit_entries:
+                    referenced_evidence.extend(unit_entry["evidence_ids"])
+                _extend_aggregation_evidence(
+                    mapping["evidence_catalog"], referenced_evidence, source_evidence
+                )
 
     for mapping in mappings.values():
         units = [
@@ -645,6 +677,112 @@ def build_aggregation_context(
         "source_observations": source_observations,
         "criterion_mappings": list(mappings.values()),
     }
+
+
+def _aggregation_evidence_catalog(
+    work_item_id: str, document: dict[str, Any]
+) -> tuple[list[dict[str, Any]], dict[str, str]]:
+    """Re-key one observation's evidence into the run-level aggregation namespace."""
+    rows: list[dict[str, Any]] = []
+    by_source_id: dict[str, str] = {}
+    source_rows_by_id: dict[str, dict[str, Any]] = {}
+    by_aggregation_id: dict[str, dict[str, Any]] = {}
+    for observation in document.get("observations", []):
+        if not isinstance(observation, dict):
+            continue
+        for evidence in observation.get("evidence", []):
+            if not isinstance(evidence, dict):
+                continue
+            source_id = evidence.get("evidence_id")
+            if not isinstance(source_id, str) or not source_id:
+                continue
+            identity = {
+                "work_item_id": work_item_id,
+                "source_evidence_id": source_id,
+                "type": evidence.get("type"),
+                "path": evidence.get("path"),
+                "line_start": evidence.get("line_start"),
+                "line_end": evidence.get("line_end"),
+                "content_hash": evidence.get("content_hash"),
+            }
+            aggregation_id = "EV-" + hashlib.sha256(
+                json.dumps(
+                    identity, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+                ).encode("utf-8")
+            ).hexdigest()[:24]
+            published = {
+                key: copy.deepcopy(value)
+                for key, value in evidence.items()
+                if key in {
+                    "type", "path", "line_start", "line_end", "source_revision",
+                    "content_hash", "claim_id", "description",
+                }
+            }
+            row = {
+                "evidence_id": aggregation_id,
+                **published,
+                "source_work_item_id": work_item_id,
+                "source_evidence_id": source_id,
+            }
+            previous_id = by_source_id.get(source_id)
+            previous_row = source_rows_by_id.get(source_id)
+            if previous_id is not None and (
+                previous_id != aggregation_id or previous_row != row
+            ):
+                raise ValueError(
+                    f"observation {work_item_id} reuses evidence ID {source_id} "
+                    "for different evidence rows"
+                )
+            by_source_id[source_id] = aggregation_id
+            source_rows_by_id[source_id] = row
+            if aggregation_id not in by_aggregation_id:
+                by_aggregation_id[aggregation_id] = row
+                rows.append(row)
+    return rows, by_source_id
+
+
+def _aggregation_evidence_refs(
+    evidence_by_id: dict[str, str], raw_ids: Any
+) -> list[str]:
+    if not isinstance(raw_ids, list):
+        return []
+    unknown = sorted({
+        evidence_id for evidence_id in raw_ids
+        if isinstance(evidence_id, str) and evidence_id not in evidence_by_id
+    })
+    if unknown:
+        raise ValueError(f"unknown observation evidence IDs: {unknown}")
+    return [
+        evidence_by_id[evidence_id]
+        for evidence_id in raw_ids
+        if isinstance(evidence_id, str) and evidence_id in evidence_by_id
+    ]
+
+
+def _extend_aggregation_evidence(
+    target: list[dict[str, Any]], evidence_ids: list[str],
+    source_evidence: list[dict[str, Any]],
+) -> None:
+    existing = {
+        row.get("evidence_id"): row for row in target
+        if isinstance(row, dict) and isinstance(row.get("evidence_id"), str)
+    }
+    source_by_id = {
+        row.get("evidence_id"): row
+        for row in source_evidence
+        if isinstance(row, dict) and isinstance(row.get("evidence_id"), str)
+    }
+    for evidence_id in evidence_ids:
+        if evidence_id not in source_by_id:
+            continue
+        if evidence_id in existing:
+            if existing[evidence_id] != source_by_id[evidence_id]:
+                raise ValueError(
+                    f"aggregation evidence ID collision for {evidence_id}"
+                )
+            continue
+        target.append(copy.deepcopy(source_by_id[evidence_id]))
+        existing[evidence_id] = source_by_id[evidence_id]
 
 
 def _extend_unique(target: list[str], values: list[str]) -> None:

@@ -204,6 +204,8 @@ CRITERION_JUDGMENT_FIELDS = (
     "reason",
     "applicability_reason",
     "missing_evidence",
+    "claim_ids",
+    "evidence_ids",
     "findings",
 )
 FINDING_JUDGMENT_FIELDS = (

@@ -65,9 +65,9 @@ def input_fingerprint(
 ) -> str:
     """Layered fingerprint base for resume decisions (design v3 R4).
 
-    Covers the evaluator/protocol identity, the frozen input path set and the
-    initialized template; callers extend it with executor identity where the
-    executor varies per run.
+    Covers the evaluator/protocol identity, the frozen input path set and file
+    contents, and the initialized template; callers extend it with executor
+    identity where the executor varies per run.
     """
     digest = hashlib.sha256()
     digest.update(evaluator_version.encode("utf-8"))
@@ -76,6 +76,12 @@ def input_fingerprint(
     digest.update(b"\0")
     for path in input_paths:
         digest.update(path.encode("utf-8"))
+        digest.update(b"\0")
+        input_path = Path(path)
+        if input_path.is_file():
+            with input_path.open("rb") as stream:
+                for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                    digest.update(chunk)
         digest.update(b"\n")
     digest.update(b"\0")
     digest.update(json.dumps(
