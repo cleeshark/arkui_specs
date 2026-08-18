@@ -38,6 +38,10 @@ def build_parser() -> argparse.ArgumentParser:
     serve.add_argument("--port", type=int, default=8790)
     serve.add_argument("--max-workers", type=int, default=2)
     serve.add_argument("--token", default=None)
+    serve.add_argument(
+        "--executor", choices=["codex", "claude"], default=None,
+        help="executor backend (default: codex)",
+    )
 
     metrics = sub.add_parser("metrics", help="export metrics and exit")
     metrics.add_argument("--write", type=Path, required=True, help="destination path")
@@ -84,11 +88,32 @@ def main(argv: list[str] | None = None) -> int:
 def _serve(settings: ServiceSettings, args) -> int:
     if args.host not in ("127.0.0.1", "localhost") and not args.token:
         print("WARNING: binding non-loopback without --token; API will be open", file=sys.stderr)
-    app = SemanticServiceApp(settings, max_workers=args.max_workers, token=args.token)
+
+    executor_name = args.executor or "codex"
+    executor = None
+    executor_config = None
+    if executor_name != "codex":
+        from spec_eval.service.executors.registry import create
+        from spec_eval.service.settings import executor_config_for
+
+        executor_config = executor_config_for(executor_name)
+        executor = create(executor_name, executor_config, schemas_root=settings.schemas_root)
+
+    app = SemanticServiceApp(
+        settings,
+        executor=executor,
+        executor_config=executor_config,
+        max_workers=args.max_workers,
+        token=args.token,
+    )
     app.start()
     server = make_server(app, args.host, args.port)
     bound = server.server_address
-    print(f"semantic service listening on http://{bound[0]}:{bound[1]}", flush=True)
+    print(
+        f"semantic service listening on http://{bound[0]}:{bound[1]} "
+        f"(executor={executor_name})",
+        flush=True,
+    )
     try:
         server.serve_forever()
     except KeyboardInterrupt:
