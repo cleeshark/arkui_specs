@@ -83,6 +83,23 @@ def run_aggregation(
         })
 
     try:
+        observation_preflight = staged_stage.validate_observation_checkpoints(
+            ctx, runner=runner
+        )
+    except staged_stage.StagedStageError as exc:
+        observation_preflight = staged_stage.ValidationResult(
+            ok=False, errors=(str(exc),)
+        )
+    if not observation_preflight.ok:
+        jobs.transition_status(
+            ctx.job_id,
+            S.FAILED,
+            event_type="aggregation_preflight_rejected",
+            payload={"errors": list(observation_preflight.errors)},
+        )
+        return C.STATUS_FAILED, None
+
+    try:
         template = load_template(aggregation_path)
         source_observation_ids = _source_observation_ids(
             ctx.run_dir / "work-items.json"

@@ -472,6 +472,31 @@ class _DriverTestBase(unittest.TestCase):
 
 
 class AggregationStageTest(_DriverTestBase):
+    def test_observation_preflight_rejects_before_executor(self) -> None:
+        self.jobs.transition_status(self.job.job_id, S.RUNNING, stage=S.STAGE_PREPARING, event_type="x")
+        self.jobs.transition_status(self.job.job_id, S.RUNNING, stage=S.STAGE_EVIDENCE, event_type="x")
+        self.jobs.transition_status(self.job.job_id, S.RUNNING, stage=S.STAGE_OBSERVATION, event_type="x")
+        executor = _FakeExecutor()
+        base_runner = _FakeScriptRunner([])
+
+        def runner(argv, *, cwd, timeout):
+            joined = " ".join(argv)
+            if "validate_staged_run.py" in joined and "--stage observations" in joined:
+                return subprocess.CompletedProcess(
+                    argv, 1, "", "ERROR: observation preflight rejected"
+                )
+            return base_runner(argv, cwd=cwd, timeout=timeout)
+
+        outcome, result = aggregation_stage.run_aggregation(
+            self.ctx, executor, jobs=self.jobs, attempts=self.attempts,
+            events=self.events, runner=runner,
+        )
+        self.assertEqual(outcome, C.STATUS_FAILED)
+        self.assertIsNone(result)
+        self.assertEqual(executor.calls, [])
+        event_types = [event.event_type for event in self.events.list_for_job(self.job.job_id)]
+        self.assertIn("aggregation_preflight_rejected", event_types)
+
     def test_orchestration_produces_semantic_result(self) -> None:
         self.jobs.transition_status(self.job.job_id, S.RUNNING, stage=S.STAGE_PREPARING, event_type="x")
         self.jobs.transition_status(self.job.job_id, S.RUNNING, stage=S.STAGE_EVIDENCE, event_type="x")
