@@ -19,6 +19,7 @@ from staged_run_support import (
     validate_input_hashes,
     validate_observation_document,
 )
+from create_pilot_template import DEFAULT_EVALUATOR_VERSION
 
 
 def validate_stage(
@@ -33,6 +34,15 @@ def validate_stage(
     except ValueError as exc:
         return [str(exc)], {}, {}
     validate_identity(work_items, state, "work-items", errors)
+    if state.get("evaluator_version") != DEFAULT_EVALUATOR_VERSION:
+        errors.append(
+            "run-state.evaluator_version: unsupported value "
+            f"{state.get('evaluator_version')!r}; expected {DEFAULT_EVALUATOR_VERSION!r}"
+        )
+    if state.get("schema_version") != 2:
+        errors.append(
+            "run-state.schema_version: protocol 0.2.0 requires schema_version=2"
+        )
     errors.extend(validate_input_hashes(state))
     items = work_items.get("items")
     if not isinstance(items, list) or not items:

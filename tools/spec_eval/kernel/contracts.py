@@ -20,6 +20,9 @@ from __future__ import annotations
 # judgment payload shape and validation semantics change together at this
 # version; no historical compatibility is retained (design D1).
 EVALUATION_PROTOCOL_VERSION = "0.2.0"
+# The installed evaluator skill is part of the immutable run identity.  D1
+# intentionally accepts one exact version instead of a compatibility range.
+EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.2.0"
 
 ENVELOPE_SCHEMA_VERSION = 3
 

@@ -40,6 +40,7 @@ from spec_eval.protocol_validator import validate_protocol, validate_semantic_re
 
 
 EVALUATION_ROOT = SPECS_ROOT / "evaluation"
+EXPECTED_EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.2.0"
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -60,6 +61,13 @@ def main(argv: list[str] | None = None) -> int:
     if not isinstance(instance, dict):
         print(f"ERROR: {args.result}: expected a JSON object", file=sys.stderr)
         return 2
+    if instance.get("evaluator_version") != EXPECTED_EVALUATOR_VERSION:
+        print(
+            "ERROR: unsupported evaluator_version: expected "
+            f"{EXPECTED_EVALUATOR_VERSION!r}, got {instance.get('evaluator_version')!r}",
+            file=sys.stderr,
+        )
+        return 1
     rubric, complexity, errors = validate_protocol(EVALUATION_ROOT)
     errors.extend(
         validate_semantic_result(

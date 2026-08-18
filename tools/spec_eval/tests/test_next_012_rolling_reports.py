@@ -301,7 +301,7 @@ class ReportDeltaTest(unittest.TestCase):
 
 
 class SchemaMigrationTest(unittest.TestCase):
-    def test_v1_database_is_upgraded_additively_to_v6(self) -> None:
+    def test_v1_database_is_rejected_at_cold_start(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             settings = ServiceSettings.discover(data_root=Path(temporary))
             conn = sqlite3.connect(settings.db_path)
@@ -310,27 +310,10 @@ class SchemaMigrationTest(unittest.TestCase):
             conn.commit()
             conn.close()
 
-            store = SqliteStore(settings)
-            row = store._conn.execute(
-                "SELECT value FROM schema_meta WHERE key='schema_version'"
-            ).fetchone()
-            tables = {
-                item[0]
-                for item in store._conn.execute(
-                    "SELECT name FROM sqlite_master WHERE type='table'"
-                ).fetchall()
-            }
-            self.assertEqual(row[0], "6")
-            self.assertTrue(
-                {
-                    "evaluation_reports", "function_report_heads", "freshness_policies",
-                    "report_deltas", "job_statistics",
-                }
-                <= tables
-            )
-            store.close()
+            with self.assertRaisesRegex(RuntimeError, "incompatible schema version"):
+                SqliteStore(settings)
 
-    def test_v2_database_backfills_job_statistics_from_events(self) -> None:
+    def test_v2_database_is_rejected_without_migration(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             settings = ServiceSettings.discover(data_root=Path(temporary))
             store = SqliteStore(settings)
@@ -356,20 +339,10 @@ class SchemaMigrationTest(unittest.TestCase):
             conn.commit()
             conn.close()
 
-            migrated = SqliteStore(settings)
-            row = migrated._conn.execute(
-                "SELECT started_at, finished_at FROM job_statistics WHERE job_id = ?",
-                (job.job_id,),
-            ).fetchone()
-            version = migrated._conn.execute(
-                "SELECT value FROM schema_meta WHERE key='schema_version'"
-            ).fetchone()[0]
-            self.assertEqual(version, "6")
-            self.assertIsNotNone(row[0])
-            self.assertIsNotNone(row[1])
-            migrated.close()
+            with self.assertRaisesRegex(RuntimeError, "incompatible schema version"):
+                SqliteStore(settings)
 
-    def test_v3_database_adds_executor_telemetry_columns(self) -> None:
+    def test_v3_database_is_rejected_without_migration(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             settings = ServiceSettings.discover(data_root=Path(temporary))
             store = SqliteStore(settings)
@@ -387,18 +360,8 @@ class SchemaMigrationTest(unittest.TestCase):
             conn.commit()
             conn.close()
 
-            migrated = SqliteStore(settings)
-            columns = {
-                row[1]
-                for row in migrated._conn.execute("PRAGMA table_info(job_statistics)")
-            }
-            version = migrated._conn.execute(
-                "SELECT value FROM schema_meta WHERE key='schema_version'"
-            ).fetchone()[0]
-            self.assertEqual(version, "6")
-            self.assertIn("executor_command_calls", columns)
-            self.assertIn("evidence_paths_accessed", columns)
-            migrated.close()
+            with self.assertRaisesRegex(RuntimeError, "incompatible schema version"):
+                SqliteStore(settings)
 
     def test_future_database_version_is_not_silently_downgraded(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -408,7 +371,7 @@ class SchemaMigrationTest(unittest.TestCase):
             conn.execute("INSERT INTO schema_meta VALUES ('schema_version', '99')")
             conn.commit()
             conn.close()
-            with self.assertRaisesRegex(RuntimeError, "schema version '99'"):
+            with self.assertRaisesRegex(RuntimeError, "incompatible schema version"):
                 SqliteStore(settings)
 
 

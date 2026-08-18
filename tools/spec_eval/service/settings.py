@@ -47,6 +47,13 @@ class ServiceSettings:
     service_version: str = "0.1.0"
     default_executor_config: dict[str, Any] = field(default_factory=_default_executor_config)
 
+    def __post_init__(self) -> None:
+        if self.protocol_version != "0.2.0":
+            raise ValueError(
+                "unsupported protocol_version: expected '0.2.0', "
+                f"got {self.protocol_version!r}"
+            )
+
     @classmethod
     def discover(cls, data_root: Path | str | None = None) -> "ServiceSettings":
         """Build settings from the repo layout, creating the data dir tree.

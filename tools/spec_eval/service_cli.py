@@ -9,6 +9,7 @@ metrics, clean disposable run dirs, and back up the DB.
     python3 specs/tools/spec_eval/service_cli.py cleanup --retention-days 14
     python3 specs/tools/spec_eval/service_cli.py backup
     python3 specs/tools/spec_eval/service_cli.py purge --yes [--export]
+    python3 specs/tools/spec_eval/service_cli.py purge --legacy-artifacts --yes
 
 Binds 127.0.0.1 by default. Pass --host 0.0.0.0 only together with --token.
 """
@@ -54,6 +55,10 @@ def build_parser() -> argparse.ArgumentParser:
     purge.add_argument("--yes", action="store_true", help="required confirmation flag")
     purge.add_argument(
         "--export", action="store_true", help="take a DB backup snapshot first"
+    )
+    purge.add_argument(
+        "--legacy-artifacts", action="store_true",
+        help="remove only pre-0.2.0 staged/archive JSON artifacts",
     )
     return parser
 
@@ -142,7 +147,7 @@ def _backup(settings: ServiceSettings) -> int:
 
 
 def _purge(settings, args) -> int:
-    from spec_eval.service.governance import purge_all
+    from spec_eval.service.governance import purge_all, purge_legacy_artifacts
 
     if not args.yes:
         print(
@@ -151,11 +156,21 @@ def _purge(settings, args) -> int:
             file=sys.stderr,
         )
         return 2
+    if args.legacy_artifacts:
+        summary = purge_legacy_artifacts(settings)
+        print(
+            f"purged legacy artifacts under {summary['data_root']} "
+            f"(removed={len(summary['removed'])})",
+            flush=True,
+        )
+        return 0
     summary = purge_all(settings, export_first=args.export)
     removed = [name for name, count in summary["removed"].items() if count]
     print(
         f"purged {summary['data_root']} (removed: {', '.join(removed) or 'nothing'}; "
-        f"exported={summary['exported']})",
+        f"exported={summary['exported']}"
+        + (f" path={summary['export_path']}" if summary.get("export_path") else "")
+        + ")",
         flush=True,
     )
     return 0

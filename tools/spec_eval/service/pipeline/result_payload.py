@@ -3,8 +3,8 @@
 Two modes only (design §4): ``observe`` produces one complete judgment
 payload against the generated strict schema; ``correct`` receives the invalid
 candidate plus typed validation errors and returns one complete corrected
-payload using the same schema. The six 0.1.x repair/retry/reconciliation
-contracts are gone; the machine contract injected into the prompt comes from
+payload using the same schema. Legacy repair/retry/reconciliation contracts are
+gone; the machine contract injected into the prompt comes from
 the kernel's single declarative source.
 """
 

@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import shutil
 import sqlite3
+import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -153,8 +154,11 @@ def purge_all(
     Never touches the repository itself: ``evaluation/reviews/`` (confirmed
     human baselines), static baselines and any code stay untouched.
     """
+    export_path: str | None = None
     if export_first and settings.db_path.is_file():
-        backup_database(settings)
+        # Keep the snapshot outside the tree that is about to be deleted.
+        export_root = settings.data_root.parent / (settings.data_root.name + "-purge-export")
+        export_path = str(backup_database(settings, backup_root=export_root))
 
     removed: dict[str, int] = {}
     for name in (
@@ -184,5 +188,40 @@ def purge_all(
     return {
         "data_root": str(settings.data_root),
         "exported": bool(export_first),
+        "export_path": export_path,
         "removed": removed,
     }
+
+
+def purge_legacy_artifacts(settings: ServiceSettings) -> dict[str, Any]:
+    """Remove staged/archive artifacts from pre-0.2.0 runs only.
+
+    Current archive manifests also use a small manifest schema number, so the
+    legacy decision is based on the evaluator version for archives and on the
+    staged schema/evaluator identity for job run files.  The operation is
+    deliberately file-scoped and idempotent; it never touches the SQLite DB,
+    confirmed reviews, or static baselines.
+    """
+    removed: list[str] = []
+    roots = (settings.jobs_root, settings.archives_root)
+    for root in roots:
+        if not root.is_dir():
+            continue
+        for path in sorted(root.rglob("*.json")):
+            try:
+                value = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            if not isinstance(value, dict):
+                continue
+            evaluator = value.get("evaluator_version")
+            schema = value.get("schema_version")
+            legacy = isinstance(evaluator, str) and "@0.1." in evaluator
+            if root == settings.jobs_root:
+                legacy = legacy or (isinstance(schema, int) and schema < 2)
+            elif root == settings.archives_root and path.name != "archive-manifest.json":
+                legacy = legacy or (isinstance(schema, int) and schema < 3)
+            if legacy:
+                path.unlink(missing_ok=True)
+                removed.append(str(path))
+    return {"data_root": str(settings.data_root), "removed": removed}
