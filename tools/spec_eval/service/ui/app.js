@@ -87,18 +87,34 @@ function archivedPath(job) {
 }
 
 function progressHtml(job) {
+  const pipeline = job.pipeline || [];
   const p = job.progress || {};
   const archive = archivedPath(job);
-  const note = archive
-    ? ` · <button type="button" class="archive-link" data-act="copy-archive"
+
+  if (!pipeline.length) {
+    const note = p.note ? ` · ${esc(p.note)}` : "";
+    return `<span>${esc(p.stage || job.stage || "—")}${note}</span>`;
+  }
+
+  const archiveHtml = archive
+    ? ` <button type="button" class="archive-link" data-act="copy-archive"
         data-path="${esc(archive)}" aria-label="Copy archive path">link</button>`
-    : p.note ? ` · ${esc(p.note)}` : "";
+    : "";
   const running = job.status === "running";
-  const active = running || job.status === "waiting";
-  return `<div class="progress-wrap ${active ? "active" : ""}">
-    ${running ? '<span class="activity-spinner" aria-hidden="true"></span>' : ""}
-    <span>${esc(p.stage || "—")}${note}</span>
-  </div>${running ? '<div class="activity-track" aria-label="job running"><span></span></div>' : ""}`;
+  const activeStage = pipeline.find(s => s.state === "active" || s.state === "waiting");
+  const label = activeStage ? activeStage.stage
+    : job.status === "completed" ? "done"
+    : job.status === "failed" ? "failed"
+    : job.stage || "—";
+
+  const segs = pipeline.map(s =>
+    `<span class="seg ${esc(s.state)}" title="${esc(s.stage)}"></span>`
+  ).join("");
+
+  return `<div class="pipeline-progress">
+    <div class="pipeline-bar">${segs}</div>
+    <span class="pipeline-label">${running ? '<span class="activity-spinner" aria-hidden="true"></span>' : ""}${esc(label)}${archiveHtml}</span>
+  </div>`;
 }
 
 function formatDuration(ms) {
@@ -116,13 +132,28 @@ function formatNumber(value) {
   return Number(value || 0).toLocaleString("en-US");
 }
 
+function formatTime(isoString) {
+  if (!isoString) return "—";
+  try {
+    const d = new Date(isoString);
+    if (isNaN(d.getTime())) return String(isoString);
+    return d.toLocaleString(undefined, {
+      month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit",
+    });
+  } catch (_) { return String(isoString); }
+}
+
 function durationHtml(job) {
   const timing = job.timing || {};
   const live = ACTIVE_STATES.has(job.status) && timing.started_at && !timing.finished_at;
   const title = `Executor: ${formatDuration(Number(timing.executor_duration_ms || 0))}`;
-  return `<span class="job-duration ${live ? "live-duration" : ""}"
-    data-duration-ms="${Number(timing.duration_ms || 0)}"
-    data-rendered-at="${Date.now()}" title="${esc(title)}">${formatDuration(Number(timing.duration_ms || 0))}</span>`;
+  if (live) {
+    const elapsed = Math.max(0, Date.now() - new Date(timing.started_at).getTime());
+    return `<span class="job-duration live-duration"
+      data-started-at="${esc(timing.started_at)}" title="${esc(title)}">${formatDuration(elapsed)}</span>`;
+  }
+  return `<span class="job-duration" title="${esc(title)}">${formatDuration(Number(timing.duration_ms || 0))}</span>`;
 }
 
 function tokenHtml(job) {
@@ -148,7 +179,7 @@ function renderJobs(jobs = latestJobs) {
       <td>${progressHtml(job)}</td>
       <td>${durationHtml(job)}</td>
       <td>${tokenHtml(job)}</td>
-      <td class="muted">${esc(job.updated_at)}</td>
+      <td class="muted" title="${esc(job.updated_at)}">${formatTime(job.updated_at)}</td>
       <td>${rowActions(job)} <button data-act="detail" data-id="${esc(job.job_id)}">detail</button></td>
     </tr>`).join("") || `<tr><td class="muted" colspan="7">no jobs</td></tr>`;
   updatePagination(paged, jobsPageInfo, jobsPagePrev, jobsPageNext);
@@ -184,10 +215,12 @@ async function refreshMetrics(force = false) {
 }
 
 function tickDurations() {
+  const now = Date.now();
   document.querySelectorAll(".live-duration").forEach((node) => {
-    const base = Number(node.dataset.durationMs || 0);
-    const rendered = Number(node.dataset.renderedAt || Date.now());
-    node.textContent = formatDuration(base + Math.max(0, Date.now() - rendered));
+    const startedAt = node.dataset.startedAt;
+    if (startedAt) {
+      node.textContent = formatDuration(Math.max(0, now - new Date(startedAt).getTime()));
+    }
   });
 }
 
@@ -270,7 +303,7 @@ async function loadDetail(jobId) {
   document.getElementById("detail-state").textContent = JSON.stringify(jobRes.json, null, 2);
   const events = Array.isArray(evRes.json) ? evRes.json : [];
   document.getElementById("events").innerHTML = events.slice(-40).reverse().map((e) =>
-    `<li><b>${esc(e.seq)}</b> ${esc(e.event_type)} <span class="muted">${esc(e.created_at)}</span><br/><pre>${esc(JSON.stringify(e.payload))}</pre></li>`
+    `<li><b>${esc(e.seq)}</b> ${esc(e.event_type)} <span class="muted" title="${esc(e.created_at)}">${formatTime(e.created_at)}</span><br/><pre>${esc(JSON.stringify(e.payload))}</pre></li>`
   ).join("");
 }
 
