@@ -25,6 +25,33 @@ def _default_executor_config() -> dict[str, Any]:
     }
 
 
+def _claude_executor_config() -> dict[str, Any]:
+    """Claude CLI executor config."""
+    return {
+        "type": "claude-cli",
+        "command": "claude",
+        "model": None,
+        "permission_mode": "bypassPermissions",
+        "timeout_seconds": 3600,
+        "max_parallel": 2,
+        "output_schema": "executor-result.schema.json",
+    }
+
+
+_EXECUTOR_CONFIGS: dict[str, Any] = {
+    "codex": _default_executor_config,
+    "claude": _claude_executor_config,
+}
+
+
+def executor_config_for(name: str) -> dict[str, Any]:
+    """Return the default config for the named executor."""
+    factory = _EXECUTOR_CONFIGS.get(name)
+    if factory is None:
+        raise ValueError(f"unknown executor: {name!r}")
+    return factory()
+
+
 @dataclass(frozen=True)
 class ServiceSettings:
     """Paths and immutable defaults for the local semantic service."""

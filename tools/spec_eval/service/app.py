@@ -39,17 +39,19 @@ class SemanticServiceApp:
         settings: ServiceSettings,
         *,
         executor: SemanticExecutor | None = None,
+        executor_config: dict | None = None,
         job_runner=None,
         max_workers: int = 2,
         token: str | None = None,
     ) -> None:
         self.settings = settings
         self.token = token
+        self._executor_config = executor_config or settings.default_executor_config
         self.store = SqliteStore(settings)
         FreshnessPolicyRepository(self.store).ensure_default()
         self.ui_dir = Path(__file__).resolve().parent / "ui"
         self._executor = executor or _create_default_executor(
-            settings.default_executor_config, schemas_root=settings.schemas_root
+            self._executor_config, schemas_root=settings.schemas_root
         )
         runner = job_runner or build_runner(settings, self.store, self._executor)
         self.dispatcher = Dispatcher(self.store, job_runner=runner, max_workers=max_workers)
@@ -77,12 +79,12 @@ class SemanticServiceApp:
             source_revision=source_revision,
             run_count=run_count,
             job_id=job_id,
-            executor_config=self.settings.default_executor_config,
+            executor_config=self._executor_config,
         )
         job = self.jobs.create_job(
             cmd,
             evaluator_version=DEFAULT_SKILL_EVALUATOR_VERSION,
-            executor_config=self.settings.default_executor_config,
+            executor_config=self._executor_config,
         )
         EventRepository(self.store).append(job.job_id, "job_submitted", {})
         self.dispatcher.submit(job.job_id, job.func_id)

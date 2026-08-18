@@ -30,6 +30,12 @@ def _codex_factory(config: dict[str, Any], schemas_root: Path) -> SemanticExecut
     return CodexCliExecutor(config, schemas_root=schemas_root)
 
 
+def _claude_factory(config: dict[str, Any], schemas_root: Path) -> SemanticExecutor:
+    from .claude_cli import ClaudeCliExecutor
+
+    return ClaudeCliExecutor(config, schemas_root=schemas_root)
+
+
 # ---- registry ------------------------------------------------------------
 
 # Name of the default executor when no explicit executor is requested.
@@ -38,6 +44,7 @@ DEFAULT_EXECUTOR = "codex"
 # Internal mutable registry; populated by register() / unregister().
 _REGISTRY: dict[str, ExecutorFactory] = {
     "codex": _codex_factory,
+    "claude": _claude_factory,
 }
 
 
