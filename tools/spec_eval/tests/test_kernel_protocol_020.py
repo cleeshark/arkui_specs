@@ -52,6 +52,16 @@ CRITERIA = (
     "COMPATIBILITY-API-VERSION",
     "COMPATIBILITY-MULTI-DEVICE",
 )
+DIMENSION_BY_CRITERION = {
+    "CORRECTNESS-SOURCE-SUPPORT": "correctness",
+    "CORRECTNESS-CROSS-DOC-CONSISTENCY": "correctness",
+    "SPEC-AC-TESTABILITY": "spec_executability",
+    "SPEC-TRACEABILITY": "spec_executability",
+    "DESIGN-IMPACT-COVERAGE": "design_quality",
+    "DESIGN-VERIFICATION-PLAN": "design_quality",
+    "COMPATIBILITY-API-VERSION": "compatibility_system_impact",
+    "COMPATIBILITY-MULTI-DEVICE": "compatibility_system_impact",
+}
 SOURCE_REVISION = "a" * 40
 
 
@@ -584,6 +594,7 @@ class NormalizeAggregationTest(unittest.TestCase):
             ],
             "criterion_results": [
                 {"criterion_id": cid, "conclusion": "NOT_VERIFIABLE",
+                 "dimension_id": DIMENSION_BY_CRITERION[cid],
                  "applicability": "APPLICABLE", "reason": ""}
                 for cid in CRITERIA
             ],
@@ -672,6 +683,46 @@ class NormalizeAggregationTest(unittest.TestCase):
         self.assertEqual(ownership["secondary_criterion_ids"], [])
         self.assertEqual(
             document["source_observation_ids"], ["feature:Feat-01"]
+        )
+
+    def test_normalize_preserves_dimension_and_omits_nullable_reason(self) -> None:
+        result = normalize_aggregation(
+            self._template(), self._judgment(), source_observation_ids=[]
+        )
+        self.assertEqual(result.fatal, [])
+        for criterion in result.document["criterion_results"]:
+            criterion_id = criterion["criterion_id"]
+            self.assertEqual(
+                criterion["dimension_id"], DIMENSION_BY_CRITERION[criterion_id]
+            )
+            self.assertNotIn("applicability_reason", criterion)
+
+    def test_normalize_keeps_explicit_reason_and_falls_back_for_na(self) -> None:
+        judgment = self._judgment()
+        judgment["criterion_results"][1]["applicability_reason"] = (
+            "Explicit evidence-backed non-impact statement."
+        )
+        judgment["criterion_results"][2].update({
+            "conclusion": "NOT_APPLICABLE",
+            "applicability": "NOT_APPLICABLE",
+            "reason": "This criterion is outside the function scope.",
+            "applicability_reason": None,
+            "findings": [],
+        })
+        result = normalize_aggregation(
+            self._template(), judgment, source_observation_ids=[]
+        )
+        self.assertEqual(result.fatal, [])
+        rows = {
+            row["criterion_id"]: row for row in result.document["criterion_results"]
+        }
+        self.assertEqual(
+            rows["CORRECTNESS-CROSS-DOC-CONSISTENCY"]["applicability_reason"],
+            "Explicit evidence-backed non-impact statement.",
+        )
+        self.assertEqual(
+            rows["SPEC-AC-TESTABILITY"]["applicability_reason"],
+            "This criterion is outside the function scope.",
         )
 
     def test_criterion_order_follows_template(self) -> None:

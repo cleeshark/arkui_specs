@@ -429,17 +429,20 @@ def normalize_aggregation(
             findings.append(published_finding)
             if isinstance(finding_key, str):
                 finding_by_key[finding_key] = published_finding
-        criterion_results.append({
+        criterion_result = {
             "criterion_id": criterion_id,
+            "dimension_id": template_row.get("dimension_id"),
             "conclusion": conclusion,
             "applicability": row.get("applicability", template_row.get("applicability")),
             "reason": reason,
-            "applicability_reason": applicability_reason,
             "missing_evidence": row.get("missing_evidence"),
             "evidence": copy.deepcopy(row.get("evidence") or []),
             "claim_ids": _strings(row.get("claim_ids")),
             "findings": findings,
-        })
+        }
+        if isinstance(applicability_reason, str) and applicability_reason.strip():
+            criterion_result["applicability_reason"] = applicability_reason
+        criterion_results.append(criterion_result)
         if findings:
             changes.append(
                 f"criterion_results[{criterion_id}]: canonical finding IDs assigned"
