@@ -173,9 +173,12 @@ section into every Codex prompt. Typed validation failures use the single generi
 there are no version-specific repair calls or legacy fallbacks.
 
 The service additionally generates `aggregation-context.json` after all observations pass. It
-records the authoritative observation, Claim and atomic-unit mapping for every Criterion. Mapped
-adverse or unverifiable units constrain aggregate conclusions. Evidence cardinality, NV inspection
-quality, Finding cardinality and canonical Finding identity are enforced by the 0.2.0 kernel.
+records the authoritative observation, Claim and atomic-unit mapping for every Criterion. Context
+schema v2 also re-keys observation evidence into deterministic run-global IDs and exposes a
+Criterion-scoped evidence catalog. Aggregation selects only those canonical IDs; the normalizer
+copies the inherited evidence rows into the published Criterion and rejects unknown references.
+Mapped adverse or unverifiable units constrain aggregate conclusions. Evidence cardinality, NV
+inspection quality, Finding cardinality and canonical Finding identity are enforced by the 0.2.0 kernel.
 Validation errors are typed and enter the one generic correction turn; there are no version-specific
 repair modes, reconciliation calls, or historical fallback branches.
 

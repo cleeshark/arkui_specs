@@ -157,7 +157,7 @@ def _aggregation_defs() -> dict:
             "severity": _enum(*K.FINDING_SEVERITIES),
             "message": _non_empty_string(),
             "evidence_ids": {"type": "array", "items": _non_empty_string()},
-            "recommendation": {"type": ["string", "null"]},
+            "recommendation": _non_empty_string(),
         },
         "required": list(K.FINDING_JUDGMENT_FIELDS),
         "additionalProperties": False,
@@ -171,6 +171,12 @@ def _aggregation_defs() -> dict:
             "reason": _non_empty_string(),
             "applicability_reason": {"type": ["string", "null"]},
             "missing_evidence": {"type": ["string", "null"]},
+            "claim_ids": {
+                "type": "array", "items": _non_empty_string(), "uniqueItems": True,
+            },
+            "evidence_ids": {
+                "type": "array", "items": _non_empty_string(), "uniqueItems": True,
+            },
             "findings": {"type": "array", "items": {"$ref": "#/$defs/findingJudgment"}},
         },
         "required": list(K.CRITERION_JUDGMENT_FIELDS),

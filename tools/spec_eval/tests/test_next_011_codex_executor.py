@@ -348,6 +348,41 @@ class CodexExecutorTest(unittest.TestCase):
             contract["typed_errors"][0]["code"], "GAP_MISSING_FOR_NV"
         )
 
+    def test_aggregation_prompt_uses_inherited_canonical_evidence(self) -> None:
+        schema_path = _write_v3_envelope_schema(self.tmp.name)
+        context_path = str(Path(self.tmp.name) / "aggregation-context.json")
+        work = replace(
+            self.work,
+            work_item_id="function-aggregation",
+            input_paths=(context_path,),
+            prompt_extras={
+                "mode": "observe",
+                "evaluation_protocol_version": "0.2.0",
+                "result_kind": "aggregation_judgments",
+                "payload_kind": "aggregation",
+                "payload_fields": [
+                    "cross_feat_contracts_reviewed", "contradiction_bases",
+                    "defect_ownership", "outcome_policy_bases",
+                    "criterion_results", "notes",
+                ],
+                "schema_path": schema_path,
+                "machine_contract": {
+                    "aggregation_context_path": context_path,
+                    "criterion_evidence_rule": "Use canonical Criterion evidence.",
+                },
+            },
+        )
+        runner = _FakeRunner(result_doc=_result_doc(work.work_item_id))
+        self._executor(runner).execute(work, lambda event: None)
+        prompt = json.loads(runner.last_stdin or "{}")
+        requirement = prompt["output"]["requirement"]
+        self.assertIn("canonical EV- IDs", requirement)
+        self.assertIn("aggregation-context.json", requirement)
+        self.assertIn("do not emit evidence_declarations", requirement)
+        self.assertNotIn("never emit canonical EV- IDs", requirement)
+        constraints = " ".join(prompt["constraints"])
+        self.assertNotIn("Re-declare every piece of evidence", constraints)
+
 
     def test_nonzero_exit_is_failed(self) -> None:
         runner = _FakeRunner(exit_code=2, write_result=False)

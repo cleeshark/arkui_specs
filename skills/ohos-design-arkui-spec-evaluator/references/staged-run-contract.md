@@ -275,6 +275,13 @@ the Criterion mapping of its parent Claim. `criterion_results[].claim_ids` may c
 mapped Claims and cannot define or narrow aggregate scope. Observation `claim_ids` remain local
 fact references and do not independently map a Claim to a Criterion.
 
+Context schema v2 assigns deterministic run-global evidence IDs per source work item and records
+their provenance in each Criterion `evidence_catalog`. Aggregation emits only
+`criterion_results[].evidence_ids` references to that catalog; it does not emit evidence rows,
+evidence declarations, or observation-local IDs. Published Criterion evidence is copied by the
+service from the catalog, and every Finding evidence reference must be a subset of that selected
+Criterion evidence.
+
 Apply the context constraints before publishing a conclusion:
 
 - Any mapped `CONFLICT` or `MISSING` observation, Claim, or atomic unit forbids `SUPPORTED` and
@@ -282,8 +289,8 @@ Apply the context constraints before publishing a conclusion:
 - If mapped units contain `NOT_VERIFIABLE` and no mapped adverse unit, the Criterion conclusion is
   `NOT_VERIFIABLE`.
 - Any applicable mapped unit forbids `NOT_APPLICABLE`.
-- Aggregation evidence may explain the result but cannot silently override a published mapped
-  outcome.
+- Selected inherited evidence may explain the result but cannot silently override a published
+  mapped outcome.
 
 If validation fails, return the typed protocol errors to the single generic correction turn. There
 is no separate reconciliation or legacy repair contract in protocol 0.2.0; unresolved errors fail

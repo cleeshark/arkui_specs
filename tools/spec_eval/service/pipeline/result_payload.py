@@ -107,6 +107,14 @@ def correct_prompt_contract(
 ) -> dict[str, Any]:
     """Contract for the single generic correction turn (same stage schema)."""
     contract = copy.deepcopy(base_contract)
+    payload_fields = list(contract.get("payload_fields", []))
+    evidence_constraint = (
+        "Re-declare any evidence you keep or add; the service re-verifies "
+        "hashes and re-assigns canonical IDs."
+        if "evidence_declarations" in payload_fields else
+        "Do not declare evidence or use local evidence keys. Use only canonical "
+        "evidence IDs listed for each Criterion in aggregation-context.json."
+    )
     contract.update({
         "mode": MODE_CORRECT,
         "candidate_path": str(candidate_path),
@@ -117,8 +125,7 @@ def correct_prompt_contract(
             "ordering, derived fields or evidence you cannot verify.",
             "Return one complete corrected payload using the same schema; "
             "this is not a patch and not a partial document.",
-            "Re-declare any evidence you keep or add; the service re-verifies "
-            "hashes and re-assigns canonical IDs.",
+            evidence_constraint,
         ],
     })
     return contract

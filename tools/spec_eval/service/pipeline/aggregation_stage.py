@@ -188,7 +188,9 @@ def run_aggregation(
 
     def _normalize(payload: dict[str, Any]) -> Any:
         return normalize_aggregation(
-            template, payload, source_observation_ids=source_observation_ids
+            template, payload,
+            source_observation_ids=source_observation_ids,
+            aggregation_context=aggregation_context,
         )
 
     def _validate(document: dict[str, Any]) -> list:
@@ -210,7 +212,10 @@ def run_aggregation(
     fingerprint = input_fingerprint(
         evaluator_version=ctx.evaluator_version,
         protocol_version=ctx.protocol_version,
-        input_paths=list(work.input_paths),
+        input_paths=[
+            *work.input_paths,
+            str(work.prompt_extras["schema_path"]),
+        ],
         template_bytes=aggregation_path.read_bytes(),
     )
     outcome = flow.run(

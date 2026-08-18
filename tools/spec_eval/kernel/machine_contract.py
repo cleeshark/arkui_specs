@@ -21,25 +21,28 @@ def _common() -> dict[str, Any]:
         "unit_facet_type_enum": list(K.UNIT_FACET_TYPES),
         "breadth_enum": list(K.BREADTHS),
         "evidence_type_enum": list(K.EVIDENCE_TYPES),
-        "judgment_rules": [
-            "Provide judgments only: outcomes, reasons/facts, evidence declarations "
-            "and references, defect descriptions and NOT_VERIFIABLE gaps.",
-            "Do not echo document identity, ordering, derived fields or hashes; the "
-            "service owns them.",
-            "Declare every piece of evidence exactly once in the top-level "
-            "evidence_declarations array with a unique local key (e1, e2, ...); "
-            "claim, unit and observation rows reference declarations through "
-            "evidence_refs. The service converts local keys to canonical EV- IDs "
-            "at publish time; never emit EV- IDs yourself.",
-            "verification_gap is required (non-null) exactly when local_outcome is "
-            "NOT_VERIFIABLE, both at claim and unit level; null otherwise.",
-            "Every NOT_VERIFIABLE observation, claim and unit must reference "
-            "review_record inspection evidence.",
-            "Every NOT_VERIFIABLE claim reason and unit fact must name the checked "
-            "scope, the missing evidence and why the gap is insufficient to verify "
-            "the claim or unit.",
-        ],
     }
+
+
+def _observation_judgment_rules() -> list[str]:
+    return [
+        "Provide judgments only: outcomes, reasons/facts, evidence declarations "
+        "and references, defect descriptions and NOT_VERIFIABLE gaps.",
+        "Do not echo document identity, ordering, derived fields or hashes; the "
+        "service owns them.",
+        "Declare every piece of evidence exactly once in the top-level "
+        "evidence_declarations array with a unique local key (e1, e2, ...); "
+        "claim, unit and observation rows reference declarations through "
+        "evidence_refs. The service converts local keys to canonical EV- IDs "
+        "at publish time; never emit EV- IDs yourself.",
+        "verification_gap is required (non-null) exactly when local_outcome is "
+        "NOT_VERIFIABLE, both at claim and unit level; null otherwise.",
+        "Every NOT_VERIFIABLE observation, claim and unit must reference "
+        "review_record inspection evidence.",
+        "Every NOT_VERIFIABLE claim reason and unit fact must name the checked "
+        "scope, the missing evidence and why the gap is insufficient to verify "
+        "the claim or unit.",
+    ]
 
 
 def build_observation_machine_contract(
@@ -60,6 +63,7 @@ def build_observation_machine_contract(
     checks = list(required_checks)
     return {
         **_common(),
+        "judgment_rules": _observation_judgment_rules(),
         "payload_fields": list(K.OBSERVATION_JUDGMENT_FIELDS),
         "claim_judgment_fields": list(K.CLAIM_JUDGMENT_FIELDS),
         "unit_judgment_fields": list(K.UNIT_JUDGMENT_FIELDS),
@@ -113,6 +117,15 @@ def build_aggregation_machine_contract(
     """Contract for the aggregation work item."""
     return {
         **_common(),
+        "judgment_rules": [
+            "Provide aggregation judgments only; document identity, ordering, "
+            "canonical evidence rows and finding IDs are service-owned.",
+            "Read aggregation-context.json and use only the canonical EV- evidence "
+            "IDs listed for each Criterion. Do not emit local evidence keys such as "
+            "e1, do not declare evidence, and do not guess EV- IDs.",
+            "criterion_results[].evidence_ids selects the inherited evidence attached "
+            "to that Criterion; every finding evidence_ids entry must be a subset.",
+        ],
         "payload_fields": list(K.AGGREGATION_JUDGMENT_FIELDS),
         "criterion_judgment_fields": list(K.CRITERION_JUDGMENT_FIELDS),
         "finding_judgment_fields": list(K.FINDING_JUDGMENT_FIELDS),
@@ -136,6 +149,11 @@ def build_aggregation_machine_contract(
             "every criterion whose conclusion is PARTIALLY_SUPPORTED, CONTRADICTED "
             "or MISSING must contain at least one evidence-backed finding; SUPPORTED "
             "and NOT_APPLICABLE criteria must contain none."
+        ),
+        "criterion_evidence_rule": (
+            "criterion_results[].evidence_ids may contain only canonical IDs from "
+            "that Criterion's aggregation-context evidence_catalog; finding "
+            "evidence_ids must be a subset of the selected Criterion evidence IDs."
         ),
         "ownership_rule": (
             "findings link to defects through temporary keys; the service derives "

@@ -243,6 +243,10 @@ atomic-unit mappings as authoritative: observations map by their `criterion_ids`
 `claim_reviews[].criterion_ids`, and units inherit their parent Claim mapping. A final
 `criterion_results[].claim_ids` list is only a citation list and cannot redefine or narrow the
 mapped Criterion scope. Observation `claim_ids` do not independently grant Claim mapping.
+Each Criterion mapping also contains an `evidence_catalog`. Aggregation must select evidence only
+through `criterion_results[].evidence_ids` using the canonical `EV-*` IDs in that catalog. Do not
+declare new evidence, reuse observation-local IDs such as `EV-1`, or copy evidence rows into the
+judgment payload. Every Finding `evidence_ids` list must be a subset of its Criterion selection.
 
 The staged observations are the run-local scratch coverage matrix:
 

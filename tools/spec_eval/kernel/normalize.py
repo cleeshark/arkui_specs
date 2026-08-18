@@ -34,6 +34,15 @@ OUTCOME_POLICY_BASIS_CRITERIA = (
     "COMPATIBILITY-API-VERSION",
     "COMPATIBILITY-MULTI-DEVICE",
 )
+FINDING_SEVERITY_TO_PUBLISHED = {
+    "CRITICAL": "Critical",
+    "MAJOR": "Major",
+    "MINOR": "Minor",
+}
+PUBLISHED_EVIDENCE_FIELDS = {
+    "evidence_id", "type", "path", "line_start", "line_end",
+    "source_revision", "content_hash", "claim_id", "description",
+}
 
 
 @dataclass(frozen=True)
@@ -337,14 +346,17 @@ def normalize_aggregation(
     judgment: dict[str, Any],
     *,
     source_observation_ids: list[str],
+    aggregation_context: dict[str, Any] | None = None,
 ) -> NormalizationResult:
     """Expand one aggregation judgment payload into the published document.
 
     Deterministic only: canonical finding IDs from ownership keys, secondary
     criterion derivation, applicability_reason copy, criterion order from the
-    template. Conclusions, evidence citations and prose pass through.
+    template, and Criterion evidence copied from the aggregation context.
+    Conclusions, evidence selections and prose pass through.
     """
     changes: list[str] = []
+    errors: list[TypedError] = []
     fatal: list[TypedError] = []
     func_id = str(template.get("func_id", ""))
     if not func_id:
@@ -377,6 +389,18 @@ def normalize_aggregation(
         row.get("criterion_id"): row
         for row in _rows(judgment.get("criterion_results"))
     }
+    context_by_criterion = {
+        row.get("criterion_id"): row
+        for row in _rows((aggregation_context or {}).get("criterion_mappings"))
+    }
+    inherited_catalog: list[dict[str, Any]] = []
+    inherited_ids: set[str] = set()
+    for context_row in context_by_criterion.values():
+        for evidence in _rows(context_row.get("evidence_catalog")):
+            evidence_id = evidence.get("evidence_id")
+            if isinstance(evidence_id, str) and evidence_id not in inherited_ids:
+                inherited_catalog.append(copy.deepcopy(evidence))
+                inherited_ids.add(evidence_id)
     criterion_results: list[dict[str, Any]] = []
     canonical_ids: set[str] = set()
     finding_by_key: dict[str, dict[str, Any]] = {}
@@ -393,6 +417,33 @@ def normalize_aggregation(
             applicability_reason = reason
             changes.append(f"criterion_results[{criterion_id}].applicability_reason copied")
         findings: list[dict[str, Any]] = []
+        context_row = context_by_criterion.get(criterion_id, {})
+        criterion_catalog = {
+            evidence.get("evidence_id"): evidence
+            for evidence in _rows(context_row.get("evidence_catalog"))
+            if isinstance(evidence.get("evidence_id"), str)
+        }
+        requested_evidence_ids = _strings(row.get("evidence_ids"))
+        unknown_evidence = sorted(
+            set(requested_evidence_ids) - set(criterion_catalog)
+        )
+        if unknown_evidence:
+            errors.append(TypedError(
+                "CRITERION_EVIDENCE_UNKNOWN",
+                f"$.criterion_results[{criterion_id}].evidence_ids",
+                entity_type="criterion", entity_id=str(criterion_id),
+                expected=f"one of {sorted(criterion_catalog)}",
+                actual=str(unknown_evidence), repairability=MODEL_CORRECTION,
+            ))
+        criterion_evidence = [
+            {
+                key: copy.deepcopy(value)
+                for key, value in criterion_catalog[evidence_id].items()
+                if key in PUBLISHED_EVIDENCE_FIELDS
+            }
+            for evidence_id in requested_evidence_ids
+            if evidence_id in criterion_catalog
+        ]
         for finding in _rows(row.get("findings")):
             finding_key = finding.get("key")
             defect_key = (
@@ -420,12 +471,16 @@ def normalize_aggregation(
             published_finding = {
                 "finding_id": finding_id,
                 "criterion_id": criterion_id,
-                "claim_id": claim_id if isinstance(claim_id, str) else None,
-                "severity": finding.get("severity"),
+                "severity": FINDING_SEVERITY_TO_PUBLISHED.get(
+                    finding.get("severity"), finding.get("severity")
+                ),
+                "conclusion": conclusion,
                 "message": finding.get("message", ""),
                 "evidence_ids": _strings(finding.get("evidence_ids")),
                 "recommendation": finding.get("recommendation"),
             }
+            if isinstance(claim_id, str) and claim_id:
+                published_finding["claim_id"] = claim_id
             findings.append(published_finding)
             if isinstance(finding_key, str):
                 finding_by_key[finding_key] = published_finding
@@ -435,13 +490,15 @@ def normalize_aggregation(
             "conclusion": conclusion,
             "applicability": row.get("applicability", template_row.get("applicability")),
             "reason": reason,
-            "missing_evidence": row.get("missing_evidence"),
-            "evidence": copy.deepcopy(row.get("evidence") or []),
+            "evidence": criterion_evidence,
             "claim_ids": _strings(row.get("claim_ids")),
             "findings": findings,
         }
         if isinstance(applicability_reason, str) and applicability_reason.strip():
             criterion_result["applicability_reason"] = applicability_reason
+        missing_evidence = row.get("missing_evidence")
+        if isinstance(missing_evidence, str) and missing_evidence.strip():
+            criterion_result["missing_evidence"] = missing_evidence
         criterion_results.append(criterion_result)
         if findings:
             changes.append(
@@ -516,8 +573,18 @@ def normalize_aggregation(
         "notes": copy.deepcopy(judgment.get("notes") or []),
     })
     if fatal:
-        return NormalizationResult(document=None, changes=changes, fatal=fatal)
-    return NormalizationResult(document=published, changes=changes)
+        return NormalizationResult(
+            document=None, changes=changes, errors=errors, fatal=fatal,
+            evidence_catalog=inherited_catalog,
+        )
+    if errors:
+        return NormalizationResult(
+            document=None, changes=changes, errors=errors,
+            evidence_catalog=inherited_catalog,
+        )
+    return NormalizationResult(
+        document=published, changes=changes, evidence_catalog=inherited_catalog,
+    )
 
 
 def assemble_semantic_result(

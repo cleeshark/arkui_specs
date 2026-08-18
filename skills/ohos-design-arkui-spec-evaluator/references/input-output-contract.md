@@ -57,7 +57,8 @@ evidence-backed required-check mapping, stable defect ownership, an explicit cor
 for every `CONTRADICTED` Criterion, atomic `unit_reviews` for each Claim, structured
 `modeling_basis` evidence, NOT_VERIFIABLE aggregation guards, run-local `outcome_policy_bases`,
 machine-readable `output-contract.json`, deterministic `aggregation-context.json` mapping,
-observation evidence cardinality enforcement, `final_contract` with canonical Finding identity,
+run-global inherited evidence catalogs for aggregation, observation evidence cardinality
+enforcement, `final_contract` with canonical Finding identity,
 service-normalized Finding IDs and ownership secondary Criteria, categorized observation repair
 routing, evidence-backed NOT_VERIFIABLE with `review_record` inspection evidence and three-signal
 expression families, and claim-level evidence quality enforcement. The evaluator version must not

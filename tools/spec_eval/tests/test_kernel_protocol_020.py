@@ -16,6 +16,8 @@ from unittest.mock import patch
 
 from spec_eval.protocol_validator import (
     JsonSchemaSubsetValidator,
+    validate_protocol,
+    validate_semantic_result,
     validate_strict_output_schema,
 )
 from spec_eval.kernel import contracts as K
@@ -29,6 +31,7 @@ from spec_eval.kernel.machine_contract import (
     build_observation_machine_contract,
 )
 from spec_eval.kernel.normalize import (
+    OUTCOME_POLICY_BASIS_CRITERIA,
     assemble_semantic_result,
     normalize_aggregation,
     normalize_observation,
@@ -231,6 +234,54 @@ class SchemaGenerationTest(unittest.TestCase):
             schema_path = root / "schema.json"
             schema_path.write_text(json.dumps(schema), encoding="utf-8")
             self.assertEqual(validator.validate_file(document, schema_path), [])
+
+    def test_aggregation_schema_accepts_only_canonical_evidence_references(self) -> None:
+        schema = build_envelope_schema("aggregation")
+        payload = NormalizeAggregationTest()._judgment()
+        document = {
+            "schema_version": 3,
+            "work_item_id": "function-aggregation",
+            "status": "completed",
+            "payload": payload,
+            "notes": [],
+            "error": None,
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            schema_path = Path(tmp) / "schema.json"
+            schema_path.write_text(json.dumps(schema), encoding="utf-8")
+            validator = JsonSchemaSubsetValidator(SCHEMAS_ROOT)
+            self.assertEqual(validator.validate_file(document, schema_path), [])
+            payload["criterion_results"][0]["evidence"] = [
+                {"evidence_id": "EV-illegal-inline-row"}
+            ]
+            errors = validator.validate_file(document, schema_path)
+        self.assertTrue(
+            any("additional property" in error and ".evidence" in error for error in errors),
+            errors,
+        )
+
+
+class InputFingerprintTest(unittest.TestCase):
+    def test_fingerprint_changes_when_input_file_content_changes(self) -> None:
+        from spec_eval.service.pipeline.judgment_flow import input_fingerprint
+
+        with tempfile.TemporaryDirectory() as tmp:
+            input_path = Path(tmp) / "aggregation-context.json"
+            input_path.write_text('{"schema_version": 1}\n', encoding="utf-8")
+            before = input_fingerprint(
+                evaluator_version=K.EVALUATOR_VERSION,
+                protocol_version=K.EVALUATION_PROTOCOL_VERSION,
+                input_paths=[str(input_path)],
+                template_bytes=b"template",
+            )
+            input_path.write_text('{"schema_version": 2}\n', encoding="utf-8")
+            after = input_fingerprint(
+                evaluator_version=K.EVALUATOR_VERSION,
+                protocol_version=K.EVALUATION_PROTOCOL_VERSION,
+                input_paths=[str(input_path)],
+                template_bytes=b"template",
+            )
+        self.assertNotEqual(before, after)
 
 
 class NormalizeObservationTest(unittest.TestCase):
@@ -571,6 +622,10 @@ class ValidateObservationTest(unittest.TestCase):
 
 
 class NormalizeAggregationTest(unittest.TestCase):
+    @staticmethod
+    def _evidence_id(criterion_id: str) -> str:
+        return "EV-" + criterion_id.lower().replace("_", "-")
+
     def _template(self) -> dict:
         return {
             "schema_version": 2,
@@ -600,6 +655,38 @@ class NormalizeAggregationTest(unittest.TestCase):
             ],
             "notes": [],
         }
+
+    def _aggregation_context(self) -> dict:
+        return {
+            "schema_version": 2,
+            "criterion_mappings": [
+                {
+                    "criterion_id": criterion_id,
+                    "evidence_catalog": [{
+                        "evidence_id": self._evidence_id(criterion_id),
+                        "type": "source_citation",
+                        "path": "frameworks/core/example.cpp",
+                        "line_start": 1,
+                        "line_end": 2,
+                        "source_revision": SOURCE_REVISION,
+                        "content_hash": "sha256:" + "0" * 64,
+                        "description": "Inherited observation evidence.",
+                        "source_work_item_id": "feature:Feat-01",
+                        "source_evidence_id": "EV-1",
+                    }],
+                }
+                for criterion_id in CRITERIA
+            ],
+        }
+
+    def _normalize(
+        self, judgment: dict | None = None, *, source_observation_ids: list[str] | None = None
+    ):
+        return normalize_aggregation(
+            self._template(), judgment or self._judgment(),
+            source_observation_ids=source_observation_ids or [],
+            aggregation_context=self._aggregation_context(),
+        )
 
     def _judgment(self) -> dict:
         return {
@@ -640,14 +727,18 @@ class NormalizeAggregationTest(unittest.TestCase):
                     "applicability_reason": None,
                     "missing_evidence": None,
                     "claim_ids": ["Feat-01/AC-1"],
-                    "evidence": [{"evidence_id": "EV-1"}],
+                    "evidence_ids": [
+                        self._evidence_id("CORRECTNESS-SOURCE-SUPPORT")
+                    ],
                     "findings": [{
                         "key": "f1",
                         "criterion_id": "CORRECTNESS-SOURCE-SUPPORT",
                         "claim_id": "Feat-01/AC-1",
                         "severity": "CRITICAL",
                         "message": "The published contract is contradicted.",
-                        "evidence_ids": ["EV-1"],
+                        "evidence_ids": [
+                            self._evidence_id("CORRECTNESS-SOURCE-SUPPORT")
+                        ],
                         "recommendation": "Align the contract with the mapping.",
                     }],
                 },
@@ -660,7 +751,7 @@ class NormalizeAggregationTest(unittest.TestCase):
                         "applicability_reason": None,
                         "missing_evidence": None,
                         "claim_ids": [],
-                        "evidence": [{"evidence_id": "EV-1"}],
+                        "evidence_ids": [self._evidence_id(criterion_id)],
                         "findings": [],
                     }
                     for criterion_id in CRITERIA[1:]
@@ -670,14 +761,15 @@ class NormalizeAggregationTest(unittest.TestCase):
         }
 
     def test_canonical_ids_and_secondary_derivation(self) -> None:
-        result = normalize_aggregation(
-            self._template(), self._judgment(),
-            source_observation_ids=["feature:Feat-01"],
-        )
+        result = self._normalize(source_observation_ids=["feature:Feat-01"])
         self.assertEqual(result.fatal, [])
         document = result.document
         finding = document["criterion_results"][0]["findings"][0]
         self.assertTrue(finding["finding_id"].startswith("SEM-"))
+        self.assertEqual(finding["severity"], "Critical")
+        self.assertEqual(finding["conclusion"], "CONTRADICTED")
+        self.assertNotIn("source_work_item_id", document["criterion_results"][0]["evidence"][0])
+        self.assertNotIn("source_evidence_id", document["criterion_results"][0]["evidence"][0])
         ownership = document["defect_ownership"][0]
         self.assertEqual(ownership["finding_ids"], [finding["finding_id"]])
         self.assertEqual(ownership["secondary_criterion_ids"], [])
@@ -685,10 +777,29 @@ class NormalizeAggregationTest(unittest.TestCase):
             document["source_observation_ids"], ["feature:Feat-01"]
         )
 
-    def test_normalize_preserves_dimension_and_omits_nullable_reason(self) -> None:
+    def test_unknown_criterion_evidence_is_correctable(self) -> None:
+        judgment = self._judgment()
+        judgment["criterion_results"][0]["evidence_ids"] = ["EV-unknown"]
+        result = self._normalize(judgment)
+        self.assertIsNone(result.document)
+        self.assertEqual([error.code for error in result.errors], [
+            "CRITERION_EVIDENCE_UNKNOWN"
+        ])
+        self.assertTrue(result.evidence_catalog)
+
+    def test_missing_context_does_not_accept_inline_or_guessed_evidence(self) -> None:
         result = normalize_aggregation(
             self._template(), self._judgment(), source_observation_ids=[]
         )
+        self.assertIsNone(result.document)
+        self.assertTrue(result.errors)
+        self.assertEqual(
+            {error.code for error in result.errors},
+            {"CRITERION_EVIDENCE_UNKNOWN"},
+        )
+
+    def test_normalize_preserves_dimension_and_omits_nullable_reason(self) -> None:
+        result = self._normalize()
         self.assertEqual(result.fatal, [])
         for criterion in result.document["criterion_results"]:
             criterion_id = criterion["criterion_id"]
@@ -709,9 +820,7 @@ class NormalizeAggregationTest(unittest.TestCase):
             "applicability_reason": None,
             "findings": [],
         })
-        result = normalize_aggregation(
-            self._template(), judgment, source_observation_ids=[]
-        )
+        result = self._normalize(judgment)
         self.assertEqual(result.fatal, [])
         rows = {
             row["criterion_id"]: row for row in result.document["criterion_results"]
@@ -728,9 +837,7 @@ class NormalizeAggregationTest(unittest.TestCase):
     def test_criterion_order_follows_template(self) -> None:
         judgment = self._judgment()
         judgment["criterion_results"].reverse()
-        result = normalize_aggregation(
-            self._template(), judgment, source_observation_ids=[]
-        )
+        result = self._normalize(judgment)
         self.assertEqual(result.fatal, [])
         ids = [
             row["criterion_id"] for row in result.document["criterion_results"]
@@ -741,9 +848,7 @@ class NormalizeAggregationTest(unittest.TestCase):
         judgment = self._judgment()
         judgment["criterion_results"][0]["findings"] = []
         judgment["criterion_results"][0]["conclusion"] = "SUPPORTED"
-        result = normalize_aggregation(
-            self._template(), judgment, source_observation_ids=[]
-        )
+        result = self._normalize(judgment)
         self.assertEqual(result.fatal, [])
         self.assertEqual(result.errors, [])
         self.assertEqual(result.document["criterion_results"][0]["findings"], [])
@@ -755,9 +860,7 @@ class NormalizeAggregationTest(unittest.TestCase):
         judgment = self._judgment()
         judgment["criterion_results"][1]["findings"] = []
         judgment["criterion_results"][1]["conclusion"] = "SUPPORTED"
-        result = normalize_aggregation(
-            self._template(), judgment, source_observation_ids=[]
-        )
+        result = self._normalize(judgment)
         self.assertEqual(result.fatal, [])
         self.assertEqual(result.document["criterion_results"][1]["findings"], [])
         self.assertFalse(
@@ -765,20 +868,14 @@ class NormalizeAggregationTest(unittest.TestCase):
         )
 
     def test_valid_aggregation_has_no_blocking_errors(self) -> None:
-        result = normalize_aggregation(
-            self._template(), self._judgment(),
-            source_observation_ids=["feature:Feat-01"],
-        )
+        result = self._normalize(source_observation_ids=["feature:Feat-01"])
         errors = validate_aggregation_document(
             result.document, criterion_order=list(CRITERIA)
         )
         self.assertEqual(blocking(errors), [], [e.to_dict() for e in errors])
 
     def test_finding_cardinality_and_policy_errors(self) -> None:
-        result = normalize_aggregation(
-            self._template(), self._judgment(),
-            source_observation_ids=["feature:Feat-01"],
-        )
+        result = self._normalize(source_observation_ids=["feature:Feat-01"])
         document = result.document
         document["criterion_results"][1]["conclusion"] = "MISSING"
         document["criterion_results"][1]["findings"] = []
@@ -799,10 +896,7 @@ class NormalizeAggregationTest(unittest.TestCase):
         self.assertIn("POLICY_BASIS_INVALID", codes)
 
     def test_assemble_semantic_result_shape(self) -> None:
-        result = normalize_aggregation(
-            self._template(), self._judgment(),
-            source_observation_ids=["feature:Feat-01"],
-        )
+        result = self._normalize(source_observation_ids=["feature:Feat-01"])
         semantic_template = {
             "func_id": "05-01-02", "source_revision": SOURCE_REVISION,
             "run_id": "run-1", "execution": {"notes": []},
@@ -815,6 +909,125 @@ class NormalizeAggregationTest(unittest.TestCase):
         )
         self.assertEqual(
             candidate["criterion_results"], result.document["criterion_results"]
+        )
+
+    def test_inherited_evidence_survives_final_semantic_validation(self) -> None:
+        specs_root = Path(__file__).resolve().parents[3]
+        evaluation_root = specs_root / "evaluation"
+        rubric, complexity, protocol_errors = validate_protocol(evaluation_root)
+        self.assertEqual(protocol_errors, [])
+        semantic_template = json.loads(
+            (Path(__file__).parent / "fixtures" / "protocol" / "semantic-result.json")
+            .read_text(encoding="utf-8")
+        )
+        criteria = [
+            (dimension["id"], criterion)
+            for dimension in rubric["dimensions"]
+            for criterion in dimension["criteria"]
+        ]
+        aggregation_template = {
+            "schema_version": 2,
+            "func_id": semantic_template["func_id"],
+            "source_revision": semantic_template["source_revision"],
+            "run_id": semantic_template["run_id"],
+            "status": "pending",
+            "source_observation_ids": [],
+            "cross_feat_contracts_reviewed": False,
+            "contradiction_bases": [],
+            "defect_ownership": [],
+            "outcome_policy_bases": [
+                {"criterion_id": criterion_id, "content_status": "PENDING",
+                 "evidence_status": "PENDING", "conflict_scope": "PENDING",
+                 "reason": "待评价人填写"}
+                for criterion_id in OUTCOME_POLICY_BASIS_CRITERIA
+            ],
+            "criterion_results": [
+                {"criterion_id": criterion["id"], "dimension_id": dimension_id,
+                 "conclusion": "NOT_VERIFIABLE", "applicability": "APPLICABLE",
+                 "reason": ""}
+                for dimension_id, criterion in criteria
+            ],
+            "notes": [],
+        }
+        evidence_ids = {
+            criterion["id"]: "EV-" + criterion["id"].lower()
+            for _, criterion in criteria
+        }
+        aggregation_context = {
+            "schema_version": 2,
+            "criterion_mappings": [
+                {
+                    "criterion_id": criterion["id"],
+                    "evidence_catalog": [{
+                        "evidence_id": evidence_ids[criterion["id"]],
+                        "type": criterion["required_evidence_types"][0],
+                        "path": "frameworks/core/sample.cpp",
+                        "line_start": 10,
+                        "line_end": 20,
+                        "source_revision": semantic_template["source_revision"],
+                        "content_hash": "sha256:" + "a" * 64,
+                        "description": "Inherited observation evidence.",
+                        "source_work_item_id": "feature:Feat-01",
+                        "source_evidence_id": "EV-1",
+                    }],
+                }
+                for _, criterion in criteria
+            ],
+        }
+        judgment_rows = []
+        for index, (_, criterion) in enumerate(criteria):
+            criterion_id = criterion["id"]
+            adverse = index == 0
+            judgment_rows.append({
+                "criterion_id": criterion_id,
+                "conclusion": "CONTRADICTED" if adverse else "SUPPORTED",
+                "applicability": "APPLICABLE",
+                "reason": "Inherited observation evidence supports this conclusion.",
+                "applicability_reason": None,
+                "missing_evidence": None,
+                "claim_ids": ["Feat-01/AC-1"] if adverse else [],
+                "evidence_ids": [evidence_ids[criterion_id]],
+                "findings": [{
+                    "key": "f1",
+                    "criterion_id": criterion_id,
+                    "claim_id": "Feat-01/AC-1",
+                    "severity": "CRITICAL",
+                    "message": "The source contradicts the published contract.",
+                    "evidence_ids": [evidence_ids[criterion_id]],
+                    "recommendation": "Align the contract with the source.",
+                }] if adverse else [],
+            })
+        judgment = {
+            "cross_feat_contracts_reviewed": True,
+            "contradiction_bases": [],
+            "defect_ownership": [{
+                "defect_key": "source_contract_conflict",
+                "primary_criterion_id": criteria[0][1]["id"],
+                "finding_keys": ["f1"],
+                "rationale": "The source conflict owns the adverse finding.",
+            }],
+            "outcome_policy_bases": [
+                {"criterion_id": criterion_id, "content_status": "PRESENT",
+                 "evidence_status": "VERIFIED", "conflict_scope": "NONE",
+                 "reason": "Content and evidence were reviewed."}
+                for criterion_id in OUTCOME_POLICY_BASIS_CRITERIA
+            ],
+            "criterion_results": judgment_rows,
+            "notes": [],
+        }
+        normalized = normalize_aggregation(
+            aggregation_template, judgment,
+            source_observation_ids=["feature:Feat-01"],
+            aggregation_context=aggregation_context,
+        )
+        self.assertEqual(normalized.errors, [])
+        self.assertEqual(normalized.fatal, [])
+        candidate = assemble_semantic_result(semantic_template, normalized.document)
+        self.assertEqual(
+            validate_semantic_result(
+                candidate, rubric, complexity, evaluation_root / "schemas"
+            ),
+            [],
         )
 
 
