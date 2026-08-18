@@ -71,7 +71,9 @@ def build_observation_machine_contract(
         "coverage_rule": (
             "claim_reviews must contain exactly one judgment per expected_claim_ids "
             "entry; observations[].check_ids together must cover every required "
-            "check exactly once."
+            "check exactly once; when expected claims exist, every observation "
+            "must reference at least one expected claim and their union must cover "
+            "all expected_claim_ids."
         ),
         "defect_rule": (
             "defect_keys may only be non-empty for CONFLICT or MISSING claims; the "

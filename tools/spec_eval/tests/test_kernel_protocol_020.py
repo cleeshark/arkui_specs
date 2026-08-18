@@ -508,6 +508,20 @@ class ValidateObservationTest(unittest.TestCase):
         document["observations"][0]["criterion_ids"] = ["NOT-A-CRITERION"]
         self.assertIn("CRITERION_UNKNOWN", self._codes(document))
 
+    def test_observation_requires_claim_ids_when_claims_exist(self) -> None:
+        document = copy.deepcopy(self.document)
+        document["observations"][0]["claim_ids"] = []
+        codes = self._codes(document)
+        self.assertIn("OBSERVATION_CLAIM_IDS_EMPTY", codes)
+        self.assertIn("OBSERVATION_CLAIM_COVERAGE_INCOMPLETE", codes)
+
+    def test_observation_claims_must_cover_expected_claims(self) -> None:
+        document = copy.deepcopy(self.document)
+        document["observations"][0]["claim_ids"] = ["Feat-01/AC-1"]
+        self.assertIn(
+            "OBSERVATION_CLAIM_COVERAGE_INCOMPLETE", self._codes(document)
+        )
+
     def test_incomplete_check_coverage(self) -> None:
         document = copy.deepcopy(self.document)
         document["observations"][0]["check_ids"] = ["claim_source_support"]
