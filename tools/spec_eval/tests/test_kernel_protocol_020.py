@@ -1289,5 +1289,482 @@ class TypedErrorContractTest(unittest.TestCase):
             validate_evaluator_version("skill:ohos-design-arkui-spec-evaluator@0.1.19")
 
 
+class FindingEvidenceClosureTest(unittest.TestCase):
+    """Issue #37: normalizer closes criterion evidence over finding refs."""
+
+    @staticmethod
+    def _evidence_id(criterion_id: str) -> str:
+        return "EV-" + criterion_id.lower().replace("_", "-")
+
+    def _template(self) -> dict:
+        return {
+            "schema_version": 2,
+            "func_id": "05-01-02",
+            "source_revision": SOURCE_REVISION,
+            "run_id": "run-1",
+            "status": "pending",
+            "source_observation_ids": [],
+            "cross_feat_contracts_reviewed": False,
+            "contradiction_bases": [],
+            "defect_ownership": [],
+            "outcome_policy_bases": [
+                {"criterion_id": cid, "content_status": "PENDING",
+                 "evidence_status": "PENDING", "conflict_scope": "PENDING",
+                 "reason": "待评价人填写"}
+                for cid in OUTCOME_POLICY_BASIS_CRITERIA
+            ],
+            "criterion_results": [
+                {"criterion_id": cid, "conclusion": "NOT_VERIFIABLE",
+                 "dimension_id": DIMENSION_BY_CRITERION[cid],
+                 "applicability": "APPLICABLE", "reason": ""}
+                for cid in CRITERIA
+            ],
+            "notes": [],
+        }
+
+    def _aggregation_context(self, *, extra_evidence_ids=None) -> dict:
+        extra = extra_evidence_ids or {}
+        return {
+            "schema_version": 2,
+            "criterion_mappings": [
+                {
+                    "criterion_id": criterion_id,
+                    "evidence_catalog": [
+                        {
+                            "evidence_id": eid,
+                            "type": "source_citation",
+                            "path": "frameworks/core/example.cpp",
+                            "line_start": 1, "line_end": 2,
+                            "source_revision": SOURCE_REVISION,
+                            "content_hash": "sha256:" + "0" * 64,
+                            "description": f"Evidence {eid}.",
+                            "source_work_item_id": "feature:Feat-01",
+                            "source_evidence_id": "EV-1",
+                        }
+                        for eid in [self._evidence_id(criterion_id)]
+                        + extra.get(criterion_id, [])
+                    ],
+                }
+                for criterion_id in CRITERIA
+            ],
+        }
+
+    def test_finding_evidence_auto_closed_into_criterion(self) -> None:
+        """When a finding references valid catalog evidence that the model
+        omitted from criterion evidence_ids, the normalizer closes the gap
+        deterministically instead of sending FINDING_EVIDENCE_UNKNOWN."""
+        extra_ev = "EV-extra-finding-ref"
+        context = self._aggregation_context(
+            extra_evidence_ids={"CORRECTNESS-SOURCE-SUPPORT": [extra_ev]}
+        )
+        judgment = {
+            "cross_feat_contracts_reviewed": True,
+            "contradiction_bases": [],
+            "defect_ownership": [{
+                "defect_key": "missing-proof",
+                "primary_criterion_id": "CORRECTNESS-SOURCE-SUPPORT",
+                "finding_keys": ["f1"],
+                "rationale": "Single defect.",
+            }],
+            "outcome_policy_bases": [
+                {"criterion_id": cid, "content_status": "PRESENT",
+                 "evidence_status": "VERIFIED", "conflict_scope": "NONE",
+                 "reason": "All verified."}
+                for cid in OUTCOME_POLICY_BASIS_CRITERIA
+            ],
+            "criterion_results": [
+                {
+                    "criterion_id": "CORRECTNESS-SOURCE-SUPPORT",
+                    "conclusion": "CONTRADICTED",
+                    "applicability": "APPLICABLE",
+                    "reason": "Source contradicts spec.",
+                    "applicability_reason": None,
+                    "missing_evidence": None,
+                    "claim_ids": ["Feat-01/AC-1"],
+                    # Model only listed one evidence at criterion level
+                    "evidence_ids": [
+                        self._evidence_id("CORRECTNESS-SOURCE-SUPPORT"),
+                    ],
+                    "findings": [{
+                        "key": "f1",
+                        "criterion_id": "CORRECTNESS-SOURCE-SUPPORT",
+                        "claim_id": "Feat-01/AC-1",
+                        "severity": "CRITICAL",
+                        "message": "Contradiction found.",
+                        # Finding references extra_ev which is NOT in criterion evidence_ids
+                        "evidence_ids": [
+                            self._evidence_id("CORRECTNESS-SOURCE-SUPPORT"),
+                            extra_ev,
+                        ],
+                        "recommendation": "Fix the contradiction.",
+                    }],
+                },
+                *[
+                    {
+                        "criterion_id": cid,
+                        "conclusion": "SUPPORTED",
+                        "applicability": "APPLICABLE",
+                        "reason": "No violation.",
+                        "applicability_reason": None,
+                        "missing_evidence": None,
+                        "claim_ids": [],
+                        "evidence_ids": [self._evidence_id(cid)],
+                        "findings": [],
+                    }
+                    for cid in CRITERIA[1:]
+                ],
+            ],
+            "notes": [],
+        }
+        result = normalize_aggregation(
+            self._template(), judgment,
+            source_observation_ids=["feature:Feat-01"],
+            aggregation_context=context,
+        )
+        # No errors — the normalizer auto-closed instead of erroring
+        self.assertEqual(result.errors, [])
+        self.assertEqual(result.fatal, [])
+        self.assertIsNotNone(result.document)
+        # Criterion evidence now includes the auto-closed extra_ev
+        criterion = result.document["criterion_results"][0]
+        criterion_ev_ids = [e["evidence_id"] for e in criterion["evidence"]]
+        self.assertIn(extra_ev, criterion_ev_ids)
+        # A normalization change was recorded
+        closed_changes = [
+            c for c in result.changes if "closed over" in c
+        ]
+        self.assertTrue(closed_changes)
+        # Validator also passes
+        errors = validate_aggregation_document(
+            result.document, criterion_order=list(CRITERIA),
+            aggregation_context=context,
+        )
+        finding_ev_errors = [e for e in errors if e.code == "FINDING_EVIDENCE_UNKNOWN"]
+        self.assertEqual(finding_ev_errors, [])
+
+    def test_finding_evidence_unknown_still_reported_for_missing_catalog_id(self) -> None:
+        """Evidence IDs not in the criterion catalog are still errors."""
+        judgment = {
+            "cross_feat_contracts_reviewed": True,
+            "contradiction_bases": [],
+            "defect_ownership": [{
+                "defect_key": "missing-proof",
+                "primary_criterion_id": "CORRECTNESS-SOURCE-SUPPORT",
+                "finding_keys": ["f1"],
+                "rationale": "Single defect.",
+            }],
+            "outcome_policy_bases": [
+                {"criterion_id": cid, "content_status": "PRESENT",
+                 "evidence_status": "VERIFIED", "conflict_scope": "NONE",
+                 "reason": "All verified."}
+                for cid in OUTCOME_POLICY_BASIS_CRITERIA
+            ],
+            "criterion_results": [
+                {
+                    "criterion_id": "CORRECTNESS-SOURCE-SUPPORT",
+                    "conclusion": "CONTRADICTED",
+                    "applicability": "APPLICABLE",
+                    "reason": "Source contradicts spec.",
+                    "applicability_reason": None,
+                    "missing_evidence": None,
+                    "claim_ids": ["Feat-01/AC-1"],
+                    "evidence_ids": [
+                        self._evidence_id("CORRECTNESS-SOURCE-SUPPORT"),
+                        "EV-does-not-exist",  # unknown → error
+                    ],
+                    "findings": [{
+                        "key": "f1",
+                        "criterion_id": "CORRECTNESS-SOURCE-SUPPORT",
+                        "claim_id": "Feat-01/AC-1",
+                        "severity": "CRITICAL",
+                        "message": "Contradiction found.",
+                        "evidence_ids": [
+                            self._evidence_id("CORRECTNESS-SOURCE-SUPPORT"),
+                        ],
+                        "recommendation": "Fix.",
+                    }],
+                },
+                *[
+                    {
+                        "criterion_id": cid,
+                        "conclusion": "SUPPORTED",
+                        "applicability": "APPLICABLE",
+                        "reason": "No violation.",
+                        "applicability_reason": None,
+                        "missing_evidence": None,
+                        "claim_ids": [],
+                        "evidence_ids": [self._evidence_id(cid)],
+                        "findings": [],
+                    }
+                    for cid in CRITERIA[1:]
+                ],
+            ],
+            "notes": [],
+        }
+        result = normalize_aggregation(
+            self._template(), judgment,
+            source_observation_ids=[],
+            aggregation_context=self._aggregation_context(),
+        )
+        self.assertIsNone(result.document)
+        self.assertTrue(
+            any(e.code == "CRITERION_EVIDENCE_UNKNOWN" for e in result.errors)
+        )
+
+
+class PolicyConclusionDerivationTest(unittest.TestCase):
+    """Issue #37: normalizer derives conclusion from policy basis."""
+
+    @staticmethod
+    def _evidence_id(criterion_id: str) -> str:
+        return "EV-" + criterion_id.lower().replace("_", "-")
+
+    def _template(self) -> dict:
+        return {
+            "schema_version": 2,
+            "func_id": "05-01-02",
+            "source_revision": SOURCE_REVISION,
+            "run_id": "run-1",
+            "status": "pending",
+            "source_observation_ids": [],
+            "cross_feat_contracts_reviewed": False,
+            "contradiction_bases": [],
+            "defect_ownership": [],
+            "outcome_policy_bases": [
+                {"criterion_id": cid, "content_status": "PENDING",
+                 "evidence_status": "PENDING", "conflict_scope": "PENDING",
+                 "reason": "待评价人填写"}
+                for cid in OUTCOME_POLICY_BASIS_CRITERIA
+            ],
+            "criterion_results": [
+                {"criterion_id": cid, "conclusion": "NOT_VERIFIABLE",
+                 "dimension_id": DIMENSION_BY_CRITERION[cid],
+                 "applicability": "APPLICABLE", "reason": ""}
+                for cid in CRITERIA
+            ],
+            "notes": [],
+        }
+
+    def _aggregation_context(self) -> dict:
+        return {
+            "schema_version": 2,
+            "criterion_mappings": [
+                {
+                    "criterion_id": criterion_id,
+                    "evidence_catalog": [{
+                        "evidence_id": self._evidence_id(criterion_id),
+                        "type": "source_citation",
+                        "path": "frameworks/core/example.cpp",
+                        "line_start": 1, "line_end": 2,
+                        "source_revision": SOURCE_REVISION,
+                        "content_hash": "sha256:" + "0" * 64,
+                        "description": "Evidence.",
+                        "source_work_item_id": "feature:Feat-01",
+                        "source_evidence_id": "EV-1",
+                    }],
+                }
+                for criterion_id in CRITERIA
+            ],
+        }
+
+    def _base_judgment(self, policy_overrides=None) -> dict:
+        default_policy = [
+            {"criterion_id": cid, "content_status": "PRESENT",
+             "evidence_status": "VERIFIED", "conflict_scope": "NONE",
+             "reason": "All verified."}
+            for cid in OUTCOME_POLICY_BASIS_CRITERIA
+        ]
+        if policy_overrides:
+            by_id = {p["criterion_id"]: p for p in default_policy}
+            for override in policy_overrides:
+                by_id[override["criterion_id"]].update(override)
+            default_policy = list(by_id.values())
+        return {
+            "cross_feat_contracts_reviewed": True,
+            "contradiction_bases": [],
+            "defect_ownership": [],
+            "outcome_policy_bases": default_policy,
+            "criterion_results": [
+                {
+                    "criterion_id": cid,
+                    "conclusion": "SUPPORTED",
+                    "applicability": "APPLICABLE",
+                    "reason": "No violation.",
+                    "applicability_reason": None,
+                    "missing_evidence": None,
+                    "claim_ids": [],
+                    "evidence_ids": [self._evidence_id(cid)],
+                    "findings": [],
+                }
+                for cid in CRITERIA
+            ],
+            "notes": [],
+        }
+
+    def test_normalizer_overrides_conclusion_from_policy_basis(self) -> None:
+        """Model says SUPPORTED but policy basis says ABSENT → normalizer
+        deterministically derives MISSING."""
+        judgment = self._base_judgment(policy_overrides=[
+            {"criterion_id": "SPEC-AC-TESTABILITY",
+             "content_status": "ABSENT",
+             "evidence_status": "VERIFIED",
+             "conflict_scope": "NONE"},
+        ])
+        # Model incorrectly says SUPPORTED for the policy criterion
+        for row in judgment["criterion_results"]:
+            if row["criterion_id"] == "SPEC-AC-TESTABILITY":
+                row["conclusion"] = "SUPPORTED"
+        result = normalize_aggregation(
+            self._template(), judgment,
+            source_observation_ids=[],
+            aggregation_context=self._aggregation_context(),
+        )
+        self.assertEqual(result.errors, [])
+        rows_by_id = {
+            r["criterion_id"]: r
+            for r in result.document["criterion_results"]
+        }
+        # Normalizer derived MISSING from content_status=ABSENT
+        self.assertEqual(rows_by_id["SPEC-AC-TESTABILITY"]["conclusion"], "MISSING")
+        # Normalization change was logged
+        derived_changes = [
+            c for c in result.changes if "derived from outcome_policy_bases" in c
+        ]
+        self.assertTrue(derived_changes)
+
+    def test_policy_derivation_covers_all_precedence_rules(self) -> None:
+        """Exercise each row of the precedence table."""
+        cases = [
+            # (content, evidence, conflict) → expected
+            ("NOT_APPLICABLE", "NOT_APPLICABLE", "NOT_APPLICABLE", "NOT_APPLICABLE"),
+            ("PRESENT", "VERIFIED", "CORE", "CONTRADICTED"),
+            ("ABSENT", "VERIFIED", "NONE", "MISSING"),
+            ("PLACEHOLDER_ONLY", "PARTIAL", "NONE", "MISSING"),
+            ("PRESENT", "VERIFIED", "LOCAL", "PARTIALLY_SUPPORTED"),
+            ("PRESENT", "UNAVAILABLE", "NONE", "NOT_VERIFIABLE"),
+            ("PRESENT", "PARTIAL", "NONE", "PARTIALLY_SUPPORTED"),
+            ("PRESENT", "VERIFIED", "NONE", "SUPPORTED"),
+        ]
+        for content, evidence, conflict, expected in cases:
+            result = K.expected_policy_conclusion(content, evidence, conflict)
+            self.assertEqual(
+                result, expected,
+                f"({content}, {evidence}, {conflict}) → expected {expected}, got {result}",
+            )
+
+    def test_mixed_na_returns_none(self) -> None:
+        """Mixed NOT_APPLICABLE is invalid and returns None."""
+        self.assertIsNone(
+            K.expected_policy_conclusion("NOT_APPLICABLE", "VERIFIED", "NONE")
+        )
+
+    def test_finding_conclusion_inherits_derived_value(self) -> None:
+        """Findings under a policy criterion get the derived conclusion."""
+        judgment = self._base_judgment(policy_overrides=[
+            {"criterion_id": "SPEC-AC-TESTABILITY",
+             "content_status": "PRESENT",
+             "evidence_status": "VERIFIED",
+             "conflict_scope": "CORE"},
+        ])
+        for row in judgment["criterion_results"]:
+            if row["criterion_id"] == "SPEC-AC-TESTABILITY":
+                row["conclusion"] = "SUPPORTED"  # model says wrong
+                row["findings"] = [{
+                    "key": "f1",
+                    "criterion_id": "SPEC-AC-TESTABILITY",
+                    "claim_id": None,
+                    "severity": "CRITICAL",
+                    "message": "Core conflict.",
+                    "evidence_ids": [self._evidence_id("SPEC-AC-TESTABILITY")],
+                    "recommendation": "Fix.",
+                }]
+        judgment["defect_ownership"] = [{
+            "defect_key": "testability-conflict",
+            "primary_criterion_id": "SPEC-AC-TESTABILITY",
+            "finding_keys": ["f1"],
+            "rationale": "One defect.",
+        }]
+        result = normalize_aggregation(
+            self._template(), judgment,
+            source_observation_ids=[],
+            aggregation_context=self._aggregation_context(),
+        )
+        self.assertEqual(result.errors, [])
+        rows_by_id = {
+            r["criterion_id"]: r
+            for r in result.document["criterion_results"]
+        }
+        criterion = rows_by_id["SPEC-AC-TESTABILITY"]
+        self.assertEqual(criterion["conclusion"], "CONTRADICTED")
+        self.assertEqual(criterion["findings"][0]["conclusion"], "CONTRADICTED")
+
+    def test_validator_error_points_to_policy_basis(self) -> None:
+        """When policy basis and conclusion disagree after normalization,
+        the error message names the three basis fields."""
+        result = normalize_aggregation(
+            self._template(), self._base_judgment(),
+            source_observation_ids=[],
+            aggregation_context=self._aggregation_context(),
+        )
+        doc = result.document
+        # Manually break the derived conclusion to trigger validation error
+        for row in doc["criterion_results"]:
+            if row["criterion_id"] == "SPEC-AC-TESTABILITY":
+                row["conclusion"] = "CONTRADICTED"
+        errors = validate_aggregation_document(
+            doc, criterion_order=list(CRITERIA),
+        )
+        policy_errors = [e for e in errors if e.code == "POLICY_BASIS_INVALID"]
+        self.assertTrue(policy_errors)
+        # Error message should reference the basis fields
+        msg = policy_errors[0].expected or ""
+        self.assertIn("content_status=", msg)
+        self.assertIn("evidence_status=", msg)
+        self.assertIn("conflict_scope=", msg)
+        self.assertIn("correct the policy basis", msg)
+
+
+class MachineContractPolicyRuleTest(unittest.TestCase):
+    """Issue #37: machine contract exposes policy derivation rule."""
+
+    def test_aggregation_contract_carries_policy_conclusion_rule(self) -> None:
+        contract = build_aggregation_machine_contract(
+            valid_criterion_ids=list(CRITERIA),
+        )
+        self.assertIn("policy_conclusion_rule", contract)
+        rule = contract["policy_conclusion_rule"]
+        self.assertEqual(
+            rule["derived_from"],
+            ["content_status", "evidence_status", "conflict_scope"],
+        )
+        self.assertTrue(rule["precedence"])
+        conclusions = {entry["conclusion"] for entry in rule["precedence"]}
+        self.assertIn("CONTRADICTED", conclusions)
+        self.assertIn("MISSING", conclusions)
+        self.assertIn("NOT_VERIFIABLE", conclusions)
+
+    def test_aggregation_contract_documents_evidence_closure(self) -> None:
+        contract = build_aggregation_machine_contract(
+            valid_criterion_ids=list(CRITERIA),
+        )
+        rules = contract["judgment_rules"]
+        closure_mentioned = any("closes" in rule for rule in rules)
+        self.assertTrue(
+            closure_mentioned,
+            "Aggregation judgment_rules should mention evidence closure",
+        )
+
+    def test_aggregation_contract_documents_policy_derivation(self) -> None:
+        contract = build_aggregation_machine_contract(
+            valid_criterion_ids=list(CRITERIA),
+        )
+        rules = contract["judgment_rules"]
+        policy_mentioned = any("derives conclusion" in rule for rule in rules)
+        self.assertTrue(
+            policy_mentioned,
+            "Aggregation judgment_rules should mention service derives conclusion",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

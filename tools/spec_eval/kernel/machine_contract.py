@@ -124,7 +124,13 @@ def build_aggregation_machine_contract(
             "IDs listed for each Criterion. Do not emit local evidence keys such as "
             "e1, do not declare evidence, and do not guess EV- IDs.",
             "criterion_results[].evidence_ids selects the inherited evidence attached "
-            "to that Criterion; every finding evidence_ids entry must be a subset.",
+            "to that Criterion; the service closes this parent set over every valid "
+            "finding evidence reference, and every finding evidence_ids entry must "
+            "be a subset.",
+            "For the six outcome-policy criteria, content_status/evidence_status/"
+            "conflict_scope are the semantic inputs; the service derives conclusion "
+            "from the fixed policy precedence table. Do not try to repair a derived "
+            "conclusion without correcting the policy basis that produces it.",
         ],
         "payload_fields": list(K.AGGREGATION_JUDGMENT_FIELDS),
         "criterion_judgment_fields": list(K.CRITERION_JUDGMENT_FIELDS),
@@ -138,6 +144,15 @@ def build_aggregation_machine_contract(
         "policy_content_status_enum": list(K.POLICY_CONTENT_STATUSES),
         "policy_evidence_status_enum": list(K.POLICY_EVIDENCE_STATUSES),
         "policy_conflict_scope_enum": list(K.POLICY_CONFLICT_SCOPES),
+        "policy_conclusion_rule": {
+            "derived_from": [
+                "content_status", "evidence_status", "conflict_scope"
+            ],
+            "precedence": [
+                {"when": when, "conclusion": conclusion}
+                for when, conclusion in K.POLICY_CONCLUSION_RULES
+            ],
+        },
         "valid_criterion_ids": list(valid_criterion_ids),
         "aggregation_context_path": aggregation_context_path,
         "mapping_rule": (
