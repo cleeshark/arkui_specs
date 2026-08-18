@@ -74,10 +74,10 @@ class ManualRefreshService:
                     source_revision=resolved_revision,
                     run_count=run_count,
                     job_id=job_id,
-                    executor_config=self.settings.default_executor_config,
+                    executor_config=self.app.executor_config,
                 ),
                 evaluator_version=DEFAULT_SKILL_EVALUATOR_VERSION,
-                executor_config=self.settings.default_executor_config,
+                executor_config=self.app.executor_config,
             )
             target, created = targets.create_active(
                 job_id=job.job_id,
