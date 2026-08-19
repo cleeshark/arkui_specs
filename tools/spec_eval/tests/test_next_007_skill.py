@@ -1043,48 +1043,6 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
                 )
         self.assertEqual(validate_observation_document(document, item, state), [])
 
-    def test_staged_v2_0119_accepts_nv_expression_families(self) -> None:
-        document, item, state = self._valid_observation()
-        document["observations"][0]["local_outcome"] = "NOT_VERIFIABLE"
-        document["observations"][0]["evidence"][0]["type"] = "review_record"
-        reason = (
-            "EV-19 records inspection of the frozen Feat evidence shard and includes no "
-            "ArkUI-X adapter source; without that cross-platform content, the Claim cannot "
-            "be verified."
-        )
-        fact = (
-            "The checked shard contains no frozen ArkUI-X adapter content; that missing "
-            "source prevents verifying the atomic unit."
-        )
-        for review in document["claim_reviews"]:
-            review["local_outcome"] = "NOT_VERIFIABLE"
-            review["reason"] = reason
-            for unit in review["unit_reviews"]:
-                unit["local_outcome"] = "NOT_VERIFIABLE"
-                unit["fact"] = fact
-        self.assertEqual(validate_observation_document(document, item, state), [])
-
-    def test_staged_v2_0119_nv_expression_requires_all_three_signals(self) -> None:
-        invalid_texts = (
-            "The frozen shard lacks ArkUI-X source, so the Claim cannot be verified.",
-            "Inspection covered the frozen ArkUI-X source scope, but the Claim cannot be verified.",
-            "Inspection covered the frozen shard and found missing ArkUI-X source content.",
-            "Inspection found no behavioral change, so the Claim can be verified.",
-        )
-        for invalid_text in invalid_texts:
-            with self.subTest(invalid_text=invalid_text):
-                document, item, state = self._valid_observation()
-                document["observations"][0]["local_outcome"] = "NOT_VERIFIABLE"
-                document["observations"][0]["evidence"][0]["type"] = "review_record"
-                for review in document["claim_reviews"]:
-                    review["local_outcome"] = "NOT_VERIFIABLE"
-                    review["reason"] = invalid_text
-                    for unit in review["unit_reviews"]:
-                        unit["local_outcome"] = "NOT_VERIFIABLE"
-                        unit["fact"] = invalid_text
-                errors = validate_observation_document(document, item, state)
-                self.assertTrue(any("expected checked scope" in error for error in errors))
-
     def test_staged_v2_rejects_unmapped_required_check(self) -> None:
         document, item, state = self._valid_observation()
         document["observations"][0]["check_ids"] = ["claim_source_support"]

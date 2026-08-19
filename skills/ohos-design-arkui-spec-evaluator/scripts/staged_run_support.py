@@ -890,82 +890,6 @@ def _is_low_information_review_text(value: Any) -> bool:
     return normalized in LOW_INFORMATION_REVIEW_TEXT
 
 
-_NV_CHECKED_PATTERNS = (
-    re.compile(
-        r"\b(?:check(?:ed|ing)?|inspect(?:ed|ing|ion)?|review(?:ed|ing)?|"
-        r"examin(?:e|ed|ing|ation)|search(?:ed|ing)?|scan(?:ned|ning)?)\b"
-    ),
-)
-_NV_MISSING_PATTERNS = (
-    re.compile(r"\b(?:missing|absent|absence|unavailable|insufficient|lacks?|lacking)\b"),
-    re.compile(r"\bnot\s+(?:present|found|available|included)\b"),
-    re.compile(r"\bwithout(?:\s+the)?\b"),
-    re.compile(r"\b(?:does|do|did)\s+not\s+(?:include|contain|provide|cover)\b"),
-    re.compile(
-        r"\bno\b[^.;:\n]{0,120}\b(?:evidence|proof|source|content|implementation|"
-        r"record|test|coverage|artifact|file|path|data)\b"
-    ),
-)
-_NV_CONSEQUENCE_PATTERNS = (
-    re.compile(
-        r"\b(?:cannot|can\s+not|unable\s+to)\s+(?:\w+\s+){0,3}"
-        r"verif(?:y|ied|iable)\b"
-    ),
-    re.compile(r"\bnot\s+verifiable\b"),
-    re.compile(
-        r"\b(?:cannot|can\s+not|unable\s+to)\s+(?:\w+\s+){0,3}"
-        r"determin(?:e|ed)\b"
-    ),
-    re.compile(
-        r"\bprevent(?:s|ed|ing)?\s+(?:\w+\s+){0,3}"
-        r"(?:verif(?:y|ying|ication)|determin(?:e|ing|ation))\b"
-    ),
-    re.compile(r"\binsufficient\s+to\b"),
-)
-
-
-def _matches_any_pattern(value: str, patterns: tuple[re.Pattern[str], ...]) -> bool:
-    return any(pattern.search(value) is not None for pattern in patterns)
-
-
-def _has_unverifiable_gap_explanation(
-    value: Any, *, expression_families: bool = False
-) -> bool:
-    """Require NV prose to name both the inspected scope and the evidence gap."""
-    if not isinstance(value, str) or len(value.strip()) < 24:
-        return False
-    normalized = re.sub(r"\s+", " ", value.casefold())
-    checked_terms = ("checked", "inspected", "reviewed", "examined", "检查", "审查")
-    missing_terms = (
-        "missing", "absent", "unavailable", "insufficient", "not present",
-        "缺少", "缺失", "不足", "不可用",
-    )
-    consequence_terms = (
-        "cannot verify", "not verifiable", "insufficient to", "cannot determine",
-        "无法验证", "不能验证", "不足以", "无法判断",
-    )
-    if not expression_families:
-        return (
-            any(term in normalized for term in checked_terms)
-            and any(term in normalized for term in missing_terms)
-            and any(term in normalized for term in consequence_terms)
-        )
-    return (
-        (
-            _matches_any_pattern(normalized, _NV_CHECKED_PATTERNS)
-            or any(term in normalized for term in ("检查", "审查"))
-        )
-        and (
-            _matches_any_pattern(normalized, _NV_MISSING_PATTERNS)
-            or any(term in normalized for term in ("缺少", "缺失", "不足", "不可用"))
-        )
-        and (
-            _matches_any_pattern(normalized, _NV_CONSEQUENCE_PATTERNS)
-            or any(term in normalized for term in ("无法验证", "不能验证", "不足以", "无法判断"))
-        )
-    )
-
-
 def _observation_evidence_minimums(evaluator_version: Any) -> dict[str, int]:
     return OBSERVATION_EVIDENCE_MIN_ITEMS
 
@@ -995,7 +919,6 @@ def validate_observation_document(
     deep_contract = True
     claim_review_quality = True
     nv_inspection_required = True
-    nv_expression_families = True
     rubric, _, protocol_errors = protocol()
     errors.extend(protocol_errors)
     valid_criteria = set(criterion_order(rubric)) if not protocol_errors else set()
@@ -1232,16 +1155,6 @@ def validate_observation_document(
                 errors.append(f"{entry}.reason: replace the initialized placeholder")
             elif claim_review_quality and _is_low_information_review_text(reason):
                 errors.append(f"{entry}.reason: expected an evidence-specific explanation")
-            elif (
-                local_outcome == "NOT_VERIFIABLE"
-                and nv_inspection_required
-                and not _has_unverifiable_gap_explanation(
-                    reason, expression_families=nv_expression_families
-                )
-            ):
-                errors.append(
-                    f"{entry}.reason: expected checked scope, missing evidence and insufficiency explanation"
-                )
             defect_keys = _validate_string_list(
                 claim_review.get("defect_keys"), f"{entry}.defect_keys", errors
             )
@@ -1306,16 +1219,6 @@ def validate_observation_document(
                         errors.append(f"{unit_label}.fact: expected a resolved atomic fact")
                     elif claim_review_quality and _is_low_information_review_text(fact):
                         errors.append(f"{unit_label}.fact: expected an evidence-specific atomic fact")
-                    elif (
-                        unit_outcome == "NOT_VERIFIABLE"
-                        and nv_inspection_required
-                        and not _has_unverifiable_gap_explanation(
-                            fact, expression_families=nv_expression_families
-                        )
-                    ):
-                        errors.append(
-                            f"{unit_label}.fact: expected checked scope, missing evidence and insufficiency explanation"
-                        )
                 if unit_ids != reviewed_units:
                     errors.append(
                         f"{entry}.unit_reviews: unit IDs must exactly match reviewed_units in order"

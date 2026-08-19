@@ -103,7 +103,6 @@ ERROR_REGISTRY: dict[str, str] = _register({
     # --- prose quality (model-owned) ---------------------------------------
     "REASON_PLACEHOLDER": MODEL_CORRECTION,
     "REASON_LOW_INFORMATION": MODEL_CORRECTION,
-    "NV_EXPLANATION_INSUFFICIENT": MODEL_CORRECTION,
     # --- defect semantics (model-owned) -------------------------------------
     "DEFECT_KEYS_INVALID": MODEL_CORRECTION,
     "DEFECT_KEY_UNDEFINED": MODEL_CORRECTION,

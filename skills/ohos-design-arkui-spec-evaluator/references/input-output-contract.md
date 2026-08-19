@@ -60,8 +60,8 @@ machine-readable `output-contract.json`, deterministic `aggregation-context.json
 run-global inherited evidence catalogs for aggregation, observation evidence cardinality
 enforcement, `final_contract` with canonical Finding identity,
 service-normalized Finding IDs and ownership secondary Criteria, categorized observation repair
-routing, evidence-backed NOT_VERIFIABLE with `review_record` inspection evidence and three-signal
-expression families, and claim-level evidence quality enforcement. The evaluator version must not
+routing, evidence-backed NOT_VERIFIABLE with `review_record` inspection evidence and structured
+`verification_gap` validation, and claim-level evidence quality enforcement. The evaluator version must not
 be downgraded or overridden after initialization.
 
 Do not write automatic output to:
