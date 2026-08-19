@@ -1,4 +1,4 @@
--- SQLite schema for the semantic evaluation service Job Store (schema_version 6).
+-- SQLite schema for the semantic evaluation service Job Store (schema_version 7).
 -- Loaded idempotently by sqlite_store._run_migrations. PRAGMAs are applied in
 -- code (they are connection-scoped / must run outside a transaction). The
 -- load-bearing constraints are:
@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS schema_meta (
     key   TEXT PRIMARY KEY,
     value TEXT NOT NULL
 );
-INSERT OR IGNORE INTO schema_meta (key, value) VALUES ('schema_version', '6');
+INSERT OR IGNORE INTO schema_meta (key, value) VALUES ('schema_version', '7');
 
 -- schema v6 (protocol 0.2.0 S3, design R6): six-state lifecycle + stage.
 CREATE TABLE IF NOT EXISTS jobs (
@@ -242,3 +242,23 @@ CREATE TABLE IF NOT EXISTS executor_calls (
 CREATE INDEX IF NOT EXISTS idx_executor_calls_job ON executor_calls (job_id);
 CREATE INDEX IF NOT EXISTS idx_executor_calls_work_item
   ON executor_calls (job_id, run_id, work_item_id);
+
+-- Finding Ledger: per-FuncID lifecycle tracking for convergence (0.2.1 S3).
+CREATE TABLE IF NOT EXISTS finding_ledger (
+  finding_id             TEXT PRIMARY KEY,
+  func_id                TEXT NOT NULL,
+  criterion_id           TEXT NOT NULL,
+  severity               TEXT NOT NULL DEFAULT 'Major',
+  message                TEXT NOT NULL DEFAULT '',
+  status                 TEXT NOT NULL DEFAULT 'active'
+                           CHECK (status IN ('active','resolved','refuted','superseded','out_of_scope')),
+  first_seen_run_id      TEXT NOT NULL,
+  first_seen_at          TEXT NOT NULL,
+  last_confirmed_run_id  TEXT,
+  last_confirmed_at      TEXT,
+  confirmation_count     INTEGER NOT NULL DEFAULT 1,
+  executor_set           TEXT NOT NULL DEFAULT '[]',
+  disposition_history    TEXT NOT NULL DEFAULT '[]'
+);
+CREATE INDEX IF NOT EXISTS idx_ledger_func ON finding_ledger (func_id);
+CREATE INDEX IF NOT EXISTS idx_ledger_status ON finding_ledger (func_id, status);

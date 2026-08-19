@@ -171,7 +171,7 @@ class BackupDiskTest(_GovTestBase):
         conn = sqlite3.connect(str(dest))
         row = conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()
         conn.close()
-        self.assertEqual(row[0], "6")
+        self.assertEqual(row[0], "7")
         # the live DB still works after backup
         self.assertEqual(len(self.jobs.list_jobs()), 1)
 

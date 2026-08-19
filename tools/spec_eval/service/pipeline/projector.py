@@ -26,6 +26,7 @@ from ..domain.models import Job
 from ..settings import ServiceSettings
 from ..store.repositories import (
     EventRepository,
+    FindingLedgerRepository,
     ProjectionRepository,
     RefreshTargetRepository,
 )
@@ -161,3 +162,109 @@ def _project(
             events=events,
             pending_delta=pending_delta,
         )
+
+    # 3. Finding Ledger update (0.2.1 S3)
+    _update_finding_ledger(
+        store, job=job, aggregate_dir=aggregate_dir,
+        request=request, events=events,
+    )
+
+    # 4. Convergence metrics (0.2.1 S5)
+    from .convergence import write_convergence_result
+
+    write_convergence_result(
+        store,
+        func_id=job.func_id,
+        run_id=str(request.get("selected_run_id", job.job_id)),
+        evaluator_version=job.evaluator_version or "",
+        rubric_version="0.3.0",
+        source_revision=job.source_revision or "",
+        output_dir=aggregate_dir,
+    )
+
+
+def _update_finding_ledger(
+    store: SqliteStore,
+    *,
+    job: Job,
+    aggregate_dir: Path,
+    request: dict[str, Any],
+    events: EventRepository,
+) -> None:
+    """Upsert findings from the completed run into the Ledger."""
+    import json as _json
+
+    semantic_path = aggregate_dir / "semantic-result.json"
+    if not semantic_path.is_file():
+        return
+    try:
+        semantic = _json.loads(semantic_path.read_text(encoding="utf-8"))
+    except (OSError, _json.JSONDecodeError):
+        return
+
+    run_id = str(request.get("selected_run_id", job.job_id))
+    executor = str(job.executor_config.get("type", "unknown")) if job.executor_config else "unknown"
+    ledger = FindingLedgerRepository(store)
+
+    current_finding_ids: set[str] = set()
+    for criterion in semantic.get("criterion_results", []):
+        criterion_id = criterion.get("criterion_id", "")
+        for finding in criterion.get("findings", []):
+            finding_id = finding.get("finding_id")
+            if not isinstance(finding_id, str) or not finding_id:
+                continue
+            current_finding_ids.add(finding_id)
+            ledger.upsert_finding(
+                finding_id=finding_id,
+                func_id=job.func_id,
+                criterion_id=criterion_id,
+                severity=finding.get("severity", "Major"),
+                message=finding.get("message", ""),
+                run_id=run_id,
+                executor=executor,
+            )
+
+    resolved = ledger.mark_resolved(job.func_id, current_finding_ids, run_id)
+    events.append(job.job_id, "finding_ledger_updated", {
+        "func_id": job.func_id,
+        "upserted": len(current_finding_ids),
+        "resolved": resolved,
+    })
+
+    # Generate history-context.json for future aggregation runs (S4)
+    _write_history_context(ledger, job.func_id, aggregate_dir)
+
+
+def _write_history_context(
+    ledger: FindingLedgerRepository,
+    func_id: str,
+    aggregate_dir: Path,
+) -> None:
+    """Write history-context.json from active Ledger entries (S4)."""
+    import json as _json
+
+    active = ledger.get_active(func_id)
+    context = {
+        "active_findings": [
+            {
+                "finding_id": row["finding_id"],
+                "criterion_id": row["criterion_id"],
+                "severity": row["severity"],
+                "message": row["message"],
+                "confirmation_count": row["confirmation_count"],
+                "executor_set": _json.loads(row.get("executor_set") or "[]"),
+                "first_seen_run_id": row["first_seen_run_id"],
+                "last_confirmed_run_id": row.get("last_confirmed_run_id"),
+            }
+            for row in active
+        ],
+        "pending_questions": [],
+    }
+    context_path = aggregate_dir / "history-context.json"
+    try:
+        context_path.write_text(
+            _json.dumps(context, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+    except OSError:
+        pass

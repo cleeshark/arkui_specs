@@ -1291,3 +1291,103 @@ class ReportDeltaRepository:
                 "SELECT * FROM report_deltas WHERE report_id = ?", (report_id,)
             ).fetchone()
             return _report_delta_from_row(row) if row is not None else None
+
+
+class FindingLedgerRepository:
+    """Per-FuncID Finding lifecycle tracking (0.2.1 S3)."""
+
+    def __init__(self, store: SqliteStore) -> None:
+        self._store = store
+        self._conn = store._conn
+
+    def get_active(self, func_id: str) -> list[dict[str, Any]]:
+        with self._store._tx():
+            rows = self._conn.execute(
+                "SELECT * FROM finding_ledger WHERE func_id = ? AND status = 'active' "
+                "ORDER BY first_seen_at",
+                (func_id,),
+            ).fetchall()
+            return [dict(row) for row in rows]
+
+    def get_all(self, func_id: str) -> list[dict[str, Any]]:
+        with self._store._tx():
+            rows = self._conn.execute(
+                "SELECT * FROM finding_ledger WHERE func_id = ? ORDER BY first_seen_at",
+                (func_id,),
+            ).fetchall()
+            return [dict(row) for row in rows]
+
+    def upsert_finding(
+        self,
+        *,
+        finding_id: str,
+        func_id: str,
+        criterion_id: str,
+        severity: str,
+        message: str,
+        run_id: str,
+        executor: str,
+    ) -> None:
+        now = utc_now()
+        with self._store._tx(immediate=True):
+            existing = self._conn.execute(
+                "SELECT * FROM finding_ledger WHERE finding_id = ?",
+                (finding_id,),
+            ).fetchone()
+            if existing is None:
+                self._conn.execute(
+                    "INSERT INTO finding_ledger "
+                    "(finding_id, func_id, criterion_id, severity, message, status, "
+                    " first_seen_run_id, first_seen_at, last_confirmed_run_id, "
+                    " last_confirmed_at, confirmation_count, executor_set) "
+                    "VALUES (?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, 1, ?)",
+                    (
+                        finding_id, func_id, criterion_id, severity, message,
+                        run_id, now, run_id, now,
+                        json.dumps([executor]),
+                    ),
+                )
+            else:
+                executor_set = json.loads(existing["executor_set"] or "[]")
+                if executor not in executor_set:
+                    executor_set.append(executor)
+                self._conn.execute(
+                    "UPDATE finding_ledger SET "
+                    "  last_confirmed_run_id = ?, "
+                    "  last_confirmed_at = ?, "
+                    "  confirmation_count = confirmation_count + 1, "
+                    "  executor_set = ?, "
+                    "  status = 'active', "
+                    "  severity = ?, "
+                    "  message = ? "
+                    "WHERE finding_id = ?",
+                    (
+                        run_id, now, json.dumps(executor_set),
+                        severity, message, finding_id,
+                    ),
+                )
+
+    def mark_resolved(self, func_id: str, active_finding_ids: set[str], run_id: str) -> int:
+        """Mark active findings NOT in the current run as resolved. Returns count."""
+        now = utc_now()
+        with self._store._tx(immediate=True):
+            rows = self._conn.execute(
+                "SELECT finding_id FROM finding_ledger "
+                "WHERE func_id = ? AND status = 'active'",
+                (func_id,),
+            ).fetchall()
+            resolved_count = 0
+            for row in rows:
+                if row["finding_id"] not in active_finding_ids:
+                    disposition = json.dumps({
+                        "run_id": run_id, "action": "resolved", "at": now,
+                    })
+                    self._conn.execute(
+                        "UPDATE finding_ledger SET status = 'resolved', "
+                        "disposition_history = json_insert(disposition_history, '$[#]', ?) "
+                        "WHERE finding_id = ?",
+                        (disposition, row["finding_id"]),
+                    )
+                    resolved_count += 1
+            return resolved_count
+
