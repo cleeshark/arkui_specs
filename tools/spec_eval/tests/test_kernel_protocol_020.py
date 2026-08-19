@@ -556,27 +556,6 @@ class ValidateObservationTest(unittest.TestCase):
         document["claim_reviews"][1]["reviewed_units"] = ["different-unit"]
         self.assertIn("UNIT_ROW_INVALID", self._codes(document))
 
-    def test_not_verifiable_prose_requires_three_signals(self) -> None:
-        document = copy.deepcopy(self.document)
-        review = document["claim_reviews"][0]
-        review["reason"] = "The source is missing."
-        review["unit_reviews"][0]["fact"] = "The source is missing."
-        codes = self._codes(document)
-        self.assertEqual(codes.count("NV_EXPLANATION_INSUFFICIENT"), 2)
-
-    def test_not_verifiable_prose_accepts_three_signals(self) -> None:
-        document = copy.deepcopy(self.document)
-        review = document["claim_reviews"][0]
-        review["reason"] = (
-            "Checked the frozen scope; implementation evidence is missing and is "
-            "insufficient to verify this claim."
-        )
-        review["unit_reviews"][0]["fact"] = (
-            "Checked the frozen scope; atomic evidence is missing and is "
-            "insufficient to verify this unit."
-        )
-        self.assertNotIn("NV_EXPLANATION_INSUFFICIENT", self._codes(document))
-
     def test_unknown_criterion(self) -> None:
         document = copy.deepcopy(self.document)
         document["observations"][0]["criterion_ids"] = ["NOT-A-CRITERION"]

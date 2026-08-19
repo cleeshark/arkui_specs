@@ -205,17 +205,16 @@ defects, and ordering remain unchanged, and the complete candidate is validated 
 
 `NOT_VERIFIABLE` is not evidence-free. The observation includes at
 least one `review_record` for the frozen scope that was inspected, and each NV Claim and atomic unit
-references that record. Their reason/fact names the checked scope, missing evidence, and why the
-gap is insufficient. Claim evidence repair retains or selects inspection evidence when
+references that record. The structured `verification_gap` object (with `checked_scope`,
+`missing_evidence`, and `consequence` fields) is the authoritative record of why the gap prevents
+verification; the service validates its completeness via schema and field-level checks.
+Claim evidence repair retains or selects inspection evidence when
 downgrading; it may not clear all references. A high-NV candidate is rejected as suspected
 degenerate output only when inspection evidence has also collapsed and an independent signal such
 as repetitive prose, zero decisive outcomes, or abnormally sparse observations corroborates the
 failure. The service performs at most one complete quality retry from the original inputs.
 
-The three NV prose signals accept bounded expression families including
-inspection/review/search wording, explicit absence or omitted-content wording, and active, passive
-or causal verification consequences. This broadens valid natural language without accepting a
-generic negation as evidence of a gap. A bounded Claim evidence repair that merges but leaves the
+A bounded Claim evidence repair that merges but leaves the
 targeted validator errors unresolved receives one independent full-work-item retry, the same
 one-attempt fallback budget used when a bounded repair is rejected by its guard.
 

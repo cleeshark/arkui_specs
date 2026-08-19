@@ -157,16 +157,12 @@ evidence.
 
 `NOT_VERIFIABLE` also carries evidence: add at least one `review_record`
 that identifies a frozen input actually inspected, then reference that evidence ID from every NV
-Claim and atomic unit it supports. The reason/fact must name what was checked, what evidence is
-missing, and why that gap is insufficient for a defensible judgment. Read the declared evidence
+Claim and atomic unit it supports. The structured `verification_gap` object is the authoritative
+record: fill `checked_scope`, `missing_evidence`, and `consequence` completely. The reason/fact
+should describe the gap in natural language but the service validates completeness through the
+structured fields, not through free-text pattern matching. Read the declared evidence
 shards and relevant Spec/Design/source or SDK inputs before concluding NV; an uninspected scope is
 an incomplete evaluation, not a verification result.
-
-Express those three NV signals explicitly without relying on one fixed
-sentence. Inspection/review/search wording may identify the checked scope; missing/absence/without
-or a bounded `no ... source/content/evidence` phrase may identify the gap; and active, passive or
-causal wording such as `cannot verify`, `cannot be verified`, `prevents verifying` or
-`unable to determine` may identify the consequence. Generic negation alone is not a gap.
 
 Every Claim `reason` and atomic unit `fact` must state the evidence-specific
 proposition rather than repeat only the outcome token such as `supported`. Evidence IDs referenced

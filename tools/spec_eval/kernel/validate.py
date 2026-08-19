@@ -20,7 +20,6 @@ from typing import Any, Iterable
 from . import contracts as K
 from .errors import MODEL_CORRECTION, SERVICE_NORMALIZATION, TypedError
 from .normalize import DEFECT_KEY, OUTCOME_POLICY_BASIS_CRITERIA
-from .quality import has_unverifiable_gap_explanation
 
 # Quality gate thresholds (carried over from the 0.1.18 degenerate detector).
 _MIN_CLAIMS = 10
@@ -233,15 +232,6 @@ def validate_observation_document(
                 "REASON_LOW_INFORMATION", f"{row_label}.reason",
                 entity_type="claim", entity_id=claim_id,
             ))
-        elif (
-            outcome == K.NOT_VERIFIABLE
-            and not has_unverifiable_gap_explanation(reason)
-        ):
-            errors.append(_err(
-                "NV_EXPLANATION_INSUFFICIENT", f"{row_label}.reason",
-                entity_type="claim", entity_id=claim_id,
-                expected="checked scope, missing evidence and insufficiency explanation",
-            ))
         gap = row.get("verification_gap")
         if outcome == K.NOT_VERIFIABLE:
             if not isinstance(gap, dict):
@@ -366,12 +356,6 @@ def validate_observation_document(
             unit_outcome = unit.get("local_outcome")
             unit_gap = unit.get("verification_gap")
             if unit_outcome == K.NOT_VERIFIABLE:
-                if not has_unverifiable_gap_explanation(fact):
-                    errors.append(_err(
-                        "NV_EXPLANATION_INSUFFICIENT", f"{unit_label}.fact",
-                        entity_type="unit", entity_id=unit_id,
-                        expected="checked scope, missing evidence and insufficiency explanation",
-                    ))
                 if not isinstance(unit_gap, dict):
                     errors.append(_err(
                         "GAP_MISSING_FOR_NV", f"{unit_label}.verification_gap",

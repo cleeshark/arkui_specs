@@ -39,9 +39,9 @@ def _observation_judgment_rules() -> list[str]:
         "NOT_VERIFIABLE, both at claim and unit level; null otherwise.",
         "Every NOT_VERIFIABLE observation, claim and unit must reference "
         "review_record inspection evidence.",
-        "Every NOT_VERIFIABLE claim reason and unit fact must name the checked "
-        "scope, the missing evidence and why the gap is insufficient to verify "
-        "the claim or unit.",
+        "Every NOT_VERIFIABLE claim reason and unit fact must describe the "
+        "gap; the structured verification_gap object (checked_scope, "
+        "missing_evidence, consequence) is validated by the service.",
     ]
 
 
