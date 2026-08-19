@@ -90,7 +90,7 @@ def _observation_defs() -> dict:
             "evidence_refs": {"type": "array", "items": _evidence_key_ref()},
             "reason": {"type": "string"},
             "verification_gap": {"$ref": "#/$defs/verificationGap"},
-            "defect_keys": {"type": "array", "items": {"type": "string"}},
+            "defect_keys": {"type": "array", "items": {"type": "string", "pattern": K.DEFECT_KEY_PATTERN}},
             "unit_reviews": {"type": "array", "items": {"$ref": "#/$defs/unitJudgment"}},
         },
         "required": list(K.CLAIM_JUDGMENT_FIELDS),
@@ -108,7 +108,7 @@ def _observation_defs() -> dict:
             "breadth": _enum(*K.BREADTHS),
             "contract_family": _non_empty_string(),
             "fact": _non_empty_string(),
-            "defect_key": {"type": ["string", "null"]},
+            "defect_key": {"type": ["string", "null"], "pattern": K.DEFECT_KEY_PATTERN},
             "primary_criterion_id": {"type": ["string", "null"]},
             "evidence_refs": {
                 "type": "array", "items": _evidence_key_ref(), "minItems": 1,
@@ -185,7 +185,7 @@ def _aggregation_defs() -> dict:
     ownership = {
         "type": "object",
         "properties": {
-            "defect_key": _non_empty_string(),
+            "defect_key": {**_non_empty_string(), "pattern": K.DEFECT_KEY_PATTERN},
             "primary_criterion_id": _non_empty_string(),
             "finding_keys": {
                 "type": "array", "items": _non_empty_string(), "minItems": 1,
@@ -206,7 +206,7 @@ def _aggregation_defs() -> dict:
             },
             "correction_scope": _enum("replace_core"),
             "function_shared_assertion": {"type": "boolean"},
-            "primary_defect_key": _non_empty_string(),
+            "primary_defect_key": {**_non_empty_string(), "pattern": K.DEFECT_KEY_PATTERN},
         },
         "required": list(K.CONTRADICTION_BASIS_FIELDS),
         "additionalProperties": False,

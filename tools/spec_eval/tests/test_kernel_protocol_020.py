@@ -248,6 +248,28 @@ class SchemaGenerationTest(unittest.TestCase):
             schema_path.write_text(json.dumps(schema), encoding="utf-8")
             self.assertEqual(validator.validate_file(document, schema_path), [])
 
+    def test_defect_key_fields_carry_pattern_constraint(self) -> None:
+        obs = build_envelope_schema("observation")
+        obs_defs = obs["$defs"]
+        self.assertEqual(
+            obs_defs["observationJudgment"]["properties"]["defect_key"]["pattern"],
+            K.DEFECT_KEY_PATTERN,
+        )
+        self.assertEqual(
+            obs_defs["claimJudgment"]["properties"]["defect_keys"]["items"]["pattern"],
+            K.DEFECT_KEY_PATTERN,
+        )
+        agg = build_envelope_schema("aggregation")
+        agg_defs = agg["$defs"]
+        self.assertEqual(
+            agg_defs["defectOwnership"]["properties"]["defect_key"]["pattern"],
+            K.DEFECT_KEY_PATTERN,
+        )
+        self.assertEqual(
+            agg_defs["contradictionBasis"]["properties"]["primary_defect_key"]["pattern"],
+            K.DEFECT_KEY_PATTERN,
+        )
+
     def test_aggregation_schema_accepts_only_canonical_evidence_references(self) -> None:
         schema = build_envelope_schema("aggregation")
         payload = NormalizeAggregationTest()._judgment()
@@ -585,6 +607,13 @@ class ValidateObservationTest(unittest.TestCase):
         document["claim_reviews"][1]["local_outcome"] = "CONFLICT"
         document["claim_reviews"][1]["defect_keys"] = ["synthetic-defect"]
         self.assertIn("DEFECT_KEY_UNDEFINED", self._codes(document))
+
+    def test_uppercase_defect_key_rejected_on_observation(self) -> None:
+        document = copy.deepcopy(self.document)
+        document["observations"][0]["local_outcome"] = "CONFLICT"
+        document["observations"][0]["defect_key"] = "TRACE-RULE-ORPHAN-001"
+        document["observations"][0]["primary_criterion_id"] = CRITERIA[0]
+        self.assertIn("DEFECT_KEYS_INVALID", self._codes(document))
 
     def test_unit_claim_outcome_conflict(self) -> None:
         document = copy.deepcopy(self.document)
@@ -1062,6 +1091,14 @@ class MachineContractTest(unittest.TestCase):
             ["specs/domain/Feat-01-spec.md"],
         )
         self.assertIn("verification_gap", " ".join(contract["judgment_rules"]))
+
+    def test_observation_contract_defect_rule_contains_format(self) -> None:
+        contract = build_observation_machine_contract(
+            expected_claim_ids=["Feat-01/AC-1"],
+            required_checks=K.FEATURE_REQUIRED_CHECKS,
+            valid_criterion_ids=CRITERIA,
+        )
+        self.assertIn(K.DEFECT_KEY_PATTERN, contract["defect_rule"])
 
     def test_aggregation_contract_carries_mapping_rule(self) -> None:
         contract = build_aggregation_machine_contract(

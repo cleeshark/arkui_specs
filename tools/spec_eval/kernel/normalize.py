@@ -24,7 +24,7 @@ from . import contracts as K
 from .errors import FATAL_INPUT, MODEL_CORRECTION, TypedError
 from .evidence_paths import EvidencePathError, FrozenEvidencePathResolver
 
-DEFECT_KEY = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
+DEFECT_KEY = re.compile(K.DEFECT_KEY_PATTERN)
 SEMANTIC_FINDING_IDENTITY_VERSION = 1
 OUTCOME_POLICY_BASIS_CRITERIA = (
     "SPEC-AC-TESTABILITY",
