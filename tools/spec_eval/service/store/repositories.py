@@ -363,7 +363,8 @@ class JobRepository:
                     "UPDATE jobs SET status = ?, updated_at = ? WHERE job_id = ?",
                     (new, now, job_id),
                 )
-            if new == S.RUNNING and stage == S.STAGE_PREPARING:
+            effective_stage = stage if stage is not None else row["stage"]
+            if new == S.RUNNING and effective_stage == S.STAGE_PREPARING:
                 self._conn.execute(
                     "UPDATE job_statistics SET started_at = COALESCE(started_at, ?), "
                     "finished_at = NULL, updated_at = ? WHERE job_id = ?",
