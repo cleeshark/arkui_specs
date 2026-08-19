@@ -13,6 +13,7 @@ be added in a future phase.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import threading
 import time
@@ -51,6 +52,7 @@ class ClaudeCliExecutor:
             config.get("permission_mode", "bypassPermissions")
         )
         self._timeout = float(config.get("timeout_seconds", DEFAULT_TIMEOUT))
+        self._max_output_tokens = config.get("max_output_tokens")
         self._schemas_root = Path(schemas_root)
         schema_name = str(
             config.get("output_schema", "executor-result.schema.json")
@@ -77,7 +79,7 @@ class ClaudeCliExecutor:
         return self._available
 
     def describe(self) -> dict[str, Any]:
-        return {
+        desc = {
             "type": "claude-cli",
             "command": self._command,
             "model": self._model,
@@ -87,6 +89,9 @@ class ClaudeCliExecutor:
             "protocol_version": C.PROTOCOL_VERSION,
             "output_schema": self._output_schema_path.name,
         }
+        if self._max_output_tokens is not None:
+            desc["max_output_tokens"] = self._max_output_tokens
+        return desc
 
     def execute(
         self,
@@ -123,6 +128,7 @@ class ClaudeCliExecutor:
             kind="command", message=" ".join(_redacted_argv(argv))
         ))
         started = time.monotonic()
+        env = self._build_env()
         proc_result = self._runner(
             argv,
             cwd=work.repo_root,
@@ -132,6 +138,7 @@ class ClaudeCliExecutor:
             stderr_log_path=stderr_log,
             cancel=cancel,
             line_sink=line_sink,
+            env=env,
         )
 
         if proc_result.cancelled:
@@ -374,6 +381,13 @@ class ClaudeCliExecutor:
                 + "; ".join(errors)
             )
         return None
+
+    def _build_env(self) -> dict[str, str] | None:
+        if self._max_output_tokens is None:
+            return None
+        env = os.environ.copy()
+        env["CLAUDE_CODE_MAX_OUTPUT_TOKENS"] = str(int(self._max_output_tokens))
+        return env
 
     def _build_argv(self, work: C.WorkItemInput) -> list[str]:
         schema_path = self._schema_path_for(work)

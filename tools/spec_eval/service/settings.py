@@ -34,6 +34,7 @@ def _claude_executor_config() -> dict[str, Any]:
         "permission_mode": "bypassPermissions",
         "timeout_seconds": 3600,
         "max_parallel": 2,
+        "max_output_tokens": 200_000,
         "output_schema": "executor-result.schema.json",
     }
 

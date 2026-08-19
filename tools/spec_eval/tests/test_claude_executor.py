@@ -67,6 +67,7 @@ class _FakeRunner:
         self.last_argv: list[str] | None = None
         self.last_stdin: str | None = None
         self.last_cwd: str | None = None
+        self.last_env: dict[str, str] | None = None
 
     def __call__(
         self, argv, *, cwd, stdin, timeout, stdout_log_path,
@@ -75,6 +76,7 @@ class _FakeRunner:
         self.last_argv = list(argv)
         self.last_stdin = stdin
         self.last_cwd = cwd
+        self.last_env = env
         Path(stdout_log_path).parent.mkdir(parents=True, exist_ok=True)
         Path(stdout_log_path).write_text(
             self.stdout_content, encoding="utf-8",
@@ -343,6 +345,45 @@ class ClaudeExecutorTest(unittest.TestCase):
         prompt = json.loads(runner.last_stdin)
         self.assertIn("task", prompt)
         self.assertIn("func_id", prompt)
+
+    # --- max_output_tokens env propagation ----------------------------------
+
+    def test_max_output_tokens_env_propagated(self):
+        self.config["max_output_tokens"] = 200_000
+        runner = _FakeRunner(stdout_content=_claude_output(
+            structured_output=self._valid_envelope(),
+        ))
+        self._executor(runner).execute(self.work, lambda e: None)
+        self.assertIsNotNone(runner.last_env)
+        self.assertEqual(
+            runner.last_env["CLAUDE_CODE_MAX_OUTPUT_TOKENS"], "200000",
+        )
+
+    def test_max_output_tokens_not_set_when_absent(self):
+        self.config.pop("max_output_tokens", None)
+        runner = _FakeRunner(stdout_content=_claude_output(
+            structured_output=self._valid_envelope(),
+        ))
+        self._executor(runner).execute(self.work, lambda e: None)
+        self.assertIsNone(runner.last_env)
+
+    def test_max_output_tokens_in_describe(self):
+        self.config["max_output_tokens"] = 128_000
+        runner = _FakeRunner()
+        ex = self._executor(runner)
+        desc = ex.describe()
+        self.assertEqual(desc["max_output_tokens"], 128_000)
+
+    def test_max_output_tokens_absent_from_describe_when_none(self):
+        self.config.pop("max_output_tokens", None)
+        runner = _FakeRunner()
+        ex = self._executor(runner)
+        desc = ex.describe()
+        self.assertNotIn("max_output_tokens", desc)
+
+    def test_default_claude_config_has_max_output_tokens(self):
+        config = executor_config_for("claude")
+        self.assertEqual(config["max_output_tokens"], 200_000)
 
     # --- helpers ----------------------------------------------------------
 
