@@ -319,6 +319,67 @@ class InputFingerprintTest(unittest.TestCase):
         self.assertNotEqual(before, after)
 
 
+class CorrectionRegressionGuardTest(unittest.TestCase):
+    """Tests for _guard_correction_regression (#46)."""
+
+    def test_rollback_non_targeted_criterion_conclusion_change(self):
+        from spec_eval.service.pipeline.judgment_flow import _guard_correction_regression
+
+        with tempfile.TemporaryDirectory() as tmp:
+            candidate_path = Path(tmp) / ".aggregation.json.candidate"
+            original = {
+                "criterion_results": [
+                    {"criterion_id": "A", "conclusion": "NOT_VERIFIABLE", "reason": "ok"},
+                    {"criterion_id": "B", "conclusion": "SUPPORTED", "reason": "ok"},
+                ],
+            }
+            candidate_path.write_text(
+                json.dumps(original), encoding="utf-8",
+            )
+            corrected = {
+                "criterion_results": [
+                    {"criterion_id": "A", "conclusion": "PARTIALLY_SUPPORTED", "reason": "changed"},
+                    {"criterion_id": "B", "conclusion": "CONTRADICTED", "reason": "fixed"},
+                ],
+            }
+            typed_errors = [
+                {"code": "CRITERION_EVIDENCE_UNKNOWN", "entity_type": "criterion",
+                 "entity_id": "B", "path": "$.criterion_results[B]"},
+            ]
+            result = _guard_correction_regression(corrected, candidate_path, typed_errors)
+            rows = {r["criterion_id"]: r for r in result["criterion_results"]}
+            self.assertEqual(rows["A"]["conclusion"], "NOT_VERIFIABLE")
+            self.assertEqual(rows["B"]["conclusion"], "CONTRADICTED")
+
+    def test_no_rollback_when_no_candidate(self):
+        from spec_eval.service.pipeline.judgment_flow import _guard_correction_regression
+
+        corrected = {"criterion_results": [
+            {"criterion_id": "A", "conclusion": "SUPPORTED"},
+        ]}
+        result = _guard_correction_regression(
+            corrected, Path("/nonexistent"), [],
+        )
+        self.assertEqual(result, corrected)
+
+    def test_no_rollback_when_conclusion_unchanged(self):
+        from spec_eval.service.pipeline.judgment_flow import _guard_correction_regression
+
+        with tempfile.TemporaryDirectory() as tmp:
+            candidate_path = Path(tmp) / ".candidate"
+            original = {"criterion_results": [
+                {"criterion_id": "A", "conclusion": "SUPPORTED", "reason": "ok"},
+            ]}
+            candidate_path.write_text(json.dumps(original), encoding="utf-8")
+            corrected = {"criterion_results": [
+                {"criterion_id": "A", "conclusion": "SUPPORTED", "reason": "updated"},
+            ]}
+            result = _guard_correction_regression(corrected, candidate_path, [])
+            self.assertEqual(
+                result["criterion_results"][0]["reason"], "updated",
+            )
+
+
 class NormalizeObservationTest(unittest.TestCase):
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()
