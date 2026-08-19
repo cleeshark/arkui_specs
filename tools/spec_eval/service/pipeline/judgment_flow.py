@@ -176,6 +176,12 @@ class JudgmentFlow:
             return
         usage = dict(result.token_usage or {})
         usage["usage_reported"] = bool(result.usage_reported)
+        if result.cost_usd is not None:
+            usage["cost_usd"] = result.cost_usd
+        if result.num_turns is not None:
+            usage["num_turns"] = result.num_turns
+        if result.model_usage is not None:
+            usage["model_usage"] = result.model_usage
         telemetry = dict(result.telemetry or {})
         telemetry["telemetry_reported"] = bool(result.telemetry_reported)
         try:
