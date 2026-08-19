@@ -4,11 +4,16 @@ Errors are data, not prose: every failure carries a stable code, a JSON path,
 the entity it belongs to and a closed ``repairability`` classification. The
 orchestrator routes on ``repairability`` only and never matches validator
 message text.
+
+Protocol 0.2.1 adds a ``confidence_layer`` per error code: HARD errors block
+assembly; MAJOR/MINOR errors reduce the report confidence score but do not
+prevent report generation.
 """
 
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from typing import Any
 
 # Closed repairability classification. New error codes must bind to one of
 # these three values at registration time.
@@ -17,6 +22,13 @@ MODEL_CORRECTION = "MODEL_CORRECTION"
 FATAL_INPUT = "FATAL_INPUT"
 
 _REPAIRABILITY = (SERVICE_NORMALIZATION, MODEL_CORRECTION, FATAL_INPUT)
+
+# Confidence layers (0.2.1): how much a validation failure impacts the report.
+LAYER_HARD = "HARD"    # structure not assemblable → block
+LAYER_MAJOR = "MAJOR"  # core invariant violated → -20 confidence
+LAYER_MINOR = "MINOR"  # structural completeness → -5 confidence
+
+_LAYER_DEDUCTION = {LAYER_HARD: 0, LAYER_MAJOR: 20, LAYER_MINOR: 5}
 
 
 @dataclass(frozen=True)
@@ -138,3 +150,107 @@ def repairability_of(code: str) -> str:
 def blocking(errors: list[TypedError]) -> list[TypedError]:
     """Filter out errors the normalizer can fix without a model call."""
     return [error for error in errors if error.repairability != SERVICE_NORMALIZATION]
+
+
+# --- Confidence layer registry (0.2.1) ----------------------------------------
+#
+# HARD:  structure not assemblable — block assembly entirely
+# MAJOR: core observation/aggregation invariant violated — high deduction
+# MINOR: completeness / consistency — low deduction
+
+CONFIDENCE_LAYERS: dict[str, str] = {
+    # HARD: structure damage
+    "TEMPLATE_MISSING_FIELD": LAYER_HARD,
+    "IDENTITY_MISMATCH": LAYER_HARD,
+    "FROZEN_EVIDENCE_UNREADABLE": LAYER_HARD,
+    "CRITERION_SET_MISMATCH": LAYER_HARD,
+    # MAJOR: core invariants
+    "MAPPING_CONCLUSION_FORBIDDEN": LAYER_MAJOR,
+    "MAPPING_NV_REQUIRED": LAYER_MAJOR,
+    "POLICY_BASIS_INVALID": LAYER_MAJOR,
+    "FINDING_CARDINALITY_VIOLATED": LAYER_MAJOR,
+    "FINDING_MULTI_OWNED": LAYER_MAJOR,
+    "FINDING_OWNER_UNKNOWN": LAYER_MAJOR,
+    "FINDING_EVIDENCE_UNKNOWN": LAYER_MAJOR,
+    "DEFECT_KEYS_INVALID": LAYER_MAJOR,
+    "DEFECT_KEY_UNDEFINED": LAYER_MAJOR,
+    "DUPLICATE_DEFECT_OWNER": LAYER_MAJOR,
+    "CRITICAL_NOT_PRIMARY": LAYER_MAJOR,
+    "CROSS_FEAT_NOT_REVIEWED": LAYER_MAJOR,
+    # MINOR: completeness / consistency
+    "MAPPING_CLAIM_UNMAPPED": LAYER_MINOR,
+    "CRITERION_EVIDENCE_UNKNOWN": LAYER_MINOR,
+    "CRITERION_UNKNOWN": LAYER_MINOR,
+    "CONTRADICTION_BASIS_INVALID": LAYER_MINOR,
+    "REASON_PLACEHOLDER": LAYER_MINOR,
+    "REASON_LOW_INFORMATION": LAYER_MINOR,
+    "FINDING_ID_COLLISION": LAYER_MINOR,
+    "QUALITY_HIGH_NV_RATIO": LAYER_MINOR,
+    "QUALITY_DUPLICATE_TEXT": LAYER_MINOR,
+    "QUALITY_OBSERVATION_DENSITY": LAYER_MINOR,
+}
+
+
+def confidence_layer_of(code: str) -> str:
+    """Return the confidence layer for an error code (default MINOR)."""
+    return CONFIDENCE_LAYERS.get(code, LAYER_MINOR)
+
+
+def compute_confidence(errors: list[TypedError]) -> dict[str, Any]:
+    """Compute a confidence result from a list of typed validation errors.
+
+    Returns a dict suitable for writing as ``confidence-result.json``.
+    """
+    hard: list[dict[str, Any]] = []
+    major: list[dict[str, Any]] = []
+    minor: list[dict[str, Any]] = []
+    total_deduction = 0
+
+    for error in errors:
+        if error.repairability == SERVICE_NORMALIZATION:
+            continue
+        layer = confidence_layer_of(error.code)
+        deduction = _LAYER_DEDUCTION.get(layer, 5)
+        entry = {
+            "layer": layer,
+            "code": error.code,
+            "criterion_id": error.entity_id if error.entity_type == "criterion" else "",
+            "deduction": deduction,
+            "message": f"{error.expected}" if error.expected else error.code,
+            "path": error.path,
+        }
+        if layer == LAYER_HARD:
+            hard.append(entry)
+        elif layer == LAYER_MAJOR:
+            major.append(entry)
+            total_deduction += deduction
+        else:
+            minor.append(entry)
+            total_deduction += deduction
+
+    score = max(0, 100 - total_deduction)
+    if score >= 80:
+        level = "HIGH"
+    elif score >= 50:
+        level = "MEDIUM"
+    else:
+        level = "LOW"
+
+    return {
+        "confidence_score": score,
+        "confidence_level": level,
+        "hard_errors": hard,
+        "major_violations": major,
+        "minor_violations": minor,
+        "total_checks_failed": len(hard) + len(major) + len(minor),
+        "deduction_total": total_deduction,
+    }
+
+
+def has_hard_errors(errors: list[TypedError]) -> bool:
+    """Return True if any error is in the HARD confidence layer."""
+    return any(
+        confidence_layer_of(e.code) == LAYER_HARD
+        for e in errors
+        if e.repairability != SERVICE_NORMALIZATION
+    )

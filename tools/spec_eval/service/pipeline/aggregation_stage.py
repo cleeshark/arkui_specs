@@ -19,7 +19,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from spec_eval.kernel.errors import blocking
+from spec_eval.kernel.errors import blocking, compute_confidence, has_hard_errors
 from spec_eval.kernel.normalize import normalize_aggregation
 from spec_eval.kernel.validate import validate_aggregation_document
 from ..domain import states as S
@@ -136,18 +136,37 @@ def run_aggregation(
             aggregation_context=aggregation_context,
         )
 
-    final_status: dict[str, Any] = {"ok": True, "errors": []}
+    final_status: dict[str, Any] = {"ok": True, "errors": [], "confidence": None}
 
     def _publish(document: dict[str, Any]) -> None:
+        typed_errors = _validate_existing(document)
+        if has_hard_errors(typed_errors):
+            final_status.update(
+                ok=False,
+                errors=[f"{e.code}: {e.expected or e.actual}" for e in typed_errors],
+            )
+            return
+        confidence = compute_confidence(typed_errors)
+        confidence_path = ctx.run_dir / "confidence-result.json"
+        try:
+            confidence_path.write_text(
+                json.dumps(confidence, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+        except OSError:
+            pass
+        final_status["confidence"] = confidence
         try:
             staged_stage.assemble_semantic(ctx, runner=runner)
-            verdict = staged_stage.validate_final(ctx, runner=runner)
         except staged_stage.StagedStageError as exc:
             final_status.update(ok=False, errors=[str(exc)])
             return
+        try:
+            verdict = staged_stage.validate_final(ctx, runner=runner)
+        except staged_stage.StagedStageError as exc:
+            verdict = staged_stage.ValidationResult(ok=False, errors=(str(exc),))
         if not verdict.ok:
-            final_status.update(ok=False, errors=list(verdict.errors))
-            return
+            final_status["errors"] = list(verdict.errors)
         attempts.record_checkpoint(
             Attempt(
                 attempt_id=make_job_id(),
@@ -168,13 +187,14 @@ def run_aggregation(
     # stale executor-result cache never invalidates the published judgment)
     if aggregation_path.is_file():
         existing = load_template(aggregation_path)
-        if existing.get("status") == "complete" and not blocking(
+        if existing.get("status") == "complete" and not has_hard_errors(
             _validate_existing(existing)
         ):
             _publish(existing)
             if final_status["ok"]:
                 events.append(ctx.job_id, "aggregation_reused_document", {
                     "aggregation": str(aggregation_path),
+                    "confidence": final_status.get("confidence"),
                 })
                 return C.STATUS_COMPLETED, semantic_result_path
             final_status.update(ok=True, errors=[])
@@ -238,6 +258,13 @@ def run_aggregation(
             payload={"errors": final_status["errors"]},
         )
         return C.STATUS_FAILED, None
+    confidence = final_status.get("confidence")
+    if confidence and final_status["errors"]:
+        events.append(ctx.job_id, "aggregation_completed_with_warnings", {
+            "confidence_score": confidence.get("confidence_score"),
+            "confidence_level": confidence.get("confidence_level"),
+            "warnings": final_status["errors"][:10],
+        })
     return C.STATUS_COMPLETED, semantic_result_path
 
 
