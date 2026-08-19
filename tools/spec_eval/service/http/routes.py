@@ -303,7 +303,9 @@ def _serve_static(ui_dir: Path, name: str, content_type: str) -> Response:
     safe = safe_resolve(ui_dir, ui_dir / name)
     if safe is None:
         return _error(404, "not found")
-    return Response.file(200, safe.read_bytes(), content_type)
+    resp = Response.file(200, safe.read_bytes(), content_type)
+    resp.headers["Cache-Control"] = "no-cache"
+    return resp
 
 
 def _parse_query(query: str) -> dict[str, str]:
