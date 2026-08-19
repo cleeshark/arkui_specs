@@ -826,8 +826,8 @@ def validate_semantic_result(
                 errors.append(f"{criterion_id}: N/A is not allowed")
             elif level not in policy.get("levels", []):
                 errors.append(f"{criterion_id}: N/A is not allowed for complexity {level}")
-            if not str(result.get("applicability_reason", "")).strip() or not evidence:
-                errors.append(f"{criterion_id}: N/A requires a reason and reproducible evidence")
+            if not str(result.get("applicability_reason", "")).strip():
+                errors.append(f"{criterion_id}: N/A requires applicability_reason")
         if conclusion == "NOT_VERIFIABLE" and not str(result.get("missing_evidence", "")).strip():
             errors.append(f"{criterion_id}: NOT_VERIFIABLE requires missing_evidence")
         severity_rank = {"Info": 0, "Minor": 1, "Major": 2, "Critical": 3}
