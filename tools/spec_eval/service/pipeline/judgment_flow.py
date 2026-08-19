@@ -100,6 +100,64 @@ def _write_json(path: Path, value: Any) -> None:
     )
 
 
+def _guard_correction_regression(
+    corrected: dict[str, Any],
+    candidate_path: Path,
+    typed_error_dicts: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Roll back criterion changes that the correction was not asked to fix.
+
+    When the executor re-generates the full aggregation document during a
+    correction turn, it may unintentionally change conclusions for criteria
+    that were not mentioned in the typed errors.  This guard restores the
+    original values for any criterion not targeted by the errors.
+    """
+    if not candidate_path.is_file():
+        return corrected
+    try:
+        original = json.loads(candidate_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return corrected
+
+    error_criteria: set[str] = set()
+    for error_dict in typed_error_dicts:
+        entity_type = error_dict.get("entity_type", "")
+        entity_id = error_dict.get("entity_id", "")
+        path = error_dict.get("path", "")
+        if entity_type == "criterion" and entity_id:
+            error_criteria.add(entity_id)
+        elif "criterion_results" in path:
+            for segment in path.replace("]", "").split("["):
+                if segment and not segment.startswith("$") and not segment.startswith("."):
+                    error_criteria.add(segment)
+
+    if not error_criteria:
+        return corrected
+
+    original_by_id = {
+        row.get("criterion_id"): row
+        for row in original.get("criterion_results", [])
+        if isinstance(row, dict)
+    }
+    corrected_results = corrected.get("criterion_results")
+    if not isinstance(corrected_results, list):
+        return corrected
+
+    for i, row in enumerate(corrected_results):
+        if not isinstance(row, dict):
+            continue
+        cid = row.get("criterion_id")
+        if not isinstance(cid, str) or cid in error_criteria:
+            continue
+        orig = original_by_id.get(cid)
+        if orig is None:
+            continue
+        if row.get("conclusion") != orig.get("conclusion"):
+            corrected_results[i] = orig
+
+    return corrected
+
+
 class JudgmentFlow:
     """Drives observe -> normalize -> typed validate -> (one) correct."""
 
@@ -361,7 +419,10 @@ class JudgmentFlow:
                  "error": failure},
                 failure,
             )
-        normalization = normalize(result.observation)
+        corrected_payload = _guard_correction_regression(
+            result.observation, candidate_path, typed_dicts,
+        )
+        normalization = normalize(corrected_payload)
         if normalization.fatal:
             return self._fail(
                 "semantic_failed",
