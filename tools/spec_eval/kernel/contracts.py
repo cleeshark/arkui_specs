@@ -26,6 +26,8 @@ EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.2.0"
 
 ENVELOPE_SCHEMA_VERSION = 3
 
+DEFECT_KEY_PATTERN = r"^[a-z0-9][a-z0-9._-]*$"
+
 LOCAL_OUTCOMES = (
     "SUPPORTED",
     "CONFLICT",

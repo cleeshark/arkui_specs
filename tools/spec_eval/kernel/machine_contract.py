@@ -81,7 +81,10 @@ def build_observation_machine_contract(
         ),
         "defect_rule": (
             "defect_keys may only be non-empty for CONFLICT or MISSING claims; the "
-            "keys must be defined as defects by a CONFLICT/MISSING observation."
+            "keys must be defined as defects by a CONFLICT/MISSING observation. "
+            "Every defect_key value must be lowercase and match the pattern "
+            f"{K.DEFECT_KEY_PATTERN} (lowercase alphanumeric, dots, underscores "
+            "and hyphens; e.g. 'missing.verification_assets', 'trace-rule-orphan')."
         ),
         "evidence_cardinality": {
             "minimum_items_by_local_outcome": dict(
