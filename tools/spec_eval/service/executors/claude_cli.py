@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import threading
 import time
@@ -115,8 +116,9 @@ class ClaudeCliExecutor:
         prompt = build_executor_prompt(work)
         result_parent = Path(work.executor_result_path).parent
         result_parent.mkdir(parents=True, exist_ok=True)
-        stdout_log = str(result_parent / "claude.stdout.log")
-        stderr_log = str(result_parent / "claude.stderr.log")
+        log_tag = _safe_work_item_tag(work.work_item_id)
+        stdout_log = str(result_parent / f"claude.{log_tag}.stdout.log")
+        stderr_log = str(result_parent / f"claude.{log_tag}.stderr.log")
 
         event_count = 0
         usage = TokenUsageAccumulator()
@@ -229,7 +231,10 @@ class ClaudeCliExecutor:
         summary = _build_execution_summary(
             result_event, work, telemetry.snapshot(),
         )
-        summary_path = Path(work.executor_result_path).parent / "claude.execution-summary.json"
+        summary_path = (
+            Path(work.executor_result_path).parent
+            / f"claude.{_safe_work_item_tag(work.work_item_id)}.execution-summary.json"
+        )
         try:
             summary_path.write_text(
                 json.dumps(summary, ensure_ascii=False, indent=2),
@@ -529,6 +534,11 @@ def _build_execution_summary(
 
 
 # --- helpers ------------------------------------------------------------------
+
+def _safe_work_item_tag(work_item_id: str) -> str:
+    """Derive a filesystem-safe tag from a work_item_id for per-item log files."""
+    return re.sub(r"[^a-zA-Z0-9._-]", "_", work_item_id)
+
 
 def _redacted_argv(argv: list[str]) -> list[str]:
     masked = {"--model", "--json-schema"}

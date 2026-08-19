@@ -458,7 +458,7 @@ class ClaudeExecutorTest(unittest.TestCase):
             num_turns=3,
         ))
         self._executor(runner).execute(self.work, lambda e: None)
-        summary_path = Path(self.work.executor_result_path).parent / "claude.execution-summary.json"
+        summary_path = Path(self.work.executor_result_path).parent / "claude.feature_Feat-01.execution-summary.json"
         self.assertTrue(summary_path.exists())
         summary = json.loads(summary_path.read_text(encoding="utf-8"))
         self.assertEqual(summary["executor"], "claude-cli")
