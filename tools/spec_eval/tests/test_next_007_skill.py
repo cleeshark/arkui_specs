@@ -1127,10 +1127,12 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
         result = next(item for item in results if item["criterion_id"] == criterion_id)
         result["conclusion"] = "PARTIALLY_SUPPORTED"
         result["evidence"] = [{"evidence_id": "EV-policy"}]
+        # defect_key is scoped by work_item_id in aggregation-context (#44)
+        scoped_key = "global.policy-partial-support"
         result["findings"] = [{
             "finding_id": semantic_finding_id(
                 func_id=state["func_id"],
-                defect_key="policy-partial-support",
+                defect_key=scoped_key,
                 criterion_id=criterion_id,
                 claim_id=None,
             ),
@@ -1164,7 +1166,7 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
                 "criterion_results": results,
                 "contradiction_bases": [],
                 "defect_ownership": [{
-                    "defect_key": "policy-partial-support",
+                    "defect_key": scoped_key,
                     "primary_criterion_id": criterion_id,
                     "secondary_criterion_ids": [],
                     "finding_ids": [finding_id],
@@ -1181,15 +1183,17 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
         results = self._criterion_results()
         primary = results[0]["criterion_id"]
         secondary = results[1]["criterion_id"]
+        # defect_key is scoped by work_item_id in aggregation-context (#44)
+        scoped_key = "feat-01.shared-secondary-root"
         primary_finding_id = semantic_finding_id(
             func_id=state["func_id"],
-            defect_key="shared-secondary-root",
+            defect_key=scoped_key,
             criterion_id=primary,
             claim_id=None,
         )
         secondary_finding_id = semantic_finding_id(
             func_id=state["func_id"],
-            defect_key="shared-secondary-root",
+            defect_key=scoped_key,
             criterion_id=secondary,
             claim_id=None,
         )
@@ -1233,10 +1237,10 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
                     "core_scope": "secondary-core",
                     "correction_scope": "replace_core",
                     "why_partial_is_insufficient": "The shared defect requires replacing the Criterion core.",
-                    "primary_defect_key": "shared-secondary-root",
+                    "primary_defect_key": scoped_key,
                 }],
                 "defect_ownership": [{
-                    "defect_key": "shared-secondary-root",
+                    "defect_key": scoped_key,
                     "primary_criterion_id": primary,
                     "finding_ids": [primary_finding_id, secondary_finding_id],
                     "secondary_criterion_ids": [secondary],
