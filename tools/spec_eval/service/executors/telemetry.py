@@ -1,4 +1,4 @@
-"""Conservative, non-sensitive telemetry for Codex JSONL executor events."""
+"""Conservative, non-sensitive telemetry for Codex/Claude JSONL executor events."""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ from .contract import WorkItemInput
 
 
 _KNOWN_EVENT_TYPES = {
+    # Codex JSONL event types
     "thread.started",
     "turn.started",
     "turn.completed",
@@ -18,6 +19,10 @@ _KNOWN_EVENT_TYPES = {
     "item.updated",
     "item.completed",
     "error",
+    # Claude stream-json event types
+    "system",
+    "assistant",
+    "result",
 }
 _COMMAND_ITEM_TYPES = {"command_execution"}
 _TOOL_ITEM_TYPES = {
@@ -26,6 +31,7 @@ _TOOL_ITEM_TYPES = {
     "tool_call",
     "file_search",
 }
+_CLAUDE_COMMAND_TOOLS = {"Bash"}
 
 
 class ExecutionTelemetryAccumulator:
@@ -58,18 +64,41 @@ class ExecutionTelemetryAccumulator:
         if event_type not in _KNOWN_EVENT_TYPES:
             return
         self._reported = True
-        if event_type != "item.completed":
+
+        # Codex: tool calls via item.completed
+        if event_type == "item.completed":
+            item = event.get("item")
+            if not isinstance(item, dict):
+                return
+            item_type = item.get("type")
+            if item_type in _TOOL_ITEM_TYPES:
+                self._tool_calls += 1
+            if item_type in _COMMAND_ITEM_TYPES:
+                self._command_calls += 1
+            if item_type in _TOOL_ITEM_TYPES:
+                self._record_input_hits(_flatten_strings(item))
             return
-        item = event.get("item")
-        if not isinstance(item, dict):
+
+        # Claude: tool calls via assistant message content blocks
+        if event_type == "assistant":
+            message = event.get("message")
+            if not isinstance(message, dict):
+                return
+            content = message.get("content")
+            if not isinstance(content, list):
+                return
+            for block in content:
+                if not isinstance(block, dict):
+                    continue
+                if block.get("type") == "tool_use":
+                    self._tool_calls += 1
+                    tool_name = block.get("name", "")
+                    if tool_name in _CLAUDE_COMMAND_TOOLS:
+                        self._command_calls += 1
+                    tool_input = block.get("input")
+                    if isinstance(tool_input, dict):
+                        self._record_input_hits(_flatten_strings(tool_input))
             return
-        item_type = item.get("type")
-        if item_type in _TOOL_ITEM_TYPES:
-            self._tool_calls += 1
-        if item_type in _COMMAND_ITEM_TYPES:
-            self._command_calls += 1
-        if item_type in _TOOL_ITEM_TYPES:
-            self._record_input_hits(_flatten_strings(item))
 
     def snapshot(self) -> dict[str, int]:
         return {

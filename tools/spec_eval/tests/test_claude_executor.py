@@ -15,38 +15,103 @@ from pathlib import Path
 from unittest.mock import patch
 
 from spec_eval.service.executors import contract as C
-from spec_eval.service.executors.claude_cli import ClaudeCliExecutor
+from spec_eval.service.executors.claude_cli import (
+    ClaudeCliExecutor,
+    _find_result_event,
+    _normalize_model_usage,
+)
 from spec_eval.service.executors.process import ProcessResult
 from spec_eval.service.executors.registry import available as registry_available
 from spec_eval.service.settings import ServiceSettings, executor_config_for
 
 
-def _claude_output(
+def _stream_json_output(
     *,
     structured_output: dict | None = None,
     is_error: bool = False,
-    result: str | None = None,
+    result_text: str | None = None,
     usage: dict | None = None,
+    model_usage: dict | None = None,
+    total_cost_usd: float | None = None,
+    num_turns: int = 1,
+    duration_ms: int = 100,
+    duration_api_ms: int = 80,
+    include_assistant: bool = True,
 ) -> str:
-    """Build a Claude CLI ``--output-format json`` envelope."""
-    doc = {
+    """Build a Claude CLI ``--output-format stream-json --verbose`` NDJSON output.
+
+    Emits the event types seen in real Claude stream-json output:
+    system (init) -> assistant (per turn) -> result (final).
+    """
+    lines: list[str] = []
+
+    # system init event
+    init_event = {
+        "type": "system",
+        "subtype": "init",
+        "cwd": "/tmp/test",
+        "session_id": "test-session-123",
+        "model": "claude-opus-4-6[1m]",
+        "permissionMode": "bypassPermissions",
+    }
+    lines.append(json.dumps(init_event))
+
+    # assistant event (per-turn, with per-turn usage)
+    if include_assistant:
+        assistant_event = {
+            "type": "assistant",
+            "message": {
+                "model": "claude-opus-4-6[1m]",
+                "role": "assistant",
+                "content": [
+                    {"type": "text", "text": "Processing..."},
+                    {
+                        "type": "tool_use",
+                        "name": "Read",
+                        "input": {"file_path": "/tmp/test/evidence/spec.md"},
+                    },
+                    {
+                        "type": "tool_use",
+                        "name": "Bash",
+                        "input": {"command": "ls /tmp"},
+                    },
+                ],
+                "usage": {
+                    "input_tokens": 100,
+                    "output_tokens": 50,
+                    "cache_creation_input_tokens": 5000,
+                    "cache_read_input_tokens": 0,
+                },
+            },
+            "session_id": "test-session-123",
+        }
+        lines.append(json.dumps(assistant_event))
+
+    # result event (final)
+    result_event = {
         "type": "result",
         "subtype": "error" if is_error else "success",
         "is_error": is_error,
-        "duration_ms": 100,
-        "duration_api_ms": 80,
-        "num_turns": 1,
-        "result": result,
-        "session_id": "test-session",
-        "total_cost_usd": 0.01,
+        "duration_ms": duration_ms,
+        "duration_api_ms": duration_api_ms,
+        "num_turns": num_turns,
+        "result": result_text,
+        "session_id": "test-session-123",
+        "total_cost_usd": total_cost_usd or 0.01,
         "usage": usage or {
-            "input_tokens": 100,
-            "output_tokens": 50,
+            "input_tokens": 200,
+            "output_tokens": 100,
+            "cache_creation_input_tokens": 5000,
+            "cache_read_input_tokens": 0,
         },
     }
     if structured_output is not None:
-        doc["structured_output"] = structured_output
-    return json.dumps(doc)
+        result_event["structured_output"] = structured_output
+    if model_usage is not None:
+        result_event["modelUsage"] = model_usage
+    lines.append(json.dumps(result_event))
+
+    return "\n".join(lines) + "\n"
 
 
 class _FakeRunner:
@@ -106,6 +171,7 @@ class ClaudeExecutorTest(unittest.TestCase):
             "permission_mode": "bypassPermissions",
             "timeout_seconds": 60,
             "max_parallel": 2,
+            "max_output_tokens": 200_000,
             "output_schema": "executor-result.schema.json",
         }
         self.work = C.WorkItemInput(
@@ -154,7 +220,7 @@ class ClaudeExecutorTest(unittest.TestCase):
     def test_success_returns_completed_and_payload(self):
         payload = {"observation_id": "feature:Feat-01", "claims": []}
         runner = _FakeRunner(
-            stdout_content=_claude_output(structured_output={
+            stdout_content=_stream_json_output(structured_output={
                 "schema_version": 3,
                 "work_item_id": "feature:Feat-01",
                 "status": "completed",
@@ -174,36 +240,43 @@ class ClaudeExecutorTest(unittest.TestCase):
     # --- argv shape -------------------------------------------------------
 
     def test_argv_uses_print_mode(self):
-        runner = _FakeRunner(stdout_content=_claude_output(
+        runner = _FakeRunner(stdout_content=_stream_json_output(
             structured_output=self._valid_envelope(),
         ))
         self._executor(runner).execute(self.work, lambda e: None)
         self.assertIn("-p", runner.last_argv)
 
-    def test_argv_has_output_format_json(self):
-        runner = _FakeRunner(stdout_content=_claude_output(
+    def test_argv_has_stream_json_format(self):
+        runner = _FakeRunner(stdout_content=_stream_json_output(
             structured_output=self._valid_envelope(),
         ))
         self._executor(runner).execute(self.work, lambda e: None)
         idx = runner.last_argv.index("--output-format")
-        self.assertEqual(runner.last_argv[idx + 1], "json")
+        self.assertEqual(runner.last_argv[idx + 1], "stream-json")
+
+    def test_argv_has_verbose_flag(self):
+        runner = _FakeRunner(stdout_content=_stream_json_output(
+            structured_output=self._valid_envelope(),
+        ))
+        self._executor(runner).execute(self.work, lambda e: None)
+        self.assertIn("--verbose", runner.last_argv)
 
     def test_argv_has_no_cd_flag(self):
-        runner = _FakeRunner(stdout_content=_claude_output(
+        runner = _FakeRunner(stdout_content=_stream_json_output(
             structured_output=self._valid_envelope(),
         ))
         self._executor(runner).execute(self.work, lambda e: None)
         self.assertNotIn("--cd", runner.last_argv)
 
     def test_cwd_passed_to_runner(self):
-        runner = _FakeRunner(stdout_content=_claude_output(
+        runner = _FakeRunner(stdout_content=_stream_json_output(
             structured_output=self._valid_envelope(),
         ))
         self._executor(runner).execute(self.work, lambda e: None)
         self.assertEqual(runner.last_cwd, self.work.repo_root)
 
     def test_json_schema_inline_content(self):
-        runner = _FakeRunner(stdout_content=_claude_output(
+        runner = _FakeRunner(stdout_content=_stream_json_output(
             structured_output=self._valid_envelope(),
         ))
         self._executor(runner).execute(self.work, lambda e: None)
@@ -213,14 +286,14 @@ class ClaudeExecutorTest(unittest.TestCase):
         self.assertIn("properties", parsed)
 
     def test_no_session_persistence_flag(self):
-        runner = _FakeRunner(stdout_content=_claude_output(
+        runner = _FakeRunner(stdout_content=_stream_json_output(
             structured_output=self._valid_envelope(),
         ))
         self._executor(runner).execute(self.work, lambda e: None)
         self.assertIn("--no-session-persistence", runner.last_argv)
 
     def test_permission_mode_flag(self):
-        runner = _FakeRunner(stdout_content=_claude_output(
+        runner = _FakeRunner(stdout_content=_stream_json_output(
             structured_output=self._valid_envelope(),
         ))
         self._executor(runner).execute(self.work, lambda e: None)
@@ -229,7 +302,7 @@ class ClaudeExecutorTest(unittest.TestCase):
 
     def test_model_flag_present_when_configured(self):
         self.config["model"] = "opus"
-        runner = _FakeRunner(stdout_content=_claude_output(
+        runner = _FakeRunner(stdout_content=_stream_json_output(
             structured_output=self._valid_envelope(),
         ))
         self._executor(runner).execute(self.work, lambda e: None)
@@ -237,7 +310,7 @@ class ClaudeExecutorTest(unittest.TestCase):
         self.assertEqual(runner.last_argv[idx + 1], "opus")
 
     def test_model_flag_absent_when_none(self):
-        runner = _FakeRunner(stdout_content=_claude_output(
+        runner = _FakeRunner(stdout_content=_stream_json_output(
             structured_output=self._valid_envelope(),
         ))
         self._executor(runner).execute(self.work, lambda e: None)
@@ -261,22 +334,23 @@ class ClaudeExecutorTest(unittest.TestCase):
         result = self._executor(runner).execute(self.work, lambda e: None)
         self.assertEqual(result.status, C.STATUS_CANCELLED)
 
+    def test_no_result_event_is_failed(self):
+        init_only = json.dumps({"type": "system", "subtype": "init"}) + "\n"
+        runner = _FakeRunner(stdout_content=init_only)
+        result = self._executor(runner).execute(self.work, lambda e: None)
+        self.assertEqual(result.status, C.STATUS_FAILED)
+        self.assertIn("no result event", result.error)
+
     def test_empty_stdout_is_failed(self):
         runner = _FakeRunner(stdout_content="")
         result = self._executor(runner).execute(self.work, lambda e: None)
         self.assertEqual(result.status, C.STATUS_FAILED)
-        self.assertIn("not valid JSON", result.error)
-
-    def test_invalid_json_stdout_is_failed(self):
-        runner = _FakeRunner(stdout_content="not json")
-        result = self._executor(runner).execute(self.work, lambda e: None)
-        self.assertEqual(result.status, C.STATUS_FAILED)
-        self.assertIn("not valid JSON", result.error)
+        self.assertIn("no result event", result.error)
 
     def test_claude_error_is_failed(self):
         runner = _FakeRunner(
-            stdout_content=_claude_output(
-                is_error=True, result="rate limit exceeded",
+            stdout_content=_stream_json_output(
+                is_error=True, result_text="rate limit exceeded",
             ),
         )
         result = self._executor(runner).execute(self.work, lambda e: None)
@@ -285,14 +359,14 @@ class ClaudeExecutorTest(unittest.TestCase):
 
     def test_no_structured_output_is_failed(self):
         runner = _FakeRunner(
-            stdout_content=_claude_output(result="just text, no schema"),
+            stdout_content=_stream_json_output(result_text="just text, no schema"),
         )
         result = self._executor(runner).execute(self.work, lambda e: None)
         self.assertEqual(result.status, C.STATUS_FAILED)
         self.assertIn("structured_output", result.error)
 
     def test_wrong_work_item_id_is_failed(self):
-        runner = _FakeRunner(stdout_content=_claude_output(
+        runner = _FakeRunner(stdout_content=_stream_json_output(
             structured_output={
                 "schema_version": 3,
                 "work_item_id": "WRONG",
@@ -306,26 +380,10 @@ class ClaudeExecutorTest(unittest.TestCase):
         self.assertEqual(result.status, C.STATUS_FAILED)
         self.assertIn("work_item_id", result.error)
 
-    # --- describe / availability ------------------------------------------
+    # --- streaming usage/telemetry extraction ------------------------------
 
-    def test_describe_returns_claude_cli_type(self):
-        runner = _FakeRunner()
-        ex = self._executor(runner)
-        desc = ex.describe()
-        self.assertEqual(desc["type"], "claude-cli")
-        self.assertEqual(desc["executor_version"], C.CLAUDE_EXECUTOR_VERSION)
-
-    def test_is_available_false_for_missing_command(self):
-        self.config["command"] = "/nonexistent/claude"
-        ex = ClaudeCliExecutor(
-            self.config, schemas_root=self.settings.schemas_root,
-        )
-        self.assertFalse(ex.is_available())
-
-    # --- usage extraction -------------------------------------------------
-
-    def test_usage_extracted_from_claude_envelope(self):
-        runner = _FakeRunner(stdout_content=_claude_output(
+    def test_usage_extracted_from_streaming(self):
+        runner = _FakeRunner(stdout_content=_stream_json_output(
             structured_output=self._valid_envelope(),
             usage={"input_tokens": 500, "output_tokens": 200},
         ))
@@ -333,24 +391,87 @@ class ClaudeExecutorTest(unittest.TestCase):
         self.assertEqual(result.status, C.STATUS_COMPLETED)
         self.assertTrue(result.usage_reported)
         self.assertGreaterEqual(result.token_usage.get("input_tokens", 0), 500)
+        self.assertGreaterEqual(result.token_usage.get("output_tokens", 0), 200)
 
-    # --- prompt -----------------------------------------------------------
-
-    def test_prompt_sent_via_stdin(self):
-        runner = _FakeRunner(stdout_content=_claude_output(
+    def test_telemetry_counts_tool_calls_from_assistant_events(self):
+        runner = _FakeRunner(stdout_content=_stream_json_output(
             structured_output=self._valid_envelope(),
+            include_assistant=True,
+        ))
+        result = self._executor(runner).execute(self.work, lambda e: None)
+        self.assertEqual(result.status, C.STATUS_COMPLETED)
+        self.assertTrue(result.telemetry_reported)
+        self.assertEqual(result.telemetry.get("tool_calls", 0), 2)
+        self.assertEqual(result.telemetry.get("command_calls", 0), 1)
+
+    # --- extended telemetry: cost / turns / model usage --------------------
+
+    def test_cost_usd_extracted(self):
+        runner = _FakeRunner(stdout_content=_stream_json_output(
+            structured_output=self._valid_envelope(),
+            total_cost_usd=8.37,
+        ))
+        result = self._executor(runner).execute(self.work, lambda e: None)
+        self.assertEqual(result.status, C.STATUS_COMPLETED)
+        self.assertAlmostEqual(result.cost_usd, 8.37)
+
+    def test_num_turns_extracted(self):
+        runner = _FakeRunner(stdout_content=_stream_json_output(
+            structured_output=self._valid_envelope(),
+            num_turns=14,
+        ))
+        result = self._executor(runner).execute(self.work, lambda e: None)
+        self.assertEqual(result.status, C.STATUS_COMPLETED)
+        self.assertEqual(result.num_turns, 14)
+
+    def test_model_usage_normalized(self):
+        raw_model_usage = {
+            "claude-opus-4-6": {
+                "inputTokens": 552, "outputTokens": 37,
+                "cacheReadInputTokens": 0, "cacheCreationInputTokens": 0,
+                "costUSD": 0.011, "contextWindow": 200000,
+            },
+            "claude-opus-4-6[1m]": {
+                "inputTokens": 2, "outputTokens": 10,
+                "cacheReadInputTokens": 0, "cacheCreationInputTokens": 27360,
+                "costUSD": 0.514, "contextWindow": 1000000,
+            },
+        }
+        runner = _FakeRunner(stdout_content=_stream_json_output(
+            structured_output=self._valid_envelope(),
+            model_usage=raw_model_usage,
+        ))
+        result = self._executor(runner).execute(self.work, lambda e: None)
+        self.assertEqual(result.status, C.STATUS_COMPLETED)
+        self.assertIsNotNone(result.model_usage)
+        self.assertIn("claude-opus-4-6", result.model_usage)
+        self.assertIn("claude-opus-4-6[1m]", result.model_usage)
+        entry = result.model_usage["claude-opus-4-6[1m]"]
+        self.assertEqual(entry["input_tokens"], 2)
+        self.assertEqual(entry["output_tokens"], 10)
+        self.assertAlmostEqual(entry["cost_usd"], 0.514)
+
+    def test_execution_summary_written(self):
+        runner = _FakeRunner(stdout_content=_stream_json_output(
+            structured_output=self._valid_envelope(),
+            total_cost_usd=1.23,
+            num_turns=3,
         ))
         self._executor(runner).execute(self.work, lambda e: None)
-        self.assertIsNotNone(runner.last_stdin)
-        prompt = json.loads(runner.last_stdin)
-        self.assertIn("task", prompt)
-        self.assertIn("func_id", prompt)
+        summary_path = Path(self.work.executor_result_path).parent / "claude.execution-summary.json"
+        self.assertTrue(summary_path.exists())
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        self.assertEqual(summary["executor"], "claude-cli")
+        self.assertEqual(summary["work_item_id"], "feature:Feat-01")
+        self.assertEqual(summary["func_id"], "04-01-01")
+        self.assertAlmostEqual(summary["total_cost_usd"], 1.23)
+        self.assertEqual(summary["num_turns"], 3)
 
-    # --- max_output_tokens env propagation ----------------------------------
+    # --- max_output_tokens env propagation --------------------------------
 
     def test_max_output_tokens_env_propagated(self):
         self.config["max_output_tokens"] = 200_000
-        runner = _FakeRunner(stdout_content=_claude_output(
+        runner = _FakeRunner(stdout_content=_stream_json_output(
             structured_output=self._valid_envelope(),
         ))
         self._executor(runner).execute(self.work, lambda e: None)
@@ -361,7 +482,7 @@ class ClaudeExecutorTest(unittest.TestCase):
 
     def test_max_output_tokens_not_set_when_absent(self):
         self.config.pop("max_output_tokens", None)
-        runner = _FakeRunner(stdout_content=_claude_output(
+        runner = _FakeRunner(stdout_content=_stream_json_output(
             structured_output=self._valid_envelope(),
         ))
         self._executor(runner).execute(self.work, lambda e: None)
@@ -385,6 +506,34 @@ class ClaudeExecutorTest(unittest.TestCase):
         config = executor_config_for("claude")
         self.assertEqual(config["max_output_tokens"], 200_000)
 
+    # --- describe / availability ------------------------------------------
+
+    def test_describe_returns_claude_cli_type(self):
+        runner = _FakeRunner()
+        ex = self._executor(runner)
+        desc = ex.describe()
+        self.assertEqual(desc["type"], "claude-cli")
+        self.assertEqual(desc["executor_version"], C.CLAUDE_EXECUTOR_VERSION)
+
+    def test_is_available_false_for_missing_command(self):
+        self.config["command"] = "/nonexistent/claude"
+        ex = ClaudeCliExecutor(
+            self.config, schemas_root=self.settings.schemas_root,
+        )
+        self.assertFalse(ex.is_available())
+
+    # --- prompt -----------------------------------------------------------
+
+    def test_prompt_sent_via_stdin(self):
+        runner = _FakeRunner(stdout_content=_stream_json_output(
+            structured_output=self._valid_envelope(),
+        ))
+        self._executor(runner).execute(self.work, lambda e: None)
+        self.assertIsNotNone(runner.last_stdin)
+        prompt = json.loads(runner.last_stdin)
+        self.assertIn("task", prompt)
+        self.assertIn("func_id", prompt)
+
     # --- helpers ----------------------------------------------------------
 
     def _valid_envelope(self) -> dict:
@@ -396,6 +545,69 @@ class ClaudeExecutorTest(unittest.TestCase):
             "notes": [],
             "error": None,
         }
+
+
+class FindResultEventTest(unittest.TestCase):
+    """Tests for the _find_result_event NDJSON parser."""
+
+    def test_finds_result_in_stream(self):
+        lines = [
+            json.dumps({"type": "system", "subtype": "init"}),
+            json.dumps({"type": "assistant", "message": {}}),
+            json.dumps({"type": "result", "is_error": False, "num_turns": 5}),
+        ]
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".log", delete=False) as f:
+            f.write("\n".join(lines) + "\n")
+            path = f.name
+        try:
+            event = _find_result_event(path)
+            self.assertIsNotNone(event)
+            self.assertEqual(event["num_turns"], 5)
+        finally:
+            Path(path).unlink()
+
+    def test_returns_none_for_no_result(self):
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".log", delete=False) as f:
+            f.write(json.dumps({"type": "system"}) + "\n")
+            path = f.name
+        try:
+            self.assertIsNone(_find_result_event(path))
+        finally:
+            Path(path).unlink()
+
+    def test_returns_none_for_empty_file(self):
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".log", delete=False) as f:
+            f.write("")
+            path = f.name
+        try:
+            self.assertIsNone(_find_result_event(path))
+        finally:
+            Path(path).unlink()
+
+    def test_returns_none_for_missing_file(self):
+        self.assertIsNone(_find_result_event("/nonexistent/path.log"))
+
+
+class NormalizeModelUsageTest(unittest.TestCase):
+    def test_camel_to_snake_conversion(self):
+        raw = {
+            "opus": {
+                "inputTokens": 100,
+                "outputTokens": 50,
+                "costUSD": 0.5,
+                "contextWindow": 200000,
+            },
+        }
+        normalized = _normalize_model_usage(raw)
+        self.assertIsNotNone(normalized)
+        self.assertEqual(normalized["opus"]["input_tokens"], 100)
+        self.assertEqual(normalized["opus"]["output_tokens"], 50)
+        self.assertAlmostEqual(normalized["opus"]["cost_usd"], 0.5)
+
+    def test_none_for_empty(self):
+        self.assertIsNone(_normalize_model_usage(None))
+        self.assertIsNone(_normalize_model_usage({}))
+        self.assertIsNone(_normalize_model_usage("not a dict"))
 
 
 class ClaudeRegistryTest(unittest.TestCase):
