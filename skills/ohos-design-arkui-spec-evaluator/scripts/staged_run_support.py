@@ -667,8 +667,6 @@ def build_aggregation_context(
             ),
         }
 
-    _inject_na_evidence(mappings, state)
-
     return {
         "schema_version": AGGREGATION_CONTEXT_SCHEMA_VERSION,
         "staged_schema_version": state.get("schema_version"),
@@ -679,56 +677,6 @@ def build_aggregation_context(
         "source_observations": source_observations,
         "criterion_mappings": list(mappings.values()),
     }
-
-
-def _inject_na_evidence(
-    mappings: dict[str, dict[str, Any]], state: dict[str, Any]
-) -> None:
-    """Inject a spec_location evidence for N/A-eligible criteria with no observations.
-
-    When a criterion has ``allow_not_applicable=true`` but no observations,
-    claims or units map to it, its ``evidence_catalog`` is empty.  The executor
-    cannot reference any evidence for the N/A conclusion, creating an
-    impossible-state at assembly.  This injects the rubric document itself as
-    available evidence so the executor (or normalizer) can reference it.
-    """
-    source_revision = state.get("source_revision", "")
-    rubric_path = EVALUATION_ROOT / "rubric.yaml"
-    if not rubric_path.is_file():
-        return
-    rubric_hash = content_hash(rubric_path)
-    rubric_rel = str(rubric_path.relative_to(SPECS_ROOT))
-    for mapping in mappings.values():
-        if not mapping.get("allow_not_applicable"):
-            continue
-        if mapping["observations"] or mapping["claims"] or mapping["atomic_units"]:
-            continue
-        if mapping["evidence_catalog"]:
-            continue
-        identity = {
-            "work_item_id": "__na_context__",
-            "source_evidence_id": f"na-rubric-{mapping['criterion_id']}",
-            "type": "spec_location",
-            "path": rubric_rel,
-            "line_start": None,
-            "line_end": None,
-            "content_hash": rubric_hash,
-        }
-        evidence_id = "EV-" + hashlib.sha256(
-            json.dumps(
-                identity, ensure_ascii=False, sort_keys=True, separators=(",", ":")
-            ).encode("utf-8")
-        ).hexdigest()[:24]
-        mapping["evidence_catalog"].append({
-            "evidence_id": evidence_id,
-            "type": "spec_location",
-            "path": rubric_rel,
-            "source_revision": source_revision,
-            "content_hash": rubric_hash,
-            "description": f"{mapping['criterion_id']} is declared N/A-eligible in the rubric",
-            "source_work_item_id": "__na_context__",
-            "source_evidence_id": f"na-rubric-{mapping['criterion_id']}",
-        })
 
 
 def _aggregation_evidence_catalog(

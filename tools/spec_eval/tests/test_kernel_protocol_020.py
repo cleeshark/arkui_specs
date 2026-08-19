@@ -877,44 +877,6 @@ class NormalizeAggregationTest(unittest.TestCase):
             "This criterion is outside the function scope.",
         )
 
-    def test_normalize_na_auto_injects_evidence_from_catalog(self) -> None:
-        """When N/A has empty evidence_ids but catalog is non-empty, normalizer injects (#43)."""
-        judgment = self._judgment()
-        target_idx = next(
-            i for i, row in enumerate(judgment["criterion_results"])
-            if row["criterion_id"] == "SPEC-AC-TESTABILITY"
-        )
-        judgment["criterion_results"][target_idx].update({
-            "conclusion": "NOT_APPLICABLE",
-            "applicability": "NOT_APPLICABLE",
-            "reason": "No AC applies to this function.",
-            "applicability_reason": "No AC surface in this function.",
-            "evidence_ids": [],
-            "findings": [],
-        })
-        judgment["outcome_policy_bases"] = [
-            basis for basis in judgment["outcome_policy_bases"]
-            if basis["criterion_id"] != "SPEC-AC-TESTABILITY"
-        ] + [{
-            "criterion_id": "SPEC-AC-TESTABILITY",
-            "content_status": "NOT_APPLICABLE",
-            "evidence_status": "NOT_APPLICABLE",
-            "conflict_scope": "NOT_APPLICABLE",
-            "reason": "No AC surface.",
-        }]
-        result = self._normalize(judgment)
-        self.assertEqual(result.fatal, [])
-        rows = {
-            row["criterion_id"]: row for row in result.document["criterion_results"]
-        }
-        na_row = rows["SPEC-AC-TESTABILITY"]
-        self.assertGreaterEqual(len(na_row["evidence"]), 1,
-                                "normalizer should auto-inject evidence for N/A")
-        self.assertTrue(
-            any("auto-injected" in c for c in result.changes),
-            f"expected auto-inject change log, got: {result.changes}",
-        )
-
     def test_criterion_order_follows_template(self) -> None:
         judgment = self._judgment()
         judgment["criterion_results"].reverse()

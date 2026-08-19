@@ -467,17 +467,6 @@ def normalize_aggregation(
             changes.append(
                 f"criterion_results[{criterion_id}].evidence_ids deduplicated"
             )
-        if (
-            conclusion == "NOT_APPLICABLE"
-            and not requested_evidence_ids
-            and criterion_catalog
-        ):
-            fallback_id = next(iter(criterion_catalog))
-            requested_evidence_ids.append(fallback_id)
-            changes.append(
-                f"criterion_results[{criterion_id}].evidence_ids "
-                f"auto-injected {fallback_id} for NOT_APPLICABLE"
-            )
         # A finding's valid evidence reference is also criterion evidence. The
         # model may omit the parent reference, so close the relation here in a
         # stable order instead of sending a representational mismatch to the
