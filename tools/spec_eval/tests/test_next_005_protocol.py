@@ -243,6 +243,40 @@ class Next005ProtocolTest(unittest.TestCase):
         errors = validate_semantic_result(excessive, self.rubric, self.complexity, self.schemas_root)
         self.assertTrue(any("applicable criterion ratio" in item for item in errors))
 
+    def test_na_with_empty_evidence_accepted_when_allowed(self) -> None:
+        """N/A criterion with applicability_reason but no evidence passes (#43)."""
+        valid = self.load_fixture("semantic-result.json")
+        sdk_contract = next(
+            item for item in valid["criterion_results"]
+            if item["criterion_id"] == "CORRECTNESS-SDK-CONTRACT"
+        )
+        sdk_contract["applicability"] = "NOT_APPLICABLE"
+        sdk_contract["conclusion"] = "NOT_APPLICABLE"
+        sdk_contract["applicability_reason"] = (
+            "This function covers build system infrastructure "
+            "and has no SDK API surface."
+        )
+        sdk_contract["evidence"] = []
+        sdk_contract["findings"] = []
+        errors = validate_semantic_result(valid, self.rubric, self.complexity, self.schemas_root)
+        na_errors = [e for e in errors if "CORRECTNESS-SDK-CONTRACT" in e and "N/A" in e]
+        self.assertEqual(na_errors, [], f"unexpected N/A errors: {na_errors}")
+
+    def test_na_without_reason_still_rejected(self) -> None:
+        """N/A without applicability_reason is still rejected even with relaxed evidence."""
+        invalid = self.load_fixture("semantic-result.json")
+        sdk_contract = next(
+            item for item in invalid["criterion_results"]
+            if item["criterion_id"] == "CORRECTNESS-SDK-CONTRACT"
+        )
+        sdk_contract["applicability"] = "NOT_APPLICABLE"
+        sdk_contract["conclusion"] = "NOT_APPLICABLE"
+        sdk_contract["applicability_reason"] = ""
+        sdk_contract["evidence"] = []
+        sdk_contract["findings"] = []
+        errors = validate_semantic_result(invalid, self.rubric, self.complexity, self.schemas_root)
+        self.assertTrue(any("applicability_reason" in e for e in errors))
+
     def test_score_rejects_wrong_cap_and_static_gate_downgrade(self) -> None:
         invalid = self.load_fixture("score-result.json")
         invalid["caps"]["active_severities"] = ["Major"]

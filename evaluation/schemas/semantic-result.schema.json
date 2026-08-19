@@ -202,8 +202,7 @@
           "then": {
             "required": ["applicability_reason"],
             "properties": {
-              "applicability": { "const": "NOT_APPLICABLE" },
-              "evidence": { "minItems": 1 }
+              "applicability": { "const": "NOT_APPLICABLE" }
             }
           }
         },
