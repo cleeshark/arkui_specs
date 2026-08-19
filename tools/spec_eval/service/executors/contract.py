@@ -74,6 +74,9 @@ class ExecutionResult:
     usage_reported: bool = False
     telemetry: dict[str, int] = field(default_factory=dict)
     telemetry_reported: bool = False
+    cost_usd: float | None = None
+    num_turns: int | None = None
+    model_usage: dict[str, Any] | None = None
 
     @property
     def succeeded(self) -> bool:
