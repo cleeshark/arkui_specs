@@ -45,6 +45,13 @@ PUBLISHED_EVIDENCE_FIELDS = {
 }
 
 
+def _normalize_defect_key(raw: Any) -> str | None:
+    """Canonicalize a defect_key value to lowercase; return None if empty/null."""
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    return raw.strip().lower()
+
+
 @dataclass(frozen=True)
 class NormalizationResult:
     """Output of one normalization pass.
@@ -226,6 +233,12 @@ def normalize_observation(
             for key in _strings(entry.get("evidence_refs"))
             if key in evidence_by_key
         ]
+        raw_defect_key = entry.get("defect_key")
+        norm_defect_key = _normalize_defect_key(raw_defect_key)
+        if raw_defect_key and norm_defect_key and norm_defect_key != raw_defect_key:
+            changes.append(
+                f"defect_key: canonicalized {raw_defect_key!r} -> {norm_defect_key!r}"
+            )
         observations.append({
             "observation_id": f"OBS-{obs_index + 1}",
             "criterion_ids": _strings(entry.get("criterion_ids")),
@@ -235,7 +248,7 @@ def normalize_observation(
             "breadth": entry.get("breadth"),
             "contract_family": entry.get("contract_family", ""),
             "fact": entry.get("fact", ""),
-            "defect_key": entry.get("defect_key"),
+            "defect_key": norm_defect_key,
             "primary_criterion_id": entry.get("primary_criterion_id"),
             "evidence": evidence_rows,
         })
@@ -282,6 +295,13 @@ def normalize_observation(
                 "verification_gap": None,
             })
             continue
+        raw_dk_list = _strings(row.get("defect_keys"))
+        norm_dk_list = [k for k in (_normalize_defect_key(k) for k in raw_dk_list) if k]
+        for raw_k, norm_k in zip(raw_dk_list, norm_dk_list):
+            if norm_k != raw_k:
+                changes.append(
+                    f"claim {claim_id} defect_key: canonicalized {raw_k!r} -> {norm_k!r}"
+                )
         units = _rows(row.get("unit_reviews"))
         claim_reviews.append({
             "claim_id": claim_id,
@@ -301,7 +321,7 @@ def normalize_observation(
             } for unit in units],
             "criterion_ids": criteria_by_claim.get(claim_id, []),
             "evidence_ids": _resolve_evidence_ids(row.get("evidence_refs")),
-            "defect_keys": _strings(row.get("defect_keys")),
+            "defect_keys": norm_dk_list,
             "reason": row.get("reason", ""),
             "verification_gap": (
                 row.get("verification_gap")
@@ -373,7 +393,12 @@ def normalize_aggregation(
     ownership_rows = _rows(judgment.get("defect_ownership"))
     owner_by_finding_key: dict[str, str] = {}
     for record in ownership_rows:
-        defect_key = record.get("defect_key")
+        raw_dk = record.get("defect_key")
+        defect_key = _normalize_defect_key(raw_dk)
+        if raw_dk and defect_key and defect_key != raw_dk:
+            changes.append(
+                f"defect_ownership: canonicalized {raw_dk!r} -> {defect_key!r}"
+            )
         for finding_key in _strings(record.get("finding_keys")):
             previous = owner_by_finding_key.get(finding_key)
             if previous is not None and previous != defect_key:
@@ -384,7 +409,7 @@ def normalize_aggregation(
                     repairability=FATAL_INPUT,
                 ))
             else:
-                owner_by_finding_key[finding_key] = str(defect_key)
+                owner_by_finding_key[finding_key] = str(defect_key or "")
 
     template_results = {
         row.get("criterion_id"): row
@@ -577,7 +602,7 @@ def normalize_aggregation(
 
     defect_ownership: list[dict[str, Any]] = []
     for record in ownership_rows:
-        defect_key = str(record.get("defect_key", ""))
+        defect_key = _normalize_defect_key(record.get("defect_key")) or ""
         primary = record.get("primary_criterion_id")
         finding_ids = [
             finding_by_key[key]["finding_id"]
@@ -612,12 +637,23 @@ def normalize_aggregation(
             "reason": row.get("reason", ""),
         })
 
+    contradiction_bases = copy.deepcopy(judgment.get("contradiction_bases") or [])
+    for basis in contradiction_bases:
+        raw_pdk = basis.get("primary_defect_key")
+        norm_pdk = _normalize_defect_key(raw_pdk)
+        if norm_pdk and norm_pdk != raw_pdk:
+            basis["primary_defect_key"] = norm_pdk
+            changes.append(
+                f"contradiction_basis: canonicalized primary_defect_key "
+                f"{raw_pdk!r} -> {norm_pdk!r}"
+            )
+
     published = copy.deepcopy(template)
     published.update({
         "status": "complete",
         "source_observation_ids": list(source_observation_ids),
         "cross_feat_contracts_reviewed": judgment.get("cross_feat_contracts_reviewed"),
-        "contradiction_bases": copy.deepcopy(judgment.get("contradiction_bases") or []),
+        "contradiction_bases": contradiction_bases,
         "defect_ownership": defect_ownership,
         "outcome_policy_bases": outcome_policy_bases,
         "criterion_results": criterion_results,

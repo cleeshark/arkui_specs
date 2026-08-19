@@ -1782,5 +1782,273 @@ class MachineContractPolicyRuleTest(unittest.TestCase):
         )
 
 
+class DefectKeyNormalizationTest(unittest.TestCase):
+    """Tests for _normalize_defect_key canonicalization across flow points."""
+
+    def setUp(self) -> None:
+        self.tmp = tempfile.TemporaryDirectory()
+        self.root = Path(self.tmp.name)
+        self.evidence_rel = "input.txt"
+        self.template = _template(self.root, self.evidence_rel)
+
+    def tearDown(self) -> None:
+        self.tmp.cleanup()
+
+    def _obs_judgment(self, *, obs_defect_key=None, obs_outcome="SUPPORTED",
+                      claim_defect_keys=None, claim_outcome="SUPPORTED"):
+        claim_defect_keys = claim_defect_keys or []
+        gap = _gap() if claim_outcome == "NOT_VERIFIABLE" else None
+        return {
+            "evidence_declarations": [
+                {
+                    "key": "e1",
+                    "type": "spec_location",
+                    "path": self.evidence_rel,
+                    "lines": "1-1",
+                    "description": "Synthetic frozen evidence.",
+                },
+                {
+                    "key": "e2",
+                    "type": "review_record",
+                    "path": self.evidence_rel,
+                    "lines": None,
+                    "description": "Inspection evidence for verification gap.",
+                },
+            ],
+            "claim_reviews": [
+                {
+                    "claim_id": "Feat-01/AC-1",
+                    "local_outcome": claim_outcome,
+                    "evidence_refs": ["e1"],
+                    "reason": "Synthetic claim review.",
+                    "verification_gap": gap,
+                    "defect_keys": claim_defect_keys,
+                    "unit_reviews": [{
+                        "unit_id": "u1",
+                        "facet_type": "traceability",
+                        "local_outcome": claim_outcome,
+                        "evidence_refs": ["e1"],
+                        "fact": "Synthetic unit fact.",
+                        "verification_gap": copy.deepcopy(gap),
+                    }],
+                },
+                {
+                    "claim_id": "Feat-01/AC-2",
+                    "local_outcome": "SUPPORTED",
+                    "evidence_refs": ["e1"],
+                    "reason": "The frozen evidence supports the claim.",
+                    "verification_gap": None,
+                    "defect_keys": [],
+                    "unit_reviews": [{
+                        "unit_id": "u1",
+                        "facet_type": "traceability",
+                        "local_outcome": "SUPPORTED",
+                        "evidence_refs": ["e1"],
+                        "fact": "Supported unit.",
+                        "verification_gap": None,
+                    }],
+                },
+            ],
+            "observations": [{
+                "criterion_ids": ["CORRECTNESS-SOURCE-SUPPORT"],
+                "check_ids": ["claim_source_support", "boundary_state"],
+                "claim_ids": ["Feat-01/AC-1", "Feat-01/AC-2"],
+                "local_outcome": obs_outcome,
+                "breadth": "feat_core",
+                "contract_family": "synthetic-contract",
+                "fact": "Synthetic observation fact.",
+                "defect_key": obs_defect_key,
+                "primary_criterion_id": (
+                    "CORRECTNESS-SOURCE-SUPPORT" if obs_defect_key else None
+                ),
+                "evidence_refs": ["e1", "e2"],
+            }],
+            "open_questions": [],
+            "notes": [],
+        }
+
+    def test_defect_key_uppercase_normalized(self) -> None:
+        judgment = self._obs_judgment(
+            obs_defect_key="MISSING-VERIFICATION", obs_outcome="CONFLICT"
+        )
+        result = normalize_observation(self.template, judgment, repo_root=self.root)
+        self.assertEqual(result.fatal, [])
+        doc = result.document
+        self.assertIsNotNone(doc)
+        self.assertEqual(doc["observations"][0]["defect_key"], "missing-verification")
+        self.assertTrue(
+            any("canonicalized" in c and "MISSING-VERIFICATION" in c
+                for c in result.changes)
+        )
+
+    def test_defect_key_mixed_case_claim(self) -> None:
+        judgment = self._obs_judgment(
+            claim_defect_keys=["FOO.Bar"], claim_outcome="CONFLICT",
+            obs_defect_key="foo.bar", obs_outcome="CONFLICT",
+        )
+        result = normalize_observation(self.template, judgment, repo_root=self.root)
+        self.assertEqual(result.fatal, [])
+        doc = result.document
+        self.assertIsNotNone(doc)
+        self.assertEqual(doc["claim_reviews"][0]["defect_keys"], ["foo.bar"])
+        self.assertTrue(
+            any("canonicalized" in c and "FOO.Bar" in c for c in result.changes)
+        )
+
+    def test_defect_key_already_lowercase(self) -> None:
+        judgment = self._obs_judgment(
+            obs_defect_key="already-lowercase", obs_outcome="CONFLICT"
+        )
+        result = normalize_observation(self.template, judgment, repo_root=self.root)
+        self.assertEqual(result.fatal, [])
+        doc = result.document
+        self.assertIsNotNone(doc)
+        self.assertEqual(doc["observations"][0]["defect_key"], "already-lowercase")
+        self.assertFalse(
+            any("canonicalized" in c and "defect_key" in c for c in result.changes)
+        )
+
+    def test_defect_key_null_preserved(self) -> None:
+        judgment = self._obs_judgment(obs_defect_key=None, obs_outcome="SUPPORTED")
+        result = normalize_observation(self.template, judgment, repo_root=self.root)
+        self.assertEqual(result.fatal, [])
+        doc = result.document
+        self.assertIsNotNone(doc)
+        self.assertIsNone(doc["observations"][0]["defect_key"])
+
+    def test_aggregation_ownership_key_normalized(self) -> None:
+        template = {
+            "schema_version": 2,
+            "func_id": "05-01-02",
+            "source_revision": SOURCE_REVISION,
+            "run_id": "run-1",
+            "status": "pending",
+            "source_observation_ids": [],
+            "cross_feat_contracts_reviewed": False,
+            "contradiction_bases": [],
+            "defect_ownership": [],
+            "outcome_policy_bases": [
+                {"criterion_id": cid, "content_status": "PENDING",
+                 "evidence_status": "PENDING", "conflict_scope": "PENDING",
+                 "reason": "待评价人填写"}
+                for cid in (
+                    "SPEC-AC-TESTABILITY", "SPEC-TRACEABILITY",
+                    "DESIGN-IMPACT-COVERAGE", "DESIGN-VERIFICATION-PLAN",
+                    "COMPATIBILITY-API-VERSION", "COMPATIBILITY-MULTI-DEVICE",
+                )
+            ],
+            "criterion_results": [
+                {"criterion_id": cid, "conclusion": "NOT_VERIFIABLE",
+                 "dimension_id": DIMENSION_BY_CRITERION[cid],
+                 "applicability": "APPLICABLE", "reason": ""}
+                for cid in CRITERIA
+            ],
+            "notes": [],
+        }
+        agg_context = {
+            "schema_version": 2,
+            "criterion_mappings": [
+                {
+                    "criterion_id": cid,
+                    "evidence_catalog": [{
+                        "evidence_id": "EV-" + cid.lower().replace("_", "-"),
+                        "type": "source_citation",
+                        "path": "frameworks/core/example.cpp",
+                        "line_start": 1,
+                        "line_end": 2,
+                        "source_revision": SOURCE_REVISION,
+                        "content_hash": "sha256:" + "0" * 64,
+                        "description": "Inherited observation evidence.",
+                        "source_work_item_id": "feature:Feat-01",
+                        "source_evidence_id": "EV-1",
+                    }],
+                }
+                for cid in CRITERIA
+            ],
+        }
+        ev_id = lambda cid: "EV-" + cid.lower().replace("_", "-")
+        judgment = {
+            "cross_feat_contracts_reviewed": True,
+            "contradiction_bases": [],
+            "defect_ownership": [{
+                "defect_key": "TRACE-RULE-ORPHAN",
+                "primary_criterion_id": "CORRECTNESS-SOURCE-SUPPORT",
+                "finding_keys": ["f1"],
+                "rationale": "One defect explains both findings.",
+            }],
+            "outcome_policy_bases": [
+                {"criterion_id": "SPEC-AC-TESTABILITY", "content_status": "PRESENT",
+                 "evidence_status": "VERIFIED", "conflict_scope": "NONE",
+                 "reason": "Content and evidence verified."},
+                {"criterion_id": "SPEC-TRACEABILITY", "content_status": "PRESENT",
+                 "evidence_status": "VERIFIED", "conflict_scope": "NONE",
+                 "reason": "Content and evidence verified."},
+                {"criterion_id": "DESIGN-IMPACT-COVERAGE",
+                 "content_status": "PRESENT", "evidence_status": "VERIFIED",
+                 "conflict_scope": "NONE", "reason": "Content and evidence verified."},
+                {"criterion_id": "DESIGN-VERIFICATION-PLAN",
+                 "content_status": "PRESENT", "evidence_status": "VERIFIED",
+                 "conflict_scope": "NONE", "reason": "Content and evidence verified."},
+                {"criterion_id": "COMPATIBILITY-API-VERSION",
+                 "content_status": "PRESENT", "evidence_status": "VERIFIED",
+                 "conflict_scope": "NONE", "reason": "Content and evidence verified."},
+                {"criterion_id": "COMPATIBILITY-MULTI-DEVICE",
+                 "content_status": "PRESENT", "evidence_status": "VERIFIED",
+                 "conflict_scope": "NONE", "reason": "Content and evidence verified."},
+            ],
+            "criterion_results": [
+                {
+                    "criterion_id": "CORRECTNESS-SOURCE-SUPPORT",
+                    "conclusion": "CONTRADICTED",
+                    "applicability": "APPLICABLE",
+                    "reason": "Mapped units contradict the published contract.",
+                    "applicability_reason": None,
+                    "missing_evidence": None,
+                    "claim_ids": ["Feat-01/AC-1"],
+                    "evidence_ids": [ev_id("CORRECTNESS-SOURCE-SUPPORT")],
+                    "findings": [{
+                        "key": "f1",
+                        "criterion_id": "CORRECTNESS-SOURCE-SUPPORT",
+                        "claim_id": "Feat-01/AC-1",
+                        "severity": "CRITICAL",
+                        "message": "The published contract is contradicted.",
+                        "evidence_ids": [ev_id("CORRECTNESS-SOURCE-SUPPORT")],
+                        "recommendation": "Align the contract with the mapping.",
+                    }],
+                },
+                *[
+                    {
+                        "criterion_id": cid,
+                        "conclusion": "SUPPORTED",
+                        "applicability": "APPLICABLE",
+                        "reason": "No violation was found for this criterion.",
+                        "applicability_reason": None,
+                        "missing_evidence": None,
+                        "claim_ids": [],
+                        "evidence_ids": [ev_id(cid)],
+                        "findings": [],
+                    }
+                    for cid in CRITERIA[1:]
+                ],
+            ],
+            "notes": [],
+        }
+        result = normalize_aggregation(
+            template, judgment,
+            source_observation_ids=[],
+            aggregation_context=agg_context,
+        )
+        self.assertEqual(result.fatal, [])
+        doc = result.document
+        self.assertIsNotNone(doc)
+        ownership = doc["defect_ownership"]
+        self.assertEqual(len(ownership), 1)
+        self.assertEqual(ownership[0]["defect_key"], "trace-rule-orphan")
+        self.assertTrue(
+            any("canonicalized" in c and "TRACE-RULE-ORPHAN" in c
+                for c in result.changes)
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
