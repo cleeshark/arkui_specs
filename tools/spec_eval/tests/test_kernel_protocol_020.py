@@ -2111,5 +2111,106 @@ class DefectKeyNormalizationTest(unittest.TestCase):
         )
 
 
+class ConfidenceModelTest(unittest.TestCase):
+    """Tests for the confidence layer classification and scoring (#47)."""
+
+    def test_hard_error_detected(self):
+        from spec_eval.kernel.errors import (
+            LAYER_HARD, TypedError, confidence_layer_of, has_hard_errors,
+        )
+        self.assertEqual(confidence_layer_of("CRITERION_SET_MISMATCH"), LAYER_HARD)
+        self.assertEqual(confidence_layer_of("IDENTITY_MISMATCH"), LAYER_HARD)
+        errors = [TypedError("CRITERION_SET_MISMATCH", "$.criterion_results")]
+        self.assertTrue(has_hard_errors(errors))
+
+    def test_major_error_not_hard(self):
+        from spec_eval.kernel.errors import (
+            LAYER_MAJOR, TypedError, confidence_layer_of, has_hard_errors,
+        )
+        self.assertEqual(confidence_layer_of("MAPPING_CONCLUSION_FORBIDDEN"), LAYER_MAJOR)
+        errors = [TypedError("MAPPING_CONCLUSION_FORBIDDEN", "$.x",
+                             entity_type="criterion", entity_id="C1")]
+        self.assertFalse(has_hard_errors(errors))
+
+    def test_minor_error_not_hard(self):
+        from spec_eval.kernel.errors import (
+            LAYER_MINOR, TypedError, confidence_layer_of, has_hard_errors,
+        )
+        self.assertEqual(confidence_layer_of("MAPPING_CLAIM_UNMAPPED"), LAYER_MINOR)
+        errors = [TypedError("MAPPING_CLAIM_UNMAPPED", "$.x")]
+        self.assertFalse(has_hard_errors(errors))
+
+    def test_unknown_code_defaults_to_minor(self):
+        from spec_eval.kernel.errors import LAYER_MINOR, confidence_layer_of
+        self.assertEqual(confidence_layer_of("UNKNOWN_FUTURE_CODE"), LAYER_MINOR)
+
+    def test_confidence_score_full_when_no_errors(self):
+        from spec_eval.kernel.errors import compute_confidence
+        result = compute_confidence([])
+        self.assertEqual(result["confidence_score"], 100)
+        self.assertEqual(result["confidence_level"], "HIGH")
+        self.assertEqual(result["total_checks_failed"], 0)
+
+    def test_confidence_score_deducted_for_major(self):
+        from spec_eval.kernel.errors import TypedError, compute_confidence
+        errors = [
+            TypedError("MAPPING_CONCLUSION_FORBIDDEN", "$.x",
+                       entity_type="criterion", entity_id="C1"),
+        ]
+        result = compute_confidence(errors)
+        self.assertEqual(result["confidence_score"], 80)
+        self.assertEqual(result["confidence_level"], "HIGH")
+        self.assertEqual(len(result["major_violations"]), 1)
+        self.assertEqual(result["deduction_total"], 20)
+
+    def test_confidence_score_deducted_for_minor(self):
+        from spec_eval.kernel.errors import TypedError, compute_confidence
+        errors = [
+            TypedError("MAPPING_CLAIM_UNMAPPED", "$.x",
+                       entity_type="criterion", entity_id="C2"),
+        ]
+        result = compute_confidence(errors)
+        self.assertEqual(result["confidence_score"], 95)
+        self.assertEqual(result["confidence_level"], "HIGH")
+
+    def test_multiple_errors_accumulate(self):
+        from spec_eval.kernel.errors import TypedError, compute_confidence
+        errors = [
+            TypedError("MAPPING_CONCLUSION_FORBIDDEN", "$.a",
+                       entity_type="criterion", entity_id="C1"),
+            TypedError("MAPPING_NV_REQUIRED", "$.b",
+                       entity_type="criterion", entity_id="C2"),
+            TypedError("MAPPING_CLAIM_UNMAPPED", "$.c",
+                       entity_type="criterion", entity_id="C3"),
+        ]
+        result = compute_confidence(errors)
+        # 100 - 20 - 20 - 5 = 55
+        self.assertEqual(result["confidence_score"], 55)
+        self.assertEqual(result["confidence_level"], "MEDIUM")
+
+    def test_confidence_floors_at_zero(self):
+        from spec_eval.kernel.errors import TypedError, compute_confidence
+        errors = [
+            TypedError("MAPPING_CONCLUSION_FORBIDDEN", f"$.{i}",
+                       entity_type="criterion", entity_id=f"C{i}")
+            for i in range(10)
+        ]
+        result = compute_confidence(errors)
+        self.assertEqual(result["confidence_score"], 0)
+        self.assertEqual(result["confidence_level"], "LOW")
+
+    def test_service_normalization_ignored(self):
+        from spec_eval.kernel.errors import (
+            SERVICE_NORMALIZATION, TypedError, compute_confidence,
+        )
+        errors = [
+            TypedError("GAP_UNEXPECTED_FOR_NON_NV", "$.x",
+                       repairability=SERVICE_NORMALIZATION),
+        ]
+        result = compute_confidence(errors)
+        self.assertEqual(result["confidence_score"], 100)
+        self.assertEqual(result["total_checks_failed"], 0)
+
+
 if __name__ == "__main__":
     unittest.main()
