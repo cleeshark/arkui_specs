@@ -11,6 +11,7 @@ schema check yield ``completed``.
 from __future__ import annotations
 
 import json
+import re
 import subprocess
 import threading
 import time
@@ -101,8 +102,9 @@ class CodexCliExecutor:
         prompt = build_executor_prompt(work)
         result_parent = Path(work.executor_result_path).parent
         result_parent.mkdir(parents=True, exist_ok=True)
-        stdout_log = str(result_parent / "codex.stdout.log")
-        stderr_log = str(result_parent / "codex.stderr.log")
+        log_tag = _safe_work_item_tag(work.work_item_id)
+        stdout_log = str(result_parent / f"codex.{log_tag}.stdout.log")
+        stderr_log = str(result_parent / f"codex.{log_tag}.stderr.log")
 
         event_count = 0
         usage = TokenUsageAccumulator()
@@ -324,6 +326,12 @@ class CodexCliExecutor:
         if isinstance(schema_path, str) and schema_path:
             return Path(schema_path)
         return self._output_schema_path
+
+
+def _safe_work_item_tag(work_item_id: str) -> str:
+    """Derive a filesystem-safe tag from a work_item_id for per-item log files."""
+    return re.sub(r"[^a-zA-Z0-9._-]", "_", work_item_id)
+
 
 def _redacted_argv(argv: list[str]) -> list[str]:
     """Mask any value following a key that may carry a model/secret (for logging)."""
