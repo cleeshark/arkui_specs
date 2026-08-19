@@ -567,6 +567,10 @@ def build_aggregation_context(
             for optional in ("defect_key", "primary_criterion_id"):
                 if isinstance(observation.get(optional), str):
                     entry[optional] = observation[optional]
+            if isinstance(entry.get("defect_key"), str):
+                entry["defect_key"] = _scoped_defect_key(
+                    work_item_id, entry["defect_key"]
+                )
             for criterion_id in criterion_ids:
                 mapping = mappings[criterion_id]
                 mapping["observations"].append(copy.deepcopy(entry))
@@ -592,7 +596,7 @@ def build_aggregation_context(
                 "claim_id": claim_id,
                 "local_outcome": claim_review.get("local_outcome"),
                 "defect_keys": [
-                    key
+                    _scoped_defect_key(work_item_id, key)
                     for key in claim_review.get("defect_keys", [])
                     if isinstance(key, str) and key
                 ],
@@ -677,6 +681,22 @@ def build_aggregation_context(
         "source_observations": source_observations,
         "criterion_mappings": list(mappings.values()),
     }
+
+
+def _scoped_defect_key(work_item_id: str, defect_key: str) -> str:
+    """Prefix a defect_key with a stable work-item scope to prevent cross-item collisions.
+
+    ``feature:Feat-01`` + ``trace-rule-orphan`` → ``feat-01.trace-rule-orphan``
+    ``function-global`` + ``trace-rule-orphan`` → ``global.trace-rule-orphan``
+    """
+    if ":" in work_item_id:
+        prefix = work_item_id.split(":", 1)[1].lower()
+    elif work_item_id == "function-global":
+        prefix = "global"
+    else:
+        prefix = work_item_id.lower()
+    prefix = re.sub(r"[^a-z0-9]", "-", prefix).strip("-") or "item"
+    return f"{prefix}.{defect_key}"
 
 
 def _aggregation_evidence_catalog(
