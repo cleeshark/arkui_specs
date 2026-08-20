@@ -623,6 +623,31 @@ def validate_aggregation_document(
                                 expected=f"severity >= {expected_severity} for conclusion {conclusion}",
                                 actual=str(finding_severity),
                             ))
+            # Check required_evidence_types constraint (issue #52)
+            required_evidence_types = mapping.get("required_evidence_types", [])
+            if (
+                required_evidence_types
+                and conclusion in {"SUPPORTED", "PARTIALLY_SUPPORTED", "CONTRADICTED", "MISSING"}
+            ):
+                criterion_evidence = _rows(result.get("evidence"))
+                if not criterion_evidence:
+                    errors.append(_err(
+                        "EVIDENCE_REQUIRED_MISSING",
+                        f"{label}.criterion_results[{criterion_id}].evidence",
+                        entity_type="criterion", entity_id=criterion_id,
+                        expected=f"at least one evidence item for {conclusion}",
+                        actual="empty",
+                    ))
+                else:
+                    actual_types = {ev.get("type") for ev in criterion_evidence if isinstance(ev.get("type"), str)}
+                    if set(required_evidence_types).isdisjoint(actual_types):
+                        errors.append(_err(
+                            "EVIDENCE_TYPE_MISSING",
+                            f"{label}.criterion_results[{criterion_id}].evidence",
+                            entity_type="criterion", entity_id=criterion_id,
+                            expected=f"at least one evidence of type {required_evidence_types}",
+                            actual=str(sorted(actual_types)),
+                        ))
 
     policy_bases = _rows(document.get("outcome_policy_bases"))
     policy_order = [

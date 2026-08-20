@@ -182,6 +182,14 @@ def build_aggregation_machine_contract(
             "severity_floor. For example, if PARTIALLY_SUPPORTED has severity_floor "
             "Major, all findings must be Major or Critical, not Minor or Info."
         ),
+        "evidence_type_rule": (
+            "aggregation-context.json specifies required_evidence_types for each "
+            "Criterion. When conclusion requires evidence (SUPPORTED, "
+            "PARTIALLY_SUPPORTED, CONTRADICTED, MISSING), at least one selected "
+            "evidence item must have a type from required_evidence_types. Choose "
+            "evidence from the Criterion evidence_catalog that satisfies this "
+            "constraint."
+        ),
         "criterion_evidence_rule": (
             "criterion_results[].evidence_ids may contain only canonical IDs from "
             "that Criterion's aggregation-context evidence_catalog; finding "
