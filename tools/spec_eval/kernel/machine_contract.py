@@ -168,6 +168,20 @@ def build_aggregation_machine_contract(
             "or MISSING must contain at least one evidence-backed finding; SUPPORTED "
             "and NOT_APPLICABLE criteria must contain none."
         ),
+        "not_applicable_rule": (
+            "aggregation-context.json specifies allow_not_applicable for each "
+            "Criterion; NOT_APPLICABLE conclusion is only valid when "
+            "allow_not_applicable is true. When false, you must use one of the "
+            "other conclusions (SUPPORTED, PARTIALLY_SUPPORTED, CONTRADICTED, "
+            "MISSING, or NOT_VERIFIABLE)."
+        ),
+        "severity_floor_rule": (
+            "aggregation-context.json specifies outcomes[conclusion].severity_floor "
+            "for conclusions that require findings (PARTIALLY_SUPPORTED, CONTRADICTED, "
+            "MISSING). Each finding under that conclusion must have severity >= "
+            "severity_floor. For example, if PARTIALLY_SUPPORTED has severity_floor "
+            "Major, all findings must be Major or Critical, not Minor or Info."
+        ),
         "criterion_evidence_rule": (
             "criterion_results[].evidence_ids may contain only canonical IDs from "
             "that Criterion's aggregation-context evidence_catalog; finding "
