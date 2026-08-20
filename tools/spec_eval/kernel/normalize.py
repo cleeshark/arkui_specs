@@ -52,6 +52,27 @@ def _normalize_defect_key(raw: Any) -> str | None:
     return raw.strip().lower()
 
 
+def _repair_defect_key(key: str, valid_keys: set[str]) -> str | None:
+    """Try to match *key* to the whitelist by removing a scope prefix.
+
+    The model sometimes adds (``feat-01.trace-rule-orphan``) or removes
+    (``trace-rule-orphan``) the work-item scope prefix that was applied during
+    aggregation-context construction.  If exactly one valid key ends with the
+    unscoped tail (or starts with the key as a prefix), return it.
+    """
+    # 1. key has extra prefix: "x.feat-01.trace-rule-orphan" -> "feat-01.trace-rule-orphan"
+    parts = key.split(".", 1)
+    if len(parts) == 2:
+        tail = parts[1]
+        if tail in valid_keys:
+            return tail
+    # 2. key is missing prefix: "trace-rule-orphan" -> "feat-01.trace-rule-orphan"
+    candidates = [vk for vk in valid_keys if vk.endswith("." + key)]
+    if len(candidates) == 1:
+        return candidates[0]
+    return None
+
+
 @dataclass(frozen=True)
 class NormalizationResult:
     """Output of one normalization pass.
@@ -392,6 +413,12 @@ def normalize_aggregation(
 
     ownership_rows = _rows(judgment.get("defect_ownership"))
     owner_by_finding_key: dict[str, str] = {}
+    # Build defect_key whitelist from aggregation context
+    valid_defect_keys: set[str] = set()
+    if aggregation_context is not None:
+        for key in aggregation_context.get("valid_defect_keys", []):
+            if isinstance(key, str):
+                valid_defect_keys.add(key)
     for record in ownership_rows:
         raw_dk = record.get("defect_key")
         defect_key = _normalize_defect_key(raw_dk)
@@ -399,6 +426,16 @@ def normalize_aggregation(
             changes.append(
                 f"defect_ownership: canonicalized {raw_dk!r} -> {defect_key!r}"
             )
+        # L2a: auto-fix defect_key not in whitelist (issue #51)
+        if defect_key and valid_defect_keys and defect_key not in valid_defect_keys:
+            repaired = _repair_defect_key(defect_key, valid_defect_keys)
+            if repaired is not None:
+                changes.append(
+                    f"defect_ownership: repaired {defect_key!r} -> {repaired!r} "
+                    "(matched after removing scope prefix)"
+                )
+                defect_key = repaired
+                record["defect_key"] = repaired
         for finding_key in _strings(record.get("finding_keys")):
             previous = owner_by_finding_key.get(finding_key)
             if previous is not None and previous != defect_key:

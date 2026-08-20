@@ -688,6 +688,14 @@ def build_aggregation_context(
             ),
         }
 
+    # Collect all valid defect_keys from observation mappings for whitelist
+    valid_defect_keys = sorted({
+        observation.get("defect_key")
+        for mapping in mappings.values()
+        for observation in mapping.get("observations", [])
+        if isinstance(observation.get("defect_key"), str)
+    })
+
     return {
         "schema_version": AGGREGATION_CONTEXT_SCHEMA_VERSION,
         "staged_schema_version": state.get("schema_version"),
@@ -697,6 +705,7 @@ def build_aggregation_context(
         "run_id": state.get("run_id"),
         "source_observations": source_observations,
         "criterion_mappings": list(mappings.values()),
+        "valid_defect_keys": valid_defect_keys,
     }
 
 

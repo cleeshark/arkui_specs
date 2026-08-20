@@ -192,4 +192,11 @@ def build_aggregation_machine_contract(
             "canonical finding IDs and secondary criterion sets. At most one finding "
             "may be CRITICAL and it must belong to the primary criterion."
         ),
+        "defect_key_reference_rule": (
+            "aggregation-context.json provides valid_defect_keys — the exhaustive "
+            "whitelist of defect_key values defined by validated observations. "
+            "defect_ownership[].defect_key must exactly match one entry in this "
+            "whitelist; do not add prefixes, rename, derive, or create new keys. "
+            "These keys are already scoped by work item (e.g. feat-01.trace-rule-orphan)."
+        ),
     }
