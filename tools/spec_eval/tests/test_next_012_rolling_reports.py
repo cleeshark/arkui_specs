@@ -422,6 +422,29 @@ class ManualRefreshTest(unittest.TestCase):
         self.assertEqual(first.target.generation, 1)
         self.assertEqual(self.manager.prepared, [first.job.job_id])
 
+    def test_manual_refresh_resolves_selected_agent_and_overrides(self) -> None:
+        result = self.app.refresh_function(
+            func_id="04-01-01",
+            source_revision="1" * 40,
+            run_count=1,
+            agent_id="claude",
+            agent_params={"timeout_seconds": 900},
+        )
+        self.assertEqual(result.job.executor_config["agent_id"], "claude")
+        self.assertEqual(result.job.executor_config["overrides"], {"timeout_seconds": 900})
+        self.assertEqual(result.job.executor_config["resolved_params"]["timeout_seconds"], 900)
+        self.assertEqual(result.job.executor_config["resolved_params"]["max_output_tokens"], 200000)
+
+    def test_agent_listing_exposes_defaults_and_schema(self) -> None:
+        response = route_request("GET", "/api/agents", b"", {}, self.app)
+        self.assertEqual(response.status, 200)
+        profiles = json.loads(response.body)
+        codex = next(item for item in profiles if item["id"] == "codex")
+        self.assertTrue(codex["default"])
+        timeout = next(item for item in codex["params"] if item["key"] == "timeout_seconds")
+        self.assertEqual(timeout["default"], 3600)
+        self.assertTrue(timeout["overridable"])
+
     def test_new_target_advances_generation_without_killing_old_job(self) -> None:
         first = self.app.refresh_function(
             func_id="04-01-01", source_revision="1" * 40, run_count=1

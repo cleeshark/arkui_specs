@@ -12,6 +12,9 @@ let jobsPage = 1;
 let jobsPageSizeValue = 10;
 let functionsPage = 1;
 let functionsPageSizeValue = 10;
+let agentProfiles = [];
+let selectedAgent = null;
+let agentOverrides = new Set();
 
 const status = (document.getElementById("status"));
 const filter = (document.getElementById("filter"));
@@ -29,6 +32,9 @@ const jobsPageInfo = document.getElementById("jobs-page-info");
 const form = document.getElementById("create-form");
 const createError = document.getElementById("create-error");
 const actionError = document.getElementById("action-error");
+const agentSelect = document.getElementById("agent-select");
+const agentParams = document.getElementById("agent-params");
+const agentReset = document.getElementById("agent-reset");
 
 function esc(s) {
   return String(s == null ? "" : s).replace(/[&<>"]/g, (c) =>
@@ -214,6 +220,88 @@ async function refreshMetrics(force = false) {
   }
 }
 
+function paramInput(param, value) {
+  const key = esc(param.key);
+  const id = `agent-param-${key}`;
+  if (param.type === "enum") {
+    const options = (param.enum || []).map((item) =>
+      `<option value="${esc(item)}" ${String(item) === String(value) ? "selected" : ""}>${esc(item)}</option>`
+    ).join("");
+    return `<select id="${id}" data-param="${key}">${options}</select>`;
+  }
+  const type = param.type === "integer" ? "number" : "text";
+  const min = param.minimum == null ? "" : ` min="${esc(param.minimum)}"`;
+  const max = param.maximum == null ? "" : ` max="${esc(param.maximum)}"`;
+  const display = value == null ? "" : String(value);
+  return `<input id="${id}" data-param="${key}" type="${type}" value="${esc(display)}"${min}${max} />`;
+}
+
+function renderAgentParams(profile) {
+  selectedAgent = profile;
+  agentOverrides = new Set();
+  if (!profile) {
+    agentParams.innerHTML = '<span class="muted">No Agent available</span>';
+    agentReset.hidden = true;
+    return;
+  }
+  agentParams.innerHTML = (profile.params || []).map((param) => {
+    const defaultValue = profile.defaults ? profile.defaults[param.key] : param.default;
+    const defaultText = defaultValue == null ? "local/default" : String(defaultValue);
+    return `<label>${esc(param.label || param.key)}
+      ${paramInput(param, defaultValue)}
+      <span class="param-source muted" data-source="${esc(param.key)}">default: ${esc(defaultText)}</span>
+    </label>`;
+  }).join("");
+  agentReset.hidden = true;
+}
+
+async function loadAgents() {
+  const result = await api("GET", "/api/agents");
+  if (!result.ok || !Array.isArray(result.json)) return;
+  agentProfiles = result.json;
+  agentSelect.innerHTML = agentProfiles.map((profile) =>
+    `<option value="${esc(profile.id)}" ${profile.default ? "selected" : ""}>${esc(profile.name || profile.id)}${profile.default ? " (default)" : ""}</option>`
+  ).join("");
+  renderAgentParams(agentProfiles.find((profile) => profile.default) || agentProfiles[0]);
+}
+
+function readAgentOverrides() {
+  const params = {};
+  if (!selectedAgent) return params;
+  (selectedAgent.params || []).forEach((param) => {
+    if (!agentOverrides.has(param.key)) return;
+    const input = document.querySelector(`[data-param="${CSS.escape(param.key)}"]`);
+    if (!input) return;
+    let value = input.value;
+    if (param.type === "integer") value = Number(value);
+    if (param.type === "string" && value === "" && param.nullable) value = null;
+    params[param.key] = value;
+  });
+  return params;
+}
+
+agentSelect.addEventListener("change", () => {
+  const profile = agentProfiles.find((item) => item.id === agentSelect.value);
+  renderAgentParams(profile);
+});
+
+agentParams.addEventListener("input", (event) => {
+  const key = event.target && event.target.dataset ? event.target.dataset.param : null;
+  if (!key || !selectedAgent) return;
+  const param = (selectedAgent.params || []).find((item) => item.key === key);
+  const defaultValue = selectedAgent.defaults ? selectedAgent.defaults[key] : param.default;
+  let value = event.target.value;
+  if (param.type === "integer") value = Number(value);
+  if (param.type === "string" && value === "" && param.nullable) value = null;
+  if (String(value) === String(defaultValue)) agentOverrides.delete(key);
+  else agentOverrides.add(key);
+  const source = document.querySelector(`[data-source="${CSS.escape(key)}"]`);
+  if (source) source.textContent = agentOverrides.has(key) ? "manual override" : `default: ${defaultValue == null ? "local/default" : defaultValue}`;
+  agentReset.hidden = agentOverrides.size === 0;
+});
+
+agentReset.addEventListener("click", () => renderAgentParams(selectedAgent));
+
 function tickDurations() {
   const now = Date.now();
   document.querySelectorAll(".live-duration").forEach((node) => {
@@ -314,11 +402,26 @@ form.addEventListener("submit", async (e) => {
   const payload = { func_id: fd.get("func_id"), run_count: Number(fd.get("run_count")) || 1 };
   const rev = fd.get("source_revision");
   if (rev) payload.source_revision = rev;
+  payload.agent_id = fd.get("agent_id") || undefined;
+  payload.agent_params = readAgentOverrides();
   const { ok, json } = await api(
     "POST", `/api/functions/${encodeURIComponent(payload.func_id)}/refresh`,
-    { run_count: payload.run_count, source_revision: payload.source_revision }
+    {
+      run_count: payload.run_count,
+      source_revision: payload.source_revision,
+      agent_id: payload.agent_id,
+      agent_params: payload.agent_params,
+    }
   );
-  if (ok) { form.reset(); refresh(); }
+  if (ok) {
+    form.reset();
+    const defaultProfile = agentProfiles.find((profile) => profile.default) || agentProfiles[0];
+    if (defaultProfile) {
+      agentSelect.value = defaultProfile.id;
+      renderAgentParams(defaultProfile);
+    }
+    refresh();
+  }
   else { createError.textContent = (json && json.error) || "create failed"; createError.hidden = false; }
 });
 
@@ -413,5 +516,6 @@ jobsPageNext.addEventListener("click", () => {
   renderJobs();
 });
 refresh();
+loadAgents();
 setInterval(refresh, POLL_MS);
 setInterval(tickDurations, 1000);

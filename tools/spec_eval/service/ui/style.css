@@ -34,6 +34,9 @@ button { background: var(--accent); color: #fff; border: 0; border-radius: 4px;
   padding: 0.35rem 0.6rem; margin-right: 0.25rem; cursor: pointer; font-size: 0.8rem; }
 button:hover { filter: brightness(1.05); }
 button:disabled { background: #cbd5e1; color: #64748b; cursor: default; filter: none; }
+.agent-params { display: contents; }
+.agent-params label { min-width: 180px; }
+.param-source { display: block; font-size: 0.78rem; margin-top: 0.2rem; }
 
 .table-scroll { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }

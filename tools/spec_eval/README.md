@@ -876,7 +876,10 @@ python3 specs/tools/spec_eval/service_cli.py serve \
 # source_revision 省略时使用当前 ace_engine HEAD；也可传完整 SHA、分支或 tag
 curl -sX POST http://127.0.0.1:8790/api/functions/04-01-01/refresh \
   -H 'Content-Type: application/json' \
-  -d '{"run_count":1,"source_revision":"HEAD"}'
+  -d '{"run_count":1,"source_revision":"HEAD","agent_id":"codex","agent_params":{"timeout_seconds":900}}'
+
+# 可选 Agent、参数 Schema 和默认值
+curl -s http://127.0.0.1:8790/api/agents
 
 # Function 当前状态、历史和新鲜度
 curl -s  http://127.0.0.1:8790/api/functions/04-01-01
@@ -885,7 +888,10 @@ curl -s  http://127.0.0.1:8790/api/functions/04-01-01/freshness
 curl -s 'http://127.0.0.1:8790/api/functions?freshness=EXPIRING'
 ```
 
-相同 FuncID、四仓 revision、Evaluator/协议版本和 `run_count` 的活动请求返回已有 Job
+服务启动参数 `--default-agent`（兼容别名 `--executor`）只决定未指定 Agent 时的默认模式；
+Manual refresh 的 `agent_id` 和 `agent_params` 只覆盖当前 Job。每个可选参数都有 Agent 默认值，
+请求未提供的参数会自动补齐，完整生效配置会冻结在 Job 中。相同 FuncID、四仓 revision、
+Evaluator/协议版本、`run_count`、Agent 和生效参数的活动请求返回已有 Job
 （HTTP 200，`deduplicated: true`）；新请求返回 HTTP 202。较旧 generation 即使更晚完成，
 也只进入历史记录，不能覆盖更新的 Function 当前报告。
 

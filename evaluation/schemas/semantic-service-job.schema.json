@@ -79,18 +79,22 @@
       "required": [
         "type",
         "command",
-        "sandbox",
         "timeout_seconds",
         "max_parallel",
         "output_schema"
       ],
       "properties": {
-        "type": { "type": "string", "const": "codex-cli" },
+        "agent_id": { "type": "string", "enum": ["codex", "claude"] },
+        "type": { "type": "string", "enum": ["codex-cli", "claude-cli"] },
         "command": { "type": "string", "minLength": 1 },
         "model": { "type": ["string", "null"] },
-        "sandbox": { "type": "string", "enum": ["read-only", "dangerously-bypass"] },
+        "sandbox": { "type": "string", "enum": ["read-only", "workspace-write", "dangerously-bypass"] },
+        "permission_mode": { "type": "string", "minLength": 1 },
         "timeout_seconds": { "type": "integer", "minimum": 1, "maximum": 7200 },
         "max_parallel": { "type": "integer", "minimum": 1, "maximum": 8 },
+        "max_output_tokens": { "type": "integer", "minimum": 1, "maximum": 300000 },
+        "resolved_params": { "type": "object" },
+        "overrides": { "type": "object" },
         "output_schema": { "type": "string", "const": "executor-result.schema.json" }
       },
       "additionalProperties": false

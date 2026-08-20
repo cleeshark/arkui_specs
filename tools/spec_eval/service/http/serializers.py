@@ -33,6 +33,11 @@ def job_to_dict(job: Job, statistics: JobStatistics | None = None) -> dict[str, 
         "pipeline": _pipeline_stepper(job),
         "progress": job.progress,
         "executor_config": job.executor_config,
+        "agent_id": job.executor_config.get("agent_id", "codex"),
+        "agent_overrides": job.executor_config.get("overrides", {}),
+        "resolved_agent_params": job.executor_config.get(
+            "resolved_params", {}
+        ),
         "protocol_version": job.protocol_version,
         "evaluator_version": job.evaluator_version,
         "created_at": job.created_at,
