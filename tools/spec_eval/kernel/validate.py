@@ -685,10 +685,17 @@ def validate_aggregation_document(
             content_status, evidence_status, conflict_scope,
         )
         if expected_conclusion is None:
+            actual_conclusion = results_by_id.get(criterion_id, {}).get("conclusion")
             errors.append(_err(
                 "POLICY_BASIS_INVALID", row_label,
                 entity_type="policy_basis", entity_id=criterion_id,
-                expected="NOT_APPLICABLE on all three status fields",
+                expected=(
+                    f"policy_basis status fields are inconsistent (mixed NOT_APPLICABLE); "
+                    f"either set ALL THREE to NOT_APPLICABLE, or set NONE to NOT_APPLICABLE. "
+                    f"Do NOT change the criterion conclusion"
+                    f" (currently {actual_conclusion})" if actual_conclusion else ""
+                ),
+                actual=f"content_status={content_status}, evidence_status={evidence_status}, conflict_scope={conflict_scope}",
             ))
             continue
         if criterion_id not in results_by_id:
