@@ -38,6 +38,10 @@ def build_executor_prompt(work: C.WorkItemInput) -> str:
         "Do not modify the initialized staged template; the service owns and publishes it.",
         "Provide judgments only; treat result_contract.machine_contract as normative.",
         "Write only the structured final result.",
+        "EFFICIENCY: To verify presence of a symbol, target, or config in a "
+        "large file, use Grep or Bash(grep -n 'pattern' file) instead of "
+        "reading the entire file with Read. Use Read with offset+limit when "
+        "only a specific line range is needed. Minimize total tokens read.",
     ]
     if correcting:
         evidence_correction = (

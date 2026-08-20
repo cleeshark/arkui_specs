@@ -433,7 +433,7 @@ class ClaudeCliExecutor:
             "--add-dir", str(work.run_dir),
             "--no-session-persistence",
             "--permission-mode", self._permission_mode,
-            "--allowedTools", "Bash Read",
+            "--allowedTools", "Bash Read Grep",
         ]
         return argv
 
