@@ -39,8 +39,9 @@ def build_parser() -> argparse.ArgumentParser:
     serve.add_argument("--max-workers", type=int, default=2)
     serve.add_argument("--token", default=None)
     serve.add_argument(
-        "--executor", choices=["codex", "claude"], default=None,
-        help="executor backend (default: codex)",
+        "--default-agent", "--executor", dest="default_agent",
+        choices=["codex", "claude"], default=None,
+        help="default Agent for jobs without an explicit Agent (default: codex)",
     )
 
     metrics = sub.add_parser("metrics", help="export metrics and exit")
@@ -89,15 +90,12 @@ def _serve(settings: ServiceSettings, args) -> int:
     if args.host not in ("127.0.0.1", "localhost") and not args.token:
         print("WARNING: binding non-loopback without --token; API will be open", file=sys.stderr)
 
-    executor_name = args.executor or "codex"
-    executor = None
-    executor_config = None
-    if executor_name != "codex":
-        from spec_eval.service.executors.registry import create
-        from spec_eval.service.settings import executor_config_for
+    from spec_eval.service.executors.registry import create
+    from spec_eval.service.settings import executor_config_for
 
-        executor_config = executor_config_for(executor_name)
-        executor = create(executor_name, executor_config, schemas_root=settings.schemas_root)
+    executor_name = args.default_agent or "codex"
+    executor_config = executor_config_for(executor_name)
+    executor = create(executor_name, executor_config, schemas_root=settings.schemas_root)
 
     app = SemanticServiceApp(
         settings,
@@ -105,6 +103,7 @@ def _serve(settings: ServiceSettings, args) -> int:
         executor_config=executor_config,
         max_workers=args.max_workers,
         token=args.token,
+        default_agent=executor_name,
     )
     app.start()
     server = make_server(app, args.host, args.port)

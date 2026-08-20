@@ -37,7 +37,10 @@ class ManualRefreshService:
         func_id: str,
         source_revision: str,
         run_count: int,
+        agent_id: str | None = None,
+        agent_params: dict | None = None,
     ) -> ManualRefreshResult:
+        executor_config = self.app.resolve_executor_config(agent_id, agent_params)
         revisions = self._workspace_manager.resolve_revisions(source_revision)
         resolved_revision = revisions["ace_engine"]
         provisional = _fingerprint(
@@ -46,6 +49,7 @@ class ManualRefreshService:
                 "revision_set": revisions,
                 "evaluator_version": DEFAULT_SKILL_EVALUATOR_VERSION,
                 "protocol_version": self.settings.protocol_version,
+                "executor_config": executor_config,
             }
         )
         dedupe_key = _fingerprint(
@@ -55,6 +59,7 @@ class ManualRefreshService:
                 "evaluator_version": DEFAULT_SKILL_EVALUATOR_VERSION,
                 "protocol_version": self.settings.protocol_version,
                 "run_count": run_count,
+                "executor_config": executor_config,
             }
         )
 
@@ -74,10 +79,10 @@ class ManualRefreshService:
                     source_revision=resolved_revision,
                     run_count=run_count,
                     job_id=job_id,
-                    executor_config=self.app.executor_config,
+                    executor_config=executor_config,
                 ),
                 evaluator_version=DEFAULT_SKILL_EVALUATOR_VERSION,
-                executor_config=self.app.executor_config,
+                executor_config=executor_config,
             )
             target, created = targets.create_active(
                 job_id=job.job_id,

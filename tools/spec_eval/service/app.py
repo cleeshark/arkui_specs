@@ -15,12 +15,12 @@ from .domain.models import CreateJobCommand, FreshnessPolicy, Job
 from .freshness import FreshnessManager
 from .function_views import FunctionViewService
 from .executors.base import SemanticExecutor
-from .executors.registry import create_default as _create_default_executor
+from .executors.registry import create, create_default as _create_default_executor
 from .pipeline.context import DEFAULT_SKILL_EVALUATOR_VERSION
 from .manual_refresh import ManualRefreshService
 from .scheduler.dispatcher import CancelResult, Dispatcher
 from .scheduler.job_worker import build_runner
-from .settings import ServiceSettings
+from .settings import ServiceSettings, executor_config_for, executor_profiles
 from .store.repositories import (
     ArtifactRepository,
     EventRepository,
@@ -43,23 +43,64 @@ class SemanticServiceApp:
         job_runner=None,
         max_workers: int = 2,
         token: str | None = None,
+        default_agent: str | None = None,
     ) -> None:
         self.settings = settings
         self.token = token
-        self._executor_config = executor_config or settings.default_executor_config
+        supplied_config = executor_config or settings.default_executor_config
+        self._default_agent = default_agent or supplied_config.get("agent_id", "codex")
+        self._executor_config = supplied_config
+        if "agent_id" not in self._executor_config:
+            self._executor_config = executor_config_for(self._default_agent)
+        self._injected_executor = executor
         self.store = SqliteStore(settings)
         FreshnessPolicyRepository(self.store).ensure_default()
         self.ui_dir = Path(__file__).resolve().parent / "ui"
         self._executor = executor or _create_default_executor(
             self._executor_config, schemas_root=settings.schemas_root
         )
-        runner = job_runner or build_runner(settings, self.store, self._executor)
+        runner = job_runner or build_runner(
+            settings,
+            self.store,
+            self._executor,
+            executor_resolver=self.executor_for_job,
+        )
         self.dispatcher = Dispatcher(self.store, job_runner=runner, max_workers=max_workers)
         self.manual_refresh = ManualRefreshService(self)
 
     @property
     def executor_config(self) -> dict:
         return self._executor_config
+
+    @property
+    def default_agent(self) -> str:
+        return self._default_agent
+
+    def list_agents(self) -> list[dict]:
+        profiles = executor_profiles()
+        for profile in profiles:
+            profile["default"] = profile["id"] == self._default_agent
+        return profiles
+
+    def resolve_executor_config(
+        self, agent_id: str | None = None, agent_params: dict | None = None
+    ) -> dict:
+        name = agent_id or self._default_agent
+        return executor_config_for(name, agent_params or {})
+
+    def executor_for_job(self, config: dict) -> SemanticExecutor:
+        """Create the executor selected by an immutable job config."""
+        legacy_type = {"codex-cli": "codex", "claude-cli": "claude"}.get(
+            str(config.get("type", ""))
+        )
+        name = str(config.get("agent_id") or legacy_type or self._default_agent)
+        if (
+            name == self._default_agent
+            and self._injected_executor is not None
+            and config == self._executor_config
+        ):
+            return self._injected_executor
+        return create(name, config, schemas_root=self.settings.schemas_root)
 
     # --- repositories (fresh handles are cheap; they only reference the store) -
     @property
@@ -78,29 +119,38 @@ class SemanticServiceApp:
         source_revision: str,
         job_id: str | None = None,
     ) -> Job:
+        config = self._executor_config
         cmd = CreateJobCommand(
             func_id=func_id,
             source_revision=source_revision,
             run_count=run_count,
             job_id=job_id,
-            executor_config=self._executor_config,
+            executor_config=config,
         )
         job = self.jobs.create_job(
             cmd,
             evaluator_version=DEFAULT_SKILL_EVALUATOR_VERSION,
-            executor_config=self._executor_config,
+            executor_config=config,
         )
         EventRepository(self.store).append(job.job_id, "job_submitted", {})
         self.dispatcher.submit(job.job_id, job.func_id)
         return job
 
     def refresh_function(
-        self, *, func_id: str, source_revision: str | None = None, run_count: int = 1
+        self,
+        *,
+        func_id: str,
+        source_revision: str | None = None,
+        run_count: int = 1,
+        agent_id: str | None = None,
+        agent_params: dict | None = None,
     ):
         return self.manual_refresh.request(
             func_id=func_id,
             source_revision=source_revision or self.default_source_revision(),
             run_count=run_count,
+            agent_id=agent_id,
+            agent_params=agent_params,
         )
 
     def list_functions(self):

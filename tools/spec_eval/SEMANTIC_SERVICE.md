@@ -2,8 +2,8 @@
 
 A local, loopback-bound service that turns Function-level semantic evaluation
 into a queued, resumable, observable rolling-report workflow. It drives the
-existing `spec_eval` evidence pipeline and staged-run skill scripts, calls a
-Codex CLI executor per work item, deterministically scores and aggregates the
+existing `spec_eval` evidence pipeline and staged-run skill scripts, calls the
+selected Agent executor per work item, deterministically scores and aggregates the
 result, then publishes an immutable automated archive.
 
 The current scheduler is deliberately manual: an operator chooses a FuncID and
@@ -54,7 +54,7 @@ Use the Function refresh endpoint for rolling reports:
 ```bash
 curl -sX POST http://127.0.0.1:8790/api/functions/04-01-01/refresh \
   -H 'Content-Type: application/json' \
-  -d '{"run_count":1,"source_revision":"HEAD"}'
+  -d '{"run_count":1,"source_revision":"HEAD","agent_id":"codex","agent_params":{"timeout_seconds":900}}'
 ```
 
 `source_revision` is resolved in `ace_engine`; it may be a full commit, branch,
@@ -63,7 +63,7 @@ tag, or `HEAD`. At submission time the service also resolves the current
 revision set for the Job.
 
 An active request with the same FuncID, revision set, evaluator/protocol
-version, and run count is deduplicated. A new request allocates the next
+version, run count, Agent and resolved Agent parameters is deduplicated. A new request allocates the next
 Function generation. Generation-checked promotion prevents an older Job that
 finishes late from replacing a newer desired report; it remains queryable in
 history instead.
@@ -77,6 +77,7 @@ report head.
 | Method | Path | Purpose |
 |--------|------|---------|
 | GET    | `/api/functions[?freshness=&refresh_status=&func_id=]` | list Function report heads |
+| GET    | `/api/agents` | list enabled Agents, parameter Schema and defaults |
 | GET    | `/api/functions/{func_id}` | current report, freshness, refresh state |
 | GET    | `/api/functions/{func_id}/history` | immutable report history and Finding delta |
 | GET    | `/api/functions/{func_id}/freshness` | compact expiry/staleness projection |
@@ -142,7 +143,49 @@ schemas all read from the same frozen revision envelope.
 - `--max-workers` controls global Job concurrency; the Function resource lock
   prevents conflicting work for the same FuncID.
 
-## Executor configuration (Phase-1 default)
+## Agent selection and parameter defaults
+
+The service startup option only selects the default Agent:
+
+```bash
+python3 specs/tools/spec_eval/service_cli.py serve --default-agent claude
+```
+
+`--executor` remains accepted as a compatibility alias. It does not configure
+per-job parameters. Manual refresh accepts either the flat form
+`{"agent_id":"claude","agent_params":{...}}` or the nested form
+`{"agent":{"id":"claude","params":{...}}}`.
+
+Every exposed optional parameter has an Agent-specific default and is
+overridable for the current refresh. The service validates the override against
+the Agent Schema, fills omitted parameters from the default, and stores the
+complete resolved snapshot in the immutable Job. The precedence is:
+
+```text
+manual override > selected Agent default > global safety limit
+```
+
+The `GET /api/agents` response drives the UI form. Resetting a parameter removes
+the override and returns it to the Agent default. Retry uses the original Job
+snapshot, even if the service default or Agent profile changes later.
+
+Sandbox mode, CLI command, output schema and service-wide worker concurrency
+remain service-controlled and are intentionally not exposed as per-refresh
+overrides.
+
+Example request:
+
+```json
+{
+  "agent_id": "claude",
+  "agent_params": {
+    "model": "claude-sonnet",
+    "timeout_seconds": 900
+  }
+}
+```
+
+## Executor configuration (Codex default)
 
 ```json
 {

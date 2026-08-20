@@ -45,12 +45,110 @@ _EXECUTOR_CONFIGS: dict[str, Any] = {
 }
 
 
-def executor_config_for(name: str) -> dict[str, Any]:
-    """Return the default config for the named executor."""
+_EXECUTOR_PARAM_SCHEMAS: dict[str, tuple[dict[str, Any], ...]] = {
+    "codex": (
+        {
+            "key": "model", "label": "Model", "type": "string", "default": None,
+            "nullable": True, "description": "Leave empty to use the local Codex configuration.",
+        },
+        {
+            "key": "timeout_seconds", "label": "Timeout (seconds)", "type": "integer",
+            "default": 3600, "minimum": 10, "maximum": 7200,
+        },
+    ),
+    "claude": (
+        {
+            "key": "model", "label": "Model", "type": "string",
+            "default": "claude-opus-4-6[1m]",
+        },
+        {
+            "key": "permission_mode", "label": "Permission mode", "type": "enum",
+            "default": "bypassPermissions", "enum": ["bypassPermissions", "default"],
+        },
+        {
+            "key": "timeout_seconds", "label": "Timeout (seconds)", "type": "integer",
+            "default": 3600, "minimum": 10, "maximum": 7200,
+        },
+        {
+            "key": "max_output_tokens", "label": "Max output tokens", "type": "integer",
+            "default": 200000, "minimum": 1024, "maximum": 300000,
+        },
+    ),
+}
+
+
+def _schema_for(name: str) -> tuple[dict[str, Any], ...]:
+    try:
+        return _EXECUTOR_PARAM_SCHEMAS[name]
+    except KeyError:
+        raise ValueError(f"unknown executor: {name!r}") from None
+
+
+def executor_config_for(
+    name: str, overrides: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """Return a complete, validated config for one executor.
+
+    ``overrides`` contains only values explicitly supplied for one job. The
+    returned config always contains every exposed parameter, so queued jobs are
+    reproducible even if service defaults change after submission.
+    """
     factory = _EXECUTOR_CONFIGS.get(name)
     if factory is None:
         raise ValueError(f"unknown executor: {name!r}")
-    return factory()
+    overrides = overrides or {}
+    schema = {item["key"]: item for item in _schema_for(name)}
+    unknown = sorted(set(overrides) - set(schema))
+    if unknown:
+        raise ValueError(f"unsupported {name} executor parameter(s): {', '.join(unknown)}")
+    config = factory()
+    resolved: dict[str, Any] = {}
+    for key, item in schema.items():
+        value = overrides[key] if key in overrides else item["default"]
+        _validate_executor_param(name, item, value)
+        resolved[key] = value
+        config[key] = value
+    config["agent_id"] = name
+    config["resolved_params"] = resolved
+    config["overrides"] = dict(overrides)
+    return config
+
+
+def _validate_executor_param(name: str, item: dict[str, Any], value: Any) -> None:
+    if value is None and item.get("nullable"):
+        return
+    kind = item["type"]
+    if kind == "string" and not isinstance(value, str):
+        raise ValueError(f"{name}.{item['key']} must be a string")
+    if kind == "enum" and value not in item.get("enum", ()):
+        raise ValueError(
+            f"{name}.{item['key']} must be one of "
+            f"{', '.join(map(str, item.get('enum', ())))}"
+        )
+    if kind == "integer":
+        if isinstance(value, bool) or not isinstance(value, int):
+            raise ValueError(f"{name}.{item['key']} must be an integer")
+        if value < item["minimum"] or value > item["maximum"]:
+            raise ValueError(
+                f"{name}.{item['key']} must be between {item['minimum']} and {item['maximum']}"
+            )
+
+
+def executor_profiles() -> list[dict[str, Any]]:
+    """Return redacted Agent metadata used by the Manual refresh UI."""
+    profiles = []
+    for name in sorted(_EXECUTOR_CONFIGS):
+        config = executor_config_for(name)
+        profiles.append({
+            "id": name,
+            "name": name.capitalize(),
+            "params": [
+                dict(item, required=False, overridable=True)
+                for item in _schema_for(name)
+            ],
+            "defaults": config["resolved_params"],
+        })
+    return profiles
 
 
 @dataclass(frozen=True)

@@ -72,6 +72,9 @@ def route_request(
     if segments == ["api", "metrics"] and method == "GET":
         return Response.json(200, app.metrics())
 
+    if segments == ["api", "agents"] and method == "GET":
+        return Response.json(200, app.list_agents())
+
     if segments == ["api", "site", "export"] and method == "POST":
         return Response.json(200, {key: str(path) for key, path in app.export_site().items()})
 
@@ -208,10 +211,33 @@ def _refresh_function(method: str, func_id: str, body: bytes, app: Any) -> Respo
     source_revision = payload.get("source_revision")
     if source_revision is not None and not isinstance(source_revision, str):
         return _error(400, "source_revision must be a string")
+    agent_id = payload.get("agent_id")
+    agent_params = payload.get("agent_params", payload.get("params", {}))
+    # Accept the nested form as well: {"agent": {"id": ..., "params": ...}}.
+    agent = payload.get("agent")
+    if agent is not None:
+        if not isinstance(agent, dict):
+            return _error(400, "agent must be an object")
+        agent_id = agent.get("id", agent.get("agent_id", agent_id))
+        agent_params = agent.get("params", agent_params)
+    if agent_id is not None and (
+        not isinstance(agent_id, str) or not agent_id.strip()
+    ):
+        return _error(400, "agent_id must be a non-empty string")
+    if agent_params is None:
+        agent_params = {}
+    if not isinstance(agent_params, dict):
+        return _error(400, "agent_params must be an object")
     try:
         result = app.refresh_function(
-            func_id=func_id, source_revision=source_revision, run_count=run_count
+            func_id=func_id,
+            source_revision=source_revision,
+            run_count=run_count,
+            agent_id=agent_id,
+            agent_params=agent_params,
         )
+    except ValueError as exc:
+        return _error(400, str(exc))
     except Exception as exc:
         return _error(409, str(exc))
     return Response.json(

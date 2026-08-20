@@ -38,6 +38,7 @@ def build_runner(
     store: SqliteStore,
     executor: SemanticExecutor,
     *,
+    executor_resolver: Callable[[dict], SemanticExecutor] | None = None,
     runner: Runner = default_runner,
 ) -> Callable[[str, threading.Event], None]:
     """Return a ``run_job(job_id, cancel)`` closure for the dispatcher."""
@@ -48,6 +49,12 @@ def build_runner(
         jobs = JobRepository(store)
         raised = False
         try:
+            job = jobs.get_job(job_id)
+            selected_executor = (
+                executor_resolver(job.executor_config)
+                if executor_resolver is not None
+                else executor
+            )
             result = run_job_pipeline(
                 job_id,
                 settings=settings,
@@ -56,7 +63,7 @@ def build_runner(
                 events=EventRepository(store),
                 artifacts=ArtifactRepository(store),
                 snapshots=DependencySnapshotRepository(store),
-                executor=executor,
+                executor=selected_executor,
                 workspace_provider=workspace_manager.prepare,
                 refresh_targets=targets,
                 statistics=JobStatisticsRepository(store),
