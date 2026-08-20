@@ -117,6 +117,9 @@ class ClaudeCliExecutor:
         result_parent = Path(work.executor_result_path).parent
         result_parent.mkdir(parents=True, exist_ok=True)
         log_tag = _safe_work_item_tag(work.work_item_id)
+        mode = work.prompt_extras.get("mode", "observe")
+        if mode != "observe":
+            log_tag = f"{log_tag}.{mode}"
         stdout_log = str(result_parent / f"claude.{log_tag}.stdout.log")
         stderr_log = str(result_parent / f"claude.{log_tag}.stderr.log")
 
@@ -231,9 +234,13 @@ class ClaudeCliExecutor:
         summary = _build_execution_summary(
             result_event, work, telemetry.snapshot(),
         )
+        summary_tag = _safe_work_item_tag(work.work_item_id)
+        summary_mode = work.prompt_extras.get("mode", "observe")
+        if summary_mode != "observe":
+            summary_tag = f"{summary_tag}.{summary_mode}"
         summary_path = (
             Path(work.executor_result_path).parent
-            / f"claude.{_safe_work_item_tag(work.work_item_id)}.execution-summary.json"
+            / f"claude.{summary_tag}.execution-summary.json"
         )
         try:
             summary_path.write_text(

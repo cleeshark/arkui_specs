@@ -103,6 +103,9 @@ class CodexCliExecutor:
         result_parent = Path(work.executor_result_path).parent
         result_parent.mkdir(parents=True, exist_ok=True)
         log_tag = _safe_work_item_tag(work.work_item_id)
+        mode = work.prompt_extras.get("mode", "observe")
+        if mode != "observe":
+            log_tag = f"{log_tag}.{mode}"
         stdout_log = str(result_parent / f"codex.{log_tag}.stdout.log")
         stderr_log = str(result_parent / f"codex.{log_tag}.stderr.log")
 
