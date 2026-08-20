@@ -595,6 +595,34 @@ def validate_aggregation_document(
                     expected="not NOT_APPLICABLE with applicable units",
                     actual=str(conclusion),
                 ))
+            # Check allow_not_applicable constraint (issue #50)
+            if conclusion == "NOT_APPLICABLE" and not mapping.get("allow_not_applicable"):
+                errors.append(_err(
+                    "NOT_APPLICABLE_FORBIDDEN",
+                    f"{label}.criterion_results[{criterion_id}].conclusion",
+                    entity_type="criterion", entity_id=criterion_id,
+                    expected="allow_not_applicable is false; use SUPPORTED, PARTIALLY_SUPPORTED, CONTRADICTED, MISSING, or NOT_VERIFIABLE",
+                    actual="NOT_APPLICABLE",
+                ))
+            # Check severity floor constraint (issue #50)
+            outcomes = mapping.get("outcomes", {})
+            if isinstance(outcomes, dict) and conclusion in outcomes:
+                outcome_constraint = outcomes.get(conclusion, {})
+                expected_severity = outcome_constraint.get("severity_floor")
+                if expected_severity:
+                    severity_rank = {"Info": 0, "Minor": 1, "Major": 2, "Critical": 3}
+                    findings = _rows(result.get("findings"))
+                    for finding in findings:
+                        finding_severity = finding.get("severity")
+                        if severity_rank.get(finding_severity, -1) < severity_rank.get(expected_severity, 0):
+                            errors.append(_err(
+                                "SEVERITY_BELOW_FLOOR",
+                                f"{label}.criterion_results[{criterion_id}].findings[].severity",
+                                entity_type="finding",
+                                entity_id=str(finding.get("finding_id") or finding.get("key")),
+                                expected=f"severity >= {expected_severity} for conclusion {conclusion}",
+                                actual=str(finding_severity),
+                            ))
 
     policy_bases = _rows(document.get("outcome_policy_bases"))
     policy_order = [

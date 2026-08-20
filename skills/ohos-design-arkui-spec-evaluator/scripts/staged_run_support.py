@@ -494,16 +494,33 @@ def build_aggregation_context(
     if errors:
         raise ValueError("cannot build aggregation context: " + "; ".join(errors))
     criteria = criterion_order(rubric)
-    allow_not_applicable = {
-        criterion["id"]: bool(criterion.get("allow_not_applicable"))
-        for dimension in rubric.get("dimensions", [])
-        for criterion in dimension.get("criteria", [])
-        if isinstance(criterion, dict) and isinstance(criterion.get("id"), str)
-    }
+    # Extract allow_not_applicable and outcomes (severity floor) from rubric
+    criterion_metadata = {}
+    for dimension in rubric.get("dimensions", []):
+        for criterion in dimension.get("criteria", []):
+            if isinstance(criterion, dict) and isinstance(criterion.get("id"), str):
+                criterion_id = criterion["id"]
+                metadata = {
+                    "allow_not_applicable": bool(criterion.get("allow_not_applicable")),
+                }
+                # Extract severity floor for each outcome
+                outcomes = criterion.get("outcomes", {})
+                if isinstance(outcomes, dict):
+                    outcome_constraints = {}
+                    for conclusion, props in outcomes.items():
+                        if isinstance(props, dict) and "severity" in props:
+                            outcome_constraints[conclusion] = {
+                                "severity_floor": props["severity"]
+                            }
+                    if outcome_constraints:
+                        metadata["outcomes"] = outcome_constraints
+                criterion_metadata[criterion_id] = metadata
+
     mappings: dict[str, dict[str, Any]] = {
         criterion_id: {
             "criterion_id": criterion_id,
-            "allow_not_applicable": allow_not_applicable.get(criterion_id, False),
+            "allow_not_applicable": criterion_metadata.get(criterion_id, {}).get("allow_not_applicable", False),
+            "outcomes": criterion_metadata.get(criterion_id, {}).get("outcomes", {}),
             "observations": [],
             "claims": [],
             "atomic_units": [],
