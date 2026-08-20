@@ -170,12 +170,9 @@ def validate_observation_document(
             else:
                 conflict = defined_defects.get(defect_key)
                 if conflict is not None and conflict != primary:
-                    errors.append(_err(
-                        "DEFECT_KEYS_INVALID", f"{obs_label}.defect_key",
-                        entity_type="defect", entity_id=defect_key,
-                        expected=f"consistent primary criterion {conflict}",
-                        actual=primary,
-                    ))
+                    # Same defect observed from different criterion dimensions;
+                    # aggregation selects the final primary (issue #53).
+                    pass
                 else:
                     defined_defects[defect_key] = primary
         elif defect_key is not None:

@@ -1415,7 +1415,7 @@ def validate_aggregation_document(
         if isinstance(mapping, dict) and isinstance(mapping.get("criterion_id"), str)
     }
 
-    observed_defects: dict[str, str] = {}
+    observed_defects: dict[str, set[str]] = {}
     adverse_criteria: set[str] = set()
     unverifiable_criteria: set[str] = set()
     for criterion_id, mapping in mappings_by_id.items():
@@ -1430,12 +1430,8 @@ def validate_aggregation_document(
             primary = observation.get("primary_criterion_id")
             if not isinstance(defect_key, str):
                 continue
-            if defect_key in observed_defects and observed_defects[defect_key] != primary:
-                errors.append(
-                    f"aggregation: defect {defect_key!r} has conflicting observation primary Criteria"
-                )
-            elif isinstance(primary, str):
-                observed_defects[defect_key] = primary
+            if isinstance(primary, str):
+                observed_defects.setdefault(defect_key, set()).add(primary)
         if any(
             isinstance(claim, dict) and claim.get("local_outcome") == "NOT_VERIFIABLE"
             for claim in mapping.get("claims", [])
@@ -1604,12 +1600,12 @@ def validate_aggregation_document(
             errors.append(f"{label}: one defect may produce at most one Critical Finding")
         if critical_criteria and critical_criteria[0] != primary:
             errors.append(f"{label}: a Critical Finding must belong to the primary Criterion")
-        observed_primary = observed_defects.get(defect_key)
-        if observed_primary is None:
+        observed_primaries = observed_defects.get(defect_key)
+        if observed_primaries is None:
             errors.append(f"{label}.defect_key: not defined by a validated observation")
-        elif observed_primary != primary:
+        elif primary not in observed_primaries:
             errors.append(
-                f"{label}.primary_criterion_id: expected observation owner {observed_primary!r}"
+                f"{label}.primary_criterion_id: expected one of observation owners {sorted(observed_primaries)!r}"
             )
 
     for finding_id in findings_by_id:
