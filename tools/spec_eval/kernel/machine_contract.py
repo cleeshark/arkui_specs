@@ -86,6 +86,12 @@ def build_observation_machine_contract(
             f"{K.DEFECT_KEY_PATTERN} (lowercase alphanumeric, dots, underscores "
             "and hyphens; e.g. 'missing.verification_assets', 'trace-rule-orphan')."
         ),
+        "defect_ownership_rule": (
+            "observations[].defect_key and observations[].primary_criterion_id are "
+            "defect ownership fields. Set them ONLY when local_outcome is CONFLICT "
+            "or MISSING. For SUPPORTED, NOT_VERIFIABLE, and NOT_APPLICABLE outcomes, "
+            "both fields must be null (omitted or explicitly null)."
+        ),
         "evidence_cardinality": {
             "minimum_items_by_local_outcome": dict(
                 K.OBSERVATION_EVIDENCE_MIN_ITEMS

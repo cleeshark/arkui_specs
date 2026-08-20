@@ -175,11 +175,13 @@ def validate_observation_document(
                     pass
                 else:
                     defined_defects[defect_key] = primary
-        elif defect_key is not None:
+        elif defect_key is not None or primary is not None:
             errors.append(_err(
                 "DEFECT_KEYS_INVALID", f"{obs_label}.defect_key",
                 entity_type="observation", entity_id=str(entry.get("observation_id")),
-                expected="null for non-adverse outcome", actual=str(defect_key),
+                expected="defect_key and primary_criterion_id must be null for non-adverse outcome",
+                actual=f"defect_key={defect_key}, primary={primary}",
+                repairability=SERVICE_NORMALIZATION,
             ))
 
     if expected_claims and observed_claims != set(expected_claims):
