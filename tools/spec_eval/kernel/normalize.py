@@ -260,17 +260,28 @@ def normalize_observation(
             changes.append(
                 f"defect_key: canonicalized {raw_defect_key!r} -> {norm_defect_key!r}"
             )
+        local_outcome = entry.get("local_outcome")
+        primary_criterion = entry.get("primary_criterion_id")
+        # Auto-cleanup: clear defect ownership fields for non-adverse outcomes
+        if local_outcome not in {"CONFLICT", "MISSING"}:
+            if norm_defect_key is not None or primary_criterion is not None:
+                changes.append(
+                    f"observations[{obs_index}]: cleared defect ownership fields "
+                    f"for {local_outcome} outcome"
+                )
+                norm_defect_key = None
+                primary_criterion = None
         observations.append({
             "observation_id": f"OBS-{obs_index + 1}",
             "criterion_ids": _strings(entry.get("criterion_ids")),
             "check_ids": _strings(entry.get("check_ids")),
             "claim_ids": _strings(entry.get("claim_ids")),
-            "local_outcome": entry.get("local_outcome"),
+            "local_outcome": local_outcome,
             "breadth": entry.get("breadth"),
             "contract_family": entry.get("contract_family", ""),
             "fact": entry.get("fact", ""),
             "defect_key": norm_defect_key,
-            "primary_criterion_id": entry.get("primary_criterion_id"),
+            "primary_criterion_id": primary_criterion,
             "evidence": evidence_rows,
         })
     claim_referenced_keys: list[str] = []
