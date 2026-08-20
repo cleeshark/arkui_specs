@@ -30,7 +30,7 @@ def _claude_executor_config() -> dict[str, Any]:
     return {
         "type": "claude-cli",
         "command": "claude",
-        "model": None,
+        "model": "claude-opus-4-6[1m]",
         "permission_mode": "bypassPermissions",
         "timeout_seconds": 3600,
         "max_parallel": 2,
