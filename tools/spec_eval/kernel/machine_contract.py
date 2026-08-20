@@ -169,6 +169,14 @@ def build_aggregation_machine_contract(
             "criterion scope and mapped unit outcomes; criterion_results[].claim_ids "
             "are citations only and may not narrow the mapped scope."
         ),
+        "forbidden_conclusions_rule": (
+            "aggregation-context.json specifies constraints.forbidden_conclusions "
+            "for each Criterion — a list of conclusions that are structurally "
+            "impossible given the observation evidence. If a conclusion appears "
+            "in forbidden_conclusions, do not use it for that Criterion. Also "
+            "check constraints.required_conclusion_when_no_adverse: when set, "
+            "the Criterion conclusion must be exactly that value."
+        ),
         "finding_cardinality_rule": (
             "every criterion whose conclusion is PARTIALLY_SUPPORTED, CONTRADICTED "
             "or MISSING must contain at least one evidence-backed finding; SUPPORTED "
