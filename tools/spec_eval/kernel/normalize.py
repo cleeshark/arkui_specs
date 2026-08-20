@@ -73,6 +73,26 @@ def _repair_defect_key(key: str, valid_keys: set[str]) -> str | None:
     return None
 
 
+def _repair_policy_basis(conclusion: str | None) -> tuple[str, str, str] | None:
+    """Reverse-map a conclusion to the most natural policy_basis triple.
+
+    When the model fills policy_basis with a mix of NOT_APPLICABLE and non-NA
+    values, ``expected_policy_conclusion`` returns None.  If the conclusion
+    itself is valid, we can infer a canonical set of status fields.
+    """
+    _CANONICAL_BASIS: dict[str, tuple[str, str, str]] = {
+        "NOT_APPLICABLE": ("NOT_APPLICABLE", "NOT_APPLICABLE", "NOT_APPLICABLE"),
+        "NOT_VERIFIABLE": ("PRESENT", "UNAVAILABLE", "NONE"),
+        "SUPPORTED": ("PRESENT", "VERIFIED", "NONE"),
+        "PARTIALLY_SUPPORTED": ("PRESENT", "PARTIAL", "NONE"),
+        "CONTRADICTED": ("PRESENT", "VERIFIED", "CORE"),
+        "MISSING": ("ABSENT", "UNAVAILABLE", "NONE"),
+    }
+    if not isinstance(conclusion, str):
+        return None
+    return _CANONICAL_BASIS.get(conclusion)
+
+
 @dataclass(frozen=True)
 class NormalizationResult:
     """Output of one normalization pass.
@@ -677,11 +697,25 @@ def normalize_aggregation(
     outcome_policy_bases = []
     for criterion_id in OUTCOME_POLICY_BASIS_CRITERIA:
         row = policy_judgment.get(criterion_id, policy_template.get(criterion_id, {}))
+        content_status = row.get("content_status")
+        evidence_status = row.get("evidence_status")
+        conflict_scope = row.get("conflict_scope")
+        derived = K.expected_policy_conclusion(content_status, evidence_status, conflict_scope)
+        if derived is None:
+            # Mixed NOT_APPLICABLE — try to repair from the conclusion
+            conclusion = judgment_by_criterion.get(criterion_id, {}).get("conclusion")
+            repaired = _repair_policy_basis(conclusion)
+            if repaired is not None:
+                content_status, evidence_status, conflict_scope = repaired
+                changes.append(
+                    f"outcome_policy_bases[{criterion_id}]: repaired inconsistent "
+                    f"status fields to match conclusion {conclusion}"
+                )
         outcome_policy_bases.append({
             "criterion_id": criterion_id,
-            "content_status": row.get("content_status"),
-            "evidence_status": row.get("evidence_status"),
-            "conflict_scope": row.get("conflict_scope"),
+            "content_status": content_status,
+            "evidence_status": evidence_status,
+            "conflict_scope": conflict_scope,
             "reason": row.get("reason", ""),
         })
 
