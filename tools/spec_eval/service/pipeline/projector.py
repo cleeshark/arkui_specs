@@ -46,7 +46,7 @@ def enqueue_projection(
 ) -> None:
     """Record one projection request (idempotent per job/report)."""
     del pending_delta  # the projector recomputes deltas from the store
-    with SqliteStore(settings) as store:
+    with SqliteStore(settings, run_recovery=False) as store:
         ProjectionRepository(store).enqueue(
             job_id=job.job_id,
             report_id=report_id,
@@ -71,7 +71,7 @@ def run_projection(
     job lifecycle.
     """
     del runner
-    with SqliteStore(settings) as store:
+    with SqliteStore(settings, run_recovery=False) as store:
         repository = ProjectionRepository(store)
         request = repository.get(job.job_id)
         if request is None or request.get("status") == "completed":
@@ -95,14 +95,14 @@ def run_pending_projections(settings: ServiceSettings) -> int:
     from ..domain.models import Job as JobModel
 
     processed = 0
-    with SqliteStore(settings) as store:
+    with SqliteStore(settings, run_recovery=False) as store:
         repository = ProjectionRepository(store)
         pending_ids = [
             row["job_id"]
             for row in repository.list_by_status("pending")
         ] + [row["job_id"] for row in repository.list_by_status("failed")]
     for job_id in pending_ids:
-        with SqliteStore(settings) as store:
+        with SqliteStore(settings, run_recovery=False) as store:
             jobs = store  # JobRepository import below
             from ..store.repositories import JobRepository
 
