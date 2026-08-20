@@ -43,7 +43,7 @@ def _load_json(path: Path) -> dict[str, Any]:
     return value
 
 
-def _compact_finding(finding: dict[str, Any], *, source: str) -> dict[str, Any]:
+def compact_finding(finding: dict[str, Any], *, source: str) -> dict[str, Any]:
     fields = (
         "finding_id", "criterion_id", "rule_id", "severity", "conclusion", "message",
         "recommendation", "path", "line", "feat_id", "claim_id", "evidence_ids",
@@ -53,7 +53,7 @@ def _compact_finding(finding: dict[str, Any], *, source: str) -> dict[str, Any]:
     return result
 
 
-def _semantic_data(review: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[str]]:
+def semantic_data(review: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[str]]:
     semantic = review.get("semantic_result", {})
     criteria: list[dict[str, Any]] = []
     findings: list[dict[str, Any]] = []
@@ -62,7 +62,7 @@ def _semantic_data(review: dict[str, Any]) -> tuple[list[dict[str, Any]], list[d
         if not isinstance(item, dict):
             continue
         item_findings = [
-            _compact_finding(finding, source="semantic")
+            compact_finding(finding, source="semantic")
             for finding in item.get("findings", [])
             if isinstance(finding, dict)
         ]
@@ -95,9 +95,9 @@ def _semantic_data(review: dict[str, Any]) -> tuple[list[dict[str, Any]], list[d
     return criteria, findings, sorted(evidence_paths)
 
 
-def _static_data(static: dict[str, Any], *, func_id: str) -> tuple[list[dict[str, Any]], list[str]]:
+def static_data(static: dict[str, Any], *, func_id: str) -> tuple[list[dict[str, Any]], list[str]]:
     findings = [
-        _compact_finding(enrich_finding_identity(finding, default_func_id=func_id), source="static")
+        compact_finding(enrich_finding_identity(finding, default_func_id=func_id), source="static")
         for finding in static.get("findings", [])
         if isinstance(finding, dict)
     ]
@@ -105,7 +105,7 @@ def _static_data(static: dict[str, Any], *, func_id: str) -> tuple[list[dict[str
     return findings, paths
 
 
-def _recommendations(findings: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def recommendations(findings: list[dict[str, Any]]) -> list[dict[str, Any]]:
     result = []
     for finding in findings:
         recommendation = finding.get("recommendation")
@@ -132,8 +132,8 @@ def _function_entry(
 ) -> dict[str, Any]:
     func_id = str(review.get("func_id", ""))
     review_revision = str(review.get("source_revision", ""))
-    criteria, semantic_findings, semantic_paths = _semantic_data(review)
-    static_findings, static_paths = _static_data(static or {}, func_id=func_id)
+    criteria, semantic_findings, semantic_paths = semantic_data(review)
+    static_findings, static_paths = static_data(static or {}, func_id=func_id)
     all_findings = static_findings + semantic_findings
     confirmation = review.get("confirmation", {})
     status = "CONFIRMED" if review_revision == site_revision and static is not None else "EXPIRED"
@@ -145,7 +145,7 @@ def _function_entry(
         "scores": review.get("scores", {}),
         "criterion_summaries": sorted(criteria, key=lambda item: str(item.get("criterion_id", ""))),
         "findings": all_findings,
-        "recommendations": _recommendations(all_findings),
+        "recommendations": recommendations(all_findings),
         "evidence_paths": sorted(set(semantic_paths + static_paths)),
         "confirmation": {
             "confirmed_by": confirmation.get("confirmed_by", ""),
