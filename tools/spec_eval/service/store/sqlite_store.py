@@ -37,7 +37,9 @@ def utc_now() -> str:
 class SqliteStore:
     """Owns the single SQLite connection and serializes all access to it."""
 
-    def __init__(self, settings: ServiceSettings) -> None:
+    def __init__(
+        self, settings: ServiceSettings, *, run_recovery: bool = True,
+    ) -> None:
         self.settings = settings
         self._conn = sqlite3.connect(str(settings.db_path), check_same_thread=False)
         self._conn.row_factory = sqlite3.Row
@@ -46,9 +48,12 @@ class SqliteStore:
         self._tx_depth = 0
         self._apply_pragmas()
         self._run_migrations()
-        # Crash recovery runs on every open: a fresh DB has no active jobs, so
-        # it is a no-op there; a reopened DB resumes interrupted jobs to queued.
-        self.recover_active_jobs()
+        # Crash recovery is a *startup-only* concern: it resets running jobs
+        # left behind by a previous process crash.  Non-startup callers (e.g.
+        # projector opening a temporary store) must pass run_recovery=False to
+        # avoid killing jobs that are still executing in parallel workers.
+        if run_recovery:
+            self.recover_active_jobs()
 
     # --- lifecycle ---------------------------------------------------------
     def close(self) -> None:
