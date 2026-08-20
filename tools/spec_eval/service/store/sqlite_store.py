@@ -27,7 +27,7 @@ from typing import Any, Iterator
 from ..domain import states as S
 from ..settings import ServiceSettings
 
-_SCHEMA_VERSION = "6"
+_SCHEMA_VERSION = "7"
 
 def utc_now() -> str:
     """Current UTC timestamp as an ISO-8601 string (seconds precision)."""
@@ -84,6 +84,29 @@ class SqliteStore:
             # D1 is a cold-start boundary: historical service databases are
             # intentionally not migrated or silently relabeled as 0.2.0.
             # Operators must run `service_cli.py purge --yes` and start empty.
+            if version == "6":
+                self._conn.executescript("""
+                    CREATE TABLE IF NOT EXISTS finding_ledger (
+                      finding_id TEXT PRIMARY KEY,
+                      func_id TEXT NOT NULL,
+                      criterion_id TEXT NOT NULL,
+                      severity TEXT NOT NULL DEFAULT 'Major',
+                      message TEXT NOT NULL DEFAULT '',
+                      status TEXT NOT NULL DEFAULT 'active'
+                        CHECK (status IN ('active','resolved','refuted','superseded','out_of_scope')),
+                      first_seen_run_id TEXT NOT NULL,
+                      first_seen_at TEXT NOT NULL,
+                      last_confirmed_run_id TEXT,
+                      last_confirmed_at TEXT,
+                      confirmation_count INTEGER NOT NULL DEFAULT 1,
+                      executor_set TEXT NOT NULL DEFAULT '[]',
+                      disposition_history TEXT NOT NULL DEFAULT '[]'
+                    );
+                    CREATE INDEX IF NOT EXISTS idx_ledger_func ON finding_ledger (func_id);
+                    CREATE INDEX IF NOT EXISTS idx_ledger_status ON finding_ledger (func_id, status);
+                    UPDATE schema_meta SET value = '7' WHERE key = 'schema_version';
+                """)
+                version = "7"
             if version != _SCHEMA_VERSION:
                 raise RuntimeError(
                     f"database has incompatible schema version {version!r}; "
