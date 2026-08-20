@@ -514,6 +514,10 @@ def build_aggregation_context(
                             }
                     if outcome_constraints:
                         metadata["outcomes"] = outcome_constraints
+                # Extract required_evidence_types (#52)
+                req_types = criterion.get("required_evidence_types")
+                if isinstance(req_types, list) and req_types:
+                    metadata["required_evidence_types"] = req_types
                 criterion_metadata[criterion_id] = metadata
 
     mappings: dict[str, dict[str, Any]] = {
@@ -521,6 +525,7 @@ def build_aggregation_context(
             "criterion_id": criterion_id,
             "allow_not_applicable": criterion_metadata.get(criterion_id, {}).get("allow_not_applicable", False),
             "outcomes": criterion_metadata.get(criterion_id, {}).get("outcomes", {}),
+            "required_evidence_types": criterion_metadata.get(criterion_id, {}).get("required_evidence_types", []),
             "observations": [],
             "claims": [],
             "atomic_units": [],
