@@ -695,6 +695,16 @@ def validate_aggregation_document(
                 entity_type="defect", entity_id=defect_key,
             ))
             continue
+        # Check defect_key against aggregation-context whitelist (issue #51)
+        if aggregation_context is not None:
+            valid_defect_keys = set(aggregation_context.get("valid_defect_keys", []))
+            if valid_defect_keys and defect_key not in valid_defect_keys:
+                errors.append(_err(
+                    "DEFECT_KEY_UNDEFINED", f"{row_label}.defect_key",
+                    entity_type="defect", entity_id=defect_key,
+                    expected=f"one of valid_defect_keys: {sorted(valid_defect_keys)}",
+                    actual=defect_key,
+                ))
         primary = record.get("primary_criterion_id")
         if primary not in actual_order:
             errors.append(_err(
