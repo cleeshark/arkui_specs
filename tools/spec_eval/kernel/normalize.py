@@ -618,6 +618,18 @@ def normalize_aggregation(
         claim_ids = _unique_strings(row.get("claim_ids"))
         if claim_ids != raw_claim_ids:
             changes.append(f"criterion_results[{criterion_id}].claim_ids deduplicated")
+        # Auto-fix forbidden conclusion when a required conclusion exists
+        context_constraints = context_row.get("constraints", {})
+        forbidden = context_constraints.get("forbidden_conclusions", [])
+        required_conclusion = context_constraints.get("required_conclusion_when_no_adverse")
+        if conclusion in forbidden and required_conclusion:
+            changes.append(
+                f"criterion_results[{criterion_id}].conclusion: "
+                f"{conclusion} is forbidden, auto-corrected to {required_conclusion}"
+            )
+            conclusion = required_conclusion
+            for finding in findings:
+                finding["conclusion"] = conclusion
         conclusion_basis = policy_judgment.get(
             criterion_id, policy_template.get(criterion_id, {})
         )

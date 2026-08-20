@@ -565,6 +565,7 @@ def validate_aggregation_document(
                     actual=str(unmapped),
                 ))
             required = constraints.get("required_conclusion_when_no_adverse")
+            forbidden = constraints.get("forbidden_conclusions", [])
             if required and conclusion != required:
                 errors.append(_err(
                     "MAPPING_NV_REQUIRED",
@@ -572,26 +573,12 @@ def validate_aggregation_document(
                     entity_type="criterion", entity_id=criterion_id,
                     expected=required, actual=str(conclusion),
                 ))
-            elif (
-                constraints.get("adverse_unit_refs")
-                and conclusion in {"SUPPORTED", "NOT_APPLICABLE"}
-            ):
+            elif conclusion in forbidden:
                 errors.append(_err(
                     "MAPPING_CONCLUSION_FORBIDDEN",
                     f"{label}.criterion_results[{criterion_id}]",
                     entity_type="criterion", entity_id=criterion_id,
-                    expected="not SUPPORTED/NOT_APPLICABLE with adverse units",
-                    actual=str(conclusion),
-                ))
-            elif (
-                constraints.get("applicable_unit_refs")
-                and conclusion == "NOT_APPLICABLE"
-            ):
-                errors.append(_err(
-                    "MAPPING_CONCLUSION_FORBIDDEN",
-                    f"{label}.criterion_results[{criterion_id}]",
-                    entity_type="criterion", entity_id=criterion_id,
-                    expected="not NOT_APPLICABLE with applicable units",
+                    expected=f"conclusion not in forbidden_conclusions {forbidden}",
                     actual=str(conclusion),
                 ))
             # Check allow_not_applicable constraint (issue #50)
