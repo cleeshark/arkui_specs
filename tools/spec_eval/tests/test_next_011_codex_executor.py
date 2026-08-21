@@ -297,6 +297,9 @@ class CodexExecutorTest(unittest.TestCase):
         runner = _FakeRunner(result_doc=_result_doc(work.work_item_id))
         self._executor(runner).execute(work, lambda e: None)
         prompt = json.loads(runner.last_stdin or "{}")
+        prompt_log = Path(work.executor_result_path).parent / "codex.feature_Feat-01.prompt.log"
+        self.assertTrue(prompt_log.is_file())
+        self.assertEqual(prompt_log.read_text(encoding="utf-8"), runner.last_stdin)
         self.assertIn("Produce one complete staged_observation_judgments payload", prompt["task"])
         constraints = " ".join(prompt["constraints"])
         self.assertIn("normative", constraints)

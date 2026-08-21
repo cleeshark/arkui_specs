@@ -122,6 +122,16 @@ class ClaudeCliExecutor:
             log_tag = f"{log_tag}.{mode}"
         stdout_log = str(result_parent / f"claude.{log_tag}.stdout.log")
         stderr_log = str(result_parent / f"claude.{log_tag}.stderr.log")
+        prompt_log = result_parent / f"claude.{log_tag}.prompt.log"
+        try:
+            prompt_log.write_text(prompt, encoding="utf-8")
+        except OSError as exc:
+            # Prompt capture is diagnostic; do not turn a logging failure into
+            # an executor failure when the CLI can still run.
+            emit(C.ExecutionEvent(
+                kind="error",
+                message=f"cannot write prompt log {prompt_log}: {exc}",
+            ))
 
         event_count = 0
         usage = TokenUsageAccumulator()

@@ -530,6 +530,9 @@ class ClaudeExecutorTest(unittest.TestCase):
         ))
         self._executor(runner).execute(self.work, lambda e: None)
         self.assertIsNotNone(runner.last_stdin)
+        prompt_log = Path(self.work.executor_result_path).parent / "claude.feature_Feat-01.prompt.log"
+        self.assertTrue(prompt_log.is_file())
+        self.assertEqual(prompt_log.read_text(encoding="utf-8"), runner.last_stdin)
         prompt = json.loads(runner.last_stdin)
         self.assertIn("task", prompt)
         self.assertIn("func_id", prompt)
