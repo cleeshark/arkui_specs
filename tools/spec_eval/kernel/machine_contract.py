@@ -92,6 +92,20 @@ def build_observation_machine_contract(
             "or MISSING. For SUPPORTED, NOT_VERIFIABLE, and NOT_APPLICABLE outcomes, "
             "both fields must be null (omitted or explicitly null)."
         ),
+        "modeling_basis_rule": (
+            "When an observation's criterion_ids includes any Function modeling "
+            "criterion (FUNCTION-FEAT-COVERAGE, FUNCTION-FEAT-DECOMPOSITION, "
+            "FUNCTION-FEAT-BOUNDARY) AND local_outcome is CONFLICT or MISSING, "
+            "the observation MUST include a modeling_basis object with: "
+            "issue_type (one of: unowned_capability, ownership_overlap, "
+            "oversized_feat, fragmented_feat, ambiguous_boundary), "
+            "capability (non-empty string), "
+            "why_dependency_or_detail_is_insufficient (non-empty string), "
+            "feat_roles (non-empty list of {feat_id, role: owner|consumer|context, "
+            "acceptance_claim_ids}). For ownership_overlap or ambiguous_boundary, "
+            "at least two owner roles with acceptance_claim_ids are required, "
+            "plus incompatible_contracts list and independent_acceptance_conflict=true."
+        ),
         "evidence_cardinality": {
             "minimum_items_by_local_outcome": dict(
                 K.OBSERVATION_EVIDENCE_MIN_ITEMS

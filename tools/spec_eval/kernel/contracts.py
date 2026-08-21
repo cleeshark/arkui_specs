@@ -326,3 +326,16 @@ PUBLISHED_OBSERVATION_FIELDS = (
     "primary_criterion_id",
     "evidence",
 )
+FUNCTION_MODELING_CRITERIA = frozenset({
+    "FUNCTION-FEAT-COVERAGE",
+    "FUNCTION-FEAT-DECOMPOSITION",
+    "FUNCTION-FEAT-BOUNDARY",
+})
+MODELING_ISSUE_TYPES = frozenset({
+    "unowned_capability",
+    "ownership_overlap",
+    "oversized_feat",
+    "fragmented_feat",
+    "ambiguous_boundary",
+})
+MODELING_FEAT_ROLES = frozenset({"owner", "consumer", "context"})

@@ -52,6 +52,67 @@ def _is_low_information(text: Any) -> bool:
     return normalized in K.LOW_INFORMATION_REVIEW_TEXT
 
 
+def _validate_modeling_basis(
+    basis: dict[str, Any], obs_label: str, errors: list[TypedError],
+) -> None:
+    """Validate all sub-fields of modeling_basis for Function modeling defects."""
+    issue_type = basis.get("issue_type")
+    if issue_type not in K.MODELING_ISSUE_TYPES:
+        errors.append(_err(
+            "MODELING_BASIS_INVALID", f"{obs_label}.modeling_basis.issue_type",
+            entity_type="observation",
+            expected=f"one of {sorted(K.MODELING_ISSUE_TYPES)}",
+            actual=str(issue_type),
+        ))
+    for field in ("capability", "why_dependency_or_detail_is_insufficient"):
+        value = basis.get(field)
+        if not isinstance(value, str) or not value.strip():
+            errors.append(_err(
+                "MODELING_BASIS_INVALID", f"{obs_label}.modeling_basis.{field}",
+                entity_type="observation",
+                expected="non-empty string",
+            ))
+    roles = basis.get("feat_roles")
+    if not isinstance(roles, list) or not roles:
+        errors.append(_err(
+            "MODELING_BASIS_INVALID", f"{obs_label}.modeling_basis.feat_roles",
+            entity_type="observation",
+            expected="non-empty list of {feat_id, role, acceptance_claim_ids}",
+        ))
+        return
+    owner_count = 0
+    for role_index, role in enumerate(roles):
+        role_label = f"{obs_label}.modeling_basis.feat_roles[{role_index}]"
+        if not isinstance(role, dict):
+            errors.append(_err(
+                "MODELING_BASIS_INVALID", role_label,
+                entity_type="observation", expected="object",
+            ))
+            continue
+        if not isinstance(role.get("feat_id"), str) or not role.get("feat_id"):
+            errors.append(_err(
+                "MODELING_BASIS_INVALID", f"{role_label}.feat_id",
+                entity_type="observation", expected="non-empty string",
+            ))
+        if role.get("role") not in K.MODELING_FEAT_ROLES:
+            errors.append(_err(
+                "MODELING_BASIS_INVALID", f"{role_label}.role",
+                entity_type="observation",
+                expected=f"one of {sorted(K.MODELING_FEAT_ROLES)}",
+                actual=str(role.get("role")),
+            ))
+        if role.get("role") == "owner":
+            owner_count += 1
+    if issue_type in {"ownership_overlap", "ambiguous_boundary"} and owner_count < 2:
+        errors.append(_err(
+            "MODELING_BASIS_INVALID",
+            f"{obs_label}.modeling_basis.feat_roles",
+            entity_type="observation",
+            expected="at least two owner roles for overlap/ambiguous_boundary",
+            actual=f"{owner_count} owner(s)",
+        ))
+
+
 def validate_observation_document(
     document: dict[str, Any],
     *,
@@ -183,6 +244,25 @@ def validate_observation_document(
                 actual=f"defect_key={defect_key}, primary={primary}",
                 repairability=SERVICE_NORMALIZATION,
             ))
+        # Function modeling basis validation (issue #59)
+        criterion_ids = set(_strings(entry.get("criterion_ids")))
+        if (
+            outcome in {"CONFLICT", "MISSING"}
+            and criterion_ids & K.FUNCTION_MODELING_CRITERIA
+        ):
+            basis = entry.get("modeling_basis")
+            if not isinstance(basis, dict):
+                errors.append(_err(
+                    "MODELING_BASIS_MISSING", f"{obs_label}.modeling_basis",
+                    entity_type="observation",
+                    entity_id=str(entry.get("observation_id")),
+                    expected=(
+                        "modeling_basis object required for Function modeling "
+                        "criteria (FUNCTION-FEAT-*) with CONFLICT/MISSING outcome"
+                    ),
+                ))
+            else:
+                _validate_modeling_basis(basis, obs_label, errors)
 
     if expected_claims and observed_claims != set(expected_claims):
         errors.append(_err(
