@@ -87,6 +87,11 @@ class FunctionViewService:
         for entry in document.get("functions", []):
             if not isinstance(entry, dict) or not entry.get("id"):
                 continue
+            path = entry.get("path")
+            if isinstance(path, str) and path:
+                feat_dir = self.settings.specs_root / path
+                if feat_dir.is_dir() and not any(feat_dir.glob("Feat-*")):
+                    continue
             l1 = entry.get("l1") if isinstance(entry.get("l1"), dict) else {}
             l3 = entry.get("l3") if isinstance(entry.get("l3"), dict) else {}
             result.append(
