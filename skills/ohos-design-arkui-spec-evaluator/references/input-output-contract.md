@@ -34,7 +34,7 @@ Before semantic judgment, verify:
 5. Function context contains all registered non-Deprecated Feature specs.
 6. Evidence-manifest warnings are reviewed; archive-size warnings do not by themselves make semantic evaluation incomplete.
 7. Related repositories named by source citations or SDK declarations are checked out at the required revision when verification depends on them.
-8. Any `evaluation_scope` recorded for the Pilot Function is treated as a confirmed evaluation input; apply its inclusions, exclusions, and explicit non-Finding decisions without reading the confirmed Review.
+8. Any `evaluation_scope` recorded in the Function input is treated as a confirmed evaluation input; apply its inclusions, exclusions, and explicit non-Finding decisions without reading prior Reviews.
 
 If any required consistency check fails, keep `execution.semantic_complete=false` and report the missing input.
 
@@ -47,12 +47,13 @@ Write automatic runs to a temporary or run-specific directory, for example:
 ```
 
 For complex or multi-Feat Functions, initialize the full run directory described by
-`staged-run-contract.md`. Feature and Function-global observation files are disposable external
-memory for that run. They may be resumed after context compaction or handed to a clean aggregation
-session, but they are not confirmed Reviews or a maintained capability baseline.
+`observation-contract.md`; aggregation uses `aggregation-workflow.md` and the aggregation-only
+contract after Observation completes. Feature and Function-global observation files are disposable
+external memory for that run. They may be resumed after context compaction or handed to a clean
+aggregation session, but they are not confirmed Reviews or a maintained capability baseline.
 
 Staged schema v2 runs are produced by evaluator
-`skill:ohos-design-arkui-spec-evaluator@0.2.0`. Schema v2 requires atomic `claim_reviews`,
+`skill:ohos-design-arkui-spec-evaluator@0.3.0`. Schema v2 requires atomic `claim_reviews`,
 evidence-backed required-check mapping, stable defect ownership, an explicit core-conflict basis
 for every `CONTRADICTED` Criterion, atomic `unit_reviews` for each Claim, structured
 `modeling_basis` evidence, NOT_VERIFIABLE aggregation guards, run-local `outcome_policy_bases`,
@@ -71,7 +72,7 @@ Do not write automatic output to:
 - Registry files
 - generated site data
 
-Confirmed Reviews are read-only calibration baselines.
+Prior Reviews are optional, read-only calibration baselines and are not required for a clean evaluation.
 
 Do not manually construct the staged run's final `semantic-result.json`. Complete and validate every
 observation, write final Criterion judgments to `aggregation.json`, and let
@@ -148,17 +149,3 @@ Rubric-defined severity, while its message identifies the conflicting unit preci
 Every Finding in a staged schema v2 aggregation belongs to exactly one root `defect_key`. If one
 root defect affects several Criteria, choose the Criterion that owns the correction as primary and
 list the others as secondary. Do not create several Critical deductions for the same defect.
-
-## 8. Calibration comparison
-
-Freeze and validate the blind automatic result before opening any confirmed Review. Then, for Pilot
-calibration, compare the automatic run with the confirmed Review using:
-
-- Criterion conclusion agreement.
-- Critical and Major finding recall by problem substance.
-- Severity agreement.
-- Unsupported extra finding count.
-- Missing-evidence rate.
-- Repeated-run score or deduction variance once NEXT-008 aggregation exists.
-
-Finding IDs need not match during MVP calibration when the same problem, scope, and evidence are identified. Do not overwrite the confirmed Review with an automatic result.

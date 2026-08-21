@@ -40,7 +40,7 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
     def _staged_identity(self) -> dict[str, object]:
         return {
             "schema_version": 2,
-            "evaluator_version": "skill:ohos-design-arkui-spec-evaluator@0.2.0",
+            "evaluator_version": "skill:ohos-design-arkui-spec-evaluator@0.3.0",
             "func_id": "05-01-02",
             "source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
             "run_id": "validator-unit-test",
@@ -135,12 +135,17 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
         _, frontmatter, _ = content.split("---", 2)
         metadata = yaml.safe_load(frontmatter)
         self.assertEqual(metadata["name"], "ohos-design-arkui-spec-evaluator")
-        self.assertEqual(metadata["metadata"]["version"], "0.2.0")
+        self.assertEqual(metadata["metadata"]["version"], "0.3.0")
         self.assertEqual(metadata["metadata"]["rubric-version"], "0.3.0")
         self.assertLess(len(content.splitlines()), 500)
         for relative in (
             "references/input-output-contract.md",
             "references/criterion-guide.md",
+            "references/observation-contract.md",
+            "references/observation-guide.md",
+            "references/orchestration-workflow.md",
+            "references/aggregation-workflow.md",
+            "references/calibration.md",
             "references/staged-run-contract.md",
             "scripts/create_pilot_template.py",
             "scripts/initialize_staged_run.py",
@@ -208,7 +213,7 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             semantic = json.loads(result_path.read_text(encoding="utf-8"))
             self.assertEqual(
                 semantic["evaluator_version"],
-                "skill:ohos-design-arkui-spec-evaluator@0.2.0",
+                "skill:ohos-design-arkui-spec-evaluator@0.3.0",
             )
             expected_ids = [
                 criterion["id"]
@@ -286,7 +291,7 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(
                 json.loads(output.read_text(encoding="utf-8"))["evaluator_version"],
-                "skill:ohos-design-arkui-spec-evaluator@0.2.0",
+                "skill:ohos-design-arkui-spec-evaluator@0.3.0",
             )
 
     def test_machine_output_contract_matches_validator_and_rubric(self) -> None:
@@ -770,6 +775,9 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             self.assertEqual(automated.returncode, 0, automated.stderr)
             semantic = json.loads(output.read_text(encoding="utf-8"))
             self.assertEqual(semantic["func_id"], func_id)
+            notes = " ".join(semantic["execution"]["notes"])
+            self.assertNotIn("NEXT-007", notes)
+            self.assertNotIn("Pilot", notes)
             self.assertEqual(semantic["source_revision"], source_revision)
 
     def test_staged_run_externalizes_context_and_assembles_result(self) -> None:
@@ -1353,8 +1361,11 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
         guide = (self.skill_root / "references" / "criterion-guide.md").read_text(
             encoding="utf-8"
         )
+        staged = (self.skill_root / "references" / "staged-run-contract.md").read_text(
+            encoding="utf-8"
+        )
         evals = (self.skill_root / "evals" / "evals.json").read_text(encoding="utf-8")
-        normalized = " ".join((skill + guide + evals).split())
+        normalized = " ".join((skill + guide + staged + evals).split())
         self.assertIn("parent entry", normalized)
         self.assertIn("direct-success", normalized)
         self.assertIn("produced Host binary", normalized)
@@ -1418,13 +1429,19 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
         guide = (self.skill_root / "references" / "criterion-guide.md").read_text(
             encoding="utf-8"
         )
+        aggregation = (self.skill_root / "references" / "aggregation-workflow.md").read_text(
+            encoding="utf-8"
+        )
         contract = (self.skill_root / "references" / "input-output-contract.md").read_text(
             encoding="utf-8"
         )
-        self.assertIn("specs/evaluation/reviews/**", skill)
-        self.assertIn("specs/.evaluator/next-007/**", skill)
-        self.assertIn("scratch coverage matrix", skill)
-        self.assertIn("every AC and Rule claim", skill)
+        self.assertIn("workflow router", skill)
+        self.assertIn("must not receive aggregation", skill)
+        self.assertNotIn("NEXT-007", skill)
+        self.assertNotIn("Pilot", skill)
+        self.assertIn("coverage matrix", aggregation)
+        self.assertNotIn("Use the staged observations as the coverage matrix", skill)
+        self.assertIn("every AC and Rule claim", aggregation)
         self.assertIn("Do not use “worst local observation wins.”", guide)
         self.assertIn("test target, produced binary, Suite.Case, filter", guide)
         self.assertIn("machine-verifiable AC/Rule/VM chain", contract)
@@ -1434,11 +1451,18 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
         staged = (self.skill_root / "references" / "staged-run-contract.md").read_text(
             encoding="utf-8"
         )
+        orchestration = (self.skill_root / "references" / "orchestration-workflow.md").read_text(
+            encoding="utf-8"
+        )
+        aggregation = (self.skill_root / "references" / "aggregation-workflow.md").read_text(
+            encoding="utf-8"
+        )
         normalized_skill = " ".join(skill.split())
-        self.assertIn("Do not preload full `work-items.json`, `static-result.json`", normalized_skill)
-        self.assertIn("durable handoff after context compaction", skill)
+        self.assertIn("Do not preload full", orchestration)
+        self.assertIn("durable handoff after context compaction", (self.skill_root / "references" / "observation-contract.md").read_text(encoding="utf-8"))
         self.assertIn("Do not assign final Criterion conclusions", skill)
-        self.assertIn("cross_feat_contracts_reviewed=true", skill)
+        self.assertIn("cross_feat_contracts_reviewed=true", aggregation)
+        self.assertIn("phase-scoped", normalized_skill)
         self.assertIn("disposable run-local state", staged)
         self.assertIn("Feature workers record local facts", staged)
 
@@ -1447,9 +1471,15 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
         guide = (self.skill_root / "references" / "criterion-guide.md").read_text(
             encoding="utf-8"
         )
-        self.assertIn("Criterion's frozen `outcome_policy`", skill)
-        self.assertIn("terminology, direction/axis", skill)
-        self.assertIn("exact result assertion", skill)
+        observation = (self.skill_root / "references" / "observation-contract.md").read_text(
+            encoding="utf-8"
+        )
+        aggregation = (self.skill_root / "references" / "aggregation-workflow.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("Criterion's frozen `outcome_policy`", " ".join((skill + guide + aggregation).split()))
+        self.assertIn("terminology, architecture direction", guide)
+        self.assertIn("result assertion", observation)
         self.assertIn("`DESIGN-IMPACT-COVERAGE` is `MISSING`", guide)
         self.assertIn("main/cross axis", guide)
         self.assertIn("below-minimum, exact boundary", guide)
@@ -1460,10 +1490,10 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
         guide = (self.skill_root / "references" / "criterion-guide.md").read_text(
             encoding="utf-8"
         )
-        self.assertIn("Reset/default/update semantics", skill)
-        self.assertIn("gates/API versions, prior state", skill)
-        self.assertIn("For `DESIGN-VERIFICATION-PLAN`", skill)
-        self.assertIn("Use `MISSING` only when no Function-specific verification direction", skill)
+        self.assertIn("For reset, default, theme/resource update", guide)
+        self.assertIn("API-level gates, default changes", guide)
+        self.assertIn("### DESIGN-VERIFICATION-PLAN", guide)
+        self.assertIn("Use `MISSING` only when there is no Function-specific verification direction", guide)
         self.assertIn("build an explicit state matrix", guide)
         self.assertIn("user-set marker, cached resource", guide)
         self.assertIn("the plan body exists", guide)
@@ -1477,10 +1507,13 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
         contract = (self.skill_root / "references" / "input-output-contract.md").read_text(
             encoding="utf-8"
         )
-        self.assertIn("An included device form makes `COMPATIBILITY-MULTI-DEVICE` applicable", skill)
+        aggregation = (self.skill_root / "references" / "aggregation-workflow.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("An included device form makes `COMPATIBILITY-MULTI-DEVICE` applicable", aggregation)
         self.assertIn("Dedicated per-device tests improve confidence", guide)
         self.assertIn("implementation mechanisms rather than separate capabilities", guide)
-        self.assertIn("independently observable and independently acceptable capability", skill)
+        self.assertIn("independently observable and independently acceptable capability", guide)
         self.assertIn("Do not combine unrelated problems", contract)
 
     def test_skill_stabilizes_function_wide_contradiction_and_impact_precedence(self) -> None:
@@ -1488,9 +1521,15 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
         guide = (self.skill_root / "references" / "criterion-guide.md").read_text(
             encoding="utf-8"
         )
-        self.assertIn("two independent core contract families", " ".join(skill.split()))
-        self.assertIn("`contradiction_bases`", skill)
-        self.assertIn("`defect_ownership`", skill)
+        staged = (self.skill_root / "references" / "staged-run-contract.md").read_text(
+            encoding="utf-8"
+        )
+        aggregation = (self.skill_root / "references" / "aggregation-workflow.md").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("two independent core contract families", " ".join(staged.split()))
+        self.assertIn("`contradiction_bases`", aggregation)
+        self.assertIn("`defect_ownership`", aggregation)
         self.assertIn("do not use “most rows are supported”", guide)
         self.assertIn("contradiction precedence", guide)
         normalized_guide = " ".join(guide.lower().split())
@@ -1504,22 +1543,28 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
         )
         normalized_skill = " ".join(skill.split())
         normalized_guide = " ".join(guide.split())
-        self.assertIn("complexity controls whether the evaluator should demand a new ADR", normalized_skill)
-        self.assertIn("this Criterion is applicable even for a simple Function", normalized_skill)
+        self.assertIn("Complexity determines whether the Function is required to introduce a new ADR", normalized_guide)
+        self.assertIn("mark this Criterion applicable even when the Function is simple", normalized_guide)
         self.assertIn("it does not make an existing material ADR disappear", normalized_guide)
         self.assertIn("An inaccurate existing ADR is `PARTIALLY_SUPPORTED` or `CONTRADICTED`", normalized_guide)
 
     def test_skill_requires_atomic_contract_facets_and_acceptance_ownership_evidence(self) -> None:
         skill = (self.skill_root / "SKILL.md").read_text(encoding="utf-8")
+        observation_contract = (self.skill_root / "references" / "observation-contract.md").read_text(
+            encoding="utf-8"
+        )
+        observation_guide = (self.skill_root / "references" / "observation-guide.md").read_text(
+            encoding="utf-8"
+        )
         staged = (self.skill_root / "references" / "staged-run-contract.md").read_text(
             encoding="utf-8"
         )
         guide = (self.skill_root / "references" / "criterion-guide.md").read_text(
             encoding="utf-8"
         )
-        self.assertIn("`unit_reviews`", skill)
-        self.assertIn("callback result", skill)
-        self.assertIn("`modeling_basis`", skill)
+        self.assertIn("`unit_reviews`", observation_contract)
+        self.assertIn("callback result", observation_guide)
+        self.assertIn("`modeling_basis`", guide + staged)
         self.assertIn("two owner Feats with independent acceptance claims", staged)
         self.assertIn("source-file overlap", guide)
 

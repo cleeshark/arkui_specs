@@ -1361,7 +1361,7 @@ class TypedErrorContractTest(unittest.TestCase):
             sys.path.insert(0, str(scripts))
         from create_pilot_template import validate_evaluator_version
 
-        validate_evaluator_version("skill:ohos-design-arkui-spec-evaluator@0.2.0")
+        validate_evaluator_version("skill:ohos-design-arkui-spec-evaluator@0.3.0")
         with self.assertRaisesRegex(ValueError, "unsupported evaluator_version"):
             validate_evaluator_version("skill:ohos-design-arkui-spec-evaluator@0.1.19")
 

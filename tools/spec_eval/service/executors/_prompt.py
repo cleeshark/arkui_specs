@@ -17,17 +17,30 @@ def build_executor_prompt(work: C.WorkItemInput) -> str:
     """Build the JSON prompt sent to a CLI executor via stdin.
 
     The prompt is mode-aware (``observe`` vs ``correct``) and includes the
-    full work-item context, machine contract, and output requirements.
+    compact work-item context, embedded phase references, one authoritative
+    machine contract, and output requirements.  Protocol fields already
+    represented elsewhere in the prompt are omitted from the descriptive
+    work-item copy to avoid duplicate prompt tokens.
     """
     contract = dict(work.prompt_extras)
     mode = contract.get("mode", "observe")
     correcting = mode == "correct"
     machine_contract = contract.get("machine_contract", {})
+    phase_references = (
+        list(contract.get("phase_references", [])) if not correcting else []
+    )
     result_kind = contract.get("result_kind", "staged_judgments")
     payload_fields = contract.get("payload_fields", [])
     declares_evidence = "evidence_declarations" in payload_fields
+    reference_constraint = (
+        "The phase_references contents are already loaded in this prompt; "
+        "follow them as phase instructions and do not reread their source paths."
+        if phase_references else
+        "Follow the phase-specific evaluator references and machine contract "
+        "in declared input_paths."
+    )
     constraints = [
-        "Follow the declared evaluator Skill and the staged-run contract.",
+        reference_constraint,
         "Read only the declared input_paths and frozen source/SDK files.",
         "Treat input_resources.citable=false files as context only; never "
         "declare them as evidence.",
@@ -36,7 +49,7 @@ def build_executor_prompt(work: C.WorkItemInput) -> str:
         "Do not read paths in forbidden_paths (confirmed reviews or other runs).",
         "Do not modify any formal Spec, Design, Registry, source or test file.",
         "Do not modify the initialized staged template; the service owns and publishes it.",
-        "Provide judgments only; treat result_contract.machine_contract as normative.",
+        "Provide judgments only; treat the top-level machine_contract as normative.",
         "Write only the structured final result.",
         "EFFICIENCY: To verify presence of a symbol, target, or config in a "
         "large file, use Grep or Bash(grep -n 'pattern' file) instead of "
@@ -64,7 +77,7 @@ def build_executor_prompt(work: C.WorkItemInput) -> str:
             evidence_correction,
             "Treat input_resources.citable=false files as context only. "
             "Replace rejected paths with canonical frozen repository paths.",
-            "Treat result_contract.machine_contract as normative.",
+            "Treat the top-level machine_contract as normative.",
             "Write only the structured final result.",
         ]
     payload_field_text = json.dumps(payload_fields, ensure_ascii=False)
@@ -83,18 +96,33 @@ def build_executor_prompt(work: C.WorkItemInput) -> str:
         if correcting else
         f"Produce one complete {result_kind} payload for the declared work item."
     )
+    # ``machine_contract`` is authoritative and is emitted once at the prompt
+    # top level.  ``contract`` is the service/result metadata and should not
+    # carry a second nested copy of the same contract.
+    result_contract = {
+        key: value for key, value in contract.items()
+        if key not in {"machine_contract", "phase_references"}
+    }
+    prompt_work_item = dict(work.work_item)
+    for duplicated_field in (
+        "expected_claim_ids", "required_checks", "input_paths",
+        "input_resources", "output_path",
+    ):
+        prompt_work_item.pop(duplicated_field, None)
+
     payload: dict[str, Any] = {
         "task": task,
         "constraints": constraints,
         "func_id": work.func_id,
         "run_id": work.run_id,
-        "work_item": work.work_item,
+        "work_item": prompt_work_item,
+        "phase_references": phase_references,
         "input_paths": list(work.input_paths),
         "input_resources": list(work.work_item.get("input_resources", [])),
         "forbidden_paths": list(work.forbidden_paths),
         "skill_version": work.skill_version,
         "protocol_version": work.protocol_version,
-        "result_contract": contract,
+        "result_contract": result_contract,
         "machine_contract": machine_contract,
         "output": {
             "path": work.executor_result_path,

@@ -39,7 +39,7 @@ from spec_eval.service.store.repositories import (
 from spec_eval.service.store.sqlite_store import SqliteStore
 from spec_eval.service.workspace.models import EvaluationWorkspace
 
-EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.2.0"
+EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.3.0"
 JOB_ID = "c" * 40
 
 
