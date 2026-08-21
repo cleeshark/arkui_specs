@@ -253,7 +253,7 @@ Apply every detailed check in `design_completeness_rules.yaml`; headings, diagra
 - In this evaluation model, multi-device primarily means OHOS device-form differences, not automatically Android/iOS platform support.
 - Verify phone, tablet, wearable, TV, automotive, foldable, or other applicable device behavior and configuration.
 - Evaluate ArkUI-X separately under platform/cross-platform scope when the Function actually supports it.
-- Apply the Pilot Function's explicit `evaluation_scope` before enumerating devices or platforms. Do not create findings for an excluded platform/frontend combination or for an observation recorded as a non-Finding decision.
+- Apply the input Function's explicit `evaluation_scope` before enumerating devices or platforms. Do not create findings for an excluded platform/frontend combination or for an observation recorded as a non-Finding decision.
 - A device form explicitly included by `evaluation_scope` makes this Criterion applicable; do not
   use `NOT_APPLICABLE` merely because the implementation has no device-specific branch.
 - A supported no-difference conclusion may be established by frozen source showing that all

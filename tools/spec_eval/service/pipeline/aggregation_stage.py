@@ -294,6 +294,8 @@ def _build_aggregation_input(
         ctx.run_dir / "output-contract.json",
         aggregation_context_path,
         ctx.run_dir / "work-items.json",
+        ctx.skill_scripts_dir.parent / "references" / "aggregation-workflow.md",
+        ctx.skill_scripts_dir.parent / "references" / "criterion-guide.md",
         ctx.skill_scripts_dir.parent / "references" / "staged-run-contract.md",
     ):
         if contract_input is not None and contract_input.is_file():

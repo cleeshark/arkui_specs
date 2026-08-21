@@ -40,7 +40,7 @@ from spec_eval.protocol_validator import validate_protocol, validate_semantic_re
 
 
 EVALUATION_ROOT = SPECS_ROOT / "evaluation"
-EXPECTED_EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.2.0"
+EXPECTED_EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.3.0"
 
 
 def build_parser() -> argparse.ArgumentParser:

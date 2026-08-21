@@ -256,6 +256,8 @@ class CodexExecutorTest(unittest.TestCase):
             self.work,
             work_item={
                 **self.work.work_item,
+                "expected_claim_ids": ["Feat-01/AC-1"],
+                "required_checks": ["claim_source_support"],
                 "input_resources": [{
                     "path": "/tmp/input/evidence/Feat-01.json",
                     "role": "semantic_input",
@@ -280,6 +282,12 @@ class CodexExecutorTest(unittest.TestCase):
                 "service_derived_fields": ["ordering", "stable evidence IDs"],
                 "schema_path": schema_path,
                 "template_path": "/tmp/Feat-01.json",
+                "phase_references": [{
+                    "name": "observation-contract",
+                    "path": "/tmp/references/observation-contract.md",
+                    "content_hash": "sha256:" + "a" * 64,
+                    "content": "Inspect frozen source before judging implementation claims.",
+                }],
                 "machine_contract": {
                     "expected_claim_ids": ["Feat-01/AC-1"],
                     "judgment_rules": ["evidence via declarations and refs"],
@@ -289,6 +297,9 @@ class CodexExecutorTest(unittest.TestCase):
         runner = _FakeRunner(result_doc=_result_doc(work.work_item_id))
         self._executor(runner).execute(work, lambda e: None)
         prompt = json.loads(runner.last_stdin or "{}")
+        prompt_log = Path(work.executor_result_path).parent / "codex.feature_Feat-01.prompt.log"
+        self.assertTrue(prompt_log.is_file())
+        self.assertEqual(prompt_log.read_text(encoding="utf-8"), runner.last_stdin)
         self.assertIn("Produce one complete staged_observation_judgments payload", prompt["task"])
         constraints = " ".join(prompt["constraints"])
         self.assertIn("normative", constraints)
@@ -307,6 +318,15 @@ class CodexExecutorTest(unittest.TestCase):
         self.assertEqual(
             prompt["machine_contract"]["expected_claim_ids"], ["Feat-01/AC-1"]
         )
+        self.assertNotIn("expected_claim_ids", prompt["work_item"])
+        self.assertNotIn("required_checks", prompt["work_item"])
+        self.assertNotIn("input_resources", prompt["work_item"])
+        self.assertNotIn("machine_contract", prompt["result_contract"])
+        self.assertNotIn("phase_references", prompt["result_contract"])
+        self.assertEqual(
+            prompt["phase_references"][0]["name"], "observation-contract"
+        )
+        self.assertIn("already loaded", constraints)
 
     def test_correct_prompt_carries_candidate_and_typed_errors(self) -> None:
         schema_path = _write_v3_envelope_schema(self.tmp.name)
@@ -330,6 +350,10 @@ class CodexExecutorTest(unittest.TestCase):
                     "repairability": "MODEL_CORRECTION",
                 }],
                 "correction_constraints": ["Fix the reported judgments."],
+                "phase_references": [{
+                    "name": "observation-contract",
+                    "content": "Normal observation instructions.",
+                }],
                 "machine_contract": {"expected_claim_ids": ["Feat-01/AC-1"]},
             },
         )
@@ -342,6 +366,7 @@ class CodexExecutorTest(unittest.TestCase):
         self.assertIn("typed_errors", constraints)
         self.assertIn("Re-declare every piece of evidence", constraints)
         contract = prompt["result_contract"]
+        self.assertEqual(prompt["phase_references"], [])
         self.assertEqual(
             contract["candidate_path"], "/tmp/run/.Feat-01.json.candidate"
         )

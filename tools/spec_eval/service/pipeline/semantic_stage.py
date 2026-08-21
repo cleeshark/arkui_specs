@@ -266,13 +266,29 @@ def _build_work_input(
             {"path": path, "role": "semantic_input", "citable": False}
             for path in input_paths
         ]
-    staged_contract = ctx.skill_scripts_dir.parent / "references" / "staged-run-contract.md"
-    if staged_contract.is_file():
-        input_paths.append(str(staged_contract))
+    phase_references: list[dict[str, str]] = []
+    for name, filename, role in (
+        ("observation-contract", "observation-contract.md", "executor_contract"),
+        ("observation-guide", "observation-guide.md", "executor_guide"),
+    ):
+        reference = ctx.skill_scripts_dir.parent / "references" / filename
+        if not reference.is_file():
+            continue
+        content = reference.read_text(encoding="utf-8")
+        input_paths.append(str(reference))
         input_resources.append({
-            "path": str(staged_contract),
-            "role": "executor_contract",
+            "path": str(reference),
+            "role": role,
             "citable": False,
+            "embedded": True,
+        })
+        phase_references.append({
+            "name": name,
+            "path": str(reference),
+            "content_hash": "sha256:" + hashlib.sha256(
+                content.encode("utf-8")
+            ).hexdigest(),
+            "content": content,
         })
     input_paths = list(dict.fromkeys(input_paths))
     work_item["input_resources"] = input_resources
@@ -286,6 +302,12 @@ def _build_work_input(
             if resource.get("citable") is True and resource.get("canonical_path")
         ),
     )
+    prompt_contract = observe_observation_prompt_contract(
+        template_path=output_path,
+        schema_dir=ctx.run_dir,
+        machine_contract=machine_contract,
+    )
+    prompt_contract["phase_references"] = phase_references
     return C.WorkItemInput(
         job_id=ctx.job_id,
         func_id=ctx.func_id,
@@ -299,11 +321,7 @@ def _build_work_input(
         skill_version=ctx.evaluator_version,
         protocol_version=ctx.protocol_version,
         forbidden_paths=ctx.forbidden_paths,
-        prompt_extras=observe_observation_prompt_contract(
-            template_path=output_path,
-            schema_dir=ctx.run_dir,
-            machine_contract=machine_contract,
-        ),
+        prompt_extras=prompt_contract,
     )
 
 def _write_candidate(path: Path, document: dict[str, Any]) -> None:

@@ -36,7 +36,7 @@ SKILL_SCRIPTS = (
 if str(SKILL_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SKILL_SCRIPTS))
 
-EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.2.0"
+EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.3.0"
 SOURCE_REVISION = "a" * 40
 
 
@@ -337,6 +337,18 @@ class ObservationFlowTest(_StagedRunIntegrationTest):
         resources = executor.prompts[0].work_item["input_resources"]
         self.assertTrue(any(resource.get("citable") is True for resource in resources))
         self.assertTrue(any(resource.get("citable") is False for resource in resources))
+        embedded = [resource for resource in resources if resource.get("embedded") is True]
+        self.assertEqual(len(embedded), 2)
+        references = executor.prompts[0].prompt_extras["phase_references"]
+        self.assertEqual(
+            [reference["name"] for reference in references],
+            ["observation-contract", "observation-guide"],
+        )
+        self.assertTrue(all(reference["content"] for reference in references))
+        self.assertTrue(all(
+            reference["content_hash"].startswith("sha256:")
+            for reference in references
+        ))
         policy = executor.prompts[0].prompt_extras["machine_contract"][
             "evidence_path_policy"
         ]

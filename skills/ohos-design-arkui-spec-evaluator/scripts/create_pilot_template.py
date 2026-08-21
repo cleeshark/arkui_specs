@@ -48,7 +48,7 @@ from spec_eval.protocol_validator import validate_protocol  # noqa: E402
 EVALUATION_ROOT = SPECS_ROOT / "evaluation"
 MANIFEST_PATH = EVALUATION_ROOT / "golden" / "manifest.yaml"
 REVIEWS_ROOT = (EVALUATION_ROOT / "reviews").resolve()
-DEFAULT_EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.2.0"
+DEFAULT_EVALUATOR_VERSION = "skill:ohos-design-arkui-spec-evaluator@0.3.0"
 
 
 def validate_evaluator_version(value: str) -> None:
@@ -195,15 +195,20 @@ def create_semantic_template(
     semantic = evaluation["semantic_result"]
     semantic["evaluator_version"] = evaluator_version
     semantic["run_id"] = run_id
+    notes = [
+        "Complete all 20 Criteria before setting semantic_complete=true.",
+        "Blind mode: do not read prior Reviews or historical automatic runs before validating this result.",
+    ]
+    if not allow_non_pilot:
+        notes = [
+            "Calibration template: complete all 20 Criteria before setting semantic_complete=true.",
+            "Blind mode: do not read confirmed Reviews or historical calibration runs before validating this result.",
+        ]
     semantic["execution"] = {
         "static_complete": True,
         "evidence_complete": True,
         "semantic_complete": False,
-        "notes": [
-            "NEXT-007 Skill template: complete all 20 Criteria before setting semantic_complete=true.",
-            "Blind mode: do not read confirmed Reviews or historical NEXT-007 runs before validating this result.",
-            *_scope_notes(sample or {}),
-        ],
+        "notes": [*notes, *_scope_notes(sample or {})],
     }
     return semantic
 
