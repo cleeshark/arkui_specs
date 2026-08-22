@@ -32,7 +32,7 @@ from pathlib import Path
 from typing import Any, Callable, Sequence
 
 from spec_eval.kernel import staged_state as SS
-from spec_eval.kernel.errors import TypedError, blocking
+from spec_eval.kernel.errors import TypedError
 from spec_eval.kernel.normalize import NormalizationResult
 from spec_eval.service.domain import states as S
 from spec_eval.service.executors import contract as C
@@ -44,6 +44,8 @@ from spec_eval.service.pipeline.result_payload import (
 from spec_eval.service.pipeline.correction import (
     apply_deterministic_correction,
     apply_json_patch,
+    is_deterministic_error,
+    is_fatal_error,
     is_model_correction_error,
     resolve_typed_error_json_path,
     validate_patch_scope,
@@ -355,7 +357,7 @@ class JudgmentFlow:
             """
             deterministic = [
                 error for error in typed
-                if not is_model_correction_error(error)
+                if is_deterministic_error(error)
             ]
             if not deterministic:
                 return document, typed
@@ -370,7 +372,7 @@ class JudgmentFlow:
                     "work_item_id": work.work_item_id,
                     "changes": changes,
                     "remaining_errors": [
-                        error.to_dict() for error in blocking(remaining)
+                        error.to_dict() for error in remaining
                     ],
                 },
             )
@@ -422,7 +424,7 @@ class JudgmentFlow:
                 })
             else:
                 typed = typed_of(normalization.document)
-                if not blocking(typed):
+                if not typed:
                     publish(normalization.document, normalization.evidence_catalog)
                     return JudgmentOutcome(C.STATUS_COMPLETED, published=True)
                 _write_json(candidate_path, normalization.document)
@@ -468,11 +470,31 @@ class JudgmentFlow:
         breakpoint_data = json.loads(errors_path.read_text(encoding="utf-8"))
         typed_dicts = breakpoint_data.get("errors", [])
 
+        fatal_dicts = [
+            error for error in typed_dicts if is_fatal_error(error)
+        ]
+        if fatal_dicts:
+            SS.set_work_item_state(
+                self.ctx.run_dir, work.work_item_id,
+                SS.CORRECTION_INVALID_TERMINAL,
+            )
+            return self._fail(
+                "semantic_failed",
+                {
+                    "work_item_id": work.work_item_id,
+                    "state": SS.CORRECTION_INVALID_TERMINAL,
+                    "errors": fatal_dicts,
+                    "repair": "fatal_input",
+                },
+                "fatal correction input: "
+                + "; ".join(str(error.get("code")) for error in fatal_dicts[:5]),
+            )
+
         # Safe structural/ownership errors are repaired by the service.  They
         # never consume a model correction turn.  If a repair is ambiguous,
         # fail explicitly rather than asking the model to invent a mapping.
         deterministic_dicts = [
-            error for error in typed_dicts if not is_model_correction_error(error)
+            error for error in typed_dicts if is_deterministic_error(error)
         ]
         model_dicts = [
             error for error in typed_dicts if is_model_correction_error(error)
@@ -514,7 +536,7 @@ class JudgmentFlow:
                 )
             if changes:
                 remaining = typed_of(corrected_document)
-                if not blocking(remaining):
+                if not remaining:
                     publish(
                         corrected_document,
                         _published_evidence_catalog(corrected_document),
@@ -529,24 +551,28 @@ class JudgmentFlow:
                 # remain unresolved are never delegated to the model.
                 remaining_dicts = [error.to_dict() for error in remaining]
                 remaining_deterministic = [
-                    error for error in remaining if not is_model_correction_error(error)
+                    error for error in remaining if is_deterministic_error(error)
                 ]
-                if remaining_deterministic:
+                remaining_fatal = [
+                    error for error in remaining if is_fatal_error(error)
+                ]
+                if remaining_fatal or remaining_deterministic:
+                    service_errors = remaining_fatal or remaining_deterministic
                     self.events.append(self.ctx.job_id, "correction_skipped", {
                         "work_item_id": work.work_item_id,
                         "reason": "service_deterministic_error",
-                        "errors": [error.to_dict() for error in remaining_deterministic],
+                        "errors": [error.to_dict() for error in service_errors],
                     })
                     return self._fail(
                         "semantic_failed",
                         {
                             "work_item_id": work.work_item_id,
                             "state": SS.CORRECTION_INVALID_TERMINAL,
-                            "errors": [error.to_dict() for error in remaining_deterministic],
+                            "errors": [error.to_dict() for error in service_errors],
                             "repair": "deterministic_only",
                         },
                         "deterministic correction still invalid: "
-                        + "; ".join(error.code for error in remaining_deterministic[:5]),
+                        + "; ".join(error.code for error in service_errors[:5]),
                     )
                 _write_json(candidate_path, corrected_document)
                 _write_json(errors_path, {
@@ -556,7 +582,10 @@ class JudgmentFlow:
                     "deterministic_changes": changes,
                 })
                 typed_dicts = remaining_dicts
-                model_dicts = remaining_dicts
+                model_dicts = [
+                    error.to_dict() for error in remaining
+                    if is_model_correction_error(error)
+                ]
 
         if not model_dicts:
             self.events.append(self.ctx.job_id, "correction_skipped", {
@@ -645,12 +674,12 @@ class JudgmentFlow:
                     f"invalid JSON Patch: {exc}",
                 )
             typed = typed_of(corrected_payload)
-            if blocking(typed):
+            if typed:
                 corrected_payload, typed = repair_after_model_correction(
                     corrected_payload, typed,
                 )
                 corrected_candidate_for_failure = corrected_payload
-            if not blocking(typed):
+            if not typed:
                 publish(
                     corrected_payload,
                     _published_evidence_catalog(corrected_payload),
@@ -701,7 +730,7 @@ class JudgmentFlow:
         corrected_document, typed = repair_after_model_correction(
             normalization.document, typed_of(normalization.document),
         )
-        if not blocking(typed):
+        if not typed:
             publish(corrected_document, normalization.evidence_catalog)
             return JudgmentOutcome(C.STATUS_COMPLETED, published=True)
         _write_json(candidate_path, corrected_document)

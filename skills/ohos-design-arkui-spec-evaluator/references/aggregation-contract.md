@@ -68,8 +68,10 @@ shared `defect_ownership` record. A secondary Criterion must have an actual Find
 that owner. At most one Finding for a root defect may be Critical, and it belongs to the primary
 Criterion.
 
-For the six initialized policy-basis Criteria, provide `content_status`, `evidence_status`, and
-`conflict_scope`. The service derives the Criterion conclusion from the fixed precedence table.
+For the six Criteria listed in `machine_contract.policy_basis_criterion_ids`, emit exactly one
+`outcome_policy_bases` row per ID in the declared order. Provide `content_status`,
+`evidence_status`, and `conflict_scope`; the service derives each conclusion from the fixed
+precedence table. Do not substitute another group of six Criteria.
 
 ## Output ownership
 

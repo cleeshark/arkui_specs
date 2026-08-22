@@ -259,6 +259,12 @@ class SchemaGenerationTest(unittest.TestCase):
             agg["$defs"]["criterionJudgment"]["properties"]["conclusion"]["enum"],
             list(K.SEMANTIC_CONCLUSIONS),
         )
+        policy_ids = agg["$defs"]["policyBasis"]["properties"]["criterion_id"]
+        self.assertEqual(policy_ids["enum"], list(K.POLICY_BASIS_CRITERION_IDS))
+        policy_rows = agg["$defs"]["aggregationPayload"]["properties"][
+            "outcome_policy_bases"
+        ]
+        self.assertEqual(policy_rows["minItems"], 6)
 
     def test_spiked_schema_shape_validates_spiked_document(self) -> None:
         validator = JsonSchemaSubsetValidator(SCHEMAS_ROOT)
@@ -1049,6 +1055,61 @@ class NormalizeAggregationTest(unittest.TestCase):
         ]
         self.assertIn("POLICY_BASIS_INVALID", codes)
 
+    def test_wrong_policy_basis_ids_do_not_overwrite_model_conclusions(self) -> None:
+        judgment = self._judgment()
+        expected = {
+            row["criterion_id"]: row["conclusion"]
+            for row in judgment["criterion_results"]
+        }
+        judgment["outcome_policy_bases"] = [
+            {
+                "criterion_id": criterion_id,
+                "content_status": "PRESENT",
+                "evidence_status": "VERIFIED",
+                "conflict_scope": "NONE",
+                "reason": "The model evaluated this non-policy Criterion.",
+            }
+            for criterion_id in (
+                "DESIGN-IMPLEMENTATION-PATH",
+                "DESIGN-FEAT-RUNTIME-COVERAGE",
+                "DESIGN-ALGORITHM-DATA-STATE",
+                "DESIGN-DECISION-QUALITY",
+                "DESIGN-IMPACT-COVERAGE",
+                "DESIGN-VERIFICATION-PLAN",
+            )
+        ]
+        result = self._normalize(judgment)
+        actual = {
+            row["criterion_id"]: row["conclusion"]
+            for row in result.document["criterion_results"]
+        }
+        self.assertEqual(actual, expected)
+        errors = validate_aggregation_document(
+            result.document, criterion_order=list(CRITERIA)
+        )
+        self.assertEqual(
+            [error.code for error in errors].count("POLICY_BASIS_INVALID"), 1
+        )
+
+    def test_contradiction_basis_references_owned_defect_key(self) -> None:
+        judgment = self._judgment()
+        judgment["contradiction_bases"] = [{
+            "statement": "The shared source contract is accurate.",
+            "left_assertion": "The Spec asserts the shared behavior.",
+            "right_assertion": "Frozen source contradicts that behavior.",
+            "affected_feat_ids": ["Feat-01"],
+            "correction_scope": "replace_core",
+            "function_shared_assertion": True,
+            "primary_defect_key": "missing-source-proof",
+        }]
+        result = self._normalize(judgment)
+        errors = validate_aggregation_document(
+            result.document, criterion_order=list(CRITERIA)
+        )
+        self.assertNotIn(
+            "CONTRADICTION_BASIS_INVALID", [error.code for error in errors]
+        )
+
     def test_assemble_semantic_result_shape(self) -> None:
         result = self._normalize(source_observation_ids=["feature:Feat-01"])
         semantic_template = {
@@ -1239,6 +1300,11 @@ class MachineContractTest(unittest.TestCase):
             contract["aggregation_context_path"], "/tmp/run/aggregation-context.json"
         )
         self.assertIn("authoritative", contract["mapping_rule"])
+        self.assertEqual(
+            contract["policy_basis_criterion_ids"],
+            list(K.POLICY_BASIS_CRITERION_IDS),
+        )
+        self.assertIn("exactly", contract["policy_basis_order_rule"])
 
 
 class PurgeTest(unittest.TestCase):
@@ -1802,6 +1868,11 @@ class PolicyConclusionDerivationTest(unittest.TestCase):
         """Mixed NOT_APPLICABLE is invalid and returns None."""
         self.assertIsNone(
             K.expected_policy_conclusion("NOT_APPLICABLE", "VERIFIED", "NONE")
+        )
+
+    def test_unknown_policy_status_returns_none(self) -> None:
+        self.assertIsNone(
+            K.expected_policy_conclusion("PENDING", "PENDING", "PENDING")
         )
 
     def test_finding_conclusion_inherits_derived_value(self) -> None:

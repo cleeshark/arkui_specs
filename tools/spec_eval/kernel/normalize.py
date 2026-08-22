@@ -27,14 +27,7 @@ from .evidence_paths import EvidencePathError, FrozenEvidencePathResolver
 
 DEFECT_KEY = re.compile(K.DEFECT_KEY_PATTERN)
 SEMANTIC_FINDING_IDENTITY_VERSION = 1
-OUTCOME_POLICY_BASIS_CRITERIA = (
-    "SPEC-AC-TESTABILITY",
-    "SPEC-TRACEABILITY",
-    "DESIGN-IMPACT-COVERAGE",
-    "DESIGN-VERIFICATION-PLAN",
-    "COMPATIBILITY-API-VERSION",
-    "COMPATIBILITY-MULTI-DEVICE",
-)
+OUTCOME_POLICY_BASIS_CRITERIA = K.POLICY_BASIS_CRITERION_IDS
 FINDING_SEVERITY_TO_PUBLISHED = {
     "CRITICAL": "Critical",
     "MAJOR": "Major",
@@ -72,26 +65,6 @@ def _repair_defect_key(key: str, valid_keys: set[str]) -> str | None:
     if len(candidates) == 1:
         return candidates[0]
     return None
-
-
-def _repair_policy_basis(conclusion: str | None) -> tuple[str, str, str] | None:
-    """Reverse-map a conclusion to the most natural policy_basis triple.
-
-    When the model fills policy_basis with a mix of NOT_APPLICABLE and non-NA
-    values, ``expected_policy_conclusion`` returns None.  If the conclusion
-    itself is valid, we can infer a canonical set of status fields.
-    """
-    _CANONICAL_BASIS: dict[str, tuple[str, str, str]] = {
-        "NOT_APPLICABLE": ("NOT_APPLICABLE", "NOT_APPLICABLE", "NOT_APPLICABLE"),
-        "NOT_VERIFIABLE": ("PRESENT", "UNAVAILABLE", "NONE"),
-        "SUPPORTED": ("PRESENT", "VERIFIED", "NONE"),
-        "PARTIALLY_SUPPORTED": ("PRESENT", "PARTIAL", "NONE"),
-        "CONTRADICTED": ("PRESENT", "VERIFIED", "CORE"),
-        "MISSING": ("ABSENT", "UNAVAILABLE", "NONE"),
-    }
-    if not isinstance(conclusion, str):
-        return None
-    return _CANONICAL_BASIS.get(conclusion)
 
 
 @dataclass(frozen=True)
@@ -489,14 +462,25 @@ def normalize_aggregation(
         for row in _rows(judgment.get("criterion_results"))
     }
     context_by_criterion = criteria_by_id(aggregation_context)
-    policy_template = {
-        row.get("criterion_id"): row
-        for row in _rows(template.get("outcome_policy_bases"))
-    }
     policy_judgment = {
         row.get("criterion_id"): row
         for row in _rows(judgment.get("outcome_policy_bases"))
     }
+    policy_rows = _rows(judgment.get("outcome_policy_bases"))
+    policy_order = [
+        row.get("criterion_id") for row in policy_rows
+        if isinstance(row.get("criterion_id"), str)
+    ]
+    policy_basis_valid = policy_order == list(OUTCOME_POLICY_BASIS_CRITERIA)
+    if policy_basis_valid:
+        policy_basis_valid = all(
+            K.expected_policy_conclusion(
+                row.get("content_status"),
+                row.get("evidence_status"),
+                row.get("conflict_scope"),
+            ) is not None
+            for row in policy_rows
+        )
     inherited_catalog: list[dict[str, Any]] = []
     inherited_ids: set[str] = set()
     for evidence in (aggregation_context or {}).get("evidence_catalog", {}).values():
@@ -629,10 +613,8 @@ def normalize_aggregation(
             conclusion = required_conclusion
             for finding in findings:
                 finding["conclusion"] = conclusion
-        conclusion_basis = policy_judgment.get(
-            criterion_id, policy_template.get(criterion_id, {})
-        )
-        if criterion_id in OUTCOME_POLICY_BASIS_CRITERIA:
+        conclusion_basis = policy_judgment.get(criterion_id, {})
+        if criterion_id in OUTCOME_POLICY_BASIS_CRITERIA and policy_basis_valid:
             derived_conclusion = K.expected_policy_conclusion(
                 conclusion_basis.get("content_status"),
                 conclusion_basis.get("evidence_status"),
@@ -705,30 +687,7 @@ def normalize_aggregation(
         })
         changes.append(f"defect_ownership[{defect_key}]: secondary criteria derived")
 
-    outcome_policy_bases = []
-    for criterion_id in OUTCOME_POLICY_BASIS_CRITERIA:
-        row = policy_judgment.get(criterion_id, policy_template.get(criterion_id, {}))
-        content_status = row.get("content_status")
-        evidence_status = row.get("evidence_status")
-        conflict_scope = row.get("conflict_scope")
-        derived = K.expected_policy_conclusion(content_status, evidence_status, conflict_scope)
-        if derived is None:
-            # Mixed NOT_APPLICABLE — try to repair from the conclusion
-            conclusion = judgment_by_criterion.get(criterion_id, {}).get("conclusion")
-            repaired = _repair_policy_basis(conclusion)
-            if repaired is not None:
-                content_status, evidence_status, conflict_scope = repaired
-                changes.append(
-                    f"outcome_policy_bases[{criterion_id}]: repaired inconsistent "
-                    f"status fields to match conclusion {conclusion}"
-                )
-        outcome_policy_bases.append({
-            "criterion_id": criterion_id,
-            "content_status": content_status,
-            "evidence_status": evidence_status,
-            "conflict_scope": conflict_scope,
-            "reason": row.get("reason", ""),
-        })
+    outcome_policy_bases = copy.deepcopy(policy_rows)
 
     contradiction_bases = copy.deepcopy(judgment.get("contradiction_bases") or [])
     for basis in contradiction_bases:

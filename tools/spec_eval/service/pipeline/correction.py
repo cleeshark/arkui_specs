@@ -20,85 +20,35 @@ import re
 from typing import Any, Iterable
 
 from spec_eval.kernel import contracts as K
-from spec_eval.kernel.errors import TypedError
+from spec_eval.kernel.errors import (
+    FATAL_INPUT,
+    MODEL_CORRECTION,
+    SERVICE_NORMALIZATION,
+    TypedError,
+    repairability_of,
+)
 from spec_eval.kernel.normalize import DEFECT_KEY
 
 
-# Correction routing is intentionally conservative.  Only evidence and
-# semantic-content errors may consume a model turn.  Field/enum/coverage/
-# ownership/mapping errors are service-owned: a safe canonical repair is
-# attempted, otherwise the work item terminates without asking the model to
-# invent structure or IDs.
-MODEL_CORRECTION_ERROR_CODES = frozenset({
-    # Evidence declaration, path and cardinality problems.
-    "EVIDENCE_DECLARATION_INVALID",
-    "EVIDENCE_KEY_DUPLICATED",
-    "EVIDENCE_PATH_NOT_ALLOWED",
-    "EVIDENCE_PATH_NOT_FOUND",
-    "EVIDENCE_KEY_UNKNOWN",
-    "EVIDENCE_CARDINALITY_VIOLATED",
-    "NV_INSPECTION_EVIDENCE_MISSING",
-    "GAP_MISSING_FOR_NV",
-    "GAP_FIELD_INSUFFICIENT",
-    "CRITERION_EVIDENCE_UNKNOWN",
-    "FINDING_EVIDENCE_UNKNOWN",
-    "EVIDENCE_TYPE_MISSING",
-    "EVIDENCE_REQUIRED_MISSING",
-    # Semantic prose and semantic basis problems.
-    "REASON_PLACEHOLDER",
-    "REASON_LOW_INFORMATION",
-    "MODELING_BASIS_MISSING",
-    "MODELING_BASIS_INVALID",
-    "POLICY_BASIS_INVALID",
-    "CONTRADICTION_BASIS_INVALID",
-    "MAPPING_CONCLUSION_FORBIDDEN",
-    "MAPPING_NV_REQUIRED",
-    "SEVERITY_BELOW_FLOOR",
-    "NOT_APPLICABLE_FORBIDDEN",
-    "CROSS_FEAT_NOT_REVIEWED",
-    "QUALITY_HIGH_NV_RATIO",
-    "QUALITY_DUPLICATE_TEXT",
-    "QUALITY_OBSERVATION_DENSITY",
-})
-
-# These codes are safe to handle without asking a model to re-evaluate the
-# document.  The set is the complement of MODEL_CORRECTION_ERROR_CODES for
-# known validator errors; keeping the explicit name preserves the routing API
-# used by the pipeline and tests.
-DETERMINISTIC_ERROR_CODES = frozenset({
-    "CLAIM_SET_MISMATCH",
-    "CLAIM_ROW_DUPLICATED",
-    "CLAIM_OUTCOME_INVALID",
-    "UNIT_ROW_INVALID",
-    "UNIT_CLAIM_OUTCOME_CONFLICT",
-    "CHECK_COVERAGE_INCOMPLETE",
-    "CRITERION_UNKNOWN",
-    "OBSERVATION_CLAIM_UNEXPECTED",
-    "OBSERVATION_CLAIM_IDS_EMPTY",
-    "OBSERVATION_CLAIM_COVERAGE_INCOMPLETE",
-    "OBSERVATION_FIELD_INVALID",
-    "DEFECT_KEYS_INVALID",
-    "DEFECT_KEY_UNDEFINED",
-    "CRITERION_SET_MISMATCH",
-    "MAPPING_CLAIM_UNMAPPED",
-    "FINDING_CARDINALITY_VIOLATED",
-    "FINDING_OWNER_UNKNOWN",
-    "FINDING_MULTI_OWNED",
-    "CRITICAL_NOT_PRIMARY",
-    "DUPLICATE_DEFECT_OWNER",
-})
+def error_repairability(error: TypedError | dict[str, Any]) -> str:
+    """Return the Kernel-owned routing class; unknown codes fail closed."""
+    code = error.code if isinstance(error, TypedError) else error.get("code")
+    try:
+        return repairability_of(str(code))
+    except ValueError:
+        return FATAL_INPUT
 
 
 def is_deterministic_error(error: TypedError | dict[str, Any]) -> bool:
-    code = error.code if isinstance(error, TypedError) else error.get("code")
-    # Unknown codes are never delegated implicitly.  New semantic/evidence
-    # codes must be added to MODEL_CORRECTION_ERROR_CODES deliberately.
-    return str(code) not in MODEL_CORRECTION_ERROR_CODES
+    return error_repairability(error) == SERVICE_NORMALIZATION
 
 
 def is_model_correction_error(error: TypedError | dict[str, Any]) -> bool:
-    code = error.code if isinstance(error, TypedError) else error.get("code")
-    return str(code) in MODEL_CORRECTION_ERROR_CODES
+    return error_repairability(error) == MODEL_CORRECTION
+
+
+def is_fatal_error(error: TypedError | dict[str, Any]) -> bool:
+    return error_repairability(error) == FATAL_INPUT
 
 
 def _rows(value: Any) -> list[dict[str, Any]]:

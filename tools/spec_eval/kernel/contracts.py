@@ -105,6 +105,15 @@ POLICY_CONTENT_STATUSES = ("PRESENT", "PLACEHOLDER_ONLY", "ABSENT", "NOT_APPLICA
 POLICY_EVIDENCE_STATUSES = ("VERIFIED", "PARTIAL", "UNAVAILABLE", "NOT_APPLICABLE")
 POLICY_CONFLICT_SCOPES = ("NONE", "LOCAL", "CORE", "NOT_APPLICABLE")
 
+POLICY_BASIS_CRITERION_IDS = (
+    "SPEC-AC-TESTABILITY",
+    "SPEC-TRACEABILITY",
+    "DESIGN-IMPACT-COVERAGE",
+    "DESIGN-VERIFICATION-PLAN",
+    "COMPATIBILITY-API-VERSION",
+    "COMPATIBILITY-MULTI-DEVICE",
+)
+
 # The policy basis is the model-owned semantic input for the six fixed policy
 # criteria.  The conclusion is derived by the service so the model cannot
 # produce two inconsistent representations of the same judgment.
@@ -131,6 +140,12 @@ def expected_policy_conclusion(
     Keeping this function in the declarative contract makes schema prompts,
     normalization and validation use the same precedence table.
     """
+    if (
+        content_status not in POLICY_CONTENT_STATUSES
+        or evidence_status not in POLICY_EVIDENCE_STATUSES
+        or conflict_scope not in POLICY_CONFLICT_SCOPES
+    ):
+        return None
     statuses = {content_status, evidence_status, conflict_scope}
     if "NOT_APPLICABLE" in statuses and len(statuses) > 1:
         return None
