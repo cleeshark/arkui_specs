@@ -310,6 +310,10 @@ class CodexExecutorTest(unittest.TestCase):
         self.assertIn("forbidden_paths", constraints)
         self.assertIn("citable=false", constraints)
         self.assertIn("canonical repository-relative", constraints)
+        self.assertIn("NEVER print, echo, cat, tee", constraints)
+        self.assertIn("exactly once in the final response", constraints)
+        self.assertIn("normally below 16 KB", constraints)
+        self.assertIn("print only compact summaries", constraints)
         self.assertEqual(prompt["input_resources"][0]["citable"], False)
         requirement = prompt["output"]["requirement"]
         self.assertIn("evidence_declarations", requirement)
@@ -369,6 +373,9 @@ class CodexExecutorTest(unittest.TestCase):
         self.assertIn("typed_errors", constraints)
         self.assertIn("RFC-6902-style add/remove/replace patches", constraints)
         self.assertIn("NEVER read SKILL.md", constraints)
+        self.assertIn("NEVER print, echo, cat, tee", constraints)
+        self.assertIn("normally below 16 KB", constraints)
+        self.assertIn("print only compact summaries", constraints)
         contract = prompt["result_contract"]
         self.assertEqual(prompt["phase_references"], [])
         self.assertEqual(
