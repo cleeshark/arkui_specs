@@ -30,7 +30,10 @@ Do not create `semantic-result.json` manually. Produce it with
 
 1. Read `run-state.json` and use `show_next_work_item.py` to retrieve only one pending item. Do not
    load the complete `work-items.json` into model context for routine Feature processing.
-2. Load only the selected item's declared `input_paths`.
+2. Start with the selected item's declared `input_paths` as prioritized focus paths; they are not an
+   exhaustive read allowlist. Expand within the frozen repository when the selected claim requires
+   parent/caller/helper, build, test, SDK, or dependency verification. Do not infer absence from an
+   omitted path, and respect `forbidden_paths`.
    Inspect its `input_resources` metadata before declaring evidence: `citable: false` inputs are
    disposable semantic context, while `citable: true` inputs provide a `canonical_path` suitable
    for evidence declaration.

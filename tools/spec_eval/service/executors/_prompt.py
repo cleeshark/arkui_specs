@@ -45,7 +45,12 @@ def build_executor_prompt(work: C.WorkItemInput) -> str:
     )
     constraints = [
         reference_constraint,
-        "Read only the declared input_paths and frozen source/SDK files.",
+        "Use declared input_paths as prioritized focus paths, not a read allowlist. "
+        "For claim verification, inspect any relevant frozen file under repo_root, "
+        "including callers, helpers, build files, tests, and SDK declarations.",
+        "Every claim_review must contain at least one atomic unit_review; keep "
+        "reviewed_units and unit_reviews aligned in non-empty order and derive "
+        "the Claim outcome from its unit outcomes.",
         "Treat input_resources.citable=false files as context only; never "
         "declare them as evidence.",
         "Evidence paths must be canonical repository-relative POSIX paths. "
@@ -91,14 +96,14 @@ def build_executor_prompt(work: C.WorkItemInput) -> str:
             )
     elif observation_profile == "function_global":
         constraints.extend([
-            "This is Function-global Observation: inspect static-index first, then Design/Registry and declared global source/build/SDK/test scopes.",
+            "This is Function-global Observation: inspect static-index first, then Design/Registry and the declared focus paths; expand within frozen repo_root for the relevant source, build, SDK, test, and dependency paths.",
             "Assess Function-wide architecture, cross-Feature ownership/boundaries, build/deployment, SDK and device impact.",
             "Use declared cross-Feature Specs for boundary/coverage context; reopen a Feature evidence slice only for a named unresolved cross-Feature question; do not scan every Feature shard.",
         ])
     else:
         constraints.extend([
             "This is Feature Observation: review only the current Feature's claims and local acceptance evidence.",
-            "Read the Feature Spec first, then declared Feature source/test/SDK scopes; do not expand to other Features or Function-global material unless a named claim requires it.",
+            "Read the Feature Spec first, then the declared Feature focus paths. Expand within frozen repo_root for named claim dependencies, parent/caller paths, build files, SDK declarations, and tests; an omitted path is not evidence of absence. Do not scan unrelated Feature shards or Function-global material by default.",
         ])
     payload_field_text = json.dumps(payload_fields, ensure_ascii=False)
     if correcting:

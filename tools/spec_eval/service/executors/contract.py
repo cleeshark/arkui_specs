@@ -34,7 +34,7 @@ class WorkItemInput:
     work_item_id: str
     work_item: dict[str, Any]  # full work item from show_next_work_item (for the prompt)
     run_dir: str  # staged run dir; exposed as an extra read root for initialized inputs
-    input_paths: tuple[str, ...]  # absolute paths the executor may read
+    input_paths: tuple[str, ...]  # absolute paths prioritized for claim verification; not a repo read allowlist
     executor_result_path: str  # absolute path the executor must write
     repo_root: str  # working directory granted read-only
     skill_version: str

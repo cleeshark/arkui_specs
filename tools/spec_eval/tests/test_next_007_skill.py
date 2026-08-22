@@ -1574,7 +1574,11 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             encoding="utf-8"
         )
         self.assertIn("`unit_reviews`", observation_contract)
+        self.assertIn("not an exhaustive read allowlist", observation_contract)
+        self.assertIn("Every Claim must contain at", observation_contract)
+        self.assertIn("same non-empty unit IDs exactly once", observation_contract)
         self.assertIn("callback result", observation_guide)
+        self.assertIn("Derive Claim outcomes from units", observation_guide)
         self.assertIn("`modeling_basis`", guide + staged)
         self.assertIn("two owner Feats with independent acceptance claims", staged)
         self.assertIn("source-file overlap", guide)
