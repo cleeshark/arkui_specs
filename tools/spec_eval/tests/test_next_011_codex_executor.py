@@ -364,7 +364,8 @@ class CodexExecutorTest(unittest.TestCase):
         constraints = " ".join(prompt["constraints"])
         self.assertIn("candidate_path", constraints)
         self.assertIn("typed_errors", constraints)
-        self.assertIn("Re-declare every piece of evidence", constraints)
+        self.assertIn("RFC-6902-style add/remove/replace patches", constraints)
+        self.assertIn("NEVER read SKILL.md", constraints)
         contract = prompt["result_contract"]
         self.assertEqual(prompt["phase_references"], [])
         self.assertEqual(

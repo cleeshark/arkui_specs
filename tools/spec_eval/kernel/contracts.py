@@ -193,6 +193,11 @@ OBSERVATION_JUDGMENT_FIELDS = (
     "open_questions",
     "notes",
 )
+
+# Correction turns return a bounded RFC-6902 patch against the normalized
+# candidate.  The service merges and validates the patch; the model never
+# rewrites the staged document.
+CORRECTION_JUDGMENT_FIELDS = ("patches", "notes")
 CLAIM_JUDGMENT_FIELDS = (
     "claim_id",
     "local_outcome",

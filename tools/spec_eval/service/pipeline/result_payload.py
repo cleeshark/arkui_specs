@@ -1,11 +1,8 @@
 """Executor prompt contracts for evaluator protocol 0.2.0.
 
-Two modes only (design §4): ``observe`` produces one complete judgment
-payload against the generated strict schema; ``correct`` receives the invalid
-candidate plus typed validation errors and returns one complete corrected
-payload using the same schema. Legacy repair/retry/reconciliation contracts are
-gone; the machine contract injected into the prompt comes from
-the kernel's single declarative source.
+Observation produces one complete judgment payload.  Correction produces a
+bounded JSON Patch against the normalized candidate; the service merges and
+validates that patch.
 """
 
 from __future__ import annotations
@@ -104,28 +101,31 @@ def correct_prompt_contract(
     *,
     candidate_path: Path,
     typed_errors: Iterable[dict[str, Any]],
+    schema_dir: Path,
+    correction_contract: dict[str, Any],
+    machine_contract: dict[str, Any],
 ) -> dict[str, Any]:
-    """Contract for the single generic correction turn (same stage schema)."""
+    """Contract for one bounded JSON Patch correction turn."""
     contract = copy.deepcopy(base_contract)
-    payload_fields = list(contract.get("payload_fields", []))
-    evidence_constraint = (
-        "Re-declare any evidence you keep or add; the service re-verifies "
-        "hashes and re-assigns canonical IDs."
-        if "evidence_declarations" in payload_fields else
-        "Do not declare evidence or use local evidence keys. Use only canonical "
-        "evidence IDs listed for each Criterion in aggregation-context.json."
+    schema_path = write_envelope_schema(
+        "correction", schema_dir / "envelope-correction.schema.json"
     )
     contract.update({
         "mode": MODE_CORRECT,
+        "phase_references": [],
+        "payload_kind": "correction",
+        "result_kind": "staged_json_patch",
+        "payload_fields": list(K.CORRECTION_JUDGMENT_FIELDS),
+        "schema_path": str(schema_path),
         "candidate_path": str(candidate_path),
         "typed_errors": list(typed_errors),
+        "correction_contract": correction_contract,
+        "machine_contract": machine_contract,
         "correction_constraints": [
             "Read the invalid candidate at candidate_path and every typed error.",
-            "Fix the reported judgments; do not change document identity, "
-            "ordering, derived fields or evidence you cannot verify.",
-            "Return one complete corrected payload using the same schema; "
-            "this is not a patch and not a partial document.",
-            evidence_constraint,
+            "Return RFC-6902-style add/remove/replace patches against the published candidate.",
+            "Do not return a complete replacement document.",
+            "Do not read SKILL.md or search any skill directory during Correction.",
         ],
     })
     return contract

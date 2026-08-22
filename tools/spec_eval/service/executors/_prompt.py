@@ -36,8 +36,8 @@ def build_executor_prompt(work: C.WorkItemInput) -> str:
         "The phase_references contents are already loaded in this prompt; "
         "follow them as phase instructions and do not reread their source paths."
         if phase_references else
-        "Follow the phase-specific evaluator references and machine contract "
-        "in declared input_paths."
+        "Follow only the declared machine contract and explicitly allowed "
+        "input paths."
     )
     constraints = [
         reference_constraint,
@@ -57,31 +57,29 @@ def build_executor_prompt(work: C.WorkItemInput) -> str:
         "only a specific line range is needed. Minimize total tokens read.",
     ]
     if correcting:
-        evidence_correction = (
-            "Re-declare every piece of evidence you keep or add in "
-            "evidence_declarations; the service re-verifies hashes and "
-            "re-assigns canonical IDs."
-            if declares_evidence else
-            "Do not declare evidence or use local evidence keys. Use only "
-            "canonical evidence IDs listed for each Criterion in "
-            "aggregation-context.json."
-        )
         constraints = [
             "Correct one invalid evaluation candidate.",
             "Read the candidate at result_contract.candidate_path and every "
             "entry of result_contract.typed_errors.",
-            "Fix the reported judgments; the typed errors carry code, path, "
-            "entity and expected/actual values.",
-            "Do not change document identity, ordering, derived fields or "
-            "evidence you cannot verify from the frozen inputs.",
-            evidence_correction,
-            "Treat input_resources.citable=false files as context only. "
-            "Replace rejected paths with canonical frozen repository paths.",
-            "Treat the top-level machine_contract as normative.",
+            "The service owns the candidate merge and final validation.",
+            "Return only RFC-6902-style add/remove/replace patches and notes.",
+            "Patch the published candidate; do not rewrite the complete document.",
+            "Change only paths allowed by result_contract.correction_contract.",
+            "Do not change document identity, source revision, ordering, canonical IDs, "
+            "hashes or derived fields.",
+            "NEVER read SKILL.md or search any skill directory during Correction.",
+            "Treat the top-level machine_contract and correction_contract as normative.",
             "Write only the structured final result.",
         ]
     payload_field_text = json.dumps(payload_fields, ensure_ascii=False)
-    evidence_requirement = (
+    if correcting:
+        evidence_requirement = (
+            "Return payload.patches as an array of add/remove/replace operations "
+            "against the published candidate; the service applies and validates "
+            "them. Encode each patch value as a JSON string (use \"null\" for remove)."
+        )
+    else:
+        evidence_requirement = (
         "Local evidence keys (e1, e2, ...) are declared once in "
         "evidence_declarations and referenced via evidence_refs; never emit "
         "canonical EV- IDs."
@@ -90,7 +88,7 @@ def build_executor_prompt(work: C.WorkItemInput) -> str:
         "or local evidence keys. criterion_results[].evidence_ids and each "
         "finding evidence_ids must use canonical EV- IDs listed for that "
         "Criterion in aggregation-context.json."
-    )
+        )
     task = (
         f"Correct one {result_kind} candidate after typed validation failure."
         if correcting else

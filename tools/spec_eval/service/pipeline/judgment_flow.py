@@ -7,7 +7,8 @@ observation and aggregation stages:
       -> GENERATED_INVALID   (observe completed, typed validation failed)
       -> VALIDATED           (observe first pass)
     GENERATED_INVALID
-      -> CORRECTION_PENDING  (the single generic correction turn)
+      -> VALIDATED           (deterministic structural correction)
+      -> CORRECTION_PENDING  (the single semantic/evidence patch turn)
     CORRECTION_PENDING
       -> VALIDATED                     (correction output validates)
       -> CORRECTION_INVALID_TERMINAL   (correction completed but still invalid:
@@ -39,6 +40,13 @@ from spec_eval.service.executors.base import SemanticExecutor
 from spec_eval.service.pipeline.context import RunContext
 from spec_eval.service.pipeline.result_payload import (
     correct_prompt_contract,
+)
+from spec_eval.service.pipeline.correction import (
+    apply_deterministic_correction,
+    apply_json_patch,
+    is_model_correction_error,
+    typed_error_json_path,
+    validate_patch_scope,
 )
 from spec_eval.service.store.repositories import (
     EventRepository,
@@ -98,6 +106,31 @@ def _write_json(path: Path, value: Any) -> None:
     path.write_text(
         json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
+
+
+def _published_evidence_catalog(document: dict[str, Any]) -> list[dict[str, Any]]:
+    """Return the already verified evidence catalog for a published candidate."""
+    catalog: dict[str, dict[str, Any]] = {}
+    rows: list[dict[str, Any]] = []
+    for collection in ("observations", "criterion_results"):
+        rows.extend(
+            row for row in document.get(collection, [])
+            if isinstance(row, dict)
+        )
+    for row in rows:
+        for evidence in row.get("evidence", []):
+            if not isinstance(evidence, dict):
+                continue
+            evidence_id = evidence.get("evidence_id")
+            if not isinstance(evidence_id, str) or evidence_id in catalog:
+                continue
+            catalog[evidence_id] = {
+                "evidence_id": evidence_id,
+                "type": evidence.get("type"),
+                "path": evidence.get("path"),
+                "description": evidence.get("description", ""),
+            }
+    return list(catalog.values())
 
 
 def _guard_correction_regression(
@@ -401,11 +434,120 @@ class JudgmentFlow:
             )
         breakpoint_data = json.loads(errors_path.read_text(encoding="utf-8"))
         typed_dicts = breakpoint_data.get("errors", [])
+
+        # Safe structural/ownership errors are repaired by the service.  They
+        # never consume a model correction turn.  If a repair is ambiguous,
+        # fail explicitly rather than asking the model to invent a mapping.
+        deterministic_dicts = [
+            error for error in typed_dicts if not is_model_correction_error(error)
+        ]
+        model_dicts = [
+            error for error in typed_dicts if is_model_correction_error(error)
+        ]
+        if deterministic_dicts:
+            try:
+                candidate_document = json.loads(
+                    candidate_path.read_text(encoding="utf-8")
+                )
+            except (OSError, json.JSONDecodeError) as exc:
+                return self._fail(
+                    "semantic_failed",
+                    {"work_item_id": work.work_item_id, "error": str(exc)},
+                    f"cannot read correction candidate: {exc}",
+                )
+            corrected_document, changes, unresolved = apply_deterministic_correction(
+                candidate_document, deterministic_dicts,
+            )
+            if unresolved:
+                self.events.append(self.ctx.job_id, "correction_skipped", {
+                    "work_item_id": work.work_item_id,
+                    "reason": "service_deterministic_error",
+                    "errors": [error.to_dict() for error in unresolved],
+                })
+                SS.set_work_item_state(
+                    self.ctx.run_dir, work.work_item_id,
+                    SS.CORRECTION_INVALID_TERMINAL,
+                )
+                return self._fail(
+                    "semantic_failed",
+                    {
+                        "work_item_id": work.work_item_id,
+                        "state": SS.CORRECTION_INVALID_TERMINAL,
+                        "errors": [error.to_dict() for error in unresolved],
+                        "repair": "deterministic_only",
+                    },
+                    "deterministic correction could not resolve: "
+                    + "; ".join(error.code for error in unresolved[:5]),
+                )
+            if changes:
+                remaining = typed_of(corrected_document)
+                if not blocking(remaining):
+                    publish(
+                        corrected_document,
+                        _published_evidence_catalog(corrected_document),
+                    )
+                    self.events.append(self.ctx.job_id, "candidate_deterministic_repaired", {
+                        "work_item_id": work.work_item_id,
+                        "changes": changes,
+                    })
+                    return JudgmentOutcome(C.STATUS_COMPLETED, published=True)
+                # Persist the repaired candidate and send only semantic or
+                # evidence errors to the model.  Deterministic errors that
+                # remain unresolved are never delegated to the model.
+                remaining_dicts = [error.to_dict() for error in remaining]
+                remaining_deterministic = [
+                    error for error in remaining if not is_model_correction_error(error)
+                ]
+                if remaining_deterministic:
+                    self.events.append(self.ctx.job_id, "correction_skipped", {
+                        "work_item_id": work.work_item_id,
+                        "reason": "service_deterministic_error",
+                        "errors": [error.to_dict() for error in remaining_deterministic],
+                    })
+                    return self._fail(
+                        "semantic_failed",
+                        {
+                            "work_item_id": work.work_item_id,
+                            "state": SS.CORRECTION_INVALID_TERMINAL,
+                            "errors": [error.to_dict() for error in remaining_deterministic],
+                            "repair": "deterministic_only",
+                        },
+                        "deterministic correction still invalid: "
+                        + "; ".join(error.code for error in remaining_deterministic[:5]),
+                    )
+                _write_json(candidate_path, corrected_document)
+                _write_json(errors_path, {
+                    "input_fingerprint": fingerprint,
+                    "errors": remaining_dicts,
+                    "evidence_catalog": _published_evidence_catalog(corrected_document),
+                    "deterministic_changes": changes,
+                })
+                typed_dicts = remaining_dicts
+                model_dicts = remaining_dicts
+
+        if not model_dicts:
+            self.events.append(self.ctx.job_id, "correction_skipped", {
+                "work_item_id": work.work_item_id,
+                "reason": "no_model_correctable_error",
+                "errors": typed_dicts,
+            })
+            return self._fail(
+                "semantic_failed",
+                {
+                    "work_item_id": work.work_item_id,
+                    "state": SS.CORRECTION_INVALID_TERMINAL,
+                    "errors": typed_dicts,
+                    "repair": "no_model_correction",
+                },
+                "no model-correctable Observation errors remain",
+            )
+
         SS.set_work_item_state(
             self.ctx.run_dir, work.work_item_id, SS.CORRECTION_PENDING
         )
         correct_work = self._correct_work_input(
-            work, candidate_path, typed_dicts, breakpoint_data
+            work, candidate_path, model_dicts,
+            {**breakpoint_data, "errors": model_dicts},
         )
         result, failure = self._execute(correct_work, "correct")
         if failure == "cancelled":
@@ -419,10 +561,58 @@ class JudgmentFlow:
                  "error": failure},
                 failure,
             )
-        corrected_payload = _guard_correction_regression(
-            result.observation, candidate_path, typed_dicts,
-        )
-        normalization = normalize(corrected_payload)
+        # New Correction turns return JSON Patch against the normalized
+        # candidate.  Keep the full-payload fallback for old executors and
+        # fixtures while the protocol rolls forward.
+        correction_payload = result.observation or {}
+        corrected_candidate_for_failure = correction_payload
+        if isinstance(correction_payload, dict) and "patches" in correction_payload:
+            try:
+                candidate_document = json.loads(
+                    candidate_path.read_text(encoding="utf-8")
+                )
+                patches = correction_payload.get("patches")
+                if not isinstance(patches, list):
+                    raise ValueError("correction patches must be an array")
+                correction_contract = correct_work.prompt_extras.get(
+                    "correction_contract", {}
+                )
+                violations = validate_patch_scope(
+                    patches,
+                    allowed_paths=correction_contract.get("allowed_paths", []),
+                    immutable_paths=correction_contract.get("immutable_paths", []),
+                )
+                if violations:
+                    raise ValueError("; ".join(violations))
+                corrected_payload = apply_json_patch(candidate_document, patches)
+                corrected_candidate_for_failure = corrected_payload
+            except (OSError, json.JSONDecodeError, ValueError, TypeError) as exc:
+                return self._fail(
+                    "semantic_failed",
+                    {
+                        "work_item_id": work.work_item_id,
+                        "state": SS.CORRECTION_INVALID_TERMINAL,
+                        "error": f"invalid JSON Patch: {exc}",
+                    },
+                    f"invalid JSON Patch: {exc}",
+                )
+            typed = typed_of(corrected_payload)
+            if not blocking(typed):
+                publish(
+                    corrected_payload,
+                    _published_evidence_catalog(corrected_payload),
+                )
+                return JudgmentOutcome(C.STATUS_COMPLETED, published=True)
+            normalization = NormalizationResult(
+                document=None,
+                errors=typed,
+                evidence_catalog=_published_evidence_catalog(corrected_payload),
+            )
+        else:
+            corrected_payload = _guard_correction_regression(
+                result.observation, candidate_path, model_dicts,
+            )
+            normalization = normalize(corrected_payload)
         if normalization.fatal:
             return self._fail(
                 "semantic_failed",
@@ -433,7 +623,7 @@ class JudgmentFlow:
                 ),
             )
         if normalization.errors:
-            _write_json(candidate_path, result.observation)
+            _write_json(candidate_path, corrected_candidate_for_failure)
             _write_json(errors_path, {
                 "input_fingerprint": fingerprint,
                 "errors": [error.to_dict() for error in normalization.errors],
@@ -487,27 +677,89 @@ class JudgmentFlow:
         breakpoint_data: dict[str, Any],
     ) -> C.WorkItemInput:
         from dataclasses import replace
+        from spec_eval.kernel.machine_contract import build_correction_machine_contract
 
         result_path = Path(work.executor_result_path)
         correct_result_path = result_path.with_name(
             f"{result_path.stem}.correct-1{result_path.suffix}"
         )
         base_contract = dict(work.prompt_extras)
-        machine_contract = dict(base_contract.get("machine_contract", {}))
+        payload_kind = str(base_contract.get("payload_kind", "observation"))
         catalog = breakpoint_data.get("evidence_catalog", [])
-        if catalog and isinstance(machine_contract, dict):
-            machine_contract = dict(machine_contract)
-            machine_contract["evidence_catalog"] = catalog
-            base_contract["machine_contract"] = machine_contract
-        input_paths = list(dict.fromkeys((
+        error_codes = {str(error.get("code")) for error in typed_errors}
+        needs_evidence = any(
+            code.startswith("EVIDENCE_")
+            or code.startswith("NV_")
+            or code.startswith("GAP_")
+            for code in error_codes
+        )
+        allowed_paths = [typed_error_json_path(str(error.get("path", ""))) for error in typed_errors]
+        correction_contract = {
+            "format": "json_patch",
+            "base": "published_candidate",
+            "allowed_paths": list(dict.fromkeys(allowed_paths)),
+            "immutable_paths": [
+                "/func_id", "/source_revision", "/run_id", "/observation_id",
+                "/expected_claim_ids", "/required_checks", "/reviewed_claim_ids",
+                "/completed_checks", "/status",
+            ],
+        }
+        machine_contract = build_correction_machine_contract(
+            payload_kind=payload_kind,
+            typed_errors=typed_errors,
+            allowed_paths=allowed_paths,
+            evidence_catalog=catalog if needs_evidence else (),
+        )
+
+        # Correction never needs the embedded workflow references.  Keep only
+        # the candidate and declared frozen inputs relevant to semantic or
+        # evidence errors; SKILL.md and the two Observation markdown files are
+        # explicitly excluded from the correction input set.
+        excluded_names = {
+            "SKILL.md", "observation-contract.md", "observation-guide.md",
+            "aggregation-workflow.md", "criterion-guide.md",
+            "staged-run-contract.md", "output-contract.json", "work-items.json",
+            "run-state.json",
+        }
+
+        def correction_input_allowed(path: str) -> bool:
+            candidate = Path(path)
+            # Never expose evaluator workflow/reference material in a
+            # Correction turn.  Feature/spec Markdown outside the skill tree
+            # remains available because semantic correction may need it.
+            if candidate.name in excluded_names:
+                return False
+            if "ohos-design-arkui-spec-evaluator" in candidate.parts:
+                return False
+            return True
+
+        input_paths = [
             str(candidate_path),
-            *work.input_paths,
-        )))
+            *[
+                path for path in work.input_paths
+                if correction_input_allowed(path)
+            ],
+        ]
+        input_paths = list(dict.fromkeys(input_paths))
+        work_item = dict(work.work_item)
+        resources = [
+            dict(resource)
+            for resource in work_item.get("input_resources", [])
+            if isinstance(resource, dict)
+            and correction_input_allowed(str(resource.get("path", "")))
+        ]
+        work_item["input_resources"] = resources
         return replace(
             work,
+            work_item=work_item,
             input_paths=tuple(input_paths),
             executor_result_path=str(correct_result_path),
             prompt_extras=correct_prompt_contract(
-                base_contract, candidate_path=candidate_path, typed_errors=typed_errors
+                base_contract,
+                candidate_path=candidate_path,
+                typed_errors=typed_errors,
+                schema_dir=self.ctx.run_dir,
+                correction_contract=correction_contract,
+                machine_contract=machine_contract,
             ),
         )

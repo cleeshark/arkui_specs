@@ -254,6 +254,37 @@ def _aggregation_defs() -> dict:
     }
 
 
+def _correction_defs() -> dict:
+    """Strict envelope payload for a bounded JSON Patch correction."""
+    patch = {
+        "type": "object",
+        "properties": {
+            "op": _enum("add", "remove", "replace"),
+            "path": _non_empty_string(),
+            # The executor's strict JSON-schema subset cannot express an
+            # arbitrary JSON value union.  Transport the RFC-6902 value as a
+            # JSON-encoded string; the service decodes it before applying the
+            # operation (use "null" for remove).
+            "value": _non_empty_string(),
+        },
+        "required": ["op", "path", "value"],
+        "additionalProperties": False,
+    }
+    payload = {
+        "type": ["object", "null"],
+        "properties": {
+            "patches": {"type": "array", "items": {"$ref": "#/$defs/jsonPatch"}},
+            "notes": {"type": "array", "items": {"type": "string"}},
+        },
+        "required": list(K.CORRECTION_JUDGMENT_FIELDS),
+        "additionalProperties": False,
+    }
+    return {
+        "jsonPatch": patch,
+        "correctionPayload": payload,
+    }
+
+
 def build_envelope_schema(payload_kind: str) -> dict:
     """Build the executor envelope v3 schema for one payload kind.
 
@@ -266,6 +297,9 @@ def build_envelope_schema(payload_kind: str) -> dict:
     elif payload_kind == "aggregation":
         defs = _aggregation_defs()
         payload_ref = {"$ref": "#/$defs/aggregationPayload"}
+    elif payload_kind == "correction":
+        defs = _correction_defs()
+        payload_ref = {"$ref": "#/$defs/correctionPayload"}
     else:
         raise ValueError(f"unknown payload kind: {payload_kind!r}")
     return {

@@ -187,36 +187,23 @@ When an evidence ID changes, update every observation, Claim, and unit-level `ev
 reference. Claim `defect_keys` are required for `CONFLICT` and `MISSING`, and must be empty for
 `SUPPORTED`, `NOT_APPLICABLE`, and `NOT_VERIFIABLE`.
 
-If validation fails only because one or more non-`NOT_VERIFIABLE` observations have empty evidence,
-the service may request one bounded evidence completion pass. That pass reads the failed candidate,
-initialized template, `output-contract.json`, and the original scoped frozen inputs. It may populate
-only the named observation evidence arrays. It cannot change outcomes, facts, Claim/check/Criterion
-mappings, defect ownership, non-target evidence, or ordering; if the scoped inputs do not prove the
-existing fact, it fails instead of inventing evidence or downgrading the outcome.
-
-Claim `reason` and unit `fact` values must contain an evidence-specific
-explanation; an outcome token by itself is not a completed review. Dangling Claim or unit
-`evidence_ids` may trigger one bounded Claim re-review. The pass reads the candidate and original
-scoped frozen inputs, targets only the named Claim IDs, and may reference only evidence already
-defined by candidate observations. It may preserve the existing outcome with corrected references,
-or conservatively downgrade an affected Claim/unit to `NOT_VERIFIABLE` with inspection references
-and a specific explanation. Observations, non-target Claims, mappings, reviewed units, facet types,
-defects, and ordering remain unchanged, and the complete candidate is validated again.
-
 `NOT_VERIFIABLE` is not evidence-free. The observation includes at
 least one `review_record` for the frozen scope that was inspected, and each NV Claim and atomic unit
 references that record. The structured `verification_gap` object (with `checked_scope`,
 `missing_evidence`, and `consequence` fields) is the authoritative record of why the gap prevents
 verification; the service validates its completeness via schema and field-level checks.
-Claim evidence repair retains or selects inspection evidence when
-downgrading; it may not clear all references. A high-NV candidate is rejected as suspected
-degenerate output only when inspection evidence has also collapsed and an independent signal such
-as repetitive prose, zero decisive outcomes, or abnormally sparse observations corroborates the
-failure. The service performs at most one complete quality retry from the original inputs.
+Claim evidence repair retains or selects inspection evidence when downgrading; it may not clear all
+references. A high-NV candidate is rejected as suspected degenerate output only when inspection
+evidence has also collapsed and an independent signal such as repetitive prose, zero decisive
+outcomes, or abnormally sparse observations corroborates the failure.
 
-A bounded Claim evidence repair that merges but leaves the
-targeted validator errors unresolved receives one independent full-work-item retry, the same
-one-attempt fallback budget used when a bounded repair is rejected by its guard.
+For any validation failure, the service first handles field, enum, coverage, ownership, and
+defect-key mapping errors deterministically. Ambiguous or unrepairable structural errors terminate
+without a model call. Only evidence or semantic errors enter one Correction turn. Correction reads
+the normalized candidate and named typed errors, returns JSON Patch `add`/`remove`/`replace`
+operations within the generated `correction_contract`, and never rewrites the complete document or
+loads `SKILL.md`. The service applies the patch, validates the merged candidate, and preserves the
+candidate and typed-error checkpoint if the single turn remains invalid.
 
 ## Function-global scope
 
@@ -291,9 +278,16 @@ Apply the context constraints before publishing a conclusion:
 - Selected inherited evidence may explain the result but cannot silently override a published
   mapped outcome.
 
-If validation fails, return the typed protocol errors to the single generic correction turn. There
-is no separate reconciliation or legacy repair contract in protocol 0.2.0; unresolved errors fail
-the work item while preserving the candidate and typed-error checkpoint.
+If validation fails, the service first applies safe structural, enum
+canonicalization, and defect-key ownership repairs without invoking an executor.
+Only evidence or semantic errors enter the single generic Correction turn.
+Correction returns a bounded JSON Patch against the normalized candidate; the
+service merges and validates it. The Correction prompt uses a dedicated compact
+`correction_contract`, excludes Observation workflow references and `SKILL.md`,
+and forbids reading the skill directory. Unresolved deterministic errors fail
+the work item without a model call; unresolved semantic/evidence errors after
+the one Correction turn remain terminal while preserving the candidate and
+typed-error checkpoint.
 
 `output-contract.json` also contains
 `aggregation_payload.final_contract`, sourced directly from the final semantic-result Schema.

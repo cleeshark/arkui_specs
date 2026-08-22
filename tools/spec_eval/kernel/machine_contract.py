@@ -132,6 +132,58 @@ def build_observation_machine_contract(
     }
 
 
+def build_correction_machine_contract(
+    *,
+    payload_kind: str,
+    typed_errors: Iterable[dict[str, Any]],
+    allowed_paths: Iterable[str] = (),
+    evidence_catalog: Iterable[dict[str, Any]] = (),
+) -> dict[str, Any]:
+    """Build the small contract used by a JSON Patch correction turn.
+
+    Correction does not need the full Observation/Design contract.  The
+    candidate is already normalized; the service owns patch application,
+    identity, ordering, hashes and final validation.
+    """
+    errors = [dict(error) for error in typed_errors]
+    return {
+        "evaluation_protocol_version": K.EVALUATION_PROTOCOL_VERSION,
+        "mode": "correct",
+        "payload_kind": payload_kind,
+        "output_format": "json_patch",
+        "service_handled_error_codes": [
+            "CLAIM_SET_MISMATCH",
+            "CLAIM_ROW_DUPLICATED",
+            "UNIT_ROW_INVALID",
+            "UNIT_CLAIM_OUTCOME_CONFLICT",
+            "CHECK_COVERAGE_INCOMPLETE",
+            "CRITERION_UNKNOWN",
+            "OBSERVATION_CLAIM_UNEXPECTED",
+            "OBSERVATION_CLAIM_IDS_EMPTY",
+            "OBSERVATION_CLAIM_COVERAGE_INCOMPLETE",
+            "OBSERVATION_FIELD_INVALID",
+            "CLAIM_OUTCOME_INVALID",
+            "DEFECT_KEYS_INVALID",
+            "DEFECT_KEY_UNDEFINED",
+        ],
+        "model_correction_scope": [
+            "evidence verification",
+            "semantic outcome/reason/fact correction",
+        ],
+        "patch_operations": ["add", "remove", "replace"],
+        "allowed_paths": list(dict.fromkeys(str(path) for path in allowed_paths)),
+        "typed_errors": errors,
+        "rules": [
+            "Patch the published candidate only; do not rewrite the complete document.",
+            "Change only paths covered by typed_errors or their directly required sibling fields.",
+            "Never modify document identity, source revision, ordering, canonical IDs, hashes, or derived fields.",
+            "The service applies and validates the patch; do not calculate canonical IDs or hashes.",
+            "Return patches and notes only. Encode every patch value as a JSON string; use \"null\" for remove.",
+        ],
+        "evidence_catalog": list(evidence_catalog),
+    }
+
+
 def build_aggregation_machine_contract(
     *,
     valid_criterion_ids: Iterable[str],
