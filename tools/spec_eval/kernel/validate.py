@@ -20,6 +20,7 @@ from typing import Any, Iterable
 from . import contracts as K
 from .errors import MODEL_CORRECTION, SERVICE_NORMALIZATION, TypedError
 from .normalize import DEFECT_KEY, OUTCOME_POLICY_BASIS_CRITERIA
+from .aggregation_context import criteria_by_id, mapped_claim_ids as context_mapped_claim_ids
 
 # Quality gate thresholds (carried over from the 0.1.18 degenerate detector).
 _MIN_CLAIMS = 10
@@ -621,10 +622,7 @@ def validate_aggregation_document(
                     findings_by_id[finding_id] = finding
 
     if aggregation_context is not None:
-        mappings_by_id = {
-            row.get("criterion_id"): row
-            for row in _rows(aggregation_context.get("criterion_mappings"))
-        }
+        mappings_by_id = criteria_by_id(aggregation_context)
         for result in results:
             criterion_id = str(result.get("criterion_id"))
             conclusion = result.get("conclusion")
@@ -632,7 +630,7 @@ def validate_aggregation_document(
             if not isinstance(mapping, dict):
                 continue
             constraints = mapping.get("constraints", {})
-            mapped_claim_ids = set(_strings(mapping.get("mapped_claim_ids")))
+            mapped_claim_ids = set(context_mapped_claim_ids(aggregation_context, mapping))
             unmapped = sorted(
                 claim_id for claim_id in _strings(result.get("claim_ids"))
                 if claim_id not in mapped_claim_ids

@@ -23,11 +23,15 @@ from spec_eval.protocol_validator import (  # noqa: E402
     validate_protocol,
     validate_semantic_result,
 )
+from spec_eval.kernel.aggregation_context import (  # noqa: E402
+    criteria_by_id,
+    mapped_claim_ids as context_mapped_claim_ids,
+)
 
 
 STAGED_SCHEMA_VERSION = 2
 SUPPORTED_STAGED_SCHEMA_VERSIONS = {STAGED_SCHEMA_VERSION}
-AGGREGATION_CONTEXT_SCHEMA_VERSION = 2
+AGGREGATION_CONTEXT_SCHEMA_VERSION = 3
 SEMANTIC_FINDING_IDENTITY_VERSION = 1
 OUTCOME_POLICY_BASIS_CRITERIA = [
     "SPEC-AC-TESTABILITY",
@@ -250,16 +254,17 @@ def staged_output_contract(
         "schema_version": AGGREGATION_CONTEXT_SCHEMA_VERSION,
         "path_field": "aggregation_context_path",
         "mapping_authority": {
-            "observations": "Map each observation through observations[].criterion_ids.",
-            "claims": "Map each claim through claim_reviews[].criterion_ids.",
-            "atomic_units": "Each unit_review inherits the Criterion IDs of its parent claim review.",
+            "observations": "Resolve criteria[].observation_refs through the global observations table.",
+            "claims": "Resolve criteria[].claim_refs through the global claims table.",
+            "atomic_units": "Resolve criteria[].unit_refs through the global units table; units inherit the parent Claim mapping.",
             "criterion_result_claim_ids": (
                 "criterion_results[].claim_ids may cite only claims already mapped to that "
                 "Criterion; it never defines or narrows aggregate scope."
             ),
             "criterion_evidence_ids": (
-                "criterion_results[].evidence_ids may select only canonical IDs from "
-                "that Criterion's evidence_catalog; Finding evidence_ids must be a subset."
+                "criterion_results[].evidence_ids may select only canonical IDs listed "
+                "by that Criterion and present in the global evidence_catalog; "
+                "Finding evidence_ids must be a subset."
             ),
         },
         "mixed_outcome_policy": [
@@ -489,7 +494,7 @@ def staged_output_contract(
 def build_aggregation_context(
     state: dict[str, Any], work_items: dict[str, Any]
 ) -> dict[str, Any]:
-    """Build the run-derived Criterion mapping consumed by aggregation and validation."""
+    """Build normalized run-derived tables consumed by aggregation and validation."""
     rubric, _, errors = protocol()
     if errors:
         raise ValueError("cannot build aggregation context: " + "; ".join(errors))
@@ -520,20 +525,23 @@ def build_aggregation_context(
                     metadata["required_evidence_types"] = req_types
                 criterion_metadata[criterion_id] = metadata
 
-    mappings: dict[str, dict[str, Any]] = {
+    criteria_rows: dict[str, dict[str, Any]] = {
         criterion_id: {
             "criterion_id": criterion_id,
             "allow_not_applicable": criterion_metadata.get(criterion_id, {}).get("allow_not_applicable", False),
             "outcomes": criterion_metadata.get(criterion_id, {}).get("outcomes", {}),
             "required_evidence_types": criterion_metadata.get(criterion_id, {}).get("required_evidence_types", []),
-            "observations": [],
-            "claims": [],
-            "atomic_units": [],
-            "mapped_claim_ids": [],
-            "evidence_catalog": [],
+            "observation_refs": [],
+            "claim_refs": [],
+            "unit_refs": [],
+            "evidence_ids": [],
         }
         for criterion_id in criteria
     }
+    observations: dict[str, dict[str, Any]] = {}
+    claims: dict[str, dict[str, Any]] = {}
+    units: dict[str, dict[str, Any]] = {}
+    evidence_catalog: dict[str, dict[str, Any]] = {}
     source_observations: list[dict[str, Any]] = []
 
     for item in work_items.get("items", []):
@@ -562,7 +570,7 @@ def build_aggregation_context(
                 dict.fromkeys(
                     criterion_id
                     for criterion_id in observation.get("criterion_ids", [])
-                    if criterion_id in mappings
+                    if criterion_id in criteria_rows
                 )
             )
             claim_ids = [
@@ -593,12 +601,16 @@ def build_aggregation_context(
                 entry["defect_key"] = _scoped_defect_key(
                     work_item_id, entry["defect_key"]
                 )
+            observation_ref = _context_ref("O", work_item_id, entry["observation_id"])
+            observations[observation_ref] = copy.deepcopy(entry)
+            for evidence in source_evidence:
+                evidence_id = evidence.get("evidence_id")
+                if isinstance(evidence_id, str):
+                    evidence_catalog.setdefault(evidence_id, copy.deepcopy(evidence))
             for criterion_id in criterion_ids:
-                mapping = mappings[criterion_id]
-                mapping["observations"].append(copy.deepcopy(entry))
-                _extend_aggregation_evidence(
-                    mapping["evidence_catalog"], entry["evidence_ids"], source_evidence
-                )
+                mapping = criteria_rows[criterion_id]
+                _extend_unique(mapping["observation_refs"], [observation_ref])
+                _extend_unique(mapping["evidence_ids"], entry["evidence_ids"])
 
         for claim_review in document.get("claim_reviews", []):
             if not isinstance(claim_review, dict):
@@ -607,7 +619,7 @@ def build_aggregation_context(
                 dict.fromkeys(
                     criterion_id
                     for criterion_id in claim_review.get("criterion_ids", [])
-                    if criterion_id in mappings
+                    if criterion_id in criteria_rows
                 )
             )
             claim_id = claim_review.get("claim_id")
@@ -626,11 +638,13 @@ def build_aggregation_context(
                     evidence_by_id, claim_review.get("evidence_ids", [])
                 ),
             }
+            claim_ref = _context_ref("C", work_item_id, claim_id)
+            unit_refs: list[str] = []
             unit_entries = []
             for unit in claim_review.get("unit_reviews", []):
                 if not isinstance(unit, dict):
                     continue
-                unit_entries.append({
+                unit_entry = {
                     "work_item_id": work_item_id,
                     "claim_id": claim_id,
                     "unit_id": unit.get("unit_id"),
@@ -639,32 +653,60 @@ def build_aggregation_context(
                     "evidence_ids": _aggregation_evidence_refs(
                         evidence_by_id, unit.get("evidence_ids", [])
                     ),
-                })
+                }
+                unit_ref = _context_ref(
+                    "U", work_item_id,
+                    f"{claim_id}/{unit_entry.get('unit_id', 'unknown')}",
+                )
+                units[unit_ref] = unit_entry
+                unit_refs.append(unit_ref)
+                unit_entries.append(unit_entry)
+                for evidence_id in unit_entry["evidence_ids"]:
+                    evidence = next(
+                        (row for row in source_evidence
+                         if row.get("evidence_id") == evidence_id),
+                        None,
+                    )
+                    if evidence is not None:
+                        evidence_catalog.setdefault(evidence_id, copy.deepcopy(evidence))
+            claim_entry["unit_refs"] = unit_refs
+            claims[claim_ref] = claim_entry
+            for evidence_id in claim_entry["evidence_ids"]:
+                evidence = next(
+                    (row for row in source_evidence
+                     if row.get("evidence_id") == evidence_id),
+                    None,
+                )
+                if evidence is not None:
+                    evidence_catalog.setdefault(evidence_id, copy.deepcopy(evidence))
             for criterion_id in criterion_ids:
-                mapping = mappings[criterion_id]
-                mapping["claims"].append(copy.deepcopy(claim_entry))
-                mapping["atomic_units"].extend(copy.deepcopy(unit_entries))
-                _extend_unique(mapping["mapped_claim_ids"], [claim_id])
+                mapping = criteria_rows[criterion_id]
+                _extend_unique(mapping["claim_refs"], [claim_ref])
+                _extend_unique(mapping["unit_refs"], unit_refs)
                 referenced_evidence = list(claim_entry["evidence_ids"])
                 for unit_entry in unit_entries:
                     referenced_evidence.extend(unit_entry["evidence_ids"])
-                _extend_aggregation_evidence(
-                    mapping["evidence_catalog"], referenced_evidence, source_evidence
-                )
+                _extend_unique(mapping["evidence_ids"], referenced_evidence)
 
-    for mapping in mappings.values():
-        units = [
-            ("observation", entry) for entry in mapping["observations"]
+    for mapping in criteria_rows.values():
+        mapped_units = [
+            ("observation", observations[ref])
+            for ref in mapping["observation_refs"]
+            if ref in observations
         ] + [
-            ("claim", entry) for entry in mapping["claims"]
+            ("claim", claims[ref])
+            for ref in mapping["claim_refs"]
+            if ref in claims
         ] + [
-            ("atomic_unit", entry) for entry in mapping["atomic_units"]
+            ("atomic_unit", units[ref])
+            for ref in mapping["unit_refs"]
+            if ref in units
         ]
         counts = {outcome: 0 for outcome in sorted(LOCAL_OUTCOMES)}
         adverse_refs: list[str] = []
         unverifiable_refs: list[str] = []
         applicable_refs: list[str] = []
-        for kind, entry in units:
+        for kind, entry in mapped_units:
             outcome = entry.get("local_outcome")
             if outcome in counts:
                 counts[outcome] += 1
@@ -696,8 +738,7 @@ def build_aggregation_context(
     # Collect all valid defect_keys from observation mappings for whitelist
     valid_defect_keys = sorted({
         observation.get("defect_key")
-        for mapping in mappings.values()
-        for observation in mapping.get("observations", [])
+        for observation in observations.values()
         if isinstance(observation.get("defect_key"), str)
     })
 
@@ -709,9 +750,17 @@ def build_aggregation_context(
         "source_revision": state.get("source_revision"),
         "run_id": state.get("run_id"),
         "source_observations": source_observations,
-        "criterion_mappings": list(mappings.values()),
+        "criteria": list(criteria_rows.values()),
+        "observations": observations,
+        "claims": claims,
+        "units": units,
+        "evidence_catalog": evidence_catalog,
         "valid_defect_keys": valid_defect_keys,
     }
+
+
+def _context_ref(kind: str, work_item_id: str, identity: Any) -> str:
+    return f"{kind}:{work_item_id}/{identity}"
 
 
 def _scoped_defect_key(work_item_id: str, defect_key: str) -> str:
@@ -1408,18 +1457,19 @@ def validate_aggregation_document(
         aggregation_context = build_aggregation_context(state, work_items)
     except ValueError as exc:
         errors.append(f"aggregation: cannot build mapped-unit context: {exc}")
-        aggregation_context = {"criterion_mappings": []}
+        aggregation_context = {"criteria": []}
     mappings_by_id = {
         mapping.get("criterion_id"): mapping
-        for mapping in aggregation_context.get("criterion_mappings", [])
-        if isinstance(mapping, dict) and isinstance(mapping.get("criterion_id"), str)
+        for mapping in criteria_by_id(aggregation_context).values()
+        if isinstance(mapping.get("criterion_id"), str)
     }
 
     observed_defects: dict[str, set[str]] = {}
     adverse_criteria: set[str] = set()
     unverifiable_criteria: set[str] = set()
     for criterion_id, mapping in mappings_by_id.items():
-        for observation in mapping.get("observations", []):
+        for observation_ref in mapping.get("observation_refs", []):
+            observation = aggregation_context.get("observations", {}).get(observation_ref, {})
             if not isinstance(observation, dict):
                 continue
             if observation.get("local_outcome") in {"CONFLICT", "MISSING"}:
@@ -1433,11 +1483,13 @@ def validate_aggregation_document(
             if isinstance(primary, str):
                 observed_defects.setdefault(defect_key, set()).add(primary)
         if any(
-            isinstance(claim, dict) and claim.get("local_outcome") == "NOT_VERIFIABLE"
-            for claim in mapping.get("claims", [])
+            isinstance(aggregation_context.get("claims", {}).get(ref), dict)
+            and aggregation_context["claims"][ref].get("local_outcome") == "NOT_VERIFIABLE"
+            for ref in mapping.get("claim_refs", [])
         ) or any(
-            isinstance(unit, dict) and unit.get("local_outcome") == "NOT_VERIFIABLE"
-            for unit in mapping.get("atomic_units", [])
+            isinstance(aggregation_context.get("units", {}).get(ref), dict)
+            and aggregation_context["units"][ref].get("local_outcome") == "NOT_VERIFIABLE"
+            for ref in mapping.get("unit_refs", [])
         ):
             unverifiable_criteria.add(criterion_id)
 
@@ -1450,7 +1502,7 @@ def validate_aggregation_document(
         mapping = mappings_by_id.get(criterion_id, {})
         constraints = mapping.get("constraints", {}) if isinstance(mapping, dict) else {}
         if mapping_guard:
-            mapped_claim_ids = set(mapping.get("mapped_claim_ids", []))
+            mapped_claim_ids = set(context_mapped_claim_ids(aggregation_context, mapping))
             result_claim_ids = result.get("claim_ids")
             if isinstance(result_claim_ids, list):
                 unmapped_claim_ids = sorted(

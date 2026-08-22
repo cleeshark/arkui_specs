@@ -280,9 +280,21 @@ def _build_aggregation_input(
 
     observations_dir = ctx.run_dir / "observations"
     input_paths: list[str] = []
-    if observations_dir.is_dir():
-        for obs in sorted(observations_dir.glob("*.json")):
-            input_paths.append(str(obs))
+    work_items_path = ctx.run_dir / "work-items.json"
+    if work_items_path.is_file():
+        try:
+            work_items = load_template(work_items_path)
+        except ValueError:
+            work_items = {}
+        for item in work_items.get("items", []):
+            if not isinstance(item, dict):
+                continue
+            output = item.get("output_path")
+            if not isinstance(output, str):
+                continue
+            observation_path = Path(output)
+            if observation_path.parent == observations_dir and observation_path.is_file():
+                input_paths.append(str(observation_path))
     template = ctx.run_dir / "semantic-template.json"
     if template.is_file():
         input_paths.append(str(template))
@@ -316,6 +328,7 @@ def _build_aggregation_input(
         work_item_id="aggregation:final",
         work_item={
             "id": "aggregation:final",
+            "type": "aggregation",
             "observation_type": "aggregation",
             "input_paths": input_paths,
             "output_path": str(aggregation_path),
