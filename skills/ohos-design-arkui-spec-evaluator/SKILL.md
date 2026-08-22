@@ -59,13 +59,12 @@ load aggregation or calibration references during this phase.
 After all Observation checkpoints pass, the service invokes the aggregation worker with compact
 observations and aggregation-only references:
 
-- [aggregation-workflow](references/aggregation-workflow.md)
-- [criterion-guide](references/criterion-guide.md)
-- aggregation portions of [staged-run-contract](references/staged-run-contract.md)
+- [aggregation-contract](references/aggregation-contract.md)
+- [aggregation-guide](references/aggregation-guide.md)
 
-Aggregate the frozen Criteria, model cross-Feat coverage and ownership, assemble the semantic
-result, and run final validation. Do not reopen all source artifacts unless a mapped evidence gap
-requires it.
+Aggregate the frozen Criteria, model cross-Feat coverage and ownership, and return one structured
+semantic judgment. The service owns validation, assembly, and scoring. Do not reopen source
+artifacts unless one mapped Evidence question requires a bounded recheck.
 
 ### 3. Optional calibration
 

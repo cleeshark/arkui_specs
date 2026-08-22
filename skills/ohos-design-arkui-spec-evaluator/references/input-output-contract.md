@@ -47,10 +47,11 @@ Write automatic runs to a temporary or run-specific directory, for example:
 ```
 
 For complex or multi-Feat Functions, initialize the full run directory described by
-`observation-contract.md`; aggregation uses `aggregation-workflow.md` and the aggregation-only
-contract after Observation completes. Feature and Function-global observation files are disposable
-external memory for that run. They may be resumed after context compaction or handed to a clean
-aggregation session, but they are not confirmed Reviews or a maintained capability baseline.
+`observation-contract.md`; aggregation uses the stdin-embedded `aggregation-contract.md` and
+`aggregation-guide.md` after Observation completes. Feature and Function-global observation files
+are disposable external memory for that run. They may be resumed after context compaction or handed
+to a clean aggregation session, but they are not confirmed Reviews or a maintained capability
+baseline.
 
 Staged schema v2 runs are produced by evaluator
 `skill:ohos-design-arkui-spec-evaluator@0.3.0`. Schema v2 requires atomic `claim_reviews`,

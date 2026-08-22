@@ -16,6 +16,7 @@ never written by a failed path.
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 from typing import Any
@@ -237,6 +238,7 @@ def run_aggregation(
             *work.input_paths,
             str(work.prompt_extras["schema_path"]),
         ],
+        input_resources=work.work_item.get("input_resources", []),
         template_bytes=aggregation_path.read_bytes(),
     )
     outcome = flow.run(
@@ -278,41 +280,40 @@ def _build_aggregation_input(
         build_aggregation_machine_contract,
     )
 
-    observations_dir = ctx.run_dir / "observations"
-    input_paths: list[str] = []
-    work_items_path = ctx.run_dir / "work-items.json"
-    if work_items_path.is_file():
-        try:
-            work_items = load_template(work_items_path)
-        except ValueError:
-            work_items = {}
-        for item in work_items.get("items", []):
-            if not isinstance(item, dict):
-                continue
-            output = item.get("output_path")
-            if not isinstance(output, str):
-                continue
-            observation_path = Path(output)
-            if observation_path.parent == observations_dir and observation_path.is_file():
-                input_paths.append(str(observation_path))
-    template = ctx.run_dir / "semantic-template.json"
-    if template.is_file():
-        input_paths.append(str(template))
-    rubric = ctx.specs_root / "evaluation" / "rubric.yaml"
-    if rubric.is_file():
-        input_paths.append(str(rubric))
     aggregation_path = ctx.run_dir / "aggregation.json"
-    for contract_input in (
-        aggregation_path,
-        ctx.run_dir / "output-contract.json",
-        aggregation_context_path,
-        ctx.run_dir / "work-items.json",
-        ctx.skill_scripts_dir.parent / "references" / "aggregation-workflow.md",
-        ctx.skill_scripts_dir.parent / "references" / "criterion-guide.md",
-        ctx.skill_scripts_dir.parent / "references" / "staged-run-contract.md",
+    input_paths: list[str] = []
+    input_resources: list[dict[str, Any]] = []
+    if aggregation_context_path is not None and aggregation_context_path.is_file():
+        input_paths.append(str(aggregation_context_path))
+        input_resources.append({
+            "path": str(aggregation_context_path),
+            "role": "semantic_input",
+            "citable": False,
+        })
+    phase_references: list[dict[str, str]] = []
+    for name, filename, role in (
+        ("aggregation-contract", "aggregation-contract.md", "executor_contract"),
+        ("aggregation-guide", "aggregation-guide.md", "executor_guide"),
     ):
-        if contract_input is not None and contract_input.is_file():
-            input_paths.append(str(contract_input))
+        reference = ctx.skill_scripts_dir.parent / "references" / filename
+        if not reference.is_file():
+            continue
+        content = reference.read_text(encoding="utf-8")
+        input_paths.append(str(reference))
+        input_resources.append({
+            "path": str(reference),
+            "role": role,
+            "citable": False,
+            "embedded": True,
+        })
+        phase_references.append({
+            "name": name,
+            "path": str(reference),
+            "content_hash": "sha256:" + hashlib.sha256(
+                content.encode("utf-8")
+            ).hexdigest(),
+            "content": content,
+        })
     input_paths = list(dict.fromkeys(input_paths))
     machine_contract = build_aggregation_machine_contract(
         valid_criterion_ids=valid_criterion_ids,
@@ -321,6 +322,13 @@ def _build_aggregation_input(
             if aggregation_context_path is not None else None
         ),
     )
+    prompt_contract = observe_aggregation_prompt_contract(
+        template_path=aggregation_path,
+        schema_dir=ctx.run_dir,
+        machine_contract=machine_contract,
+    )
+    prompt_contract["phase_references"] = phase_references
+    prompt_contract["observation_profile"] = "aggregation"
     return C.WorkItemInput(
         job_id=ctx.job_id,
         func_id=ctx.func_id,
@@ -330,7 +338,9 @@ def _build_aggregation_input(
             "id": "aggregation:final",
             "type": "aggregation",
             "observation_type": "aggregation",
+            "observation_profile": "aggregation",
             "input_paths": input_paths,
+            "input_resources": input_resources,
             "output_path": str(aggregation_path),
         },
         run_dir=str(ctx.run_dir),
@@ -340,11 +350,7 @@ def _build_aggregation_input(
         skill_version=ctx.evaluator_version,
         protocol_version=ctx.protocol_version,
         forbidden_paths=ctx.forbidden_paths,
-        prompt_extras=observe_aggregation_prompt_contract(
-            template_path=aggregation_path,
-            schema_dir=ctx.run_dir,
-            machine_contract=machine_contract,
-        ),
+        prompt_extras=prompt_contract,
     )
 
 

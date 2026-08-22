@@ -143,6 +143,8 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             "references/criterion-guide.md",
             "references/observation-contract.md",
             "references/observation-guide.md",
+            "references/aggregation-contract.md",
+            "references/aggregation-guide.md",
             "references/orchestration-workflow.md",
             "references/aggregation-workflow.md",
             "references/calibration.md",
@@ -605,20 +607,31 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
         self.assertEqual(len(mapping["unit_refs"]), 4)
         self.assertEqual(first["schema_version"], 3)
         self.assertEqual(len(mapping["evidence_ids"]), 1)
+        self.assertEqual(mapping["evidence_scope"], "criterion_allowlist")
         inherited = first["evidence_catalog"][mapping["evidence_ids"][0]]
         self.assertNotEqual(inherited["evidence_id"], "EV-unit")
         self.assertEqual(inherited["source_evidence_id"], "EV-unit")
         self.assertEqual(inherited["source_work_item_id"], item["id"])
         observation = first["observations"][mapping["observation_refs"][0]]
+        self.assertEqual(observation["fact"], "The initialized claims were checked.")
         self.assertEqual(observation["evidence_ids"], [inherited["evidence_id"]])
         self.assertTrue(all(
             first["claims"][ref]["evidence_ids"] == [inherited["evidence_id"]]
             for ref in mapping["claim_refs"]
         ))
         self.assertTrue(all(
+            first["claims"][ref]["reason"] == "Both initialized frontend units were checked."
+            for ref in mapping["claim_refs"]
+        ))
+        self.assertTrue(all(
             first["units"][ref]["evidence_ids"] == [inherited["evidence_id"]]
             for ref in mapping["unit_refs"]
         ))
+        self.assertTrue(all(first["units"][ref]["fact"] for ref in mapping["unit_refs"]))
+        self.assertEqual(
+            mapping["evidence_ids_by_type"]["source_citation"],
+            mapping["evidence_ids"],
+        )
         self.assertTrue(mapping["constraints"]["adverse_unit_refs"])
         self.assertEqual(
             mapping["constraints"]["forbidden_conclusions"],

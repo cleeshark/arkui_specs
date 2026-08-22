@@ -396,7 +396,20 @@ class CodexExecutorTest(unittest.TestCase):
                     "criterion_results", "notes",
                 ],
                 "schema_path": schema_path,
+                "observation_profile": "aggregation",
+                "phase_references": [{
+                    "name": "aggregation-contract",
+                    "path": "/tmp/references/aggregation-contract.md",
+                    "content_hash": "sha256:" + "b" * 64,
+                    "content": "The global evidence catalog is lookup-only.",
+                }, {
+                    "name": "aggregation-guide",
+                    "path": "/tmp/references/aggregation-guide.md",
+                    "content_hash": "sha256:" + "c" * 64,
+                    "content": "Aggregate each Criterion from mapped units.",
+                }],
                 "machine_contract": {
+                    "observation_profile": "aggregation",
                     "aggregation_context_path": context_path,
                     "criterion_evidence_rule": "Use canonical Criterion evidence.",
                 },
@@ -408,6 +421,17 @@ class CodexExecutorTest(unittest.TestCase):
         requirement = prompt["output"]["requirement"]
         self.assertIn("canonical EV- IDs", requirement)
         self.assertIn("aggregation-context.json", requirement)
+        constraints = " ".join(prompt["constraints"])
+        self.assertIn("This is Aggregation", constraints)
+        self.assertNotIn("Feature Observation", constraints)
+        self.assertIn("NEVER read SKILL.md", constraints)
+        self.assertIn("exhaustive Evidence allowlist", constraints)
+        self.assertIn("lookup-only", constraints)
+        self.assertIn("Do not calculate or emit scores", constraints)
+        self.assertEqual(
+            [reference["name"] for reference in prompt["phase_references"]],
+            ["aggregation-contract", "aggregation-guide"],
+        )
         self.assertIn("do not emit evidence_declarations", requirement)
         self.assertNotIn("never emit canonical EV- IDs", requirement)
         constraints = " ".join(prompt["constraints"])
