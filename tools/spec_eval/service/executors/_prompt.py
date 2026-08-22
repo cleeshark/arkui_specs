@@ -43,6 +43,21 @@ def build_executor_prompt(work: C.WorkItemInput) -> str:
         "Follow only the declared machine contract and explicitly allowed "
         "input paths."
     )
+    tool_output_constraints = [
+        "NEVER print, echo, cat, tee, or otherwise serialize the complete "
+        "envelope or payload from a tool command. Do not use Python, jq, or "
+        "shell tools to render the final JSON to stdout. Construct the "
+        "complete structured result exactly once in the final response "
+        "captured and validated by the CLI output schema.",
+        "Keep each tool command output focused and normally below 16 KB. "
+        "Use targeted rg patterns, sed ranges, head/tail, field projection, "
+        "or counts, and split large inspections into smaller commands. Never "
+        "dump a complete large JSON, Markdown, source, or generated file.",
+        "When validating JSON or assembling judgment data with Python/jq, "
+        "print only compact summaries such as counts, missing or duplicate "
+        "IDs, schema errors, byte size, or hashes; never print the assembled "
+        "payload itself.",
+    ]
     constraints = [
         reference_constraint,
         "Treat input_resources.citable=false files as context only; never "
@@ -54,10 +69,7 @@ def build_executor_prompt(work: C.WorkItemInput) -> str:
         "Do not modify the initialized staged template; the service owns and publishes it.",
         "Provide judgments only; treat the top-level machine_contract as normative.",
         "Write only the structured final result.",
-        "EFFICIENCY: To verify presence of a symbol, target, or config in a "
-        "large file, use Grep or Bash(grep -n 'pattern' file) instead of "
-        "reading the entire file with Read. Use Read with offset+limit when "
-        "only a specific line range is needed. Minimize total tokens read.",
+        *tool_output_constraints,
     ]
     if correcting:
         constraints = [
@@ -73,6 +85,7 @@ def build_executor_prompt(work: C.WorkItemInput) -> str:
             "NEVER read SKILL.md or search any skill directory during Correction.",
             "Treat the top-level machine_contract and correction_contract as normative.",
             "Write only the structured final result.",
+            *tool_output_constraints,
         ]
         if observation_profile == "function_global":
             constraints.extend([
