@@ -45,6 +45,37 @@ from spec_eval.kernel.validate import (
 SCHEMAS_ROOT = (
     Path(__file__).resolve().parents[3] / "evaluation" / "schemas"
 )
+
+
+def _compact_context(context: dict) -> dict:
+    """Convert readable fixture rows to the normalized context tables."""
+    catalog = {}
+    criteria = []
+    for row in context.get("criterion_mappings", []):
+        evidence_ids = []
+        for evidence in row.get("evidence_catalog", []):
+            evidence_id = evidence["evidence_id"]
+            catalog[evidence_id] = evidence
+            evidence_ids.append(evidence_id)
+        criteria.append({
+            "criterion_id": row["criterion_id"],
+            "observation_refs": [],
+            "claim_refs": [],
+            "unit_refs": [],
+            "evidence_ids": evidence_ids,
+            "allow_not_applicable": False,
+            "outcomes": {},
+            "required_evidence_types": [],
+        })
+    return {
+        "schema_version": 3,
+        "criteria": criteria,
+        "observations": {},
+        "claims": {},
+        "units": {},
+        "evidence_catalog": catalog,
+        "valid_defect_keys": [],
+    }
 CRITERIA = (
     "CORRECTNESS-SOURCE-SUPPORT",
     "CORRECTNESS-CROSS-DOC-CONSISTENCY",
@@ -767,7 +798,7 @@ class NormalizeAggregationTest(unittest.TestCase):
         return normalize_aggregation(
             self._template(), judgment or self._judgment(),
             source_observation_ids=source_observation_ids or [],
-            aggregation_context=self._aggregation_context(),
+            aggregation_context=_compact_context(self._aggregation_context()),
         )
 
     def _judgment(self) -> dict:
@@ -1057,7 +1088,7 @@ class NormalizeAggregationTest(unittest.TestCase):
             criterion["id"]: "EV-" + criterion["id"].lower()
             for _, criterion in criteria
         }
-        aggregation_context = {
+        aggregation_context = _compact_context({
             "schema_version": 2,
             "criterion_mappings": [
                 {
@@ -1077,7 +1108,7 @@ class NormalizeAggregationTest(unittest.TestCase):
                 }
                 for _, criterion in criteria
             ],
-        }
+        })
         judgment_rows = []
         for index, (_, criterion) in enumerate(criteria):
             criterion_id = criterion["id"]
@@ -1431,9 +1462,9 @@ class FindingEvidenceClosureTest(unittest.TestCase):
         omitted from criterion evidence_ids, the normalizer closes the gap
         deterministically instead of sending FINDING_EVIDENCE_UNKNOWN."""
         extra_ev = "EV-extra-finding-ref"
-        context = self._aggregation_context(
+        context = _compact_context(self._aggregation_context(
             extra_evidence_ids={"CORRECTNESS-SOURCE-SUPPORT": [extra_ev]}
-        )
+        ))
         judgment = {
             "cross_feat_contracts_reviewed": True,
             "contradiction_bases": [],
@@ -1581,7 +1612,7 @@ class FindingEvidenceClosureTest(unittest.TestCase):
         result = normalize_aggregation(
             self._template(), judgment,
             source_observation_ids=[],
-            aggregation_context=self._aggregation_context(),
+            aggregation_context=_compact_context(self._aggregation_context()),
         )
         self.assertIsNone(result.document)
         self.assertTrue(
@@ -1694,7 +1725,7 @@ class PolicyConclusionDerivationTest(unittest.TestCase):
         result = normalize_aggregation(
             self._template(), judgment,
             source_observation_ids=[],
-            aggregation_context=self._aggregation_context(),
+            aggregation_context=_compact_context(self._aggregation_context()),
         )
         self.assertEqual(result.errors, [])
         rows_by_id = {
@@ -1764,7 +1795,7 @@ class PolicyConclusionDerivationTest(unittest.TestCase):
         result = normalize_aggregation(
             self._template(), judgment,
             source_observation_ids=[],
-            aggregation_context=self._aggregation_context(),
+            aggregation_context=_compact_context(self._aggregation_context()),
         )
         self.assertEqual(result.errors, [])
         rows_by_id = {
@@ -1781,7 +1812,7 @@ class PolicyConclusionDerivationTest(unittest.TestCase):
         result = normalize_aggregation(
             self._template(), self._base_judgment(),
             source_observation_ids=[],
-            aggregation_context=self._aggregation_context(),
+            aggregation_context=_compact_context(self._aggregation_context()),
         )
         doc = result.document
         # Manually break the derived conclusion to trigger validation error
@@ -2006,7 +2037,7 @@ class DefectKeyNormalizationTest(unittest.TestCase):
             ],
             "notes": [],
         }
-        agg_context = {
+        agg_context = _compact_context({
             "schema_version": 2,
             "criterion_mappings": [
                 {
@@ -2026,7 +2057,7 @@ class DefectKeyNormalizationTest(unittest.TestCase):
                 }
                 for cid in CRITERIA
             ],
-        }
+        })
         ev_id = lambda cid: "EV-" + cid.lower().replace("_", "-")
         judgment = {
             "cross_feat_contracts_reviewed": True,
