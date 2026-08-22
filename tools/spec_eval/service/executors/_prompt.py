@@ -71,6 +71,11 @@ def build_executor_prompt(work: C.WorkItemInput) -> str:
             "Treat the top-level machine_contract and correction_contract as normative.",
             "Write only the structured final result.",
         ]
+        if work.work_item.get("observation_type") == "aggregation":
+            constraints.extend([
+                "This is Aggregation Correction: keep the patch within the named Criterion/Policy/Finding path.",
+                "Do not modify Observation source facts, non-target Criteria, or service-derived Finding IDs.",
+            ])
     payload_field_text = json.dumps(payload_fields, ensure_ascii=False)
     if correcting:
         evidence_requirement = (

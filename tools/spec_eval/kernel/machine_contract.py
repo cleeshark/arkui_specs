@@ -136,6 +136,7 @@ def build_correction_machine_contract(
     *,
     payload_kind: str,
     typed_errors: Iterable[dict[str, Any]],
+    observation_profile: str = "feature",
     allowed_paths: Iterable[str] = (),
     evidence_catalog: Iterable[dict[str, Any]] = (),
 ) -> dict[str, Any]:
@@ -145,7 +146,20 @@ def build_correction_machine_contract(
     candidate is already normalized; the service owns patch application,
     identity, ordering, hashes and final validation.
     """
+    if observation_profile not in K.CORRECTION_PROFILES:
+        raise ValueError(f"unknown correction profile: {observation_profile!r}")
     errors = [dict(error) for error in typed_errors]
+    profile_rules = {
+        "feature": [
+            "Keep patches local to the named Feature Claim/Unit/Observation paths.",
+            "Do not alter global mappings or non-target claims.",
+        ],
+        "aggregation": [
+            "Keep patches local to the named Aggregation Criterion/Policy/Finding paths.",
+            "Do not modify Observation source facts, non-target Criteria, or derived Finding IDs.",
+            "Do not change a policy-derived conclusion without correcting its policy basis.",
+        ],
+    }[observation_profile]
     return {
         "evaluation_protocol_version": K.EVALUATION_PROTOCOL_VERSION,
         "mode": "correct",
@@ -179,6 +193,7 @@ def build_correction_machine_contract(
             "Never modify document identity, source revision, ordering, canonical IDs, hashes, or derived fields.",
             "The service applies and validates the patch; do not calculate canonical IDs or hashes.",
             "Return patches and notes only. Encode every patch value as a JSON string; use \"null\" for remove.",
+            *profile_rules,
         ],
         "evidence_catalog": list(evidence_catalog),
     }
@@ -199,9 +214,9 @@ def build_aggregation_machine_contract(
             "IDs listed for each Criterion. Do not emit local evidence keys such as "
             "e1, do not declare evidence, and do not guess EV- IDs.",
             "criterion_results[].evidence_ids selects the inherited evidence attached "
-            "to that Criterion; the service closes this parent set over every valid "
-            "finding evidence reference, and every finding evidence_ids entry must "
-            "be a subset.",
+            "to that Criterion from the global evidence_catalog; the service closes "
+            "this parent set over every valid finding evidence reference, and every "
+            "finding evidence_ids entry must be a subset.",
             "For the six outcome-policy criteria, content_status/evidence_status/"
             "conflict_scope are the semantic inputs; the service derives conclusion "
             "from the fixed policy precedence table. Do not try to repair a derived "
@@ -232,11 +247,12 @@ def build_aggregation_machine_contract(
         "aggregation_context_path": aggregation_context_path,
         "mapping_rule": (
             "aggregation-context.json (when provided) is authoritative for "
-            "criterion scope and mapped unit outcomes; criterion_results[].claim_ids "
+            "criterion scope and mapped unit outcomes; criteria refs resolve through "
+            "the global observations/claims/units tables; criterion_results[].claim_ids "
             "are citations only and may not narrow the mapped scope."
         ),
         "forbidden_conclusions_rule": (
-            "aggregation-context.json specifies constraints.forbidden_conclusions "
+            "aggregation-context.json criteria specify constraints.forbidden_conclusions "
             "for each Criterion — a list of conclusions that are structurally "
             "impossible given the observation evidence. If a conclusion appears "
             "in forbidden_conclusions, do not use it for that Criterion. Also "
@@ -249,30 +265,32 @@ def build_aggregation_machine_contract(
             "and NOT_APPLICABLE criteria must contain none."
         ),
         "not_applicable_rule": (
-            "aggregation-context.json specifies allow_not_applicable for each "
+            "aggregation-context.json criteria specify allow_not_applicable for each "
             "Criterion; NOT_APPLICABLE conclusion is only valid when "
             "allow_not_applicable is true. When false, you must use one of the "
             "other conclusions (SUPPORTED, PARTIALLY_SUPPORTED, CONTRADICTED, "
             "MISSING, or NOT_VERIFIABLE)."
         ),
         "severity_floor_rule": (
-            "aggregation-context.json specifies outcomes[conclusion].severity_floor "
+            "aggregation-context.json criteria specify outcomes[conclusion].severity_floor "
             "for conclusions that require findings (PARTIALLY_SUPPORTED, CONTRADICTED, "
             "MISSING). Each finding under that conclusion must have severity >= "
             "severity_floor. For example, if PARTIALLY_SUPPORTED has severity_floor "
             "Major, all findings must be Major or Critical, not Minor or Info."
         ),
         "evidence_type_rule": (
-            "aggregation-context.json specifies required_evidence_types for each "
+            "aggregation-context.json criteria specify required_evidence_types for each "
             "Criterion. When conclusion requires evidence (SUPPORTED, "
             "PARTIALLY_SUPPORTED, CONTRADICTED, MISSING), at least one selected "
             "evidence item must have a type from required_evidence_types. Choose "
-            "evidence from the Criterion evidence_catalog that satisfies this "
+            "evidence from the global aggregation-context evidence_catalog that is "
+            "listed by that Criterion and satisfies this "
             "constraint."
         ),
         "criterion_evidence_rule": (
-            "criterion_results[].evidence_ids may contain only canonical IDs from "
-            "that Criterion's aggregation-context evidence_catalog; finding "
+            "criterion_results[].evidence_ids may contain only canonical IDs listed "
+            "by that Criterion and present in the global aggregation-context "
+            "evidence_catalog; finding "
             "evidence_ids must be a subset of the selected Criterion evidence IDs."
         ),
         "ownership_rule": (

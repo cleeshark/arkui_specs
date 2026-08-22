@@ -707,6 +707,11 @@ class JudgmentFlow:
         machine_contract = build_correction_machine_contract(
             payload_kind=payload_kind,
             typed_errors=typed_errors,
+            observation_profile=(
+                "aggregation"
+                if work.work_item.get("observation_type") == "aggregation"
+                else "feature"
+            ),
             allowed_paths=allowed_paths,
             evidence_catalog=catalog if needs_evidence else (),
         )

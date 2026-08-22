@@ -39,6 +39,10 @@ NOT_VERIFIABLE = "NOT_VERIFIABLE"
 
 BREADTHS = ("local", "feat_core", "function_shared")
 
+# Correction profiles distinguish ordinary observation repair from the
+# aggregation candidate, whose patch scope is Criterion/Policy/Finding only.
+CORRECTION_PROFILES = ("feature", "aggregation")
+
 UNIT_FACET_TYPES = (
     "condition",
     "input",
