@@ -8,7 +8,11 @@ schemas, enums, IDs, hashes, and required fields.
 
 The service has already selected the work item, initialized its template, and generated the machine
 contract. Do not run initialization, work-item selection, or checkpoint scripts from the worker.
-Load only the declared `input_paths` and `input_resources`.
+Start with the declared `input_paths` and `input_resources` as prioritized focus context; they are
+not an exhaustive read allowlist. When a claim requires it, expand into the relevant frozen
+repository files under `repo_root`, including parent/caller/helper paths, build files, tests, SDK
+declarations, and dependencies. An omitted path is not evidence of absence. Respect
+`forbidden_paths` and do not read other runs or confirmed Reviews.
 
 Treat `citable: false` resources as semantic context only. Evidence declarations must use a verified
 canonical repository path and frozen source revision. Read the run-local `output-contract.json`
@@ -21,9 +25,18 @@ Registry, generated site, confirmed Review, or historical evaluator directories.
 ## Observation payload
 
 Keep initialized identity, expected claims, and required checks unchanged. Complete exactly one
-`claim_reviews` row for every initialized claim, in initialized order, and one `unit_reviews` row
-for every independently reviewed unit. Split units by independent condition, transformation, state
-transition, callback result, failure path, timing guarantee, or compatibility side.
+`claim_reviews` row for every initialized claim, in initialized order. Every Claim must contain at
+least one atomic `unit_reviews` row, even when the Claim has only one facet. Give each Unit a unique,
+non-empty `unit_id` in review order; the service derives published `reviewed_units` from those IDs,
+so the worker payload must not emit `reviewed_units`. Split compound Claims by independently
+verifiable conditions, inputs, data fields, transformations, state transitions, callback/observable
+results, failure or recovery paths, timing guarantees, compatibility sides, or design facets; do not
+create duplicate or blanket units.
+
+The Claim outcome is derived from its units: `SUPPORTED` requires all units to be supported,
+`NOT_APPLICABLE` requires all units to be inapplicable, and `CONFLICT`, `MISSING`, or
+`NOT_VERIFIABLE` requires at least one unit with the same outcome. Keep each unit's fact, evidence,
+and verification gap specific to that unit; Claim-level reason and evidence summarize the units.
 
 Every observation must:
 

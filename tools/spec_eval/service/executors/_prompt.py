@@ -45,7 +45,6 @@ def build_executor_prompt(work: C.WorkItemInput) -> str:
     )
     constraints = [
         reference_constraint,
-        "Read only the declared input_paths and frozen source/SDK files.",
         "Treat input_resources.citable=false files as context only; never "
         "declare them as evidence.",
         "Evidence paths must be canonical repository-relative POSIX paths. "
@@ -91,14 +90,11 @@ def build_executor_prompt(work: C.WorkItemInput) -> str:
             )
     elif observation_profile == "function_global":
         constraints.extend([
-            "This is Function-global Observation: inspect static-index first, then Design/Registry and declared global source/build/SDK/test scopes.",
-            "Assess Function-wide architecture, cross-Feature ownership/boundaries, build/deployment, SDK and device impact.",
-            "Use declared cross-Feature Specs for boundary/coverage context; reopen a Feature evidence slice only for a named unresolved cross-Feature question; do not scan every Feature shard.",
+            "This is Function-global Observation; keep judgments at Function scope.",
         ])
     else:
         constraints.extend([
-            "This is Feature Observation: review only the current Feature's claims and local acceptance evidence.",
-            "Read the Feature Spec first, then declared Feature source/test/SDK scopes; do not expand to other Features or Function-global material unless a named claim requires it.",
+            "This is Feature Observation; keep judgments local to the current Feature claims.",
         ])
     payload_field_text = json.dumps(payload_fields, ensure_ascii=False)
     if correcting:

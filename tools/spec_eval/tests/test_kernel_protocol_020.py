@@ -1182,7 +1182,22 @@ class MachineContractTest(unittest.TestCase):
             contract["evidence_path_policy"]["citable_input_paths"],
             ["specs/domain/Feat-01-spec.md"],
         )
-        self.assertIn("verification_gap", " ".join(contract["judgment_rules"]))
+        rules = " ".join(contract["judgment_rules"])
+        self.assertIn("verification_gap", rules)
+        self.assertIn("injected Observation references", rules)
+        self.assertIn("service derives published reviewed_units", rules)
+        self.assertNotIn("reviewed_units and unit_reviews must contain", rules)
+
+    def test_observation_profile_source_loading_delegates_to_references(self) -> None:
+        contract = build_observation_machine_contract(
+            expected_claim_ids=["Feat-01/AC-1"],
+            required_checks=K.FEATURE_REQUIRED_CHECKS,
+            valid_criterion_ids=CRITERIA,
+        )
+        source_loading = " ".join(contract["profile_rules"]["source_loading"])
+        self.assertIn("injected Observation references", source_loading)
+        self.assertIn("focus hints", source_loading)
+        self.assertNotIn("Do not scan unrelated Feature shards", source_loading)
 
     def test_observation_contract_defect_rule_contains_format(self) -> None:
         contract = build_observation_machine_contract(

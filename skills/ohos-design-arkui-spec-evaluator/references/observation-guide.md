@@ -7,6 +7,12 @@ machine output contract remains authoritative for fields, IDs, evidence, and ord
 
 - Enumerate every material behavior claim and split compound claims into independent units such as
   conditions, state transitions, callback results, failure paths, and timing guarantees.
+- Every Claim review must have at least one atomic `unit_reviews` row. Give each Unit a unique,
+  non-empty `unit_id` in review order; the service derives published `reviewed_units` from those
+  IDs. A simple Claim still gets one unit, while a compound Claim must be split rather than covered
+  by a blanket unit.
+- Derive Claim outcomes from units: all units must support `SUPPORTED` or `NOT_APPLICABLE`; a
+  `CONFLICT`, `MISSING`, or `NOT_VERIFIABLE` Claim needs at least one unit with that outcome.
 - Verify entry, parsing, state update, main branch, output, fallback, recovery, and timing against
   frozen source and tests.
 - Inspect helper bodies and every claimed parent entry path for blockers, gates, callbacks, reset,

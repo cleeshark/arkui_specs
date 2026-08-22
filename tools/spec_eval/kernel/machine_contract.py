@@ -42,6 +42,10 @@ def _observation_judgment_rules() -> list[str]:
         "Every NOT_VERIFIABLE claim reason and unit fact must describe the "
         "gap; the structured verification_gap object (checked_scope, "
         "missing_evidence, consequence) is validated by the service.",
+        "For unit coverage, emit atomic unit_reviews and follow the injected "
+        "Observation references for decomposition and Claim outcome derivation. "
+        "The service derives published reviewed_units from unit_id order and "
+        "validates unit presence, IDs, evidence, and outcome consistency.",
     ]
 
 
@@ -69,16 +73,14 @@ def build_observation_machine_contract(
             "scope": "one Feature and its local acceptance claims",
             "breadths": ["local", "feat_core"],
             "source_loading": [
-                "Read the Feature Spec first, then only the declared Feature source/test/SDK scopes.",
-                "Do not reopen Design, other Feature shards, or function-global slices unless a named claim requires it.",
+                "Follow the injected Observation references for source loading. Use declared input_paths as Feature focus hints and expand within frozen repo_root when a named claim requires it.",
             ],
         },
         "function_global": {
             "scope": "Function-wide Design, Registry, and cross-Feature contracts",
             "breadths": ["function_shared", "feat_core", "local"],
             "source_loading": [
-                "Read static-index first, then Design/Registry and declared global source/build/SDK/test scopes.",
-                "Reopen a Feature slice only for a named unresolved cross-Feature question; do not scan every Feature shard.",
+                "Follow the injected Observation references for source loading. Use declared input_paths as Function focus hints and expand within frozen repo_root when a named question requires it.",
             ],
         },
     }[observation_profile]
