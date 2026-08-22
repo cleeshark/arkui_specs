@@ -707,6 +707,25 @@ class ValidateObservationTest(unittest.TestCase):
         document["observations"][0]["primary_criterion_id"] = CRITERIA[0]
         self.assertIn("DEFECT_KEYS_INVALID", self._codes(document))
 
+    def test_primary_criterion_must_be_listed_by_observation(self) -> None:
+        document = copy.deepcopy(self.document)
+        observation = document["observations"][0]
+        observation["local_outcome"] = "MISSING"
+        observation["defect_key"] = "missing.primary_criterion_route"
+        observation["primary_criterion_id"] = "SPEC-TRACEABILITY"
+        errors = validate_observation_document(
+            document, valid_criterion_ids=CRITERIA
+        )
+        membership_errors = [
+            error for error in errors
+            if error.code == "DEFECT_KEYS_INVALID"
+            and error.path.endswith(".primary_criterion_id")
+        ]
+        self.assertEqual(len(membership_errors), 1)
+        self.assertEqual(
+            membership_errors[0].repairability, SERVICE_NORMALIZATION
+        )
+
     def test_unit_claim_outcome_conflict(self) -> None:
         document = copy.deepcopy(self.document)
         document["claim_reviews"][1]["unit_reviews"][0]["local_outcome"] = "CONFLICT"
@@ -1206,6 +1225,10 @@ class MachineContractTest(unittest.TestCase):
             valid_criterion_ids=CRITERIA,
         )
         self.assertIn(K.DEFECT_KEY_PATTERN, contract["defect_rule"])
+        self.assertIn(
+            "include primary_criterion_id",
+            contract["defect_ownership_rule"],
+        )
 
     def test_aggregation_contract_carries_mapping_rule(self) -> None:
         contract = build_aggregation_machine_contract(

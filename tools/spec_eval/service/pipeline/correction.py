@@ -183,6 +183,18 @@ def apply_deterministic_correction(
                     rows[index]["defect_key"] = None
                     rows[index]["primary_criterion_id"] = None
                     changes.append(f"observations[{index}] defect ownership cleared")
+                elif error.path.endswith(".primary_criterion_id"):
+                    primary = rows[index].get("primary_criterion_id")
+                    criterion_ids = rows[index].get("criterion_ids")
+                    if not isinstance(primary, str) or not isinstance(criterion_ids, list):
+                        unresolved.append(error)
+                    elif primary not in criterion_ids:
+                        criterion_ids.append(primary)
+                        changes.append(
+                            f"observations[{index}].criterion_ids added primary criterion"
+                        )
+                    else:
+                        unresolved.append(error)
                 else:
                     key = rows[index].get("defect_key")
                     if isinstance(key, str) and DEFECT_KEY.fullmatch(key.strip().lower()):

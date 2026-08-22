@@ -25,6 +25,31 @@ from spec_eval.service.pipeline.judgment_flow import JudgmentFlow
 
 
 class CorrectionFlowTest(unittest.TestCase):
+    def test_primary_criterion_is_added_to_observation_criteria_without_model(self) -> None:
+        document = {
+            "observations": [{
+                "local_outcome": "MISSING",
+                "criterion_ids": ["DESIGN-IMPACT-COVERAGE"],
+                "defect_key": "missing.build_config_entry",
+                "primary_criterion_id": "SPEC-TRACEABILITY",
+            }],
+        }
+        error = TypedError(
+            "DEFECT_KEYS_INVALID",
+            "observation.observations[0].primary_criterion_id",
+            entity_type="defect",
+            entity_id="missing.build_config_entry",
+        )
+        corrected, changes, unresolved = apply_deterministic_correction(
+            document, [error]
+        )
+        self.assertFalse(unresolved)
+        self.assertEqual(
+            corrected["observations"][0]["criterion_ids"],
+            ["DESIGN-IMPACT-COVERAGE", "SPEC-TRACEABILITY"],
+        )
+        self.assertTrue(changes)
+
     def test_defect_key_is_mapped_from_claim_owner_without_model(self) -> None:
         document = {
             "claim_reviews": [{

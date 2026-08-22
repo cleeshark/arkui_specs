@@ -197,8 +197,9 @@ def validate_observation_document(
                 entity_type="observation", entity_id=str(entry.get("observation_id")),
                 expected="review_record inspection evidence",
             ))
+        observation_criterion_ids = _strings(entry.get("criterion_ids"))
         unknown_criteria = sorted(
-            set(_strings(entry.get("criterion_ids"))) - known_criteria
+            set(observation_criterion_ids) - known_criteria
         )
         if unknown_criteria:
             errors.append(_err(
@@ -230,6 +231,18 @@ def validate_observation_document(
                     expected="primary criterion for adverse outcome",
                 ))
             else:
+                if primary not in observation_criterion_ids:
+                    errors.append(_err(
+                        "DEFECT_KEYS_INVALID",
+                        f"{obs_label}.primary_criterion_id",
+                        entity_type="defect", entity_id=defect_key,
+                        expected=(
+                            "primary criterion must be included in the "
+                            "observation criterion_ids"
+                        ),
+                        actual=primary,
+                        repairability=SERVICE_NORMALIZATION,
+                    ))
                 conflict = defined_defects.get(defect_key)
                 if conflict is not None and conflict != primary:
                     # Same defect observed from different criterion dimensions;

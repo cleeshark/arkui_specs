@@ -59,12 +59,14 @@ class _JudgmentExecutor:
         invalid_global_path_once: bool = False,
         empty_observation_claims_once: bool = False,
         json_patch_correction: bool = False,
+        correction_primary_mismatch: bool = False,
     ) -> None:
         self.break_first = break_first
         self.break_all = break_all
         self.invalid_global_path_once = invalid_global_path_once
         self.empty_observation_claims_once = empty_observation_claims_once
         self.json_patch_correction = json_patch_correction
+        self.correction_primary_mismatch = correction_primary_mismatch
         self._invalid_global_path_emitted = False
         self._empty_observation_claims_emitted = False
         self.calls: list[tuple[str, str]] = []
@@ -209,6 +211,11 @@ class _JudgmentExecutor:
             self.break_all
         )
         payload = self._payload(work, broken=broken)
+        if mode == "correct" and self.correction_primary_mismatch:
+            observation = payload["observations"][0]
+            observation["local_outcome"] = "MISSING"
+            observation["defect_key"] = "missing.primary_criterion_route"
+            observation["primary_criterion_id"] = "SPEC-TRACEABILITY"
         if (
             self.empty_observation_claims_once
             and not self._empty_observation_claims_emitted
@@ -462,6 +469,31 @@ class ObservationFlowTest(_StagedRunIntegrationTest):
             )
         )
         self.assertIn("after source verification", published["claim_reviews"][0]["reason"])
+
+    def test_service_repairs_primary_mapping_reintroduced_by_correction(self) -> None:
+        executor = _JudgmentExecutor(
+            break_first=True,
+            correction_primary_mismatch=True,
+        )
+        result = run_semantic(
+            self.ctx, executor,
+            jobs=self.jobs, attempts=self.attempts, events=self.events,
+            statistics=self.statistics, invocations=self.invocations,
+        )
+        self.assertEqual(result.outcome, C.STATUS_COMPLETED, result.error)
+        published = json.loads(
+            (self.ctx.run_dir / "observations" / "Feat-01.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertIn(
+            "SPEC-TRACEABILITY",
+            published["observations"][0]["criterion_ids"],
+        )
+        event_types = [
+            event.event_type for event in self.events.list_for_job(self.job.job_id)
+        ]
+        self.assertIn("correction_deterministic_repaired", event_types)
 
     def test_empty_observation_claim_ids_is_service_terminal_without_model(self) -> None:
         executor = _JudgmentExecutor(empty_observation_claims_once=True)
