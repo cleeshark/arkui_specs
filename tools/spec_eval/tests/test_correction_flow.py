@@ -3,19 +3,25 @@
 from __future__ import annotations
 
 import json
+import tempfile
 import unittest
+from pathlib import Path
+from types import SimpleNamespace
 
 from spec_eval.kernel.errors import TypedError
 from spec_eval.kernel.machine_contract import build_correction_machine_contract
 from spec_eval.kernel.schema_gen import build_envelope_schema
+from spec_eval.service.executors import contract as C
 from spec_eval.service.pipeline.correction import (
     apply_deterministic_correction,
     apply_json_patch,
     is_deterministic_error,
     is_model_correction_error,
+    resolve_typed_error_json_path,
     typed_error_json_path,
     validate_patch_scope,
 )
+from spec_eval.service.pipeline.judgment_flow import JudgmentFlow
 
 
 class CorrectionFlowTest(unittest.TestCase):
@@ -83,6 +89,135 @@ class CorrectionFlowTest(unittest.TestCase):
             "/criterion_results/FUNCTION-FEAT-COVERAGE/claim_ids",
         )
 
+    def test_named_criterion_path_resolves_and_applies_to_real_list(self) -> None:
+        document = {
+            "criterion_results": [
+                {
+                    "criterion_id": "OTHER",
+                    "evidence_ids": ["EV-other"],
+                },
+                {
+                    "criterion_id": "SPEC-SCOPE-BOUNDARY",
+                    "evidence_ids": ["EV-old"],
+                },
+            ],
+        }
+        error = TypedError(
+            "CRITERION_EVIDENCE_UNKNOWN",
+            "aggregation.criterion_results[SPEC-SCOPE-BOUNDARY].evidence_ids",
+            entity_type="criterion",
+            entity_id="SPEC-SCOPE-BOUNDARY",
+        )
+        path = resolve_typed_error_json_path(document, error)
+        self.assertEqual(path, "/criterion_results/1/evidence_ids")
+        corrected = apply_json_patch(document, [{
+            "op": "replace",
+            "path": path,
+            "value": json.dumps(["EV-new"]),
+        }])
+        self.assertEqual(
+            corrected["criterion_results"][1]["evidence_ids"],
+            ["EV-new"],
+        )
+        self.assertEqual(
+            corrected["criterion_results"][0]["evidence_ids"],
+            ["EV-other"],
+        )
+
+    def test_aggregation_correction_prompt_uses_resolved_numeric_path(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            run_dir = Path(temporary)
+            candidate_path = run_dir / "aggregation.json.candidate"
+            candidate_path.write_text(json.dumps({
+                "criterion_results": [
+                    {"criterion_id": "OTHER", "evidence_ids": []},
+                    {
+                        "criterion_id": "SPEC-SCOPE-BOUNDARY",
+                        "evidence_ids": ["EV-unknown"],
+                    },
+                ],
+            }), encoding="utf-8")
+            work = C.WorkItemInput(
+                job_id="job",
+                func_id="01-01-01",
+                run_id="run-1",
+                work_item_id="aggregation",
+                work_item={
+                    "observation_type": "aggregation",
+                    "input_resources": [],
+                },
+                run_dir=str(run_dir),
+                input_paths=(),
+                executor_result_path=str(run_dir / "aggregation.result.json"),
+                repo_root=str(run_dir),
+                skill_version="0.3.0",
+                protocol_version="0.2.0",
+                prompt_extras={"payload_kind": "aggregation"},
+            )
+            error = TypedError(
+                "CRITERION_EVIDENCE_UNKNOWN",
+                "aggregation.criterion_results[SPEC-SCOPE-BOUNDARY].evidence_ids",
+                entity_type="criterion",
+                entity_id="SPEC-SCOPE-BOUNDARY",
+            ).to_dict()
+            flow = JudgmentFlow(
+                ctx=SimpleNamespace(run_dir=run_dir),
+                executor=None,
+                jobs=None,
+                events=None,
+            )
+            correction_work = flow._correct_work_input(
+                work, candidate_path, [error], {"evidence_catalog": []},
+            )
+            expected = ["/criterion_results/1/evidence_ids"]
+            self.assertEqual(
+                correction_work.prompt_extras["correction_contract"]["allowed_paths"],
+                expected,
+            )
+            self.assertEqual(
+                correction_work.prompt_extras["machine_contract"]["allowed_paths"],
+                expected,
+            )
+
+    def test_finding_wildcard_resolves_from_typed_error_entity(self) -> None:
+        document = {
+            "criterion_results": [{
+                "criterion_id": "DESIGN-FEAT-RUNTIME-COVERAGE",
+                "findings": [
+                    {"finding_id": "F-1", "key": "first", "severity": "Minor"},
+                    {"finding_id": "F-2", "key": "second", "severity": "Minor"},
+                ],
+            }],
+        }
+        path = resolve_typed_error_json_path(document, TypedError(
+            "SEVERITY_BELOW_FLOOR",
+            "aggregation.criterion_results[DESIGN-FEAT-RUNTIME-COVERAGE].findings[].severity",
+            entity_type="finding",
+            entity_id="F-2",
+        ))
+        self.assertEqual(path, "/criterion_results/0/findings/1/severity")
+
+    def test_named_selector_resolution_is_fail_closed(self) -> None:
+        error = TypedError(
+            "CRITERION_EVIDENCE_UNKNOWN",
+            "aggregation.criterion_results[MISSING].evidence_ids",
+            entity_type="criterion",
+            entity_id="MISSING",
+        )
+        with self.assertRaisesRegex(ValueError, "matched 0 rows"):
+            resolve_typed_error_json_path(
+                {"criterion_results": [{"criterion_id": "OTHER"}]},
+                error,
+            )
+        with self.assertRaisesRegex(ValueError, "matched 2 rows"):
+            resolve_typed_error_json_path(
+                {"criterion_results": [
+                    {"criterion_id": "MISSING"},
+                    {"criterion_id": "MISSING"},
+                ]},
+                error,
+            )
+
     def test_evidence_error_is_model_correctable_but_mapping_is_not(self) -> None:
         self.assertTrue(is_model_correction_error({"code": "EVIDENCE_KEY_UNKNOWN"}))
         self.assertFalse(is_deterministic_error({"code": "EVIDENCE_KEY_UNKNOWN"}))
@@ -119,7 +254,7 @@ class CorrectionFlowTest(unittest.TestCase):
                 "code": "CRITERION_EVIDENCE_UNKNOWN",
                 "path": "aggregation.criterion_results[C].evidence_ids",
             }],
-            allowed_paths=["/criterion_results/C/evidence_ids"],
+            allowed_paths=["/criterion_results/0/evidence_ids"],
         )
         self.assertIn(
             "Keep patches local to the named Aggregation Criterion/Policy/Finding paths.",

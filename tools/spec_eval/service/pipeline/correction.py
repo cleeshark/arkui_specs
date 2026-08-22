@@ -309,7 +309,14 @@ def apply_json_patch(document: dict[str, Any], patches: Iterable[dict[str, Any]]
 
 
 def typed_error_json_path(path: str) -> str:
-    """Convert validator paths to a JSON Pointer prefix for correction scope."""
+    """Convert a validator path to a diagnostic JSON Pointer-like path.
+
+    Validator paths may use semantic list selectors such as
+    ``criterion_results[CRITERION-ID]`` or ``findings[]``.  Those selectors
+    are useful in errors and prompts, but are not executable RFC-6901 array
+    indices.  Use :func:`resolve_typed_error_json_path` before exposing a path
+    as a Correction ``allowed_path``.
+    """
     value = path
     for prefix in ("observation.", "aggregation."):
         if value.startswith(prefix):
@@ -330,6 +337,117 @@ def typed_error_json_path(path: str) -> str:
         token.replace("~", "~0").replace("/", "~1")
         for token in value.split("/")
     )
+
+
+_LIST_IDENTITY_FIELDS: dict[str, tuple[str, ...]] = {
+    "criterion_results": ("criterion_id",),
+    "findings": ("finding_id", "key"),
+}
+
+
+def _encode_pointer(tokens: Iterable[str]) -> str:
+    return "/" + "/".join(
+        token.replace("~", "~0").replace("/", "~1")
+        for token in tokens
+    )
+
+
+def _identity_index(
+    rows: list[Any], *, collection: str, selector: str,
+) -> int:
+    fields = _LIST_IDENTITY_FIELDS.get(collection)
+    if not fields:
+        raise ValueError(
+            f"validator path uses a named selector for unsupported list {collection!r}"
+        )
+    matches = [
+        index
+        for index, row in enumerate(rows)
+        if isinstance(row, dict)
+        and any(row.get(field) == selector for field in fields)
+    ]
+    if len(matches) != 1:
+        raise ValueError(
+            f"validator path cannot uniquely locate {collection}[{selector}]: "
+            f"matched {len(matches)} rows"
+        )
+    return matches[0]
+
+
+def resolve_typed_error_json_path(
+    document: dict[str, Any], error: TypedError | dict[str, Any],
+) -> str:
+    """Resolve one validator path to an executable RFC-6901 JSON Pointer.
+
+    Named selectors are resolved against the immutable Correction candidate.
+    Empty selectors such as ``findings[]`` use the typed error ``entity_id``.
+    Resolution is fail-closed: a missing, duplicate, or unsupported identity
+    never reaches the model as an ambiguous ``allowed_path``.
+    """
+    typed = error if isinstance(error, TypedError) else TypedError.from_dict(error)
+    tokens = _decode_pointer(typed_error_json_path(typed.path))
+    resolved: list[str] = []
+    parent: Any = document
+    collection = ""
+
+    for position, raw_token in enumerate(tokens):
+        last = position == len(tokens) - 1
+        if isinstance(parent, dict):
+            wildcard_collection = (
+                raw_token[:-2]
+                if raw_token.endswith("[]")
+                else ""
+            )
+            token = wildcard_collection or raw_token
+            resolved.append(token)
+            if last:
+                break
+            if token not in parent:
+                raise ValueError(
+                    f"validator path parent does not exist: {typed.path}"
+                )
+            parent = parent[token]
+            collection = token
+            if wildcard_collection:
+                if not isinstance(parent, list):
+                    raise ValueError(
+                        f"validator path wildcard is not a list: {typed.path}"
+                    )
+                if not typed.entity_id:
+                    raise ValueError(
+                        f"validator path wildcard requires entity_id: {typed.path}"
+                    )
+                index = _identity_index(
+                    parent, collection=collection, selector=typed.entity_id,
+                )
+                resolved.append(str(index))
+                parent = parent[index]
+            continue
+
+        if isinstance(parent, list):
+            if raw_token.isdigit():
+                index = int(raw_token)
+                if index < 0 or index >= len(parent):
+                    raise ValueError(
+                        f"validator path array index out of range: {typed.path}"
+                    )
+            else:
+                selector = raw_token or typed.entity_id
+                if not selector:
+                    raise ValueError(
+                        f"validator path list selector is empty: {typed.path}"
+                    )
+                index = _identity_index(
+                    parent, collection=collection, selector=selector,
+                )
+            resolved.append(str(index))
+            if not last:
+                parent = parent[index]
+            continue
+
+        raise ValueError(f"validator path is not traversable: {typed.path}")
+
+    return _encode_pointer(resolved) if resolved else ""
 
 
 def validate_patch_scope(
