@@ -26,6 +26,10 @@ def build_executor_prompt(work: C.WorkItemInput) -> str:
     mode = contract.get("mode", "observe")
     correcting = mode == "correct"
     machine_contract = contract.get("machine_contract", {})
+    observation_profile = contract.get(
+        "observation_profile",
+        machine_contract.get("observation_profile", "feature"),
+    )
     phase_references = (
         list(contract.get("phase_references", [])) if not correcting else []
     )
@@ -71,6 +75,26 @@ def build_executor_prompt(work: C.WorkItemInput) -> str:
             "Treat the top-level machine_contract and correction_contract as normative.",
             "Write only the structured final result.",
         ]
+        if observation_profile == "function_global":
+            constraints.extend([
+                "This is Function-global Correction: keep the patch within the named global Claim/Unit/Observation path.",
+                "Do not change cross-Feature ownership, boundary roles, or the global outcome unless the typed error names that exact path and frozen evidence supports it.",
+            ])
+        else:
+            constraints.append(
+                "This is Feature Correction: keep the patch local to the named Feature Claim/Unit/Observation path."
+            )
+    elif observation_profile == "function_global":
+        constraints.extend([
+            "This is Function-global Observation: inspect static-index first, then Design/Registry and declared global source/build/SDK/test scopes.",
+            "Assess Function-wide architecture, cross-Feature ownership/boundaries, build/deployment, SDK and device impact.",
+            "Use declared cross-Feature Specs for boundary/coverage context; reopen a Feature evidence slice only for a named unresolved cross-Feature question; do not scan every Feature shard.",
+        ])
+    else:
+        constraints.extend([
+            "This is Feature Observation: review only the current Feature's claims and local acceptance evidence.",
+            "Read the Feature Spec first, then declared Feature source/test/SDK scopes; do not expand to other Features or Function-global material unless a named claim requires it.",
+        ])
     payload_field_text = json.dumps(payload_fields, ensure_ascii=False)
     if correcting:
         evidence_requirement = (

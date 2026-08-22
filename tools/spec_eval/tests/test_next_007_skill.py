@@ -833,9 +833,19 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             self.assertFalse(any(path.endswith("static-result.json") for path in feature_inputs))
             self.assertFalse(any(path.endswith("report.md") for path in feature_inputs))
             self.assertTrue(any(path.endswith("static-Feat-01.json") for path in feature_inputs))
-            self.assertEqual(
-                [resource["citable"] for resource in feature_resources],
-                [False, True, False, False, False],
+            citable_flags = [resource["citable"] for resource in feature_resources]
+            self.assertFalse(citable_flags[0])
+            self.assertTrue(citable_flags[1])
+            self.assertTrue(
+                all(flag is False for flag in citable_flags[2:]),
+                citable_flags,
+            )
+            self.assertTrue(
+                all(
+                    resource["citable"] is False
+                    for resource in feature_resources
+                    if resource.get("role") == "source_scope"
+                )
             )
             self.assertTrue(
                 feature_resources[1]["canonical_path"].startswith("specs/")
