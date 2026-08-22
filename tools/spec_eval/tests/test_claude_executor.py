@@ -380,6 +380,27 @@ class ClaudeExecutorTest(unittest.TestCase):
         self.assertEqual(result.status, C.STATUS_FAILED)
         self.assertIn("work_item_id", result.error)
 
+    def test_reported_failed_status_is_not_promoted_to_completed(self):
+        envelope = self._valid_envelope()
+        envelope["status"] = "failed"
+        envelope["error"] = "cannot complete work item"
+        runner = _FakeRunner(stdout_content=_stream_json_output(
+            structured_output=envelope,
+        ))
+        result = self._executor(runner).execute(self.work, lambda e: None)
+        self.assertEqual(result.status, C.STATUS_FAILED)
+        self.assertEqual(result.error, "cannot complete work item")
+
+    def test_completed_result_with_error_is_failed(self):
+        envelope = self._valid_envelope()
+        envelope["error"] = "unexpected executor error"
+        runner = _FakeRunner(stdout_content=_stream_json_output(
+            structured_output=envelope,
+        ))
+        result = self._executor(runner).execute(self.work, lambda e: None)
+        self.assertEqual(result.status, C.STATUS_FAILED)
+        self.assertIn("error to null", result.error)
+
     # --- streaming usage/telemetry extraction ------------------------------
 
     def test_usage_extracted_from_streaming(self):
