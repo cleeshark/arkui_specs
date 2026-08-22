@@ -357,6 +357,32 @@ class ClaudeCliExecutor:
                 event_count=event_count,
                 cost_usd=cost_usd, num_turns=num_turns, model_usage=model_usage,
             )
+        status = document.get("status")
+        if status == "failed":
+            error = document.get("error")
+            if not isinstance(error, str) or not error.strip():
+                error = "executor reported failure without an error message"
+            return _execution_result(
+                usage, telemetry,
+                status=C.STATUS_FAILED,
+                exit_code=proc_result.exit_code,
+                executor_result_path=work.executor_result_path,
+                error=error,
+                elapsed_seconds=time.monotonic() - started,
+                event_count=event_count,
+                cost_usd=cost_usd, num_turns=num_turns, model_usage=model_usage,
+            )
+        if document.get("error") is not None:
+            return _execution_result(
+                usage, telemetry,
+                status=C.STATUS_FAILED,
+                exit_code=proc_result.exit_code,
+                executor_result_path=work.executor_result_path,
+                error="completed executor result must set error to null",
+                elapsed_seconds=time.monotonic() - started,
+                event_count=event_count,
+                cost_usd=cost_usd, num_turns=num_turns, model_usage=model_usage,
+            )
         observation = document.get("payload")
         if not isinstance(observation, dict):
             return _execution_result(
