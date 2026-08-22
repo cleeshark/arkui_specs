@@ -80,6 +80,11 @@ def build_executor_prompt(work: C.WorkItemInput) -> str:
                 "This is Function-global Correction: keep the patch within the named global Claim/Unit/Observation path.",
                 "Do not change cross-Feature ownership, boundary roles, or the global outcome unless the typed error names that exact path and frozen evidence supports it.",
             ])
+        elif observation_profile == "aggregation":
+            constraints.extend([
+                "This is Aggregation Correction: keep the patch within the named Criterion/Policy/Finding path.",
+                "Do not modify Observation source facts, non-target Criteria, or service-derived Finding IDs.",
+            ])
         else:
             constraints.append(
                 "This is Feature Correction: keep the patch local to the named Feature Claim/Unit/Observation path."

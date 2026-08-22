@@ -687,7 +687,11 @@ class JudgmentFlow:
         payload_kind = str(base_contract.get("payload_kind", "observation"))
         observation_profile = str(
             work.work_item.get("observation_profile")
-            or ("function_global" if work.work_item.get("type") == "function_global" else "feature")
+            or (
+                "aggregation" if work.work_item.get("observation_type") == "aggregation"
+                else "function_global" if work.work_item.get("type") == "function_global"
+                else "feature"
+            )
         )
         catalog = breakpoint_data.get("evidence_catalog", [])
         error_codes = {str(error.get("code")) for error in typed_errors}

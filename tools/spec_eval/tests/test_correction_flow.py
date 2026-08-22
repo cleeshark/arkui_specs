@@ -111,6 +111,25 @@ class CorrectionFlowTest(unittest.TestCase):
         self.assertNotIn("expected_claim_ids", contract)
         self.assertNotIn("required_checks", contract)
 
+    def test_aggregation_correction_contract_is_scoped(self) -> None:
+        contract = build_correction_machine_contract(
+            payload_kind="aggregation",
+            observation_profile="aggregation",
+            typed_errors=[{
+                "code": "CRITERION_EVIDENCE_UNKNOWN",
+                "path": "aggregation.criterion_results[C].evidence_ids",
+            }],
+            allowed_paths=["/criterion_results/C/evidence_ids"],
+        )
+        self.assertIn(
+            "Keep patches local to the named Aggregation Criterion/Policy/Finding paths.",
+            contract["rules"],
+        )
+        self.assertIn(
+            "Do not modify Observation source facts, non-target Criteria, or derived Finding IDs.",
+            contract["rules"],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
