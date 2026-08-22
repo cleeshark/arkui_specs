@@ -32,7 +32,9 @@ After the executor returns, the service:
 2. resolves and verifies evidence paths and hashes;
 3. validates the Observation schema and required-check mapping;
 4. publishes the validated checkpoint and updates run-state;
-5. routes one bounded correction turn when typed validation rejects the candidate.
+5. applies safe structural/defect-key repairs without a worker call;
+6. routes one bounded JSON Patch correction turn only for remaining evidence or
+   semantic errors.
 
 The service repeats this loop until all Feature and function-global items are validated. It then
 enters Aggregation; the Observation worker does not perform that transition.

@@ -61,4 +61,8 @@ slice only for a specific unresolved question; do not reopen every shard by defa
 
 The service validates each Feature, then `function-global`, and finally the Observation stage. A
 validated observation file is the durable handoff after context compaction. On a correction turn,
-read only the candidate and named typed errors; make no fresh review or outcome upgrade.
+the service first repairs safe structural, enum-canonicalization, and defect-key ownership errors
+without invoking the worker. A worker Correction reads only the candidate and named typed errors;
+it must not read `SKILL.md`, search the skill directory, make a fresh review, or upgrade an outcome.
+It returns a bounded JSON Patch against the normalized candidate; the service applies and validates
+the patch.

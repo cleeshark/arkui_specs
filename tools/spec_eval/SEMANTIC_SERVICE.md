@@ -209,11 +209,17 @@ rejected. Identity, revision, input paths, expected claim/check lists and derive
 remain owned by the initialized staged template. The service freezes that template before invoking
 Codex, normalizes service-owned IDs/hashes, validates a candidate with the kernel and atomically
 publishes it only after validation succeeds. Observation and aggregation use separate payload
-contracts, and one generic typed correction turn is the only model retry.
+contracts. Safe structural, enum-canonicalization and defect-key mapping errors are repaired by
+the service without a model call; only evidence or semantic errors enter one bounded model
+correction turn. Correction returns a JSON Patch against the normalized candidate, which the
+service merges and validates.
 
 The service generates `output-contract.json` from the kernel contracts and embeds the relevant
-section into every Codex prompt. Typed validation failures use the single generic correction turn;
-there are no version-specific repair calls or legacy fallbacks.
+section into every Codex prompt. Correction uses a dedicated compact `correction_contract`; it
+does not inject the Observation workflow references or `SKILL.md`, and the executor is forbidden
+from reading the skill directory. There are no version-specific repair calls; a complete-payload
+fallback is retained only for older executor adapters during protocol rollout and is not part of
+the Correction prompt contract.
 
 The service additionally generates `aggregation-context.json` after all observations pass. It
 records the authoritative observation, Claim and atomic-unit mapping for every Criterion. Context
@@ -222,8 +228,9 @@ Criterion-scoped evidence catalog. Aggregation selects only those canonical IDs;
 copies the inherited evidence rows into the published Criterion and rejects unknown references.
 Mapped adverse or unverifiable units constrain aggregate conclusions. Evidence cardinality, NV
 inspection quality, Finding cardinality and canonical Finding identity are enforced by the 0.2.0 kernel.
-Validation errors are typed and enter the one generic correction turn; there are no version-specific
-repair modes, reconciliation calls, or historical fallback branches.
+Validation errors are typed and are either deterministically repaired or enter the one generic JSON
+Patch correction turn; there are no version-specific repair modes, reconciliation calls, or
+historical fallback branches.
 
 The aggregation contract also requires conclusion-level Finding cardinality. Every Criterion whose
 conclusion is `PARTIALLY_SUPPORTED`, `CONTRADICTED`, or `MISSING` must contain at least one
@@ -237,10 +244,10 @@ the executor is invoked again.
 The service also audits every structured-output schema object node for
 `additionalProperties: false` and complete `required` coverage before starting
 Codex. It also applies a conservative OpenAI Structured Outputs keyword
-compatibility profile to both generated observation and aggregation schemas at
-service startup, then rechecks the exact run-local schema before each executor
-call. A locally invalid or unsupported output schema therefore fails without
-consuming a model request.
+compatibility profile to generated observation, aggregation, and Correction
+schemas at service startup, then rechecks the exact run-local schema before
+each executor call. A locally invalid or unsupported output schema therefore
+fails without consuming a model request.
 
 ## Data directory (`--data-root`, default `specs/.evaluator/service-data/`)
 

@@ -289,8 +289,8 @@ class CodexCliExecutor:
             )
 
     def _validate_generated_output_schemas(self) -> None:
-        """Reject observation- or aggregation-only incompatibility at startup."""
-        for payload_kind in ("observation", "aggregation"):
+        """Reject any generated phase-schema incompatibility at startup."""
+        for payload_kind in ("observation", "aggregation", "correction"):
             errors = validate_strict_output_schema(
                 build_envelope_schema(payload_kind)
             )

@@ -58,11 +58,13 @@ class _JudgmentExecutor:
         break_all: bool = False,
         invalid_global_path_once: bool = False,
         empty_observation_claims_once: bool = False,
+        json_patch_correction: bool = False,
     ) -> None:
         self.break_first = break_first
         self.break_all = break_all
         self.invalid_global_path_once = invalid_global_path_once
         self.empty_observation_claims_once = empty_observation_claims_once
+        self.json_patch_correction = json_patch_correction
         self._invalid_global_path_emitted = False
         self._empty_observation_claims_emitted = False
         self.calls: list[tuple[str, str]] = []
@@ -95,8 +97,9 @@ class _JudgmentExecutor:
             },
         ]
         if broken and claims:
-            # claim set mismatch + low-information prose: guaranteed typed errors
-            claims = claims[: max(0, len(claims) - 1)]
+            # Keep structure/mappings valid and introduce only a semantic
+            # low-information defect.  This must still enter the model
+            # correction turn under the evidence/semantic-only routing rule.
             return {
                 "evidence_declarations": declarations,
                 "claim_reviews": [
@@ -112,7 +115,7 @@ class _JudgmentExecutor:
                             "facet_type": "traceability",
                             "local_outcome": "SUPPORTED",
                             "evidence_refs": ["e1"],
-                            "fact": "ok",
+                            "fact": "The inspected unit is supported by the frozen evidence.",
                             "verification_gap": None,
                         }],
                     }
@@ -183,9 +186,24 @@ class _JudgmentExecutor:
         self.prompts.append(work)
         if mode == "correct":
             candidate_path = Path(str(work.prompt_extras["candidate_path"]))
-            self.correction_candidates.append(
-                json.loads(candidate_path.read_text(encoding="utf-8"))
-            )
+            candidate = json.loads(candidate_path.read_text(encoding="utf-8"))
+            self.correction_candidates.append(candidate)
+            if self.json_patch_correction:
+                return C.ExecutionResult(
+                    status=C.STATUS_COMPLETED,
+                    exit_code=0,
+                    executor_result_path=work.executor_result_path,
+                    observation={
+                        "patches": [{
+                            "op": "replace",
+                            "path": "/claim_reviews/0/reason",
+                            "value": json.dumps(
+                                "The frozen evidence supports this claim after source verification.",
+                            ),
+                        }],
+                        "notes": ["semantic reason corrected"],
+                    },
+                )
         emit(C.ExecutionEvent(kind="command", message="fake"))
         broken = (self.break_first and mode == "observe" and is_first_call) or (
             self.break_all
@@ -393,13 +411,25 @@ class ObservationFlowTest(_StagedRunIntegrationTest):
         self.assertEqual(modes, ["observe", "correct", "observe"])
         correct_prompt = executor.prompts[1]
         self.assertEqual(correct_prompt.prompt_extras["mode"], "correct")
+        self.assertEqual(correct_prompt.prompt_extras["payload_kind"], "correction")
+        self.assertEqual(
+            correct_prompt.prompt_extras["correction_contract"]["format"],
+            "json_patch",
+        )
+        self.assertTrue(
+            correct_prompt.prompt_extras["schema_path"].endswith(
+                "envelope-correction.schema.json"
+            )
+        )
+        self.assertEqual(correct_prompt.prompt_extras["phase_references"], [])
+        self.assertFalse(any(
+            str(path).endswith(("SKILL.md", "observation-contract.md", "observation-guide.md"))
+            for path in correct_prompt.input_paths
+        ))
         typed = correct_prompt.prompt_extras["typed_errors"]
-        # the missing claim surfaces as a pending placeholder row whose NV
-        # obligations are unmet: accurate typed errors either way
-        self.assertTrue(any(e["code"] in {
-            "CLAIM_SET_MISMATCH", "REASON_PLACEHOLDER",
-            "REASON_LOW_INFORMATION", "GAP_MISSING_FOR_NV",
-        } for e in typed), typed)
+        self.assertTrue(any(
+            e["code"] == "REASON_LOW_INFORMATION" for e in typed
+        ), typed)
         event_types = [
             event.event_type for event in self.events.list_for_job(self.job.job_id)
         ]
@@ -409,8 +439,11 @@ class ObservationFlowTest(_StagedRunIntegrationTest):
             [call["attempt_type"] for call in calls], ["observe", "correct", "observe"]
         )
 
-    def test_empty_observation_claim_ids_gets_corrected_before_aggregation(self) -> None:
-        executor = _JudgmentExecutor(empty_observation_claims_once=True)
+    def test_json_patch_correction_is_merged_by_service(self) -> None:
+        executor = _JudgmentExecutor(
+            break_first=True,
+            json_patch_correction=True,
+        )
         result = run_semantic(
             self.ctx, executor,
             jobs=self.jobs, attempts=self.attempts, events=self.events,
@@ -420,10 +453,22 @@ class ObservationFlowTest(_StagedRunIntegrationTest):
         self.assertEqual(
             [mode for _, mode in executor.calls], ["observe", "correct", "observe"]
         )
-        typed = executor.prompts[1].prompt_extras["typed_errors"]
-        self.assertTrue(any(
-            error["code"] == "OBSERVATION_CLAIM_IDS_EMPTY" for error in typed
-        ), typed)
+        published = json.loads(
+            (self.ctx.run_dir / "observations" / "Feat-01.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertIn("after source verification", published["claim_reviews"][0]["reason"])
+
+    def test_empty_observation_claim_ids_is_service_terminal_without_model(self) -> None:
+        executor = _JudgmentExecutor(empty_observation_claims_once=True)
+        result = run_semantic(
+            self.ctx, executor,
+            jobs=self.jobs, attempts=self.attempts, events=self.events,
+            statistics=self.statistics, invocations=self.invocations,
+        )
+        self.assertEqual(result.outcome, C.STATUS_FAILED)
+        self.assertEqual([mode for _, mode in executor.calls], ["observe"])
         event_types = [
             event.event_type for event in self.events.list_for_job(self.job.job_id)
         ]
@@ -462,9 +507,9 @@ class ObservationFlowTest(_StagedRunIntegrationTest):
             statistics=self.statistics, invocations=self.invocations,
         )
         self.assertEqual(result.outcome, C.STATUS_FAILED)
-        self.assertIn("still invalid", result.error or "")
+        self.assertIn("correction output still invalid", result.error or "")
         modes = [mode for _, mode in executor.calls]
-        self.assertEqual(modes, ["observe", "correct"])  # exactly one correction
+        self.assertEqual(modes, ["observe", "correct"])  # exactly one semantic correction
         work_items = json.loads(
             (self.ctx.run_dir / "work-items.json").read_text(encoding="utf-8")
         )
