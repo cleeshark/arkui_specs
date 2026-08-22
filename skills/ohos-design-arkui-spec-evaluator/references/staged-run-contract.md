@@ -255,14 +255,15 @@ python3 specs/skills/ohos-design-arkui-spec-evaluator/scripts/build_aggregation_
   --run-dir /tmp/spec-evaluator/<FuncID>/<unique-run-id>
 ```
 
-Treat `aggregation-context.json` as authoritative for Criterion scope. Observations map through
-their `criterion_ids`; Claims map through `claim_reviews[].criterion_ids`; each atomic unit inherits
-the Criterion mapping of its parent Claim. `criterion_results[].claim_ids` may cite only those
+Treat `aggregation-context.json` as authoritative for Criterion scope. Context schema v3 stores
+each Observation, Claim, atomic Unit, and Evidence object once in global tables; each `criteria[]`
+row contains only `observation_refs`, `claim_refs`, `unit_refs`, and `evidence_ids`. Resolve those
+references through the corresponding global tables. `criterion_results[].claim_ids` may cite only
 mapped Claims and cannot define or narrow aggregate scope. Observation `claim_ids` remain local
 fact references and do not independently map a Claim to a Criterion.
 
-Context schema v2 assigns deterministic run-global evidence IDs per source work item and records
-their provenance in each Criterion `evidence_catalog`. Aggregation emits only
+Context schema v3 assigns deterministic run-global evidence IDs per source work item and records
+their provenance once in the global `evidence_catalog`. Aggregation emits only
 `criterion_results[].evidence_ids` references to that catalog; it does not emit evidence rows,
 evidence declarations, or observation-local IDs. Published Criterion evidence is copied by the
 service from the catalog, and every Finding evidence reference must be a subset of that selected

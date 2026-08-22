@@ -42,6 +42,7 @@ BREADTHS = ("local", "feat_core", "function_shared")
 # Observation work-item profiles share one transport/state machine but have
 # different source scope and correction risk.
 OBSERVATION_PROFILES = ("feature", "function_global")
+CORRECTION_PROFILES = ("feature", "function_global", "aggregation")
 
 UNIT_FACET_TYPES = (
     "condition",

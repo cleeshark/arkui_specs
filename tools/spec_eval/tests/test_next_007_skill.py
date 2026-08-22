@@ -313,8 +313,8 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
         self.assertEqual(example["source_revision"], source_revision)
         self.assertTrue(example["content_hash"].startswith("sha256:"))
         mapping_contract = contract["aggregation_payload"]["mapping_context"]
-        self.assertEqual(mapping_contract["schema_version"], 2)
-        self.assertIn("claim_reviews[].criterion_ids", mapping_contract["mapping_authority"]["claims"])
+        self.assertEqual(mapping_contract["schema_version"], 3)
+        self.assertIn("criteria[].claim_refs", mapping_contract["mapping_authority"]["claims"])
         self.assertIn(
             "evidence_catalog",
             mapping_contract["mapping_authority"]["criterion_evidence_ids"],
@@ -597,30 +597,27 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             second = build_aggregation_context(state, work_items)
         self.assertEqual(first, second)
         mapping = next(
-            row
-            for row in first["criterion_mappings"]
+            row for row in first["criteria"]
             if row["criterion_id"] == "CORRECTNESS-SOURCE-SUPPORT"
         )
-        self.assertEqual(len(mapping["observations"]), 1)
-        self.assertEqual(len(mapping["claims"]), 2)
-        self.assertEqual(len(mapping["atomic_units"]), 4)
-        self.assertIn("Feat-01/AC-1", mapping["mapped_claim_ids"])
-        self.assertEqual(first["schema_version"], 2)
-        self.assertEqual(len(mapping["evidence_catalog"]), 1)
-        inherited = mapping["evidence_catalog"][0]
+        self.assertEqual(len(mapping["observation_refs"]), 1)
+        self.assertEqual(len(mapping["claim_refs"]), 2)
+        self.assertEqual(len(mapping["unit_refs"]), 4)
+        self.assertEqual(first["schema_version"], 3)
+        self.assertEqual(len(mapping["evidence_ids"]), 1)
+        inherited = first["evidence_catalog"][mapping["evidence_ids"][0]]
         self.assertNotEqual(inherited["evidence_id"], "EV-unit")
         self.assertEqual(inherited["source_evidence_id"], "EV-unit")
         self.assertEqual(inherited["source_work_item_id"], item["id"])
-        self.assertEqual(mapping["observations"][0]["evidence_ids"], [
-            inherited["evidence_id"]
-        ])
+        observation = first["observations"][mapping["observation_refs"][0]]
+        self.assertEqual(observation["evidence_ids"], [inherited["evidence_id"]])
         self.assertTrue(all(
-            claim["evidence_ids"] == [inherited["evidence_id"]]
-            for claim in mapping["claims"]
+            first["claims"][ref]["evidence_ids"] == [inherited["evidence_id"]]
+            for ref in mapping["claim_refs"]
         ))
         self.assertTrue(all(
-            unit["evidence_ids"] == [inherited["evidence_id"]]
-            for unit in mapping["atomic_units"]
+            first["units"][ref]["evidence_ids"] == [inherited["evidence_id"]]
+            for ref in mapping["unit_refs"]
         ))
         self.assertTrue(mapping["constraints"]["adverse_unit_refs"])
         self.assertEqual(
@@ -649,10 +646,10 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
                 state, {"items": [first_item, second_item]}
             )
         mapping = next(
-            row for row in context["criterion_mappings"]
+            row for row in context["criteria"]
             if row["criterion_id"] == "CORRECTNESS-SOURCE-SUPPORT"
         )
-        catalog = mapping["evidence_catalog"]
+        catalog = [context["evidence_catalog"][eid] for eid in mapping["evidence_ids"]]
         self.assertEqual(len(catalog), 2)
         self.assertEqual(
             {row["source_evidence_id"] for row in catalog}, {"EV-unit"}
@@ -690,13 +687,17 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             context = build_aggregation_context(state, {"items": [item]})
         source_mapping = next(
             row
-            for row in context["criterion_mappings"]
+            for row in context["criteria"]
             if row["criterion_id"] == "CORRECTNESS-SOURCE-SUPPORT"
         )
         self.assertEqual(
-            source_mapping["observations"][0]["claim_ids"], item["expected_claim_ids"]
+            context["observations"][source_mapping["observation_refs"][0]]["claim_ids"],
+            item["expected_claim_ids"]
         )
-        self.assertEqual(source_mapping["mapped_claim_ids"], ["Feat-01/AC-1"])
+        self.assertEqual(
+            [context["claims"][ref]["claim_id"] for ref in source_mapping["claim_refs"]],
+            ["Feat-01/AC-1"],
+        )
 
     def test_aggregation_rejects_claim_cited_only_by_observation_mapping(self) -> None:
         document, item, state = self._valid_observation()

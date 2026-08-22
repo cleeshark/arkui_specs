@@ -14,13 +14,13 @@ python3 specs/skills/ohos-design-arkui-spec-evaluator/scripts/build_aggregation_
   --run-dir /tmp/spec-evaluator/<FuncID>/<unique-run-id>
 ```
 
-Read `aggregation-context.json` as the mapping authority:
-
-- observations map through `criterion_ids`;
-- Claims map through `claim_reviews[].criterion_ids`;
-- atomic units inherit their Claim mapping;
-- `criterion_results[].claim_ids` is a citation list and cannot narrow scope;
-- evidence is selected only through each Criterion's canonical evidence catalog.
+Read `aggregation-context.json` as the mapping authority. It contains global
+`observations`, `claims`, `units`, and `evidence_catalog` tables; each `criteria[]`
+row stores only references into those tables. Resolve observations through
+`observation_refs`, Claims through `claim_refs`, and atomic units through
+`unit_refs`. `criterion_results[].claim_ids` is a citation list and cannot narrow
+scope. Evidence is selected by the Criterion's `evidence_ids` from the global
+catalog.
 
 Do not declare new evidence, reuse observation-local IDs such as `EV-1`, or copy evidence rows
 into the aggregation payload. Every Finding evidence ID must be selected for that Criterion.

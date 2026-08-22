@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any
 
 from . import contracts as K
+from .aggregation_context import criteria_by_id, criterion_evidence_catalog
 from .errors import FATAL_INPUT, MODEL_CORRECTION, TypedError
 from .evidence_paths import EvidencePathError, FrozenEvidencePathResolver
 
@@ -487,10 +488,7 @@ def normalize_aggregation(
         row.get("criterion_id"): row
         for row in _rows(judgment.get("criterion_results"))
     }
-    context_by_criterion = {
-        row.get("criterion_id"): row
-        for row in _rows((aggregation_context or {}).get("criterion_mappings"))
-    }
+    context_by_criterion = criteria_by_id(aggregation_context)
     policy_template = {
         row.get("criterion_id"): row
         for row in _rows(template.get("outcome_policy_bases"))
@@ -501,12 +499,13 @@ def normalize_aggregation(
     }
     inherited_catalog: list[dict[str, Any]] = []
     inherited_ids: set[str] = set()
-    for context_row in context_by_criterion.values():
-        for evidence in _rows(context_row.get("evidence_catalog")):
-            evidence_id = evidence.get("evidence_id")
-            if isinstance(evidence_id, str) and evidence_id not in inherited_ids:
-                inherited_catalog.append(copy.deepcopy(evidence))
-                inherited_ids.add(evidence_id)
+    for evidence in (aggregation_context or {}).get("evidence_catalog", {}).values():
+        if not isinstance(evidence, dict):
+            continue
+        evidence_id = evidence.get("evidence_id")
+        if isinstance(evidence_id, str) and evidence_id not in inherited_ids:
+            inherited_catalog.append(copy.deepcopy(evidence))
+            inherited_ids.add(evidence_id)
     criterion_results: list[dict[str, Any]] = []
     canonical_ids: set[str] = set()
     finding_by_key: dict[str, dict[str, Any]] = {}
@@ -526,7 +525,7 @@ def normalize_aggregation(
         context_row = context_by_criterion.get(criterion_id, {})
         criterion_catalog = {
             evidence.get("evidence_id"): evidence
-            for evidence in _rows(context_row.get("evidence_catalog"))
+            for evidence in criterion_evidence_catalog(aggregation_context, context_row)
             if isinstance(evidence.get("evidence_id"), str)
         }
         raw_evidence_ids = _strings(row.get("evidence_ids"))
