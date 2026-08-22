@@ -237,22 +237,9 @@ def build_aggregation_machine_contract(
 ) -> dict[str, Any]:
     """Contract for the aggregation work item."""
     return {
-        **_common(),
-        "judgment_rules": [
-            "Provide aggregation judgments only; document identity, ordering, "
-            "canonical evidence rows and finding IDs are service-owned.",
-            "Read aggregation-context.json and use only the canonical EV- evidence "
-            "IDs listed for each Criterion. Do not emit local evidence keys such as "
-            "e1, do not declare evidence, and do not guess EV- IDs.",
-            "criterion_results[].evidence_ids selects the inherited evidence attached "
-            "to that Criterion from the global evidence_catalog; the service closes "
-            "this parent set over every valid finding evidence reference, and every "
-            "finding evidence_ids entry must be a subset.",
-            "For the six outcome-policy criteria, content_status/evidence_status/"
-            "conflict_scope are the semantic inputs; the service derives conclusion "
-            "from the fixed policy precedence table. Do not try to repair a derived "
-            "conclusion without correcting the policy basis that produces it.",
-        ],
+        "evaluation_protocol_version": K.EVALUATION_PROTOCOL_VERSION,
+        "envelope_schema_version": K.ENVELOPE_SCHEMA_VERSION,
+        "observation_profile": "aggregation",
         "payload_fields": list(K.AGGREGATION_JUDGMENT_FIELDS),
         "criterion_judgment_fields": list(K.CRITERION_JUDGMENT_FIELDS),
         "finding_judgment_fields": list(K.FINDING_JUDGMENT_FIELDS),
@@ -276,64 +263,86 @@ def build_aggregation_machine_contract(
         },
         "valid_criterion_ids": list(valid_criterion_ids),
         "aggregation_context_path": aggregation_context_path,
+        "input_authority": {
+            "semantic_context": "aggregation-context.json",
+            "criterion_mapping_fields": [
+                "criteria[].observation_refs",
+                "criteria[].claim_refs",
+                "criteria[].unit_refs",
+            ],
+            "lookup_tables": [
+                "observations", "claims", "units", "evidence_catalog",
+            ],
+        },
         "mapping_rule": (
-            "aggregation-context.json (when provided) is authoritative for "
-            "criterion scope and mapped unit outcomes; criteria refs resolve through "
-            "the global observations/claims/units tables; criterion_results[].claim_ids "
-            "are citations only and may not narrow the mapped scope."
+            "aggregation-context.json is authoritative for Criterion scope and "
+            "mapped outcomes. Resolve refs through the global tables; output "
+            "claim_ids are citations only and may not narrow mapped scope."
         ),
-        "forbidden_conclusions_rule": (
-            "aggregation-context.json criteria specify constraints.forbidden_conclusions "
-            "for each Criterion — a list of conclusions that are structurally "
-            "impossible given the observation evidence. If a conclusion appears "
-            "in forbidden_conclusions, do not use it for that Criterion. Also "
-            "check constraints.required_conclusion_when_no_adverse: when set, "
-            "the Criterion conclusion must be exactly that value."
-        ),
-        "finding_cardinality_rule": (
-            "every criterion whose conclusion is PARTIALLY_SUPPORTED, CONTRADICTED "
-            "or MISSING must contain at least one evidence-backed finding; SUPPORTED "
-            "and NOT_APPLICABLE criteria must contain none."
-        ),
-        "not_applicable_rule": (
-            "aggregation-context.json criteria specify allow_not_applicable for each "
-            "Criterion; NOT_APPLICABLE conclusion is only valid when "
-            "allow_not_applicable is true. When false, you must use one of the "
-            "other conclusions (SUPPORTED, PARTIALLY_SUPPORTED, CONTRADICTED, "
-            "MISSING, or NOT_VERIFIABLE)."
-        ),
-        "severity_floor_rule": (
-            "aggregation-context.json criteria specify outcomes[conclusion].severity_floor "
-            "for conclusions that require findings (PARTIALLY_SUPPORTED, CONTRADICTED, "
-            "MISSING). Each finding under that conclusion must have severity >= "
-            "severity_floor. For example, if PARTIALLY_SUPPORTED has severity_floor "
-            "Major, all findings must be Major or Critical, not Minor or Info."
-        ),
-        "evidence_type_rule": (
-            "aggregation-context.json criteria specify required_evidence_types for each "
-            "Criterion. When conclusion requires evidence (SUPPORTED, "
-            "PARTIALLY_SUPPORTED, CONTRADICTED, MISSING), at least one selected "
-            "evidence item must have a type from required_evidence_types. Choose "
-            "evidence from the global aggregation-context evidence_catalog that is "
-            "listed by that Criterion and satisfies this "
-            "constraint."
-        ),
+        "evidence_selection": {
+            "catalog_role": "lookup_only",
+            "criterion_allowlist_field": "criteria[].evidence_ids",
+            "criterion_by_type_field": "criteria[].evidence_ids_by_type",
+            "output_selection_field": "criterion_results[].evidence_ids",
+            "finding_subset_rule": (
+                "Each finding evidence_ids must be a subset of its parent "
+                "Criterion result evidence_ids."
+            ),
+            "forbidden": [
+                "local Evidence keys", "Evidence declarations",
+                "guessed or newly created EV- IDs",
+            ],
+        },
         "criterion_evidence_rule": (
-            "criterion_results[].evidence_ids may contain only canonical IDs listed "
-            "by that Criterion and present in the global aggregation-context "
-            "evidence_catalog; finding "
-            "evidence_ids must be a subset of the selected Criterion evidence IDs."
+            "The global evidence_catalog is lookup-only. criterion_results[]."
+            "evidence_ids may contain only canonical IDs in that Criterion's "
+            "criteria[].evidence_ids allowlist; finding evidence_ids are a subset."
         ),
-        "ownership_rule": (
-            "findings link to defects through temporary keys; the service derives "
-            "canonical finding IDs and secondary criterion sets. At most one finding "
-            "may be CRITICAL and it must belong to the primary criterion."
-        ),
-        "defect_key_reference_rule": (
-            "aggregation-context.json provides valid_defect_keys — the exhaustive "
-            "whitelist of defect_key values defined by validated observations. "
-            "defect_ownership[].defect_key must exactly match one entry in this "
-            "whitelist; do not add prefixes, rename, derive, or create new keys. "
-            "These keys are already scoped by work item (e.g. feat-01.trace-rule-orphan)."
-        ),
+        "conclusion_constraints": {
+            "forbidden": "criteria[].constraints.forbidden_conclusions",
+            "required_when_no_adverse": (
+                "criteria[].constraints.required_conclusion_when_no_adverse"
+            ),
+            "not_applicable_guard": "criteria[].allow_not_applicable",
+            "finding_required_for": [
+                "PARTIALLY_SUPPORTED", "CONTRADICTED", "MISSING",
+            ],
+            "finding_forbidden_for": ["SUPPORTED", "NOT_APPLICABLE"],
+            "finding_severity_floor": (
+                "criteria[].outcomes[conclusion].severity_floor"
+            ),
+            "required_evidence_types": "criteria[].required_evidence_types",
+        },
+        "defect_ownership": {
+            "valid_key_allowlist": "valid_defect_keys",
+            "root_defect_rule": (
+                "One actionable root defect may produce one Finding per materially "
+                "affected Criterion and one shared ownership row."
+            ),
+            "critical_rule": (
+                "At most one Finding for a root defect is Critical, on its primary "
+                "Criterion."
+            ),
+        },
+        "source_recheck": {
+            "default": "inherit_validated_observation_facts",
+            "allowed_when": [
+                "one mapped fact is ambiguous",
+                "mapped facts conflict",
+                "one named Evidence gap blocks a defensible conclusion",
+            ],
+            "start_from": "current Criterion allowed Evidence paths",
+            "boundary": "exact symbol, branch, target, declaration, or test",
+            "may_not": [
+                "introduce Evidence", "change an Observation outcome",
+                "broadly rescan source, SDK, build, or test trees",
+            ],
+        },
+        "service_owned": [
+            "document identity", "ordering", "source Observation IDs",
+            "canonical Finding IDs", "Evidence row expansion",
+            "parent Evidence closure", "secondary Criterion derivation",
+            "normalization", "validation", "assembly", "scoring",
+            "confidence", "gate", "admission",
+        ],
     }

@@ -506,7 +506,12 @@ def build_aggregation_context(
             if isinstance(criterion, dict) and isinstance(criterion.get("id"), str):
                 criterion_id = criterion["id"]
                 metadata = {
+                    "name": criterion.get("name"),
                     "allow_not_applicable": bool(criterion.get("allow_not_applicable")),
+                    "coverage_scope": criterion.get("coverage_scope"),
+                    "outcome_policy": copy.deepcopy(
+                        criterion.get("outcome_policy", {})
+                    ),
                 }
                 # Extract severity floor for each outcome
                 outcomes = criterion.get("outcomes", {})
@@ -528,7 +533,10 @@ def build_aggregation_context(
     criteria_rows: dict[str, dict[str, Any]] = {
         criterion_id: {
             "criterion_id": criterion_id,
+            "name": criterion_metadata.get(criterion_id, {}).get("name"),
             "allow_not_applicable": criterion_metadata.get(criterion_id, {}).get("allow_not_applicable", False),
+            "coverage_scope": criterion_metadata.get(criterion_id, {}).get("coverage_scope"),
+            "outcome_policy": criterion_metadata.get(criterion_id, {}).get("outcome_policy", {}),
             "outcomes": criterion_metadata.get(criterion_id, {}).get("outcomes", {}),
             "required_evidence_types": criterion_metadata.get(criterion_id, {}).get("required_evidence_types", []),
             "observation_refs": [],
@@ -561,6 +569,7 @@ def build_aggregation_context(
             "path": output_path,
             "content_hash": content_hash(path),
             "evidence_count": len(source_evidence),
+            "open_questions": copy.deepcopy(document.get("open_questions", [])),
         })
 
         for observation in document.get("observations", []):
@@ -585,6 +594,7 @@ def build_aggregation_context(
                 "breadth": observation.get("breadth"),
                 "contract_family": observation.get("contract_family"),
                 "claim_ids": claim_ids,
+                "fact": observation.get("fact"),
                 "evidence_ids": _aggregation_evidence_refs(
                     evidence_by_id,
                     [
@@ -597,6 +607,10 @@ def build_aggregation_context(
             for optional in ("defect_key", "primary_criterion_id"):
                 if isinstance(observation.get(optional), str):
                     entry[optional] = observation[optional]
+            if isinstance(observation.get("modeling_basis"), dict):
+                entry["modeling_basis"] = copy.deepcopy(
+                    observation["modeling_basis"]
+                )
             if isinstance(entry.get("defect_key"), str):
                 entry["defect_key"] = _scoped_defect_key(
                     work_item_id, entry["defect_key"]
@@ -629,6 +643,10 @@ def build_aggregation_context(
                 "work_item_id": work_item_id,
                 "claim_id": claim_id,
                 "local_outcome": claim_review.get("local_outcome"),
+                "reason": claim_review.get("reason"),
+                "verification_gap": copy.deepcopy(
+                    claim_review.get("verification_gap")
+                ),
                 "defect_keys": [
                     _scoped_defect_key(work_item_id, key)
                     for key in claim_review.get("defect_keys", [])
@@ -650,6 +668,10 @@ def build_aggregation_context(
                     "unit_id": unit.get("unit_id"),
                     "facet_type": unit.get("facet_type"),
                     "local_outcome": unit.get("local_outcome"),
+                    "fact": unit.get("fact"),
+                    "verification_gap": copy.deepcopy(
+                        unit.get("verification_gap")
+                    ),
                     "evidence_ids": _aggregation_evidence_refs(
                         evidence_by_id, unit.get("evidence_ids", [])
                     ),
@@ -725,6 +747,15 @@ def build_aggregation_context(
         if applicable_refs and "NOT_APPLICABLE" not in forbidden:
             forbidden.append("NOT_APPLICABLE")
         mapping["outcome_counts"] = counts
+        evidence_ids_by_type: dict[str, list[str]] = {}
+        for evidence_id in mapping["evidence_ids"]:
+            evidence_type = evidence_catalog.get(evidence_id, {}).get("type")
+            if isinstance(evidence_type, str) and evidence_type:
+                evidence_ids_by_type.setdefault(evidence_type, []).append(
+                    evidence_id
+                )
+        mapping["evidence_scope"] = "criterion_allowlist"
+        mapping["evidence_ids_by_type"] = evidence_ids_by_type
         mapping["constraints"] = {
             "adverse_unit_refs": adverse_refs,
             "unverifiable_unit_refs": unverifiable_refs,

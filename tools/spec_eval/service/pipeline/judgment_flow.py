@@ -745,6 +745,7 @@ class JudgmentFlow:
         # explicitly excluded from the correction input set.
         excluded_names = {
             "SKILL.md", "observation-contract.md", "observation-guide.md",
+            "aggregation-contract.md", "aggregation-guide.md",
             "aggregation-workflow.md", "criterion-guide.md",
             "staged-run-contract.md", "output-contract.json", "work-items.json",
             "run-state.json",

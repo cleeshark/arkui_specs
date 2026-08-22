@@ -58,19 +58,6 @@ def build_executor_prompt(work: C.WorkItemInput) -> str:
         "IDs, schema errors, byte size, or hashes; never print the assembled "
         "payload itself.",
     ]
-    constraints = [
-        reference_constraint,
-        "Treat input_resources.citable=false files as context only; never "
-        "declare them as evidence.",
-        "Evidence paths must be canonical repository-relative POSIX paths. "
-        "Never emit absolute paths, '..', evidence/... or runs/... service paths.",
-        "Do not read paths in forbidden_paths (confirmed reviews or other runs).",
-        "Do not modify any formal Spec, Design, Registry, source or test file.",
-        "Do not modify the initialized staged template; the service owns and publishes it.",
-        "Provide judgments only; treat the top-level machine_contract as normative.",
-        "Write only the structured final result.",
-        *tool_output_constraints,
-    ]
     if correcting:
         constraints = [
             "Correct one invalid evaluation candidate.",
@@ -101,14 +88,43 @@ def build_executor_prompt(work: C.WorkItemInput) -> str:
             constraints.append(
                 "This is Feature Correction: keep the patch local to the named Feature Claim/Unit/Observation path."
             )
-    elif observation_profile == "function_global":
-        constraints.extend([
-            "This is Function-global Observation; keep judgments at Function scope.",
-        ])
+    elif observation_profile == "aggregation":
+        constraints = [
+            reference_constraint,
+            "This is Aggregation and not a second source-verification pass.",
+            "NEVER read SKILL.md, search a skill directory, or load references from their source paths; the two Aggregation references are already embedded above.",
+            "Treat aggregation-context.json as the authoritative semantic handoff from validated Observations.",
+            "The global evidence_catalog is lookup-only. For each Criterion, criteria[].evidence_ids is the exhaustive Evidence allowlist; never cite an EV- ID merely because it exists globally.",
+            "Do not declare Evidence, invent EV- IDs or defect keys, or change inherited Observation outcomes.",
+            "Reopen frozen source only for one named ambiguity, conflict, or Evidence gap, starting from that Criterion's allowed Evidence paths; keep the recheck bounded.",
+            "Do not calculate or emit scores, deductions, confidence, gates, or admission; the service derives them deterministically.",
+            "Do not read paths in forbidden_paths or modify Spec, Design, Registry, source, tests, staged templates, or Observation files.",
+            "Provide semantic aggregation judgments only; treat the top-level machine_contract as normative.",
+            "Write only the structured final result.",
+            *tool_output_constraints,
+        ]
     else:
-        constraints.extend([
-            "This is Feature Observation; keep judgments local to the current Feature claims.",
-        ])
+        constraints = [
+            reference_constraint,
+            "Treat input_resources.citable=false files as context only; never "
+            "declare them as evidence.",
+            "Evidence paths must be canonical repository-relative POSIX paths. "
+            "Never emit absolute paths, '..', evidence/... or runs/... service paths.",
+            "Do not read paths in forbidden_paths (confirmed reviews or other runs).",
+            "Do not modify any formal Spec, Design, Registry, source or test file.",
+            "Do not modify the initialized staged template; the service owns and publishes it.",
+            "Provide judgments only; treat the top-level machine_contract as normative.",
+            "Write only the structured final result.",
+            *tool_output_constraints,
+        ]
+        if observation_profile == "function_global":
+            constraints.extend([
+                "This is Function-global Observation; keep judgments at Function scope.",
+            ])
+        else:
+            constraints.extend([
+                "This is Feature Observation; keep judgments local to the current Feature claims.",
+            ])
     payload_field_text = json.dumps(payload_fields, ensure_ascii=False)
     if correcting:
         evidence_requirement = (
@@ -146,6 +162,11 @@ def build_executor_prompt(work: C.WorkItemInput) -> str:
     ):
         prompt_work_item.pop(duplicated_field, None)
 
+    completion_note = (
+        "Criterion NOT_VERIFIABLE conclusions still use envelope status=completed. "
+        if observation_profile == "aggregation" and not correcting else
+        "Local NOT_VERIFIABLE outcomes still use envelope status=completed. "
+    )
     payload: dict[str, Any] = {
         "task": task,
         "constraints": constraints,
@@ -168,8 +189,7 @@ def build_executor_prompt(work: C.WorkItemInput) -> str:
                 "completed work item set status=completed, error=null, and "
                 f"payload to one {result_kind} object containing exactly "
                 f"these fields: {payload_field_text}, fully constrained by "
-                f"the declared schema. {evidence_requirement} Local "
-                "NOT_VERIFIABLE outcomes still use envelope status=completed. "
+                f"the declared schema. {evidence_requirement} {completion_note}"
                 "Use status=failed only when no complete payload can be "
                 "produced; then set payload=null and provide a non-empty error."
             ),

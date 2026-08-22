@@ -68,6 +68,7 @@ class _FakeExecutor:
     def __init__(self, *, fail_aggregation: bool = False) -> None:
         self.fail_aggregation = fail_aggregation
         self.calls: list[str] = []
+        self.works: list[C.WorkItemInput] = []
 
     def is_available(self) -> bool:
         return True
@@ -77,6 +78,7 @@ class _FakeExecutor:
 
     def execute(self, work: C.WorkItemInput, emit, cancel=None) -> C.ExecutionResult:
         self.calls.append(work.work_item_id)
+        self.works.append(work)
         emit(C.ExecutionEvent(kind="command", message="fake"))
         if work.work_item_id == "aggregation:final" and self.fail_aggregation:
             return C.ExecutionResult(status=C.STATUS_FAILED, error="injected aggregation failure")
@@ -472,6 +474,46 @@ class _DriverTestBase(unittest.TestCase):
 
 
 class AggregationStageTest(_DriverTestBase):
+    def test_aggregation_input_embeds_only_context_and_phase_references(self) -> None:
+        context_path = self.ctx.run_dir / "aggregation-context.json"
+        context_path.write_text('{"schema_version":3}', encoding="utf-8")
+        work = aggregation_stage._build_aggregation_input(
+            self.ctx,
+            context_path,
+            ("CORRECTNESS-SOURCE-SUPPORT",),
+        )
+        references = work.prompt_extras["phase_references"]
+        self.assertEqual(
+            [reference["name"] for reference in references],
+            ["aggregation-contract", "aggregation-guide"],
+        )
+        self.assertTrue(all(reference["content"] for reference in references))
+        self.assertTrue(all(
+            reference["content_hash"].startswith("sha256:")
+            for reference in references
+        ))
+        self.assertEqual(work.prompt_extras["observation_profile"], "aggregation")
+        self.assertEqual(
+            work.prompt_extras["machine_contract"]["observation_profile"],
+            "aggregation",
+        )
+        self.assertEqual(len(work.input_paths), 3)
+        self.assertEqual(Path(work.input_paths[0]), context_path)
+        self.assertFalse(any(
+            Path(path).name in {
+                "aggregation.json", "output-contract.json", "work-items.json",
+                "semantic-template.json", "rubric.yaml", "aggregation-workflow.md",
+                "criterion-guide.md", "staged-run-contract.md",
+            }
+            for path in work.input_paths
+        ))
+        resources = work.work_item["input_resources"]
+        self.assertEqual(resources[0]["role"], "semantic_input")
+        self.assertEqual(
+            [resource.get("embedded", False) for resource in resources],
+            [False, True, True],
+        )
+
     def test_observation_preflight_rejects_before_executor(self) -> None:
         self.jobs.transition_status(self.job.job_id, S.RUNNING, stage=S.STAGE_PREPARING, event_type="x")
         self.jobs.transition_status(self.job.job_id, S.RUNNING, stage=S.STAGE_EVIDENCE, event_type="x")
@@ -501,14 +543,16 @@ class AggregationStageTest(_DriverTestBase):
         self.jobs.transition_status(self.job.job_id, S.RUNNING, stage=S.STAGE_PREPARING, event_type="x")
         self.jobs.transition_status(self.job.job_id, S.RUNNING, stage=S.STAGE_EVIDENCE, event_type="x")
         self.jobs.transition_status(self.job.job_id, S.RUNNING, stage=S.STAGE_OBSERVATION, event_type="x")
+        executor = _FakeExecutor()
         outcome, sr = aggregation_stage.run_aggregation(
-            self.ctx, _FakeExecutor(), jobs=self.jobs, attempts=self.attempts,
+            self.ctx, executor, jobs=self.jobs, attempts=self.attempts,
             events=self.events, runner=_FakeScriptRunner([]),
         )
         self.assertEqual(outcome, C.STATUS_COMPLETED)
         self.assertTrue(sr is not None and sr.is_file())
         # aggregation checkpoint recorded
         self.assertTrue(self.attempts.list_for_job(self.job.job_id, stage=S.ATTEMPT_STAGE_AGGREGATION))
+        self.assertEqual(executor.works[0].prompt_extras["observation_profile"], "aggregation")
 
     def test_reuses_existing_validated_semantic_result_without_executor(self) -> None:
         self.jobs.transition_status(self.job.job_id, S.RUNNING, stage=S.STAGE_PREPARING, event_type="x")

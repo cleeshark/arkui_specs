@@ -423,7 +423,10 @@ class ObservationFlowTest(_StagedRunIntegrationTest):
         )
         self.assertEqual(correct_prompt.prompt_extras["phase_references"], [])
         self.assertFalse(any(
-            str(path).endswith(("SKILL.md", "observation-contract.md", "observation-guide.md"))
+            str(path).endswith((
+                "SKILL.md", "observation-contract.md", "observation-guide.md",
+                "aggregation-contract.md", "aggregation-guide.md",
+            ))
             for path in correct_prompt.input_paths
         ))
         typed = correct_prompt.prompt_extras["typed_errors"]

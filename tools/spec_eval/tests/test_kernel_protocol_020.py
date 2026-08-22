@@ -1870,23 +1870,21 @@ class MachineContractPolicyRuleTest(unittest.TestCase):
         contract = build_aggregation_machine_contract(
             valid_criterion_ids=list(CRITERIA),
         )
-        rules = contract["judgment_rules"]
-        closure_mentioned = any("closes" in rule for rule in rules)
-        self.assertTrue(
-            closure_mentioned,
-            "Aggregation judgment_rules should mention evidence closure",
+        self.assertIn(
+            "subset",
+            contract["evidence_selection"]["finding_subset_rule"],
         )
+        self.assertIn("parent Evidence closure", contract["service_owned"])
 
     def test_aggregation_contract_documents_policy_derivation(self) -> None:
         contract = build_aggregation_machine_contract(
             valid_criterion_ids=list(CRITERIA),
         )
-        rules = contract["judgment_rules"]
-        policy_mentioned = any("derives conclusion" in rule for rule in rules)
-        self.assertTrue(
-            policy_mentioned,
-            "Aggregation judgment_rules should mention service derives conclusion",
+        self.assertEqual(
+            contract["policy_conclusion_rule"]["derived_from"],
+            ["content_status", "evidence_status", "conflict_scope"],
         )
+        self.assertIn("scoring", contract["service_owned"])
 
 
 class DefectKeyNormalizationTest(unittest.TestCase):
