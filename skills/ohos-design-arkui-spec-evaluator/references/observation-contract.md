@@ -48,8 +48,9 @@ Every observation must:
   verification consequence;
 - use `NOT_APPLICABLE` only with reproducible proof of inapplicability.
 
-For `CONFLICT` or `MISSING`, use a stable `defect_key` and primary Criterion. Keep source excerpts
-short; persist repository-relative paths and hashes instead of copying source into the payload.
+For `CONFLICT` or `MISSING`, use a stable `defect_key` and primary Criterion, and include that
+primary Criterion in the same Observation's `criterion_ids`. Keep source excerpts short; persist
+repository-relative paths and hashes instead of copying source into the payload.
 Do not assign final Criterion conclusions, scores, or aggregation ownership during Observation.
 
 ## Required source checks

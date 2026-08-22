@@ -114,8 +114,9 @@ def build_observation_machine_contract(
         "defect_ownership_rule": (
             "observations[].defect_key and observations[].primary_criterion_id are "
             "defect ownership fields. Set them ONLY when local_outcome is CONFLICT "
-            "or MISSING. For SUPPORTED, NOT_VERIFIABLE, and NOT_APPLICABLE outcomes, "
-            "both fields must be null (omitted or explicitly null)."
+            "or MISSING, and include primary_criterion_id in that observation's "
+            "criterion_ids. For SUPPORTED, NOT_VERIFIABLE, and NOT_APPLICABLE "
+            "outcomes, both fields must be null (omitted or explicitly null)."
         ),
         "modeling_basis_rule": (
             "When an observation's criterion_ids includes any Function modeling "

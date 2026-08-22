@@ -343,6 +343,39 @@ class JudgmentFlow:
                 "evidence_catalog_size": len(catalog),
             })
 
+        def repair_after_model_correction(
+            document: dict[str, Any], typed: list[TypedError]
+        ) -> tuple[dict[str, Any], list[TypedError]]:
+            """Apply one final service-owned repair before publishing/failing.
+
+            A legacy full-payload Correction can reintroduce a structural or
+            ownership error outside the semantic paths it was asked to fix.
+            Do not spend another model turn on such errors; apply only the
+            deterministic repairs already owned by the service and revalidate.
+            """
+            deterministic = [
+                error for error in typed
+                if not is_model_correction_error(error)
+            ]
+            if not deterministic:
+                return document, typed
+            corrected, changes, _unresolved = apply_deterministic_correction(
+                document, deterministic,
+            )
+            if not changes:
+                return document, typed
+            remaining = typed_of(corrected)
+            self.events.append(
+                self.ctx.job_id, "correction_deterministic_repaired", {
+                    "work_item_id": work.work_item_id,
+                    "changes": changes,
+                    "remaining_errors": [
+                        error.to_dict() for error in blocking(remaining)
+                    ],
+                },
+            )
+            return corrected, remaining
+
         if not resume_candidate:
             SS.set_work_item_state(
                 self.ctx.run_dir, work.work_item_id, SS.GENERATE_PENDING
@@ -612,6 +645,11 @@ class JudgmentFlow:
                     f"invalid JSON Patch: {exc}",
                 )
             typed = typed_of(corrected_payload)
+            if blocking(typed):
+                corrected_payload, typed = repair_after_model_correction(
+                    corrected_payload, typed,
+                )
+                corrected_candidate_for_failure = corrected_payload
             if not blocking(typed):
                 publish(
                     corrected_payload,
@@ -660,11 +698,13 @@ class JudgmentFlow:
                 "correction output still invalid: "
                 + "; ".join(error.code for error in normalization.errors[:5]),
             )
-        typed = typed_of(normalization.document)
+        corrected_document, typed = repair_after_model_correction(
+            normalization.document, typed_of(normalization.document),
+        )
         if not blocking(typed):
-            publish(normalization.document, normalization.evidence_catalog)
+            publish(corrected_document, normalization.evidence_catalog)
             return JudgmentOutcome(C.STATUS_COMPLETED, published=True)
-        _write_json(candidate_path, normalization.document)
+        _write_json(candidate_path, corrected_document)
         _write_json(errors_path, {
             "input_fingerprint": fingerprint,
             "errors": [error.to_dict() for error in typed],
