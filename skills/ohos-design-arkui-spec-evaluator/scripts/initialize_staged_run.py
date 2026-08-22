@@ -75,6 +75,49 @@ def _input_resource(path: Path, role: str, *, citable: bool) -> dict[str, Any]:
     return resource
 
 
+def _source_scope_paths(
+    *documents: dict[str, Any], findings: list[dict[str, Any]] = ()
+) -> list[Path]:
+    """Collect already-resolved frozen source/SDK/build/test paths.
+
+    Evidence and static reports are navigation indexes.  We expose only paths
+    that are present in the frozen repository, and keep them non-citable so a
+    worker must still cite the concrete file it inspected.  Spec/evidence
+    paths are intentionally excluded; the document itself is declared
+    separately as the citable input.
+    """
+    candidates: set[str] = set()
+
+    def visit(value: Any, key: str = "") -> None:
+        if isinstance(value, dict):
+            for name, child in value.items():
+                visit(child, str(name))
+        elif isinstance(value, list):
+            for child in value:
+                visit(child, key)
+        elif isinstance(value, str) and key in {
+            "source_path", "path", "raw", "file", "build_path", "test_path",
+        }:
+            raw = value.strip().split(":", 1)[0]
+            if raw.startswith((
+                "frameworks/", "adapter/", "interfaces/", "interface/sdk-js/",
+                "interface/sdk_c/", "test/", "tests/",
+            )):
+                candidates.add(raw)
+
+    for document in documents:
+        visit(document)
+    for finding in findings:
+        visit(finding)
+
+    result: list[Path] = []
+    for raw in sorted(candidates):
+        path = _repo_path(raw)
+        if path.is_file() or path.is_dir():
+            result.append(path)
+    return result
+
+
 def _static_summary(findings: list[dict[str, Any]], slice_path: Path) -> dict[str, Any]:
     return {
         "count": len(findings),
@@ -94,6 +137,7 @@ def _observation_template(
     input_paths: list[str],
     expected_claim_ids: list[str],
     required_checks: list[str],
+    observation_profile: str,
 ) -> dict[str, Any]:
     document: dict[str, Any] = {
         "schema_version": STAGED_SCHEMA_VERSION,
@@ -103,6 +147,7 @@ def _observation_template(
         "run_id": semantic["run_id"],
         "observation_id": item_id,
         "observation_type": observation_type,
+        "observation_profile": observation_profile,
         "status": "pending",
         "input_paths": input_paths,
         "expected_claim_ids": expected_claim_ids,
@@ -243,7 +288,8 @@ def main(argv: list[str] | None = None) -> int:
                 raise ValueError(f"evidence-manifest.json has no shard for {feat_id}")
             shard_path = input_dir / "evidence" / str(shard_entry.get("path", ""))
             spec_path = _repo_path(f"specs/{spec_value}")
-            claim_ids = _claim_ids(load_object(shard_path), shard_path)
+            shard_document = load_object(shard_path)
+            claim_ids = _claim_ids(shard_document, shard_path)
             feature_findings = [item for item in findings if item.get("feat_id") == feat_id]
             static_slice_path = slices_dir / f"static-{feat_id}.json"
             write_object(
@@ -274,6 +320,12 @@ def main(argv: list[str] | None = None) -> int:
                 ),
                 _input_resource(spec_path, "frozen_evidence", citable=True),
                 _input_resource(shard_path, "semantic_input", citable=False),
+                *[
+                    _input_resource(path, "source_scope", citable=False)
+                    for path in _source_scope_paths(
+                        shard_document, findings=feature_findings
+                    )
+                ],
                 _input_resource(static_slice_path, "semantic_input", citable=False),
                 _input_resource(output_contract_path, "machine_contract", citable=False),
             ]
@@ -281,6 +333,7 @@ def main(argv: list[str] | None = None) -> int:
             item = {
                 "id": item_id,
                 "type": "feature",
+                "observation_profile": "feature",
                 "feat_id": feat_id,
                 "status": "pending",
                 "input_paths": input_paths,
@@ -301,6 +354,7 @@ def main(argv: list[str] | None = None) -> int:
                     input_paths=input_paths,
                     expected_claim_ids=claim_ids,
                     required_checks=FEATURE_REQUIRED_CHECKS,
+                    observation_profile="feature",
                 ),
             )
 
@@ -318,6 +372,7 @@ def main(argv: list[str] | None = None) -> int:
         static_index["function_global"] = _static_summary(global_findings, global_slice_path)
         static_index_path = slices_dir / "static-index.json"
         write_object(static_index_path, static_index)
+        design_document = load_object(design_shard_path)
 
         global_item_id = "function-global"
         global_output = observations_dir / "function-global.json"
@@ -328,6 +383,21 @@ def main(argv: list[str] | None = None) -> int:
             ),
             _input_resource(design_path, "frozen_evidence", citable=True),
             _input_resource(design_shard_path, "semantic_input", citable=False),
+            *[
+                _input_resource(
+                    _repo_path(f"specs/{entry.get('spec')}"),
+                    "cross_feature_context",
+                    citable=True,
+                )
+                for entry in entries
+                if isinstance(entry.get("spec"), str) and entry.get("spec")
+            ],
+            *[
+                _input_resource(path, "source_scope", citable=False)
+                for path in _source_scope_paths(
+                    design_document, findings=global_findings
+                )
+            ],
             _input_resource(static_index_path, "semantic_input", citable=False),
             _input_resource(global_slice_path, "semantic_input", citable=False),
             _input_resource(
@@ -344,6 +414,7 @@ def main(argv: list[str] | None = None) -> int:
             {
                 "id": global_item_id,
                 "type": "function_global",
+                "observation_profile": "function_global",
                 "status": "pending",
                 "input_paths": global_inputs,
                 "input_resources": global_resources,
@@ -362,6 +433,7 @@ def main(argv: list[str] | None = None) -> int:
                 input_paths=global_inputs,
                 expected_claim_ids=design_claim_ids,
                 required_checks=FUNCTION_REQUIRED_CHECKS,
+                observation_profile="function_global",
             ),
         )
 

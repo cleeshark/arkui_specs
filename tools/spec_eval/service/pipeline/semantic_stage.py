@@ -267,6 +267,11 @@ def _build_work_input(
             for path in input_paths
         ]
     phase_references: list[dict[str, str]] = []
+    observation_profile = str(item.get("observation_profile") or "").strip()
+    if observation_profile not in {"feature", "function_global"}:
+        observation_profile = (
+            "function_global" if item.get("type") == "function_global" else "feature"
+        )
     for name, filename, role in (
         ("observation-contract", "observation-contract.md", "executor_contract"),
         ("observation-guide", "observation-guide.md", "executor_guide"),
@@ -296,6 +301,7 @@ def _build_work_input(
         expected_claim_ids=item.get("expected_claim_ids", []),
         required_checks=item.get("required_checks", []),
         valid_criterion_ids=valid_criterion_ids,
+        observation_profile=observation_profile,
         citable_input_paths=(
             str(resource["canonical_path"])
             for resource in input_resources
@@ -308,6 +314,7 @@ def _build_work_input(
         machine_contract=machine_contract,
     )
     prompt_contract["phase_references"] = phase_references
+    prompt_contract["observation_profile"] = observation_profile
     return C.WorkItemInput(
         job_id=ctx.job_id,
         func_id=ctx.func_id,

@@ -50,6 +50,7 @@ def build_observation_machine_contract(
     expected_claim_ids: Iterable[str],
     required_checks: Iterable[str],
     valid_criterion_ids: Iterable[str],
+    observation_profile: str = "feature",
     evidence_catalog: Iterable[dict[str, Any]] = (),
     citable_input_paths: Iterable[str] = (),
 ) -> dict[str, Any]:
@@ -59,10 +60,32 @@ def build_observation_machine_contract(
     (stable EV- IDs with type/path/description) so a correction turn can
     reference prior evidence without re-declaring it.
     """
+    if observation_profile not in K.OBSERVATION_PROFILES:
+        raise ValueError(f"unknown observation profile: {observation_profile!r}")
     claims = list(expected_claim_ids)
     checks = list(required_checks)
+    profile_rules = {
+        "feature": {
+            "scope": "one Feature and its local acceptance claims",
+            "breadths": ["local", "feat_core"],
+            "source_loading": [
+                "Read the Feature Spec first, then only the declared Feature source/test/SDK scopes.",
+                "Do not reopen Design, other Feature shards, or function-global slices unless a named claim requires it.",
+            ],
+        },
+        "function_global": {
+            "scope": "Function-wide Design, Registry, and cross-Feature contracts",
+            "breadths": ["function_shared", "feat_core", "local"],
+            "source_loading": [
+                "Read static-index first, then Design/Registry and declared global source/build/SDK/test scopes.",
+                "Reopen a Feature slice only for a named unresolved cross-Feature question; do not scan every Feature shard.",
+            ],
+        },
+    }[observation_profile]
     return {
         **_common(),
+        "observation_profile": observation_profile,
+        "profile_rules": profile_rules,
         "judgment_rules": _observation_judgment_rules(),
         "payload_fields": list(K.OBSERVATION_JUDGMENT_FIELDS),
         "claim_judgment_fields": list(K.CLAIM_JUDGMENT_FIELDS),
@@ -136,6 +159,7 @@ def build_correction_machine_contract(
     *,
     payload_kind: str,
     typed_errors: Iterable[dict[str, Any]],
+    observation_profile: str = "feature",
     allowed_paths: Iterable[str] = (),
     evidence_catalog: Iterable[dict[str, Any]] = (),
 ) -> dict[str, Any]:
@@ -145,11 +169,25 @@ def build_correction_machine_contract(
     candidate is already normalized; the service owns patch application,
     identity, ordering, hashes and final validation.
     """
+    if observation_profile not in K.OBSERVATION_PROFILES:
+        raise ValueError(f"unknown observation profile: {observation_profile!r}")
     errors = [dict(error) for error in typed_errors]
+    profile_rules = {
+        "feature": [
+            "Keep patches local to the named Feature Claim/Unit/Observation paths.",
+            "Do not alter cross-Feature ownership, global mappings, or non-target claims.",
+        ],
+        "function_global": [
+            "Keep patches local to the named Function-global Claim/Unit/Observation paths.",
+            "Do not alter cross-Feature ownership, boundary roles, or non-target claims unless the typed error names that exact path.",
+            "Do not upgrade a global outcome without a typed semantic error and matching frozen evidence.",
+        ],
+    }[observation_profile]
     return {
         "evaluation_protocol_version": K.EVALUATION_PROTOCOL_VERSION,
         "mode": "correct",
         "payload_kind": payload_kind,
+        "observation_profile": observation_profile,
         "output_format": "json_patch",
         "service_handled_error_codes": [
             "CLAIM_SET_MISMATCH",
@@ -179,6 +217,7 @@ def build_correction_machine_contract(
             "Never modify document identity, source revision, ordering, canonical IDs, hashes, or derived fields.",
             "The service applies and validates the patch; do not calculate canonical IDs or hashes.",
             "Return patches and notes only. Encode every patch value as a JSON string; use \"null\" for remove.",
+            *profile_rules,
         ],
         "evidence_catalog": list(evidence_catalog),
     }

@@ -685,6 +685,10 @@ class JudgmentFlow:
         )
         base_contract = dict(work.prompt_extras)
         payload_kind = str(base_contract.get("payload_kind", "observation"))
+        observation_profile = str(
+            work.work_item.get("observation_profile")
+            or ("function_global" if work.work_item.get("type") == "function_global" else "feature")
+        )
         catalog = breakpoint_data.get("evidence_catalog", [])
         error_codes = {str(error.get("code")) for error in typed_errors}
         needs_evidence = any(
@@ -707,6 +711,7 @@ class JudgmentFlow:
         machine_contract = build_correction_machine_contract(
             payload_kind=payload_kind,
             typed_errors=typed_errors,
+            observation_profile=observation_profile,
             allowed_paths=allowed_paths,
             evidence_catalog=catalog if needs_evidence else (),
         )
@@ -761,5 +766,6 @@ class JudgmentFlow:
                 schema_dir=self.ctx.run_dir,
                 correction_contract=correction_contract,
                 machine_contract=machine_contract,
+                observation_profile=observation_profile,
             ),
         )

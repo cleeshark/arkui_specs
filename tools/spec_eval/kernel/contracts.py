@@ -39,6 +39,10 @@ NOT_VERIFIABLE = "NOT_VERIFIABLE"
 
 BREADTHS = ("local", "feat_core", "function_shared")
 
+# Observation work-item profiles share one transport/state machine but have
+# different source scope and correction risk.
+OBSERVATION_PROFILES = ("feature", "function_global")
+
 UNIT_FACET_TYPES = (
     "condition",
     "input",

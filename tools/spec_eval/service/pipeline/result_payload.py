@@ -104,6 +104,7 @@ def correct_prompt_contract(
     schema_dir: Path,
     correction_contract: dict[str, Any],
     machine_contract: dict[str, Any],
+    observation_profile: str = "feature",
 ) -> dict[str, Any]:
     """Contract for one bounded JSON Patch correction turn."""
     contract = copy.deepcopy(base_contract)
@@ -120,6 +121,7 @@ def correct_prompt_contract(
         "candidate_path": str(candidate_path),
         "typed_errors": list(typed_errors),
         "correction_contract": correction_contract,
+        "observation_profile": observation_profile,
         "machine_contract": machine_contract,
         "correction_constraints": [
             "Read the invalid candidate at candidate_path and every typed error.",
