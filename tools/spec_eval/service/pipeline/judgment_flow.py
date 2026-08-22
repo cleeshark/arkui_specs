@@ -45,7 +45,7 @@ from spec_eval.service.pipeline.correction import (
     apply_deterministic_correction,
     apply_json_patch,
     is_model_correction_error,
-    typed_error_json_path,
+    resolve_typed_error_json_path,
     validate_patch_scope,
 )
 from spec_eval.service.store.repositories import (
@@ -542,12 +542,27 @@ class JudgmentFlow:
                 "no model-correctable Observation errors remain",
             )
 
+        try:
+            correct_work = self._correct_work_input(
+                work, candidate_path, model_dicts,
+                {**breakpoint_data, "errors": model_dicts},
+            )
+        except (OSError, json.JSONDecodeError, ValueError, TypeError) as exc:
+            SS.set_work_item_state(
+                self.ctx.run_dir, work.work_item_id,
+                SS.CORRECTION_INVALID_TERMINAL,
+            )
+            return self._fail(
+                "semantic_failed",
+                {
+                    "work_item_id": work.work_item_id,
+                    "state": SS.CORRECTION_INVALID_TERMINAL,
+                    "error": f"correction path resolution failed: {exc}",
+                },
+                f"correction path resolution failed: {exc}",
+            )
         SS.set_work_item_state(
             self.ctx.run_dir, work.work_item_id, SS.CORRECTION_PENDING
-        )
-        correct_work = self._correct_work_input(
-            work, candidate_path, model_dicts,
-            {**breakpoint_data, "errors": model_dicts},
         )
         result, failure = self._execute(correct_work, "correct")
         if failure == "cancelled":
@@ -701,7 +716,11 @@ class JudgmentFlow:
             or code.startswith("GAP_")
             for code in error_codes
         )
-        allowed_paths = [typed_error_json_path(str(error.get("path", ""))) for error in typed_errors]
+        candidate_document = json.loads(candidate_path.read_text(encoding="utf-8"))
+        allowed_paths = [
+            resolve_typed_error_json_path(candidate_document, error)
+            for error in typed_errors
+        ]
         correction_contract = {
             "format": "json_patch",
             "base": "published_candidate",
