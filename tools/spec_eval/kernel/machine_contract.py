@@ -169,8 +169,8 @@ def build_correction_machine_contract(
     candidate is already normalized; the service owns patch application,
     identity, ordering, hashes and final validation.
     """
-    if observation_profile not in K.OBSERVATION_PROFILES:
-        raise ValueError(f"unknown observation profile: {observation_profile!r}")
+    if observation_profile not in K.CORRECTION_PROFILES:
+        raise ValueError(f"unknown correction profile: {observation_profile!r}")
     errors = [dict(error) for error in typed_errors]
     profile_rules = {
         "feature": [
