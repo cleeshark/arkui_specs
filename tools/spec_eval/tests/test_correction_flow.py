@@ -16,6 +16,7 @@ from spec_eval.service.pipeline.correction import (
     apply_deterministic_correction,
     apply_json_patch,
     is_deterministic_error,
+    is_fatal_error,
     is_model_correction_error,
     resolve_typed_error_json_path,
     typed_error_json_path,
@@ -243,14 +244,36 @@ class CorrectionFlowTest(unittest.TestCase):
                 error,
             )
 
-    def test_evidence_error_is_model_correctable_but_mapping_is_not(self) -> None:
+    def test_kernel_repairability_is_the_only_correction_router(self) -> None:
         self.assertTrue(is_model_correction_error({"code": "EVIDENCE_KEY_UNKNOWN"}))
         self.assertFalse(is_deterministic_error({"code": "EVIDENCE_KEY_UNKNOWN"}))
         self.assertTrue(is_deterministic_error({"code": "OBSERVATION_FIELD_INVALID"}))
         self.assertFalse(is_model_correction_error({"code": "OBSERVATION_FIELD_INVALID"}))
-        # Unknown validator codes are fail-closed and never delegated to a
-        # model until explicitly classified as semantic/evidence.
-        self.assertTrue(is_deterministic_error({"code": "NEW_UNCLASSIFIED_CODE"}))
+        self.assertTrue(is_model_correction_error({
+            "code": "FINDING_CARDINALITY_VIOLATED",
+        }))
+        self.assertFalse(is_deterministic_error({
+            "code": "FINDING_CARDINALITY_VIOLATED",
+        }))
+        # Unknown validator codes fail closed as fatal and are not silently
+        # delegated to either correction path.
+        unknown = {"code": "NEW_UNCLASSIFIED_CODE"}
+        self.assertTrue(is_fatal_error(unknown))
+        self.assertFalse(is_deterministic_error(unknown))
+        self.assertFalse(is_model_correction_error(unknown))
+
+    def test_issue_65_aggregation_errors_all_reach_model_correction(self) -> None:
+        for code in (
+            "FINDING_CARDINALITY_VIOLATED",
+            "POLICY_BASIS_INVALID",
+            "CONTRADICTION_BASIS_INVALID",
+            "MAPPING_CONCLUSION_FORBIDDEN",
+            "MAPPING_NV_REQUIRED",
+        ):
+            with self.subTest(code=code):
+                self.assertTrue(is_model_correction_error({"code": code}))
+                self.assertFalse(is_deterministic_error({"code": code}))
+                self.assertFalse(is_fatal_error({"code": code}))
 
     def test_correction_schema_is_generated_and_compact(self) -> None:
         schema = build_envelope_schema("correction")

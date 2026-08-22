@@ -11,6 +11,7 @@ from __future__ import annotations
 from typing import Any, Iterable
 
 from . import contracts as K
+from .errors import ERROR_REGISTRY, SERVICE_NORMALIZATION
 
 
 def _common() -> dict[str, Any]:
@@ -198,19 +199,8 @@ def build_correction_machine_contract(
         "observation_profile": observation_profile,
         "output_format": "json_patch",
         "service_handled_error_codes": [
-            "CLAIM_SET_MISMATCH",
-            "CLAIM_ROW_DUPLICATED",
-            "UNIT_ROW_INVALID",
-            "UNIT_CLAIM_OUTCOME_CONFLICT",
-            "CHECK_COVERAGE_INCOMPLETE",
-            "CRITERION_UNKNOWN",
-            "OBSERVATION_CLAIM_UNEXPECTED",
-            "OBSERVATION_CLAIM_IDS_EMPTY",
-            "OBSERVATION_CLAIM_COVERAGE_INCOMPLETE",
-            "OBSERVATION_FIELD_INVALID",
-            "CLAIM_OUTCOME_INVALID",
-            "DEFECT_KEYS_INVALID",
-            "DEFECT_KEY_UNDEFINED",
+            code for code, repairability in ERROR_REGISTRY.items()
+            if repairability == SERVICE_NORMALIZATION
         ],
         "model_correction_scope": [
             "evidence verification",
@@ -247,6 +237,11 @@ def build_aggregation_machine_contract(
         "defect_ownership_fields": list(K.DEFECT_OWNERSHIP_FIELDS),
         "contradiction_basis_fields": list(K.CONTRADICTION_BASIS_FIELDS),
         "policy_basis_fields": list(K.POLICY_BASIS_FIELDS),
+        "policy_basis_criterion_ids": list(K.POLICY_BASIS_CRITERION_IDS),
+        "policy_basis_order_rule": (
+            "outcome_policy_bases must contain exactly the listed six "
+            "policy_basis_criterion_ids in that order, once each."
+        ),
         "semantic_conclusion_enum": list(K.SEMANTIC_CONCLUSIONS),
         "applicability_enum": list(K.APPLICABILITY_VALUES),
         "finding_severity_enum": list(K.FINDING_SEVERITIES),

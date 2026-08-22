@@ -214,7 +214,7 @@ def _aggregation_defs() -> dict:
     policy = {
         "type": "object",
         "properties": {
-            "criterion_id": _non_empty_string(),
+            "criterion_id": _enum(*K.POLICY_BASIS_CRITERION_IDS),
             "content_status": _enum(*K.POLICY_CONTENT_STATUSES),
             "evidence_status": _enum(*K.POLICY_EVIDENCE_STATUSES),
             "conflict_scope": _enum(*K.POLICY_CONFLICT_SCOPES),
@@ -234,7 +234,9 @@ def _aggregation_defs() -> dict:
                 "type": "array", "items": {"$ref": "#/$defs/defectOwnership"},
             },
             "outcome_policy_bases": {
-                "type": "array", "items": {"$ref": "#/$defs/policyBasis"},
+                "type": "array",
+                "items": {"$ref": "#/$defs/policyBasis"},
+                "minItems": len(K.POLICY_BASIS_CRITERION_IDS),
             },
             "criterion_results": {
                 "type": "array", "items": {"$ref": "#/$defs/criterionJudgment"},

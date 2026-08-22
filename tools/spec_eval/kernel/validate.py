@@ -18,7 +18,12 @@ from collections import Counter
 from typing import Any, Iterable
 
 from . import contracts as K
-from .errors import MODEL_CORRECTION, SERVICE_NORMALIZATION, TypedError
+from .errors import (
+    MODEL_CORRECTION,
+    SERVICE_NORMALIZATION,
+    TypedError,
+    repairability_of,
+)
 from .normalize import DEFECT_KEY, OUTCOME_POLICY_BASIS_CRITERIA
 from .aggregation_context import criteria_by_id, mapped_claim_ids as context_mapped_claim_ids
 
@@ -31,6 +36,7 @@ _REPETITIVE_TEXT_RATIO = 0.50
 
 
 def _err(code: str, path: str, **kwargs: Any) -> TypedError:
+    kwargs.setdefault("repairability", repairability_of(code))
     return TypedError(code=code, path=path, **kwargs)
 
 
@@ -795,6 +801,7 @@ def validate_aggregation_document(
 
     ownership = _rows(document.get("defect_ownership"))
     finding_owners: dict[str, list[str]] = {}
+    owned_defect_keys: set[str] = set()
     for index, record in enumerate(ownership):
         row_label = f"{label}.defect_ownership[{index}]"
         defect_key = str(record.get("defect_key", ""))
@@ -827,6 +834,8 @@ def validate_aggregation_document(
                 entity_type="defect", entity_id=defect_key,
                 expected="at least one finding",
             ))
+        else:
+            owned_defect_keys.add(defect_key)
         for finding_id in finding_ids:
             finding_owners.setdefault(finding_id, []).append(defect_key)
             finding = findings_by_id.get(finding_id)
@@ -868,7 +877,7 @@ def validate_aggregation_document(
                 entity_type="contradiction_basis", entity_id=str(index),
             ))
         defect_key = basis.get("primary_defect_key")
-        if not isinstance(defect_key, str) or defect_key not in finding_owners:
+        if not isinstance(defect_key, str) or defect_key not in owned_defect_keys:
             errors.append(_err(
                 "CONTRADICTION_BASIS_INVALID", f"{row_label}.primary_defect_key",
                 entity_type="contradiction_basis", entity_id=str(index),
