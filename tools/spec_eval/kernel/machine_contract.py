@@ -42,16 +42,10 @@ def _observation_judgment_rules() -> list[str]:
         "Every NOT_VERIFIABLE claim reason and unit fact must describe the "
         "gap; the structured verification_gap object (checked_scope, "
         "missing_evidence, consequence) is validated by the service.",
-        "Every claim_review must contain at least one atomic unit_review. "
-        "reviewed_units and unit_reviews must contain the same non-empty unit IDs "
-        "exactly once and in the same order; split compound claims by independent "
-        "conditions, inputs, data fields, state transitions, observable results, "
-        "failure/recovery paths, timing, compatibility, or design facets.",
-        "Derive the claim local_outcome from its units: SUPPORTED requires every "
-        "unit to be SUPPORTED, NOT_APPLICABLE requires every unit to be "
-        "NOT_APPLICABLE, and CONFLICT, MISSING, or NOT_VERIFIABLE requires at "
-        "least one unit with that same outcome. Keep unit facts and evidence "
-        "specific to the unit; claim reason/evidence is the summary.",
+        "For unit coverage, emit atomic unit_reviews and follow the injected "
+        "Observation references for decomposition and Claim outcome derivation. "
+        "The service derives published reviewed_units from unit_id order and "
+        "validates unit presence, IDs, evidence, and outcome consistency.",
     ]
 
 
@@ -79,18 +73,14 @@ def build_observation_machine_contract(
             "scope": "one Feature and its local acceptance claims",
             "breadths": ["local", "feat_core"],
             "source_loading": [
-                "Read the Feature Spec first, then use declared input_paths as prioritized Feature focus paths; they are not exhaustive.",
-                "Expand within the frozen repo_root to relevant parent, caller, helper, build, test, SDK, and dependency paths required by a named claim; an omitted path is not evidence of absence.",
-                "Do not scan unrelated Feature shards or function-global material by default.",
+                "Follow the injected Observation references for source loading. Use declared input_paths as Feature focus hints and expand within frozen repo_root when a named claim requires it.",
             ],
         },
         "function_global": {
             "scope": "Function-wide Design, Registry, and cross-Feature contracts",
             "breadths": ["function_shared", "feat_core", "local"],
             "source_loading": [
-                "Read static-index first, then Design/Registry and use declared input_paths as prioritized global focus paths; they are not exhaustive.",
-                "Expand within the frozen repo_root to relevant source, build, SDK, test, dependency, and cross-Feature paths required by a named question.",
-                "Reopen a Feature slice only for a named unresolved cross-Feature question; do not scan every Feature shard.",
+                "Follow the injected Observation references for source loading. Use declared input_paths as Function focus hints and expand within frozen repo_root when a named question requires it.",
             ],
         },
     }[observation_profile]

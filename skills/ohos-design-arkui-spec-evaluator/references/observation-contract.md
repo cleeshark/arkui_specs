@@ -26,11 +26,12 @@ Registry, generated site, confirmed Review, or historical evaluator directories.
 
 Keep initialized identity, expected claims, and required checks unchanged. Complete exactly one
 `claim_reviews` row for every initialized claim, in initialized order. Every Claim must contain at
-least one atomic `unit_reviews` row, even when the Claim has only one facet. `reviewed_units` and
-`unit_reviews` must contain the same non-empty unit IDs exactly once and in the same order. Split
-compound Claims by independently verifiable conditions, inputs, data fields, transformations, state
-transitions, callback/observable results, failure or recovery paths, timing guarantees,
-compatibility sides, or design facets; do not create duplicate or blanket units.
+least one atomic `unit_reviews` row, even when the Claim has only one facet. Give each Unit a unique,
+non-empty `unit_id` in review order; the service derives published `reviewed_units` from those IDs,
+so the worker payload must not emit `reviewed_units`. Split compound Claims by independently
+verifiable conditions, inputs, data fields, transformations, state transitions, callback/observable
+results, failure or recovery paths, timing guarantees, compatibility sides, or design facets; do not
+create duplicate or blanket units.
 
 The Claim outcome is derived from its units: `SUPPORTED` requires all units to be supported,
 `NOT_APPLICABLE` requires all units to be inapplicable, and `CONFLICT`, `MISSING`, or
