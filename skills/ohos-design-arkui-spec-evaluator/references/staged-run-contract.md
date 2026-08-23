@@ -235,7 +235,10 @@ In `aggregation.json`:
 - Replace all 20 template Criterion results in place without changing their order.
 - Assign every Finding to exactly one `defect_ownership` record. The record names one primary
   Criterion and any secondary Criteria affected by the same root defect.
-- Add one `contradiction_bases` record for every and only every `CONTRADICTED` Criterion.
+- Add one `contradiction_bases` record for every root defect that explains one or more
+  `CONTRADICTED` Criteria.  A basis is shared-root data and has no `criterion_id`; the
+  service derives Criterion coverage from the Findings referenced by its
+  `primary_defect_key`.  The covered Criteria must equal the set of contradicted Criteria.
 - Complete every initialized `outcome_policy_bases` record in fixed order. These records remain
   run-local and are not copied into `semantic-result.json`.
 - Every `PARTIALLY_SUPPORTED`, `CONTRADICTED`, or `MISSING` Criterion must contain at least one
@@ -354,14 +357,12 @@ Contradicted for a core conflict. A core conflict takes precedence over omission
   ],
   "contradiction_bases": [
     {
-      "criterion_id": "COMPATIBILITY-SYSTEM-IMPACT",
-      "core_claim": "The Function has no participating external subsystem.",
+      "statement": "The Function-wide system boundary is materially false.",
+      "left_assertion": "The Design asserts that the Function has no participating external subsystem.",
+      "right_assertion": "Validated evidence shows a participating external dependency.",
       "affected_feat_ids": ["Feat-01"],
-      "independent_contract_families": [],
-      "function_shared_assertion": true,
-      "core_scope": "system-boundary",
       "correction_scope": "replace_core",
-      "why_partial_is_insufficient": "The asserted Function-wide system boundary is false.",
+      "function_shared_assertion": true,
       "primary_defect_key": "divider-graphic-2d-dependency"
     }
   ]

@@ -65,7 +65,7 @@ and contain no device-specific branch.
 - `PARTIALLY_SUPPORTED`: the main body exists but one or more applicable units are incomplete,
   inaccurate, or locally contradicted.
 - `CONTRADICTED`: the Criterion core or primary architecture direction conflicts with frozen
-  implementation or contract evidence; record a `contradiction_bases` entry.
+implementation or contract evidence; record a root-defect `contradiction_bases` entry.
 - `MISSING`: the Rubric-defined content or covered unit is absent. Do not promote one missing
   subcheck to Criterion-wide `MISSING`.
 - `NOT_APPLICABLE`: the Rubric permits it and reproducible evidence proves inapplicability.

@@ -36,6 +36,7 @@ from spec_eval.kernel.normalize import (
     normalize_aggregation,
     normalize_observation,
     project_observation_derived_fields,
+    semantic_finding_id,
 )
 from spec_eval.kernel.schema_gen import build_envelope_schema
 from spec_eval.kernel.validate import (
@@ -962,7 +963,15 @@ class NormalizeAggregationTest(unittest.TestCase):
     def _judgment(self) -> dict:
         return {
             "cross_feat_contracts_reviewed": True,
-            "contradiction_bases": [],
+            "contradiction_bases": [{
+                "statement": "The published contract is materially contradicted.",
+                "left_assertion": "The specification promises the published behavior.",
+                "right_assertion": "Mapped evidence contradicts that behavior.",
+                "affected_feat_ids": ["Feat-01"],
+                "correction_scope": "replace_core",
+                "function_shared_assertion": False,
+                "primary_defect_key": "missing-source-proof",
+            }],
             "defect_ownership": [{
                 "defect_key": "missing-source-proof",
                 "primary_criterion_id": "CORRECTNESS-SOURCE-SUPPORT",
@@ -1164,6 +1173,45 @@ class NormalizeAggregationTest(unittest.TestCase):
         result = self._normalize(source_observation_ids=["feature:Feat-01"])
         errors = validate_aggregation_document(
             result.document, criterion_order=list(CRITERIA)
+        )
+        self.assertEqual(blocking(errors), [], [e.to_dict() for e in errors])
+
+    def test_shared_contradiction_basis_covers_multiple_criteria(self) -> None:
+        result = self._normalize(source_observation_ids=["feature:Feat-01"])
+        document = result.document
+        secondary = document["criterion_results"][1]
+        secondary_id = semantic_finding_id(
+            func_id=document["func_id"],
+            defect_key="missing-source-proof",
+            criterion_id=secondary["criterion_id"],
+            claim_id=None,
+        )
+        secondary.update({
+            "conclusion": "CONTRADICTED",
+            "findings": [{
+                "finding_id": secondary_id,
+                "criterion_id": secondary["criterion_id"],
+                "severity": "Major",
+                "conclusion": "CONTRADICTED",
+                "message": "The shared root contract is contradicted.",
+                "recommendation": "Align the shared contract with implementation.",
+                "evidence_ids": [secondary["evidence"][0]["evidence_id"]],
+            }],
+        })
+        owner = document["defect_ownership"][0]
+        owner["finding_ids"].append(secondary_id)
+        owner["secondary_criterion_ids"] = [secondary["criterion_id"]]
+        document["contradiction_bases"] = [{
+            "statement": "One shared root defect invalidates both Criteria.",
+            "left_assertion": "The documents promise the shared behavior.",
+            "right_assertion": "Validated evidence contradicts the shared behavior.",
+            "affected_feat_ids": ["Feat-01"],
+            "correction_scope": "replace_core",
+            "function_shared_assertion": True,
+            "primary_defect_key": "missing-source-proof",
+        }]
+        errors = validate_aggregation_document(
+            document, criterion_order=list(CRITERIA)
         )
         self.assertEqual(blocking(errors), [], [e.to_dict() for e in errors])
 

@@ -55,8 +55,9 @@ baseline.
 
 Staged schema v2 runs are produced by evaluator
 `skill:ohos-design-arkui-spec-evaluator@0.3.0`. Schema v2 requires atomic `claim_reviews`,
-evidence-backed required-check mapping, stable defect ownership, an explicit core-conflict basis
-for every `CONTRADICTED` Criterion, atomic `unit_reviews` for each Claim, structured
+evidence-backed required-check mapping, stable defect ownership, an explicit root-defect
+core-conflict basis covering the `CONTRADICTED` Criteria through owned Findings, atomic
+`unit_reviews` for each Claim, structured
 `modeling_basis` evidence, NOT_VERIFIABLE aggregation guards, run-local `outcome_policy_bases`,
 machine-readable `output-contract.json`, deterministic `aggregation-context.json` mapping,
 run-global inherited evidence catalogs for aggregation, observation evidence cardinality
