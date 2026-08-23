@@ -150,6 +150,20 @@ class CorrectionFlowTest(unittest.TestCase):
         )
         self.assertEqual(result["claim_reviews"][0]["defect_keys"], ["defect.one"])
 
+    def test_json_patch_preserves_plain_string_values(self) -> None:
+        result = apply_json_patch(
+            {"criterion_results": [{"findings": [{"severity": "Major"}]}]},
+            [{
+                "op": "replace",
+                "path": "/criterion_results/0/findings/0/severity",
+                "value": "Critical",
+            }],
+        )
+        self.assertEqual(
+            result["criterion_results"][0]["findings"][0]["severity"],
+            "Critical",
+        )
+
     def test_patch_scope_blocks_identity_changes(self) -> None:
         violations = validate_patch_scope(
             [{"op": "replace", "path": "/func_id", "value": json.dumps("x")}],
