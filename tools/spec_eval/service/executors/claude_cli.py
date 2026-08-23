@@ -15,6 +15,8 @@ post-hoc cost analysis.
 
 from __future__ import annotations
 
+import copy
+import hashlib
 import json
 import os
 import re
@@ -92,6 +94,7 @@ class ClaudeCliExecutor:
             "executor_version": C.CLAUDE_EXECUTOR_VERSION,
             "protocol_version": C.PROTOCOL_VERSION,
             "output_schema": self._output_schema_path.name,
+            "payload_transport": "object_or_json_string",
         }
         if self._max_output_tokens is not None:
             desc["max_output_tokens"] = self._max_output_tokens
@@ -112,7 +115,8 @@ class ClaudeCliExecutor:
                 error="claude CLI not available",
             )
 
-        argv = self._build_argv(work)
+        schema_content, schema_metadata = self._transport_schema(work)
+        argv = self._build_argv(work, schema_content)
         prompt = build_executor_prompt(work)
         result_parent = Path(work.executor_result_path).parent
         result_parent.mkdir(parents=True, exist_ok=True)
@@ -148,6 +152,11 @@ class ClaudeCliExecutor:
 
         emit(C.ExecutionEvent(
             kind="command", message=" ".join(_redacted_argv(argv))
+        ))
+        emit(C.ExecutionEvent(
+            kind="info",
+            message="claude output schema prepared",
+            data=schema_metadata,
         ))
         started = time.monotonic()
         env = self._build_env()
@@ -193,7 +202,7 @@ class ClaudeCliExecutor:
 
         return self._capture_and_validate(
             work, proc_result, event_count, started, usage, telemetry,
-            stdout_log,
+            stdout_log, schema_metadata,
         )
 
     # --- internals --------------------------------------------------------
@@ -206,6 +215,7 @@ class ClaudeCliExecutor:
         usage: TokenUsageAccumulator,
         telemetry: ExecutionTelemetryAccumulator,
         stdout_log: str,
+        schema_metadata: dict[str, Any],
     ) -> C.ExecutionResult:
         # stdout_log is a stream-json NDJSON file; find the final result event.
         result_event = _find_result_event(stdout_log)
@@ -218,17 +228,6 @@ class ClaudeCliExecutor:
                 elapsed_seconds=time.monotonic() - started,
                 event_count=event_count,
             )
-        if result_event.get("is_error"):
-            error_msg = result_event.get("result") or "claude reported an error"
-            return _execution_result(
-                usage, telemetry,
-                status=C.STATUS_FAILED,
-                exit_code=proc_result.exit_code,
-                error=f"claude error: {error_msg}",
-                elapsed_seconds=time.monotonic() - started,
-                event_count=event_count,
-            )
-
         # Extract aggregate usage from the result event (supplements
         # streaming accumulation with the authoritative final totals).
         result_usage = result_event.get("usage")
@@ -244,25 +243,29 @@ class ClaudeCliExecutor:
         summary = _build_execution_summary(
             result_event, work, telemetry.snapshot(),
         )
-        summary_tag = _safe_work_item_tag(work.work_item_id)
-        summary_mode = work.prompt_extras.get("mode", "observe")
-        if summary_mode != "observe":
-            summary_tag = f"{summary_tag}.{summary_mode}"
-        summary_path = (
-            Path(work.executor_result_path).parent
-            / f"claude.{summary_tag}.execution-summary.json"
-        )
-        try:
-            summary_path.write_text(
-                json.dumps(summary, ensure_ascii=False, indent=2),
-                encoding="utf-8",
+        summary["output_schema"] = schema_metadata
+
+        if result_event.get("is_error"):
+            summary["result_status"] = "error"
+            _write_execution_summary(work, summary)
+            error_msg = result_event.get("result") or "claude reported an error"
+            return _execution_result(
+                usage, telemetry,
+                status=C.STATUS_FAILED,
+                exit_code=proc_result.exit_code,
+                error=f"claude error: {error_msg}",
+                elapsed_seconds=time.monotonic() - started,
+                event_count=event_count,
+                cost_usd=cost_usd,
+                num_turns=num_turns,
+                model_usage=model_usage,
             )
-        except OSError:
-            pass  # telemetry must never fail a job
 
         # Extract structured_output from the result event.
         structured = result_event.get("structured_output")
         if not isinstance(structured, dict):
+            summary["result_status"] = "missing_structured_output"
+            _write_execution_summary(work, summary)
             return _execution_result(
                 usage, telemetry,
                 status=C.STATUS_FAILED,
@@ -274,6 +277,29 @@ class ClaudeCliExecutor:
                 num_turns=num_turns,
                 model_usage=model_usage,
             )
+
+        structured, normalizations, normalization_error = (
+            _normalize_structured_output(structured)
+        )
+        summary["transport_normalizations"] = normalizations
+        if normalization_error is not None:
+            summary["result_status"] = "transport_normalization_failed"
+            summary["transport_normalization_error"] = normalization_error
+            _write_execution_summary(work, summary)
+            return _execution_result(
+                usage, telemetry,
+                status=C.STATUS_FAILED,
+                exit_code=proc_result.exit_code,
+                error=normalization_error,
+                elapsed_seconds=time.monotonic() - started,
+                event_count=event_count,
+                cost_usd=cost_usd,
+                num_turns=num_turns,
+                model_usage=model_usage,
+            )
+
+        summary["result_status"] = "structured_output_captured"
+        _write_execution_summary(work, summary)
 
         # Write the structured output as the executor result file.
         try:
@@ -453,6 +479,13 @@ class ClaudeCliExecutor:
                 f"work output schema is not compatible: {schema_path}: "
                 + "; ".join(errors)
             )
+        transport_schema = _build_transport_schema(schema)
+        transport_errors = validate_strict_output_schema(transport_schema)
+        if transport_errors:
+            return (
+                f"work transport schema is not compatible: {schema_path}: "
+                + "; ".join(transport_errors)
+            )
         return None
 
     def _build_env(self) -> dict[str, str] | None:
@@ -462,10 +495,9 @@ class ClaudeCliExecutor:
         env["CLAUDE_CODE_MAX_OUTPUT_TOKENS"] = str(int(self._max_output_tokens))
         return env
 
-    def _build_argv(self, work: C.WorkItemInput) -> list[str]:
-        schema_path = self._schema_path_for(work)
-        schema_content = schema_path.read_text(encoding="utf-8")
-
+    def _build_argv(
+        self, work: C.WorkItemInput, schema_content: str
+    ) -> list[str]:
         argv = [self._command, "-p"]
         if self._model:
             argv += ["--model", str(self._model)]
@@ -479,6 +511,26 @@ class ClaudeCliExecutor:
             "--allowedTools", "Bash Read Grep",
         ]
         return argv
+
+    def _transport_schema(
+        self, work: C.WorkItemInput
+    ) -> tuple[str, dict[str, Any]]:
+        schema_path = self._schema_path_for(work)
+        source = schema_path.read_bytes()
+        canonical = json.loads(source)
+        transport = _build_transport_schema(canonical)
+        content = json.dumps(
+            transport, ensure_ascii=False, separators=(",", ":")
+        )
+        encoded = content.encode("utf-8")
+        return content, {
+            "path": str(schema_path),
+            "source_bytes": len(source),
+            "source_sha256": hashlib.sha256(source).hexdigest(),
+            "transport_bytes": len(encoded),
+            "transport_sha256": hashlib.sha256(encoded).hexdigest(),
+            "payload_transport": "object_or_json_string",
+        }
 
     def _schema_path_for(self, work: C.WorkItemInput) -> Path:
         schema_path = work.prompt_extras.get("schema_path")
@@ -510,6 +562,92 @@ def _find_result_event(ndjson_path: str) -> dict[str, Any] | None:
         if isinstance(event, dict) and event.get("type") == "result":
             return event
     return None
+
+
+def _build_transport_schema(canonical: dict[str, Any]) -> dict[str, Any]:
+    """Allow one JSON-string transport fallback for the envelope payload.
+
+    Claude Code implements ``--json-schema`` through its internal
+    ``StructuredOutput`` tool. Some compatible model providers serialize a
+    large nested ``payload`` object as JSON text before issuing that tool
+    call. Accept both forms at the CLI boundary, then decode once and run the
+    unchanged canonical envelope schema in :meth:`_validate_result`.
+    """
+    transport = copy.deepcopy(canonical)
+    payload_schema = transport.get("properties", {}).get("payload")
+    target = _resolve_local_schema_ref(transport, payload_schema)
+    if not isinstance(target, dict):
+        return transport
+    declared = target.get("type")
+    if declared == "object":
+        target["type"] = ["object", "string"]
+    elif isinstance(declared, list) and "object" in declared:
+        target["type"] = list(dict.fromkeys([*declared, "string"]))
+    return transport
+
+
+def _resolve_local_schema_ref(
+    document: dict[str, Any], node: Any
+) -> dict[str, Any] | None:
+    if not isinstance(node, dict):
+        return None
+    reference = node.get("$ref")
+    if not isinstance(reference, str) or not reference.startswith("#/"):
+        return node
+    target: Any = document
+    for token in reference[2:].split("/"):
+        token = token.replace("~1", "/").replace("~0", "~")
+        if not isinstance(target, dict) or token not in target:
+            return None
+        target = target[token]
+    return target if isinstance(target, dict) else None
+
+
+def _normalize_structured_output(
+    structured: dict[str, Any]
+) -> tuple[dict[str, Any], list[str], str | None]:
+    """Decode only the known Claude transport wrappers, at most once."""
+    normalized = dict(structured)
+    changes: list[str] = []
+    payload = normalized.get("payload")
+    if isinstance(payload, str):
+        try:
+            normalized["payload"] = json.loads(payload)
+        except json.JSONDecodeError as exc:
+            return (
+                normalized,
+                changes,
+                "claude payload string is not valid JSON: "
+                f"line {exc.lineno} column {exc.colno}: {exc.msg}",
+            )
+        changes.append("payload_json_string_decoded")
+    if (
+        normalized.get("status") == "completed"
+        and normalized.get("error") == "null"
+    ):
+        normalized["error"] = None
+        changes.append("completed_error_string_null_decoded")
+    return normalized, changes, None
+
+
+def _write_execution_summary(
+    work: C.WorkItemInput, summary: dict[str, Any]
+) -> None:
+    summary_tag = _safe_work_item_tag(work.work_item_id)
+    summary_mode = work.prompt_extras.get("mode", "observe")
+    if summary_mode != "observe":
+        summary_tag = f"{summary_tag}.{summary_mode}"
+    summary_path = (
+        Path(work.executor_result_path).parent
+        / f"claude.{summary_tag}.execution-summary.json"
+    )
+    try:
+        summary_path.write_text(
+            json.dumps(summary, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+    except OSError:
+        pass  # telemetry must never fail a job
 
 
 def _float_or_none(value: Any) -> float | None:

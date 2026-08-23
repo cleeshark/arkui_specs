@@ -11,9 +11,11 @@ from __future__ import annotations
 import json
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
 
+from spec_eval.kernel.schema_gen import write_envelope_schema
 from spec_eval.service.executors import contract as C
 from spec_eval.service.executors.claude_cli import (
     ClaudeCliExecutor,
@@ -285,6 +287,30 @@ class ClaudeExecutorTest(unittest.TestCase):
         parsed = json.loads(schema_arg)
         self.assertIn("properties", parsed)
 
+    def test_generated_schema_allows_object_or_json_string_payload(self):
+        schema_path = write_envelope_schema(
+            "observation", Path(self.tmp.name) / "envelope-observation.json"
+        )
+        work = replace(
+            self.work,
+            prompt_extras={"schema_path": str(schema_path)},
+        )
+        runner = _FakeRunner(stdout_content=_stream_json_output(
+            structured_output={
+                "schema_version": 3,
+                "work_item_id": "feature:Feat-01",
+                "status": "failed",
+                "payload": None,
+                "notes": [],
+                "error": "test stop",
+            },
+        ))
+        self._executor(runner).execute(work, lambda e: None)
+        idx = runner.last_argv.index("--json-schema")
+        schema = json.loads(runner.last_argv[idx + 1])
+        payload_types = schema["$defs"]["observationPayload"]["type"]
+        self.assertEqual(payload_types, ["object", "null", "string"])
+
     def test_no_session_persistence_flag(self):
         runner = _FakeRunner(stdout_content=_stream_json_output(
             structured_output=self._valid_envelope(),
@@ -400,6 +426,49 @@ class ClaudeExecutorTest(unittest.TestCase):
         result = self._executor(runner).execute(self.work, lambda e: None)
         self.assertEqual(result.status, C.STATUS_FAILED)
         self.assertIn("error to null", result.error)
+
+    def test_json_string_payload_is_decoded_before_canonical_validation(self):
+        payload = {"observation_id": "feature:Feat-01", "claims": []}
+        envelope = self._valid_envelope()
+        envelope["payload"] = json.dumps(payload, ensure_ascii=False)
+        envelope["error"] = "null"
+        runner = _FakeRunner(stdout_content=_stream_json_output(
+            structured_output=envelope,
+        ))
+        result = self._executor(runner).execute(self.work, lambda e: None)
+        self.assertEqual(result.status, C.STATUS_COMPLETED)
+        self.assertEqual(result.observation, payload)
+        persisted = json.loads(Path(
+            self.work.executor_result_path
+        ).read_text(encoding="utf-8"))
+        self.assertEqual(persisted["payload"], payload)
+        self.assertIsNone(persisted["error"])
+
+        summary_path = (
+            Path(self.work.executor_result_path).parent
+            / "claude.feature_Feat-01.execution-summary.json"
+        )
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        self.assertEqual(summary["output_schema"]["payload_transport"],
+                         "object_or_json_string")
+        self.assertIn("source_sha256", summary["output_schema"])
+        self.assertEqual(
+            summary["transport_normalizations"],
+            [
+                "payload_json_string_decoded",
+                "completed_error_string_null_decoded",
+            ],
+        )
+
+    def test_invalid_json_string_payload_fails_deterministically(self):
+        envelope = self._valid_envelope()
+        envelope["payload"] = "{not-json"
+        runner = _FakeRunner(stdout_content=_stream_json_output(
+            structured_output=envelope,
+        ))
+        result = self._executor(runner).execute(self.work, lambda e: None)
+        self.assertEqual(result.status, C.STATUS_FAILED)
+        self.assertIn("payload string is not valid JSON", result.error)
 
     # --- streaming usage/telemetry extraction ------------------------------
 
