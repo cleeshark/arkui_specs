@@ -35,6 +35,7 @@ from spec_eval.kernel.normalize import (
     assemble_semantic_result,
     normalize_aggregation,
     normalize_observation,
+    project_observation_derived_fields,
 )
 from spec_eval.kernel.schema_gen import build_envelope_schema
 from spec_eval.kernel.validate import (
@@ -265,6 +266,16 @@ class SchemaGenerationTest(unittest.TestCase):
             "outcome_policy_bases"
         ]
         self.assertEqual(policy_rows["minItems"], 6)
+
+    def test_observation_schema_constrains_run_local_criterion_ids(self) -> None:
+        schema = build_envelope_schema(
+            "observation", valid_criterion_ids=CRITERIA
+        )
+        criterion_items = schema["$defs"]["observationJudgment"][
+            "properties"
+        ]["criterion_ids"]["items"]
+        self.assertEqual(criterion_items["enum"], list(CRITERIA))
+        self.assertEqual(validate_strict_output_schema(schema), [])
 
     def test_spiked_schema_shape_validates_spiked_document(self) -> None:
         validator = JsonSchemaSubsetValidator(SCHEMAS_ROOT)
@@ -521,6 +532,31 @@ class NormalizeObservationTest(unittest.TestCase):
             sum("deduplicated" in change for change in result.changes), 6
         )
 
+    def test_correction_projection_rebuilds_observation_derived_fields(self) -> None:
+        result = normalize_observation(
+            self.template, _judgment(self.evidence_rel), repo_root=self.root
+        )
+        document = result.document
+        self.assertIsNotNone(document)
+        corrected = copy.deepcopy(document)
+        corrected["observations"][0]["criterion_ids"] = ["SPEC-TRACEABILITY"]
+        corrected["claim_reviews"][0]["criterion_ids"] = [
+            "CORRECTNESS-SOURCE-SUPPORT"
+        ]
+        corrected["completed_checks"] = []
+
+        projected = project_observation_derived_fields(corrected)
+
+        self.assertEqual(
+            projected["claim_reviews"][0]["criterion_ids"],
+            ["SPEC-TRACEABILITY"],
+        )
+        self.assertEqual(
+            projected["completed_checks"],
+            ["boundary_state", "claim_source_support"],
+        )
+        self.assertEqual(corrected["completed_checks"], [])
+
     def test_missing_evidence_is_correctable(self) -> None:
         judgment = _judgment("missing/file.txt")
         result = normalize_observation(self.template, judgment, repo_root=self.root)
@@ -724,7 +760,14 @@ class ValidateObservationTest(unittest.TestCase):
     def test_unknown_criterion(self) -> None:
         document = copy.deepcopy(self.document)
         document["observations"][0]["criterion_ids"] = ["NOT-A-CRITERION"]
-        self.assertIn("CRITERION_UNKNOWN", self._codes(document))
+        errors = validate_observation_document(
+            document, valid_criterion_ids=CRITERIA
+        )
+        criterion_errors = [
+            error for error in errors if error.code == "CRITERION_UNKNOWN"
+        ]
+        self.assertEqual(len(criterion_errors), 1)
+        self.assertEqual(criterion_errors[0].repairability, "MODEL_CORRECTION")
 
     def test_duplicate_observation_list_values_are_service_errors(self) -> None:
         for field in ("criterion_ids", "check_ids", "claim_ids"):

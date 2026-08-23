@@ -60,6 +60,7 @@ class _JudgmentExecutor:
         empty_observation_claims_once: bool = False,
         json_patch_correction: bool = False,
         correction_primary_mismatch: bool = False,
+        invalid_criterion_once: bool = False,
     ) -> None:
         self.break_first = break_first
         self.break_all = break_all
@@ -67,8 +68,10 @@ class _JudgmentExecutor:
         self.empty_observation_claims_once = empty_observation_claims_once
         self.json_patch_correction = json_patch_correction
         self.correction_primary_mismatch = correction_primary_mismatch
+        self.invalid_criterion_once = invalid_criterion_once
         self._invalid_global_path_emitted = False
         self._empty_observation_claims_emitted = False
+        self._invalid_criterion_emitted = False
         self.calls: list[tuple[str, str]] = []
         self.prompts: list[C.WorkItemInput] = []
         self.correction_candidates: list[dict] = []
@@ -190,6 +193,32 @@ class _JudgmentExecutor:
             candidate_path = Path(str(work.prompt_extras["candidate_path"]))
             candidate = json.loads(candidate_path.read_text(encoding="utf-8"))
             self.correction_candidates.append(candidate)
+            if self.invalid_criterion_once:
+                return C.ExecutionResult(
+                    status=C.STATUS_COMPLETED,
+                    exit_code=0,
+                    executor_result_path=work.executor_result_path,
+                    observation={
+                        "patches": [{
+                            "op": "replace",
+                            "path": "/observations/0/criterion_ids",
+                            "value": json.dumps([
+                                "CORRECTNESS-SOURCE-SUPPORT"
+                            ]),
+                        }, {
+                            "op": "replace",
+                            "path": "/claim_reviews/0/evidence_ids",
+                            "value": json.dumps(["EV-1"]),
+                        }, {
+                            "op": "replace",
+                            "path": "/claim_reviews/0/unit_reviews/0/evidence_ids",
+                            "value": json.dumps(["EV-1"]),
+                        }],
+                        "notes": [
+                            "unknown Criterion and Evidence references corrected"
+                        ],
+                    },
+                )
             if self.json_patch_correction:
                 return C.ExecutionResult(
                     status=C.STATUS_COMPLETED,
@@ -224,6 +253,20 @@ class _JudgmentExecutor:
         ):
             self._empty_observation_claims_emitted = True
             payload["observations"][0]["claim_ids"] = []
+        if (
+            self.invalid_criterion_once
+            and not self._invalid_criterion_emitted
+            and work.work_item_id == "feature:Feat-01"
+            and mode == "observe"
+        ):
+            self._invalid_criterion_emitted = True
+            payload["observations"][0]["criterion_ids"] = [
+                "SPEC-CROSS-DOC-CONSISTENCY"
+            ]
+            payload["claim_reviews"][0]["evidence_refs"] = ["e35"]
+            payload["claim_reviews"][0]["unit_reviews"][0][
+                "evidence_refs"
+            ] = ["e35"]
         if (
             self.invalid_global_path_once
             and not self._invalid_global_path_emitted
@@ -469,6 +512,48 @@ class ObservationFlowTest(_StagedRunIntegrationTest):
             )
         )
         self.assertIn("after source verification", published["claim_reviews"][0]["reason"])
+
+    def test_unknown_criterion_uses_one_model_correction_and_reprojects(self) -> None:
+        executor = _JudgmentExecutor(invalid_criterion_once=True)
+        result = run_semantic(
+            self.ctx, executor,
+            jobs=self.jobs, attempts=self.attempts, events=self.events,
+            statistics=self.statistics, invocations=self.invocations,
+        )
+
+        self.assertEqual(result.outcome, C.STATUS_COMPLETED, result.error)
+        self.assertEqual(
+            [mode for _, mode in executor.calls],
+            ["observe", "correct", "observe"],
+        )
+        correction = executor.prompts[1]
+        self.assertEqual(
+            {error["code"] for error in correction.prompt_extras["typed_errors"]},
+            {"CRITERION_UNKNOWN", "EVIDENCE_KEY_UNKNOWN"},
+        )
+        valid_ids = correction.prompt_extras["machine_contract"][
+            "valid_criterion_ids"
+        ]
+        self.assertIn("CORRECTNESS-SOURCE-SUPPORT", valid_ids)
+        self.assertEqual(
+            correction.prompt_extras["correction_contract"][
+                "allowed_values_by_path"
+            ]["/observations/0/criterion_ids"],
+            list(valid_ids),
+        )
+        published = json.loads(
+            (self.ctx.run_dir / "observations" / "Feat-01.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(
+            published["observations"][0]["criterion_ids"],
+            ["CORRECTNESS-SOURCE-SUPPORT"],
+        )
+        self.assertEqual(
+            published["claim_reviews"][0]["criterion_ids"],
+            ["CORRECTNESS-SOURCE-SUPPORT"],
+        )
 
     def test_service_repairs_primary_mapping_reintroduced_by_correction(self) -> None:
         executor = _JudgmentExecutor(

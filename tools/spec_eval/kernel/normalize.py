@@ -129,6 +129,57 @@ def _unique_strings(value: Any) -> list[str]:
     return list(dict.fromkeys(_strings(value)))
 
 
+def project_observation_derived_fields(
+    document: dict[str, Any],
+) -> dict[str, Any]:
+    """Rebuild service-owned Observation fields after a bounded correction.
+
+    Correction patches target the published candidate.  When a model changes
+    an Observation mapping, Claim Criterion mappings and progress lists must
+    be projected again instead of retaining values derived from the invalid
+    pre-correction candidate.
+    """
+    projected = copy.deepcopy(document)
+    observations = _rows(projected.get("observations"))
+    criteria_by_claim: dict[str, list[str]] = {}
+    for observation in observations:
+        criterion_ids = _unique_strings(observation.get("criterion_ids"))
+        check_ids = _unique_strings(observation.get("check_ids"))
+        claim_ids = _unique_strings(observation.get("claim_ids"))
+        observation["criterion_ids"] = criterion_ids
+        observation["check_ids"] = check_ids
+        observation["claim_ids"] = claim_ids
+        for claim_id in claim_ids:
+            mapped = criteria_by_claim.setdefault(claim_id, [])
+            for criterion_id in criterion_ids:
+                if criterion_id not in mapped:
+                    mapped.append(criterion_id)
+
+    claim_reviews = _rows(projected.get("claim_reviews"))
+    for claim in claim_reviews:
+        claim_id = claim.get("claim_id")
+        claim["criterion_ids"] = criteria_by_claim.get(str(claim_id), [])
+        units = _rows(claim.get("unit_reviews"))
+        claim["reviewed_units"] = [
+            unit["unit_id"]
+            for unit in units
+            if isinstance(unit.get("unit_id"), str) and unit["unit_id"]
+        ]
+
+    projected["reviewed_claim_ids"] = [
+        claim["claim_id"]
+        for claim in claim_reviews
+        if claim.get("status") == "complete"
+        and isinstance(claim.get("claim_id"), str)
+    ]
+    projected["completed_checks"] = sorted({
+        check_id
+        for observation in observations
+        for check_id in _strings(observation.get("check_ids"))
+    })
+    return projected
+
+
 def normalize_observation(
     template: dict[str, Any],
     judgment: dict[str, Any],

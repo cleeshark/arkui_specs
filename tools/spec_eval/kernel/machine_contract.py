@@ -169,6 +169,7 @@ def build_correction_machine_contract(
     observation_profile: str = "feature",
     allowed_paths: Iterable[str] = (),
     evidence_catalog: Iterable[dict[str, Any]] = (),
+    valid_criterion_ids: Iterable[str] = (),
 ) -> dict[str, Any]:
     """Build the small contract used by a JSON Patch correction turn.
 
@@ -211,6 +212,7 @@ def build_correction_machine_contract(
         ],
         "patch_operations": ["add", "remove", "replace"],
         "allowed_paths": list(dict.fromkeys(str(path) for path in allowed_paths)),
+        "valid_criterion_ids": list(dict.fromkeys(valid_criterion_ids)),
         "typed_errors": errors,
         "rules": [
             "Patch the published candidate only; do not rewrite the complete document.",

@@ -21,6 +21,7 @@ from spec_eval.service.pipeline.correction import (
     resolve_typed_error_json_path,
     typed_error_json_path,
     validate_patch_scope,
+    validate_patch_values,
 )
 from spec_eval.service.pipeline.judgment_flow import JudgmentFlow
 
@@ -156,6 +157,30 @@ class CorrectionFlowTest(unittest.TestCase):
             immutable_paths=["/func_id"],
         )
         self.assertTrue(violations)
+
+    def test_patch_values_enforce_criterion_allowlist(self) -> None:
+        path = "/observations/0/criterion_ids"
+        self.assertEqual(
+            validate_patch_values(
+                [{"path": path, "value": json.dumps([
+                    "CORRECTNESS-SOURCE-SUPPORT"
+                ])}],
+                allowed_values_by_path={
+                    path: ["CORRECTNESS-SOURCE-SUPPORT"]
+                },
+            ),
+            [],
+        )
+        self.assertTrue(
+            validate_patch_values(
+                [{"path": path, "value": json.dumps([
+                    "SPEC-CROSS-DOC-CONSISTENCY"
+                ])}],
+                allowed_values_by_path={
+                    path: ["CORRECTNESS-SOURCE-SUPPORT"]
+                },
+            )
+        )
 
     def test_typed_error_path_becomes_json_pointer(self) -> None:
         self.assertEqual(
@@ -305,6 +330,8 @@ class CorrectionFlowTest(unittest.TestCase):
     def test_kernel_repairability_is_the_only_correction_router(self) -> None:
         self.assertTrue(is_model_correction_error({"code": "EVIDENCE_KEY_UNKNOWN"}))
         self.assertFalse(is_deterministic_error({"code": "EVIDENCE_KEY_UNKNOWN"}))
+        self.assertTrue(is_model_correction_error({"code": "CRITERION_UNKNOWN"}))
+        self.assertFalse(is_deterministic_error({"code": "CRITERION_UNKNOWN"}))
         self.assertTrue(is_deterministic_error({"code": "OBSERVATION_FIELD_INVALID"}))
         self.assertFalse(is_model_correction_error({"code": "OBSERVATION_FIELD_INVALID"}))
         self.assertTrue(is_model_correction_error({
@@ -347,10 +374,15 @@ class CorrectionFlowTest(unittest.TestCase):
             payload_kind="observation",
             typed_errors=[{"code": "DEFECT_KEY_UNDEFINED", "path": "/claim_reviews/0/defect_keys"}],
             allowed_paths=["/claim_reviews/0/defect_keys"],
+            valid_criterion_ids=["CORRECTNESS-SOURCE-SUPPORT"],
         )
         self.assertEqual(contract["output_format"], "json_patch")
         self.assertNotIn("expected_claim_ids", contract)
         self.assertNotIn("required_checks", contract)
+        self.assertEqual(
+            contract["valid_criterion_ids"],
+            ["CORRECTNESS-SOURCE-SUPPORT"],
+        )
 
     def test_aggregation_correction_contract_is_scoped(self) -> None:
         contract = build_correction_machine_contract(
