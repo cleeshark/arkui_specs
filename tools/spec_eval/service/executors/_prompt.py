@@ -66,13 +66,25 @@ def build_executor_prompt(
         "payload itself.",
     ]
     if correcting:
+        correction_base = contract.get("correction_contract", {}).get(
+            "base", "published_candidate"
+        )
+        if correction_base == "raw_payload":
+            patch_target = (
+                "Patch the raw judgment payload; the service will normalize it "
+                "again after applying the patch."
+            )
+        else:
+            patch_target = (
+                "Patch the published candidate; do not rewrite the complete document."
+            )
         constraints = [
             "Correct one invalid evaluation candidate.",
             "Read the candidate at result_contract.candidate_path and every "
             "entry of result_contract.typed_errors.",
             "The service owns the candidate merge and final validation.",
             "Return only RFC-6902-style add/remove/replace patches and notes.",
-            "Patch the published candidate; do not rewrite the complete document.",
+            patch_target,
             "Change only paths allowed by result_contract.correction_contract.",
             "Do not change document identity, source revision, ordering, canonical IDs, "
             "hashes or derived fields.",

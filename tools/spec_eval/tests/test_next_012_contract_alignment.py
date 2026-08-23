@@ -59,6 +59,7 @@ class _JudgmentExecutor:
         invalid_global_path_once: bool = False,
         empty_observation_claims_once: bool = False,
         json_patch_correction: bool = False,
+        json_patch_evidence_correction: bool = False,
         correction_primary_mismatch: bool = False,
         invalid_criterion_once: bool = False,
     ) -> None:
@@ -67,6 +68,7 @@ class _JudgmentExecutor:
         self.invalid_global_path_once = invalid_global_path_once
         self.empty_observation_claims_once = empty_observation_claims_once
         self.json_patch_correction = json_patch_correction
+        self.json_patch_evidence_correction = json_patch_evidence_correction
         self.correction_primary_mismatch = correction_primary_mismatch
         self.invalid_criterion_once = invalid_criterion_once
         self._invalid_global_path_emitted = False
@@ -193,6 +195,25 @@ class _JudgmentExecutor:
             candidate_path = Path(str(work.prompt_extras["candidate_path"]))
             candidate = json.loads(candidate_path.read_text(encoding="utf-8"))
             self.correction_candidates.append(candidate)
+            if self.json_patch_evidence_correction:
+                valid_path = _first_input(work)
+                return C.ExecutionResult(
+                    status=C.STATUS_COMPLETED,
+                    exit_code=0,
+                    executor_result_path=work.executor_result_path,
+                    observation={
+                        "patches": [{
+                            "op": "replace",
+                            "path": "/evidence_declarations/0/path",
+                            "value": valid_path,
+                        }, {
+                            "op": "replace",
+                            "path": "/evidence_declarations/1/path",
+                            "value": valid_path,
+                        }],
+                        "notes": ["evidence paths corrected"],
+                    },
+                )
             if self.invalid_criterion_once:
                 return C.ExecutionResult(
                     status=C.STATUS_COMPLETED,
@@ -623,6 +644,48 @@ class ObservationFlowTest(_StagedRunIntegrationTest):
         self.assertEqual(
             candidate["evidence_declarations"][0]["path"],
             "runs/run-1/staged/output-contract.json",
+        )
+
+    def test_raw_payload_patch_is_normalized_before_validation(self) -> None:
+        executor = _JudgmentExecutor(
+            invalid_global_path_once=True,
+            json_patch_evidence_correction=True,
+        )
+        result = run_semantic(
+            self.ctx, executor,
+            jobs=self.jobs, attempts=self.attempts, events=self.events,
+            statistics=self.statistics, invocations=self.invocations,
+        )
+
+        self.assertEqual(result.outcome, C.STATUS_COMPLETED, result.error)
+        self.assertEqual(
+            [mode for _, mode in executor.calls],
+            ["observe", "observe", "correct"],
+        )
+        correction = executor.prompts[-1]
+        self.assertEqual(
+            correction.prompt_extras["correction_contract"]["base"],
+            "raw_payload",
+        )
+        self.assertTrue(any(
+            "normalize it again" in constraint
+            for constraint in correction.prompt_extras["correction_constraints"]
+        ))
+        published = json.loads(
+            (self.ctx.run_dir / "observations" / "function-global.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        self.assertEqual(published["status"], "complete")
+        self.assertEqual(
+            published["reviewed_claim_ids"],
+            published["expected_claim_ids"],
+        )
+        self.assertFalse(
+            (self.ctx.run_dir / "observations" / ".function-global.json.candidate").exists()
+        )
+        self.assertFalse(
+            (self.ctx.run_dir / "observations" / ".function-global.json.typed-errors.json").exists()
         )
 
     def test_correction_still_invalid_is_terminal(self) -> None:

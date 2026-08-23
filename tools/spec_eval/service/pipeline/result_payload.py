@@ -1,8 +1,8 @@
 """Executor prompt contracts for evaluator protocol 0.2.0.
 
-Observation produces one complete judgment payload.  Correction produces a
-bounded JSON Patch against the normalized candidate; the service merges and
-validates that patch.
+Observation produces one complete judgment payload. Correction produces a
+bounded JSON Patch against the candidate selected by the service; raw
+payloads are normalized again after patch application before publication.
 """
 
 from __future__ import annotations
@@ -110,6 +110,17 @@ def correct_prompt_contract(
 ) -> dict[str, Any]:
     """Contract for one bounded JSON Patch correction turn."""
     contract = copy.deepcopy(base_contract)
+    candidate_base = correction_contract.get("base", "published_candidate")
+    if candidate_base == "raw_payload":
+        patch_target = (
+            "Return RFC-6902-style add/remove/replace patches against the raw "
+            "judgment payload; the service will normalize it again after patching."
+        )
+    else:
+        patch_target = (
+            "Return RFC-6902-style add/remove/replace patches against the "
+            "published candidate."
+        )
     schema_path = write_envelope_schema(
         "correction", schema_dir / "envelope-correction.schema.json"
     )
@@ -127,7 +138,7 @@ def correct_prompt_contract(
         "machine_contract": machine_contract,
         "correction_constraints": [
             "Read the invalid candidate at candidate_path and every typed error.",
-            "Return RFC-6902-style add/remove/replace patches against the published candidate.",
+            patch_target,
             "Do not return a complete replacement document.",
             "Do not read SKILL.md or search any skill directory during Correction.",
         ],
