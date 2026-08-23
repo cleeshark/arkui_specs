@@ -26,6 +26,7 @@ import time
 from pathlib import Path
 from typing import Any, Callable
 
+from spec_eval.kernel.contracts import ENVELOPE_SCHEMA_VERSION
 from spec_eval.kernel.schema_gen import build_envelope_schema
 from spec_eval.protocol_validator import (
     JsonSchemaSubsetValidator,
@@ -94,7 +95,7 @@ class ClaudeCliExecutor:
             "executor_version": C.CLAUDE_EXECUTOR_VERSION,
             "protocol_version": C.PROTOCOL_VERSION,
             "output_schema": self._output_schema_path.name,
-            "payload_transport": "object_or_json_string",
+            "payload_transport": "payload_root_object",
         }
         if self._max_output_tokens is not None:
             desc["max_output_tokens"] = self._max_output_tokens
@@ -117,7 +118,7 @@ class ClaudeCliExecutor:
 
         schema_content, schema_metadata = self._transport_schema(work)
         argv = self._build_argv(work, schema_content)
-        prompt = build_executor_prompt(work)
+        prompt = build_executor_prompt(work, output_transport="payload_root")
         result_parent = Path(work.executor_result_path).parent
         result_parent.mkdir(parents=True, exist_ok=True)
         log_tag = _safe_work_item_tag(work.work_item_id)
@@ -278,25 +279,10 @@ class ClaudeCliExecutor:
                 model_usage=model_usage,
             )
 
-        structured, normalizations, normalization_error = (
-            _normalize_structured_output(structured)
-        )
-        summary["transport_normalizations"] = normalizations
-        if normalization_error is not None:
-            summary["result_status"] = "transport_normalization_failed"
-            summary["transport_normalization_error"] = normalization_error
-            _write_execution_summary(work, summary)
-            return _execution_result(
-                usage, telemetry,
-                status=C.STATUS_FAILED,
-                exit_code=proc_result.exit_code,
-                error=normalization_error,
-                elapsed_seconds=time.monotonic() - started,
-                event_count=event_count,
-                cost_usd=cost_usd,
-                num_turns=num_turns,
-                model_usage=model_usage,
-            )
+        structured = _wrap_payload_root(work, structured)
+        summary["transport_normalizations"] = [
+            "payload_root_wrapped_in_canonical_envelope"
+        ]
 
         summary["result_status"] = "structured_output_captured"
         _write_execution_summary(work, summary)
@@ -456,13 +442,20 @@ class ClaudeCliExecutor:
 
     def _validate_generated_output_schemas(self) -> None:
         for payload_kind in ("observation", "aggregation", "correction"):
-            errors = validate_strict_output_schema(
-                build_envelope_schema(payload_kind)
-            )
-            if errors:
+            canonical = build_envelope_schema(payload_kind)
+            canonical_errors = validate_strict_output_schema(canonical)
+            if canonical_errors:
                 raise ValueError(
                     f"generated {payload_kind} output schema is not "
-                    "compatible: " + "; ".join(errors)
+                    "compatible: " + "; ".join(canonical_errors)
+                )
+            transport_errors = validate_strict_output_schema(
+                _build_transport_schema(canonical)
+            )
+            if transport_errors:
+                raise ValueError(
+                    f"generated {payload_kind} Claude transport schema is not "
+                    "compatible: " + "; ".join(transport_errors)
                 )
 
     def _work_schema_error(self, work: C.WorkItemInput) -> str | None:
@@ -479,7 +472,10 @@ class ClaudeCliExecutor:
                 f"work output schema is not compatible: {schema_path}: "
                 + "; ".join(errors)
             )
-        transport_schema = _build_transport_schema(schema)
+        try:
+            transport_schema = _build_transport_schema(schema)
+        except ValueError as exc:
+            return f"work transport schema is not compatible: {schema_path}: {exc}"
         transport_errors = validate_strict_output_schema(transport_schema)
         if transport_errors:
             return (
@@ -529,7 +525,7 @@ class ClaudeCliExecutor:
             "source_sha256": hashlib.sha256(source).hexdigest(),
             "transport_bytes": len(encoded),
             "transport_sha256": hashlib.sha256(encoded).hexdigest(),
-            "payload_transport": "object_or_json_string",
+            "payload_transport": "payload_root_object",
         }
 
     def _schema_path_for(self, work: C.WorkItemInput) -> Path:
@@ -565,24 +561,33 @@ def _find_result_event(ndjson_path: str) -> dict[str, Any] | None:
 
 
 def _build_transport_schema(canonical: dict[str, Any]) -> dict[str, Any]:
-    """Allow one JSON-string transport fallback for the envelope payload.
+    """Expose the canonical payload object as Claude's structured-output root.
 
     Claude Code implements ``--json-schema`` through its internal
-    ``StructuredOutput`` tool. Some compatible model providers serialize a
-    large nested ``payload`` object as JSON text before issuing that tool
-    call. Accept both forms at the CLI boundary, then decode once and run the
-    unchanged canonical envelope schema in :meth:`_validate_result`.
+    ``StructuredOutput`` tool. Keeping a large payload nested inside an
+    executor envelope can encourage compatible providers to serialize that
+    payload as opaque JSON text. Make the payload itself the tool input so its
+    nested fields remain schema-constrained, then let the adapter construct
+    the service-owned canonical envelope.
     """
-    transport = copy.deepcopy(canonical)
-    payload_schema = transport.get("properties", {}).get("payload")
-    target = _resolve_local_schema_ref(transport, payload_schema)
+    payload_schema = canonical.get("properties", {}).get("payload")
+    target = _resolve_local_schema_ref(canonical, payload_schema)
     if not isinstance(target, dict):
-        return transport
+        raise ValueError("canonical schema payload is not resolvable")
+    transport = copy.deepcopy(target)
     declared = target.get("type")
     if declared == "object":
-        target["type"] = ["object", "string"]
+        transport["type"] = "object"
     elif isinstance(declared, list) and "object" in declared:
-        target["type"] = list(dict.fromkeys([*declared, "string"]))
+        transport["type"] = "object"
+    else:
+        raise ValueError("canonical schema payload root must allow an object")
+    transport["$schema"] = canonical.get(
+        "$schema", "http://json-schema.org/draft-07/schema#"
+    )
+    definitions = canonical.get("$defs")
+    if isinstance(definitions, dict):
+        transport["$defs"] = copy.deepcopy(definitions)
     return transport
 
 
@@ -603,31 +608,18 @@ def _resolve_local_schema_ref(
     return target if isinstance(target, dict) else None
 
 
-def _normalize_structured_output(
-    structured: dict[str, Any]
-) -> tuple[dict[str, Any], list[str], str | None]:
-    """Decode only the known Claude transport wrappers, at most once."""
-    normalized = dict(structured)
-    changes: list[str] = []
-    payload = normalized.get("payload")
-    if isinstance(payload, str):
-        try:
-            normalized["payload"] = json.loads(payload)
-        except json.JSONDecodeError as exc:
-            return (
-                normalized,
-                changes,
-                "claude payload string is not valid JSON: "
-                f"line {exc.lineno} column {exc.colno}: {exc.msg}",
-            )
-        changes.append("payload_json_string_decoded")
-    if (
-        normalized.get("status") == "completed"
-        and normalized.get("error") == "null"
-    ):
-        normalized["error"] = None
-        changes.append("completed_error_string_null_decoded")
-    return normalized, changes, None
+def _wrap_payload_root(
+    work: C.WorkItemInput, payload: dict[str, Any]
+) -> dict[str, Any]:
+    """Construct the canonical envelope from Claude's payload-root output."""
+    return {
+        "schema_version": ENVELOPE_SCHEMA_VERSION,
+        "work_item_id": work.work_item_id,
+        "status": "completed",
+        "payload": payload,
+        "notes": [],
+        "error": None,
+    }
 
 
 def _write_execution_summary(
