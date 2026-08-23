@@ -13,7 +13,11 @@ from typing import Any
 from . import contract as C
 
 
-def build_executor_prompt(work: C.WorkItemInput) -> str:
+def build_executor_prompt(
+    work: C.WorkItemInput,
+    *,
+    output_transport: str = "canonical_envelope",
+) -> str:
     """Build the JSON prompt sent to a CLI executor via stdin.
 
     The prompt is mode-aware (``observe`` vs ``correct``) and includes the
@@ -22,6 +26,9 @@ def build_executor_prompt(work: C.WorkItemInput) -> str:
     represented elsewhere in the prompt are omitted from the descriptive
     work-item copy to avoid duplicate prompt tokens.
     """
+    if output_transport not in {"canonical_envelope", "payload_root"}:
+        raise ValueError(f"unknown output transport: {output_transport!r}")
+    payload_root = output_transport == "payload_root"
     contract = dict(work.prompt_extras)
     mode = contract.get("mode", "observe")
     correcting = mode == "correct"
@@ -128,6 +135,10 @@ def build_executor_prompt(work: C.WorkItemInput) -> str:
     payload_field_text = json.dumps(payload_fields, ensure_ascii=False)
     if correcting:
         evidence_requirement = (
+            "Return patches as an array of add/remove/replace operations "
+            "against the published candidate; the service applies and validates "
+            "them. Encode each patch value as a JSON string (use \"null\" for remove)."
+            if payload_root else
             "Return payload.patches as an array of add/remove/replace operations "
             "against the published candidate; the service applies and validates "
             "them. Encode each patch value as a JSON string (use \"null\" for remove)."
@@ -155,6 +166,11 @@ def build_executor_prompt(work: C.WorkItemInput) -> str:
         key: value for key, value in contract.items()
         if key not in {"machine_contract", "phase_references"}
     }
+    if payload_root:
+        result_contract["canonical_envelope_schema_path"] = (
+            result_contract.pop("schema_path", None)
+        )
+        result_contract["output_transport"] = "payload_root"
     prompt_work_item = dict(work.work_item)
     for duplicated_field in (
         "expected_claim_ids", "required_checks", "input_paths",
@@ -162,11 +178,47 @@ def build_executor_prompt(work: C.WorkItemInput) -> str:
     ):
         prompt_work_item.pop(duplicated_field, None)
 
-    completion_note = (
-        "Criterion NOT_VERIFIABLE conclusions still use envelope status=completed. "
-        if observation_profile == "aggregation" and not correcting else
-        "Local NOT_VERIFIABLE outcomes still use envelope status=completed. "
-    )
+    if payload_root:
+        completion_note = (
+            "Criterion NOT_VERIFIABLE conclusions remain completed judgments; "
+            "the executor adapter owns envelope status. "
+            if observation_profile == "aggregation" and not correcting else
+            "Local NOT_VERIFIABLE outcomes remain completed judgments; "
+            "the executor adapter owns envelope status. "
+        )
+        output_requirement = (
+            f"Return one {result_kind} object directly at the structured-output "
+            f"root containing exactly these fields: {payload_field_text}, fully "
+            f"constrained by the CLI output schema. {evidence_requirement} "
+            f"{completion_note}Do not emit schema_version, work_item_id, status, "
+            "payload, envelope notes, or error; the executor adapter constructs "
+            "and validates the canonical envelope."
+        )
+    else:
+        completion_note = (
+            "Criterion NOT_VERIFIABLE conclusions still use envelope status=completed. "
+            if observation_profile == "aggregation" and not correcting else
+            "Local NOT_VERIFIABLE outcomes still use envelope status=completed. "
+        )
+        output_requirement = (
+            "Return every envelope field. Use schema_version=3. For a "
+            "completed work item set status=completed, error=null, and "
+            f"payload to one {result_kind} object containing exactly "
+            f"these fields: {payload_field_text}, fully constrained by "
+            f"the declared schema. {evidence_requirement} {completion_note}"
+            "Use status=failed only when no complete payload can be "
+            "produced; then set payload=null and provide a non-empty error."
+        )
+    output: dict[str, Any] = {
+        "path": work.executor_result_path,
+        "transport": output_transport,
+        "requirement": output_requirement,
+    }
+    if payload_root:
+        output["canonical_envelope_schema"] = contract.get("schema_path")
+    else:
+        output["schema"] = contract.get("schema_path")
+
     payload: dict[str, Any] = {
         "task": task,
         "constraints": constraints,
@@ -181,18 +233,6 @@ def build_executor_prompt(work: C.WorkItemInput) -> str:
         "protocol_version": work.protocol_version,
         "result_contract": result_contract,
         "machine_contract": machine_contract,
-        "output": {
-            "path": work.executor_result_path,
-            "schema": contract.get("schema_path"),
-            "requirement": (
-                "Return every envelope field. Use schema_version=3. For a "
-                "completed work item set status=completed, error=null, and "
-                f"payload to one {result_kind} object containing exactly "
-                f"these fields: {payload_field_text}, fully constrained by "
-                f"the declared schema. {evidence_requirement} {completion_note}"
-                "Use status=failed only when no complete payload can be "
-                "produced; then set payload=null and provide a non-empty error."
-            ),
-        },
+        "output": output,
     }
     return json.dumps(payload, ensure_ascii=False, indent=2)

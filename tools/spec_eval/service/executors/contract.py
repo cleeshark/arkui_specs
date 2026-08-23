@@ -20,7 +20,7 @@ STATUS_CANCELLED = "cancelled"
 STATUS_AWAITING = "awaiting_executor"
 
 EXECUTOR_VERSION = "codex-cli-0.4"
-CLAUDE_EXECUTOR_VERSION = "claude-cli-0.3"
+CLAUDE_EXECUTOR_VERSION = "claude-cli-0.4"
 PROTOCOL_VERSION = "0.2.0"
 
 

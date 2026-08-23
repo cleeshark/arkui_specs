@@ -11,14 +11,18 @@ from __future__ import annotations
 import json
 import tempfile
 import unittest
-from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
 
-from spec_eval.kernel.schema_gen import write_envelope_schema
+from spec_eval.kernel.schema_gen import (
+    build_envelope_schema,
+    write_envelope_schema,
+)
+from spec_eval.protocol_validator import validate_strict_output_schema
 from spec_eval.service.executors import contract as C
 from spec_eval.service.executors.claude_cli import (
     ClaudeCliExecutor,
+    _build_transport_schema,
     _find_result_event,
     _normalize_model_usage,
 )
@@ -29,7 +33,7 @@ from spec_eval.service.settings import ServiceSettings, executor_config_for
 
 def _stream_json_output(
     *,
-    structured_output: dict | None = None,
+    structured_output: object | None = None,
     is_error: bool = False,
     result_text: str | None = None,
     usage: dict | None = None,
@@ -176,6 +180,9 @@ class ClaudeExecutorTest(unittest.TestCase):
             "max_output_tokens": 200_000,
             "output_schema": "executor-result.schema.json",
         }
+        self.schema_path = write_envelope_schema(
+            "observation", Path(self.tmp.name) / "envelope-observation.json"
+        )
         self.work = C.WorkItemInput(
             job_id="j1",
             func_id="04-01-01",
@@ -194,6 +201,17 @@ class ClaudeExecutorTest(unittest.TestCase):
             repo_root=self.settings.repo_root,
             skill_version="x",
             protocol_version="0.2.0",
+            prompt_extras={
+                "schema_path": str(self.schema_path),
+                "result_kind": "staged_observation_judgments",
+                "payload_fields": [
+                    "evidence_declarations",
+                    "claim_reviews",
+                    "observations",
+                    "open_questions",
+                    "notes",
+                ],
+            },
         )
 
     def tearDown(self) -> None:
@@ -220,16 +238,10 @@ class ClaudeExecutorTest(unittest.TestCase):
     # --- happy path -------------------------------------------------------
 
     def test_success_returns_completed_and_payload(self):
-        payload = {"observation_id": "feature:Feat-01", "claims": []}
         runner = _FakeRunner(
-            stdout_content=_stream_json_output(structured_output={
-                "schema_version": 3,
-                "work_item_id": "feature:Feat-01",
-                "status": "completed",
-                "payload": payload,
-                "notes": [],
-                "error": None,
-            }),
+            stdout_content=_stream_json_output(
+                structured_output=self._valid_payload()
+            ),
         )
         events = self._events()
         result = self._executor(runner).execute(
@@ -237,20 +249,20 @@ class ClaudeExecutorTest(unittest.TestCase):
         )
         self.assertEqual(result.status, C.STATUS_COMPLETED)
         self.assertIsNotNone(result.observation)
-        self.assertIn("observation_id", result.observation)
+        self.assertIn("evidence_declarations", result.observation)
 
     # --- argv shape -------------------------------------------------------
 
     def test_argv_uses_print_mode(self):
         runner = _FakeRunner(stdout_content=_stream_json_output(
-            structured_output=self._valid_envelope(),
+            structured_output=self._valid_payload(),
         ))
         self._executor(runner).execute(self.work, lambda e: None)
         self.assertIn("-p", runner.last_argv)
 
     def test_argv_has_stream_json_format(self):
         runner = _FakeRunner(stdout_content=_stream_json_output(
-            structured_output=self._valid_envelope(),
+            structured_output=self._valid_payload(),
         ))
         self._executor(runner).execute(self.work, lambda e: None)
         idx = runner.last_argv.index("--output-format")
@@ -258,28 +270,28 @@ class ClaudeExecutorTest(unittest.TestCase):
 
     def test_argv_has_verbose_flag(self):
         runner = _FakeRunner(stdout_content=_stream_json_output(
-            structured_output=self._valid_envelope(),
+            structured_output=self._valid_payload(),
         ))
         self._executor(runner).execute(self.work, lambda e: None)
         self.assertIn("--verbose", runner.last_argv)
 
     def test_argv_has_no_cd_flag(self):
         runner = _FakeRunner(stdout_content=_stream_json_output(
-            structured_output=self._valid_envelope(),
+            structured_output=self._valid_payload(),
         ))
         self._executor(runner).execute(self.work, lambda e: None)
         self.assertNotIn("--cd", runner.last_argv)
 
     def test_cwd_passed_to_runner(self):
         runner = _FakeRunner(stdout_content=_stream_json_output(
-            structured_output=self._valid_envelope(),
+            structured_output=self._valid_payload(),
         ))
         self._executor(runner).execute(self.work, lambda e: None)
         self.assertEqual(runner.last_cwd, self.work.repo_root)
 
     def test_json_schema_inline_content(self):
         runner = _FakeRunner(stdout_content=_stream_json_output(
-            structured_output=self._valid_envelope(),
+            structured_output=self._valid_payload(),
         ))
         self._executor(runner).execute(self.work, lambda e: None)
         idx = runner.last_argv.index("--json-schema")
@@ -287,40 +299,40 @@ class ClaudeExecutorTest(unittest.TestCase):
         parsed = json.loads(schema_arg)
         self.assertIn("properties", parsed)
 
-    def test_generated_schema_allows_object_or_json_string_payload(self):
-        schema_path = write_envelope_schema(
-            "observation", Path(self.tmp.name) / "envelope-observation.json"
-        )
-        work = replace(
-            self.work,
-            prompt_extras={"schema_path": str(schema_path)},
-        )
-        runner = _FakeRunner(stdout_content=_stream_json_output(
-            structured_output={
-                "schema_version": 3,
-                "work_item_id": "feature:Feat-01",
-                "status": "failed",
-                "payload": None,
-                "notes": [],
-                "error": "test stop",
+    def test_generated_transport_schemas_are_strict_payload_roots(self):
+        expected = {
+            "observation": {
+                "evidence_declarations", "claim_reviews", "observations",
+                "open_questions", "notes",
             },
-        ))
-        self._executor(runner).execute(work, lambda e: None)
-        idx = runner.last_argv.index("--json-schema")
-        schema = json.loads(runner.last_argv[idx + 1])
-        payload_types = schema["$defs"]["observationPayload"]["type"]
-        self.assertEqual(payload_types, ["object", "null", "string"])
+            "aggregation": {
+                "cross_feat_contracts_reviewed", "contradiction_bases",
+                "defect_ownership", "outcome_policy_bases",
+                "criterion_results", "notes",
+            },
+            "correction": {"patches", "notes"},
+        }
+        for payload_kind, fields in expected.items():
+            with self.subTest(payload_kind=payload_kind):
+                transport = _build_transport_schema(
+                    build_envelope_schema(payload_kind)
+                )
+                self.assertEqual(transport["type"], "object")
+                self.assertEqual(set(transport["properties"]), fields)
+                self.assertNotIn("payload", transport["properties"])
+                self.assertNotIn("schema_version", transport["properties"])
+                self.assertEqual(validate_strict_output_schema(transport), [])
 
     def test_no_session_persistence_flag(self):
         runner = _FakeRunner(stdout_content=_stream_json_output(
-            structured_output=self._valid_envelope(),
+            structured_output=self._valid_payload(),
         ))
         self._executor(runner).execute(self.work, lambda e: None)
         self.assertIn("--no-session-persistence", runner.last_argv)
 
     def test_permission_mode_flag(self):
         runner = _FakeRunner(stdout_content=_stream_json_output(
-            structured_output=self._valid_envelope(),
+            structured_output=self._valid_payload(),
         ))
         self._executor(runner).execute(self.work, lambda e: None)
         idx = runner.last_argv.index("--permission-mode")
@@ -329,7 +341,7 @@ class ClaudeExecutorTest(unittest.TestCase):
     def test_model_flag_present_when_configured(self):
         self.config["model"] = "opus"
         runner = _FakeRunner(stdout_content=_stream_json_output(
-            structured_output=self._valid_envelope(),
+            structured_output=self._valid_payload(),
         ))
         self._executor(runner).execute(self.work, lambda e: None)
         idx = runner.last_argv.index("--model")
@@ -337,7 +349,7 @@ class ClaudeExecutorTest(unittest.TestCase):
 
     def test_model_flag_absent_when_none(self):
         runner = _FakeRunner(stdout_content=_stream_json_output(
-            structured_output=self._valid_envelope(),
+            structured_output=self._valid_payload(),
         ))
         self._executor(runner).execute(self.work, lambda e: None)
         self.assertNotIn("--model", runner.last_argv)
@@ -391,11 +403,11 @@ class ClaudeExecutorTest(unittest.TestCase):
         self.assertEqual(result.status, C.STATUS_FAILED)
         self.assertIn("structured_output", result.error)
 
-    def test_wrong_work_item_id_is_failed(self):
+    def test_legacy_envelope_output_is_rejected_as_payload(self):
         runner = _FakeRunner(stdout_content=_stream_json_output(
             structured_output={
                 "schema_version": 3,
-                "work_item_id": "WRONG",
+                "work_item_id": "feature:Feat-01",
                 "status": "completed",
                 "payload": {"x": 1},
                 "notes": [],
@@ -404,36 +416,20 @@ class ClaudeExecutorTest(unittest.TestCase):
         ))
         result = self._executor(runner).execute(self.work, lambda e: None)
         self.assertEqual(result.status, C.STATUS_FAILED)
-        self.assertIn("work_item_id", result.error)
+        self.assertIn("schema validation", result.error)
 
-    def test_reported_failed_status_is_not_promoted_to_completed(self):
-        envelope = self._valid_envelope()
-        envelope["status"] = "failed"
-        envelope["error"] = "cannot complete work item"
+    def test_non_object_structured_output_is_rejected(self):
         runner = _FakeRunner(stdout_content=_stream_json_output(
-            structured_output=envelope,
+            structured_output=json.dumps(self._valid_payload()),
         ))
         result = self._executor(runner).execute(self.work, lambda e: None)
         self.assertEqual(result.status, C.STATUS_FAILED)
-        self.assertEqual(result.error, "cannot complete work item")
+        self.assertIn("structured_output object", result.error)
 
-    def test_completed_result_with_error_is_failed(self):
-        envelope = self._valid_envelope()
-        envelope["error"] = "unexpected executor error"
+    def test_payload_root_is_wrapped_in_service_owned_envelope(self):
+        payload = self._valid_payload()
         runner = _FakeRunner(stdout_content=_stream_json_output(
-            structured_output=envelope,
-        ))
-        result = self._executor(runner).execute(self.work, lambda e: None)
-        self.assertEqual(result.status, C.STATUS_FAILED)
-        self.assertIn("error to null", result.error)
-
-    def test_json_string_payload_is_decoded_before_canonical_validation(self):
-        payload = {"observation_id": "feature:Feat-01", "claims": []}
-        envelope = self._valid_envelope()
-        envelope["payload"] = json.dumps(payload, ensure_ascii=False)
-        envelope["error"] = "null"
-        runner = _FakeRunner(stdout_content=_stream_json_output(
-            structured_output=envelope,
+            structured_output=payload,
         ))
         result = self._executor(runner).execute(self.work, lambda e: None)
         self.assertEqual(result.status, C.STATUS_COMPLETED)
@@ -441,8 +437,12 @@ class ClaudeExecutorTest(unittest.TestCase):
         persisted = json.loads(Path(
             self.work.executor_result_path
         ).read_text(encoding="utf-8"))
+        self.assertEqual(persisted["schema_version"], 3)
+        self.assertEqual(persisted["work_item_id"], self.work.work_item_id)
+        self.assertEqual(persisted["status"], "completed")
         self.assertEqual(persisted["payload"], payload)
         self.assertIsNone(persisted["error"])
+        self.assertEqual(persisted["notes"], [])
 
         summary_path = (
             Path(self.work.executor_result_path).parent
@@ -450,31 +450,30 @@ class ClaudeExecutorTest(unittest.TestCase):
         )
         summary = json.loads(summary_path.read_text(encoding="utf-8"))
         self.assertEqual(summary["output_schema"]["payload_transport"],
-                         "object_or_json_string")
+                         "payload_root_object")
         self.assertIn("source_sha256", summary["output_schema"])
         self.assertEqual(
             summary["transport_normalizations"],
-            [
-                "payload_json_string_decoded",
-                "completed_error_string_null_decoded",
-            ],
+            ["payload_root_wrapped_in_canonical_envelope"],
         )
 
-    def test_invalid_json_string_payload_fails_deterministically(self):
-        envelope = self._valid_envelope()
-        envelope["payload"] = "{not-json"
+    def test_payload_strings_with_quotes_need_no_json_reparse(self):
+        payload = self._valid_payload()
+        payload["notes"] = [
+            "agrees with code, not with spec R-7's 'entire strokeWidth'."
+        ]
         runner = _FakeRunner(stdout_content=_stream_json_output(
-            structured_output=envelope,
+            structured_output=payload,
         ))
         result = self._executor(runner).execute(self.work, lambda e: None)
-        self.assertEqual(result.status, C.STATUS_FAILED)
-        self.assertIn("payload string is not valid JSON", result.error)
+        self.assertEqual(result.status, C.STATUS_COMPLETED)
+        self.assertEqual(result.observation["notes"], payload["notes"])
 
     # --- streaming usage/telemetry extraction ------------------------------
 
     def test_usage_extracted_from_streaming(self):
         runner = _FakeRunner(stdout_content=_stream_json_output(
-            structured_output=self._valid_envelope(),
+            structured_output=self._valid_payload(),
             usage={"input_tokens": 500, "output_tokens": 200},
         ))
         result = self._executor(runner).execute(self.work, lambda e: None)
@@ -485,7 +484,7 @@ class ClaudeExecutorTest(unittest.TestCase):
 
     def test_telemetry_counts_tool_calls_from_assistant_events(self):
         runner = _FakeRunner(stdout_content=_stream_json_output(
-            structured_output=self._valid_envelope(),
+            structured_output=self._valid_payload(),
             include_assistant=True,
         ))
         result = self._executor(runner).execute(self.work, lambda e: None)
@@ -498,7 +497,7 @@ class ClaudeExecutorTest(unittest.TestCase):
 
     def test_cost_usd_extracted(self):
         runner = _FakeRunner(stdout_content=_stream_json_output(
-            structured_output=self._valid_envelope(),
+            structured_output=self._valid_payload(),
             total_cost_usd=8.37,
         ))
         result = self._executor(runner).execute(self.work, lambda e: None)
@@ -507,7 +506,7 @@ class ClaudeExecutorTest(unittest.TestCase):
 
     def test_num_turns_extracted(self):
         runner = _FakeRunner(stdout_content=_stream_json_output(
-            structured_output=self._valid_envelope(),
+            structured_output=self._valid_payload(),
             num_turns=14,
         ))
         result = self._executor(runner).execute(self.work, lambda e: None)
@@ -528,7 +527,7 @@ class ClaudeExecutorTest(unittest.TestCase):
             },
         }
         runner = _FakeRunner(stdout_content=_stream_json_output(
-            structured_output=self._valid_envelope(),
+            structured_output=self._valid_payload(),
             model_usage=raw_model_usage,
         ))
         result = self._executor(runner).execute(self.work, lambda e: None)
@@ -543,7 +542,7 @@ class ClaudeExecutorTest(unittest.TestCase):
 
     def test_execution_summary_written(self):
         runner = _FakeRunner(stdout_content=_stream_json_output(
-            structured_output=self._valid_envelope(),
+            structured_output=self._valid_payload(),
             total_cost_usd=1.23,
             num_turns=3,
         ))
@@ -562,7 +561,7 @@ class ClaudeExecutorTest(unittest.TestCase):
     def test_max_output_tokens_env_propagated(self):
         self.config["max_output_tokens"] = 200_000
         runner = _FakeRunner(stdout_content=_stream_json_output(
-            structured_output=self._valid_envelope(),
+            structured_output=self._valid_payload(),
         ))
         self._executor(runner).execute(self.work, lambda e: None)
         self.assertIsNotNone(runner.last_env)
@@ -573,7 +572,7 @@ class ClaudeExecutorTest(unittest.TestCase):
     def test_max_output_tokens_not_set_when_absent(self):
         self.config.pop("max_output_tokens", None)
         runner = _FakeRunner(stdout_content=_stream_json_output(
-            structured_output=self._valid_envelope(),
+            structured_output=self._valid_payload(),
         ))
         self._executor(runner).execute(self.work, lambda e: None)
         self.assertIsNone(runner.last_env)
@@ -616,7 +615,7 @@ class ClaudeExecutorTest(unittest.TestCase):
 
     def test_prompt_sent_via_stdin(self):
         runner = _FakeRunner(stdout_content=_stream_json_output(
-            structured_output=self._valid_envelope(),
+            structured_output=self._valid_payload(),
         ))
         self._executor(runner).execute(self.work, lambda e: None)
         self.assertIsNotNone(runner.last_stdin)
@@ -626,17 +625,29 @@ class ClaudeExecutorTest(unittest.TestCase):
         prompt = json.loads(runner.last_stdin)
         self.assertIn("task", prompt)
         self.assertIn("func_id", prompt)
+        self.assertEqual(prompt["output"]["transport"], "payload_root")
+        self.assertNotIn("schema", prompt["output"])
+        self.assertEqual(
+            prompt["output"]["canonical_envelope_schema"],
+            str(self.schema_path),
+        )
+        self.assertEqual(
+            prompt["result_contract"]["output_transport"], "payload_root"
+        )
+        self.assertIn(
+            "Do not emit schema_version, work_item_id, status, payload",
+            prompt["output"]["requirement"],
+        )
 
     # --- helpers ----------------------------------------------------------
 
-    def _valid_envelope(self) -> dict:
+    def _valid_payload(self) -> dict:
         return {
-            "schema_version": 3,
-            "work_item_id": "feature:Feat-01",
-            "status": "completed",
-            "payload": {"observation_id": "feature:Feat-01"},
+            "evidence_declarations": [],
+            "claim_reviews": [],
+            "observations": [],
+            "open_questions": [],
             "notes": [],
-            "error": None,
         }
 
 
