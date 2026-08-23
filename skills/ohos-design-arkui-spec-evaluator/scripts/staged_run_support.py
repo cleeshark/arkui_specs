@@ -1727,18 +1727,19 @@ def validate_aggregation_document(
     if not isinstance(bases, list):
         errors.append("aggregation.contradiction_bases: expected a list")
         bases = []
-    basis_criteria: list[str] = []
+    # A contradiction basis describes a root defect, not one individual
+    # Criterion.  A shared Function-level defect may invalidate several
+    # Criteria, so coverage is derived from the Findings owned by the basis'
+    # defect record.  This deliberately mirrors the declared aggregation
+    # schema, whose contradictionBasis has no criterion_id field.
+    covered_contradicted_criteria: set[str] = set()
+    basis_defect_keys: set[str] = set()
     for index, basis in enumerate(bases):
         label = f"aggregation.contradiction_bases[{index}]"
         if not isinstance(basis, dict):
             errors.append(f"{label}: expected an object")
             continue
-        criterion_id = basis.get("criterion_id")
-        if not isinstance(criterion_id, str) or not criterion_id:
-            errors.append(f"{label}.criterion_id: required")
-            continue
-        basis_criteria.append(criterion_id)
-        for key in ("core_claim", "core_scope", "why_partial_is_insufficient"):
+        for key in ("statement", "left_assertion", "right_assertion"):
             if not isinstance(basis.get(key), str) or not basis.get(key):
                 errors.append(f"{label}.{key}: expected a non-empty string")
         affected = _validate_string_list(
@@ -1746,35 +1747,40 @@ def validate_aggregation_document(
         )
         if not affected:
             errors.append(f"{label}.affected_feat_ids: at least one affected Feat is required")
-        families = _validate_string_list(
-            basis.get("independent_contract_families"),
-            f"{label}.independent_contract_families",
-            errors,
-        )
-        if len(families) < 2 and basis.get("function_shared_assertion") is not True:
-            errors.append(
-                f"{label}: CONTRADICTED requires two independent contract families or one "
-                "materially false Function-shared assertion"
-            )
+        if basis.get("function_shared_assertion") not in {True, False}:
+            errors.append(f"{label}.function_shared_assertion: expected a boolean")
         if basis.get("correction_scope") != "replace_core":
             errors.append(f"{label}.correction_scope: expected 'replace_core'")
         primary_defect = basis.get("primary_defect_key")
-        owner = ownership_by_key.get(primary_defect)
+        if isinstance(primary_defect, str) and primary_defect in basis_defect_keys:
+            errors.append(f"{label}.primary_defect_key: duplicate contradiction basis")
+        if isinstance(primary_defect, str):
+            basis_defect_keys.add(primary_defect)
+        owner = (
+            ownership_by_key.get(primary_defect)
+            if isinstance(primary_defect, str)
+            else None
+        )
         if owner is None:
             errors.append(f"{label}.primary_defect_key: unknown defect {primary_defect!r}")
         else:
             owned_criteria = {
-                owner.get("primary_criterion_id"),
-                *owner.get("secondary_criterion_ids", []),
+                finding.get("criterion_id")
+                for finding_id in owner.get("finding_ids", [])
+                for finding in [findings_by_id.get(finding_id)]
+                if isinstance(finding, dict) and isinstance(finding.get("criterion_id"), str)
             }
-            if criterion_id not in owned_criteria:
+            basis_criteria = owned_criteria & set(contradicted_criteria)
+            if not basis_criteria:
                 errors.append(
-                    f"{label}.primary_defect_key: defect does not affect Criterion {criterion_id}"
+                    f"{label}.primary_defect_key: defect does not affect any CONTRADICTED Criterion"
                 )
-    if basis_criteria != contradicted_criteria:
+            covered_contradicted_criteria.update(basis_criteria)
+    if covered_contradicted_criteria != set(contradicted_criteria):
         errors.append(
-            "aggregation.contradiction_bases: must contain every CONTRADICTED Criterion "
-            f"exactly once in Criterion order; expected {contradicted_criteria}, got {basis_criteria}"
+            "aggregation.contradiction_bases: basis defects must cover every CONTRADICTED "
+            f"Criterion through owned Findings; expected {contradicted_criteria}, got "
+            f"{[criterion for criterion in contradicted_criteria if criterion in covered_contradicted_criteria]}"
         )
     return errors
 

@@ -932,8 +932,49 @@ def validate_aggregation_document(
                 entity_type="contradiction_basis", entity_id=str(index),
                 actual=str(defect_key),
             ))
-    contradiction_criteria = [
-        str(basis.get("primary_criterion_id"))
-        for basis in contradictions
-    ]
+    # ``contradiction_bases`` describe root defects.  They intentionally do
+    # not carry a Criterion ID: one Function-shared defect can invalidate
+    # several Criteria.  Derive coverage from the Findings referenced by the
+    # owning defect record so the typed validator follows the aggregation
+    # schema and the staged assembler.
+    covered_contradicted: set[str] = set()
+    seen_basis_defects: set[str] = set()
+    for index, basis in enumerate(contradictions):
+        row_label = f"{label}.contradiction_bases[{index}]"
+        defect_key = basis.get("primary_defect_key")
+        if isinstance(defect_key, str) and defect_key in seen_basis_defects:
+            errors.append(_err(
+                "CONTRADICTION_BASIS_INVALID", f"{row_label}.primary_defect_key",
+                entity_type="contradiction_basis", entity_id=str(index),
+                expected="one basis per root defect", actual=defect_key,
+            ))
+        if isinstance(defect_key, str):
+            seen_basis_defects.add(defect_key)
+        owner = next(
+            (record for record in ownership if record.get("defect_key") == defect_key),
+            None,
+        )
+        if owner is None:
+            continue
+        owned_criteria = {
+            findings_by_id[finding_id].get("criterion_id")
+            for finding_id in _strings(owner.get("finding_ids"))
+            if finding_id in findings_by_id
+            and isinstance(findings_by_id[finding_id].get("criterion_id"), str)
+        }
+        covered_contradicted.update(owned_criteria & set(contradicted_criteria))
+
+    if covered_contradicted != set(contradicted_criteria):
+        errors.append(_err(
+            "CONTRADICTION_BASIS_INVALID", f"{label}.contradiction_bases",
+            entity_type="contradiction_basis",
+            expected=(
+                "basis root defects cover every CONTRADICTED Criterion through "
+                f"owned Findings: {contradicted_criteria}"
+            ),
+            actual=str([
+                criterion for criterion in contradicted_criteria
+                if criterion in covered_contradicted
+            ]),
+        ))
     return errors

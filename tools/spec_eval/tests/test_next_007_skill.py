@@ -1119,7 +1119,7 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             "contradiction_bases": [],
         }
         errors = validate_aggregation_document(document, state, {"items": []})
-        self.assertTrue(any("must contain every CONTRADICTED Criterion" in error for error in errors))
+        self.assertTrue(any("basis defects must cover every CONTRADICTED Criterion" in error for error in errors))
 
     def _valid_policy_bases(self) -> list[dict[str, str]]:
         return [
@@ -1261,14 +1261,12 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
                 "cross_feat_contracts_reviewed": True,
                 "criterion_results": results,
                 "contradiction_bases": [{
-                    "criterion_id": secondary,
-                    "core_claim": "A shared root defect overturns the secondary Criterion core.",
+                    "statement": "A shared root defect overturns the secondary Criterion core.",
+                    "left_assertion": "The contract states the shared behavior.",
+                    "right_assertion": "Validated evidence contradicts the shared behavior.",
                     "affected_feat_ids": ["Feat-01"],
-                    "independent_contract_families": ["family-a", "family-b"],
                     "function_shared_assertion": False,
-                    "core_scope": "secondary-core",
                     "correction_scope": "replace_core",
-                    "why_partial_is_insufficient": "The shared defect requires replacing the Criterion core.",
                     "primary_defect_key": scoped_key,
                 }],
                 "defect_ownership": [{
