@@ -502,3 +502,34 @@ def validate_patch_scope(
         ):
             violations.append(f"patch path outside correction scope: {path}")
     return violations
+
+
+def validate_patch_values(
+    patches: Iterable[dict[str, Any]],
+    *,
+    allowed_values_by_path: dict[str, Iterable[str]],
+) -> list[str]:
+    """Validate enum-constrained patch values before applying a correction."""
+    violations: list[str] = []
+    allowed = {
+        path: set(values) for path, values in allowed_values_by_path.items()
+    }
+    for patch in patches:
+        path = patch.get("path") if isinstance(patch, dict) else None
+        if path not in allowed:
+            continue
+        raw_value = patch.get("value")
+        try:
+            value = json.loads(raw_value) if isinstance(raw_value, str) else raw_value
+        except json.JSONDecodeError:
+            violations.append(f"{path}: patch value is not valid JSON")
+            continue
+        if not isinstance(value, list) or not value or any(
+            not isinstance(item, str) or item not in allowed[path]
+            for item in value
+        ):
+            violations.append(
+                f"{path}: every Criterion must be one of "
+                f"{sorted(allowed[path])}"
+            )
+    return violations

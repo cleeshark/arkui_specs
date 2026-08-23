@@ -49,6 +49,7 @@ from spec_eval.service.pipeline.correction import (
     is_model_correction_error,
     resolve_typed_error_json_path,
     validate_patch_scope,
+    validate_patch_values,
 )
 from spec_eval.service.store.repositories import (
     EventRepository,
@@ -314,6 +315,7 @@ class JudgmentFlow:
         on_publish: Callable[[dict[str, Any]], None],
         fingerprint: str,
         stage_event: str,
+        reproject: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
     ) -> JudgmentOutcome:
         """Run one work item through the state machine.
 
@@ -334,7 +336,11 @@ class JudgmentFlow:
         def typed_of(document: dict[str, Any]) -> list[TypedError]:
             return validate(document)
 
+        def projected(document: dict[str, Any]) -> dict[str, Any]:
+            return reproject(document) if reproject is not None else document
+
         def publish(document: dict[str, Any], catalog: list[dict[str, Any]]) -> None:
+            document = projected(document)
             _write_json(output_path, document)
             SS.set_work_item_state(self.ctx.run_dir, work.work_item_id, SS.VALIDATED)
             on_publish(document)
@@ -366,6 +372,7 @@ class JudgmentFlow:
             )
             if not changes:
                 return document, typed
+            corrected = projected(corrected)
             remaining = typed_of(corrected)
             self.events.append(
                 self.ctx.job_id, "correction_deterministic_repaired", {
@@ -513,6 +520,7 @@ class JudgmentFlow:
             corrected_document, changes, unresolved = apply_deterministic_correction(
                 candidate_document, deterministic_dicts,
             )
+            corrected_document = projected(corrected_document)
             if unresolved:
                 self.events.append(self.ctx.job_id, "correction_skipped", {
                     "work_item_id": work.work_item_id,
@@ -659,9 +667,16 @@ class JudgmentFlow:
                     allowed_paths=correction_contract.get("allowed_paths", []),
                     immutable_paths=correction_contract.get("immutable_paths", []),
                 )
+                violations.extend(validate_patch_values(
+                    patches,
+                    allowed_values_by_path=correction_contract.get(
+                        "allowed_values_by_path", {}
+                    ),
+                ))
                 if violations:
                     raise ValueError("; ".join(violations))
                 corrected_payload = apply_json_patch(candidate_document, patches)
+                corrected_payload = projected(corrected_payload)
                 corrected_candidate_for_failure = corrected_payload
             except (OSError, json.JSONDecodeError, ValueError, TypeError) as exc:
                 return self._fail(
@@ -790,10 +805,21 @@ class JudgmentFlow:
             resolve_typed_error_json_path(candidate_document, error)
             for error in typed_errors
         ]
+        valid_criterion_ids = tuple(
+            base_contract.get("machine_contract", {}).get(
+                "valid_criterion_ids", ()
+            )
+        )
+        allowed_values_by_path = {}
+        if valid_criterion_ids:
+            for error, path in zip(typed_errors, allowed_paths):
+                if error.get("code") == "CRITERION_UNKNOWN":
+                    allowed_values_by_path[path] = list(valid_criterion_ids)
         correction_contract = {
             "format": "json_patch",
             "base": "published_candidate",
             "allowed_paths": list(dict.fromkeys(allowed_paths)),
+            "allowed_values_by_path": allowed_values_by_path,
             "immutable_paths": [
                 "/func_id", "/source_revision", "/run_id", "/observation_id",
                 "/expected_claim_ids", "/required_checks", "/reviewed_claim_ids",
@@ -806,6 +832,7 @@ class JudgmentFlow:
             observation_profile=observation_profile,
             allowed_paths=allowed_paths,
             evidence_catalog=catalog if needs_evidence else (),
+            valid_criterion_ids=valid_criterion_ids,
         )
 
         # Correction never needs the embedded workflow references.  Keep only

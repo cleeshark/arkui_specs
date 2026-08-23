@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Iterable
 
 from . import contracts as K
 from .errors import SERVICE_NORMALIZATION  # noqa: F401  (re-export convenience)
@@ -67,8 +68,14 @@ def _evidence_declaration_def() -> dict:
     }
 
 
-def _observation_defs() -> dict:
+def _criterion_id(valid_criterion_ids: Iterable[str]) -> dict:
+    values = list(dict.fromkeys(valid_criterion_ids))
+    return _enum(*values) if values else _non_empty_string()
+
+
+def _observation_defs(valid_criterion_ids: Iterable[str] = ()) -> dict:
     outcome = _enum(*K.LOCAL_OUTCOMES)
+    criterion_id = _criterion_id(valid_criterion_ids)
     unit = {
         "type": "object",
         "properties": {
@@ -100,7 +107,7 @@ def _observation_defs() -> dict:
         "type": "object",
         "properties": {
             "criterion_ids": {
-                "type": "array", "items": _non_empty_string(), "minItems": 1,
+                "type": "array", "items": criterion_id, "minItems": 1,
             },
             "check_ids": {"type": "array", "items": _non_empty_string()},
             "claim_ids": {"type": "array", "items": _non_empty_string()},
@@ -287,14 +294,16 @@ def _correction_defs() -> dict:
     }
 
 
-def build_envelope_schema(payload_kind: str) -> dict:
+def build_envelope_schema(
+    payload_kind: str, *, valid_criterion_ids: Iterable[str] = ()
+) -> dict:
     """Build the executor envelope v3 schema for one payload kind.
 
     ``payload_kind`` is ``"observation"`` or ``"aggregation"``; the envelope is
     identical for both, only the nested payload definition differs.
     """
     if payload_kind == "observation":
-        defs = _observation_defs()
+        defs = _observation_defs(valid_criterion_ids)
         payload_ref = {"$ref": "#/$defs/observationPayload"}
     elif payload_kind == "aggregation":
         defs = _aggregation_defs()
@@ -323,9 +332,16 @@ def build_envelope_schema(payload_kind: str) -> dict:
     }
 
 
-def write_envelope_schema(payload_kind: str, path: Path) -> Path:
+def write_envelope_schema(
+    payload_kind: str,
+    path: Path,
+    *,
+    valid_criterion_ids: Iterable[str] = (),
+) -> Path:
     """Write one generated schema; callers pass it to ``--output-schema``."""
-    schema = build_envelope_schema(payload_kind)
+    schema = build_envelope_schema(
+        payload_kind, valid_criterion_ids=valid_criterion_ids
+    )
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         json.dumps(schema, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"

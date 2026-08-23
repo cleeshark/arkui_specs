@@ -119,7 +119,10 @@ def run_semantic(
     resumes at the single correction turn instead of regenerating.
     """
     from spec_eval.kernel import staged_state as SS
-    from spec_eval.kernel.normalize import normalize_observation
+    from spec_eval.kernel.normalize import (
+        normalize_observation,
+        project_observation_derived_fields,
+    )
     from spec_eval.kernel.validate import validate_observation_document
     from spec_eval.service.pipeline.judgment_flow import (
         JudgmentFlow, input_fingerprint,
@@ -229,6 +232,7 @@ def run_semantic(
             on_publish=_publish,
             fingerprint=fingerprint,
             stage_event="work_item_completed",
+            reproject=project_observation_derived_fields,
         )
         if outcome.status != C.STATUS_COMPLETED:
             return SemanticStageResult(

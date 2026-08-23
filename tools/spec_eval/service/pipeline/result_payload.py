@@ -62,7 +62,9 @@ def observe_observation_prompt_contract(
 ) -> dict[str, Any]:
     """Contract for one observation work item's judgment turn."""
     schema_path = write_envelope_schema(
-        "observation", schema_dir / "envelope-observation.schema.json"
+        "observation",
+        schema_dir / "envelope-observation.schema.json",
+        valid_criterion_ids=machine_contract.get("valid_criterion_ids", ()),
     )
     contract = _base_contract(
         payload_kind="observation",
