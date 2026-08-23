@@ -57,6 +57,28 @@ from spec_eval.service.store.repositories import (
     JobStatisticsRepository,
 )
 
+
+# A correction candidate can be either the executor's raw judgment payload
+# (when normalization failed before a published document could be built) or
+# the already-normalized published document (when typed validation failed).
+# Keep this distinction explicit so JSON Patch correction can resume the
+# correct half of the pipeline.
+CANDIDATE_RAW_PAYLOAD = "raw_payload"
+CANDIDATE_PUBLISHED_DOCUMENT = "published_candidate"
+
+
+def _candidate_kind(document: dict[str, Any], metadata: dict[str, Any]) -> str:
+    """Return the stored candidate representation, with legacy inference."""
+    kind = metadata.get("candidate_kind")
+    if kind in {CANDIDATE_RAW_PAYLOAD, CANDIDATE_PUBLISHED_DOCUMENT}:
+        return kind
+    # Runs created before candidate_kind was persisted may still be retried.
+    # Raw judgment payloads declare evidence by local key; published
+    # documents contain canonical observations instead.
+    if isinstance(document.get("evidence_declarations"), list):
+        return CANDIDATE_RAW_PAYLOAD
+    return CANDIDATE_PUBLISHED_DOCUMENT
+
 Terminating = Callable[[str, str], None]
 """transition(job_id, event_type, payload) used for terminal failures."""
 
@@ -415,6 +437,7 @@ class JudgmentFlow:
                 _write_json(candidate_path, result.observation)
                 _write_json(errors_path, {
                     "input_fingerprint": fingerprint,
+                    "candidate_kind": CANDIDATE_RAW_PAYLOAD,
                     "errors": [
                         error.to_dict() for error in normalization.errors
                     ],
@@ -437,6 +460,7 @@ class JudgmentFlow:
                 _write_json(candidate_path, normalization.document)
                 _write_json(errors_path, {
                     "input_fingerprint": fingerprint,
+                    "candidate_kind": CANDIDATE_PUBLISHED_DOCUMENT,
                     "errors": [error.to_dict() for error in typed],
                     "evidence_catalog": normalization.evidence_catalog,
                 })
@@ -585,6 +609,9 @@ class JudgmentFlow:
                 _write_json(candidate_path, corrected_document)
                 _write_json(errors_path, {
                     "input_fingerprint": fingerprint,
+                    "candidate_kind": breakpoint_data.get(
+                        "candidate_kind", CANDIDATE_PUBLISHED_DOCUMENT
+                    ),
                     "errors": remaining_dicts,
                     "evidence_catalog": _published_evidence_catalog(corrected_document),
                     "deterministic_changes": changes,
@@ -646,9 +673,11 @@ class JudgmentFlow:
                  "error": failure},
                 failure,
             )
-        # New Correction turns return JSON Patch against the normalized
-        # candidate.  Keep the full-payload fallback for old executors and
-        # fixtures while the protocol rolls forward.
+        # New Correction turns return JSON Patch against the candidate.  The
+        # candidate kind determines whether patch application resumes from a
+        # raw judgment payload or an already-normalized published document.
+        # Keep the full-payload fallback for old executors and fixtures while
+        # the protocol rolls forward.
         correction_payload = result.observation or {}
         corrected_candidate_for_failure = correction_payload
         if isinstance(correction_payload, dict) and "patches" in correction_payload:
@@ -676,7 +705,6 @@ class JudgmentFlow:
                 if violations:
                     raise ValueError("; ".join(violations))
                 corrected_payload = apply_json_patch(candidate_document, patches)
-                corrected_payload = projected(corrected_payload)
                 corrected_candidate_for_failure = corrected_payload
             except (OSError, json.JSONDecodeError, ValueError, TypeError) as exc:
                 return self._fail(
@@ -688,23 +716,55 @@ class JudgmentFlow:
                     },
                     f"invalid JSON Patch: {exc}",
                 )
-            typed = typed_of(corrected_payload)
-            if typed:
-                corrected_payload, typed = repair_after_model_correction(
-                    corrected_payload, typed,
-                )
+            candidate_kind = _candidate_kind(corrected_payload, breakpoint_data)
+            if candidate_kind == CANDIDATE_RAW_PAYLOAD:
+                # An initial normalization error leaves the raw executor
+                # payload in .candidate.  Re-enter normalization after the
+                # patch so the template identity, canonical evidence, claim
+                # ordering and derived fields are rebuilt before validation.
+                normalization = normalize(corrected_payload)
+                if not normalization.fatal and not normalization.errors:
+                    corrected_payload = projected(normalization.document)
+                    corrected_candidate_for_failure = corrected_payload
+                    typed = typed_of(corrected_payload)
+                    if typed:
+                        corrected_payload, typed = repair_after_model_correction(
+                            corrected_payload, typed,
+                        )
+                        corrected_candidate_for_failure = corrected_payload
+                    if not typed:
+                        publish(
+                            corrected_payload,
+                            normalization.evidence_catalog,
+                        )
+                        return JudgmentOutcome(C.STATUS_COMPLETED, published=True)
+                    normalization = NormalizationResult(
+                        document=corrected_payload,
+                        errors=typed,
+                        evidence_catalog=normalization.evidence_catalog,
+                    )
+            else:
+                # Validation-only failures already have a published candidate;
+                # preserve the existing patch -> project -> validate path.
+                corrected_payload = projected(corrected_payload)
                 corrected_candidate_for_failure = corrected_payload
-            if not typed:
-                publish(
-                    corrected_payload,
-                    _published_evidence_catalog(corrected_payload),
+                typed = typed_of(corrected_payload)
+                if typed:
+                    corrected_payload, typed = repair_after_model_correction(
+                        corrected_payload, typed,
+                    )
+                    corrected_candidate_for_failure = corrected_payload
+                if not typed:
+                    publish(
+                        corrected_payload,
+                        _published_evidence_catalog(corrected_payload),
+                    )
+                    return JudgmentOutcome(C.STATUS_COMPLETED, published=True)
+                normalization = NormalizationResult(
+                    document=None,
+                    errors=typed,
+                    evidence_catalog=_published_evidence_catalog(corrected_payload),
                 )
-                return JudgmentOutcome(C.STATUS_COMPLETED, published=True)
-            normalization = NormalizationResult(
-                document=None,
-                errors=typed,
-                evidence_catalog=_published_evidence_catalog(corrected_payload),
-            )
         else:
             corrected_payload = _guard_correction_regression(
                 result.observation, candidate_path, model_dicts,
@@ -801,6 +861,7 @@ class JudgmentFlow:
             for code in error_codes
         )
         candidate_document = json.loads(candidate_path.read_text(encoding="utf-8"))
+        candidate_kind = _candidate_kind(candidate_document, breakpoint_data)
         allowed_paths = [
             resolve_typed_error_json_path(candidate_document, error)
             for error in typed_errors
@@ -817,7 +878,7 @@ class JudgmentFlow:
                     allowed_values_by_path[path] = list(valid_criterion_ids)
         correction_contract = {
             "format": "json_patch",
-            "base": "published_candidate",
+            "base": candidate_kind,
             "allowed_paths": list(dict.fromkeys(allowed_paths)),
             "allowed_values_by_path": allowed_values_by_path,
             "immutable_paths": [
