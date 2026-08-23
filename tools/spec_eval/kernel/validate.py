@@ -52,6 +52,31 @@ def _strings(value: Any) -> list[str]:
     return [item for item in value if isinstance(item, str) and item]
 
 
+def _validate_unique_strings(
+    value: Any,
+    path: str,
+    errors: list[TypedError],
+    *,
+    entity_type: str,
+    entity_id: str,
+) -> None:
+    seen: set[str] = set()
+    duplicates: list[str] = []
+    for item in _strings(value):
+        if item in seen and item not in duplicates:
+            duplicates.append(item)
+        seen.add(item)
+    if duplicates:
+        errors.append(_err(
+            "OBSERVATION_FIELD_INVALID",
+            path,
+            entity_type=entity_type,
+            entity_id=entity_id,
+            expected="unique string values",
+            actual=f"duplicate values={duplicates}",
+        ))
+
+
 def _is_low_information(text: Any) -> bool:
     if not isinstance(text, str):
         return True
@@ -177,6 +202,15 @@ def validate_observation_document(
 
     for obs_index, entry in enumerate(observations):
         obs_label = f"{label}.observations[{obs_index}]"
+        observation_id = str(entry.get("observation_id"))
+        for field in ("criterion_ids", "check_ids", "claim_ids"):
+            _validate_unique_strings(
+                entry.get(field),
+                f"{obs_label}.{field}",
+                errors,
+                entity_type="observation",
+                entity_id=observation_id,
+            )
         outcome = entry.get("local_outcome")
         observation_claim_ids = _strings(entry.get("claim_ids"))
         if expected_claims and not observation_claim_ids:
@@ -308,6 +342,14 @@ def validate_observation_document(
     for index, row in enumerate(claim_rows):
         claim_id = str(row.get("claim_id"))
         row_label = f"{label}.claim_reviews[{index}]"
+        for field in ("criterion_ids", "evidence_ids", "defect_keys"):
+            _validate_unique_strings(
+                row.get(field),
+                f"{row_label}.{field}",
+                errors,
+                entity_type="claim",
+                entity_id=claim_id,
+            )
         outcome = row.get("local_outcome")
         if outcome not in K.LOCAL_OUTCOMES:
             errors.append(_err(
@@ -433,6 +475,13 @@ def validate_observation_document(
         for unit_index, unit in enumerate(units):
             unit_label = f"{row_label}.unit_reviews[{unit_index}]"
             unit_id = str(unit.get("unit_id"))
+            _validate_unique_strings(
+                unit.get("evidence_ids"),
+                f"{unit_label}.evidence_ids",
+                errors,
+                entity_type="unit",
+                entity_id=unit_id,
+            )
             unknown = sorted(
                 set(_strings(unit.get("evidence_ids"))) - defined_evidence_ids
             )

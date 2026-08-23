@@ -47,6 +47,9 @@ def _observation_judgment_rules() -> list[str]:
         "Observation references for decomposition and Claim outcome derivation. "
         "The service derives published reviewed_units from unit_id order and "
         "validates unit presence, IDs, evidence, and outcome consistency.",
+        "Treat every ID/reference list as set-like and do not repeat values. "
+        "This includes criterion_ids, check_ids, claim_ids, evidence_refs and "
+        "defect_keys in observation, claim and unit judgments.",
     ]
 
 
