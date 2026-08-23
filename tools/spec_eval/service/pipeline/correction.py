@@ -279,8 +279,13 @@ def apply_json_patch(document: dict[str, Any], patches: Iterable[dict[str, Any]]
         if isinstance(raw_value, str):
             try:
                 patch_value = json.loads(raw_value)
-            except json.JSONDecodeError as exc:
-                raise ValueError(f"patch value is not valid JSON: {exc}") from exc
+            except json.JSONDecodeError:
+                # Older correction contracts transport every value as a
+                # string, but a plain scalar string (for example
+                # ``"Critical"``) is already a valid RFC-6902 value and is
+                # not itself a JSON document. Preserve it when the legacy
+                # decoding attempt does not apply.
+                patch_value = raw_value
         else:
             # Native values are accepted by the service helper for unit tests
             # and internal callers; executor transport remains string-only.
