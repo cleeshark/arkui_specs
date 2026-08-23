@@ -149,6 +149,13 @@ def normalize_observation(
     changes: list[str] = []
     resolver = evidence_resolver or FrozenEvidencePathResolver.ace_engine_only(repo_root)
 
+    def _deduplicated_strings(value: Any, label: str) -> list[str]:
+        raw_values = _strings(value)
+        unique_values = _unique_strings(value)
+        if unique_values != raw_values:
+            changes.append(f"{label} deduplicated")
+        return unique_values
+
     # empty expected sets are legitimate (synthetic loop fixtures, empty
     # features); claim-set mismatches are the validator's job
     expected_claims = _strings(template.get("expected_claim_ids"))
@@ -226,9 +233,9 @@ def normalize_observation(
         "evidence_declarations: canonical IDs assigned and hashes verified"
     )
 
-    def _resolve_evidence_ids(raw: Any) -> list[str]:
+    def _resolve_evidence_ids(raw: Any, label: str) -> list[str]:
         resolved: list[str] = []
-        for item in _strings(raw):
+        for item in _deduplicated_strings(raw, label):
             row = evidence_by_key.get(item)
             if row is not None:
                 resolved.append(row["evidence_id"])
@@ -243,9 +250,13 @@ def normalize_observation(
     #    the published invariant (claim evidence defined by observations) holds
     observations: list[dict[str, Any]] = []
     for obs_index, entry in enumerate(_rows(judgment.get("observations"))):
+        evidence_refs = _deduplicated_strings(
+            entry.get("evidence_refs"),
+            f"observations[{obs_index}].evidence_refs",
+        )
         evidence_rows = [
             evidence_by_key[key]
-            for key in _strings(entry.get("evidence_refs"))
+            for key in evidence_refs
             if key in evidence_by_key
         ]
         raw_defect_key = entry.get("defect_key")
@@ -267,9 +278,18 @@ def normalize_observation(
                 primary_criterion = None
         observations.append({
             "observation_id": f"OBS-{obs_index + 1}",
-            "criterion_ids": _strings(entry.get("criterion_ids")),
-            "check_ids": _strings(entry.get("check_ids")),
-            "claim_ids": _strings(entry.get("claim_ids")),
+            "criterion_ids": _deduplicated_strings(
+                entry.get("criterion_ids"),
+                f"observations[{obs_index}].criterion_ids",
+            ),
+            "check_ids": _deduplicated_strings(
+                entry.get("check_ids"),
+                f"observations[{obs_index}].check_ids",
+            ),
+            "claim_ids": _deduplicated_strings(
+                entry.get("claim_ids"),
+                f"observations[{obs_index}].claim_ids",
+            ),
             "local_outcome": local_outcome,
             "breadth": entry.get("breadth"),
             "contract_family": entry.get("contract_family", ""),
@@ -322,9 +342,16 @@ def normalize_observation(
             })
             continue
         raw_dk_list = _strings(row.get("defect_keys"))
-        norm_dk_list = [k for k in (_normalize_defect_key(k) for k in raw_dk_list) if k]
-        for raw_k, norm_k in zip(raw_dk_list, norm_dk_list):
-            if norm_k != raw_k:
+        normalized_defect_keys = [
+            key for key in (_normalize_defect_key(key) for key in raw_dk_list)
+            if key
+        ]
+        norm_dk_list = list(dict.fromkeys(normalized_defect_keys))
+        if norm_dk_list != normalized_defect_keys:
+            changes.append(f"claim_reviews[{claim_id}].defect_keys deduplicated")
+        for raw_k in raw_dk_list:
+            norm_k = _normalize_defect_key(raw_k)
+            if norm_k is not None and norm_k != raw_k:
                 changes.append(
                     f"claim {claim_id} defect_key: canonicalized {raw_k!r} -> {norm_k!r}"
                 )
@@ -341,12 +368,18 @@ def normalize_observation(
                 "unit_id": unit.get("unit_id"),
                 "facet_type": unit.get("facet_type"),
                 "local_outcome": unit.get("local_outcome"),
-                "evidence_ids": _resolve_evidence_ids(unit.get("evidence_refs")),
+                "evidence_ids": _resolve_evidence_ids(
+                    unit.get("evidence_refs"),
+                    f"claim_reviews[{claim_id}].unit_reviews[{unit_index}].evidence_refs",
+                ),
                 "fact": unit.get("fact", ""),
                 "verification_gap": unit.get("verification_gap"),
-            } for unit in units],
+            } for unit_index, unit in enumerate(units)],
             "criterion_ids": criteria_by_claim.get(claim_id, []),
-            "evidence_ids": _resolve_evidence_ids(row.get("evidence_refs")),
+            "evidence_ids": _resolve_evidence_ids(
+                row.get("evidence_refs"),
+                f"claim_reviews[{claim_id}].evidence_refs",
+            ),
             "defect_keys": norm_dk_list,
             "reason": row.get("reason", ""),
             "verification_gap": (

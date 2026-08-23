@@ -30,6 +30,11 @@ from spec_eval.kernel.errors import (
 from spec_eval.kernel.normalize import DEFECT_KEY
 
 
+_OBSERVATION_SET_FIELDS = frozenset({"criterion_ids", "check_ids", "claim_ids"})
+_CLAIM_SET_FIELDS = frozenset({"criterion_ids", "evidence_ids", "defect_keys"})
+_UNIT_SET_FIELDS = frozenset({"evidence_ids"})
+
+
 def error_repairability(error: TypedError | dict[str, Any]) -> str:
     """Return the Kernel-owned routing class; unknown codes fail closed."""
     code = error.code if isinstance(error, TypedError) else error.get("code")
@@ -77,6 +82,19 @@ def _claim_owned_defects(document: dict[str, Any], claim_id: str) -> set[str]:
     return result
 
 
+def _deduplicate_string_field(row: dict[str, Any], field: str) -> bool:
+    values = row.get(field)
+    if not isinstance(values, list) or any(
+        not isinstance(value, str) or not value for value in values
+    ):
+        return False
+    unique_values = list(dict.fromkeys(values))
+    if unique_values == values:
+        return False
+    row[field] = unique_values
+    return True
+
+
 def apply_deterministic_correction(
     document: dict[str, Any],
     errors: Iterable[TypedError | dict[str, Any]],
@@ -104,6 +122,48 @@ def apply_deterministic_correction(
             else:
                 rows[index]["local_outcome"] = canonical
                 changes.append(f"claim_reviews[{index}].local_outcome canonicalized")
+            continue
+
+        if error.code == "OBSERVATION_FIELD_INVALID":
+            field = error.path.rsplit(".", 1)[-1]
+            row: dict[str, Any] | None = None
+            label: str | None = None
+            allowed_fields: frozenset[str] = frozenset()
+            if ".unit_reviews[" in error.path:
+                allowed_fields = _UNIT_SET_FIELDS
+                claim_index = _path_index(error.path, "claim_reviews")
+                claim_rows = _rows(corrected.get("claim_reviews"))
+                unit_index = _path_index(error.path, "unit_reviews")
+                if claim_index is not None and claim_index < len(claim_rows):
+                    unit_rows = _rows(claim_rows[claim_index].get("unit_reviews"))
+                    if unit_index is not None and unit_index < len(unit_rows):
+                        row = unit_rows[unit_index]
+                        label = (
+                            f"claim_reviews[{claim_index}].unit_reviews[{unit_index}]"
+                        )
+            elif ".claim_reviews[" in error.path:
+                allowed_fields = _CLAIM_SET_FIELDS
+                index = _path_index(error.path, "claim_reviews")
+                rows = _rows(corrected.get("claim_reviews"))
+                if index is not None and index < len(rows):
+                    row = rows[index]
+                    label = f"claim_reviews[{index}]"
+            elif ".observations[" in error.path:
+                allowed_fields = _OBSERVATION_SET_FIELDS
+                index = _path_index(error.path, "observations")
+                rows = _rows(corrected.get("observations"))
+                if index is not None and index < len(rows):
+                    row = rows[index]
+                    label = f"observations[{index}]"
+            if (
+                field not in allowed_fields
+                or row is None
+                or label is None
+                or not _deduplicate_string_field(row, field)
+            ):
+                unresolved.append(error)
+            else:
+                changes.append(f"{label}.{field} deduplicated")
             continue
 
         if error.code == "DEFECT_KEYS_INVALID":

@@ -26,6 +26,64 @@ from spec_eval.service.pipeline.judgment_flow import JudgmentFlow
 
 
 class CorrectionFlowTest(unittest.TestCase):
+    def test_duplicate_observation_lists_are_repaired_without_model(self) -> None:
+        document = {
+            "observations": [{
+                "criterion_ids": ["C-1", "C-1"],
+                "check_ids": ["check-1", "check-1"],
+                "claim_ids": ["claim-1", "claim-1"],
+            }],
+            "claim_reviews": [{
+                "criterion_ids": ["C-1", "C-1"],
+                "evidence_ids": ["EV-1", "EV-1"],
+                "defect_keys": [],
+                "unit_reviews": [{"evidence_ids": ["EV-1", "EV-1"]}],
+            }],
+        }
+        paths = (
+            "observation.observations[0].criterion_ids",
+            "observation.observations[0].check_ids",
+            "observation.observations[0].claim_ids",
+            "observation.claim_reviews[0].criterion_ids",
+            "observation.claim_reviews[0].evidence_ids",
+            "observation.claim_reviews[0].unit_reviews[0].evidence_ids",
+        )
+        errors = [
+            TypedError("OBSERVATION_FIELD_INVALID", path)
+            for path in paths
+        ]
+
+        corrected, changes, unresolved = apply_deterministic_correction(
+            document, errors
+        )
+
+        self.assertFalse(unresolved)
+        self.assertEqual(corrected["observations"][0]["criterion_ids"], ["C-1"])
+        self.assertEqual(corrected["observations"][0]["check_ids"], ["check-1"])
+        self.assertEqual(corrected["observations"][0]["claim_ids"], ["claim-1"])
+        self.assertEqual(corrected["claim_reviews"][0]["criterion_ids"], ["C-1"])
+        self.assertEqual(corrected["claim_reviews"][0]["evidence_ids"], ["EV-1"])
+        self.assertEqual(
+            corrected["claim_reviews"][0]["unit_reviews"][0]["evidence_ids"],
+            ["EV-1"],
+        )
+        self.assertEqual(len(changes), len(paths))
+
+    def test_duplicate_repair_rejects_unowned_list_fields(self) -> None:
+        document = {"observations": [{"notes": ["same", "same"]}]}
+        error = TypedError(
+            "OBSERVATION_FIELD_INVALID",
+            "observation.observations[0].notes",
+        )
+
+        corrected, changes, unresolved = apply_deterministic_correction(
+            document, [error]
+        )
+
+        self.assertEqual(corrected, document)
+        self.assertEqual(changes, [])
+        self.assertEqual(unresolved, [error])
+
     def test_primary_criterion_is_added_to_observation_criteria_without_model(self) -> None:
         document = {
             "observations": [{

@@ -476,6 +476,51 @@ class NormalizeObservationTest(unittest.TestCase):
             json.dumps(second.document, sort_keys=True),
         )
 
+    def test_observation_set_like_lists_are_stably_deduplicated(self) -> None:
+        judgment = _judgment(self.evidence_rel)
+        observation = judgment["observations"][0]
+        observation["criterion_ids"] *= 2
+        observation["check_ids"] = [
+            "claim_source_support", "claim_source_support", "boundary_state",
+        ]
+        observation["claim_ids"] = [
+            "Feat-01/AC-1", "Feat-01/AC-1", "Feat-01/AC-2",
+        ]
+        observation["evidence_refs"] = ["e1", "e1", "e2"]
+        judgment["claim_reviews"][0]["evidence_refs"] *= 2
+        judgment["claim_reviews"][0]["unit_reviews"][0]["evidence_refs"] *= 2
+
+        result = normalize_observation(
+            self.template, judgment, repo_root=self.root
+        )
+
+        self.assertEqual(result.errors, [])
+        published = result.document
+        self.assertEqual(
+            published["observations"][0]["criterion_ids"],
+            ["CORRECTNESS-SOURCE-SUPPORT"],
+        )
+        self.assertEqual(
+            published["observations"][0]["check_ids"],
+            ["claim_source_support", "boundary_state"],
+        )
+        self.assertEqual(
+            published["observations"][0]["claim_ids"],
+            ["Feat-01/AC-1", "Feat-01/AC-2"],
+        )
+        self.assertEqual(
+            [row["evidence_id"] for row in published["observations"][0]["evidence"]],
+            ["EV-1", "EV-2"],
+        )
+        self.assertEqual(published["claim_reviews"][0]["evidence_ids"], ["EV-2"])
+        self.assertEqual(
+            published["claim_reviews"][0]["unit_reviews"][0]["evidence_ids"],
+            ["EV-2"],
+        )
+        self.assertGreaterEqual(
+            sum("deduplicated" in change for change in result.changes), 6
+        )
+
     def test_missing_evidence_is_correctable(self) -> None:
         judgment = _judgment("missing/file.txt")
         result = normalize_observation(self.template, judgment, repo_root=self.root)
@@ -680,6 +725,51 @@ class ValidateObservationTest(unittest.TestCase):
         document = copy.deepcopy(self.document)
         document["observations"][0]["criterion_ids"] = ["NOT-A-CRITERION"]
         self.assertIn("CRITERION_UNKNOWN", self._codes(document))
+
+    def test_duplicate_observation_list_values_are_service_errors(self) -> None:
+        for field in ("criterion_ids", "check_ids", "claim_ids"):
+            with self.subTest(field=field):
+                document = copy.deepcopy(self.document)
+                values = document["observations"][0][field]
+                document["observations"][0][field] = [
+                    values[0], values[0], *values[1:],
+                ]
+                duplicates = [
+                    error for error in validate_observation_document(
+                        document, valid_criterion_ids=CRITERIA
+                    )
+                    if error.code == "OBSERVATION_FIELD_INVALID"
+                    and error.path.endswith(f".{field}")
+                ]
+                self.assertEqual(len(duplicates), 1)
+                self.assertEqual(
+                    duplicates[0].repairability, SERVICE_NORMALIZATION
+                )
+
+    def test_duplicate_published_reference_lists_are_service_errors(self) -> None:
+        cases = (
+            ("claim_reviews", 0, "criterion_ids"),
+            ("claim_reviews", 0, "evidence_ids"),
+            ("unit_reviews", 0, "evidence_ids"),
+        )
+        for row_kind, index, field in cases:
+            with self.subTest(row_kind=row_kind, field=field):
+                document = copy.deepcopy(self.document)
+                claim = document["claim_reviews"][0]
+                row = claim if row_kind == "claim_reviews" else claim["unit_reviews"][index]
+                values = row[field]
+                row[field] = [values[0], values[0], *values[1:]]
+                duplicates = [
+                    error for error in validate_observation_document(
+                        document, valid_criterion_ids=CRITERIA
+                    )
+                    if error.code == "OBSERVATION_FIELD_INVALID"
+                    and error.path.endswith(f".{field}")
+                ]
+                self.assertEqual(len(duplicates), 1)
+                self.assertEqual(
+                    duplicates[0].repairability, SERVICE_NORMALIZATION
+                )
 
     def test_observation_requires_claim_ids_when_claims_exist(self) -> None:
         document = copy.deepcopy(self.document)
@@ -1266,6 +1356,8 @@ class MachineContractTest(unittest.TestCase):
         self.assertIn("verification_gap", rules)
         self.assertIn("injected Observation references", rules)
         self.assertIn("service derives published reviewed_units", rules)
+        self.assertIn("do not repeat values", rules)
+        self.assertIn("criterion_ids", rules)
         self.assertNotIn("reviewed_units and unit_reviews must contain", rules)
 
     def test_observation_profile_source_loading_delegates_to_references(self) -> None:
