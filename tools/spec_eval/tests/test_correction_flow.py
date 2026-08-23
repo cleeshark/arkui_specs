@@ -352,6 +352,7 @@ class CorrectionFlowTest(unittest.TestCase):
             "FINDING_CARDINALITY_VIOLATED",
             "POLICY_BASIS_INVALID",
             "CONTRADICTION_BASIS_INVALID",
+            "MAPPING_CLAIM_UNMAPPED",
             "MAPPING_CONCLUSION_FORBIDDEN",
             "MAPPING_NV_REQUIRED",
         ):
@@ -359,6 +360,20 @@ class CorrectionFlowTest(unittest.TestCase):
                 self.assertTrue(is_model_correction_error({"code": code}))
                 self.assertFalse(is_deterministic_error({"code": code}))
                 self.assertFalse(is_fatal_error({"code": code}))
+
+    def test_mapping_and_evidence_errors_share_one_model_correction(self) -> None:
+        errors = [
+            {
+                "code": "MAPPING_CLAIM_UNMAPPED",
+                "path": "aggregation.criterion_results[C].claim_ids",
+            },
+            {
+                "code": "EVIDENCE_TYPE_MISSING",
+                "path": "aggregation.criterion_results[C].evidence",
+            },
+        ]
+        self.assertTrue(all(is_model_correction_error(error) for error in errors))
+        self.assertFalse(any(is_deterministic_error(error) for error in errors))
 
     def test_correction_schema_is_generated_and_compact(self) -> None:
         schema = build_envelope_schema("correction")

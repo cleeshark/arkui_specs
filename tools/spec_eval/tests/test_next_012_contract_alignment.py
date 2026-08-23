@@ -483,6 +483,12 @@ class ObservationFlowTest(_StagedRunIntegrationTest):
         self.assertTrue(any(
             e["code"] == "REASON_LOW_INFORMATION" for e in typed
         ), typed)
+        self.assertFalse(
+            (self.ctx.run_dir / "observations" / ".Feat-01.json.candidate").exists()
+        )
+        self.assertFalse(
+            (self.ctx.run_dir / "observations" / ".Feat-01.json.typed-errors.json").exists()
+        )
         event_types = [
             event.event_type for event in self.events.list_for_job(self.job.job_id)
         ]
