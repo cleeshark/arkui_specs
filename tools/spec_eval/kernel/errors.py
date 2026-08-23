@@ -89,7 +89,7 @@ ERROR_REGISTRY: dict[str, str] = _register({
     "FROZEN_EVIDENCE_UNREADABLE": FATAL_INPUT,
     "FINDING_ID_COLLISION": FATAL_INPUT,
     "DUPLICATE_DEFECT_OWNER": FATAL_INPUT,
-    # --- coverage / mapping (service-owned; unresolved cases are terminal) --
+    # --- coverage / mapping -------------------------------------------------
     "CLAIM_SET_MISMATCH": SERVICE_NORMALIZATION,
     "CLAIM_ROW_DUPLICATED": SERVICE_NORMALIZATION,
     "CLAIM_OUTCOME_INVALID": SERVICE_NORMALIZATION,
@@ -128,7 +128,9 @@ ERROR_REGISTRY: dict[str, str] = _register({
     "FINDING_OWNER_UNKNOWN": SERVICE_NORMALIZATION,
     "FINDING_MULTI_OWNED": SERVICE_NORMALIZATION,
     "CRITICAL_NOT_PRIMARY": SERVICE_NORMALIZATION,
-    "MAPPING_CLAIM_UNMAPPED": SERVICE_NORMALIZATION,
+    # Claim-to-Criterion ownership is semantic: the service cannot safely
+    # decide whether to remove the claim or move it to another Criterion.
+    "MAPPING_CLAIM_UNMAPPED": MODEL_CORRECTION,
     "MAPPING_CONCLUSION_FORBIDDEN": MODEL_CORRECTION,
     "MAPPING_NV_REQUIRED": MODEL_CORRECTION,
     "POLICY_BASIS_INVALID": MODEL_CORRECTION,

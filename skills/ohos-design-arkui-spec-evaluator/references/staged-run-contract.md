@@ -42,8 +42,8 @@ Do not create `semantic-result.json` manually. Produce it with
 5. Complete and validate `function-global`.
 6. Build `aggregation-context.json`, then start a clean aggregation phase. Read the context,
    observation files, Rubric, and only the evidence slices needed to resolve a remaining doubt.
-7. Complete `aggregation.json`, reconcile mapped outcomes if validation reports only mapping
-   consistency errors, assemble `semantic-result.json`, and validate the final stage.
+7. Complete `aggregation.json`, correct semantic Criterion/Claim mapping errors through the
+   bounded Correction turn, assemble `semantic-result.json`, and validate the final stage.
 
 Never rely on prior conversation memory for a completed work item. Treat its validated observation
 file as the durable handoff after context compaction or a new Agent session.
@@ -200,9 +200,11 @@ references. A high-NV candidate is rejected as suspected degenerate output only 
 evidence has also collapsed and an independent signal such as repetitive prose, zero decisive
 outcomes, or abnormally sparse observations corroborates the failure.
 
-For any validation failure, the service first handles field, enum, coverage, ownership, and
-defect-key mapping errors deterministically. Ambiguous or unrepairable structural errors terminate
-without a model call. Only evidence or semantic errors enter one Correction turn. Correction reads
+For any validation failure, the service first handles only unambiguous field, enum, ownership, and
+defect-key normalization errors deterministically. Semantic Criterion/Claim mapping errors are
+model-correctable because the service cannot infer whether a Claim should be removed or moved.
+Ambiguous or unrepairable structural errors terminate without a model call. Evidence and semantic
+errors enter one Correction turn. Correction reads
 the normalized candidate and named typed errors, returns JSON Patch `add`/`remove`/`replace`
 operations within the generated `correction_contract`, and never rewrites the complete document or
 loads `SKILL.md`. The service applies the patch, validates the merged candidate, and preserves the

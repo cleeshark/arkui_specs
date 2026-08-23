@@ -6,8 +6,9 @@ into the published ``aggregation.json`` through the kernel normalizer, typed-
 validates it against the aggregation context, then runs
 ``assemble_semantic_result.py`` to freeze ``semantic-result.json`` and
 validates the ``final`` stage. Evidence or semantic correction uses one bounded
-JSON Patch turn; field/enum/ownership/mapping failures are service-handled and
-never delegated to a model.
+JSON Patch turn; only unambiguous field/enum/ownership normalization remains
+service-handled. Semantic Criterion/Claim mapping errors are delegated to the
+model with the other correction errors.
 
 Anti-fake-completion: a missing/invalid aggregation body, an assemble failure,
 or a failed final validator all fail the job — ``semantic-result.json`` is
