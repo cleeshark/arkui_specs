@@ -50,7 +50,10 @@ Every observation must:
 
 For `CONFLICT` or `MISSING`, use a stable `defect_key` and primary Criterion, and include that
 primary Criterion in the same Observation's `criterion_ids`. Keep source excerpts short; persist
-repository-relative paths and hashes instead of copying source into the payload.
+repository-relative paths and hashes instead of copying source into the payload. For `review_record`
+evidence the `path` may name a directory and `content_hash` may be null/omitted, because it anchors
+a scope-level inspection rather than a single file; every other evidence type needs a file path and
+SHA-256 hash.
 Do not assign final Criterion conclusions, scores, or aggregation ownership during Observation.
 
 ## Required source checks

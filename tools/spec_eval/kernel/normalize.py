@@ -242,8 +242,14 @@ def normalize_observation(
             ))
             continue
         seen_evidence_keys.add(key)
+        decl_type = declaration.get("type")
+        # review_record evidence records a scope-level inspection whose anchor is a
+        # directory tree, not a single hashable file; permit a directory path and
+        # leave its content_hash null. All other evidence types require a regular
+        # file with a verified hash.
+        allow_directory = decl_type in K.DIRECTORY_PATH_EVIDENCE_TYPES
         try:
-            resolution = resolver.resolve(path_text)
+            resolution = resolver.resolve(path_text, allow_directory=allow_directory)
         except EvidencePathError as exc:
             error = TypedError(
                 exc.code,
@@ -260,19 +266,22 @@ def normalize_observation(
             else:
                 errors.append(error)
             continue
-        hash_value = _content_hash(resolution.absolute_path)
-        if hash_value is None:
-            fatal.append(TypedError(
-                "FROZEN_EVIDENCE_UNREADABLE",
-                f"$.evidence_declarations[{decl_index}].path",
-                entity_type="evidence", entity_id=key,
-                expected="readable file already resolved inside the frozen workspace",
-                actual=path_text, repairability=FATAL_INPUT,
-            ))
-            continue
+        if resolution.absolute_path.is_dir():
+            hash_value: str | None = None
+        else:
+            hash_value = _content_hash(resolution.absolute_path)
+            if hash_value is None:
+                fatal.append(TypedError(
+                    "FROZEN_EVIDENCE_UNREADABLE",
+                    f"$.evidence_declarations[{decl_index}].path",
+                    entity_type="evidence", entity_id=key,
+                    expected="readable file already resolved inside the frozen workspace",
+                    actual=path_text, repairability=FATAL_INPUT,
+                ))
+                continue
         row = {
             "evidence_id": f"EV-{len(evidence_by_key) + 1}",
-            "type": declaration.get("type"),
+            "type": decl_type,
             "path": resolution.canonical_path,
             "source_revision": source_revision,
             "content_hash": hash_value,

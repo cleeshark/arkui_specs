@@ -121,6 +121,13 @@ service-owned job paths such as `evidence/...` or `runs/...` are not evidence. A
 when they improve navigation, but do not reject otherwise stable evidence solely because it omits
 a line number.
 
+`review_record` evidence is the one exception: it records a scope-level inspection or a negated
+finding (for example, "recursively searched directory X, symbol Y is absent"). Its anchor is a
+directory tree plus the inspection reasoning, not a single hashable file, so its `path` may name a
+directory and its `content_hash` may be null or omitted. All other evidence types must still cite a
+regular file with a SHA-256 content hash. Every review_record description must still state the
+checked scope and the fact it establishes.
+
 Evidence descriptions must state the supported fact. A file path alone is not evidence reasoning.
 
 ## 7. Finding rules

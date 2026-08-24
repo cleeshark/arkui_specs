@@ -84,7 +84,7 @@
   "$defs": {
     "evidence": {
       "type": "object",
-      "required": ["evidence_id", "type", "path", "source_revision", "content_hash", "description"],
+      "required": ["evidence_id", "type", "path", "source_revision", "description"],
       "properties": {
         "evidence_id": { "type": "string", "pattern": "^EV-[A-Za-z0-9._-]+$" },
         "type": {
@@ -104,11 +104,23 @@
         "line_start": { "type": "integer", "minimum": 1 },
         "line_end": { "type": "integer", "minimum": 1 },
         "source_revision": { "type": "string", "minLength": 1 },
-        "content_hash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "content_hash": { "type": ["string", "null"], "pattern": "^sha256:[0-9a-f]{64}$" },
         "claim_id": { "type": "string", "minLength": 1 },
         "description": { "type": "string", "minLength": 1 }
       },
-      "additionalProperties": false
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "$comment": "review_record anchors a directory-level inspection, so content_hash may be null/omitted; every other evidence type must carry a file hash.",
+          "if": {
+            "properties": { "type": { "not": { "const": "review_record" } } }
+          },
+          "then": {
+            "required": ["content_hash"],
+            "properties": { "content_hash": { "type": "string" } }
+          }
+        }
+      ]
     },
     "semantic_finding": {
       "type": "object",
