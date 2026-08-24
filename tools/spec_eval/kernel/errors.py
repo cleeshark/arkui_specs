@@ -220,10 +220,23 @@ NON_BLOCKING_WARNING_CODES = frozenset({
     "OWNERSHIP_CRITICALITY",
 })
 
+# These errors still receive the single bounded model Correction turn.  If
+# they remain afterwards, the document is structurally consumable and may be
+# published with its normal confidence-layer deduction instead of entering
+# CORRECTION_INVALID_TERMINAL.
+POST_CORRECTION_WARNING_CODES = frozenset({
+    "MAPPING_CLAIM_UNMAPPED",
+})
+
 
 def is_non_blocking_warning(error: TypedError) -> bool:
     """Return whether *error* is an accepted report-quality warning."""
     return error.code in NON_BLOCKING_WARNING_CODES
+
+
+def is_post_correction_warning(error: TypedError) -> bool:
+    """Return whether *error* may be downgraded after model Correction."""
+    return error.code in POST_CORRECTION_WARNING_CODES
 
 
 def confidence_layer_of(code: str) -> str:

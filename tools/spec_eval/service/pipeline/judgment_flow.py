@@ -33,7 +33,11 @@ from pathlib import Path
 from typing import Any, Callable, Sequence
 
 from spec_eval.kernel import staged_state as SS
-from spec_eval.kernel.errors import TypedError, is_non_blocking_warning
+from spec_eval.kernel.errors import (
+    TypedError,
+    is_non_blocking_warning,
+    is_post_correction_warning,
+)
 from spec_eval.kernel.normalize import NormalizationResult
 from spec_eval.service.domain import states as S
 from spec_eval.service.executors import contract as C
@@ -388,19 +392,55 @@ class JudgmentFlow:
             Do not spend another model turn on such errors; apply only the
             deterministic repairs already owned by the service and revalidate.
             """
+            downgraded: list[TypedError] = []
+            downgraded_identities: set[tuple[str, str, str, str]] = set()
+
+            def downgrade_warnings(errors: list[TypedError]) -> list[TypedError]:
+                for error in errors:
+                    if not is_post_correction_warning(error):
+                        continue
+                    identity = (
+                        error.code, error.path,
+                        error.entity_type, error.entity_id,
+                    )
+                    if identity not in downgraded_identities:
+                        downgraded_identities.add(identity)
+                        downgraded.append(error)
+                return [
+                    error for error in errors
+                    if not is_post_correction_warning(error)
+                ]
+
+            def record_downgraded() -> None:
+                if not downgraded:
+                    return
+                self.events.append(
+                    self.ctx.job_id, "correction_completed_with_warnings", {
+                        "work_item_id": work.work_item_id,
+                        "warnings": [error.to_dict() for error in downgraded],
+                    },
+                )
+
+            typed = downgrade_warnings(typed)
             deterministic = [
                 error for error in typed
                 if is_deterministic_error(error)
             ]
             if not deterministic:
+                record_downgraded()
                 return document, typed
             corrected, changes, _unresolved = apply_deterministic_correction(
                 document, deterministic,
             )
             if not changes:
+                record_downgraded()
                 return document, typed
             corrected = projected(corrected)
-            remaining = typed_of(corrected)
+            # Revalidation may surface the same residual mapping warning again
+            # after a deterministic repair.  Preserve the post-Correction
+            # downgrade policy on this final path as well.
+            remaining = downgrade_warnings(typed_of(corrected))
+            record_downgraded()
             self.events.append(
                 self.ctx.job_id, "correction_deterministic_repaired", {
                     "work_item_id": work.work_item_id,

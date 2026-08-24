@@ -13,7 +13,7 @@ model with the other correction errors.
 Anti-fake-completion: a missing/invalid aggregation body, a structural assemble
 failure, or a failed final validator all fail the job — ``semantic-result.json``
 is never written by a failed path. The assemble script may downgrade bounded
-cross-Criterion Critical and observation-primary ownership checks to confidence
+ownership checks and residual post-Correction Claim mapping errors to confidence
 warnings.
 """
 
