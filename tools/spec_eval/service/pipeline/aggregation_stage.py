@@ -24,7 +24,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from spec_eval.kernel.errors import blocking, compute_confidence, has_hard_errors
+from spec_eval.kernel.errors import compute_confidence, has_hard_errors
 from spec_eval.kernel.normalize import normalize_aggregation
 from spec_eval.kernel.validate import validate_aggregation_document
 from ..domain import states as S
@@ -151,6 +151,10 @@ def run_aggregation(
                 errors=[f"{e.code}: {e.expected or e.actual}" for e in typed_errors],
             )
             return
+        final_status["errors"] = [
+            f"{error.code}: {error.expected or error.actual}"
+            for error in typed_errors
+        ]
         confidence = compute_confidence(typed_errors)
         confidence_path = ctx.run_dir / "confidence-result.json"
         try:
@@ -218,6 +222,14 @@ def run_aggregation(
             aggregation_context=aggregation_context,
         )
 
+    def _normalize_after_correction(payload: dict[str, Any]) -> Any:
+        return normalize_aggregation(
+            template, payload,
+            source_observation_ids=source_observation_ids,
+            aggregation_context=aggregation_context,
+            allow_ownership_fallback=True,
+        )
+
     def _validate(document: dict[str, Any]) -> list:
         return validate_aggregation_document(
             document,
@@ -254,6 +266,7 @@ def run_aggregation(
         on_publish=_publish,
         fingerprint=fingerprint,
         stage_event="aggregation_completed",
+        normalize_after_correction=_normalize_after_correction,
     )
     if outcome.status != C.STATUS_COMPLETED:
         return outcome.status, None

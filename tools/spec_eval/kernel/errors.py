@@ -125,9 +125,12 @@ ERROR_REGISTRY: dict[str, str] = _register({
     "CRITERION_EVIDENCE_UNKNOWN": MODEL_CORRECTION,
     "FINDING_CARDINALITY_VIOLATED": MODEL_CORRECTION,
     "FINDING_EVIDENCE_UNKNOWN": MODEL_CORRECTION,
+    "FINDING_KEY_DUPLICATE": MODEL_CORRECTION,
+    "SERVICE_DEFECT_KEY_RESERVED": MODEL_CORRECTION,
     "FINDING_OWNER_UNKNOWN": SERVICE_NORMALIZATION,
     "FINDING_MULTI_OWNED": SERVICE_NORMALIZATION,
     "CRITICAL_NOT_PRIMARY": SERVICE_NORMALIZATION,
+    "OWNERSHIP_CRITICALITY": MODEL_CORRECTION,
     # Claim-to-Criterion ownership is semantic: the service cannot safely
     # decide whether to remove the claim or move it to another Criterion.
     "MAPPING_CLAIM_UNMAPPED": MODEL_CORRECTION,
@@ -181,6 +184,9 @@ CONFIDENCE_LAYERS: dict[str, str] = {
     "FINDING_MULTI_OWNED": LAYER_MAJOR,
     "FINDING_OWNER_UNKNOWN": LAYER_MAJOR,
     "FINDING_EVIDENCE_UNKNOWN": LAYER_MAJOR,
+    "FINDING_KEY_DUPLICATE": LAYER_MAJOR,
+    "SERVICE_DEFECT_KEY_RESERVED": LAYER_MAJOR,
+    "OWNERSHIP_CRITICALITY": LAYER_MAJOR,
     "DEFECT_KEYS_INVALID": LAYER_MAJOR,
     "DEFECT_KEY_UNDEFINED": LAYER_MAJOR,
     "DUPLICATE_DEFECT_OWNER": LAYER_MAJOR,
@@ -204,6 +210,20 @@ CONFIDENCE_LAYERS: dict[str, str] = {
     "QUALITY_DUPLICATE_TEXT": LAYER_MINOR,
     "QUALITY_OBSERVATION_DENSITY": LAYER_MINOR,
 }
+
+
+NON_BLOCKING_WARNING_CODES = frozenset({
+    # Stable consumer-facing code for the bounded family of ownership-quality
+    # warnings.  The kernel emits it when post-Correction fallback ownership
+    # is required; assemble-time Critical/primary checks use the same code so
+    # confidence deduction remains idempotent at one MAJOR (-20) penalty.
+    "OWNERSHIP_CRITICALITY",
+})
+
+
+def is_non_blocking_warning(error: TypedError) -> bool:
+    """Return whether *error* is an accepted report-quality warning."""
+    return error.code in NON_BLOCKING_WARNING_CODES
 
 
 def confidence_layer_of(code: str) -> str:

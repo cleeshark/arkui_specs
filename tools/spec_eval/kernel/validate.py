@@ -24,7 +24,11 @@ from .errors import (
     TypedError,
     repairability_of,
 )
-from .normalize import DEFECT_KEY, OUTCOME_POLICY_BASIS_CRITERIA
+from .normalize import (
+    DEFECT_KEY,
+    OUTCOME_POLICY_BASIS_CRITERIA,
+    is_service_ownership_defect_key,
+)
 from .aggregation_context import criteria_by_id, mapped_claim_ids as context_mapped_claim_ids
 
 # Quality gate thresholds (carried over from the 0.1.18 degenerate detector).
@@ -863,7 +867,11 @@ def validate_aggregation_document(
         # Check defect_key against aggregation-context whitelist (issue #51)
         if aggregation_context is not None:
             valid_defect_keys = set(aggregation_context.get("valid_defect_keys", []))
-            if valid_defect_keys and defect_key not in valid_defect_keys:
+            if (
+                valid_defect_keys
+                and defect_key not in valid_defect_keys
+                and not is_service_ownership_defect_key(defect_key)
+            ):
                 errors.append(_err(
                     "DEFECT_KEY_UNDEFINED", f"{row_label}.defect_key",
                     entity_type="defect", entity_id=defect_key,
@@ -909,6 +917,21 @@ def validate_aggregation_document(
                 entity_type="finding", entity_id=finding_id,
                 expected="CRITICAL findings must be owned",
             ))
+    fallback_owners = sorted({
+        str(record.get("defect_key")) for record in ownership
+        if is_service_ownership_defect_key(record.get("defect_key"))
+    })
+    if fallback_owners:
+        errors.append(_err(
+            "OWNERSHIP_CRITICALITY", f"{label}.defect_ownership",
+            entity_type="document",
+            expected=(
+                "all Findings should use observation-backed defect owners; "
+                f"service fallback retained report consumability for "
+                f"{len(fallback_owners)} unresolved Finding(s)"
+            ),
+            actual=str(fallback_owners),
+        ))
 
     contradictions = _rows(document.get("contradiction_bases"))
     contradiction_criteria: list[str] = []

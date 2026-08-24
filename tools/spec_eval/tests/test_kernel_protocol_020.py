@@ -1126,6 +1126,117 @@ class NormalizeAggregationTest(unittest.TestCase):
         ])
         self.assertTrue(result.evidence_catalog)
 
+    def test_duplicate_finding_key_requires_one_model_correction(self) -> None:
+        judgment = self._judgment()
+        duplicate = copy.deepcopy(judgment["criterion_results"][0]["findings"][0])
+        duplicate.update({
+            "criterion_id": "CORRECTNESS-CROSS-DOC-CONSISTENCY",
+            "claim_id": "Feat-01/AC-2",
+            "evidence_ids": [
+                self._evidence_id("CORRECTNESS-CROSS-DOC-CONSISTENCY")
+            ],
+        })
+        judgment["criterion_results"][1].update({
+            "conclusion": "PARTIALLY_SUPPORTED",
+            "claim_ids": ["Feat-01/AC-2"],
+            "findings": [duplicate],
+        })
+
+        result = self._normalize(judgment)
+
+        self.assertIsNotNone(result.document)
+        self.assertEqual(
+            [error.code for error in result.errors],
+            ["FINDING_KEY_DUPLICATE"],
+        )
+        occurrences = json.loads(result.errors[0].actual)
+        self.assertEqual(len(occurrences), 2)
+        self.assertEqual(
+            {(row["criterion_index"], row["finding_index"]) for row in occurrences},
+            {(0, 0), (1, 0)},
+        )
+
+    def test_model_cannot_claim_service_generated_defect_namespace(self) -> None:
+        judgment = self._judgment()
+        judgment["defect_ownership"][0]["defect_key"] = (
+            "service.unresolved-ownership.model-supplied"
+        )
+
+        result = self._normalize(judgment)
+
+        self.assertIsNone(result.document)
+        self.assertEqual(
+            [error.code for error in result.errors],
+            ["SERVICE_DEFECT_KEY_RESERVED"],
+        )
+        self.assertEqual(
+            result.errors[0].path,
+            "$.defect_ownership[0].defect_key",
+        )
+
+    def test_duplicate_finding_key_falls_back_without_orphaning_sem_ids(self) -> None:
+        judgment = self._judgment()
+        duplicate = copy.deepcopy(judgment["criterion_results"][0]["findings"][0])
+        duplicate.update({
+            "criterion_id": "CORRECTNESS-CROSS-DOC-CONSISTENCY",
+            "claim_id": "Feat-01/AC-2",
+            "evidence_ids": [
+                self._evidence_id("CORRECTNESS-CROSS-DOC-CONSISTENCY")
+            ],
+        })
+        judgment["criterion_results"][1].update({
+            "conclusion": "PARTIALLY_SUPPORTED",
+            "claim_ids": ["Feat-01/AC-2"],
+            "findings": [duplicate],
+        })
+        context = _compact_context(self._aggregation_context())
+        context["claims"] = {
+            "C:feature:Feat-01/Feat-01/AC-1": {
+                "claim_id": "Feat-01/AC-1",
+                "defect_keys": ["missing-source-proof"],
+            },
+        }
+        context["valid_defect_keys"] = ["missing-source-proof"]
+
+        result = normalize_aggregation(
+            self._template(), judgment,
+            source_observation_ids=["feature:Feat-01"],
+            aggregation_context=context,
+            allow_ownership_fallback=True,
+        )
+
+        self.assertEqual(result.errors, [])
+        self.assertEqual(result.fatal, [])
+        document = result.document
+        findings = [
+            finding
+            for criterion in document["criterion_results"]
+            for finding in criterion["findings"]
+        ]
+        finding_ids = [finding["finding_id"] for finding in findings]
+        self.assertEqual(len(finding_ids), len(set(finding_ids)))
+        owners = {
+            finding_id: [
+                record["defect_key"]
+                for record in document["defect_ownership"]
+                if finding_id in record["finding_ids"]
+            ]
+            for finding_id in finding_ids
+        }
+        self.assertTrue(all(len(values) == 1 for values in owners.values()))
+        self.assertIn("missing-source-proof", set(owners[finding_ids[0]]))
+        fallback_keys = {
+            record["defect_key"] for record in document["defect_ownership"]
+            if record["defect_key"].startswith("service.unresolved-ownership.")
+        }
+        self.assertEqual(len(fallback_keys), 1)
+        typed = validate_aggregation_document(
+            document, criterion_order=list(CRITERIA), aggregation_context=None,
+        )
+        self.assertEqual(
+            sum(error.code == "OWNERSHIP_CRITICALITY" for error in typed), 1,
+        )
+
     def test_missing_context_does_not_accept_inline_or_guessed_evidence(self) -> None:
         result = normalize_aggregation(
             self._template(), self._judgment(), source_observation_ids=[]
@@ -2542,6 +2653,20 @@ class ConfidenceModelTest(unittest.TestCase):
         self.assertEqual(result["confidence_level"], "HIGH")
         self.assertEqual(len(result["major_violations"]), 1)
         self.assertEqual(result["deduction_total"], 20)
+
+    def test_ownership_fallback_is_one_non_blocking_major_deduction(self):
+        from spec_eval.kernel.errors import (
+            TypedError, compute_confidence, is_non_blocking_warning,
+        )
+        warning = TypedError(
+            "OWNERSHIP_CRITICALITY", "aggregation.defect_ownership",
+            expected="one or more service fallback owners",
+        )
+        result = compute_confidence([warning])
+        self.assertTrue(is_non_blocking_warning(warning))
+        self.assertEqual(result["confidence_score"], 80)
+        self.assertEqual(result["deduction_total"], 20)
+        self.assertEqual(len(result["major_violations"]), 1)
 
     def test_confidence_score_deducted_for_minor(self):
         from spec_eval.kernel.errors import TypedError, compute_confidence

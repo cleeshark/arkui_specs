@@ -21,12 +21,13 @@ from pathlib import Path
 from typing import Any
 
 from . import contracts as K
-from .aggregation_context import criteria_by_id, criterion_evidence_catalog
+from .aggregation_context import criteria_by_id, criterion_evidence_catalog, table
 from .errors import FATAL_INPUT, MODEL_CORRECTION, TypedError
 from .evidence_paths import EvidencePathError, FrozenEvidencePathResolver
 
 DEFECT_KEY = re.compile(K.DEFECT_KEY_PATTERN)
 SEMANTIC_FINDING_IDENTITY_VERSION = 1
+SERVICE_OWNERSHIP_PREFIX = "service.unresolved-ownership."
 OUTCOME_POLICY_BASIS_CRITERIA = K.POLICY_BASIS_CRITERION_IDS
 FINDING_SEVERITY_TO_PUBLISHED = {
     "CRITICAL": "Critical",
@@ -73,8 +74,10 @@ class NormalizationResult:
 
     ``errors`` carries model-owned declaration errors that must enter the one
     correction turn. ``fatal`` is reserved for damaged frozen inputs or
-    templates. ``changes`` records SERVICE_NORMALIZATION fixes. The document
-    is None when either errors or fatal is set.
+    templates. ``changes`` records SERVICE_NORMALIZATION fixes. ``document``
+    is normally None on error; duplicate aggregation correlation keys may
+    carry a deterministic diagnostic document so the flow can collect all
+    errors for the same bounded Correction turn.
     """
 
     document: dict[str, Any] | None
@@ -99,6 +102,69 @@ def semantic_finding_id(
         identity, ensure_ascii=False, sort_keys=True, separators=(",", ":")
     ).encode("utf-8")
     return "SEM-" + hashlib.sha256(encoded).hexdigest()[:24]
+
+
+def service_ownership_defect_key(
+    *,
+    func_id: str,
+    provisional_key: str,
+    criterion_id: str,
+    claim_id: str | None,
+    occurrence_index: int = 0,
+) -> str:
+    """Return a stable service-only owner for one unresolved Finding."""
+    identity = {
+        "func_id": func_id,
+        "provisional_key": provisional_key,
+        "criterion_id": criterion_id,
+        "claim_id": claim_id,
+        "occurrence_index": occurrence_index,
+    }
+    encoded = json.dumps(
+        identity, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")
+    return SERVICE_OWNERSHIP_PREFIX + hashlib.sha256(encoded).hexdigest()[:16]
+
+
+def is_service_ownership_defect_key(value: Any) -> bool:
+    return isinstance(value, str) and value.startswith(SERVICE_OWNERSHIP_PREFIX)
+
+
+def _context_defect_candidates(
+    aggregation_context: dict[str, Any] | None,
+    *,
+    criterion_id: str,
+    claim_id: str | None,
+) -> set[str]:
+    """Return observation-backed defect candidates for one Finding.
+
+    Claim overlap is the strongest safe signal.  Criterion-scoped Observation
+    references are used only when the Finding has no claim identity.
+    """
+    if aggregation_context is None:
+        return set()
+    candidates: set[str] = set()
+    claims = table(aggregation_context, "claims")
+    if claim_id:
+        for claim in claims.values():
+            if claim.get("claim_id") != claim_id:
+                continue
+            candidates.update(_strings(claim.get("defect_keys")))
+        for observation in table(aggregation_context, "observations").values():
+            if claim_id not in _strings(observation.get("claim_ids")):
+                continue
+            defect_key = observation.get("defect_key")
+            if isinstance(defect_key, str):
+                candidates.add(defect_key)
+        return candidates
+
+    criterion = criteria_by_id(aggregation_context).get(criterion_id, {})
+    observations = table(aggregation_context, "observations")
+    for ref in _strings(criterion.get("observation_refs")):
+        defect_key = observations.get(ref, {}).get("defect_key")
+        if isinstance(defect_key, str):
+            candidates.add(defect_key)
+    return candidates
 
 
 def _content_hash(path: Path) -> str | None:
@@ -491,6 +557,7 @@ def normalize_aggregation(
     *,
     source_observation_ids: list[str],
     aggregation_context: dict[str, Any] | None = None,
+    allow_ownership_fallback: bool = False,
 ) -> NormalizationResult:
     """Expand one aggregation judgment payload into the published document.
 
@@ -509,21 +576,83 @@ def normalize_aggregation(
         ))
         return NormalizationResult(document=None, fatal=fatal)
 
+    inherited_catalog: list[dict[str, Any]] = []
+    inherited_ids: set[str] = set()
+    for evidence in (aggregation_context or {}).get("evidence_catalog", {}).values():
+        if not isinstance(evidence, dict):
+            continue
+        evidence_id = evidence.get("evidence_id")
+        if isinstance(evidence_id, str) and evidence_id not in inherited_ids:
+            inherited_catalog.append(copy.deepcopy(evidence))
+            inherited_ids.add(evidence_id)
+
+    # Finding ``key`` is a provisional correlation identity shared across all
+    # Criterion rows.  A normal dict assignment silently lost the earlier
+    # occurrence when the model reused a key, which later orphaned its SEM ID.
+    # Detect this before any ownership or canonical-ID work and give the model
+    # one coordinated chance to rename Findings and their ownership references.
+    occurrence_rows: list[dict[str, Any]] = []
+    occurrences_by_key: dict[str, list[dict[str, Any]]] = {}
+    for criterion_index, criterion in enumerate(_rows(judgment.get("criterion_results"))):
+        criterion_id = criterion.get("criterion_id")
+        for finding_index, finding in enumerate(_rows(criterion.get("findings"))):
+            finding_key = finding.get("key")
+            if not isinstance(finding_key, str) or not finding_key:
+                continue
+            occurrence = {
+                "criterion_index": criterion_index,
+                "finding_index": finding_index,
+                "criterion_id": criterion_id,
+                "claim_id": finding.get("claim_id"),
+                "key": finding_key,
+            }
+            occurrence_rows.append(occurrence)
+            occurrences_by_key.setdefault(finding_key, []).append(occurrence)
+    duplicate_occurrences = {
+        key: rows for key, rows in occurrences_by_key.items() if len(rows) > 1
+    }
+    if duplicate_occurrences and not allow_ownership_fallback:
+        for finding_key, occurrences in duplicate_occurrences.items():
+            errors.append(TypedError(
+                "FINDING_KEY_DUPLICATE", "$.criterion_results",
+                entity_type="finding", entity_id=finding_key,
+                expected="provisional Finding key unique within aggregation",
+                actual=json.dumps(occurrences, ensure_ascii=False, sort_keys=True),
+                repairability=MODEL_CORRECTION,
+            ))
+    ownership_recovery_enabled = (
+        allow_ownership_fallback or bool(duplicate_occurrences)
+    )
+
     ownership_rows = _rows(judgment.get("defect_ownership"))
-    owner_by_finding_key: dict[str, str] = {}
+    owners_by_finding_key: dict[str, list[str]] = {}
+    reserved_model_defect_keys: set[str] = set()
     # Build defect_key whitelist from aggregation context
     valid_defect_keys: set[str] = set()
     if aggregation_context is not None:
         for key in aggregation_context.get("valid_defect_keys", []):
             if isinstance(key, str):
                 valid_defect_keys.add(key)
-    for record in ownership_rows:
+    for owner_index, record in enumerate(ownership_rows):
         raw_dk = record.get("defect_key")
         defect_key = _normalize_defect_key(raw_dk)
         if raw_dk and defect_key and defect_key != raw_dk:
             changes.append(
                 f"defect_ownership: canonicalized {raw_dk!r} -> {defect_key!r}"
             )
+        if is_service_ownership_defect_key(defect_key):
+            reserved_model_defect_keys.add(str(defect_key))
+            if not allow_ownership_fallback:
+                errors.append(TypedError(
+                    "SERVICE_DEFECT_KEY_RESERVED",
+                    f"$.defect_ownership[{owner_index}].defect_key",
+                    entity_type="defect", entity_id=str(defect_key),
+                    expected=(
+                        f"prefix {SERVICE_OWNERSHIP_PREFIX!r} is service-owned"
+                    ),
+                    actual=str(defect_key), repairability=MODEL_CORRECTION,
+                ))
+            defect_key = None
         # L2a: auto-fix defect_key not in whitelist (issue #51)
         if defect_key and valid_defect_keys and defect_key not in valid_defect_keys:
             repaired = _repair_defect_key(defect_key, valid_defect_keys)
@@ -535,16 +664,98 @@ def normalize_aggregation(
                 defect_key = repaired
                 record["defect_key"] = repaired
         for finding_key in _strings(record.get("finding_keys")):
-            previous = owner_by_finding_key.get(finding_key)
-            if previous is not None and previous != defect_key:
+            owners = owners_by_finding_key.setdefault(finding_key, [])
+            previous = owners[0] if owners else None
+            if (
+                previous is not None
+                and previous != defect_key
+                and not ownership_recovery_enabled
+            ):
                 fatal.append(TypedError(
                     "DUPLICATE_DEFECT_OWNER", "$.defect_ownership",
                     entity_type="finding", entity_id=finding_key,
                     expected="one owner", actual=f"{previous} and {defect_key}",
                     repairability=FATAL_INPUT,
                 ))
-            else:
-                owner_by_finding_key[finding_key] = str(defect_key or "")
+            owner = str(defect_key or "")
+            if owner and owner not in owners:
+                owners.append(owner)
+
+    owner_by_occurrence: dict[tuple[str, int], str] = {}
+    fallback_occurrences: set[tuple[str, int]] = set()
+    for occurrence in occurrence_rows:
+        criterion_id = str(occurrence.get("criterion_id") or "")
+        finding_index = int(occurrence["finding_index"])
+        identity = (criterion_id, finding_index)
+        finding_key = str(occurrence["key"])
+        declared_owners = owners_by_finding_key.get(finding_key, [])
+        is_duplicate = finding_key in duplicate_occurrences
+        owner: str | None = None
+        if len(declared_owners) == 1 and not is_duplicate:
+            owner = declared_owners[0]
+        elif ownership_recovery_enabled:
+            claim_id = occurrence.get("claim_id")
+            context_candidates = _context_defect_candidates(
+                aggregation_context,
+                criterion_id=criterion_id,
+                claim_id=claim_id if isinstance(claim_id, str) else None,
+            )
+            compatible = [
+                candidate for candidate in declared_owners
+                if candidate in context_candidates
+            ]
+            if len(compatible) == 1:
+                owner = compatible[0]
+            elif not is_duplicate and len(context_candidates) == 1:
+                owner = next(iter(context_candidates))
+        if owner is None and ownership_recovery_enabled:
+            claim_id = occurrence.get("claim_id")
+            owner = service_ownership_defect_key(
+                func_id=func_id,
+                provisional_key=finding_key,
+                criterion_id=criterion_id,
+                claim_id=claim_id if isinstance(claim_id, str) else None,
+                occurrence_index=finding_index,
+            )
+            fallback_occurrences.add(identity)
+        if owner is not None:
+            owner_by_occurrence[identity] = owner
+
+    # The public SEM identity intentionally excludes the provisional key.  If
+    # two retained Findings would still collapse to the same identity, keep
+    # the first observation-backed projection and isolate later occurrences
+    # under deterministic service fallback owners.
+    seen_semantic_identities: set[tuple[str, str, str | None]] = set()
+    for occurrence in occurrence_rows:
+        criterion_id = str(occurrence.get("criterion_id") or "")
+        finding_index = int(occurrence["finding_index"])
+        identity = (criterion_id, finding_index)
+        owner = owner_by_occurrence.get(identity)
+        if owner is None:
+            continue
+        claim_id = occurrence.get("claim_id")
+        semantic_identity = (
+            owner, criterion_id, claim_id if isinstance(claim_id, str) else None,
+        )
+        if semantic_identity not in seen_semantic_identities:
+            seen_semantic_identities.add(semantic_identity)
+            continue
+        if not ownership_recovery_enabled:
+            continue
+        fallback_owner = service_ownership_defect_key(
+            func_id=func_id,
+            provisional_key=str(occurrence["key"]),
+            criterion_id=criterion_id,
+            claim_id=claim_id if isinstance(claim_id, str) else None,
+            occurrence_index=finding_index,
+        )
+        owner_by_occurrence[identity] = fallback_owner
+        fallback_occurrences.add(identity)
+    if fallback_occurrences:
+        changes.append(
+            "defect_ownership: assigned deterministic service fallback owners "
+            f"to {len(fallback_occurrences)} unresolved Finding(s)"
+        )
 
     template_results = {
         row.get("criterion_id"): row
@@ -574,18 +785,9 @@ def normalize_aggregation(
             ) is not None
             for row in policy_rows
         )
-    inherited_catalog: list[dict[str, Any]] = []
-    inherited_ids: set[str] = set()
-    for evidence in (aggregation_context or {}).get("evidence_catalog", {}).values():
-        if not isinstance(evidence, dict):
-            continue
-        evidence_id = evidence.get("evidence_id")
-        if isinstance(evidence_id, str) and evidence_id not in inherited_ids:
-            inherited_catalog.append(copy.deepcopy(evidence))
-            inherited_ids.add(evidence_id)
     criterion_results: list[dict[str, Any]] = []
     canonical_ids: set[str] = set()
-    finding_by_key: dict[str, dict[str, Any]] = {}
+    findings_by_owner: dict[str, list[dict[str, Any]]] = {}
     for criterion_id, template_row in template_results.items():
         row = judgment_by_criterion.get(criterion_id, {})
         conclusion = row.get("conclusion")
@@ -643,12 +845,9 @@ def normalize_aggregation(
             for evidence_id in requested_evidence_ids
             if evidence_id in criterion_catalog
         ]
-        for finding in _rows(row.get("findings")):
+        for finding_index, finding in enumerate(_rows(row.get("findings"))):
             finding_key = finding.get("key")
-            defect_key = (
-                owner_by_finding_key.get(finding_key)
-                if isinstance(finding_key, str) else None
-            )
+            defect_key = owner_by_occurrence.get((str(criterion_id), finding_index))
             claim_id = finding.get("claim_id")
             finding_id = None
             if defect_key is not None and isinstance(criterion_id, str):
@@ -688,8 +887,8 @@ def normalize_aggregation(
             if isinstance(claim_id, str) and claim_id:
                 published_finding["claim_id"] = claim_id
             findings.append(published_finding)
-            if isinstance(finding_key, str):
-                finding_by_key[finding_key] = published_finding
+            if defect_key:
+                findings_by_owner.setdefault(defect_key, []).append(published_finding)
         raw_claim_ids = _strings(row.get("claim_ids"))
         claim_ids = _unique_strings(row.get("claim_ids"))
         if claim_ids != raw_claim_ids:
@@ -746,25 +945,37 @@ def normalize_aggregation(
     if extra:
         changes.append(f"criterion_results: dropped unexpected criteria: {extra}")
 
-    # map canonical finding IDs for ownership and validator lookups
-    findings_by_id: dict[str, dict[str, Any]] = {}
-    for result in criterion_results:
-        for finding in result["findings"]:
-            fid = finding.get("finding_id")
-            if isinstance(fid, str):
-                findings_by_id[fid] = finding
-
-    defect_ownership: list[dict[str, Any]] = []
+    ownership_template_by_defect: dict[str, dict[str, Any]] = {}
+    ownership_order: list[str] = []
     for record in ownership_rows:
         defect_key = _normalize_defect_key(record.get("defect_key")) or ""
+        if (
+            not defect_key
+            or defect_key in reserved_model_defect_keys
+            or defect_key in ownership_template_by_defect
+        ):
+            continue
+        ownership_template_by_defect[defect_key] = record
+        ownership_order.append(defect_key)
+    for defect_key in findings_by_owner:
+        if defect_key not in ownership_template_by_defect:
+            ownership_order.append(defect_key)
+
+    defect_ownership: list[dict[str, Any]] = []
+    for defect_key in ownership_order:
+        owned = findings_by_owner.get(defect_key, [])
+        if not owned:
+            changes.append(
+                f"defect_ownership[{defect_key}]: dropped empty ownership row"
+            )
+            continue
+        record = ownership_template_by_defect.get(defect_key, {})
         primary = record.get("primary_criterion_id")
+        if is_service_ownership_defect_key(defect_key):
+            primary = owned[0].get("criterion_id")
         finding_ids = [
-            finding_by_key[key]["finding_id"]
-            for key in _strings(record.get("finding_keys"))
-            if key in finding_by_key and finding_by_key[key].get("finding_id")
-        ]
-        owned = [
-            findings_by_id[fid] for fid in finding_ids if fid in findings_by_id
+            finding["finding_id"] for finding in owned
+            if finding.get("finding_id")
         ]
         expected_secondary = sorted({
             finding["criterion_id"] for finding in owned
@@ -776,7 +987,13 @@ def normalize_aggregation(
             "primary_criterion_id": primary,
             "finding_ids": finding_ids,
             "secondary_criterion_ids": expected_secondary,
-            "rationale": record.get("rationale", ""),
+            "rationale": (
+                "Service-generated fallback owner after the bounded model "
+                "correction could not establish a unique observation-backed "
+                "defect owner."
+                if is_service_ownership_defect_key(defect_key)
+                else record.get("rationale", "")
+            ),
         })
         changes.append(f"defect_ownership[{defect_key}]: secondary criteria derived")
 
@@ -811,7 +1028,12 @@ def normalize_aggregation(
         )
     if errors:
         return NormalizationResult(
-            document=None, changes=changes, errors=errors,
+            # A duplicate-key pass keeps this deterministic recovery document
+            # only for collecting the other validation errors that must share
+            # the one Correction turn.  The raw payload remains the actual
+            # patch base and this document is never published here.
+            document=published if duplicate_occurrences else None,
+            changes=changes, errors=errors,
             evidence_catalog=inherited_catalog,
         )
     return NormalizationResult(

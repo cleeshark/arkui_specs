@@ -1712,9 +1712,10 @@ def validate_aggregation_document(
         if critical_criteria and critical_criteria[0] != primary:
             errors.append(f"{label}: a Critical Finding must belong to the primary Criterion")
         observed_primaries = observed_defects.get(defect_key)
-        if observed_primaries is None:
+        service_fallback = defect_key.startswith("service.unresolved-ownership.")
+        if observed_primaries is None and not service_fallback:
             errors.append(f"{label}.defect_key: not defined by a validated observation")
-        elif primary not in observed_primaries:
+        elif observed_primaries is not None and primary not in observed_primaries:
             errors.append(
                 f"{label}.primary_criterion_id: expected one of observation owners {sorted(observed_primaries)!r}"
             )
