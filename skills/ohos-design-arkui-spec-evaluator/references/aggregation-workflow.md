@@ -116,6 +116,12 @@ python3 specs/skills/ohos-design-arkui-spec-evaluator/scripts/validate_staged_ru
   --stage aggregation --update-state
 ```
 
+The assembly step treats only the two cross-Criterion Critical ownership checks as report-quality
+warnings: a root defect producing more than one Critical Finding, or a Critical Finding appearing
+under a secondary Criterion. These warnings are recorded in `confidence-result.json` as one bounded
+MAJOR deduction, while structural ownership failures (unknown Finding, duplicate owner, unknown
+defect key, or missing owner) remain blocking.
+
 Assemble and validate the final result deterministically:
 
 ```bash
