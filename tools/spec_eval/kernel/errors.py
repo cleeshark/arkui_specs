@@ -220,6 +220,11 @@ NON_BLOCKING_WARNING_CODES = frozenset({
     # is required; assemble-time Critical/primary checks use the same code so
     # confidence deduction remains idempotent at one MAJOR (-20) penalty.
     "OWNERSHIP_CRITICALITY",
+    # The aggregation normalizer removes references that are absent from the
+    # frozen Criterion evidence catalog and persists a service-warning note.
+    # The repaired report remains consumable, but loses one bounded MAJOR
+    # confidence penalty so the data-quality issue stays visible.
+    "FINDING_EVIDENCE_UNKNOWN",
 })
 
 # These errors still receive the single bounded model Correction turn.  If
@@ -255,10 +260,15 @@ def compute_confidence(errors: list[TypedError]) -> dict[str, Any]:
     major: list[dict[str, Any]] = []
     minor: list[dict[str, Any]] = []
     total_deduction = 0
+    bounded_warning_codes: set[str] = set()
 
     for error in errors:
         if error.repairability == SERVICE_NORMALIZATION:
             continue
+        if is_non_blocking_warning(error):
+            if error.code in bounded_warning_codes:
+                continue
+            bounded_warning_codes.add(error.code)
         layer = confidence_layer_of(error.code)
         deduction = _LAYER_DEDUCTION.get(layer, 5)
         entry = {

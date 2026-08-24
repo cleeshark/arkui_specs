@@ -25,7 +25,9 @@ from spec_eval.kernel.errors import (
     SERVICE_NORMALIZATION,
     TypedError,
     blocking,
+    compute_confidence,
     has_hard_errors,
+    is_non_blocking_warning,
 )
 from spec_eval.kernel.evidence_paths import (
     EvidencePathError,
@@ -36,6 +38,7 @@ from spec_eval.kernel.machine_contract import (
     build_observation_machine_contract,
 )
 from spec_eval.kernel.normalize import (
+    FINDING_EVIDENCE_WARNING_PREFIX,
     OUTCOME_POLICY_BASIS_CRITERIA,
     assemble_semantic_result,
     normalize_aggregation,
@@ -2124,6 +2127,89 @@ class FindingEvidenceClosureTest(unittest.TestCase):
         self.assertTrue(
             any(e.code == "CRITERION_EVIDENCE_UNKNOWN" for e in result.errors)
         )
+
+    def test_unknown_finding_evidence_is_removed_and_downgraded(self) -> None:
+        valid_evidence = self._evidence_id("CORRECTNESS-SOURCE-SUPPORT")
+        judgment = {
+            "cross_feat_contracts_reviewed": True,
+            "contradiction_bases": [],
+            "defect_ownership": [{
+                "defect_key": "missing-proof",
+                "primary_criterion_id": "CORRECTNESS-SOURCE-SUPPORT",
+                "finding_keys": ["f1"],
+                "rationale": "Single defect.",
+            }],
+            "outcome_policy_bases": [
+                {"criterion_id": cid, "content_status": "PRESENT",
+                 "evidence_status": "VERIFIED", "conflict_scope": "NONE",
+                 "reason": "All verified."}
+                for cid in OUTCOME_POLICY_BASIS_CRITERIA
+            ],
+            "criterion_results": [
+                {
+                    "criterion_id": "CORRECTNESS-SOURCE-SUPPORT",
+                    "conclusion": "CONTRADICTED",
+                    "applicability": "APPLICABLE",
+                    "reason": "Source contradicts spec.",
+                    "applicability_reason": None,
+                    "missing_evidence": None,
+                    "claim_ids": [],
+                    "evidence_ids": [valid_evidence],
+                    "findings": [{
+                        "key": "f1",
+                        "criterion_id": "CORRECTNESS-SOURCE-SUPPORT",
+                        "claim_id": None,
+                        "severity": "CRITICAL",
+                        "message": "Contradiction found.",
+                        "evidence_ids": ["EV-does-not-exist"],
+                        "recommendation": "Fix.",
+                    }],
+                },
+                *[
+                    {
+                        "criterion_id": cid,
+                        "conclusion": "SUPPORTED",
+                        "applicability": "APPLICABLE",
+                        "reason": "No violation.",
+                        "applicability_reason": None,
+                        "missing_evidence": None,
+                        "claim_ids": [],
+                        "evidence_ids": [self._evidence_id(cid)],
+                        "findings": [],
+                    }
+                    for cid in CRITERIA[1:]
+                ],
+            ],
+            "notes": [],
+        }
+        context = _compact_context(self._aggregation_context())
+        result = normalize_aggregation(
+            self._template(), judgment,
+            source_observation_ids=[],
+            aggregation_context=context,
+        )
+        self.assertEqual(result.errors, [])
+        self.assertEqual(result.fatal, [])
+        finding = result.document["criterion_results"][0]["findings"][0]
+        self.assertEqual(finding["evidence_ids"], [])
+        self.assertTrue(any(
+            isinstance(note, str)
+            and note.startswith(FINDING_EVIDENCE_WARNING_PREFIX)
+            for note in result.document["notes"]
+        ))
+        errors = validate_aggregation_document(
+            result.document, criterion_order=list(CRITERIA),
+            aggregation_context=context,
+        )
+        finding_warnings = [
+            error for error in errors
+            if error.code == "FINDING_EVIDENCE_UNKNOWN"
+        ]
+        self.assertEqual(len(finding_warnings), 1)
+        self.assertTrue(is_non_blocking_warning(finding_warnings[0]))
+        confidence = compute_confidence(finding_warnings)
+        self.assertEqual(confidence["confidence_score"], 80)
+        self.assertEqual(confidence["deduction_total"], 20)
 
 
 class PolicyConclusionDerivationTest(unittest.TestCase):

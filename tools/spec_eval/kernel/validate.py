@@ -13,6 +13,7 @@ The degenerate-output quality gate (issue #22 successor) is folded in as
 
 from __future__ import annotations
 
+import json
 import re
 from collections import Counter
 from typing import Any, Iterable
@@ -26,6 +27,7 @@ from .errors import (
 )
 from .normalize import (
     DEFECT_KEY,
+    FINDING_EVIDENCE_WARNING_PREFIX,
     OUTCOME_POLICY_BASIS_CRITERIA,
     is_service_ownership_defect_key,
 )
@@ -626,6 +628,32 @@ def validate_aggregation_document(
             "CROSS_FEAT_NOT_REVIEWED", f"{label}.cross_feat_contracts_reviewed",
             entity_type="document", expected="true",
         ))
+    notes = document.get("notes")
+    evidence_recovery_notes = [
+        note for note in (notes if isinstance(notes, list) else [])
+        if isinstance(note, str)
+        and note.startswith(FINDING_EVIDENCE_WARNING_PREFIX)
+    ]
+    recovered_finding_ids: set[str] = set()
+    for note in evidence_recovery_notes:
+        try:
+            recovery = json.loads(note[len(FINDING_EVIDENCE_WARNING_PREFIX):])
+        except (TypeError, ValueError):
+            continue
+        for recovered in _rows(recovery.get("findings")):
+            finding_id = recovered.get("finding_id")
+            if isinstance(finding_id, str) and finding_id:
+                recovered_finding_ids.add(finding_id)
+    if evidence_recovery_notes:
+        errors.append(_err(
+            "FINDING_EVIDENCE_UNKNOWN", f"{label}.notes",
+            entity_type="document",
+            expected=(
+                "unknown Finding evidence references removed by service; "
+                "publish with reduced confidence"
+            ),
+            actual=evidence_recovery_notes[0],
+        ))
 
     findings_by_id: dict[str, dict[str, Any]] = {}
     contradicted_criteria: list[str] = []
@@ -675,6 +703,7 @@ def validate_aggregation_document(
             if (
                 conclusion in K.FINDING_REQUIRED_CONCLUSIONS
                 and not _strings(finding.get("evidence_ids"))
+                and finding.get("finding_id") not in recovered_finding_ids
             ):
                 errors.append(_err(
                     "FINDING_EVIDENCE_UNKNOWN", f"{finding_label}.evidence_ids",
