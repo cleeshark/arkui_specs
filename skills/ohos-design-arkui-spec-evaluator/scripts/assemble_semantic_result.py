@@ -25,7 +25,11 @@ from validate_staged_run import validate_stage
 OWNERSHIP_WARNING_MARKERS = (
     "one defect may produce at most one Critical Finding",
     "a Critical Finding must belong to the primary Criterion",
+    "expected one of observation owners",
 )
+# Keep the existing code for report-consumer compatibility.  It now covers the
+# bounded family of non-structural cross-Criterion ownership warnings, including
+# primary-owner alignment with validated observations.
 OWNERSHIP_WARNING_CODE = "OWNERSHIP_CRITICALITY"
 OWNERSHIP_WARNING_DEDUCTION = 20
 
@@ -67,7 +71,7 @@ def record_ownership_warning(run_dir: Path, warnings: list[str]) -> None:
         "criterion_id": "",
         "deduction": OWNERSHIP_WARNING_DEDUCTION,
         "message": (
-            "defect ownership contains Critical findings outside the single primary owner; "
+            "defect ownership contains non-structural cross-Criterion inconsistencies; "
             f"{len(warnings)} ownership check(s) were downgraded to warnings"
         ),
         "path": "aggregation.defect_ownership",
