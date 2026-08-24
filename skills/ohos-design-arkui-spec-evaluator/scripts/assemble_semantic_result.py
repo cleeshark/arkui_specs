@@ -9,6 +9,7 @@ from pathlib import Path
 
 from aggregation_warning_policy import (
     record_aggregation_warnings,
+    record_finding_evidence_warning,
     record_mapping_warning,
     record_ownership_warning,
     split_aggregation_warnings,

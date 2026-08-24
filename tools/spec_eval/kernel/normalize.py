@@ -28,6 +28,9 @@ from .evidence_paths import EvidencePathError, FrozenEvidencePathResolver
 DEFECT_KEY = re.compile(K.DEFECT_KEY_PATTERN)
 SEMANTIC_FINDING_IDENTITY_VERSION = 1
 SERVICE_OWNERSHIP_PREFIX = "service.unresolved-ownership."
+FINDING_EVIDENCE_WARNING_PREFIX = (
+    "service-warning:FINDING_EVIDENCE_UNKNOWN:"
+)
 OUTCOME_POLICY_BASIS_CRITERIA = K.POLICY_BASIS_CRITERION_IDS
 FINDING_SEVERITY_TO_PUBLISHED = {
     "CRITICAL": "Critical",
@@ -564,7 +567,8 @@ def normalize_aggregation(
     Deterministic only: canonical finding IDs from ownership keys, secondary
     criterion derivation, applicability_reason copy, criterion order from the
     template, and Criterion evidence copied from the aggregation context.
-    Conclusions, evidence selections and prose pass through.
+    Unknown Finding evidence references are removed with a persistent warning;
+    conclusions, valid evidence selections and prose otherwise pass through.
     """
     changes: list[str] = []
     errors: list[TypedError] = []
@@ -792,6 +796,7 @@ def normalize_aggregation(
     criterion_results: list[dict[str, Any]] = []
     canonical_ids: set[str] = set()
     findings_by_owner: dict[str, list[dict[str, Any]]] = {}
+    recovered_finding_evidence: list[dict[str, Any]] = []
     for criterion_id, template_row in template_results.items():
         row = judgment_by_criterion.get(criterion_id, {})
         conclusion = row.get("conclusion")
@@ -877,6 +882,20 @@ def normalize_aggregation(
                     f"criterion_results[{criterion_id}].findings[{finding_key}]."
                     "evidence_ids deduplicated"
                 )
+            unknown_finding_evidence_ids = [
+                evidence_id for evidence_id in finding_evidence_ids
+                if evidence_id not in criterion_catalog
+            ]
+            if unknown_finding_evidence_ids:
+                finding_evidence_ids = [
+                    evidence_id for evidence_id in finding_evidence_ids
+                    if evidence_id in criterion_catalog
+                ]
+                changes.append(
+                    f"criterion_results[{criterion_id}].findings[{finding_key}]."
+                    "evidence_ids removed unknown references "
+                    f"{unknown_finding_evidence_ids}"
+                )
             published_finding = {
                 "finding_id": finding_id,
                 "criterion_id": criterion_id,
@@ -890,6 +909,12 @@ def normalize_aggregation(
             }
             if isinstance(claim_id, str) and claim_id:
                 published_finding["claim_id"] = claim_id
+            if unknown_finding_evidence_ids:
+                recovered_finding_evidence.append({
+                    "finding_id": finding_id,
+                    "criterion_id": criterion_id,
+                    "removed_evidence_ids": unknown_finding_evidence_ids,
+                })
             findings.append(published_finding)
             if defect_key:
                 findings_by_owner.setdefault(defect_key, []).append(published_finding)
@@ -1014,6 +1039,26 @@ def normalize_aggregation(
                 f"{raw_pdk!r} -> {norm_pdk!r}"
             )
 
+    raw_notes = judgment.get("notes")
+    notes = [
+        copy.deepcopy(note)
+        for note in (raw_notes if isinstance(raw_notes, list) else [])
+        if not (
+            isinstance(note, str)
+            and note.startswith(FINDING_EVIDENCE_WARNING_PREFIX)
+        )
+    ]
+    if recovered_finding_evidence:
+        notes.append(
+            FINDING_EVIDENCE_WARNING_PREFIX
+            + json.dumps(
+                {"findings": recovered_finding_evidence},
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+        )
+
     published = copy.deepcopy(template)
     published.update({
         "status": "complete",
@@ -1023,7 +1068,7 @@ def normalize_aggregation(
         "defect_ownership": defect_ownership,
         "outcome_policy_bases": outcome_policy_bases,
         "criterion_results": criterion_results,
-        "notes": copy.deepcopy(judgment.get("notes") or []),
+        "notes": notes,
     })
     if fatal:
         return NormalizationResult(

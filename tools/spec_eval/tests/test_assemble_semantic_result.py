@@ -13,6 +13,7 @@ if str(SKILL_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SKILL_SCRIPTS))
 
 from assemble_semantic_result import (  # noqa: E402
+    record_finding_evidence_warning,
     record_mapping_warning,
     record_ownership_warning,
     split_aggregation_warnings,
@@ -35,8 +36,12 @@ class AssembleSemanticResultWarningTest(unittest.TestCase):
                 "aggregation.criterion_results[CORRECTNESS-SDK-CONTRACT].claim_ids: "
                 "not mapped to Criterion: ['design/ADR-1']"
             ),
+            (
+                "aggregation.notes: service-warning:"
+                "FINDING_EVIDENCE_UNKNOWN:{\"findings\":[]}"
+            ),
         ])
-        self.assertEqual(len(warnings), 4)
+        self.assertEqual(len(warnings), 5)
         self.assertEqual(len(blocking), 2)
 
     def test_ownership_warning_deducts_confidence_once(self) -> None:
@@ -86,6 +91,26 @@ class AssembleSemanticResultWarningTest(unittest.TestCase):
         self.assertEqual(
             result["minor_violations"][0]["code"],
             "MAPPING_CLAIM_UNMAPPED",
+        )
+
+    def test_finding_evidence_recovery_deducts_major_confidence_once(
+        self,
+    ) -> None:
+        with TemporaryDirectory() as temporary:
+            run_dir = Path(temporary)
+            record_finding_evidence_warning(run_dir, ["warning-1"])
+            record_finding_evidence_warning(run_dir, ["warning-2"])
+            result = json.loads(
+                (run_dir / "confidence-result.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+        self.assertEqual(result["confidence_score"], 80)
+        self.assertEqual(result["deduction_total"], 20)
+        self.assertEqual(len(result["major_violations"]), 1)
+        self.assertEqual(
+            result["major_violations"][0]["code"],
+            "FINDING_EVIDENCE_UNKNOWN",
         )
 
     def test_final_validation_downgrades_all_confidence_warnings(self) -> None:

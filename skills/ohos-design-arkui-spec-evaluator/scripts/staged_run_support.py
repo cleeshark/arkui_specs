@@ -27,6 +27,9 @@ from spec_eval.kernel.aggregation_context import (  # noqa: E402
     criteria_by_id,
     mapped_claim_ids as context_mapped_claim_ids,
 )
+from spec_eval.kernel.normalize import (  # noqa: E402
+    FINDING_EVIDENCE_WARNING_PREFIX,
+)
 
 
 STAGED_SCHEMA_VERSION = 2
@@ -1448,6 +1451,27 @@ def validate_aggregation_document(
         errors.append("aggregation.source_observation_ids: must list every work item in order")
     if document.get("cross_feat_contracts_reviewed") is not True:
         errors.append("aggregation.cross_feat_contracts_reviewed: must be true")
+    recovered_finding_ids: set[str] = set()
+    notes = document.get("notes")
+    for note in notes if isinstance(notes, list) else []:
+        if not (
+            isinstance(note, str)
+            and note.startswith(FINDING_EVIDENCE_WARNING_PREFIX)
+        ):
+            continue
+        errors.append(
+            "aggregation.notes: " + note
+        )
+        try:
+            recovery = json.loads(note[len(FINDING_EVIDENCE_WARNING_PREFIX):])
+        except (TypeError, ValueError):
+            continue
+        for recovered in recovery.get("findings", []):
+            if not isinstance(recovered, dict):
+                continue
+            finding_id = recovered.get("finding_id")
+            if isinstance(finding_id, str) and finding_id:
+                recovered_finding_ids.add(finding_id)
     results = document.get("criterion_results")
     if not isinstance(results, list):
         errors.append("aggregation.criterion_results: expected a list")
@@ -1504,7 +1528,11 @@ def validate_aggregation_document(
                     f"{label}.findings[{finding_index}].evidence_ids: not present in Criterion "
                     f"evidence: {missing}"
                 )
-            if conclusion in FINDING_REQUIRED_CONCLUSIONS and not finding.get("evidence_ids"):
+            if (
+                conclusion in FINDING_REQUIRED_CONCLUSIONS
+                and not finding.get("evidence_ids")
+                and finding_id not in recovered_finding_ids
+            ):
                 errors.append(
                     f"{label}.findings[{finding_index}].evidence_ids: at least one evidence ID "
                     "is required for an evidence-backed Finding"

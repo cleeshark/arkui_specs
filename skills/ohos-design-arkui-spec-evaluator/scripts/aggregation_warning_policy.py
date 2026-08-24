@@ -20,6 +20,11 @@ OWNERSHIP_WARNING_DEDUCTION = 20
 MAPPING_WARNING_MARKER = ".claim_ids: not mapped to Criterion:"
 MAPPING_WARNING_CODE = "MAPPING_CLAIM_UNMAPPED"
 MAPPING_WARNING_DEDUCTION = 5
+FINDING_EVIDENCE_WARNING_MARKER = (
+    "service-warning:FINDING_EVIDENCE_UNKNOWN:"
+)
+FINDING_EVIDENCE_WARNING_CODE = "FINDING_EVIDENCE_UNKNOWN"
+FINDING_EVIDENCE_WARNING_DEDUCTION = 20
 
 
 def split_aggregation_warnings(errors: list[str]) -> tuple[list[str], list[str]]:
@@ -30,6 +35,7 @@ def split_aggregation_warnings(errors: list[str]) -> tuple[list[str], list[str]]
         if (
             any(marker in error for marker in OWNERSHIP_WARNING_MARKERS)
             or MAPPING_WARNING_MARKER in error
+            or FINDING_EVIDENCE_WARNING_MARKER in error
         ):
             warnings.append(error)
         else:
@@ -49,6 +55,10 @@ def record_aggregation_warnings(run_dir: Path, warnings: list[str]) -> None:
     ]
     record_ownership_warning(run_dir, ownership_warnings)
     record_mapping_warning(run_dir, mapping_warnings)
+    record_finding_evidence_warning(run_dir, [
+        warning for warning in warnings
+        if FINDING_EVIDENCE_WARNING_MARKER in warning
+    ])
 
 
 def record_ownership_warning(run_dir: Path, warnings: list[str]) -> None:
@@ -75,6 +85,23 @@ def record_mapping_warning(run_dir: Path, warnings: list[str]) -> None:
         deduction=MAPPING_WARNING_DEDUCTION,
         message="aggregation retains Claim IDs outside the Criterion mapping",
         warning_path="aggregation.criterion_results[].claim_ids",
+    )
+
+
+def record_finding_evidence_warning(
+    run_dir: Path, warnings: list[str]
+) -> None:
+    """Deduct confidence after removing unknown Finding evidence refs."""
+    _record_confidence_warning(
+        run_dir, warnings,
+        code=FINDING_EVIDENCE_WARNING_CODE,
+        layer="MAJOR",
+        deduction=FINDING_EVIDENCE_WARNING_DEDUCTION,
+        message=(
+            "service removed Finding evidence references absent from the "
+            "frozen Criterion catalog"
+        ),
+        warning_path="aggregation.criterion_results[].findings[].evidence_ids",
     )
 
 
