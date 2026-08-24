@@ -8,6 +8,10 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from aggregation_warning_policy import (
+    record_aggregation_warnings,
+    split_aggregation_warnings,
+)
 from staged_run_support import (
     build_final_candidate,
     load_object,
@@ -137,6 +141,11 @@ def main(argv: list[str] | None = None) -> int:
     run_dir = args.run_dir.resolve()
     candidate = args.candidate.resolve() if args.candidate else None
     errors, state, work_items = validate_stage(run_dir, args.stage, args.work_item, candidate)
+    if args.stage == "final":
+        errors, warnings = split_aggregation_warnings(errors)
+        for warning in warnings:
+            print(f"WARNING: {warning}", file=sys.stderr)
+        record_aggregation_warnings(run_dir, warnings)
     if errors:
         for error in errors:
             print(f"ERROR: {error}", file=sys.stderr)

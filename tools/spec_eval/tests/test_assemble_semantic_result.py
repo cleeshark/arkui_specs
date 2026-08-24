@@ -5,6 +5,7 @@ import sys
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 
 SKILL_SCRIPTS = Path(__file__).resolve().parents[3] / "skills" / "ohos-design-arkui-spec-evaluator" / "scripts"
@@ -16,6 +17,7 @@ from assemble_semantic_result import (  # noqa: E402
     record_ownership_warning,
     split_aggregation_warnings,
 )
+from validate_staged_run import main as validate_staged_main  # noqa: E402
 
 
 class AssembleSemanticResultWarningTest(unittest.TestCase):
@@ -85,6 +87,57 @@ class AssembleSemanticResultWarningTest(unittest.TestCase):
             result["minor_violations"][0]["code"],
             "MAPPING_CLAIM_UNMAPPED",
         )
+
+    def test_final_validation_downgrades_all_confidence_warnings(self) -> None:
+        ownership = (
+            "aggregation.defect_ownership[1].primary_criterion_id: expected "
+            "one of observation owners ['SPEC-AC-TESTABILITY']"
+        )
+        mapping = (
+            "aggregation.criterion_results[C].claim_ids: not mapped to "
+            "Criterion: ['claim-1']"
+        )
+        with TemporaryDirectory() as temporary:
+            run_dir = Path(temporary)
+            with (
+                patch(
+                    "validate_staged_run.validate_stage",
+                    return_value=([ownership, mapping], {}, {}),
+                ),
+                patch("validate_staged_run.update_progress") as update_progress,
+            ):
+                result = validate_staged_main([
+                    "--run-dir", str(run_dir),
+                    "--stage", "final",
+                    "--update-state",
+                ])
+            confidence = json.loads(
+                (run_dir / "confidence-result.json").read_text(encoding="utf-8")
+            )
+        self.assertEqual(result, 0)
+        update_progress.assert_called_once()
+        self.assertEqual(confidence["confidence_score"], 75)
+        self.assertEqual(confidence["deduction_total"], 25)
+        self.assertEqual(
+            {item["code"] for item in confidence["major_violations"]},
+            {"OWNERSHIP_CRITICALITY"},
+        )
+        self.assertEqual(
+            {item["code"] for item in confidence["minor_violations"]},
+            {"MAPPING_CLAIM_UNMAPPED"},
+        )
+
+    def test_final_validation_keeps_structural_errors_blocking(self) -> None:
+        with TemporaryDirectory() as temporary:
+            with patch(
+                "validate_staged_run.validate_stage",
+                return_value=(["aggregation.finding_id: required"], {}, {}),
+            ):
+                result = validate_staged_main([
+                    "--run-dir", temporary,
+                    "--stage", "final",
+                ])
+        self.assertEqual(result, 1)
 
 
 if __name__ == "__main__":

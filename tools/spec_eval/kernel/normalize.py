@@ -708,7 +708,11 @@ def normalize_aggregation(
                 owner = compatible[0]
             elif not is_duplicate and len(context_candidates) == 1:
                 owner = next(iter(context_candidates))
-        if owner is None and ownership_recovery_enabled:
+        # An omitted finding_keys edge must never leak into the published
+        # document as finding_id=null.  The provisional Finding still has a
+        # stable Criterion/Claim identity, so isolate it under a deterministic
+        # service owner and let OWNERSHIP_CRITICALITY lower confidence.
+        if owner is None:
             claim_id = occurrence.get("claim_id")
             owner = service_ownership_defect_key(
                 func_id=func_id,

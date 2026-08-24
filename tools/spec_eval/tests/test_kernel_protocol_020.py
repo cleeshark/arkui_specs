@@ -21,7 +21,12 @@ from spec_eval.protocol_validator import (
     validate_strict_output_schema,
 )
 from spec_eval.kernel import contracts as K
-from spec_eval.kernel.errors import SERVICE_NORMALIZATION, TypedError, blocking
+from spec_eval.kernel.errors import (
+    SERVICE_NORMALIZATION,
+    TypedError,
+    blocking,
+    has_hard_errors,
+)
 from spec_eval.kernel.evidence_paths import (
     EvidencePathError,
     FrozenEvidencePathResolver,
@@ -1236,6 +1241,50 @@ class NormalizeAggregationTest(unittest.TestCase):
         self.assertEqual(
             sum(error.code == "OWNERSHIP_CRITICALITY" for error in typed), 1,
         )
+
+    def test_missing_ownership_edge_gets_service_owner_and_sem_id(self) -> None:
+        judgment = self._judgment()
+        judgment["defect_ownership"][0]["finding_keys"] = []
+
+        result = self._normalize(judgment)
+
+        self.assertEqual(result.errors, [])
+        self.assertEqual(result.fatal, [])
+        finding = result.document["criterion_results"][0]["findings"][0]
+        self.assertRegex(finding["finding_id"], r"^SEM-[0-9a-f]{24}$")
+        fallback = [
+            record for record in result.document["defect_ownership"]
+            if record["defect_key"].startswith("service.unresolved-ownership.")
+        ]
+        self.assertEqual(len(fallback), 1)
+        self.assertEqual(fallback[0]["finding_ids"], [finding["finding_id"]])
+        typed = validate_aggregation_document(
+            result.document,
+            criterion_order=list(CRITERIA),
+            aggregation_context=None,
+        )
+        self.assertEqual(
+            sum(error.code == "OWNERSHIP_CRITICALITY" for error in typed), 1,
+        )
+        self.assertFalse(any(error.code == "FINDING_ID_MISSING" for error in typed))
+
+    def test_validator_rejects_missing_canonical_finding_id(self) -> None:
+        result = self._normalize()
+        result.document["criterion_results"][0]["findings"][0]["finding_id"] = None
+
+        typed = validate_aggregation_document(
+            result.document,
+            criterion_order=list(CRITERIA),
+            aggregation_context=None,
+        )
+
+        missing = [error for error in typed if error.code == "FINDING_ID_MISSING"]
+        self.assertEqual(len(missing), 1)
+        self.assertEqual(
+            missing[0].path,
+            "aggregation.criterion_results[0].findings[0].finding_id",
+        )
+        self.assertTrue(has_hard_errors(missing))
 
     def test_missing_context_does_not_accept_inline_or_guessed_evidence(self) -> None:
         result = normalize_aggregation(

@@ -683,7 +683,15 @@ def validate_aggregation_document(
                     expected="at least one evidence ID",
                 ))
             finding_id = finding.get("finding_id")
-            if isinstance(finding_id, str) and finding_id:
+            if not isinstance(finding_id, str) or not finding_id:
+                errors.append(_err(
+                    "FINDING_ID_MISSING", f"{finding_label}.finding_id",
+                    entity_type="finding",
+                    entity_id=str(finding.get("key") or ""),
+                    expected="non-empty canonical SEM Finding ID",
+                    actual=str(finding_id),
+                ))
+            else:
                 if finding_id in findings_by_id:
                     errors.append(_err(
                         "FINDING_MULTI_OWNED", f"{finding_label}.finding_id",
