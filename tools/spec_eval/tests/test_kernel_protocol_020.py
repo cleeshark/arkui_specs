@@ -565,6 +565,44 @@ class NormalizeObservationTest(unittest.TestCase):
         self.assertEqual(result.errors[0].code, "EVIDENCE_PATH_NOT_FOUND")
         self.assertIsNone(result.document)
 
+    def test_review_record_directory_path_publishes_null_hash(self) -> None:
+        (self.root / "frameworks" / "core").mkdir(parents=True, exist_ok=True)
+        judgment = _judgment(self.evidence_rel)
+        # e2 is the review_record declaration; point it at a directory tree.
+        judgment["evidence_declarations"][1]["path"] = "frameworks/core"
+        with patch("spec_eval.kernel.normalize._content_hash") as content_hash:
+            result = normalize_observation(
+                self.template, judgment, repo_root=self.root
+            )
+        self.assertEqual(result.fatal, [])
+        self.assertEqual(result.errors, [])
+        self.assertIsNotNone(result.document)
+        published_evidence = [
+            row
+            for obs in result.document["observations"]
+            for row in obs["evidence"]
+        ]
+        review_evidence = next(
+            row for row in published_evidence if row["type"] == "review_record"
+        )
+        self.assertEqual(review_evidence["path"], "frameworks/core")
+        self.assertIsNone(review_evidence["content_hash"])
+        # a directory is never hashed
+        for call in content_hash.call_args_list:
+            self.assertFalse(Path(call.args[0]).is_dir())
+
+    def test_non_review_record_directory_path_is_correctable(self) -> None:
+        (self.root / "frameworks" / "core").mkdir(parents=True, exist_ok=True)
+        judgment = _judgment(self.evidence_rel)
+        # e1 is a spec_location declaration; a directory must still be rejected.
+        judgment["evidence_declarations"][0]["path"] = "frameworks/core"
+        result = normalize_observation(self.template, judgment, repo_root=self.root)
+        self.assertEqual(result.fatal, [])
+        self.assertEqual(
+            {error.code for error in result.errors}, {"EVIDENCE_PATH_NOT_FOUND"}
+        )
+        self.assertIsNone(result.document)
+
     def test_resolved_but_unreadable_frozen_evidence_is_fatal(self) -> None:
         judgment = _judgment(self.evidence_rel)
         with patch("spec_eval.kernel.normalize._content_hash", return_value=None):
@@ -685,6 +723,27 @@ class EvidencePathResolverTest(unittest.TestCase):
         with self.assertRaises(EvidencePathError) as ctx:
             resolver.resolve("specs/domain/missing-design.md")
         self.assertEqual(ctx.exception.code, "FROZEN_EVIDENCE_UNREADABLE")
+
+    def test_directory_path_rejected_by_default(self) -> None:
+        with self.assertRaises(EvidencePathError) as ctx:
+            self.resolver.resolve("frameworks/core")
+        self.assertEqual(ctx.exception.code, "EVIDENCE_PATH_NOT_FOUND")
+
+    def test_directory_path_accepted_when_allowed(self) -> None:
+        result = self.resolver.resolve("frameworks/core", allow_directory=True)
+        self.assertEqual(result.canonical_path, "frameworks/core")
+        self.assertTrue(result.absolute_path.is_dir())
+
+    def test_allow_directory_still_rejects_missing_path(self) -> None:
+        with self.assertRaises(EvidencePathError) as ctx:
+            self.resolver.resolve("frameworks/core/does-not-exist", allow_directory=True)
+        self.assertEqual(ctx.exception.code, "EVIDENCE_PATH_NOT_FOUND")
+
+    def test_allow_directory_still_accepts_regular_file(self) -> None:
+        result = self.resolver.resolve(
+            "frameworks/core/example.cpp", allow_directory=True
+        )
+        self.assertTrue(result.absolute_path.is_file())
 
 
 class ValidateObservationTest(unittest.TestCase):

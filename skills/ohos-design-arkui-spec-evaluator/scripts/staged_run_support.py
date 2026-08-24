@@ -87,6 +87,12 @@ EVIDENCE_TYPES = (
     "test_evidence",
     "review_record",
 )
+# Evidence types whose anchor is a directory-level inspection rather than a single
+# file: their path may name a directory and their content_hash may be null/omitted.
+# Keep in sync with rubric evidence_policy.content_hash_exempt_types /
+# path_may_be_directory_types.
+HASH_EXEMPT_EVIDENCE_TYPES = frozenset({"review_record"})
+DIRECTORY_PATH_EVIDENCE_TYPES = frozenset({"review_record"})
 BREADTHS = {"local", "feat_core", "function_shared"}
 UNIT_FACET_TYPES = {
     "condition",
@@ -217,6 +223,8 @@ def staged_output_contract(
             "content_hash",
             "description",
         ],
+        "content_hash_exempt_types": sorted(HASH_EXEMPT_EVIDENCE_TYPES),
+        "directory_path_types": sorted(DIRECTORY_PATH_EVIDENCE_TYPES),
         "type_enum": list(rubric_evidence_types),
         "evidence_id_pattern": EVIDENCE_ID.pattern,
         "content_hash_pattern": HASH_VALUE.pattern,
@@ -224,6 +232,8 @@ def staged_output_contract(
             "Use one stable EV- prefixed evidence_id and update every evidence_ids reference when it changes.",
             "Use the frozen source revision exactly as source_revision.",
             "content_hash is lowercase SHA-256 with the literal sha256: prefix.",
+            "For content_hash_exempt_types (review_record), path may name a directory and "
+            "content_hash may be null or omitted; all other types require a file path and hash.",
             "Select type from type_enum; never omit it or invent a new type.",
         ],
         "format_example_only": {
@@ -1002,16 +1012,34 @@ def _validate_evidence(value: Any, label: str, errors: list[str]) -> None:
     if not isinstance(value, dict):
         errors.append(f"{label}: expected an evidence object")
         return
-    required = ("evidence_id", "type", "path", "source_revision", "content_hash", "description")
+    evidence_type = value.get("type")
+    # review_record captures a scope-level inspection or negated finding whose anchor
+    # is a directory tree, not a single hashable file. It is exempt from the
+    # content_hash requirement (a directory has no meaningful SHA-256); every other
+    # evidence type must still carry a file content hash.
+    hash_exempt = evidence_type in HASH_EXEMPT_EVIDENCE_TYPES
+    required = ("evidence_id", "type", "path", "source_revision", "description")
     for key in required:
         if not isinstance(value.get(key), str) or not value.get(key):
             errors.append(f"{label}.{key}: expected a non-empty string")
+    content_hash_value = value.get("content_hash")
+    if hash_exempt:
+        if content_hash_value is not None and not (
+            isinstance(content_hash_value, str) and HASH_VALUE.fullmatch(content_hash_value)
+        ):
+            errors.append(
+                f"{label}.content_hash: for {evidence_type} evidence must be null/omitted "
+                "or sha256:<64 lowercase hex digits>"
+            )
+    else:
+        if not isinstance(content_hash_value, str) or not content_hash_value:
+            errors.append(f"{label}.content_hash: expected a non-empty string")
+        elif not HASH_VALUE.fullmatch(content_hash_value):
+            errors.append(f"{label}.content_hash: expected sha256:<64 lowercase hex digits>")
     if isinstance(value.get("evidence_id"), str) and not EVIDENCE_ID.fullmatch(value["evidence_id"]):
         errors.append(f"{label}.evidence_id: invalid evidence ID")
-    if isinstance(value.get("content_hash"), str) and not HASH_VALUE.fullmatch(value["content_hash"]):
-        errors.append(f"{label}.content_hash: expected sha256:<64 lowercase hex digits>")
-    if value.get("type") not in EVIDENCE_TYPES:
-        errors.append(f"{label}.type: unsupported evidence type {value.get('type')!r}")
+    if evidence_type not in EVIDENCE_TYPES:
+        errors.append(f"{label}.type: unsupported evidence type {evidence_type!r}")
 
 
 def _is_low_information_review_text(value: Any) -> bool:

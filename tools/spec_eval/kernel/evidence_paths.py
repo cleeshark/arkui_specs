@@ -66,7 +66,7 @@ class FrozenEvidencePathResolver:
         """Compatibility constructor for kernel callers and isolated tests."""
         return cls({"ace_engine": repo_root})
 
-    def resolve(self, path_text: str) -> EvidencePathResolution:
+    def resolve(self, path_text: str, *, allow_directory: bool = False) -> EvidencePathResolution:
         canonical = self._validate_canonical(path_text)
         repository, relative = self._select_repository(canonical)
         root = self._roots.get(repository)
@@ -106,7 +106,23 @@ class FrozenEvidencePathResolver:
                 path_text,
                 "frozen source/spec/SDK path, not service job data",
             )
-        if not resolved.is_file():
+        # review_record evidence anchors a directory-level inspection (for example
+        # "recursively searched directory X, symbol Y is absent"); such callers pass
+        # allow_directory=True so a directory path is accepted. Every other evidence
+        # type must still resolve to a regular file.
+        if allow_directory:
+            if not (resolved.is_file() or resolved.is_dir()):
+                code = (
+                    "FROZEN_EVIDENCE_UNREADABLE"
+                    if canonical in self._required_paths
+                    else "EVIDENCE_PATH_NOT_FOUND"
+                )
+                raise EvidencePathError(
+                    code,
+                    path_text,
+                    "existing file or directory in the frozen workspace",
+                )
+        elif not resolved.is_file():
             code = (
                 "FROZEN_EVIDENCE_UNREADABLE"
                 if canonical in self._required_paths

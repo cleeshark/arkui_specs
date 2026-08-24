@@ -72,9 +72,17 @@ evidence_policy:
     - test_evidence
     - review_record
   reproducible_evidence_requires: [path, source_revision, content_hash]
+  # review_record evidence records a scope-level inspection or a negated finding
+  # ("searched directory X, symbol Y is absent"). Its natural anchor is a directory
+  # tree plus the inspection reasoning, not a single hashable file. Such evidence is
+  # therefore exempt from the file-anchor and content_hash requirements below: its
+  # path may name a directory and content_hash may be null/omitted.
+  path_may_be_directory_types: [review_record]
+  content_hash_exempt_types: [review_record]
   critical_major_requires:
     minimum_evidence_items: 1
     content_hash_required: true
+    content_hash_required_exempt_types: [review_record]
     reason_required: true
     recommendation_required: true
 

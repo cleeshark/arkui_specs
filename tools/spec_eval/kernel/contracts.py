@@ -70,6 +70,13 @@ EVIDENCE_TYPES = (
 )
 REVIEW_RECORD = "review_record"
 
+# Evidence types whose anchor is a directory-level inspection (for example a
+# recursive search that establishes an absence) rather than a single file. Their
+# declared path may name a directory and their content_hash may be null/omitted.
+# Every other evidence type must resolve to a regular file with a verified hash.
+DIRECTORY_PATH_EVIDENCE_TYPES = frozenset({REVIEW_RECORD})
+HASH_EXEMPT_EVIDENCE_TYPES = frozenset({REVIEW_RECORD})
+
 # Minimum observation-level evidence items per local outcome. NOT_VERIFIABLE
 # observations must still record their inspection evidence (issue #22 rule,
 # carried over as a typed check instead of a repair mode).
