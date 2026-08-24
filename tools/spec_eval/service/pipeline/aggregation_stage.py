@@ -10,9 +10,10 @@ JSON Patch turn; only unambiguous field/enum/ownership normalization remains
 service-handled. Semantic Criterion/Claim mapping errors are delegated to the
 model with the other correction errors.
 
-Anti-fake-completion: a missing/invalid aggregation body, an assemble failure,
-or a failed final validator all fail the job — ``semantic-result.json`` is
-never written by a failed path.
+Anti-fake-completion: a missing/invalid aggregation body, a structural assemble
+failure, or a failed final validator all fail the job — ``semantic-result.json``
+is never written by a failed path. The assemble script may downgrade the two
+cross-Criterion Critical ownership checks to confidence warnings.
 """
 
 from __future__ import annotations
