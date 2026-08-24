@@ -898,6 +898,11 @@ class EvaluationReportRepository:
         self._store = store
         self._conn = store._conn
 
+    @property
+    def store(self) -> SqliteStore:
+        """Return the backing store for composing service-level operations."""
+        return self._store
+
     def insert(self, report: EvaluationReportRecord) -> EvaluationReportRecord:
         values = (
             report.report_id, report.job_id, report.func_id, report.source_revision,
@@ -941,6 +946,19 @@ class EvaluationReportRepository:
         with self._store._tx():
             row = self._conn.execute(
                 "SELECT * FROM evaluation_reports WHERE job_id = ?", (job_id,)
+            ).fetchone()
+            return _report_from_row(row) if row is not None else None
+
+    def latest_for_target(
+        self, func_id: str, *, target_generation: int, input_fingerprint: str
+    ) -> EvaluationReportRecord | None:
+        """Return the newest immutable report matching one exact refresh target."""
+        with self._store._tx():
+            row = self._conn.execute(
+                "SELECT * FROM evaluation_reports "
+                "WHERE func_id = ? AND target_generation = ? AND input_fingerprint = ? "
+                "ORDER BY completed_at DESC, report_id DESC LIMIT 1",
+                (func_id, target_generation, input_fingerprint),
             ).fetchone()
             return _report_from_row(row) if row is not None else None
 
@@ -1033,6 +1051,57 @@ class FunctionReportHeadRepository:
                 "active_job_id = NULL, last_refresh_error = NULL, updated_at = ? WHERE func_id = ?",
                 (report.report_id, freshness, warn_at, expires_at, utc_now(), report.func_id),
             )
+            return _head_from_row(self._get_row(report.func_id))
+
+    def promote_orphan(
+        self,
+        report: EvaluationReportRecord,
+        *,
+        freshness: str,
+        warn_at: str,
+        expires_at: str,
+    ) -> FunctionReportHead | None:
+        """Promote an archived report only while its head is still unclaimed.
+
+        This is deliberately stricter than a normal promotion: it is a
+        compare-and-set repair for an orphaned pointer, never a replacement for
+        an already-current report.  The target generation and fingerprint are
+        checked in the same write transaction to prevent a startup scan from
+        racing a new refresh request.
+        """
+        with self._store._tx(immediate=True):
+            row = self._get_row(report.func_id)
+            active_job_id = row["active_job_id"]
+            if row["current_report_id"] is not None:
+                return None
+            if int(row["desired_generation"]) != report.target_generation:
+                return None
+            if row["desired_input_fingerprint"] != report.input_fingerprint:
+                return None
+            if active_job_id not in (None, report.job_id):
+                return None
+            self._conn.execute(
+                "UPDATE function_report_heads SET current_report_id = ?, freshness = ?, "
+                "stale_reasons_json = '[]', warn_at = ?, expires_at = ?, "
+                "refresh_status = 'IDLE', active_job_id = NULL, "
+                "last_refresh_error = NULL, updated_at = ? "
+                "WHERE func_id = ? AND current_report_id IS NULL "
+                "AND desired_generation = ? AND desired_input_fingerprint = ? "
+                "AND (active_job_id IS NULL OR active_job_id = ?)",
+                (
+                    report.report_id,
+                    freshness,
+                    warn_at,
+                    expires_at,
+                    utc_now(),
+                    report.func_id,
+                    report.target_generation,
+                    report.input_fingerprint,
+                    report.job_id,
+                ),
+            )
+            if self._conn.execute("SELECT changes()").fetchone()[0] != 1:
+                return None
             return _head_from_row(self._get_row(report.func_id))
 
     def update_freshness(

@@ -8,6 +8,7 @@ repositories and dispatcher; the HTTP layer never touches SQLite or subprocesses
 
 from __future__ import annotations
 
+import logging
 import subprocess
 from pathlib import Path
 
@@ -18,6 +19,7 @@ from .executors.base import SemanticExecutor
 from .executors.registry import create, create_default as _create_default_executor
 from .pipeline.context import DEFAULT_SKILL_EVALUATOR_VERSION
 from .manual_refresh import ManualRefreshService
+from .report_registry import OrphanReconcileResult, ReportRegistry
 from .scheduler.dispatcher import CancelResult, Dispatcher
 from .scheduler.job_worker import build_runner
 from .settings import ServiceSettings, executor_config_for, executor_profiles
@@ -31,6 +33,8 @@ from .store.repositories import (
     JobRepository,
 )
 from .store.sqlite_store import SqliteStore, utc_now
+
+LOGGER = logging.getLogger(__name__)
 
 
 class SemanticServiceApp:
@@ -54,7 +58,24 @@ class SemanticServiceApp:
             self._executor_config = executor_config_for(self._default_agent)
         self._injected_executor = executor
         self.store = SqliteStore(settings)
-        FreshnessPolicyRepository(self.store).ensure_default()
+        policies = FreshnessPolicyRepository(self.store)
+        policies.ensure_default()
+        try:
+            self.startup_reconcile_result = ReportRegistry(
+                settings,
+                EvaluationReportRepository(self.store),
+                FunctionReportHeadRepository(self.store),
+                policies,
+                JobRepository(self.store),
+            ).reconcile_orphan_reports()
+            if self.startup_reconcile_result.repaired:
+                LOGGER.info(
+                    "startup orphan report reconciliation repaired %d report(s)",
+                    self.startup_reconcile_result.repaired,
+                )
+        except Exception:  # noqa: BLE001 - reconciliation must not block service startup
+            LOGGER.exception("startup orphan report reconciliation failed")
+            self.startup_reconcile_result = OrphanReconcileResult()
         self.ui_dir = Path(__file__).resolve().parent / "ui"
         self._executor = executor or _create_default_executor(
             self._executor_config, schemas_root=settings.schemas_root
