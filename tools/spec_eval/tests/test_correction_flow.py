@@ -8,8 +8,9 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-from spec_eval.kernel.errors import TypedError
+from spec_eval.kernel.errors import TypedError, is_post_correction_warning
 from spec_eval.kernel.machine_contract import build_correction_machine_contract
+from spec_eval.kernel.normalize import NormalizationResult
 from spec_eval.kernel.schema_gen import build_envelope_schema
 from spec_eval.service.executors import contract as C
 from spec_eval.service.pipeline.correction import (
@@ -455,6 +456,133 @@ class CorrectionFlowTest(unittest.TestCase):
         ]
         self.assertTrue(all(is_model_correction_error(error) for error in errors))
         self.assertFalse(any(is_deterministic_error(error) for error in errors))
+
+    def test_unmapped_claim_downgrades_only_after_model_correction(self) -> None:
+        error = TypedError(
+            "MAPPING_CLAIM_UNMAPPED",
+            "aggregation.criterion_results[C].claim_ids",
+        )
+        self.assertTrue(is_model_correction_error(error))
+        self.assertTrue(is_post_correction_warning(error))
+        self.assertFalse(is_post_correction_warning(TypedError(
+            "MAPPING_CONCLUSION_FORBIDDEN",
+            "aggregation.criterion_results[C].conclusion",
+        )))
+
+    def test_unmapped_claim_remains_warning_after_final_service_revalidation(
+        self,
+    ) -> None:
+        class Executor:
+            def execute(self, work, emit, cancel=None):
+                if work.prompt_extras.get("mode") == "correct":
+                    document = {
+                        "criterion_results": [{
+                            "criterion_id": "C",
+                            "claim_ids": ["unmapped"],
+                        }],
+                        "observations": [{
+                            "claim_ids": ["claim-1", "claim-1"],
+                        }],
+                    }
+                else:
+                    document = {
+                        "criterion_results": [{
+                            "criterion_id": "C",
+                            "claim_ids": ["unmapped"],
+                        }],
+                        "observations": [{"claim_ids": ["claim-1"]}],
+                    }
+                return C.ExecutionResult(
+                    status=C.STATUS_COMPLETED,
+                    observation=document,
+                )
+
+        class Events:
+            def __init__(self):
+                self.rows = []
+
+            def append(self, job_id, event_type, payload):
+                self.rows.append((event_type, payload))
+
+        with tempfile.TemporaryDirectory() as temporary:
+            run_dir = Path(temporary)
+            (run_dir / "work-items.json").write_text(
+                json.dumps({"items": []}), encoding="utf-8",
+            )
+            events = Events()
+            published = []
+            work = C.WorkItemInput(
+                job_id="job",
+                func_id="01-01-01",
+                run_id="run-1",
+                work_item_id="aggregation:final",
+                work_item={
+                    "observation_type": "aggregation",
+                    "input_resources": [],
+                },
+                run_dir=str(run_dir),
+                input_paths=(),
+                executor_result_path=str(run_dir / "aggregation.result.json"),
+                repo_root=str(run_dir),
+                skill_version="0.3.0",
+                protocol_version="0.2.0",
+                prompt_extras={"payload_kind": "aggregation"},
+            )
+
+            def normalize(document):
+                return NormalizationResult(document=document)
+
+            def validate(document):
+                errors = [TypedError(
+                    "MAPPING_CLAIM_UNMAPPED",
+                    "aggregation.criterion_results[C].claim_ids",
+                    entity_type="criterion",
+                    entity_id="C",
+                )]
+                claims = document.get("observations", [{}])[0].get("claim_ids")
+                if claims == ["claim-1", "claim-1"]:
+                    errors.append(TypedError(
+                        "OBSERVATION_FIELD_INVALID",
+                        "aggregation.observations[0].claim_ids",
+                    ))
+                return errors
+
+            flow = JudgmentFlow(
+                ctx=SimpleNamespace(
+                    run_dir=run_dir, job_id="job", run_id="run-1",
+                ),
+                executor=Executor(),
+                jobs=SimpleNamespace(),
+                events=events,
+            )
+            outcome = flow.run(
+                work=work,
+                output_path=run_dir / "aggregation.json",
+                template={},
+                normalize=normalize,
+                validate=validate,
+                base_contract=work.prompt_extras,
+                on_publish=published.append,
+                fingerprint="fingerprint",
+                stage_event="aggregation_completed",
+            )
+
+        self.assertEqual(outcome.status, C.STATUS_COMPLETED)
+        self.assertTrue(outcome.published)
+        self.assertEqual(
+            published[0]["observations"][0]["claim_ids"],
+            ["claim-1"],
+        )
+        warning_events = [
+            payload for event_type, payload in events.rows
+            if event_type == "correction_completed_with_warnings"
+        ]
+        self.assertEqual(len(warning_events), 1)
+        self.assertEqual(len(warning_events[0]["warnings"]), 1)
+        self.assertEqual(
+            {warning["code"] for warning in warning_events[0]["warnings"]},
+            {"MAPPING_CLAIM_UNMAPPED"},
+        )
 
     def test_correction_schema_is_generated_and_compact(self) -> None:
         schema = build_envelope_schema("correction")
