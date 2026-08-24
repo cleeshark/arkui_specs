@@ -18,8 +18,9 @@ observation and aggregation stages:
                                         attempt from the stored candidate)
 
 Every executor call is recorded as one invocation (attempt) with executor,
-timing and usage. The 0.1.x repair modes, scope guards and fallbacks do not
-exist here.
+timing and usage.  After the single Correction turn, callers may provide one
+deterministic post-correction normalizer for representational ownership
+recovery; semantic conclusions and evidence remain model-owned.
 """
 
 from __future__ import annotations
@@ -32,7 +33,7 @@ from pathlib import Path
 from typing import Any, Callable, Sequence
 
 from spec_eval.kernel import staged_state as SS
-from spec_eval.kernel.errors import TypedError
+from spec_eval.kernel.errors import TypedError, is_non_blocking_warning
 from spec_eval.kernel.normalize import NormalizationResult
 from spec_eval.service.domain import states as S
 from spec_eval.service.executors import contract as C
@@ -47,7 +48,7 @@ from spec_eval.service.pipeline.correction import (
     is_deterministic_error,
     is_fatal_error,
     is_model_correction_error,
-    resolve_typed_error_json_path,
+    resolve_typed_error_json_paths,
     validate_patch_scope,
     validate_patch_values,
 )
@@ -338,6 +339,7 @@ class JudgmentFlow:
         fingerprint: str,
         stage_event: str,
         reproject: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
+        normalize_after_correction: Callable[..., NormalizationResult] | None = None,
     ) -> JudgmentOutcome:
         """Run one work item through the state machine.
 
@@ -356,7 +358,10 @@ class JudgmentFlow:
         )
 
         def typed_of(document: dict[str, Any]) -> list[TypedError]:
-            return validate(document)
+            return [
+                error for error in validate(document)
+                if not is_non_blocking_warning(error)
+            ]
 
         def projected(document: dict[str, Any]) -> dict[str, Any]:
             return reproject(document) if reproject is not None else document
@@ -434,12 +439,26 @@ class JudgmentFlow:
                     ),
                 )
             if normalization.errors:
+                combined_errors = list(normalization.errors)
+                if normalization.document is not None:
+                    combined_errors.extend(typed_of(normalization.document))
+                deduplicated_errors: list[TypedError] = []
+                seen_errors: set[tuple[str, str, str, str]] = set()
+                for error in combined_errors:
+                    identity = (
+                        error.code, error.path,
+                        error.entity_type, error.entity_id,
+                    )
+                    if identity in seen_errors:
+                        continue
+                    seen_errors.add(identity)
+                    deduplicated_errors.append(error)
                 _write_json(candidate_path, result.observation)
                 _write_json(errors_path, {
                     "input_fingerprint": fingerprint,
                     "candidate_kind": CANDIDATE_RAW_PAYLOAD,
                     "errors": [
-                        error.to_dict() for error in normalization.errors
+                        error.to_dict() for error in deduplicated_errors
                     ],
                     "evidence_catalog": normalization.evidence_catalog,
                 })
@@ -449,7 +468,7 @@ class JudgmentFlow:
                 self.events.append(self.ctx.job_id, "candidate_invalid", {
                     "work_item_id": work.work_item_id,
                     "errors": [
-                        error.to_dict() for error in normalization.errors
+                        error.to_dict() for error in deduplicated_errors
                     ],
                 })
             else:
@@ -482,6 +501,8 @@ class JudgmentFlow:
                     normalize=normalize, validate=validate,
                     base_contract=base_contract, on_publish=on_publish,
                     fingerprint=fingerprint, stage_event=stage_event,
+                    reproject=reproject,
+                    normalize_after_correction=normalize_after_correction,
                 )
             prior_state = SS.GENERATED_INVALID  # stored candidate is reusable
             self.events.append(self.ctx.job_id, "candidate_resumed", {
@@ -722,7 +743,8 @@ class JudgmentFlow:
                 # payload in .candidate.  Re-enter normalization after the
                 # patch so the template identity, canonical evidence, claim
                 # ordering and derived fields are rebuilt before validation.
-                normalization = normalize(corrected_payload)
+                correction_normalizer = normalize_after_correction or normalize
+                normalization = correction_normalizer(corrected_payload)
                 if not normalization.fatal and not normalization.errors:
                     corrected_payload = projected(normalization.document)
                     corrected_candidate_for_failure = corrected_payload
@@ -769,7 +791,8 @@ class JudgmentFlow:
             corrected_payload = _guard_correction_regression(
                 result.observation, candidate_path, model_dicts,
             )
-            normalization = normalize(corrected_payload)
+            correction_normalizer = normalize_after_correction or normalize
+            normalization = correction_normalizer(corrected_payload)
         if normalization.fatal:
             return self._fail(
                 "semantic_failed",
@@ -862,9 +885,12 @@ class JudgmentFlow:
         )
         candidate_document = json.loads(candidate_path.read_text(encoding="utf-8"))
         candidate_kind = _candidate_kind(candidate_document, breakpoint_data)
-        allowed_paths = [
-            resolve_typed_error_json_path(candidate_document, error)
+        paths_by_error = [
+            resolve_typed_error_json_paths(candidate_document, error)
             for error in typed_errors
+        ]
+        allowed_paths = [
+            path for paths in paths_by_error for path in paths
         ]
         valid_criterion_ids = tuple(
             base_contract.get("machine_contract", {}).get(
@@ -873,9 +899,10 @@ class JudgmentFlow:
         )
         allowed_values_by_path = {}
         if valid_criterion_ids:
-            for error, path in zip(typed_errors, allowed_paths):
+            for error, paths in zip(typed_errors, paths_by_error):
                 if error.get("code") == "CRITERION_UNKNOWN":
-                    allowed_values_by_path[path] = list(valid_criterion_ids)
+                    for path in paths:
+                        allowed_values_by_path[path] = list(valid_criterion_ids)
         correction_contract = {
             "format": "json_patch",
             "base": candidate_kind,

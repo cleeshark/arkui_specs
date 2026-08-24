@@ -19,6 +19,7 @@ from spec_eval.service.pipeline.correction import (
     is_fatal_error,
     is_model_correction_error,
     resolve_typed_error_json_path,
+    resolve_typed_error_json_paths,
     typed_error_json_path,
     validate_patch_scope,
     validate_patch_values,
@@ -27,6 +28,26 @@ from spec_eval.service.pipeline.judgment_flow import JudgmentFlow
 
 
 class CorrectionFlowTest(unittest.TestCase):
+    def test_duplicate_finding_key_exposes_all_coordinated_patch_paths(self) -> None:
+        document = {
+            "criterion_results": [
+                {"criterion_id": "C-1", "findings": [{"key": "dup"}]},
+                {"criterion_id": "C-2", "findings": [{"key": "dup"}]},
+            ],
+            "defect_ownership": [
+                {"defect_key": "d-1", "finding_keys": ["dup", "other"]},
+            ],
+        }
+        paths = resolve_typed_error_json_paths(document, TypedError(
+            "FINDING_KEY_DUPLICATE", "$.criterion_results",
+            entity_type="finding", entity_id="dup",
+        ))
+        self.assertEqual(paths, [
+            "/criterion_results/0/findings/0/key",
+            "/criterion_results/1/findings/0/key",
+            "/defect_ownership/0/finding_keys",
+        ])
+
     def test_duplicate_observation_lists_are_repaired_without_model(self) -> None:
         document = {
             "observations": [{
@@ -299,6 +320,52 @@ class CorrectionFlowTest(unittest.TestCase):
             )
             self.assertEqual(
                 correction_work.prompt_extras["machine_contract"]["allowed_paths"],
+                expected,
+            )
+
+    def test_aggregation_duplicate_key_prompt_allows_keys_and_owner_refs(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            run_dir = Path(temporary)
+            candidate_path = run_dir / "aggregation.json.candidate"
+            candidate_path.write_text(json.dumps({
+                "criterion_results": [
+                    {"criterion_id": "C-1", "findings": [{"key": "dup"}]},
+                    {"criterion_id": "C-2", "findings": [{"key": "dup"}]},
+                ],
+                "defect_ownership": [
+                    {"defect_key": "d-1", "finding_keys": ["dup"]},
+                ],
+            }), encoding="utf-8")
+            work = C.WorkItemInput(
+                job_id="job", func_id="01-01-01", run_id="run-1",
+                work_item_id="aggregation",
+                work_item={"observation_type": "aggregation", "input_resources": []},
+                run_dir=str(run_dir), input_paths=(),
+                executor_result_path=str(run_dir / "aggregation.result.json"),
+                repo_root=str(run_dir), skill_version="0.3.0",
+                protocol_version="0.2.0",
+                prompt_extras={"payload_kind": "aggregation"},
+            )
+            error = TypedError(
+                "FINDING_KEY_DUPLICATE", "$.criterion_results",
+                entity_type="finding", entity_id="dup",
+            ).to_dict()
+            flow = JudgmentFlow(
+                ctx=SimpleNamespace(run_dir=run_dir),
+                executor=None, jobs=None, events=None,
+            )
+
+            correction_work = flow._correct_work_input(
+                work, candidate_path, [error], {"evidence_catalog": []},
+            )
+
+            expected = [
+                "/criterion_results/0/findings/0/key",
+                "/criterion_results/1/findings/0/key",
+                "/defect_ownership/0/finding_keys",
+            ]
+            self.assertEqual(
+                correction_work.prompt_extras["correction_contract"]["allowed_paths"],
                 expected,
             )
 

@@ -60,6 +60,10 @@ def _rows(value: Any) -> list[dict[str, Any]]:
     return [row for row in value if isinstance(row, dict)] if isinstance(value, list) else []
 
 
+def _strings(value: Any) -> list[str]:
+    return [item for item in value if isinstance(item, str)] if isinstance(value, list) else []
+
+
 def _canonical_outcome(value: Any) -> str | None:
     if not isinstance(value, str):
         return None
@@ -475,6 +479,38 @@ def resolve_typed_error_json_path(
         raise ValueError(f"validator path is not traversable: {typed.path}")
 
     return _encode_pointer(resolved) if resolved else ""
+
+
+def resolve_typed_error_json_paths(
+    document: dict[str, Any], error: TypedError | dict[str, Any],
+) -> list[str]:
+    """Resolve every coordinated Correction path for one typed error.
+
+    Duplicate provisional Finding keys are a cross-document correlation error:
+    correcting only one ``key`` or only the ownership list leaves the payload
+    invalid.  Expose all duplicate key fields and every referencing
+    ``finding_keys`` list in the same bounded patch turn.
+    """
+    typed = error if isinstance(error, TypedError) else TypedError.from_dict(error)
+    if typed.code != "FINDING_KEY_DUPLICATE":
+        return [resolve_typed_error_json_path(document, typed)]
+
+    paths: list[str] = []
+    for criterion_index, criterion in enumerate(_rows(document.get("criterion_results"))):
+        for finding_index, finding in enumerate(_rows(criterion.get("findings"))):
+            if finding.get("key") == typed.entity_id:
+                paths.append(
+                    f"/criterion_results/{criterion_index}/findings/{finding_index}/key"
+                )
+    for owner_index, owner in enumerate(_rows(document.get("defect_ownership"))):
+        if typed.entity_id in _strings(owner.get("finding_keys")):
+            paths.append(f"/defect_ownership/{owner_index}/finding_keys")
+    if len(paths) < 2:
+        raise ValueError(
+            f"duplicate Finding key {typed.entity_id!r} could not be located "
+            "with its ownership references"
+        )
+    return paths
 
 
 def validate_patch_scope(
