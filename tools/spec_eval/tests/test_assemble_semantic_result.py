@@ -18,14 +18,19 @@ from assemble_semantic_result import (  # noqa: E402
 
 
 class AssembleSemanticResultWarningTest(unittest.TestCase):
-    def test_only_criticality_ownership_errors_are_warnings(self) -> None:
+    def test_only_non_structural_ownership_errors_are_warnings(self) -> None:
         blocking, warnings = split_aggregation_warnings([
             "aggregation.defect_ownership[1]: one defect may produce at most one Critical Finding",
             "aggregation.defect_ownership[2]: a Critical Finding must belong to the primary Criterion",
+            (
+                "aggregation.defect_ownership[3].primary_criterion_id: expected one of "
+                "observation owners ['SPEC-RULE-COMPLETENESS']"
+            ),
             "aggregation.defect_ownership[3].finding_ids: unknown Finding SEM-x",
+            "aggregation.defect_ownership[4].defect_key: not defined by a validated observation",
         ])
-        self.assertEqual(len(warnings), 2)
-        self.assertEqual(len(blocking), 1)
+        self.assertEqual(len(warnings), 3)
+        self.assertEqual(len(blocking), 2)
 
     def test_ownership_warning_deducts_confidence_once(self) -> None:
         with TemporaryDirectory() as temporary:
