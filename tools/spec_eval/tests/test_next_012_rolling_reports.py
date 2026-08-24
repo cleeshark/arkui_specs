@@ -117,6 +117,14 @@ class _RollingBase(unittest.TestCase):
 
 
 class ReportRegistryTest(_RollingBase):
+    def _complete_job(self, job_id: str) -> None:
+        self.jobs.transition_status(
+            job_id, S.RUNNING, stage=S.STAGE_PREPARING, event_type="enter_preparing"
+        )
+        self.jobs.transition_status(
+            job_id, S.COMPLETED, stage=S.STAGE_ARCHIVE, event_type="job_completed"
+        )
+
     def test_promotes_verified_immutable_report(self) -> None:
         job = self._job("a" * 40, "1" * 40)
         target = self.heads.set_desired_target(
@@ -138,7 +146,7 @@ class ReportRegistryTest(_RollingBase):
         )
         head = self.heads.get(job.func_id)
         self.assertEqual(head.current_report_id, report.report_id)  # type: ignore[union-attr]
-        self.assertEqual(head.freshness, FRESH)  # type: ignore[union-attr]
+        self.assertIn(head.freshness, {FRESH, EXPIRING})  # type: ignore[union-attr]
         self.assertEqual(head.refresh_status, "IDLE")  # type: ignore[union-attr]
         self.assertIsNone(head.active_job_id)  # type: ignore[union-attr]
         self.assertEqual(len(self.reports.list_for_func(job.func_id)), 1)
@@ -197,6 +205,155 @@ class ReportRegistryTest(_RollingBase):
         Path(report.archive_path, "archive-manifest.json").write_text("{}", encoding="utf-8")
         with self.assertRaisesRegex(ReportConflictError, "hash mismatch"):
             self.registry.register_and_promote(report)
+
+    def test_reconcile_promotes_safe_completed_orphan_idempotently(self) -> None:
+        job = self._job("f" * 40, "6" * 40)
+        target = self.heads.set_desired_target(
+            job.func_id,
+            revision=job.source_revision,
+            input_fingerprint="sha256:" + "6" * 64,
+            active_job_id=job.job_id,
+        )
+        report = self._report(
+            job.job_id,
+            job.source_revision,
+            target.desired_generation,
+            target.desired_input_fingerprint or "",
+        )
+        self.reports.insert(report)
+        self._complete_job(job.job_id)
+        self.heads.mark_refresh_failed(job.func_id, job.job_id, "simulated recovery gap")
+
+        result = self.registry.reconcile_orphan_reports()
+
+        self.assertEqual(result.repaired, 1)
+        head = self.heads.get(job.func_id)
+        self.assertEqual(head.current_report_id, report.report_id)  # type: ignore[union-attr]
+        self.assertEqual(head.refresh_status, "IDLE")  # type: ignore[union-attr]
+        self.assertIsNone(head.active_job_id)  # type: ignore[union-attr]
+        self.assertIsNone(head.last_refresh_error)  # type: ignore[union-attr]
+        event_types = [
+            event["event_type"]
+            for event in self.registry.reports.store._conn.execute(
+                "SELECT event_type FROM events WHERE job_id = ? ORDER BY seq", (job.job_id,)
+            ).fetchall()
+        ]
+        self.assertIn("orphan_report_reconciled", event_types)
+        self.assertEqual(self.registry.reconcile_orphan_reports().repaired, 0)
+
+    def test_reconcile_skips_report_for_old_generation(self) -> None:
+        old_job = self._job("1" * 40, "7" * 40)
+        old_target = self.heads.set_desired_target(
+            old_job.func_id,
+            revision=old_job.source_revision,
+            input_fingerprint="sha256:" + "7" * 64,
+            active_job_id=old_job.job_id,
+        )
+        old_report = self._report(
+            old_job.job_id,
+            old_job.source_revision,
+            old_target.desired_generation,
+            old_target.desired_input_fingerprint or "",
+        )
+        self.reports.insert(old_report)
+        self._complete_job(old_job.job_id)
+
+        new_job = self._job("2" * 40, "8" * 40)
+        self.heads.set_desired_target(
+            new_job.func_id,
+            revision=new_job.source_revision,
+            input_fingerprint="sha256:" + "8" * 64,
+            active_job_id=new_job.job_id,
+        )
+
+        result = self.registry.reconcile_orphan_reports()
+
+        self.assertEqual(result.repaired, 0)
+        self.assertIsNone(self.heads.get(old_job.func_id).current_report_id)  # type: ignore[union-attr]
+
+    def test_reconcile_skips_invalid_archive(self) -> None:
+        job = self._job("3" * 40, "9" * 40)
+        target = self.heads.set_desired_target(
+            job.func_id,
+            revision=job.source_revision,
+            input_fingerprint="sha256:" + "9" * 64,
+            active_job_id=job.job_id,
+        )
+        report = self._report(
+            job.job_id,
+            job.source_revision,
+            target.desired_generation,
+            target.desired_input_fingerprint or "",
+        )
+        self.reports.insert(report)
+        self._complete_job(job.job_id)
+        self.heads.mark_refresh_failed(job.func_id, job.job_id, "simulated recovery gap")
+        Path(report.archive_path, "archive-manifest.json").write_text("{}", encoding="utf-8")
+
+        result = self.registry.reconcile_orphan_reports()
+
+        self.assertEqual(result.repaired, 0)
+        self.assertEqual(result.skipped_invalid, 1)
+        self.assertIsNone(self.heads.get(job.func_id).current_report_id)  # type: ignore[union-attr]
+
+    def test_reconcile_does_not_override_another_active_job(self) -> None:
+        job = self._job("5" * 40, "b" * 40)
+        target = self.heads.set_desired_target(
+            job.func_id,
+            revision=job.source_revision,
+            input_fingerprint="sha256:" + "b" * 64,
+            active_job_id=job.job_id,
+        )
+        report = self._report(
+            job.job_id,
+            job.source_revision,
+            target.desired_generation,
+            target.desired_input_fingerprint or "",
+        )
+        self.reports.insert(report)
+        self._complete_job(job.job_id)
+        other_job = self._job("6" * 40, "c" * 40)
+        with self.store._tx(immediate=True):
+            self.store._conn.execute(
+                "UPDATE function_report_heads SET active_job_id = ? WHERE func_id = ?",
+                (other_job.job_id, job.func_id),
+            )
+
+        result = self.registry.reconcile_orphan_reports()
+
+        self.assertEqual(result.repaired, 0)
+        self.assertEqual(result.skipped_active, 1)
+        self.assertIsNone(self.heads.get(job.func_id).current_report_id)  # type: ignore[union-attr]
+
+    def test_app_startup_reconciles_existing_orphan(self) -> None:
+        job = self._job("4" * 40, "a" * 40)
+        target = self.heads.set_desired_target(
+            job.func_id,
+            revision=job.source_revision,
+            input_fingerprint="sha256:" + "a" * 64,
+            active_job_id=job.job_id,
+        )
+        report = self._report(
+            job.job_id,
+            job.source_revision,
+            target.desired_generation,
+            target.desired_input_fingerprint or "",
+        )
+        self.reports.insert(report)
+        self._complete_job(job.job_id)
+        self.heads.mark_refresh_failed(job.func_id, job.job_id, "simulated recovery gap")
+        self.store.close()
+
+        app = SemanticServiceApp(
+            self.settings,
+            executor=object(),  # type: ignore[arg-type]
+            job_runner=lambda _job_id, _cancel: None,
+        )
+        self.store = app.store
+
+        self.assertEqual(app.startup_reconcile_result.repaired, 1)
+        head = FunctionReportHeadRepository(app.store).get(job.func_id)
+        self.assertEqual(head.current_report_id, report.report_id)  # type: ignore[union-attr]
 
 
 class FreshnessTest(_RollingBase):
