@@ -372,7 +372,7 @@ async function loadDetail(jobId) {
   selectedJob = jobId;
   const [jobRes, evRes] = await Promise.all([
     api("GET", `/api/jobs/${encodeURIComponent(jobId)}`),
-    api("GET", `/api/jobs/${encodeURIComponent(jobId)}/events?since_seq=0`),
+    api("GET", `/api/jobs/${encodeURIComponent(jobId)}/events?tail=1&limit=100`),
   ]);
   const detail = document.getElementById("detail");
   if (!jobRes.ok) { detail.hidden = true; return; }

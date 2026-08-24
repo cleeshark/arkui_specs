@@ -126,9 +126,24 @@ def _route_jobs(method: str, rest: list[str], query: dict[str, str], body: bytes
     action = rest[1]
     # /api/jobs/{id}/events
     if action == "events" and len(rest) == 2 and method == "GET":
-        since = int(query.get("since_seq", "0"))
         try:
-            events = app.list_events(job_id, since)
+            since = int(query.get("since_seq", "0"))
+            limit_text = query.get("limit")
+            limit = int(limit_text) if limit_text is not None else None
+            tail_text = query.get("tail", "0").lower()
+            if tail_text not in {"0", "1", "false", "true"}:
+                raise ValueError
+            tail = tail_text in {"1", "true"}
+            if since < 0 or (limit is not None and limit < 0):
+                raise ValueError
+        except ValueError:
+            return _error(
+                400,
+                "since_seq and limit must be non-negative integers; "
+                "tail must be true or false",
+            )
+        try:
+            events = app.list_events(job_id, since, limit, tail=tail)
         except JobNotFoundError:
             return _error(404, "job not found")
         return Response.json(200, [serializers.event_to_dict(e) for e in events])

@@ -204,9 +204,18 @@ class SemanticServiceApp:
     def job_statistics(self, job_id: str):
         return JobStatisticsRepository(self.store).get(job_id)
 
-    def list_events(self, job_id: str, since_seq: int = 0):
+    def list_events(
+        self,
+        job_id: str,
+        since_seq: int = 0,
+        limit: int | None = None,
+        *,
+        tail: bool = False,
+    ):
         self.jobs.get_job(job_id)  # raises JobNotFoundError if absent
-        return EventRepository(self.store).list_for_job(job_id, since_seq=since_seq)
+        return EventRepository(self.store).list_for_job(
+            job_id, since_seq=since_seq, limit=limit, tail=tail
+        )
 
     def cancel(self, job_id: str) -> CancelResult:
         return self.dispatcher.cancel(job_id)

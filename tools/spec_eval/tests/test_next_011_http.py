@@ -24,7 +24,11 @@ from spec_eval.service.domain.models import Artifact
 from spec_eval.service.http.routes import route_request
 from spec_eval.service.http.server import make_server
 from spec_eval.service.settings import ServiceSettings
-from spec_eval.service.store.repositories import ArtifactRepository, JobRepository
+from spec_eval.service.store.repositories import (
+    ArtifactRepository,
+    EventRepository,
+    JobRepository,
+)
 from spec_eval.service.store.sqlite_store import utc_now
 
 
@@ -98,6 +102,61 @@ class EventsTest(_HttpTestBase):
         self.assertIn("job_submitted", types)
         seqs = [e["seq"] for e in events]
         self.assertEqual(seqs, sorted(seqs))
+
+    def test_events_are_unbounded_by_default_and_can_be_limited(self) -> None:
+        _, job = self._req("POST", "/api/jobs", {"func_id": "04-02-02"})
+        events = EventRepository(self.app.store)
+        for index in range(250):
+            events.append(job["job_id"], "test_event", {"index": index})
+
+        status, all_events = self._req(
+            "GET", f"/api/jobs/{job['job_id']}/events"
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(len(all_events), 252)  # create + submit + 250
+        self.assertEqual(all_events[-1]["payload"]["index"], 249)
+
+        status, limited_events = self._req(
+            "GET", f"/api/jobs/{job['job_id']}/events?limit=10"
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(len(limited_events), 10)
+        self.assertEqual(
+            [event["seq"] for event in limited_events],
+            [event["seq"] for event in all_events[:10]],
+        )
+
+        status, tail_events = self._req(
+            "GET", f"/api/jobs/{job['job_id']}/events?tail=1&limit=10"
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(
+            [event["seq"] for event in tail_events],
+            [event["seq"] for event in all_events[-10:]],
+        )
+        self.assertEqual(tail_events[-1]["payload"]["index"], 249)
+
+        status, resumed_events = self._req(
+            "GET",
+            f"/api/jobs/{job['job_id']}/events"
+            f"?since_seq={all_events[199]['seq']}",
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(len(resumed_events), 52)
+
+    def test_events_reject_negative_query_values(self) -> None:
+        _, job = self._req("POST", "/api/jobs", {"func_id": "04-02-02"})
+        for query in (
+            "since_seq=-1",
+            "limit=-1",
+            "limit=not-a-number",
+            "tail=not-a-boolean",
+        ):
+            status, body = self._req(
+                "GET", f"/api/jobs/{job['job_id']}/events?{query}"
+            )
+            self.assertEqual(status, 400)
+            self.assertIn("non-negative integers", body["error"])
 
 
 class CancelRetryTest(_HttpTestBase):

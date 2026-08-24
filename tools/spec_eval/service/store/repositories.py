@@ -768,15 +768,31 @@ class EventRepository:
             )
 
     def list_for_job(
-        self, job_id: str, *, since_seq: int = 0, limit: int = 200
+        self,
+        job_id: str,
+        *,
+        since_seq: int = 0,
+        limit: int | None = None,
+        tail: bool = False,
     ) -> list[Event]:
+        if since_seq < 0:
+            raise ValueError("since_seq must be non-negative")
+        if limit is not None and limit < 0:
+            raise ValueError("limit must be non-negative or None")
         with self._store._tx():
-            rows = self._conn.execute(
+            query = (
                 "SELECT * FROM events WHERE job_id = ? AND seq > ? "
-                "ORDER BY seq LIMIT ?",
-                (job_id, since_seq, limit),
-            ).fetchall()
-            return [_event_from_row(r) for r in rows]
+                f"ORDER BY seq {'DESC' if tail and limit is not None else 'ASC'}"
+            )
+            params: tuple[Any, ...] = (job_id, since_seq)
+            if limit is not None:
+                query += " LIMIT ?"
+                params += (limit,)
+            rows = self._conn.execute(query, params).fetchall()
+            events = [_event_from_row(r) for r in rows]
+            if tail and limit is not None:
+                events.reverse()
+            return events
 
 
 class ArtifactRepository:
@@ -1390,4 +1406,3 @@ class FindingLedgerRepository:
                     )
                     resolved_count += 1
             return resolved_count
-
