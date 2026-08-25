@@ -25,10 +25,154 @@ from spec_eval.service.pipeline.correction import (
     validate_patch_scope,
     validate_patch_values,
 )
+from spec_eval.service.pipeline.aggregation_correction import (
+    build_aggregation_correction_context,
+)
 from spec_eval.service.pipeline.judgment_flow import JudgmentFlow
 
 
 class CorrectionFlowTest(unittest.TestCase):
+    def test_severity_floor_is_raised_deterministically(self) -> None:
+        document = {
+            "criterion_results": [{
+                "criterion_id": "CORRECTNESS-SOURCE-SUPPORT",
+                "findings": [{
+                    "finding_id": "SEM-1",
+                    "severity": "Major",
+                }],
+            }],
+        }
+        error = TypedError(
+            "SEVERITY_BELOW_FLOOR",
+            "aggregation.criterion_results[CORRECTNESS-SOURCE-SUPPORT].findings[].severity",
+            entity_type="finding",
+            entity_id="SEM-1",
+            expected="severity >= Critical for conclusion CONTRADICTED",
+            actual="Major",
+        )
+
+        corrected, changes, unresolved = apply_deterministic_correction(
+            document, [error]
+        )
+
+        self.assertFalse(unresolved)
+        self.assertEqual(
+            corrected["criterion_results"][0]["findings"][0]["severity"],
+            "Critical",
+        )
+        self.assertTrue(changes)
+        self.assertTrue(is_deterministic_error(error))
+        self.assertFalse(is_model_correction_error(error))
+
+    def test_severity_floor_repair_does_not_invoke_model_correction(self) -> None:
+        class Executor:
+            def __init__(self) -> None:
+                self.calls = 0
+
+            def execute(self, work, emit, cancel=None):
+                self.calls += 1
+                if work.prompt_extras.get("mode") == "correct":
+                    raise AssertionError("severity repair must not invoke Correction")
+                return C.ExecutionResult(
+                    status=C.STATUS_COMPLETED,
+                    observation={
+                        "criterion_results": [{
+                            "criterion_id": "CORRECTNESS-SOURCE-SUPPORT",
+                            "findings": [{
+                                "finding_id": "SEM-1",
+                                "severity": "Major",
+                            }],
+                        }],
+                    },
+                )
+
+        class Events:
+            def __init__(self) -> None:
+                self.rows = []
+
+            def append(self, job_id, event_type, payload):
+                self.rows.append((event_type, payload))
+
+        with tempfile.TemporaryDirectory() as temporary:
+            run_dir = Path(temporary)
+            (run_dir / "work-items.json").write_text(
+                json.dumps({"items": []}), encoding="utf-8",
+            )
+            executor = Executor()
+            events = Events()
+            published = []
+            work = C.WorkItemInput(
+                job_id="job",
+                func_id="01-01-01",
+                run_id="run-1",
+                work_item_id="aggregation:final",
+                work_item={
+                    "observation_type": "aggregation",
+                    "observation_profile": "aggregation",
+                    "input_resources": [],
+                },
+                run_dir=str(run_dir),
+                input_paths=(),
+                executor_result_path=str(run_dir / "aggregation.result.json"),
+                repo_root=str(run_dir),
+                skill_version="0.3.0",
+                protocol_version="0.2.0",
+                prompt_extras={"payload_kind": "aggregation"},
+            )
+
+            def normalize(document):
+                return NormalizationResult(document=document)
+
+            def validate(document):
+                severity = document["criterion_results"][0]["findings"][0][
+                    "severity"
+                ]
+                if severity == "Critical":
+                    return []
+                return [TypedError(
+                    "SEVERITY_BELOW_FLOOR",
+                    "aggregation.criterion_results[CORRECTNESS-SOURCE-SUPPORT]"
+                    ".findings[].severity",
+                    entity_type="finding",
+                    entity_id="SEM-1",
+                    expected=(
+                        "severity >= Critical for conclusion CONTRADICTED"
+                    ),
+                    actual=severity,
+                )]
+
+            flow = JudgmentFlow(
+                ctx=SimpleNamespace(
+                    run_dir=run_dir, job_id="job", run_id="run-1",
+                ),
+                executor=executor,
+                jobs=SimpleNamespace(),
+                events=events,
+            )
+            outcome = flow.run(
+                work=work,
+                output_path=run_dir / "aggregation.json",
+                template={},
+                normalize=normalize,
+                validate=validate,
+                base_contract=work.prompt_extras,
+                on_publish=published.append,
+                fingerprint="fingerprint",
+                stage_event="aggregation_completed",
+            )
+
+        self.assertEqual(outcome.status, C.STATUS_COMPLETED)
+        self.assertTrue(outcome.published)
+        self.assertEqual(executor.calls, 1)
+        self.assertEqual(
+            published[0]["criterion_results"][0]["findings"][0]["severity"],
+            "Critical",
+        )
+        self.assertIn(
+            "candidate_deterministic_repaired",
+            [event_type for event_type, _payload in events.rows],
+        )
+
     def test_duplicate_finding_key_exposes_all_coordinated_patch_paths(self) -> None:
         document = {
             "criterion_results": [
@@ -279,6 +423,10 @@ class CorrectionFlowTest(unittest.TestCase):
                     {
                         "criterion_id": "SPEC-SCOPE-BOUNDARY",
                         "evidence_ids": ["EV-unknown"],
+                        "findings": [{
+                            "key": "finding-1",
+                            "evidence_ids": ["EV-unknown"],
+                        }],
                     },
                 ],
             }), encoding="utf-8")
@@ -314,7 +462,10 @@ class CorrectionFlowTest(unittest.TestCase):
             correction_work = flow._correct_work_input(
                 work, candidate_path, [error], {"evidence_catalog": []},
             )
-            expected = ["/criterion_results/1/evidence_ids"]
+            expected = [
+                "/criterion_results/1/evidence_ids",
+                "/criterion_results/1/findings/0/evidence_ids",
+            ]
             self.assertEqual(
                 correction_work.prompt_extras["correction_contract"]["allowed_paths"],
                 expected,
@@ -322,6 +473,159 @@ class CorrectionFlowTest(unittest.TestCase):
             self.assertEqual(
                 correction_work.prompt_extras["machine_contract"]["allowed_paths"],
                 expected,
+            )
+
+    def test_aggregation_correction_context_keeps_only_target_refs(self) -> None:
+        candidate = {
+            "criterion_results": [
+                {"criterion_id": "C-1", "findings": []},
+                {"criterion_id": "C-2", "findings": []},
+            ],
+        }
+        context = {
+            "schema_version": 3,
+            "criteria": [{
+                "criterion_id": "C-1",
+                "observation_refs": ["O-1"],
+                "claim_refs": ["C-1-ref"],
+                "unit_refs": ["U-1"],
+                "evidence_ids": ["EV-1"],
+            }, {
+                "criterion_id": "C-2",
+                "observation_refs": ["O-2"],
+                "claim_refs": ["C-2-ref"],
+                "unit_refs": ["U-2"],
+                "evidence_ids": ["EV-2"],
+            }],
+            "observations": {
+                "O-1": {"evidence_ids": ["EV-1"]},
+                "O-2": {"evidence_ids": ["EV-2"]},
+            },
+            "claims": {
+                "C-1-ref": {"evidence_ids": ["EV-1"]},
+                "C-2-ref": {"evidence_ids": ["EV-2"]},
+            },
+            "units": {
+                "U-1": {"evidence_ids": ["EV-1"]},
+                "U-2": {"evidence_ids": ["EV-2"]},
+            },
+            "evidence_catalog": {
+                "EV-1": {"evidence_id": "EV-1", "type": "source_citation"},
+                "EV-2": {"evidence_id": "EV-2", "type": "source_citation"},
+            },
+            "valid_defect_keys": ["defect.one", "defect.two"],
+        }
+        error = TypedError(
+            "MAPPING_CONCLUSION_FORBIDDEN",
+            "aggregation.criterion_results[C-1]",
+            entity_type="criterion",
+            entity_id="C-1",
+        ).to_dict()
+
+        projected = build_aggregation_correction_context(
+            context, candidate, [error]
+        )
+
+        self.assertEqual(projected["target_criterion_ids"], ["C-1"])
+        self.assertEqual(
+            [row["criterion_id"] for row in projected["criteria"]], ["C-1"]
+        )
+        self.assertEqual(set(projected["observations"]), {"O-1"})
+        self.assertEqual(set(projected["claims"]), {"C-1-ref"})
+        self.assertEqual(set(projected["units"]), {"U-1"})
+        self.assertEqual(set(projected["evidence_catalog"]), {"EV-1"})
+
+    def test_aggregation_correction_work_uses_projected_context(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            run_dir = Path(temporary)
+            candidate_path = run_dir / ".aggregation.json.candidate"
+            candidate_path.write_text(json.dumps({
+                "criterion_results": [{
+                    "criterion_id": "C-1",
+                    "evidence_ids": ["EV-bad"],
+                    "findings": [{
+                        "key": "f-1",
+                        "evidence_ids": ["EV-bad"],
+                    }],
+                }, {
+                    "criterion_id": "C-2",
+                    "evidence_ids": ["EV-2"],
+                    "findings": [],
+                }],
+            }), encoding="utf-8")
+            context_path = run_dir / "aggregation-context.json"
+            context_path.write_text(json.dumps({
+                "schema_version": 3,
+                "criteria": [{
+                    "criterion_id": "C-1",
+                    "observation_refs": [], "claim_refs": [], "unit_refs": [],
+                    "evidence_ids": ["EV-1"],
+                }, {
+                    "criterion_id": "C-2",
+                    "observation_refs": [], "claim_refs": [], "unit_refs": [],
+                    "evidence_ids": ["EV-2"],
+                }],
+                "observations": {}, "claims": {}, "units": {},
+                "evidence_catalog": {
+                    "EV-1": {"evidence_id": "EV-1", "type": "source_citation"},
+                    "EV-2": {"evidence_id": "EV-2", "type": "source_citation"},
+                },
+                "valid_defect_keys": [],
+            }), encoding="utf-8")
+            work = C.WorkItemInput(
+                job_id="job", func_id="01-01-01", run_id="run-1",
+                work_item_id="aggregation:final",
+                work_item={
+                    "observation_type": "aggregation",
+                    "observation_profile": "aggregation",
+                    "input_resources": [{
+                        "path": str(context_path),
+                        "role": "semantic_input", "citable": False,
+                    }],
+                },
+                run_dir=str(run_dir), input_paths=(str(context_path),),
+                executor_result_path=str(run_dir / "aggregation.result.json"),
+                repo_root=str(run_dir), skill_version="0.3.0",
+                protocol_version="0.2.0",
+                prompt_extras={
+                    "payload_kind": "aggregation",
+                    "machine_contract": {"valid_criterion_ids": ["C-1", "C-2"]},
+                },
+            )
+            error = TypedError(
+                "CRITERION_EVIDENCE_UNKNOWN",
+                "aggregation.criterion_results[C-1].evidence_ids",
+                entity_type="criterion", entity_id="C-1",
+            ).to_dict()
+            flow = JudgmentFlow(
+                ctx=SimpleNamespace(run_dir=run_dir),
+                executor=None, jobs=None, events=None,
+            )
+
+            correction_work = flow._correct_work_input(
+                work, candidate_path, [error], {"evidence_catalog": []},
+            )
+
+            projected_path = run_dir / "aggregation-correction-context.json"
+            self.assertEqual(
+                correction_work.input_paths,
+                (str(candidate_path), str(projected_path)),
+            )
+            projected = json.loads(projected_path.read_text(encoding="utf-8"))
+            self.assertEqual(projected["target_criterion_ids"], ["C-1"])
+            self.assertEqual(projected["projection_profile"], "criterion_evidence")
+            self.assertEqual(projected["observations"], {})
+            self.assertEqual(projected["claims"], {})
+            self.assertEqual(projected["units"], {})
+            machine = correction_work.prompt_extras["machine_contract"]
+            self.assertEqual(machine["observation_profile"], "aggregation")
+            self.assertEqual(machine["target_criterion_ids"], ["C-1"])
+            self.assertEqual(
+                [row["evidence_id"] for row in machine["evidence_catalog"]],
+                ["EV-1"],
+            )
+            self.assertIn(
+                "CRITERION_EVIDENCE_UNKNOWN", machine["repair_recipes"]
             )
 
     def test_aggregation_duplicate_key_prompt_allows_keys_and_owner_refs(self) -> None:
@@ -421,6 +725,12 @@ class CorrectionFlowTest(unittest.TestCase):
         }))
         self.assertFalse(is_deterministic_error({
             "code": "FINDING_CARDINALITY_VIOLATED",
+        }))
+        self.assertTrue(is_deterministic_error({
+            "code": "SEVERITY_BELOW_FLOOR",
+        }))
+        self.assertFalse(is_model_correction_error({
+            "code": "SEVERITY_BELOW_FLOOR",
         }))
         # Unknown validator codes fail closed as fatal and are not silently
         # delegated to either correction path.

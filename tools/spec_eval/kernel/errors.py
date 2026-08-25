@@ -141,7 +141,10 @@ ERROR_REGISTRY: dict[str, str] = _register({
     "CONTRADICTION_BASIS_INVALID": MODEL_CORRECTION,
     "CROSS_FEAT_NOT_REVIEWED": MODEL_CORRECTION,
     # --- rubric constraint violations (model-owned) -------------------------
-    "SEVERITY_BELOW_FLOOR": MODEL_CORRECTION,
+    # The validator provides one exact severity floor and identifies the
+    # Finding. Raising a lower value to that floor is deterministic and does
+    # not require a semantic re-evaluation.
+    "SEVERITY_BELOW_FLOOR": SERVICE_NORMALIZATION,
     "NOT_APPLICABLE_FORBIDDEN": MODEL_CORRECTION,
     "EVIDENCE_TYPE_MISSING": MODEL_CORRECTION,
     "EVIDENCE_REQUIRED_MISSING": MODEL_CORRECTION,

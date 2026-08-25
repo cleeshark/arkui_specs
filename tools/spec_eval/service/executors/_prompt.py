@@ -92,33 +92,47 @@ def build_executor_prompt(
             patch_target = (
                 "Patch the published candidate; do not rewrite the complete document."
             )
-        constraints = [
-            "Correct one invalid evaluation candidate.",
-            "Read the candidate at result_contract.candidate_path and every "
-            "entry of result_contract.typed_errors.",
-            "The service owns the candidate merge and final validation.",
-            "Return only RFC-6902-style add/remove/replace patches and notes.",
-            patch_target,
-            "Change only paths allowed by result_contract.correction_contract.",
-            "Do not change document identity, source revision, ordering, canonical IDs, "
-            "hashes or derived fields.",
-            "NEVER read SKILL.md or search any skill directory during Correction.",
-            "Treat the top-level machine_contract and correction_contract as normative.",
-            "Write only the structured final result.",
-            *tool_output_constraints,
-            language_constraint,
-        ]
+        if observation_profile == "aggregation":
+            constraints = [
+                "Correct one invalid Aggregation candidate; do not perform a second full Aggregation review.",
+                "Read the candidate at result_contract.candidate_path, every typed error, and the projected aggregation-correction-context.json only.",
+                "Treat aggregation-correction-context.json as authoritative for the target Criteria, mapped Observation/Claim/Unit rows, and Criterion Evidence allowlists.",
+                "Apply every relevant machine_contract repair recipe and preserve all dependency_rules, including parent Criterion/Finding Evidence closure and Finding/ownership consistency.",
+                "The global Evidence catalog is lookup-only; an EV- ID is selectable only when the target Criterion lists it in criteria[].evidence_ids.",
+                "Do not modify inherited Observation facts or outcomes, non-target Criteria, canonical Finding IDs, scores, confidence, gates, or admission.",
+                "The service owns candidate merge, normalization, derived fields, and final validation.",
+                "Return only RFC-6902-style add/remove/replace patches and notes.",
+                patch_target,
+                "Change only paths allowed by result_contract.correction_contract.",
+                "NEVER read SKILL.md, evaluator references, or the full aggregation-context.json during Correction.",
+                "Treat the top-level machine_contract and correction_contract as normative.",
+                "Write only the structured final result.",
+                *tool_output_constraints,
+                language_constraint,
+            ]
+        else:
+            constraints = [
+                "Correct one invalid evaluation candidate.",
+                "Read the candidate at result_contract.candidate_path and every "
+                "entry of result_contract.typed_errors.",
+                "The service owns the candidate merge and final validation.",
+                "Return only RFC-6902-style add/remove/replace patches and notes.",
+                patch_target,
+                "Change only paths allowed by result_contract.correction_contract.",
+                "Do not change document identity, source revision, ordering, canonical IDs, "
+                "hashes or derived fields.",
+                "NEVER read SKILL.md or search any skill directory during Correction.",
+                "Treat the top-level machine_contract and correction_contract as normative.",
+                "Write only the structured final result.",
+                *tool_output_constraints,
+                language_constraint,
+            ]
         if observation_profile == "function_global":
             constraints.extend([
                 "This is Function-global Correction: keep the patch within the named global Claim/Unit/Observation path.",
                 "Do not change cross-Feature ownership, boundary roles, or the global outcome unless the typed error names that exact path and frozen evidence supports it.",
             ])
-        elif observation_profile == "aggregation":
-            constraints.extend([
-                "This is Aggregation Correction: keep the patch within the named Criterion/Policy/Finding path.",
-                "Do not modify Observation source facts, non-target Criteria, or service-derived Finding IDs.",
-            ])
-        else:
+        elif observation_profile != "aggregation":
             constraints.append(
                 "This is Feature Correction: keep the patch local to the named Feature Claim/Unit/Observation path."
             )
