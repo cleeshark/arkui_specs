@@ -266,6 +266,48 @@ class SiteStaticServeTest(unittest.TestCase):
             self.assertEqual(body, b"body{}")
             self.assertIn("text/css", content_type)
 
+    def test_serves_docusaurus_clean_url_from_html_file(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            page = b"<html>spec evaluation</html>"
+            (root / "spec-evaluation.html").write_bytes(page)
+            server = self._serve(root)
+
+            status, body, content_type = self._get(
+                server, "/arkui_specs/spec-evaluation"
+            )
+            self.assertEqual(status, 200)
+            self.assertEqual(body, page)
+            self.assertIn("text/html", content_type)
+
+            status, body, _ = self._get(
+                server, "/arkui_specs/spec-evaluation.html"
+            )
+            self.assertEqual(status, 200)
+            self.assertEqual(body, page)
+
+    def test_clean_url_fallback_keeps_trailing_slash_as_directory(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            root = Path(d)
+            (root / "spec-evaluation.html").write_text("page", encoding="utf-8")
+            server = self._serve(root)
+
+            status, _, _ = self._get(server, "/arkui_specs/spec-evaluation/")
+            self.assertEqual(status, 404)
+
+    def test_clean_url_fallback_rechecks_site_root(self) -> None:
+        with tempfile.TemporaryDirectory() as d:
+            directory = Path(d)
+            root = directory / "site"
+            root.mkdir()
+            outside = directory / "outside.html"
+            outside.write_text("secret", encoding="utf-8")
+            (root / "escaped.html").symlink_to(outside)
+            server = self._serve(root)
+
+            status, _, _ = self._get(server, "/arkui_specs/escaped")
+            self.assertEqual(status, 404)
+
     def test_traversal_outside_site_root_is_not_found(self) -> None:
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)

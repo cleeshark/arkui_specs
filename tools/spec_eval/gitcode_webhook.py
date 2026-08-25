@@ -249,6 +249,17 @@ def _serve_site_path(
         return
     if candidate.is_dir():
         candidate = candidate / "index.html"
+    elif not candidate.is_file() and not url_path.endswith("/"):
+        # Docusaurus trailingSlash:false emits /foo as foo.html.  Keep a
+        # trailing slash directory-only so /foo/ does not silently serve it.
+        html_candidate = candidate.with_name(f"{candidate.name}.html")
+        if html_candidate.is_file():
+            candidate = html_candidate
+    try:
+        candidate.resolve().relative_to(site_root_resolved)
+    except ValueError:
+        _json_response(handler, 404, {"status": "error", "code": "NOT_FOUND"})
+        return
     if not candidate.is_file():
         _json_response(handler, 404, {"status": "error", "code": "NOT_FOUND"})
         return
