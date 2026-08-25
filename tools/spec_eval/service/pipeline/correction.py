@@ -33,6 +33,7 @@ from spec_eval.kernel.normalize import DEFECT_KEY
 _OBSERVATION_SET_FIELDS = frozenset({"criterion_ids", "check_ids", "claim_ids"})
 _CLAIM_SET_FIELDS = frozenset({"criterion_ids", "evidence_ids", "defect_keys"})
 _UNIT_SET_FIELDS = frozenset({"evidence_ids"})
+_PUBLISHED_FINDING_SEVERITIES = ("Info", "Minor", "Major", "Critical")
 
 
 def error_repairability(error: TypedError | dict[str, Any]) -> str:
@@ -86,6 +87,21 @@ def _claim_owned_defects(document: dict[str, Any], claim_id: str) -> set[str]:
     return result
 
 
+def _finding_by_identity(
+    document: dict[str, Any], identity: str,
+) -> tuple[int, int, dict[str, Any]] | None:
+    for criterion_index, criterion in enumerate(_rows(document.get("criterion_results"))):
+        for finding_index, finding in enumerate(_rows(criterion.get("findings"))):
+            if identity in {finding.get("finding_id"), finding.get("key")}:
+                return criterion_index, finding_index, finding
+    return None
+
+
+def _severity_floor(expected: str) -> str | None:
+    match = re.search(r"severity\s*>=\s*(Info|Minor|Major|Critical)", expected)
+    return match.group(1) if match else None
+
+
 def _deduplicate_string_field(row: dict[str, Any], field: str) -> bool:
     values = row.get(field)
     if not isinstance(values, list) or any(
@@ -115,6 +131,28 @@ def apply_deterministic_correction(
     for raw_error in errors:
         error = raw_error if isinstance(raw_error, TypedError) else TypedError.from_dict(raw_error)
         if not is_deterministic_error(error):
+            continue
+
+        if error.code == "SEVERITY_BELOW_FLOOR":
+            located = _finding_by_identity(corrected, error.entity_id)
+            floor = _severity_floor(error.expected)
+            if located is None or floor is None:
+                unresolved.append(error)
+                continue
+            criterion_index, finding_index, finding = located
+            actual = finding.get("severity")
+            if (
+                actual not in _PUBLISHED_FINDING_SEVERITIES
+                or _PUBLISHED_FINDING_SEVERITIES.index(actual)
+                >= _PUBLISHED_FINDING_SEVERITIES.index(floor)
+            ):
+                unresolved.append(error)
+                continue
+            finding["severity"] = floor
+            changes.append(
+                f"criterion_results[{criterion_index}].findings[{finding_index}]."
+                f"severity raised to {floor}"
+            )
             continue
 
         if error.code == "CLAIM_OUTCOME_INVALID":
@@ -492,8 +530,62 @@ def resolve_typed_error_json_paths(
     ``finding_keys`` list in the same bounded patch turn.
     """
     typed = error if isinstance(error, TypedError) else TypedError.from_dict(error)
+    primary_path = resolve_typed_error_json_path(document, typed)
+
+    if typed.code == "CRITERION_EVIDENCE_UNKNOWN":
+        tokens = _decode_pointer(primary_path)
+        paths = [primary_path]
+        if len(tokens) >= 2 and tokens[0] == "criterion_results":
+            criterion_index = int(tokens[1])
+            criterion_rows = _rows(document.get("criterion_results"))
+            if criterion_index < len(criterion_rows):
+                for finding_index, finding in enumerate(
+                    _rows(criterion_rows[criterion_index].get("findings"))
+                ):
+                    if isinstance(finding.get("evidence_ids"), list):
+                        paths.append(
+                            f"/criterion_results/{criterion_index}/findings/"
+                            f"{finding_index}/evidence_ids"
+                        )
+        return paths
+
+    if typed.code == "POLICY_BASIS_INVALID" and typed.entity_id:
+        paths = [primary_path]
+        for index, basis in enumerate(_rows(document.get("outcome_policy_bases"))):
+            if basis.get("criterion_id") == typed.entity_id:
+                basis_path = f"/outcome_policy_bases/{index}"
+                if basis_path not in paths:
+                    paths.append(basis_path)
+        for index, criterion in enumerate(_rows(document.get("criterion_results"))):
+            if criterion.get("criterion_id") == typed.entity_id:
+                paths.extend([
+                    f"/criterion_results/{index}/conclusion",
+                    f"/criterion_results/{index}/findings",
+                ])
+        return list(dict.fromkeys(paths))
+
+    if typed.code == "FINDING_CARDINALITY_VIOLATED":
+        paths = [primary_path]
+        tokens = _decode_pointer(primary_path)
+        if len(tokens) >= 2 and tokens[0] == "criterion_results":
+            criterion_index = int(tokens[1])
+            criterion_rows = _rows(document.get("criterion_results"))
+            identities: set[str] = set()
+            if criterion_index < len(criterion_rows):
+                for finding in _rows(criterion_rows[criterion_index].get("findings")):
+                    identities.update(
+                        value for value in (
+                            finding.get("finding_id"), finding.get("key")
+                        ) if isinstance(value, str) and value
+                    )
+            for owner_index, owner in enumerate(_rows(document.get("defect_ownership"))):
+                for field in ("finding_ids", "finding_keys"):
+                    if identities.intersection(_strings(owner.get(field))):
+                        paths.append(f"/defect_ownership/{owner_index}/{field}")
+        return list(dict.fromkeys(paths))
+
     if typed.code != "FINDING_KEY_DUPLICATE":
-        return [resolve_typed_error_json_path(document, typed)]
+        return [primary_path]
 
     paths: list[str] = []
     for criterion_index, criterion in enumerate(_rows(document.get("criterion_results"))):

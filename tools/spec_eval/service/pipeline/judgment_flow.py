@@ -56,6 +56,10 @@ from spec_eval.service.pipeline.correction import (
     validate_patch_scope,
     validate_patch_values,
 )
+from spec_eval.service.pipeline.aggregation_correction import (
+    build_aggregation_correction_context,
+    correction_evidence_catalog,
+)
 from spec_eval.service.store.repositories import (
     EventRepository,
     JobRepository,
@@ -899,7 +903,10 @@ class JudgmentFlow:
         breakpoint_data: dict[str, Any],
     ) -> C.WorkItemInput:
         from dataclasses import replace
-        from spec_eval.kernel.machine_contract import build_correction_machine_contract
+        from spec_eval.kernel.machine_contract import (
+            build_aggregation_correction_machine_contract,
+            build_correction_machine_contract,
+        )
 
         result_path = Path(work.executor_result_path)
         correct_result_path = result_path.with_name(
@@ -954,14 +961,56 @@ class JudgmentFlow:
                 "/completed_checks", "/status",
             ],
         }
-        machine_contract = build_correction_machine_contract(
-            payload_kind=payload_kind,
-            typed_errors=typed_errors,
-            observation_profile=observation_profile,
-            allowed_paths=allowed_paths,
-            evidence_catalog=catalog if needs_evidence else (),
-            valid_criterion_ids=valid_criterion_ids,
-        )
+        aggregation_correction_context: dict[str, Any] | None = None
+        aggregation_correction_context_path: Path | None = None
+        if observation_profile == "aggregation":
+            source_context_path = next((
+                Path(path) for path in work.input_paths
+                if Path(path).name == "aggregation-context.json"
+                and Path(path).is_file()
+            ), None)
+            if source_context_path is not None:
+                source_context = json.loads(
+                    source_context_path.read_text(encoding="utf-8")
+                )
+                aggregation_correction_context = (
+                    build_aggregation_correction_context(
+                        source_context, candidate_document, typed_errors,
+                    )
+                )
+                aggregation_correction_context_path = (
+                    self.ctx.run_dir / "aggregation-correction-context.json"
+                )
+                _write_json(
+                    aggregation_correction_context_path,
+                    aggregation_correction_context,
+                )
+            machine_contract = build_aggregation_correction_machine_contract(
+                typed_errors=typed_errors,
+                allowed_paths=allowed_paths,
+                evidence_catalog=(
+                    correction_evidence_catalog(aggregation_correction_context)
+                    if aggregation_correction_context is not None else ()
+                ),
+                valid_criterion_ids=valid_criterion_ids,
+                correction_context_path=(
+                    str(aggregation_correction_context_path)
+                    if aggregation_correction_context_path is not None else None
+                ),
+                target_criterion_ids=(
+                    aggregation_correction_context.get("target_criterion_ids", [])
+                    if aggregation_correction_context is not None else ()
+                ),
+            )
+        else:
+            machine_contract = build_correction_machine_contract(
+                payload_kind=payload_kind,
+                typed_errors=typed_errors,
+                observation_profile=observation_profile,
+                allowed_paths=allowed_paths,
+                evidence_catalog=catalog if needs_evidence else (),
+                valid_criterion_ids=valid_criterion_ids,
+            )
 
         # Correction never needs the embedded workflow references.  Keep only
         # the candidate and declared frozen inputs relevant to semantic or
@@ -986,34 +1035,53 @@ class JudgmentFlow:
                 return False
             return True
 
-        input_paths = [
-            str(candidate_path),
-            *[
-                path for path in work.input_paths
-                if correction_input_allowed(path)
-            ],
-        ]
+        if observation_profile == "aggregation":
+            input_paths = [str(candidate_path)]
+            if aggregation_correction_context_path is not None:
+                input_paths.append(str(aggregation_correction_context_path))
+        else:
+            input_paths = [
+                str(candidate_path),
+                *[
+                    path for path in work.input_paths
+                    if correction_input_allowed(path)
+                ],
+            ]
         input_paths = list(dict.fromkeys(input_paths))
         work_item = dict(work.work_item)
-        resources = [
-            dict(resource)
-            for resource in work_item.get("input_resources", [])
-            if isinstance(resource, dict)
-            and correction_input_allowed(str(resource.get("path", "")))
-        ]
+        if observation_profile == "aggregation":
+            resources = []
+            if aggregation_correction_context_path is not None:
+                resources.append({
+                    "path": str(aggregation_correction_context_path),
+                    "role": "aggregation_correction_context",
+                    "citable": False,
+                })
+        else:
+            resources = [
+                dict(resource)
+                for resource in work_item.get("input_resources", [])
+                if isinstance(resource, dict)
+                and correction_input_allowed(str(resource.get("path", "")))
+            ]
         work_item["input_resources"] = resources
+        prompt_contract = correct_prompt_contract(
+            base_contract,
+            candidate_path=candidate_path,
+            typed_errors=typed_errors,
+            schema_dir=self.ctx.run_dir,
+            correction_contract=correction_contract,
+            machine_contract=machine_contract,
+            observation_profile=observation_profile,
+        )
+        if aggregation_correction_context_path is not None:
+            prompt_contract["correction_context_path"] = str(
+                aggregation_correction_context_path
+            )
         return replace(
             work,
             work_item=work_item,
             input_paths=tuple(input_paths),
             executor_result_path=str(correct_result_path),
-            prompt_extras=correct_prompt_contract(
-                base_contract,
-                candidate_path=candidate_path,
-                typed_errors=typed_errors,
-                schema_dir=self.ctx.run_dir,
-                correction_contract=correction_contract,
-                machine_contract=machine_contract,
-                observation_profile=observation_profile,
-            ),
+            prompt_extras=prompt_contract,
         )
