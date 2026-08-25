@@ -688,29 +688,36 @@ class ObservationFlowTest(_StagedRunIntegrationTest):
             (self.ctx.run_dir / "observations" / ".function-global.json.typed-errors.json").exists()
         )
 
-    def test_correction_still_invalid_is_terminal(self) -> None:
+    def test_correction_still_model_invalid_is_warning(self) -> None:
         executor = _JudgmentExecutor(break_all=True)
         result = run_semantic(
             self.ctx, executor,
             jobs=self.jobs, attempts=self.attempts, events=self.events,
             statistics=self.statistics, invocations=self.invocations,
         )
-        self.assertEqual(result.outcome, C.STATUS_FAILED)
-        self.assertIn("correction output still invalid", result.error or "")
+        self.assertEqual(result.outcome, C.STATUS_COMPLETED, result.error)
         modes = [mode for _, mode in executor.calls]
-        self.assertEqual(modes, ["observe", "correct"])  # exactly one semantic correction
+        self.assertEqual(
+            modes, ["observe", "correct", "observe", "correct"]
+        )  # exactly one semantic correction per work item
         work_items = json.loads(
             (self.ctx.run_dir / "work-items.json").read_text(encoding="utf-8")
         )
         feat = next(
             item for item in work_items["items"] if item["id"] == "feature:Feat-01"
         )
-        self.assertEqual(feat["execution_state"], "CORRECTION_INVALID_TERMINAL")
-        # candidate + typed errors stay on disk as the failure artifact
+        self.assertEqual(feat["execution_state"], "VALIDATED")
+        # The consumable candidate is published; unresolved model errors are
+        # retained in the correction-completed warning event for confidence
+        # deduction by the downstream publisher.
         candidate = self.ctx.run_dir / "observations" / ".Feat-01.json.candidate"
         errors = self.ctx.run_dir / "observations" / ".Feat-01.json.typed-errors.json"
-        self.assertTrue(candidate.is_file())
-        self.assertTrue(errors.is_file())
+        self.assertFalse(candidate.exists())
+        self.assertFalse(errors.exists())
+        event_types = [
+            event.event_type for event in self.events.list_for_job(self.job.job_id)
+        ]
+        self.assertIn("correction_completed_with_warnings", event_types)
 
     def test_interrupted_attempt_resumes_into_correction(self) -> None:
         executor = _JudgmentExecutor(break_first=True)

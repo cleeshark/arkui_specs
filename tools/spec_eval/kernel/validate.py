@@ -883,6 +883,18 @@ def validate_aggregation_document(
         expected_conclusion = K.expected_policy_conclusion(
             content_status, evidence_status, conflict_scope,
         )
+        # The context-level required conclusion takes precedence over the
+        # generic policy derivation, while malformed policy tuples still
+        # report POLICY_BASIS_INVALID as before.
+        mapping = mappings_by_id.get(criterion_id, {}) if aggregation_context else {}
+        required_conclusion = (
+            mapping.get("constraints", {}).get(
+                "required_conclusion_when_no_adverse"
+            )
+            if isinstance(mapping, dict) else None
+        )
+        if required_conclusion and expected_conclusion is not None:
+            expected_conclusion = required_conclusion
         if expected_conclusion is None:
             actual_conclusion = results_by_id.get(criterion_id, {}).get("conclusion")
             errors.append(_err(
