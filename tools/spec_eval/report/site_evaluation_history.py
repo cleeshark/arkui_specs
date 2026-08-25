@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections import Counter, defaultdict
+from datetime import datetime, timezone
 from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
 from typing import Any, Iterable
@@ -110,7 +111,30 @@ def _active_findings(functions: list[dict[str, Any]]) -> list[dict[str, Any]]:
     )
 
 
-def _snapshot(report: dict[str, Any], functions: list[dict[str, Any]], findings: list[dict[str, Any]]) -> dict[str, Any]:
+def _now_iso() -> str:
+    """Current UTC time as an ISO-8601 string (indirection eases test control)."""
+    return datetime.now(timezone.utc).isoformat()
+
+
+def _day_of(timestamp: str | None) -> str | None:
+    """Extract the calendar day (YYYY-MM-DD) from an ISO-8601 timestamp."""
+    if not isinstance(timestamp, str) or not timestamp:
+        return None
+    try:
+        text = timestamp.replace("Z", "+00:00")
+        return datetime.fromisoformat(text).astimezone(timezone.utc).date().isoformat()
+    except ValueError:
+        # Best-effort fallback: an ISO string always starts with YYYY-MM-DD.
+        return timestamp[:10] if len(timestamp) >= 10 else None
+
+
+def _snapshot(
+    report: dict[str, Any],
+    functions: list[dict[str, Any]],
+    findings: list[dict[str, Any]],
+    *,
+    snapshot_at: str,
+) -> dict[str, Any]:
     severity_counts: Counter[str] = Counter()
     source_counts: Counter[str] = Counter()
     gate_counts: Counter[str] = Counter()
@@ -165,6 +189,8 @@ def _snapshot(report: dict[str, Any], functions: list[dict[str, Any]], findings:
     )[:10]
     return {
         "sourceRevision": report["sourceRevision"],
+        "snapshotAt": snapshot_at,
+        "snapshotDay": _day_of(snapshot_at),
         "fingerprint": _fingerprint(report),
         "confirmedAt": max(confirmed_at) if confirmed_at else None,
         "functionCount": len(functions),
@@ -296,22 +322,33 @@ def _delta(current: list[dict[str, Any]], previous: list[dict[str, Any]]) -> dic
 
 
 def build_site_evaluation_history(
-    *, current_report: dict[str, Any], previous_history: dict[str, Any] | None = None
+    *,
+    current_report: dict[str, Any],
+    previous_history: dict[str, Any] | None = None,
+    snapshot_at: str | None = None,
 ) -> dict[str, Any]:
     revision = current_report.get("sourceRevision")
     if not isinstance(revision, str) or not revision:
         raise SiteEvaluationHistoryInputError("site evaluation sourceRevision must be non-empty")
+    snapshot_at = snapshot_at or _now_iso()
+    snapshot_day = _day_of(snapshot_at)
     functions = _confirmed_functions(current_report)
     active_findings = _active_findings(functions)
-    snapshot = _snapshot(current_report, functions, active_findings)
+    snapshot = _snapshot(current_report, functions, active_findings, snapshot_at=snapshot_at)
 
-    if previous_history and previous_history.get("currentRevision") == revision:
-        previous_snapshots = previous_history.get("snapshots", [])
-        existing = next(
-            (item for item in previous_snapshots if isinstance(item, dict) and item.get("sourceRevision") == revision),
-            None,
-        )
-        if isinstance(existing, dict) and existing.get("fingerprint") == snapshot["fingerprint"]:
+    # Idempotent within a calendar day: if the most recent snapshot is for the
+    # same day and the report content is unchanged (same fingerprint), leave the
+    # history untouched so repeated same-day refreshes do not churn the file.
+    if previous_history:
+        previous_snapshots = [
+            item for item in previous_history.get("snapshots", []) if isinstance(item, dict)
+        ]
+        last = previous_snapshots[-1] if previous_snapshots else None
+        if (
+            isinstance(last, dict)
+            and last.get("snapshotDay") == snapshot_day
+            and last.get("fingerprint") == snapshot["fingerprint"]
+        ):
             return previous_history
 
     previous_findings = []
@@ -328,7 +365,11 @@ def build_site_evaluation_history(
         "summary": {"added": 0, "resolved": 0, "persistent": 0, "reclassified": 0},
         "functions": [], "topAdded": [], "topResolved": [], "topReclassified": [],
     }
-    snapshots = [item for item in snapshots if item.get("sourceRevision") != revision]
+    # Accumulate by calendar day: one point per day. A same-day rebuild replaces
+    # that day's point (latest wins); a new day appends a fresh point even when
+    # the revision has not moved, so a frozen revision reads as a continuous line
+    # rather than collapsing to a single dot.
+    snapshots = [item for item in snapshots if item.get("snapshotDay") != snapshot_day]
     snapshots.append(snapshot)
     snapshots = snapshots[-MAX_SNAPSHOTS:]
     comparison_status = "INITIAL" if not previous_history else (
