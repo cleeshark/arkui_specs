@@ -1199,6 +1199,32 @@ class SyncRepoToTipTest(unittest.TestCase):
         self.assertEqual(result.action, "updated")
         self.assertIn(("reset", "--hard", "origin/master"), [c[1:] for c in side.calls])
 
+    def test_untracked_only_worktree_still_syncs(self) -> None:
+        # Regression (issue #73): the dirty-guard must ignore untracked files
+        # (e.g. a tool-generated .claude/ that no .gitignore covers) so an
+        # otherwise-clean CI repo is not frozen at a stale SHA. The status probe
+        # must use -uno, which reports such a worktree as clean.
+        responses = [
+            _git_cp(0, "abc123\n"),                      # rev-parse HEAD (before)
+            _git_cp(0, ""),                              # status --porcelain -uno (clean: untracked excluded)
+            _git_cp(0),                                  # remote set-head --auto
+            _git_cp(0, "origin/master\n"),               # symbolic-ref origin/HEAD
+            _git_cp(0),                                  # fetch origin --tags
+            _git_cp(0),                                  # reset --hard origin/master
+            _git_cp(0, "def456\n"),                      # rev-parse HEAD (after)
+        ]
+        side = _git_at_recorder(responses)
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch.object(ci_worker, "_git_at", side_effect=side):
+            repo = Path(tmp) / "repo"
+            repo.mkdir()
+            (repo / ".git").mkdir()
+            result = sync_repo_to_tip("ace_engine", repo, fallback_branch="master", force=False)
+        self.assertEqual(result.action, "updated")
+        self.assertEqual(result.after, "def456")
+        # the dirty probe must pass -uno so untracked files do not count as dirty
+        self.assertIn(("status", "--porcelain", "-uno"), [c[1:] for c in side.calls])
+
     def test_missing_git_dir_reported(self) -> None:
         with tempfile.TemporaryDirectory() as tmp, \
                 mock.patch.object(ci_worker, "_git_at", side_effect=_git_at_recorder([_git_cp(1, "", "nope")])):

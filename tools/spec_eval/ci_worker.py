@@ -260,8 +260,15 @@ def _head_sha(repo_path: Path) -> str | None:
 
 
 def _worktree_dirty(repo_path: Path) -> bool:
-    """True iff the working tree has tracked-file modifications (uncommitted)."""
-    result = _git_at(repo_path, "status", "--porcelain")
+    """True iff the working tree has tracked-file modifications (uncommitted).
+
+    Uses ``-uno`` so untracked files (e.g. a tool-generated ``.claude/`` that no
+    ``.gitignore`` covers) do NOT count as dirty. This dirty-guard exists only to
+    keep ``reset --hard`` from discarding uncommitted *tracked* changes during the
+    follow-master sync; untracked files survive a reset regardless, so counting
+    them here only froze CI repos at a stale SHA (issue #73).
+    """
+    result = _git_at(repo_path, "status", "--porcelain", "-uno")
     return result.returncode == 0 and bool(result.stdout.strip())
 
 
