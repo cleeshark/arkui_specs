@@ -113,6 +113,7 @@ ERROR_REGISTRY: dict[str, str] = _register({
     "EVIDENCE_CARDINALITY_VIOLATED": MODEL_CORRECTION,
     "NV_INSPECTION_EVIDENCE_MISSING": MODEL_CORRECTION,
     "GAP_MISSING_FOR_NV": MODEL_CORRECTION,
+    "NV_MISSING_EVIDENCE_RECOVERED": MODEL_CORRECTION,
     "GAP_UNEXPECTED_FOR_NON_NV": SERVICE_NORMALIZATION,
     "GAP_FIELD_INSUFFICIENT": MODEL_CORRECTION,
     # --- prose quality (model-owned) ---------------------------------------
@@ -214,6 +215,7 @@ CONFIDENCE_LAYERS: dict[str, str] = {
     "QUALITY_HIGH_NV_RATIO": LAYER_MINOR,
     "QUALITY_DUPLICATE_TEXT": LAYER_MINOR,
     "QUALITY_OBSERVATION_DENSITY": LAYER_MINOR,
+    "NV_MISSING_EVIDENCE_RECOVERED": LAYER_MINOR,
 }
 
 
@@ -228,6 +230,10 @@ NON_BLOCKING_WARNING_CODES = frozenset({
     # The repaired report remains consumable, but loses one bounded MAJOR
     # confidence penalty so the data-quality issue stays visible.
     "FINDING_EVIDENCE_UNKNOWN",
+    # A policy-derived NOT_VERIFIABLE result remains protocol-valid when the
+    # service copies the policy-basis reason into missing_evidence. Preserve a
+    # bounded confidence deduction so the omitted model field stays visible.
+    "NV_MISSING_EVIDENCE_RECOVERED",
 })
 
 # These errors still receive the single bounded model Correction turn.  If

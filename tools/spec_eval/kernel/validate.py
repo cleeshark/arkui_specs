@@ -28,6 +28,7 @@ from .errors import (
 from .normalize import (
     DEFECT_KEY,
     FINDING_EVIDENCE_WARNING_PREFIX,
+    NV_MISSING_EVIDENCE_WARNING_PREFIX,
     OUTCOME_POLICY_BASIS_CRITERIA,
     is_service_ownership_defect_key,
 )
@@ -654,6 +655,21 @@ def validate_aggregation_document(
             ),
             actual=evidence_recovery_notes[0],
         ))
+    missing_evidence_recovery_notes = [
+        note for note in (notes if isinstance(notes, list) else [])
+        if isinstance(note, str)
+        and note.startswith(NV_MISSING_EVIDENCE_WARNING_PREFIX)
+    ]
+    if missing_evidence_recovery_notes:
+        errors.append(_err(
+            "NV_MISSING_EVIDENCE_RECOVERED", f"{label}.notes",
+            entity_type="document",
+            expected=(
+                "policy-derived missing_evidence restored by service; "
+                "publish with reduced confidence"
+            ),
+            actual=missing_evidence_recovery_notes[0],
+        ))
 
     findings_by_id: dict[str, dict[str, Any]] = {}
     contradicted_criteria: list[str] = []
@@ -663,6 +679,15 @@ def validate_aggregation_document(
         criterion_id = str(result.get("criterion_id"))
         conclusion = result.get("conclusion")
         findings = _rows(result.get("findings"))
+        if (
+            conclusion == K.NOT_VERIFIABLE
+            and not str(result.get("missing_evidence") or "").strip()
+        ):
+            errors.append(_err(
+                "GAP_MISSING_FOR_NV", f"{row_label}.missing_evidence",
+                entity_type="criterion", entity_id=criterion_id,
+                expected="non-empty missing_evidence for NOT_VERIFIABLE",
+            ))
         if conclusion in K.FINDING_REQUIRED_CONCLUSIONS and not findings:
             errors.append(_err(
                 "FINDING_CARDINALITY_VIOLATED", f"{row_label}.findings",
