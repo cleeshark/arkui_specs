@@ -19,6 +19,9 @@ site/static/data/site-runtime.json
 .evaluator/*.md
 !.evaluator/README.md
 .evaluator/*/
+# Runtime-only full history sidecar (retains activeFindings for day-over-day
+# chaining); regenerated on each dynamic refresh, never served to the browser.
+.evaluator/spec-evaluation-history-full.json
 .spec-evaluation/
 __pycache__/
 __init__.py

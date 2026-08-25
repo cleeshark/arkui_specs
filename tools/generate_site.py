@@ -485,8 +485,15 @@ def build_dynamic_semantic_evaluation(
     )
 
 
-def build_dynamic_history(spec_evaluation: dict[str, Any]) -> dict[str, Any]:
+def build_dynamic_history(semantic_evaluation: dict[str, Any]) -> dict[str, Any]:
     """Build the governance history document from the current dynamic snapshot.
+
+    ``semantic_evaluation`` (not ``spec_evaluation``) is the correct input because
+    only the semantic document carries ``status == "CONFIRMED"`` and ``scores``
+    (``published_score``, ``dimensions``) that ``_confirmed_functions`` looks for.
+    The spec-evaluation document holds gate/finding data keyed under ``funcId``
+    but has no scores, so passing it always yields zero confirmed functions and
+    every metric (publishedScoreAverage, dimensionAverages) reads 0.
 
     History accumulates one point per calendar day: the previous full-history
     sidecar (``SPEC_EVAL_HISTORY_FULL_JSON``, which retains ``activeFindings``)
@@ -497,12 +504,12 @@ def build_dynamic_history(spec_evaluation: dict[str, Any]) -> dict[str, Any]:
     """
     from spec_eval.report.site_evaluation_history import build_site_evaluation_history
 
-    if not spec_evaluation.get("available"):
+    if not semantic_evaluation.get("available"):
         return load_archived_evaluation_history(archive_root=Path("/nonexistent"))
     previous_history = _read_json(SPEC_EVAL_HISTORY_FULL_JSON)
     try:
         return build_site_evaluation_history(
-            current_report=spec_evaluation, previous_history=previous_history
+            current_report=semantic_evaluation, previous_history=previous_history
         )
     except Exception:  # noqa: BLE001 - history is best-effort in dynamic mode
         return load_archived_evaluation_history(archive_root=Path("/nonexistent"))
@@ -536,7 +543,7 @@ def load_dynamic_evaluation(
     semantic_evaluation = build_dynamic_semantic_evaluation(
         latest_jobs, functions, observed_revision=observed_revision
     )
-    history = build_dynamic_history(spec_evaluation)
+    history = build_dynamic_history(semantic_evaluation)
     return spec_evaluation, semantic_evaluation, history
 
 
