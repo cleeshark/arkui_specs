@@ -1057,22 +1057,24 @@ class FunctionReportHeadRepository:
         self,
         report: EvaluationReportRecord,
         *,
+        expected_current_report_id: str | None,
         freshness: str,
         warn_at: str,
         expires_at: str,
     ) -> FunctionReportHead | None:
-        """Promote an archived report only while its head is still unclaimed.
+        """Promote a recovered report while the observed head is unchanged.
 
-        This is deliberately stricter than a normal promotion: it is a
-        compare-and-set repair for an orphaned pointer, never a replacement for
-        an already-current report.  The target generation and fingerprint are
-        checked in the same write transaction to prevent a startup scan from
-        racing a new refresh request.
+        This compare-and-set repair supports both a missing pointer and a stale
+        pointer to an older report.  The observed current pointer, target
+        generation and fingerprint are checked in the same write transaction
+        so a startup scan cannot race a new refresh or overwrite a newer report.
         """
         with self._store._tx(immediate=True):
             row = self._get_row(report.func_id)
             active_job_id = row["active_job_id"]
-            if row["current_report_id"] is not None:
+            if row["current_report_id"] != expected_current_report_id:
+                return None
+            if row["current_report_id"] == report.report_id:
                 return None
             if int(row["desired_generation"]) != report.target_generation:
                 return None
@@ -1085,7 +1087,7 @@ class FunctionReportHeadRepository:
                 "stale_reasons_json = '[]', warn_at = ?, expires_at = ?, "
                 "refresh_status = 'IDLE', active_job_id = NULL, "
                 "last_refresh_error = NULL, updated_at = ? "
-                "WHERE func_id = ? AND current_report_id IS NULL "
+                "WHERE func_id = ? AND current_report_id IS ? "
                 "AND desired_generation = ? AND desired_input_fingerprint = ? "
                 "AND (active_job_id IS NULL OR active_job_id = ?)",
                 (
@@ -1095,6 +1097,7 @@ class FunctionReportHeadRepository:
                     expires_at,
                     utc_now(),
                     report.func_id,
+                    expected_current_report_id,
                     report.target_generation,
                     report.input_fingerprint,
                     report.job_id,
@@ -1327,6 +1330,65 @@ class RefreshTargetRepository:
             if row is None:
                 raise JobNotFoundError(job_id)
             return _refresh_target_from_row(row)
+
+    def reactivate_for_retry(self, job_id: str) -> RefreshTarget | None:
+        """Restore refresh ownership when retrying the same unsuperseded target.
+
+        A failed target may be reactivated only while its generation, revision
+        and effective fingerprint still describe the Function head and no
+        different Job owns that head.  The target and head updates share one
+        transaction so retry cannot overwrite a newer manual refresh.
+        """
+        with self._store._tx(immediate=True):
+            row = self._conn.execute(
+                "SELECT * FROM refresh_targets WHERE job_id = ?", (job_id,)
+            ).fetchone()
+            if row is None or row["status"] not in {"ACTIVE", "FAILED"}:
+                return None
+            job = self._conn.execute(
+                "SELECT status FROM jobs WHERE job_id = ?", (job_id,)
+            ).fetchone()
+            if job is None or job["status"] != "queued":
+                return None
+            head = self._conn.execute(
+                "SELECT * FROM function_report_heads WHERE func_id = ?", (row["func_id"],)
+            ).fetchone()
+            effective_fingerprint = row["input_fingerprint"] or row["provisional_fingerprint"]
+            if (
+                head is None
+                or int(head["desired_generation"]) != int(row["generation"])
+                or head["desired_revision"] != row["desired_revision"]
+                or head["desired_input_fingerprint"] != effective_fingerprint
+                or head["active_job_id"] not in (None, job_id)
+            ):
+                return None
+            self._conn.execute(
+                "UPDATE refresh_targets SET status = 'ACTIVE', updated_at = ? "
+                "WHERE job_id = ? AND status IN ('ACTIVE', 'FAILED')",
+                (utc_now(), job_id),
+            )
+            self._conn.execute(
+                "UPDATE function_report_heads SET refresh_status = 'REFRESHING', "
+                "active_job_id = ?, last_refresh_error = NULL, updated_at = ? "
+                "WHERE func_id = ? AND desired_generation = ? "
+                "AND desired_revision = ? AND desired_input_fingerprint = ? "
+                "AND (active_job_id IS NULL OR active_job_id = ?)",
+                (
+                    job_id,
+                    utc_now(),
+                    row["func_id"],
+                    row["generation"],
+                    row["desired_revision"],
+                    effective_fingerprint,
+                    job_id,
+                ),
+            )
+            if self._conn.execute("SELECT changes()").fetchone()[0] != 1:
+                return None
+            refreshed = self._conn.execute(
+                "SELECT * FROM refresh_targets WHERE job_id = ?", (job_id,)
+            ).fetchone()
+            return _refresh_target_from_row(refreshed)
 
     def finish(self, job_id: str, *, status: str) -> RefreshTarget | None:
         if status not in {"COMPLETED", "FAILED"}:

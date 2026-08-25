@@ -82,19 +82,17 @@ class ReportRegistry:
         return ReportRegistrationResult(frozen, "PROMOTED", previous_report_id)
 
     def reconcile_orphan_reports(self) -> OrphanReconcileResult:
-        """Repair only safe, unclaimed Function report pointers.
+        """Repair safe missing or stale Function report pointers.
 
         A report is considered repairable only when it belongs to the current
         desired generation/fingerprint, its producing Job is completed, and no
-        different refresh Job currently owns the head.  The final promotion is
-        a conditional compare-and-set in the repository, so a concurrent
-        refresh cannot be overwritten by this startup sweep.
+        different refresh Job currently owns the head.  The final promotion
+        compares the observed current pointer as well as the desired target,
+        so a concurrent refresh cannot be overwritten by this startup sweep.
         """
         scanned = repaired = skipped_stale = skipped_active = skipped_invalid = 0
         events = EventRepository(self.reports.store)
         for head in self.heads.list_all():
-            if head.current_report_id is not None:
-                continue
             scanned += 1
             fingerprint = head.desired_input_fingerprint
             if not fingerprint:
@@ -106,6 +104,8 @@ class ReportRegistry:
                 input_fingerprint=fingerprint,
             )
             if report is None:
+                continue
+            if head.current_report_id == report.report_id:
                 continue
             if head.active_job_id not in (None, report.job_id):
                 skipped_active += 1
@@ -138,6 +138,7 @@ class ReportRegistry:
             projection = calculate_freshness(head, report, policy)
             promoted = self.heads.promote_orphan(
                 report,
+                expected_current_report_id=head.current_report_id,
                 freshness=projection.status,
                 warn_at=projection.warn_at or "",
                 expires_at=projection.expires_at or "",

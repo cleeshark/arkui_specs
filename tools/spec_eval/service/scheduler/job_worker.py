@@ -49,6 +49,10 @@ def build_runner(
         jobs = JobRepository(store)
         raised = False
         try:
+            # Retry normally restores refresh ownership in Dispatcher.retry.
+            # Repeat the idempotent repair here so a process crash between the
+            # queued transition and enqueue cannot strand the target again.
+            targets.reactivate_for_retry(job_id)
             job = jobs.get_job(job_id)
             selected_executor = (
                 executor_resolver(job.executor_config)
