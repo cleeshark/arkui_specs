@@ -98,6 +98,7 @@ class WorkerContext:
     force_sync: bool = False
     rebuild_site_on_merge: bool = True
     site_base_url: str = "/arkui_specs/"
+    site_mode: str = "static"
 
 
 def capture_master_snapshot(oh_root: Path) -> list[dict[str, Any]]:
@@ -542,19 +543,28 @@ def run_specs_checks(*, specs_root: Path, python: str = "python3") -> list[SpecC
     return results
 
 
-def rebuild_site(specs_root: Path, *, base_url: str, python: str = "python3") -> dict[str, Any]:
+def rebuild_site(
+    specs_root: Path, *, base_url: str, python: str = "python3", site_mode: str = "static"
+) -> dict[str, Any]:
     """Regenerate the Docusaurus site inputs and build static output.
 
     Runs ``tools/generate_site.py`` (registry → site/docs + data JSON) then
     ``npm run build`` with ``BASE_URL`` so asset URLs resolve under ``base_url``
-    (must match the path the site is served at). Best-effort: never raises — a
-    step failure is recorded as a non-zero ``exit_code`` and short-circuits the
+    (must match the path the site is served at). ``site_mode`` selects the
+    evaluation-data source: ``static`` bakes the single ``.evaluator`` snapshot;
+    ``dynamic`` reads the newest archived job per Function (kept current
+    afterwards by the data-only watcher). Best-effort: never raises — a step
+    failure is recorded as a non-zero ``exit_code`` and short-circuits the
     remaining steps (build is skipped when generation failed). The merge-sync
     caller keeps its own status regardless of the site outcome.
     """
     steps: list[dict[str, Any]] = []
     plan: list[tuple[str, list[str], dict[str, Any]]] = [
-        ("generate_site", [python, str(specs_root / "tools" / "generate_site.py")], {"cwd": str(specs_root)}),
+        (
+            "generate_site",
+            [python, str(specs_root / "tools" / "generate_site.py"), "--mode", site_mode],
+            {"cwd": str(specs_root)},
+        ),
         (
             "build",
             ["npm", "run", "build"],
@@ -1044,7 +1054,12 @@ def handle_merge_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[st
         # never changes the merge-sync status (repo sync is the primary outcome).
         if ctx.rebuild_site_on_merge:
             site_started = time.perf_counter()
-            site_result = rebuild_site(ctx.specs_root, base_url=ctx.site_base_url, python=ctx.python)
+            site_result = rebuild_site(
+                ctx.specs_root,
+                base_url=ctx.site_base_url,
+                python=ctx.python,
+                site_mode=ctx.site_mode,
+            )
             timing["site_build_ms"] = round((time.perf_counter() - site_started) * 1000.0, 3)
             site_build_dict = site_result
             _write_json(archive_dir / "site-build.json", site_result)
@@ -1393,6 +1408,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="BASE_URL passed to `npm run build` so site assets resolve under the served path (default /arkui_specs/)",
     )
     parser.add_argument(
+        "--site-mode",
+        choices=["static", "dynamic"],
+        default="static",
+        help=(
+            "evaluation-data source for the merge-time site rebuild: static bakes "
+            "the .evaluator snapshot; dynamic reads the newest archived job per "
+            "Function (kept current afterwards by the data-only watcher). Default static."
+        ),
+    )
+    parser.add_argument(
         "--test-on-pass",
         action="store_true",
         help="on a passing run (delta.added == 0, not incomplete), mark GitCode PR test passed via `oh-gc pr test`",
@@ -1443,6 +1468,7 @@ def build_context(args: argparse.Namespace) -> WorkerContext:
         force_sync=args.force_sync,
         rebuild_site_on_merge=not args.no_rebuild_site,
         site_base_url=args.site_base_url,
+        site_mode=args.site_mode,
         oh_gc=args.oh_gc,
         python=args.python,
         test_on_pass=args.test_on_pass,

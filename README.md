@@ -157,6 +157,40 @@ npm run build
 
 `tools/generate_site.py` 根据 `.evaluator/latest.json` 选择归档快照。构建后的 `/spec-evaluation` 页面展示 Gate 分布、严重度、规则统计、证据覆盖率，以及每个 Function 的完整 Findings。GitHub Pages 仍只检出当前 specs 仓并执行轻量站点构建。
 
+### 动态站点（B-lite）
+
+上面的默认（`--mode static`）会把 `.evaluator/` 的单个归档快照烘焙进站点，适合 GitHub Pages 这类静态发布。当站点由常驻的 CI 服务（`ci_service.sh`）托管、需要**实时展示最新报告状态**时，改用动态模式：
+
+```bash
+# 从 CI 服务的滚动归档中读取每个 Function 的最新 job，生成站点数据
+python3 tools/generate_site.py --mode dynamic
+```
+
+动态模式的数据源是 CI 服务写入的归档目录
+`.evaluator/service-data/archives/automated/<revision>/<func_id>/<job_id>/`，
+按追加写的 `site-history-automated.jsonl` 选出每个 Function 的最新 job。它**直接读文件系统，不依赖语义服务的 SQLite 数据库**，因此可以独立于 `service_cli` 运行。
+
+站点数据分两类：`site/static/data/*.json`（运行时 `fetch`）和 `site/src/data/*.json` 中的 summary/history（构建时 `import`）。为了让新报告**刷新即见、无需重建**，动态模式把 summary/history 也镜像到 `site/static/data/`，页面改为运行时 `fetch`（构建时的 import 值仅作降级）。`site/static/data/site-runtime.json` 记录当前模式；页面在 `mode: dynamic` 时会定期轮询数据文件。
+
+只刷新数据文件、不重建整站（B-lite 刷新）：
+
+```bash
+# 重新生成 site/static/data/*.json，并镜像进已构建的 site/build/data/
+python3 tools/generate_site.py --mode dynamic --data-only
+
+# 常驻监听归档日志，任何新归档后自动刷新（供 CI 服务拉起）
+python3 tools/generate_site.py --mode dynamic --watch --poll-interval 10
+```
+
+`ci_service.sh` 默认拉起上面的 `--watch` 进程（`CI_DYNAMIC_SITE=1`），并让 merge 时的整站重建带上 `--site-mode dynamic`，使运行时描述符与数据文件保持一致：
+
+| 环境变量 | 默认 | 说明 |
+| --- | --- | --- |
+| `CI_DYNAMIC_SITE` | `1` | 设为 `0` 关闭动态数据 watcher，站点停留在静态快照 |
+| `CI_DYNAMIC_SITE_POLL` | `10` | watcher 检查归档日志的间隔（秒） |
+
+拓扑说明：`service_cli`（`127.0.0.1:8790`）不对外暴露，浏览器从不直连它；动态刷新完全基于与 CI 服务**同机共享的归档文件系统**，因此无跨域、不暴露内部服务接口。
+
 ## 本地语义评价服务
 
 需要按 FuncID 手动执行语义评价、并行查看进度、保存 revision 级报告历史和过期状态时，

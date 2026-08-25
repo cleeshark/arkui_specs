@@ -22,6 +22,10 @@
 #   CI_FORCE_SYNC           set to 1 to reset --hard even repos with uncommitted local changes (default: off)
 #   CI_REBUILD_SITE         set to 0 to skip rebuilding the Docusaurus site after a merge-sync (default: enabled)
 #   CI_SITE_BASE_PATH       URL path the site is served at + BASE_URL for the build (default /arkui_specs)
+#   CI_DYNAMIC_SITE          set to 0 to disable the dynamic site data watcher (default: enabled). The watcher
+#                            refreshes specs/site/{static,build}/data/*.json from the newest archived reports so
+#                            a browser reload shows the latest report state without a rebuild.
+#   CI_DYNAMIC_SITE_POLL     archive-log poll interval in seconds for the watcher (default 10)
 #   EXTRA_WORKER_ARGS       extra flags forwarded to ci_worker (e.g. "--dry-run")
 set -euo pipefail
 
@@ -53,8 +57,26 @@ cleanup() {
     echo "[ci_service] stopping (receiver pid ${RECEIVER_PID})"
     kill "$RECEIVER_PID" 2>/dev/null || true
     wait "$RECEIVER_PID" 2>/dev/null || true
+    if [ -n "${SITE_DATA_PID:-}" ]; then
+        echo "[ci_service] stopping dynamic site data watcher (pid ${SITE_DATA_PID})"
+        kill "$SITE_DATA_PID" 2>/dev/null || true
+        wait "$SITE_DATA_PID" 2>/dev/null || true
+    fi
 }
 trap cleanup EXIT INT TERM
+
+# Dynamic site data refresh (B-lite): keep the served Docusaurus site's data
+# files current with the newest archived reports without a rebuild. A watcher
+# regenerates specs/site/{static,build}/data/*.json whenever the archive log
+# changes, so a browser reload shows the latest report state. Enabled by default;
+# set CI_DYNAMIC_SITE=0 to opt out (e.g. to keep the site on the frozen static
+# snapshot). CI_DYNAMIC_SITE_POLL overrides the archive-log poll interval.
+if [ "${CI_DYNAMIC_SITE:-1}" = "1" ]; then
+    DYN_POLL="${CI_DYNAMIC_SITE_POLL:-10}"
+    echo "[ci_service] starting dynamic site data watcher (poll ${DYN_POLL}s)"
+    python3 specs/tools/generate_site.py --mode dynamic --watch --poll-interval "$DYN_POLL" &
+    SITE_DATA_PID=$!
+fi
 
 # Optional: report the automated GitCode PR test as passed when the run finds no new errors.
 # Enabled by default; set CI_TEST_ON_PASS=0 to opt out.
@@ -79,6 +101,9 @@ TEST_ARGS=""
 # build's BASE_URL aligned with the path the webhook server serves the site at.
 [ "${CI_REBUILD_SITE:-1}" = "0" ] && TEST_ARGS="$TEST_ARGS --no-rebuild-site"
 TEST_ARGS="$TEST_ARGS --site-base-url ${SITE_BASE_PATH}/"
+# When the dynamic site data watcher is enabled, the merge-time full rebuild also
+# uses dynamic mode so the runtime descriptor and data files stay consistent.
+[ "${CI_DYNAMIC_SITE:-1}" = "1" ] && TEST_ARGS="$TEST_ARGS --site-mode dynamic"
 
 echo "[ci_service] starting CI worker in watch mode (poll ${POLL}s, repo ${REPO})${TEST_ARGS:+ (test-on-pass)}"
 # The worker runs in the foreground; exiting it (Ctrl-C) tears down the receiver.

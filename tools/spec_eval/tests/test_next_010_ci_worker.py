@@ -1045,7 +1045,9 @@ class MergeSyncRoutingTest(unittest.TestCase):
                 mock.patch.object(ci_worker, "rebuild_site", return_value={"action": "rebuilt"}) as rebuild:
             result = process_receipt(_receipt(action="merge"), ctx)
         self.assertEqual(result["status"], "merge_synced")
-        rebuild.assert_called_once_with(REPO_ROOT / "specs", base_url="/arkui_specs/", python="python3")
+        rebuild.assert_called_once_with(
+            REPO_ROOT / "specs", base_url="/arkui_specs/", python="python3", site_mode="static"
+        )
         self.assertTrue((Path(tmp) / "ci" / "pr-61" / result["delivery_id"] / "site-build.json").is_file())
 
     def test_merge_rebuild_failure_keeps_synced_status(self) -> None:
@@ -1116,6 +1118,19 @@ class RebuildSiteTest(unittest.TestCase):
         self.assertEqual(build_command[:3], ["npm", "run", "build"])
         self.assertEqual(build_kwargs["env"]["BASE_URL"], "/arkui_specs/")
         self.assertTrue(str(build_kwargs["cwd"]).endswith("/site"))
+
+    def test_generate_step_passes_site_mode(self) -> None:
+        captured: list[list[str]] = []
+
+        def fake_run(command: list[str], **kwargs):
+            captured.append(command)
+            return self._proc(0)
+
+        with mock.patch.object(ci_worker.subprocess, "run", side_effect=fake_run):
+            rebuild_site(Path("/specs"), base_url="/arkui_specs/", site_mode="dynamic")
+        generate_command = captured[0]
+        self.assertIn("generate_site.py", generate_command[1])
+        self.assertEqual(generate_command[-2:], ["--mode", "dynamic"])
 
 
 class SyncRepoToTipTest(unittest.TestCase):

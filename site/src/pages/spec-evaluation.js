@@ -2,9 +2,9 @@ import React, {useEffect, useMemo, useState} from 'react';
 import Link from '@docusaurus/Link';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import Layout from '@theme/Layout';
-import summaryData from '../data/spec-evaluation-summary.json';
-import semanticSummaryData from '../data/semantic-evaluation-summary.json';
-import historyData from '../data/spec-evaluation-history.json';
+import bundledSummaryData from '../data/spec-evaluation-summary.json';
+import bundledSemanticSummaryData from '../data/semantic-evaluation-summary.json';
+import bundledHistoryData from '../data/spec-evaluation-history.json';
 
 const GATES = ['all', 'pass', 'warn', 'fail', 'error'];
 const SEVERITIES = ['Critical', 'Major', 'Minor', 'Info'];
@@ -15,6 +15,40 @@ const DIMENSIONS = [
   {id: 'compatibility_system_impact', label: 'Impact', max: 10},
   {id: 'function_modeling', label: 'Modeling', max: 10},
 ];
+
+// Dynamic (B-lite) mode re-polls the data files so a per-archive data-only
+// refresh appears on the served site without a full rebuild. Static mode fetches
+// once. The interval is deliberately gentle; the payloads are small and cached.
+const DYNAMIC_POLL_MS = 30000;
+
+// Fetch a runtime JSON file, seeding state with the value bundled at build time
+// so the first paint never blocks. When ``pollMs`` is set the file is re-fetched
+// on that interval (dynamic mode). ``fallback`` is returned on fetch failure so
+// a missing/served-late file degrades to the build-time snapshot.
+function useRuntimeJson(url, fallback, pollMs) {
+  const [value, setValue] = useState(fallback);
+  useEffect(() => {
+    let active = true;
+    const load = () => {
+      fetch(url)
+        .then((response) => {
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          return response.json();
+        })
+        .then((next) => {
+          if (active) setValue(next);
+        })
+        .catch(() => {
+          /* keep the previous value (bundled fallback on first load) */
+        });
+    };
+    load();
+    if (!pollMs) return () => { active = false; };
+    const timer = setInterval(load, pollMs);
+    return () => { active = false; clearInterval(timer); };
+  }, [url, pollMs]);
+  return value;
+}
 
 function GateBadge({gate}) {
   return <span className={`evalGate evalGate-${gate}`}>{String(gate).toUpperCase()}</span>;
@@ -61,7 +95,7 @@ function TrendChart({snapshots}) {
   );
 }
 
-function GovernanceOverview() {
+function GovernanceOverview({historyData}) {
   if (!historyData.available || historyData.snapshots.length === 0) return null;
   const summary = historyData.summary;
   const current = historyData.snapshots[historyData.snapshots.length - 1];
@@ -319,41 +353,67 @@ export default function SpecEvaluationPage() {
   const [semanticEvaluation, setSemanticEvaluation] = useState(null);
   const [loadError, setLoadError] = useState(null);
   const [semanticLoadError, setSemanticLoadError] = useState(null);
+  const runtimeUrl = useBaseUrl('/data/site-runtime.json');
+  const summaryUrl = useBaseUrl('/data/spec-evaluation-summary.json');
+  const semanticSummaryUrl = useBaseUrl('/data/semantic-evaluation-summary.json');
+  const historyUrl = useBaseUrl('/data/spec-evaluation-history.json');
   const reportUrl = useBaseUrl('/data/spec-evaluation.json');
   const semanticReportUrl = useBaseUrl('/data/semantic-evaluation.json');
   const normalizedQuery = query.trim().toLowerCase();
+
+  // The runtime descriptor decides whether to poll for a live (dynamic-mode)
+  // refresh. It is absent on older builds, so default to static (fetch once).
+  const runtime = useRuntimeJson(runtimeUrl, {mode: 'static'});
+  const pollMs = runtime.mode === 'dynamic' ? DYNAMIC_POLL_MS : 0;
+
+  // Summary/history are runtime-fetched (not just build-time imports) so a
+  // data-only refresh is reflected on reload; the bundled JSON is the fallback.
+  const summaryData = useRuntimeJson(summaryUrl, bundledSummaryData, pollMs);
+  const semanticSummaryData = useRuntimeJson(semanticSummaryUrl, bundledSemanticSummaryData, pollMs);
+  const historyData = useRuntimeJson(historyUrl, bundledHistoryData, pollMs);
+
   useEffect(() => {
     if (!summaryData.available) return undefined;
     let active = true;
-    fetch(reportUrl)
-      .then((response) => {
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        return response.json();
-      })
-      .then((value) => {
-        if (active) setEvaluation(value);
-      })
-      .catch((error) => {
-        if (active) setLoadError(String(error));
-      });
-    return () => { active = false; };
-  }, [reportUrl]);
+    const load = () => {
+      fetch(reportUrl)
+        .then((response) => {
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          return response.json();
+        })
+        .then((value) => {
+          if (active) { setEvaluation(value); setLoadError(null); }
+        })
+        .catch((error) => {
+          if (active) setLoadError(String(error));
+        });
+    };
+    load();
+    if (!pollMs) return () => { active = false; };
+    const timer = setInterval(load, pollMs);
+    return () => { active = false; clearInterval(timer); };
+  }, [reportUrl, summaryData.available, pollMs]);
   useEffect(() => {
     if (!semanticSummaryData.available) return undefined;
     let active = true;
-    fetch(semanticReportUrl)
-      .then((response) => {
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        return response.json();
-      })
-      .then((value) => {
-        if (active) setSemanticEvaluation(value);
-      })
-      .catch((error) => {
-        if (active) setSemanticLoadError(String(error));
-      });
-    return () => { active = false; };
-  }, [semanticReportUrl]);
+    const load = () => {
+      fetch(semanticReportUrl)
+        .then((response) => {
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          return response.json();
+        })
+        .then((value) => {
+          if (active) { setSemanticEvaluation(value); setSemanticLoadError(null); }
+        })
+        .catch((error) => {
+          if (active) setSemanticLoadError(String(error));
+        });
+    };
+    load();
+    if (!pollMs) return () => { active = false; };
+    const timer = setInterval(load, pollMs);
+    return () => { active = false; clearInterval(timer); };
+  }, [semanticReportUrl, semanticSummaryData.available, pollMs]);
   const allFunctions = useMemo(() => {
     const semanticById = new Map((semanticEvaluation?.functions || []).map((item) => [item.func_id, item]));
     return (evaluation?.functions || []).map((item) => ({...item, semanticReview: semanticById.get(item.funcId) || null}));
@@ -366,7 +426,7 @@ export default function SpecEvaluationPage() {
   }), [allFunctions, gate, normalizedQuery]);
   const selected = allFunctions.find((item) => item.funcId === selectedId) || null;
   const summary = summaryData.summary;
-  const topRules = Object.entries(summary.ruleCounts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 12);
+  const topRules = Object.entries(summary?.ruleCounts || {}).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).slice(0, 12);
   useEffect(() => {
     if (!selectedId) return undefined;
     const previousOverflow = document.body.style.overflow;
@@ -428,7 +488,7 @@ export default function SpecEvaluationPage() {
               </div>
             </section>
 
-            <GovernanceOverview />
+            <GovernanceOverview historyData={historyData} />
 
             <section className="pageBand mutedBand">
               <div className="contentWrap evalOverviewGrid">

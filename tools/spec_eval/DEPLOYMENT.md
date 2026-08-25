@@ -123,6 +123,13 @@ token 自动读 `~/.gitcode_webhook_token`。环境变量覆盖：`WEBHOOK_HOST/
 owner/repo，默认 `arkui_architecture/arkui-specs`）、`CI_POLL_INTERVAL`、`EXTRA_WORKER_ARGS`、
 `CI_TEST_ON_PASS=1`（运行通过即调 `oh-gc pr test` 写入测试通过，见下）、`CI_FORCE_TEST=1`（配合前者加 `--force`）。
 
+**动态站点（B-lite）**：`ci_service.sh` 默认额外拉起一个动态站点数据 watcher（`CI_DYNAMIC_SITE=1`），
+它监听归档日志 `.evaluator/service-data/archives/automated/site-history-automated.jsonl`，每次有新报告归档时
+重新生成 `specs/site/{static,build}/data/*.json` 并镜像进已构建的站点，使浏览器**刷新即见最新报告状态、无需重建**。
+`CI_DYNAMIC_SITE_POLL`（默认 10s）调整轮询间隔；`CI_DYNAMIC_SITE=0` 关闭该 watcher，站点停留在静态快照。启用时，
+merge 触发的整站重建也会带 `--site-mode dynamic`，保证运行时描述符与数据文件一致。该刷新只读取与 CI 服务同机共享的
+归档文件系统，不依赖也不暴露 `service_cli`（`127.0.0.1:8790`）。
+
 **通过即回写 CI 测试结果**：`CI_TEST_ON_PASS=1 ./ci_service.sh`。每次新的 MR Hook 被 Worker 消费时，先调用
 GitCode `PATCH /repos/{owner}/{repo}/pulls/{n}/testers` 复位旧测试状态，再执行评价。普通模式使用
 `reset_all=false`，要求 `oh-gc` 登录用户已经是该 PR 的 tester，仅复位自己；若 CI 使用管理员/非 tester 账号，必须
