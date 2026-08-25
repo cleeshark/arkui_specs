@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 from collections import Counter
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -101,9 +102,11 @@ def _build_automated_site_evaluation(
             eval_report = json.loads(eval_report_path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             continue
+        created_at = report_meta.get("completed_at") or _archive_created_at(Path(archive_path))
         entry = _convert_function_entry(
             eval_report, catalog=item,
             observed_revision=observed_revision,
+            created_at=created_at,
         )
         if entry is not None:
             entries.append(entry)
@@ -135,6 +138,7 @@ def _convert_function_entry(
     *,
     catalog: dict[str, Any],
     observed_revision: str,
+    created_at: str | None = None,
 ) -> dict[str, Any] | None:
     """Convert one evaluation-report.json to a site-evaluation-report function entry."""
     func_id = str(eval_report.get("func_id", ""))
@@ -157,12 +161,26 @@ def _convert_function_entry(
     score = eval_report.get("score", {})
     scores = _convert_scores(score)
 
-    status = "CONFIRMED" if source_revision == observed_revision else "EXPIRED"
+    # Freshness is time-based (report age), NOT revision equality. Under rolling
+    # per-Function evaluation each Function legitimately sits at its own revision,
+    # so a byte-equal "source == observed" check would flip most reports to
+    # EXPIRED whenever the observed-revision majority shifts (issue: #73 unfroze
+    # ace_engine, exposing this). We keep the report CONFIRMED and publishable at
+    # its own revision, expose a time-based freshness signal, and surface any
+    # revision drift as informational metadata for a display-layer badge.
+    freshness, expires_at = _report_freshness(created_at)
+    revision_current = source_revision == observed_revision
+    status = "EXPIRED" if freshness == "EXPIRED" else "CONFIRMED"
     entry: dict[str, Any] = {
         "func_id": func_id,
         "title": str(catalog.get("title", func_id)),
         "source_revision": source_revision,
+        "observed_revision": observed_revision,
+        "revision_current": revision_current,
         "status": status,
+        "freshness": freshness,
+        "evaluated_at": created_at or "",
+        "expires_at": expires_at or "",
         "scores": scores,
         "criterion_summaries": sorted(criteria, key=lambda c: str(c.get("criterion_id", ""))),
         "findings": all_findings,
@@ -170,7 +188,7 @@ def _convert_function_entry(
         "evidence_paths": sorted(set(semantic_paths + static_paths)),
         "confirmation": {
             "confirmed_by": "automated-evaluator",
-            "confirmed_at": "",
+            "confirmed_at": created_at or "",
             "conclusion": "",
             "notes": [],
         },
@@ -183,13 +201,61 @@ def _convert_function_entry(
             "finding_count": len(static_findings),
         },
     }
-    if status == "EXPIRED":
+    if freshness == "EXPIRED":
         entry["staleness"] = {
-            "reason": "review_source_revision_mismatch",
-            "review_source_revision": source_revision,
-            "static_source_revision": observed_revision,
+            "reason": "report_age_exceeded",
+            "evaluated_at": created_at or "",
+            "expires_at": expires_at or "",
         }
     return entry
+
+
+# Mirror the service default freshness policy (repositories.ensure_default):
+# reports expire 30 days after evaluation, warning 7 days before that.
+FRESHNESS_MAX_AGE_DAYS = 30
+FRESHNESS_WARNING_DAYS = 7
+
+
+def _archive_created_at(archive_path: Path) -> str | None:
+    """Read ``created_at`` from an archive manifest, or None if unavailable."""
+    manifest_path = archive_path / "archive-manifest.json"
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    value = manifest.get("created_at")
+    return value if isinstance(value, str) and value else None
+
+
+def _report_freshness(
+    created_at: str | None, *, now: datetime | None = None
+) -> tuple[str, str | None]:
+    """Classify a report by age → (FRESH | EXPIRING | EXPIRED, expires_at).
+
+    Mirrors the time-based half of ``service.freshness.calculate_freshness``
+    without the DB dependency, so the static export and the live service agree
+    on what "stale" means. Returns FRESH with no expiry when the timestamp is
+    absent or unparseable, so a missing time never hides a report.
+    """
+    if not created_at:
+        return "FRESH", None
+    try:
+        completed = datetime.fromisoformat(created_at)
+    except ValueError:
+        return "FRESH", None
+    if completed.tzinfo is None:
+        completed = completed.replace(tzinfo=timezone.utc)
+    expires = completed + timedelta(days=FRESHNESS_MAX_AGE_DAYS)
+    warns = expires - timedelta(days=FRESHNESS_WARNING_DAYS)
+    expires_at = expires.astimezone(timezone.utc).isoformat(timespec="seconds")
+    instant = now or datetime.now(timezone.utc)
+    if instant.tzinfo is None:
+        instant = instant.replace(tzinfo=timezone.utc)
+    if instant >= expires:
+        return "EXPIRED", expires_at
+    if instant >= warns:
+        return "EXPIRING", expires_at
+    return "FRESH", expires_at
 
 
 def _convert_scores(score: dict[str, Any]) -> dict[str, Any]:

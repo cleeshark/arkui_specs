@@ -91,6 +91,8 @@ def _archive_job(
         job_dir / "aggregate-report_json-evaluation-report.json",
         _make_eval_report(func_id, revision, gate=gate, findings=findings),
     )
+    # The site export reads report age from the archive manifest's created_at.
+    _write_json(job_dir / "archive-manifest.json", {"created_at": created_at})
     line = {
         "created_at": created_at,
         "func_id": func_id,
@@ -198,6 +200,45 @@ class DynamicArchiveReaderTest(unittest.TestCase):
         )
         self.assertEqual(scores["published_score"], 40)
         self.assertEqual(scores["confidence"], 0.5)
+
+    def test_revision_drift_keeps_confirmed_with_flag(self) -> None:
+        # A report whose revision differs from the observed majority stays
+        # CONFIRMED (score visible) and only carries a revision-drift flag, so a
+        # rolling per-Function evaluation does not mass-EXPIRE on revision churn.
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            ar = Path(tmp) / "automated"
+            ar.mkdir(parents=True)
+            _archive_job(ar, func_id="01-01-01", job_id="a", revision="rev-old",
+                         created_at="2026-08-21T10:00:00+00:00")
+            latest = gs._latest_jobs_by_func(ar)
+            report = gs.build_dynamic_semantic_evaluation(
+                latest, self.functions, observed_revision="rev-new",
+            )
+        entry = report["functions"][0]
+        self.assertEqual(entry["status"], "CONFIRMED")
+        self.assertFalse(entry["revision_current"])
+        self.assertEqual(entry["source_revision"], "rev-old")
+        self.assertEqual(entry["observed_revision"], "rev-new")
+        self.assertIsNotNone(entry["scores"]["published_score"])
+
+    def test_report_freshness_thresholds(self) -> None:
+        from datetime import datetime, timezone
+        from spec_eval.service.site_export import _report_freshness
+        base = datetime(2026, 1, 1, tzinfo=timezone.utc).isoformat()
+        # fresh: 5 days later
+        now = datetime(2026, 1, 6, tzinfo=timezone.utc)
+        self.assertEqual(_report_freshness(base, now=now)[0], "FRESH")
+        # expiring: 25 days later (within the 7-day warning window before 30d)
+        now = datetime(2026, 1, 26, tzinfo=timezone.utc)
+        self.assertEqual(_report_freshness(base, now=now)[0], "EXPIRING")
+        # expired: 40 days later
+        now = datetime(2026, 2, 10, tzinfo=timezone.utc)
+        self.assertEqual(_report_freshness(base, now=now)[0], "EXPIRED")
+        # missing timestamp never hides a report
+        self.assertEqual(_report_freshness(None)[0], "FRESH")
+
+    def test_empty_archive_returns_unavailable(self) -> None:
         spec, semantic, history = gs.load_dynamic_evaluation(
             self.functions, self.features, archive_root=self.archive_root
         )

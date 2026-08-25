@@ -262,15 +262,19 @@ function SemanticReview({review}) {
   return (
     <section className="semanticReview">
       {review.status === 'EXPIRED' && (
-        <div className="evalErrorBox">该 Review 已过期：Review revision {review.staleness?.review_source_revision}，当前静态 revision {review.staleness?.static_source_revision}。</div>
+        <div className="evalErrorBox">该报告已过期：评价于 {review.staleness?.evaluated_at || review.evaluated_at || '-'}，已超过新鲜度期限（{review.expires_at || review.staleness?.expires_at || '-'}）。</div>
+      )}
+      {review.status !== 'EXPIRED' && review.revision_current === false && (
+        <div className="evalNoticeBox">该报告评价于 <code>{String(review.source_revision || '').slice(0, 7)}</code>，当前主流 revision 为 <code>{String(review.observed_revision || '').slice(0, 7)}</code>；分数仍基于其评价时的源码有效，可能未覆盖之后的改动。</div>
       )}
       <div className="detailMetrics">
         <span>状态 <b>{review.status}</b></span>
+        <span>新鲜度 <b>{review.freshness || '-'}</b></span>
         <span>发布分 <b>{score.published_score ?? '-'}</b></span>
         <span>置信度 <b>{score.confidence ?? '-'}</b></span>
         <span>准入 <b>{score.admission ?? '-'}</b></span>
       </div>
-      <p className="evalMuted">人工确认：{review.confirmation?.confirmed_by || '-'} · {review.confirmation?.confirmed_at || '-'}</p>
+      <p className="evalMuted">评价时间：{review.evaluated_at || review.confirmation?.confirmed_at || '-'}</p>
       <p className="evalMuted">置信度表示证据与评价流程的完整性，不是质量得分。</p>
       <RadarChart scores={score.dimensions} rawScore={score.raw_score} publishedScore={score.published_score} />
       <h4>Actionable Criterion details</h4>
@@ -530,7 +534,12 @@ export default function SpecEvaluationPage() {
                           <td className="monoCell">{item.funcId}</td>
                           <td><div className="functionTitle">{item.title || '-'}</div><div className="functionPath">{item.path}</div></td>
                           <td><GateBadge gate={item.gate} /></td>
-                          <td>{item.semanticReview?.status === 'CONFIRMED' ? item.semanticReview.scores?.published_score ?? '-' : item.semanticReview?.status || '-'}</td>
+                          <td>
+                            {item.semanticReview?.status === 'CONFIRMED' ? item.semanticReview.scores?.published_score ?? '-' : item.semanticReview?.status || '-'}
+                            {item.semanticReview?.status === 'CONFIRMED' && item.semanticReview?.revision_current === false && (
+                              <span className="revisionDriftMark" title={`评价于 ${String(item.semanticReview.source_revision || '').slice(0, 7)}，当前 ${String(item.semanticReview.observed_revision || '').slice(0, 7)}`}>*</span>
+                            )}
+                          </td>
                           <td>{item.semanticReview?.status === 'CONFIRMED' ? item.semanticReview.scores?.admission ?? '-' : '-'}</td>
                           <td>{item.featureCount}</td>
                           <td>{item.findingCount}</td>
