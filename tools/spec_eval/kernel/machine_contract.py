@@ -248,6 +248,11 @@ def build_aggregation_correction_machine_contract(
         str(error.get("code", "")) for error in errors if error.get("code")
     ))
     recipes: dict[str, list[str]] = {
+        "MAPPING_CLAIM_UNMAPPED": [
+            "Use criteria[].allowed_claim_ids as the only values selectable for the named Criterion claim_ids list.",
+            "criteria[].claim_refs are lookup keys into claims and must never be written directly to claim_ids; allowed_claim_ids already contains the resolved claims[ref].claim_id values.",
+            "Keep zero or more semantically representative allowed Claim IDs; remove every C:-prefixed lookup key.",
+        ],
         "CRITERION_EVIDENCE_UNKNOWN": [
             "Use only criteria[].evidence_ids from aggregation-correction-context.json for the named Criterion.",
             "When removing or replacing parent Criterion evidence, update every child Finding that references the changed IDs so Finding evidence remains a subset.",
