@@ -196,7 +196,9 @@ def _convert_scores(score: dict[str, Any]) -> dict[str, Any]:
     """Convert score-result.json format to site scores format."""
     dimensions = {}
     for dim in score.get("dimensions", []):
-        dim_id = dim.get("id")
+        # The evaluation report and score-result.json key dimensions by
+        # ``dimension_id``; tolerate a legacy ``id`` as a fallback.
+        dim_id = dim.get("dimension_id") or dim.get("id")
         if isinstance(dim_id, str):
             dimensions[dim_id] = dim.get("score", 0)
     confidence = score.get("confidence", {})

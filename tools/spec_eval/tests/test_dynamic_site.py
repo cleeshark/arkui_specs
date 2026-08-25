@@ -61,7 +61,13 @@ def _make_eval_report(func_id: str, revision: str, *, gate: str, findings: list[
             "published_score": 40,
             "confidence": {"score": 0.5},
             "admission": {"status": "NOT_READY"},
-            "dimensions": [],
+            "dimensions": [
+                {"dimension_id": "correctness", "score": 22},
+                {"dimension_id": "spec_executability", "score": 15},
+                {"dimension_id": "design_quality", "score": 17},
+                {"dimension_id": "compatibility_system_impact", "score": 8},
+                {"dimension_id": "function_modeling", "score": 6},
+            ],
         },
     }
 
@@ -166,7 +172,32 @@ class DynamicArchiveReaderTest(unittest.TestCase):
         self.assertEqual(entry["func_id"], "01-01-01")
         self.assertEqual(entry["status"], "CONFIRMED")
 
-    def test_empty_archive_returns_unavailable(self) -> None:
+    def test_semantic_scores_include_five_dimensions(self) -> None:
+        # Regression: dimensions are keyed by ``dimension_id`` in the archive;
+        # the converter must map them so the radar chart is not empty.
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            ar = Path(tmp) / "automated"
+            ar.mkdir(parents=True)
+            _archive_job(ar, func_id="01-01-01", job_id="j1", revision="rev1",
+                         created_at="2026-08-21T10:00:00+00:00")
+            latest = gs._latest_jobs_by_func(ar)
+            report = gs.build_dynamic_semantic_evaluation(
+                latest, self.functions, observed_revision="rev1"
+            )
+        scores = report["functions"][0]["scores"]
+        self.assertEqual(
+            scores["dimensions"],
+            {
+                "correctness": 22,
+                "spec_executability": 15,
+                "design_quality": 17,
+                "compatibility_system_impact": 8,
+                "function_modeling": 6,
+            },
+        )
+        self.assertEqual(scores["published_score"], 40)
+        self.assertEqual(scores["confidence"], 0.5)
         spec, semantic, history = gs.load_dynamic_evaluation(
             self.functions, self.features, archive_root=self.archive_root
         )
