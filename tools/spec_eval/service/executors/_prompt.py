@@ -65,6 +65,20 @@ def build_executor_prompt(
         "IDs, schema errors, byte size, or hashes; never print the assembled "
         "payload itself.",
     ]
+    # Natural-language judgment prose must be Simplified Chinese so the report,
+    # site, CI comments and downloadable JSON read consistently in Chinese.
+    # Machine identifiers and enums stay verbatim: this only governs free-text
+    # explanation fields, not IDs, conclusions, severities, or evidence paths.
+    language_constraint = (
+        "Write every natural-language judgment field — including message, "
+        "reason, rationale, recommendation, and any explanatory notes — in "
+        "Simplified Chinese (简体中文). Keep all machine identifiers and "
+        "enumerations verbatim and untranslated: rule_id, criterion_id, "
+        "claim_id, EV-/FND- IDs, conclusion, severity, gate, admission, "
+        "func_id, feat_id, and evidence paths. Do not translate quoted source "
+        "identifiers, code symbols, file paths, or section names cited as "
+        "evidence."
+    )
     if correcting:
         correction_base = contract.get("correction_contract", {}).get(
             "base", "published_candidate"
@@ -92,6 +106,7 @@ def build_executor_prompt(
             "Treat the top-level machine_contract and correction_contract as normative.",
             "Write only the structured final result.",
             *tool_output_constraints,
+            language_constraint,
         ]
         if observation_profile == "function_global":
             constraints.extend([
@@ -121,6 +136,7 @@ def build_executor_prompt(
             "Provide semantic aggregation judgments only; treat the top-level machine_contract as normative.",
             "Write only the structured final result.",
             *tool_output_constraints,
+            language_constraint,
         ]
     else:
         constraints = [
@@ -135,6 +151,7 @@ def build_executor_prompt(
             "Provide judgments only; treat the top-level machine_contract as normative.",
             "Write only the structured final result.",
             *tool_output_constraints,
+            language_constraint,
         ]
         if observation_profile == "function_global":
             constraints.extend([
