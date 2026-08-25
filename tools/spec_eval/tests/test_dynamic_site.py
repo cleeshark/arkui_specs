@@ -274,6 +274,7 @@ class WriteEvaluationDataTest(unittest.TestCase):
                 "SEMANTIC_EVAL_SUMMARY_STATIC_JSON": static_dir / "semantic-evaluation-summary.json",
                 "SPEC_EVAL_HISTORY_STATIC_JSON": static_dir / "spec-evaluation-history.json",
                 "SITE_RUNTIME_JSON": static_dir / "site-runtime.json",
+                "SPEC_EVAL_HISTORY_FULL_JSON": Path(tmp) / "spec-evaluation-history-full.json",
             }
             saved = {name: getattr(gs, name) for name in patches}
             for name, value in patches.items():
@@ -291,6 +292,55 @@ class WriteEvaluationDataTest(unittest.TestCase):
             # summary is mirrored into static/data for runtime fetch
             self.assertTrue((static_dir / "spec-evaluation-summary.json").is_file())
             self.assertTrue((static_dir / "spec-evaluation.json").is_file())
+
+
+class DynamicHistoryAccumulationTest(unittest.TestCase):
+    """build_dynamic_history chains the full sidecar so trend accumulates by day."""
+
+    @staticmethod
+    def _spec(revision: str):
+        return {
+            "available": True,
+            "sourceRevision": revision,
+            "functions": [{
+                "func_id": "01-01-01",
+                "title": "Example",
+                "status": "CONFIRMED",
+                "scores": {
+                    "dimensions": {
+                        "correctness": 18, "spec_executability": 16, "design_quality": 14,
+                        "compatibility_system_impact": 7, "function_modeling": 8,
+                    },
+                    "published_score": 63, "confidence": 0.9, "admission": "NOT_READY",
+                },
+                "findings": [], "static_report_reference": {"gate": "pass"},
+            }],
+        }
+
+    def test_accumulates_across_days_via_full_sidecar(self) -> None:
+        from spec_eval.report.site_evaluation_history import build_site_evaluation_history
+
+        with TemporaryDirectory() as tmp:
+            full = Path(tmp) / "spec-evaluation-history-full.json"
+            saved = gs.SPEC_EVAL_HISTORY_FULL_JSON
+            gs.SPEC_EVAL_HISTORY_FULL_JSON = full
+            try:
+                # Seed a sidecar with a snapshot from a prior calendar day.
+                seeded = build_site_evaluation_history(
+                    current_report=self._spec("rev-1"), snapshot_at="2020-01-01T00:00:00Z"
+                )
+                gs._write_json(full, seeded)
+                self.assertEqual(seeded["summary"]["snapshotCount"], 1)
+                # build_dynamic_history reads the sidecar and, because "today" is a
+                # new calendar day, appends a fresh point even for the same revision.
+                accumulated = gs.build_dynamic_history(self._spec("rev-1"))
+            finally:
+                gs.SPEC_EVAL_HISTORY_FULL_JSON = saved
+            self.assertEqual(accumulated["summary"]["snapshotCount"], 2)
+            days = [s["snapshotDay"] for s in accumulated["snapshots"]]
+            self.assertEqual(days[0], "2020-01-01")
+            self.assertNotEqual(days[1], "2020-01-01")
+            self.assertEqual({s["sourceRevision"] for s in accumulated["snapshots"]}, {"rev-1"})
 
 
 if __name__ == "__main__":

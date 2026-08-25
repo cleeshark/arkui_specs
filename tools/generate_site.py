@@ -33,6 +33,11 @@ SEMANTIC_EVAL_SUMMARY_JSON = DATA_DIR / "semantic-evaluation-summary.json"
 SEMANTIC_EVAL_STATIC_JSON = STATIC_DATA_DIR / "semantic-evaluation.json"
 SPEC_EVAL_HISTORY_JSON = DATA_DIR / "spec-evaluation-history.json"
 SPEC_EVAL_ARCHIVE_DIR = ROOT / ".evaluator"
+# Full history sidecar (retains ``activeFindings``) used only to chain the next
+# dynamic accumulation. The served copies strip ``activeFindings`` to keep the
+# JS bundle small; chaining from a stripped file would make every day's delta
+# report all findings as "added", so the un-stripped state is persisted here.
+SPEC_EVAL_HISTORY_FULL_JSON = SPEC_EVAL_ARCHIVE_DIR / "spec-evaluation-history-full.json"
 
 # Dynamic (B-lite) mode: the running CI service writes immutable, per-Function
 # rolling reports under this archive root.  Dynamic mode reads the newest job
@@ -483,15 +488,22 @@ def build_dynamic_semantic_evaluation(
 def build_dynamic_history(spec_evaluation: dict[str, Any]) -> dict[str, Any]:
     """Build the governance history document from the current dynamic snapshot.
 
-    Dynamic mode has no confirmed-review chain, so history reduces to a single
-    INITIAL snapshot derived from the current spec-evaluation document.
+    History accumulates one point per calendar day: the previous full-history
+    sidecar (``SPEC_EVAL_HISTORY_FULL_JSON``, which retains ``activeFindings``)
+    is chained forward so a same-day refresh replaces that day's point and a new
+    day appends a fresh one — even when the source revision has not moved. The
+    sidecar is required for a correct day-over-day Finding delta; without it the
+    served (stripped) copy would report every finding as newly "added".
     """
     from spec_eval.report.site_evaluation_history import build_site_evaluation_history
 
     if not spec_evaluation.get("available"):
         return load_archived_evaluation_history(archive_root=Path("/nonexistent"))
+    previous_history = _read_json(SPEC_EVAL_HISTORY_FULL_JSON)
     try:
-        return build_site_evaluation_history(current_report=spec_evaluation)
+        return build_site_evaluation_history(
+            current_report=spec_evaluation, previous_history=previous_history
+        )
     except Exception:  # noqa: BLE001 - history is best-effort in dynamic mode
         return load_archived_evaluation_history(archive_root=Path("/nonexistent"))
 
@@ -575,6 +587,11 @@ def write_evaluation_data(
     _write_json(SEMANTIC_EVAL_SUMMARY_STATIC_JSON, semantic_summary)
     _write_json(SPEC_EVAL_HISTORY_STATIC_JSON, history_document)
     _write_json(SITE_RUNTIME_JSON, {"schemaVersion": 1, "mode": mode})
+    # Persist the un-stripped history (with ``activeFindings``) so the next
+    # dynamic accumulation can chain forward and compute a correct day-over-day
+    # Finding delta. Not served to the browser.
+    if mode == "dynamic":
+        _write_json(SPEC_EVAL_HISTORY_FULL_JSON, evaluation_history)
     written += [
         SPEC_EVAL_SUMMARY_STATIC_JSON,
         SEMANTIC_EVAL_SUMMARY_STATIC_JSON,

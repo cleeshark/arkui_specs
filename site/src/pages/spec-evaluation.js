@@ -90,7 +90,20 @@ function TrendChart({snapshots}) {
         return <g key={value}><line x1={left} y1={y} x2={width - right} y2={y} className="trendGrid" /><text x={left - 8} y={y + 4} textAnchor="end" className="trendAxisLabel">{value}</text></g>;
       })}
       {points.length > 1 && <polyline points={points.map(({x, y}) => `${x},${y}`).join(' ')} className="trendLine" />}
-      {points.map(({x, y}, index) => <g key={snapshots[index].sourceRevision}><circle cx={x} cy={y} r="5" className="trendPoint" /><text x={x} y={y - 11} textAnchor="middle" className="trendValueLabel">{values[index]}</text><text x={x} y={height - 12} textAnchor="middle" className="trendRevisionLabel">{snapshots[index].sourceRevision.slice(0, 7)}</text></g>)}
+      {points.map(({x, y}, index) => {
+        const snap = snapshots[index];
+        const day = snap.snapshotDay || (snap.snapshotAt ? String(snap.snapshotAt).slice(0, 10) : '');
+        const dayLabel = day ? day.slice(5) : (snap.sourceRevision || '').slice(0, 7);
+        const rev = (snap.sourceRevision || '').slice(0, 7);
+        return (
+          <g key={day || snap.sourceRevision || index}>
+            <title>{`${day || '—'} · ${rev}`}</title>
+            <circle cx={x} cy={y} r="5" className="trendPoint" />
+            <text x={x} y={y - 11} textAnchor="middle" className="trendValueLabel">{values[index]}</text>
+            <text x={x} y={height - 12} textAnchor="middle" className="trendRevisionLabel">{dayLabel}</text>
+          </g>
+        );
+      })}
     </svg>
   );
 }

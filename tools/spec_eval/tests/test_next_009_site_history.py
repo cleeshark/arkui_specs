@@ -72,11 +72,12 @@ class Next009SiteHistoryTest(unittest.TestCase):
 
     def test_builds_initial_compact_snapshot_and_schema_validates(self) -> None:
         report = self.report("rev-1", [self.finding("FND-1"), self.finding("SEM-1", source="semantic")])
-        result = build_site_evaluation_history(current_report=report)
+        result = build_site_evaluation_history(current_report=report, snapshot_at="2026-08-20T00:00:00Z")
         self.assertEqual(result["summary"]["comparisonStatus"], "INITIAL")
         self.assertEqual(result["summary"]["snapshotCount"], 1)
         self.assertEqual(result["summary"]["currentFindingCount"], 2)
         self.assertEqual(result["snapshots"][0]["severityCounts"]["Major"], 2)
+        self.assertEqual(result["snapshots"][0]["snapshotDay"], "2026-08-20")
         self.assertEqual(validate_site_evaluation_history(result, self.schemas_root), [])
         self.assertNotIn("activeFindings", site_history_data(result))
 
@@ -86,13 +87,15 @@ class Next009SiteHistoryTest(unittest.TestCase):
             self.finding("FND-resolved"),
             self.finding("SEM-change", source="semantic", severity="Major", message="old"),
         ])
-        history = build_site_evaluation_history(current_report=first)
+        history = build_site_evaluation_history(current_report=first, snapshot_at="2026-08-20T00:00:00Z")
         second = self.report("rev-2", [
             self.finding("FND-stable"),
             self.finding("FND-added", severity="Minor"),
             self.finding("SEM-change", source="semantic", severity="Critical", message="new"),
         ], published=55)
-        result = build_site_evaluation_history(current_report=second, previous_history=history)
+        result = build_site_evaluation_history(
+            current_report=second, previous_history=history, snapshot_at="2026-08-21T00:00:00Z"
+        )
         self.assertEqual(result["summary"]["comparisonStatus"], "REVISION_CHANGED")
         self.assertEqual(result["summary"]["snapshotCount"], 2)
         self.assertEqual(result["recentDelta"]["summary"], {
@@ -102,9 +105,35 @@ class Next009SiteHistoryTest(unittest.TestCase):
 
     def test_same_revision_and_fingerprint_is_idempotent(self) -> None:
         report = self.report("rev-1", [self.finding("FND-1")])
-        first = build_site_evaluation_history(current_report=report)
-        second = build_site_evaluation_history(current_report=report, previous_history=first)
+        first = build_site_evaluation_history(current_report=report, snapshot_at="2026-08-20T09:00:00Z")
+        second = build_site_evaluation_history(
+            current_report=report, previous_history=first, snapshot_at="2026-08-20T18:00:00Z"
+        )
         self.assertEqual(first, second)
+
+    def test_same_day_new_content_replaces_the_day_point(self) -> None:
+        first = self.report("rev-1", [self.finding("FND-1")], published=60)
+        history = build_site_evaluation_history(current_report=first, snapshot_at="2026-08-20T08:00:00Z")
+        second = self.report("rev-2", [self.finding("FND-1"), self.finding("FND-2")], published=50)
+        result = build_site_evaluation_history(
+            current_report=second, previous_history=history, snapshot_at="2026-08-20T20:00:00Z"
+        )
+        # Same calendar day -> one point (latest wins), not two.
+        self.assertEqual(result["summary"]["snapshotCount"], 1)
+        self.assertEqual(result["snapshots"][-1]["sourceRevision"], "rev-2")
+        self.assertEqual(result["snapshots"][-1]["publishedScoreAverage"], 50)
+
+    def test_new_day_appends_point_even_when_revision_unchanged(self) -> None:
+        report = self.report("rev-1", [self.finding("FND-1")])
+        day1 = build_site_evaluation_history(current_report=report, snapshot_at="2026-08-20T08:00:00Z")
+        # Same revision, same content, but a new calendar day -> a fresh point so
+        # a frozen revision reads as a continuous line, not a single dot.
+        day2 = build_site_evaluation_history(
+            current_report=report, previous_history=day1, snapshot_at="2026-08-21T08:00:00Z"
+        )
+        self.assertEqual(day2["summary"]["snapshotCount"], 2)
+        self.assertEqual([s["snapshotDay"] for s in day2["snapshots"]], ["2026-08-20", "2026-08-21"])
+        self.assertEqual({s["sourceRevision"] for s in day2["snapshots"]}, {"rev-1"})
 
     def test_cli_updates_history_and_generator_loader_reads_it(self) -> None:
         with TemporaryDirectory() as temporary:
