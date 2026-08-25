@@ -343,7 +343,7 @@ class JudgmentFlow:
         normalize: Callable[..., NormalizationResult],
         validate: Callable[..., list[TypedError]],
         base_contract: dict[str, Any],
-        on_publish: Callable[[dict[str, Any]], None],
+        on_publish: Callable[[dict[str, Any]], bool | None],
         fingerprint: str,
         stage_event: str,
         reproject: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
@@ -374,17 +374,20 @@ class JudgmentFlow:
         def projected(document: dict[str, Any]) -> dict[str, Any]:
             return reproject(document) if reproject is not None else document
 
-        def publish(document: dict[str, Any], catalog: list[dict[str, Any]]) -> None:
+        def publish(document: dict[str, Any], catalog: list[dict[str, Any]]) -> bool:
             document = projected(document)
             _write_json(output_path, document)
+            publish_succeeded = on_publish(document)
+            if publish_succeeded is False:
+                return False
             SS.set_work_item_state(self.ctx.run_dir, work.work_item_id, SS.VALIDATED)
-            on_publish(document)
             candidate_path.unlink(missing_ok=True)
             errors_path.unlink(missing_ok=True)
             self.events.append(self.ctx.job_id, stage_event, {
                 "work_item_id": work.work_item_id,
                 "evidence_catalog_size": len(catalog),
             })
+            return True
 
         def repair_after_model_correction(
             document: dict[str, Any], typed: list[TypedError]
@@ -518,8 +521,10 @@ class JudgmentFlow:
             else:
                 typed = typed_of(normalization.document)
                 if not typed:
-                    publish(normalization.document, normalization.evidence_catalog)
-                    return JudgmentOutcome(C.STATUS_COMPLETED, published=True)
+                    published = publish(
+                        normalization.document, normalization.evidence_catalog,
+                    )
+                    return JudgmentOutcome(C.STATUS_COMPLETED, published=published)
                 _write_json(candidate_path, normalization.document)
                 _write_json(errors_path, {
                     "input_fingerprint": fingerprint,
@@ -634,15 +639,18 @@ class JudgmentFlow:
             if changes:
                 remaining = typed_of(corrected_document)
                 if not remaining:
-                    publish(
+                    published = publish(
                         corrected_document,
                         _published_evidence_catalog(corrected_document),
                     )
-                    self.events.append(self.ctx.job_id, "candidate_deterministic_repaired", {
-                        "work_item_id": work.work_item_id,
-                        "changes": changes,
-                    })
-                    return JudgmentOutcome(C.STATUS_COMPLETED, published=True)
+                    if published:
+                        self.events.append(
+                            self.ctx.job_id, "candidate_deterministic_repaired", {
+                                "work_item_id": work.work_item_id,
+                                "changes": changes,
+                            },
+                        )
+                    return JudgmentOutcome(C.STATUS_COMPLETED, published=published)
                 # Persist the repaired candidate and send only semantic or
                 # evidence errors to the model.  Deterministic errors that
                 # remain unresolved are never delegated to the model.
@@ -799,11 +807,13 @@ class JudgmentFlow:
                         )
                         corrected_candidate_for_failure = corrected_payload
                     if not typed:
-                        publish(
+                        published = publish(
                             corrected_payload,
                             normalization.evidence_catalog,
                         )
-                        return JudgmentOutcome(C.STATUS_COMPLETED, published=True)
+                        return JudgmentOutcome(
+                            C.STATUS_COMPLETED, published=published,
+                        )
                     normalization = NormalizationResult(
                         document=corrected_payload,
                         errors=typed,
@@ -821,11 +831,11 @@ class JudgmentFlow:
                     )
                     corrected_candidate_for_failure = corrected_payload
                 if not typed:
-                    publish(
+                    published = publish(
                         corrected_payload,
                         _published_evidence_catalog(corrected_payload),
                     )
-                    return JudgmentOutcome(C.STATUS_COMPLETED, published=True)
+                    return JudgmentOutcome(C.STATUS_COMPLETED, published=published)
                 normalization = NormalizationResult(
                     document=None,
                     errors=typed,
@@ -873,8 +883,10 @@ class JudgmentFlow:
             normalization.document, typed_of(normalization.document),
         )
         if not typed:
-            publish(corrected_document, normalization.evidence_catalog)
-            return JudgmentOutcome(C.STATUS_COMPLETED, published=True)
+            published = publish(
+                corrected_document, normalization.evidence_catalog,
+            )
+            return JudgmentOutcome(C.STATUS_COMPLETED, published=published)
         _write_json(candidate_path, corrected_document)
         _write_json(errors_path, {
             "input_fingerprint": fingerprint,

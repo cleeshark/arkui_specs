@@ -31,6 +31,9 @@ SERVICE_OWNERSHIP_PREFIX = "service.unresolved-ownership."
 FINDING_EVIDENCE_WARNING_PREFIX = (
     "service-warning:FINDING_EVIDENCE_UNKNOWN:"
 )
+NV_MISSING_EVIDENCE_WARNING_PREFIX = (
+    "service-warning:NV_MISSING_EVIDENCE_RECOVERED:"
+)
 OUTCOME_POLICY_BASIS_CRITERIA = K.POLICY_BASIS_CRITERION_IDS
 FINDING_SEVERITY_TO_PUBLISHED = {
     "CRITICAL": "Critical",
@@ -797,6 +800,7 @@ def normalize_aggregation(
     canonical_ids: set[str] = set()
     findings_by_owner: dict[str, list[dict[str, Any]]] = {}
     recovered_finding_evidence: list[dict[str, Any]] = []
+    recovered_missing_evidence: list[dict[str, Any]] = []
     for criterion_id, template_row in template_results.items():
         row = judgment_by_criterion.get(criterion_id, {})
         conclusion = row.get("conclusion")
@@ -935,6 +939,7 @@ def normalize_aggregation(
             for finding in findings:
                 finding["conclusion"] = conclusion
         conclusion_basis = policy_judgment.get(criterion_id, {})
+        policy_derived = False
         if criterion_id in OUTCOME_POLICY_BASIS_CRITERIA and policy_basis_valid:
             derived_conclusion = K.expected_policy_conclusion(
                 conclusion_basis.get("content_status"),
@@ -942,6 +947,7 @@ def normalize_aggregation(
                 conclusion_basis.get("conflict_scope"),
             )
             if derived_conclusion is not None:
+                policy_derived = True
                 if conclusion != derived_conclusion:
                     changes.append(
                         f"criterion_results[{criterion_id}].conclusion derived from "
@@ -963,6 +969,22 @@ def normalize_aggregation(
         if isinstance(applicability_reason, str) and applicability_reason.strip():
             criterion_result["applicability_reason"] = applicability_reason
         missing_evidence = row.get("missing_evidence")
+        if (
+            conclusion == K.NOT_VERIFIABLE
+            and policy_derived
+            and not str(missing_evidence or "").strip()
+        ):
+            policy_reason = conclusion_basis.get("reason")
+            if isinstance(policy_reason, str) and policy_reason.strip():
+                missing_evidence = policy_reason.strip()
+                recovered_missing_evidence.append({
+                    "criterion_id": criterion_id,
+                    "source": "outcome_policy_bases.reason",
+                })
+                changes.append(
+                    f"criterion_results[{criterion_id}].missing_evidence "
+                    "recovered from outcome_policy_bases.reason"
+                )
         if isinstance(missing_evidence, str) and missing_evidence.strip():
             criterion_result["missing_evidence"] = missing_evidence
         criterion_results.append(criterion_result)
@@ -1045,7 +1067,10 @@ def normalize_aggregation(
         for note in (raw_notes if isinstance(raw_notes, list) else [])
         if not (
             isinstance(note, str)
-            and note.startswith(FINDING_EVIDENCE_WARNING_PREFIX)
+            and note.startswith((
+                FINDING_EVIDENCE_WARNING_PREFIX,
+                NV_MISSING_EVIDENCE_WARNING_PREFIX,
+            ))
         )
     ]
     if recovered_finding_evidence:
@@ -1053,6 +1078,16 @@ def normalize_aggregation(
             FINDING_EVIDENCE_WARNING_PREFIX
             + json.dumps(
                 {"findings": recovered_finding_evidence},
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+        )
+    if recovered_missing_evidence:
+        notes.append(
+            NV_MISSING_EVIDENCE_WARNING_PREFIX
+            + json.dumps(
+                {"criteria": recovered_missing_evidence},
                 ensure_ascii=False,
                 sort_keys=True,
                 separators=(",", ":"),

@@ -9,7 +9,10 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from spec_eval.kernel.errors import TypedError, is_post_correction_warning
-from spec_eval.kernel.machine_contract import build_correction_machine_contract
+from spec_eval.kernel.machine_contract import (
+    build_aggregation_correction_machine_contract,
+    build_correction_machine_contract,
+)
 from spec_eval.kernel.normalize import NormalizationResult
 from spec_eval.kernel.schema_gen import build_envelope_schema
 from spec_eval.service.executors import contract as C
@@ -171,6 +174,63 @@ class CorrectionFlowTest(unittest.TestCase):
         self.assertIn(
             "candidate_deterministic_repaired",
             [event_type for event_type, _payload in events.rows],
+        )
+
+    def test_failed_publish_callback_does_not_mark_work_validated(self) -> None:
+        class Executor:
+            def execute(self, work, emit, cancel=None):
+                return C.ExecutionResult(
+                    status=C.STATUS_COMPLETED,
+                    observation={"criterion_results": []},
+                )
+
+        class Events:
+            def append(self, job_id, event_type, payload):
+                pass
+
+        with tempfile.TemporaryDirectory() as temporary:
+            run_dir = Path(temporary)
+            (run_dir / "work-items.json").write_text(
+                json.dumps({"items": []}), encoding="utf-8",
+            )
+            work = C.WorkItemInput(
+                job_id="job", func_id="01-01-01", run_id="run-1",
+                work_item_id="aggregation:final",
+                work_item={"observation_type": "aggregation"},
+                run_dir=str(run_dir), input_paths=(),
+                executor_result_path=str(run_dir / "aggregation.result.json"),
+                repo_root=str(run_dir), skill_version="0.3.0",
+                protocol_version="0.2.0",
+                prompt_extras={"payload_kind": "aggregation"},
+            )
+            flow = JudgmentFlow(
+                ctx=SimpleNamespace(
+                    run_dir=run_dir, job_id="job", run_id="run-1",
+                ),
+                executor=Executor(), jobs=SimpleNamespace(), events=Events(),
+            )
+
+            outcome = flow.run(
+                work=work,
+                output_path=run_dir / "aggregation.json",
+                template={},
+                normalize=lambda document: NormalizationResult(document=document),
+                validate=lambda document: [],
+                base_contract=work.prompt_extras,
+                on_publish=lambda document: False,
+                fingerprint="fingerprint",
+                stage_event="aggregation_completed",
+            )
+
+            run_state = json.loads(
+                (run_dir / "run-state.json").read_text(encoding="utf-8")
+            )
+
+        self.assertEqual(outcome.status, C.STATUS_COMPLETED)
+        self.assertFalse(outcome.published)
+        self.assertNotEqual(
+            run_state["pseudo_work_item_states"]["aggregation:final"],
+            "VALIDATED",
         )
 
     def test_duplicate_finding_key_exposes_all_coordinated_patch_paths(self) -> None:
@@ -502,8 +562,12 @@ class CorrectionFlowTest(unittest.TestCase):
                 "O-2": {"evidence_ids": ["EV-2"]},
             },
             "claims": {
-                "C-1-ref": {"evidence_ids": ["EV-1"]},
-                "C-2-ref": {"evidence_ids": ["EV-2"]},
+                "C-1-ref": {
+                    "claim_id": "Feat-01/AC-1", "evidence_ids": ["EV-1"],
+                },
+                "C-2-ref": {
+                    "claim_id": "Feat-02/AC-1", "evidence_ids": ["EV-2"],
+                },
             },
             "units": {
                 "U-1": {"evidence_ids": ["EV-1"]},
@@ -532,6 +596,9 @@ class CorrectionFlowTest(unittest.TestCase):
         )
         self.assertEqual(set(projected["observations"]), {"O-1"})
         self.assertEqual(set(projected["claims"]), {"C-1-ref"})
+        self.assertEqual(
+            projected["criteria"][0]["allowed_claim_ids"], ["Feat-01/AC-1"]
+        )
         self.assertEqual(set(projected["units"]), {"U-1"})
         self.assertEqual(set(projected["evidence_catalog"]), {"EV-1"})
 
@@ -627,6 +694,48 @@ class CorrectionFlowTest(unittest.TestCase):
             self.assertIn(
                 "CRITERION_EVIDENCE_UNKNOWN", machine["repair_recipes"]
             )
+
+    def test_mapping_correction_context_resolves_claim_refs(self) -> None:
+        candidate = {
+            "criterion_results": [{
+                "criterion_id": "C-1",
+                "claim_ids": ["C:feature:Feat-01/Feat-01/AC-1"],
+                "findings": [],
+            }],
+        }
+        context = {
+            "criteria": [{
+                "criterion_id": "C-1",
+                "claim_refs": ["C:feature:Feat-01/Feat-01/AC-1"],
+                "observation_refs": [], "unit_refs": [], "evidence_ids": [],
+            }],
+            "claims": {
+                "C:feature:Feat-01/Feat-01/AC-1": {
+                    "claim_id": "Feat-01/AC-1",
+                    "evidence_ids": [],
+                },
+            },
+            "observations": {}, "units": {}, "evidence_catalog": {},
+        }
+        error = TypedError(
+            "MAPPING_CLAIM_UNMAPPED",
+            "aggregation.criterion_results[C-1].claim_ids",
+            entity_type="criterion", entity_id="C-1",
+        ).to_dict()
+
+        projected = build_aggregation_correction_context(
+            context, candidate, [error]
+        )
+
+        self.assertEqual(
+            projected["criteria"][0]["allowed_claim_ids"], ["Feat-01/AC-1"]
+        )
+        machine = build_aggregation_correction_machine_contract(
+            typed_errors=[error], target_criterion_ids=["C-1"],
+        )
+        recipe = " ".join(machine["repair_recipes"]["MAPPING_CLAIM_UNMAPPED"])
+        self.assertIn("allowed_claim_ids", recipe)
+        self.assertIn("must never be written directly", recipe)
 
     def test_aggregation_duplicate_key_prompt_allows_keys_and_owner_refs(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

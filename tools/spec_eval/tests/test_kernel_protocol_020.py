@@ -39,6 +39,7 @@ from spec_eval.kernel.machine_contract import (
 )
 from spec_eval.kernel.normalize import (
     FINDING_EVIDENCE_WARNING_PREFIX,
+    NV_MISSING_EVIDENCE_WARNING_PREFIX,
     OUTCOME_POLICY_BASIS_CRITERIA,
     assemble_semantic_result,
     normalize_aggregation,
@@ -2351,6 +2352,69 @@ class PolicyConclusionDerivationTest(unittest.TestCase):
                 result, expected,
                 f"({content}, {evidence}, {conflict}) → expected {expected}, got {result}",
             )
+
+    def test_policy_nv_missing_evidence_is_recovered_with_warning(self) -> None:
+        criterion_id = "COMPATIBILITY-MULTI-DEVICE"
+        policy_reason = (
+            "Android and iOS deployment evidence is unavailable in the frozen input."
+        )
+        judgment = self._base_judgment(policy_overrides=[{
+            "criterion_id": criterion_id,
+            "content_status": "PRESENT",
+            "evidence_status": "UNAVAILABLE",
+            "conflict_scope": "NONE",
+            "reason": policy_reason,
+        }])
+        result = normalize_aggregation(
+            self._template(), judgment,
+            source_observation_ids=[],
+            aggregation_context=_compact_context(self._aggregation_context()),
+        )
+
+        criterion = next(
+            row for row in result.document["criterion_results"]
+            if row["criterion_id"] == criterion_id
+        )
+        self.assertEqual(criterion["conclusion"], "NOT_VERIFIABLE")
+        self.assertEqual(criterion["missing_evidence"], policy_reason)
+        self.assertTrue(any(
+            isinstance(note, str)
+            and note.startswith(NV_MISSING_EVIDENCE_WARNING_PREFIX)
+            for note in result.document["notes"]
+        ))
+        errors = validate_aggregation_document(
+            result.document, criterion_order=list(CRITERIA),
+        )
+        warnings = [
+            error for error in errors
+            if error.code == "NV_MISSING_EVIDENCE_RECOVERED"
+        ]
+        self.assertEqual(len(warnings), 1)
+        self.assertTrue(is_non_blocking_warning(warnings[0]))
+        self.assertNotIn("GAP_MISSING_FOR_NV", {error.code for error in errors})
+        confidence = compute_confidence(warnings)
+        self.assertEqual(confidence["confidence_score"], 95)
+
+    def test_unrecoverable_aggregation_nv_gap_is_model_correctable(self) -> None:
+        result = normalize_aggregation(
+            self._template(), self._base_judgment(),
+            source_observation_ids=[],
+            aggregation_context=_compact_context(self._aggregation_context()),
+        )
+        criterion = next(
+            row for row in result.document["criterion_results"]
+            if row["criterion_id"] == "CORRECTNESS-SOURCE-SUPPORT"
+        )
+        criterion["conclusion"] = "NOT_VERIFIABLE"
+        criterion.pop("missing_evidence", None)
+
+        errors = validate_aggregation_document(
+            result.document, criterion_order=list(CRITERIA),
+        )
+
+        gaps = [error for error in errors if error.code == "GAP_MISSING_FOR_NV"]
+        self.assertEqual(len(gaps), 1)
+        self.assertEqual(gaps[0].repairability, "MODEL_CORRECTION")
 
     def test_mixed_na_returns_none(self) -> None:
         """Mixed NOT_APPLICABLE is invalid and returns None."""

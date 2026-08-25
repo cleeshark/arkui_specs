@@ -143,14 +143,14 @@ def run_aggregation(
 
     final_status: dict[str, Any] = {"ok": True, "errors": [], "confidence": None}
 
-    def _publish(document: dict[str, Any]) -> None:
+    def _publish(document: dict[str, Any]) -> bool:
         typed_errors = _validate_existing(document)
         if has_hard_errors(typed_errors):
             final_status.update(
                 ok=False,
                 errors=[f"{e.code}: {e.expected or e.actual}" for e in typed_errors],
             )
-            return
+            return False
         final_status["errors"] = [
             f"{error.code}: {error.expected or error.actual}"
             for error in typed_errors
@@ -169,13 +169,14 @@ def run_aggregation(
             staged_stage.assemble_semantic(ctx, runner=runner)
         except staged_stage.StagedStageError as exc:
             final_status.update(ok=False, errors=[str(exc)])
-            return
+            return False
         try:
             verdict = staged_stage.validate_final(ctx, runner=runner)
         except staged_stage.StagedStageError as exc:
             verdict = staged_stage.ValidationResult(ok=False, errors=(str(exc),))
         if not verdict.ok:
-            final_status["errors"] = list(verdict.errors)
+            final_status.update(ok=False, errors=list(verdict.errors))
+            return False
         attempts.record_checkpoint(
             Attempt(
                 attempt_id=make_job_id(),
@@ -190,6 +191,7 @@ def run_aggregation(
                 artifact_dir=str(ctx.run_dir),
             )
         )
+        return True
 
     # design D2 artifact reuse: an already-validated aggregation document is
     # re-assembled without a new executor call (a stale semantic-result or a

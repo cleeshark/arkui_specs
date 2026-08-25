@@ -131,6 +131,22 @@ def build_aggregation_correction_context(
             field: copy.deepcopy(row.get(field))
             for field in _EVIDENCE_CRITERION_FIELDS if field in row
         } for row in criteria]
+    else:
+        source_claims = aggregation_context.get("claims", {})
+        if not isinstance(source_claims, dict):
+            source_claims = {}
+        for row in criteria:
+            allowed_claim_ids: list[str] = []
+            for claim_ref in _strings(row.get("claim_refs")):
+                claim = source_claims.get(claim_ref, {})
+                claim_id = claim.get("claim_id") if isinstance(claim, dict) else None
+                if (
+                    isinstance(claim_id, str)
+                    and claim_id
+                    and claim_id not in allowed_claim_ids
+                ):
+                    allowed_claim_ids.append(claim_id)
+            row["allowed_claim_ids"] = allowed_claim_ids
 
     refs_by_table = {
         "observations": {
