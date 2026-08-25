@@ -25,7 +25,7 @@
 #   CI_DYNAMIC_SITE          set to 0 to disable the dynamic site data watcher (default: enabled). The watcher
 #                            refreshes specs/site/{static,build}/data/*.json from the newest archived reports so
 #                            a browser reload shows the latest report state without a rebuild.
-#   CI_DYNAMIC_SITE_POLL     archive-log poll interval in seconds for the watcher (default 10)
+#   CI_DYNAMIC_SITE_POLL     archive-log poll interval in seconds for the watcher (default 60)
 #   EXTRA_WORKER_ARGS       extra flags forwarded to ci_worker (e.g. "--dry-run")
 set -euo pipefail
 
@@ -72,7 +72,7 @@ trap cleanup EXIT INT TERM
 # set CI_DYNAMIC_SITE=0 to opt out (e.g. to keep the site on the frozen static
 # snapshot). CI_DYNAMIC_SITE_POLL overrides the archive-log poll interval.
 if [ "${CI_DYNAMIC_SITE:-1}" = "1" ]; then
-    DYN_POLL="${CI_DYNAMIC_SITE_POLL:-10}"
+    DYN_POLL="${CI_DYNAMIC_SITE_POLL:-60}"
     echo "[ci_service] starting dynamic site data watcher (poll ${DYN_POLL}s)"
     python3 specs/tools/generate_site.py --mode dynamic --watch --poll-interval "$DYN_POLL" &
     SITE_DATA_PID=$!

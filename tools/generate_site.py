@@ -773,8 +773,8 @@ def main() -> int:
     parser.add_argument(
         "--poll-interval",
         type=float,
-        default=10.0,
-        help="seconds between archive-log checks in --watch mode (default 10).",
+        default=60.0,
+        help="seconds between archive-log checks in --watch mode (default 60).",
     )
     args = parser.parse_args()
     if args.watch:

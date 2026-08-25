@@ -179,7 +179,7 @@ python3 tools/generate_site.py --mode dynamic
 python3 tools/generate_site.py --mode dynamic --data-only
 
 # 常驻监听归档日志，任何新归档后自动刷新（供 CI 服务拉起）
-python3 tools/generate_site.py --mode dynamic --watch --poll-interval 10
+python3 tools/generate_site.py --mode dynamic --watch --poll-interval 60
 ```
 
 `ci_service.sh` 默认拉起上面的 `--watch` 进程（`CI_DYNAMIC_SITE=1`），并让 merge 时的整站重建带上 `--site-mode dynamic`，使运行时描述符与数据文件保持一致：
@@ -187,7 +187,7 @@ python3 tools/generate_site.py --mode dynamic --watch --poll-interval 10
 | 环境变量 | 默认 | 说明 |
 | --- | --- | --- |
 | `CI_DYNAMIC_SITE` | `1` | 设为 `0` 关闭动态数据 watcher，站点停留在静态快照 |
-| `CI_DYNAMIC_SITE_POLL` | `10` | watcher 检查归档日志的间隔（秒） |
+| `CI_DYNAMIC_SITE_POLL` | `60` | watcher 检查归档日志的间隔（秒） |
 
 拓扑说明：`service_cli`（`127.0.0.1:8790`）不对外暴露，浏览器从不直连它；动态刷新完全基于与 CI 服务**同机共享的归档文件系统**，因此无跨域、不暴露内部服务接口。
 
