@@ -16,6 +16,7 @@ from typing import Any
 from urllib.parse import urlsplit
 
 from ..domain.errors import DuplicateJobError, IllegalTransitionError, JobNotFoundError
+from ..workspace.manager import WorkspaceError
 from . import serializers
 from .security import safe_resolve, token_ok
 
@@ -171,6 +172,17 @@ def _route_jobs(method: str, rest: list[str], query: dict[str, str], body: bytes
         except (JobNotFoundError, IllegalTransitionError) as exc:
             return _error(409, str(exc))
         return Response.json(200, {"job_id": job_id, "status": status})
+
+    # /api/jobs/{id}/retry-latest-specs
+    if action == "retry-latest-specs" and len(rest) == 2 and method == "POST":
+        try:
+            status, specs_revision = app.retry_latest_specs(job_id)
+        except (JobNotFoundError, IllegalTransitionError, WorkspaceError) as exc:
+            return _error(409, str(exc))
+        return Response.json(
+            200,
+            {"job_id": job_id, "status": status, "specs_revision": specs_revision},
+        )
 
     # /api/jobs/{id}/artifacts/{kind}
     if action == "artifacts" and len(rest) == 3 and method == "GET":
