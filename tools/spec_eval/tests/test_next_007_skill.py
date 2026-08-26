@@ -561,6 +561,43 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             any("secondary_criterion_ids derived" in change for change in changes)
         )
 
+    def test_aggregation_contract_recovers_missing_primary_from_owned_finding(
+        self,
+    ) -> None:
+        finding_id = semantic_finding_id(
+            func_id="01-01-01",
+            defect_key="global.design.detached-prefreeze-drift",
+            criterion_id="DESIGN-DECISION-QUALITY",
+            claim_id="design/ADR-6",
+        )
+        repaired, changes = repair_aggregation_contract({
+            "func_id": "01-01-01",
+            "defect_ownership": [{
+                "defect_key": "global.design.detached-prefreeze-drift",
+                "primary_criterion_id": None,
+                "finding_ids": [finding_id],
+                "secondary_criterion_ids": ["DESIGN-DECISION-QUALITY"],
+            }],
+            "criterion_results": [{
+                "criterion_id": "DESIGN-DECISION-QUALITY",
+                "findings": [{
+                    "finding_id": finding_id,
+                    "criterion_id": "DESIGN-DECISION-QUALITY",
+                    "claim_id": "design/ADR-6",
+                }],
+            }],
+        })
+        owner = repaired["defect_ownership"][0]
+        self.assertEqual(
+            owner["primary_criterion_id"], "DESIGN-DECISION-QUALITY"
+        )
+        self.assertEqual(owner["secondary_criterion_ids"], [])
+        self.assertTrue(any(
+            "primary_criterion_id inferred as DESIGN-DECISION-QUALITY"
+            in change
+            for change in changes
+        ))
+
     def test_aggregation_contract_rejects_canonical_identity_collisions(self) -> None:
         with self.assertRaisesRegex(ValueError, "deterministic Finding ID collision"):
             repair_aggregation_contract({
