@@ -841,9 +841,41 @@ class JudgmentFlow:
         if failure == "awaiting":
             return JudgmentOutcome(C.STATUS_AWAITING, result.error if result else None)
         if failure is not None:
+            # The correction executor itself failed (e.g. it reported that no
+            # legal patch exists for the residual).  The single correction turn
+            # has still been spent, so for the final report degrade to a usable
+            # artifact when the pre-correction candidate is structurally usable
+            # and its residuals are all non-HARD/non-fatal, instead of leaving
+            # the work item stuck without a published report.
+            if allow_degraded_publish:
+                try:
+                    pending_candidate = json.loads(
+                        candidate_path.read_text(encoding="utf-8")
+                    )
+                except (OSError, json.JSONDecodeError):
+                    pending_candidate = None
+                if pending_candidate is not None:
+                    residual = typed_of(projected(pending_candidate))
+                    if degraded_publish(
+                        projected(pending_candidate),
+                        _published_evidence_catalog(pending_candidate),
+                        residual,
+                    ):
+                        self.events.append(
+                            self.ctx.job_id, "correction_executor_failed_degraded", {
+                                "work_item_id": work.work_item_id,
+                                "error": failure,
+                            },
+                        )
+                        return JudgmentOutcome(C.STATUS_COMPLETED, published=True)
+            SS.set_work_item_state(
+                self.ctx.run_dir, work.work_item_id,
+                SS.CORRECTION_INVALID_TERMINAL,
+            )
             return self._fail(
                 "semantic_failed",
                 {"work_item_id": work.work_item_id, "attempt_type": "correct",
+                 "state": SS.CORRECTION_INVALID_TERMINAL,
                  "error": failure},
                 failure,
             )
