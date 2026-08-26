@@ -328,7 +328,7 @@ def validate_observation_document(
 
     if expected_claims and observed_claims != set(expected_claims):
         errors.append(_err(
-            "OBSERVATION_CLAIM_COVERAGE_INCOMPLETE", f"{label}.observations.claim_ids",
+            "OBSERVATION_CLAIM_COVERAGE_INCOMPLETE", f"{label}.observations",
             entity_type="document",
             expected=f"exactly {expected_claims}",
             actual=f"missing={sorted(set(expected_claims) - observed_claims)} "
