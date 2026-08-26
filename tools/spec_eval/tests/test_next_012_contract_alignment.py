@@ -607,15 +607,22 @@ class ObservationFlowTest(_StagedRunIntegrationTest):
         ]
         self.assertIn("correction_deterministic_repaired", event_types)
 
-    def test_empty_observation_claim_ids_is_service_terminal_without_model(self) -> None:
+    def test_empty_observation_claim_ids_gets_one_model_correction(self) -> None:
+        # A service error the deterministic normalizer cannot repair (an
+        # observation with no claim_ids) is now reclassified into the single
+        # model correction turn instead of terminating without a model call.
+        # The bounded turn recovers the observation, so the item completes.
         executor = _JudgmentExecutor(empty_observation_claims_once=True)
         result = run_semantic(
             self.ctx, executor,
             jobs=self.jobs, attempts=self.attempts, events=self.events,
             statistics=self.statistics, invocations=self.invocations,
         )
-        self.assertEqual(result.outcome, C.STATUS_FAILED)
-        self.assertEqual([mode for _, mode in executor.calls], ["observe"])
+        self.assertEqual(result.outcome, C.STATUS_COMPLETED, result.error)
+        self.assertEqual(
+            [mode for _, mode in executor.calls],
+            ["observe", "correct", "observe"],
+        )
         event_types = [
             event.event_type for event in self.events.list_for_job(self.job.job_id)
         ]

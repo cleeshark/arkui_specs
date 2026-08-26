@@ -270,6 +270,7 @@ def run_aggregation(
         fingerprint=fingerprint,
         stage_event="aggregation_completed",
         normalize_after_correction=_normalize_after_correction,
+        allow_degraded_publish=True,
     )
     if outcome.status != C.STATUS_COMPLETED:
         return outcome.status, None
