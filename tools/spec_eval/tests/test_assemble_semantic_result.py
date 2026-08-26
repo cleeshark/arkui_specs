@@ -13,6 +13,7 @@ if str(SKILL_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SKILL_SCRIPTS))
 
 from assemble_semantic_result import (  # noqa: E402
+    main as assemble_semantic_main,
     record_finding_evidence_warning,
     record_mapping_warning,
     record_ownership_warning,
@@ -22,6 +23,53 @@ from validate_staged_run import main as validate_staged_main  # noqa: E402
 
 
 class AssembleSemanticResultWarningTest(unittest.TestCase):
+    def test_assemble_repairs_aggregation_before_validation(self) -> None:
+        with TemporaryDirectory() as temporary:
+            run_dir = Path(temporary)
+            aggregation = {
+                "func_id": "01-01-01",
+                "defect_ownership": [],
+                "criterion_results": [],
+            }
+            repaired = dict(aggregation)
+            candidate = {"func_id": "01-01-01", "criterion_results": []}
+
+            def load(path: Path) -> dict:
+                if path.name == "semantic-template.json":
+                    return {"criterion_results": []}
+                return aggregation
+
+            with (
+                patch("assemble_semantic_result.load_object", side_effect=load),
+                patch(
+                    "assemble_semantic_result.repair_aggregation_contract",
+                    return_value=(repaired, ["ownership repaired"]),
+                ) as repair,
+                patch(
+                    "assemble_semantic_result.validate_stage",
+                    return_value=([], {}, {}),
+                ) as validate_stage,
+                patch(
+                    "assemble_semantic_result.build_final_candidate",
+                    return_value=candidate,
+                ),
+                patch(
+                    "assemble_semantic_result.validate_final_candidate",
+                    return_value=[],
+                ),
+                patch("assemble_semantic_result.write_object") as write_object,
+                patch("assemble_semantic_result.update_progress"),
+            ):
+                result = assemble_semantic_main(["--run-dir", str(run_dir)])
+
+        self.assertEqual(result, 0)
+        repair.assert_called_once_with(aggregation)
+        self.assertEqual(
+            write_object.call_args_list[0].args,
+            (run_dir / "aggregation.json", repaired),
+        )
+        validate_stage.assert_called_once_with(run_dir, "aggregation")
+
     def test_only_non_structural_ownership_errors_are_warnings(self) -> None:
         blocking, warnings = split_aggregation_warnings([
             "aggregation.defect_ownership[1]: one defect may produce at most one Critical Finding",

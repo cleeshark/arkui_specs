@@ -1965,7 +1965,37 @@ def repair_aggregation_contract(
             continue
         primary = record.get("primary_criterion_id")
         finding_ids = record.get("finding_ids")
-        if not isinstance(primary, str) or not isinstance(finding_ids, list):
+        if not isinstance(finding_ids, list):
+            continue
+        if not isinstance(primary, str) or not primary:
+            # A bounded aggregation correction may omit an ownership row's
+            # primary Criterion while still leaving a complete Finding list.
+            # At assemble time, recover only the unambiguous case: all owned
+            # Findings belong to one Criterion.  This preserves the Finding
+            # and defect identity while allowing the final report to carry the
+            # ownership uncertainty as a confidence warning.
+            if not primary:
+                owned_findings = [
+                    findings_by_id.get(finding_id)
+                    for finding_id in finding_ids
+                    if isinstance(finding_id, str)
+                ]
+                criterion_ids = [
+                    finding.get("criterion_id")
+                    for finding in owned_findings
+                    if isinstance(finding, dict)
+                    and isinstance(finding.get("criterion_id"), str)
+                ]
+                unique_criteria = list(dict.fromkeys(criterion_ids))
+                if len(unique_criteria) == 1:
+                    inferred_primary = unique_criteria[0]
+                    record["primary_criterion_id"] = inferred_primary
+                    primary = inferred_primary
+                    changes.append(
+                        f"defect_ownership[{owner_index}].primary_criterion_id "
+                        f"inferred as {inferred_primary} from owned Findings"
+                    )
+        if not isinstance(primary, str) or not primary:
             continue
         owned_findings = [
             findings_by_id.get(finding_id)

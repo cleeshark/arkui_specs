@@ -17,6 +17,7 @@ from aggregation_warning_policy import (
 from staged_run_support import (
     build_final_candidate,
     load_object,
+    repair_aggregation_contract,
     update_progress,
     validate_final_candidate,
     write_object,
@@ -35,6 +36,22 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     run_dir = args.run_dir.resolve()
+    # Repair only deterministic final-contract omissions before the staged
+    # validator runs.  In particular, a model Correction may leave an
+    # ownership row with Findings but no primary Criterion; the repair helper
+    # infers it from the owned Finding(s), while any remaining ownership
+    # disagreement is retained as a confidence warning.
+    aggregation_path = run_dir / "aggregation.json"
+    try:
+        aggregation = load_object(aggregation_path)
+        repaired_aggregation, repair_changes = repair_aggregation_contract(
+            aggregation
+        )
+        if repair_changes:
+            write_object(aggregation_path, repaired_aggregation)
+    except (KeyError, ValueError) as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 2
     errors, state, work_items = validate_stage(run_dir, "aggregation")
     blocking_errors, aggregation_warnings = split_aggregation_warnings(errors)
     if blocking_errors:
