@@ -232,6 +232,19 @@ class CancelRetryTest(_HttpTestBase):
         self.assertEqual(status, 200)
         self.assertEqual(body["status"], "queued")
 
+    def test_retry_latest_specs_action(self) -> None:
+        _, job = self._req("POST", "/api/jobs", {"func_id": "04-01-01"})
+        JobRepository(self.app.store).cancel(job["job_id"])
+        self.app.retry_latest_specs = lambda job_id: ("queued", "a" * 40)
+
+        status, body = self._req(
+            "POST", f"/api/jobs/{job['job_id']}/retry-latest-specs"
+        )
+
+        self.assertEqual(status, 200)
+        self.assertEqual(body["status"], "queued")
+        self.assertEqual(body["specs_revision"], "a" * 40)
+
 
 class ArtifactDownloadTest(_HttpTestBase):
     def test_artifact_served_within_data_root(self) -> None:
@@ -319,6 +332,8 @@ class StaticUITest(_HttpTestBase):
         self.assertEqual(js_status, 200)
         self.assertIn("runJobAction", js)
         self.assertIn("if (!res.ok)", js)
+        self.assertIn("retry-latest-specs", js)
+        self.assertIn("latest specs", js)
 
     def test_ui_contains_independent_function_and_job_pagination(self) -> None:
         status, body = self._req("GET", "/")

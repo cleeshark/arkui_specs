@@ -874,6 +874,42 @@ class DependencySnapshotRepository:
             )
             return snapshot
 
+    def refresh(self, snapshot: DependencySnapshot) -> DependencySnapshot:
+        """Apply an explicit workspace-revision refresh to an existing snapshot.
+
+        Normal retries must use :meth:`freeze` and remain immutable.  The
+        latest-specs retry action is the sole controlled exception and records
+        the new revision before the worker resumes the staged run.
+        """
+        with self._store._tx(immediate=True):
+            existing = self._conn.execute(
+                "SELECT * FROM dependency_snapshots WHERE job_id = ? AND repo_name = ?",
+                (snapshot.job_id, snapshot.repo_name),
+            ).fetchone()
+            if existing is None:
+                self._conn.execute(
+                    "INSERT INTO dependency_snapshots (job_id, repo_name, branch, sha, status, created_at) "
+                    "VALUES (?, ?, ?, ?, ?, ?)",
+                    (
+                        snapshot.job_id, snapshot.repo_name, snapshot.branch,
+                        snapshot.sha, snapshot.status, snapshot.created_at,
+                    ),
+                )
+            else:
+                self._conn.execute(
+                    "UPDATE dependency_snapshots SET branch = ?, sha = ?, status = ? "
+                    "WHERE job_id = ? AND repo_name = ?",
+                    (
+                        snapshot.branch, snapshot.sha, snapshot.status,
+                        snapshot.job_id, snapshot.repo_name,
+                    ),
+                )
+            row = self._conn.execute(
+                "SELECT * FROM dependency_snapshots WHERE job_id = ? AND repo_name = ?",
+                (snapshot.job_id, snapshot.repo_name),
+            ).fetchone()
+            return _snapshot_from_row(row)
+
     def get(self, job_id: str, repo_name: str) -> DependencySnapshot | None:
         with self._store._tx():
             row = self._conn.execute(
@@ -1323,6 +1359,26 @@ class RefreshTargetRepository:
                 "UPDATE refresh_targets SET input_fingerprint = ?, evidence_fingerprint = ?, "
                 "updated_at = ? WHERE job_id = ? AND status = 'ACTIVE'",
                 (input_fingerprint, evidence_fingerprint, utc_now(), job_id),
+            )
+            row = self._conn.execute(
+                "SELECT * FROM refresh_targets WHERE job_id = ?", (job_id,)
+            ).fetchone()
+            if row is None:
+                raise JobNotFoundError(job_id)
+            return _refresh_target_from_row(row)
+
+    def update_revision_set(
+        self, job_id: str, revision_set: dict[str, str]
+    ) -> RefreshTarget:
+        """Persist an explicit workspace revision refresh for report metadata."""
+        with self._store._tx(immediate=True):
+            self._conn.execute(
+                "UPDATE refresh_targets SET revision_set_json = ?, updated_at = ? "
+                "WHERE job_id = ?",
+                (
+                    json.dumps(revision_set, ensure_ascii=False, sort_keys=True),
+                    utc_now(), job_id,
+                ),
             )
             row = self._conn.execute(
                 "SELECT * FROM refresh_targets WHERE job_id = ?", (job_id,)

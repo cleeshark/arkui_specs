@@ -82,7 +82,14 @@ function rowActions(job) {
     ? `<button data-act="cancel" data-id="${esc(job.job_id)}">cancel</button>` : "";
   const retry = (job.status === "failed" || job.status === "cancelled")
     ? `<button data-act="retry" data-id="${esc(job.job_id)}">retry</button>` : "";
-  return `${cancel}${retry}`;
+  const retryLatestSpecs = (
+    (job.status === "failed" || job.status === "cancelled") &&
+    job.stage === "aggregation"
+  )
+    ? `<button data-act="retry-latest-specs" data-id="${esc(job.job_id)}"` +
+      ` title="Refresh the specs workspace to current HEAD before retrying">` +
+      `retry (latest specs)</button>` : "";
+  return `${cancel}${retry}${retryLatestSpecs}`;
 }
 
 function archivedPath(job) {
@@ -477,6 +484,9 @@ document.addEventListener("click", async (e) => {
   const id = t.dataset.id;
   if (t.dataset.act === "cancel") { await runJobAction(t, "cancel", id); }
   if (t.dataset.act === "retry") { await runJobAction(t, "retry", id); }
+  if (t.dataset.act === "retry-latest-specs") {
+    await runJobAction(t, "retry-latest-specs", id);
+  }
   if (t.dataset.act === "detail") { loadDetail(id); }
   if (t.dataset.act === "function-detail") { loadFunctionDetail(id); }
 });

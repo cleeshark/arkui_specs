@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import subprocess
 import tempfile
 import unittest
@@ -68,6 +69,26 @@ class RevisionWorkspaceManagerTest(unittest.TestCase):
         second = self.manager.prepare(job)
         self.assertEqual(second.revisions["specs"], frozen_specs)
         self.assertEqual(self._head(second.specs_root), frozen_specs)
+
+    def test_explicit_specs_refresh_updates_only_specs_revision(self) -> None:
+        job = self._job(self.ace_v1)
+        first = self.manager.prepare(job)
+        frozen_ace = first.revisions["ace_engine"]
+        frozen_sdk = first.revisions["sdk-js"]
+        frozen_specs = first.revisions["specs"]
+
+        (self.specs / "spec.txt").write_text("spec-v2\n", encoding="utf-8")
+        self._commit(self.specs, "spec v2")
+        refreshed = self.manager.refresh_specs_revision(job)
+
+        self.assertNotEqual(refreshed.revisions["specs"], frozen_specs)
+        self.assertEqual(refreshed.revisions["ace_engine"], frozen_ace)
+        self.assertEqual(refreshed.revisions["sdk-js"], frozen_sdk)
+        self.assertEqual(self._head(refreshed.specs_root), refreshed.revisions["specs"])
+        manifest = json.loads(
+            (refreshed.workspace_root / "workspace-manifest.json").read_text()
+        )
+        self.assertEqual(manifest["revisions"]["specs"], refreshed.revisions["specs"])
 
     def test_release_removes_worktrees_but_keeps_revision_reservation(self) -> None:
         job = self._job(self.ace_v1)
@@ -157,6 +178,14 @@ class DependencySnapshotImmutabilityTest(unittest.TestCase):
         with self.assertRaises(SnapshotConflictError):
             self.repo.freeze(conflict)
         self.assertEqual(self.repo.get("job", "ace_engine").sha, "a" * 40)  # type: ignore[union-attr]
+
+    def test_explicit_refresh_replaces_reserved_revision(self) -> None:
+        first = DependencySnapshot("job", "specs", "detached", "a" * 40, "frozen", "t1")
+        second = DependencySnapshot("job", "specs", "detached", "b" * 40, "frozen", "t2")
+        self.repo.freeze(first)
+        refreshed = self.repo.refresh(second)
+        self.assertEqual(refreshed.sha, "b" * 40)
+        self.assertEqual(self.repo.get("job", "specs").sha, "b" * 40)  # type: ignore[union-attr]
 
 
 if __name__ == "__main__":

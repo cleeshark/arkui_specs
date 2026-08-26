@@ -67,6 +67,72 @@ class RevisionWorkspaceManager:
             revisions=revisions,
         )
 
+    def refresh_specs_revision(self, job: Job) -> EvaluationWorkspace:
+        """Refresh only the specs checkout to the repository's current HEAD.
+
+        This is an explicit operator action for retrying a failed evaluation
+        with a newer evaluator/toolchain revision.  The evaluated source and
+        SDK revisions remain frozen; the existing staged run directory is not
+        touched, so validated observations can be reused.  The reservation
+        manifest is updated only after the new specs worktree is created.
+        """
+        root = self.settings.workspaces_root / job.job_id
+        manifest_path = root / "workspace-manifest.json"
+        if not manifest_path.is_file():
+            raise WorkspaceError(
+                f"workspace reservation not found for job {job.job_id!r}"
+            )
+        document = self._read_manifest(manifest_path)
+        self._validate_manifest_job(document, job)
+        revisions = self._manifest_revisions(document)
+        latest_specs = self._resolve_commit(self._source_repositories()["specs"], "HEAD")
+        if revisions["specs"] == latest_specs:
+            return self.prepare(job)
+
+        paths = self._workspace_paths(root)
+        current_specs = paths["specs"]
+        if current_specs.exists():
+            actual = self._worktree_head(current_specs)
+            if actual != revisions["specs"]:
+                raise WorkspaceError(
+                    f"workspace path already exists at wrong revision: {current_specs}; "
+                    f"expected {revisions['specs']}, got {actual or 'not-a-git-worktree'}"
+                )
+            cp = subprocess.run(
+                [
+                    "git", "-C", str(self._source_repositories()["specs"]),
+                    "worktree", "remove", "--force", str(current_specs),
+                ],
+                capture_output=True,
+                text=True,
+                timeout=300,
+            )
+            if cp.returncode != 0:
+                detail = (cp.stderr or cp.stdout).strip()
+                raise WorkspaceError(
+                    f"cannot refresh specs workspace {current_specs}: {detail}"
+                )
+
+        refreshed = dict(revisions)
+        refreshed["specs"] = latest_specs
+        self._validate_revision_set(refreshed)
+        # Recreate every worktree through the same integrity checks used by
+        # normal preparation.  Non-specs worktrees must remain at their frozen
+        # revisions.
+        sources = self._source_repositories()
+        for name in ("ace_engine", "specs", "sdk-js", "sdk_c"):
+            self._ensure_worktree(sources[name], paths[name], refreshed[name])
+
+        ready = self._manifest(job, refreshed, status="ready")
+        self._write_manifest(manifest_path, ready)
+        return EvaluationWorkspace(
+            workspace_root=root,
+            repo_root=paths["ace_engine"],
+            specs_root=paths["specs"],
+            schemas_root=paths["specs"] / "evaluation" / "schemas",
+            revisions=refreshed,
+        )
+
     def release(self, job_id: str) -> list[str]:
         """Best-effort removal of detached worktrees; keep the reservation manifest."""
         root = self.settings.workspaces_root / job_id

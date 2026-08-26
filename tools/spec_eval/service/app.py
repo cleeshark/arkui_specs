@@ -12,7 +12,9 @@ import logging
 import subprocess
 from pathlib import Path
 
-from .domain.models import CreateJobCommand, FreshnessPolicy, Job
+from .domain import states as S
+from .domain.errors import IllegalTransitionError
+from .domain.models import CreateJobCommand, DependencySnapshot, FreshnessPolicy, Job
 from .freshness import FreshnessManager
 from .function_views import FunctionViewService
 from .executors.base import SemanticExecutor
@@ -31,7 +33,10 @@ from .store.repositories import (
     FunctionReportHeadRepository,
     JobStatisticsRepository,
     JobRepository,
+    DependencySnapshotRepository,
+    RefreshTargetRepository,
 )
+from .workspace.manager import RevisionWorkspaceManager, WorkspaceError
 from .store.sqlite_store import SqliteStore, utc_now
 
 LOGGER = logging.getLogger(__name__)
@@ -243,6 +248,54 @@ class SemanticServiceApp:
 
     def retry(self, job_id: str) -> str:
         return self.dispatcher.retry(job_id)
+
+    def retry_latest_specs(self, job_id: str) -> tuple[str, str]:
+        """Retry using the current specs revision while reusing checkpoints.
+
+        Only aggregation failures are eligible: refreshing specs
+        before observations would make the existing observation evidence stale.
+        """
+        job = self.jobs.get_job(job_id)
+        if job.status not in {S.FAILED, S.CANCELLED}:
+            raise IllegalTransitionError(job.status, S.QUEUED)
+        if job.stage != S.STAGE_AGGREGATION:
+            raise WorkspaceError(
+                "latest specs retry is only available for aggregation failures"
+            )
+        workspace = RevisionWorkspaceManager(self.settings).refresh_specs_revision(job)
+        # Keep the persisted execution envelope and eventual report metadata
+        # aligned with the refreshed workspace before the worker is queued.
+        snapshots = DependencySnapshotRepository(self.store)
+        previous_snapshot = snapshots.get(job_id, "specs")
+        snapshots.refresh(
+            DependencySnapshot(
+                job_id=job_id,
+                repo_name="specs",
+                branch="detached",
+                sha=workspace.revisions["specs"],
+                status="frozen",
+                created_at=utc_now(),
+            )
+        )
+        targets = RefreshTargetRepository(self.store)
+        target = targets.get(job_id)
+        if target is not None:
+            targets.update_revision_set(job_id, workspace.revisions)
+        EventRepository(self.store).append(
+            job_id,
+            "workspace_revision_refreshed",
+            {
+                "repository": "specs",
+                "previous_specs_revision": (
+                    previous_snapshot.sha if previous_snapshot is not None else None
+                ),
+                "specs_revision": workspace.revisions["specs"],
+            },
+        )
+        status = self.dispatcher.retry(
+            job_id, reason="retry with latest specs revision"
+        )
+        return status, workspace.revisions["specs"]
 
     def artifact(self, job_id: str, kind: str):
         return ArtifactRepository(self.store).get(job_id, kind)
