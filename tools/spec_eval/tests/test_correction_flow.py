@@ -1161,6 +1161,23 @@ class _FlowExecutor:
         raise AssertionError("observe should be pre-seeded via candidate reuse")
 
 
+class _FailingCorrectExecutor:
+    """Correction executor that reports failure (e.g. no legal patch exists)."""
+
+    def __init__(self, error: str = "no legal patch exists") -> None:
+        self.calls: list[str] = []
+        self._error = error
+
+    def execute(self, work, emit, cancel=None):
+        mode = work.prompt_extras.get("mode", "observe")
+        self.calls.append(mode)
+        if mode == "correct":
+            return C.ExecutionResult(
+                status=C.STATUS_FAILED, observation=None, error=self._error,
+            )
+        raise AssertionError("observe should be pre-seeded via candidate reuse")
+
+
 def _aggregation_work(run_dir: Path) -> C.WorkItemInput:
     (run_dir / "work-items.json").write_text(
         json.dumps({"items": []}), encoding="utf-8",
@@ -1377,6 +1394,81 @@ class CorrectionRoutingDegradeTest(unittest.TestCase):
         self.assertNotIn("correct", _FlowExecutor().calls)
 
         terminal_outcome, _events, terminal_published = run_once(False)
+        self.assertEqual(terminal_outcome.status, C.STATUS_FAILED)
+        self.assertFalse(terminal_published)
+
+    def test_failed_correction_executor_degrades_final_report(self) -> None:
+        # The correction executor itself reports failure (e.g. no legal evidence
+        # patch exists for a MISSING criterion).  The single correction turn is
+        # still spent, so for the final report the structurally usable
+        # pre-correction candidate is degraded to a published artifact when its
+        # residual is non-HARD, instead of leaving the item stuck without a
+        # report.  EVIDENCE_REQUIRED_MISSING is MODEL_CORRECTION / MAJOR /
+        # non-HARD.
+        document = {"criterion_results": [{
+            "criterion_id": "DESIGN-FEAT-RUNTIME-COVERAGE",
+            "conclusion": "MISSING", "evidence": [], "claim_ids": [], "findings": [],
+        }]}
+        residual = {
+            "code": "EVIDENCE_REQUIRED_MISSING",
+            "path": "aggregation.criterion_results[DESIGN-FEAT-RUNTIME-COVERAGE]"
+                    ".evidence",
+            "entity_type": "criterion",
+            "entity_id": "DESIGN-FEAT-RUNTIME-COVERAGE",
+            "repairability": "MODEL_CORRECTION",
+        }
+
+        def run_once(allow: bool):
+            with tempfile.TemporaryDirectory() as tmp:
+                run_dir = Path(tmp)
+                self._seed_candidate(
+                    run_dir, "aggregation.json", document, [residual],
+                )
+                events = _Events()
+                executor = _FailingCorrectExecutor()
+                published: list[dict] = []
+
+                def normalize(payload):
+                    return NormalizationResult(document=payload)
+
+                def validate(doc):
+                    cr = doc["criterion_results"][0]
+                    return [] if cr.get("evidence") else [
+                        TypedError.from_dict(residual)
+                    ]
+
+                flow = JudgmentFlow(
+                    ctx=SimpleNamespace(
+                        run_dir=run_dir, job_id="job", run_id="run-1",
+                    ),
+                    executor=executor,
+                    jobs=SimpleNamespace(transition_status=lambda *a, **k: None),
+                    events=events,
+                )
+                outcome = flow.run(
+                    work=_aggregation_work(run_dir),
+                    output_path=run_dir / "aggregation.json",
+                    template={}, normalize=normalize, validate=validate,
+                    base_contract={"payload_kind": "aggregation"},
+                    on_publish=lambda d: published.append(d) or True,
+                    fingerprint="fp", stage_event="aggregation_completed",
+                    allow_degraded_publish=allow,
+                )
+                return outcome, events, published, executor
+
+        degraded_outcome, degraded_events, degraded_published, degraded_exec = (
+            run_once(True)
+        )
+        # The correction turn was attempted (executor failed) then degraded.
+        self.assertIn("correct", degraded_exec.calls)
+        self.assertEqual(degraded_outcome.status, C.STATUS_COMPLETED)
+        self.assertTrue(degraded_published)
+        self.assertIn(
+            "correction_executor_failed_degraded", degraded_events.types()
+        )
+
+        # Observation work items (allow_degraded_publish=False) still fail.
+        terminal_outcome, _events, terminal_published, _exec = run_once(False)
         self.assertEqual(terminal_outcome.status, C.STATUS_FAILED)
         self.assertFalse(terminal_published)
 
