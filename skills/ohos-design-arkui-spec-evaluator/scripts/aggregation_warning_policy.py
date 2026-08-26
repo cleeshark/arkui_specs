@@ -13,6 +13,10 @@ from pathlib import Path
 OWNERSHIP_WARNING_MARKERS = (
     "one defect may produce at most one Critical Finding",
     "a Critical Finding must belong to the primary Criterion",
+    # A correction may retain a non-empty primary Criterion that does not
+    # occur among the Finding rows.  The report still has complete Findings;
+    # preserve the ownership inconsistency as a bounded warning.
+    "must own one mapped Finding",
     "expected one of observation owners",
 )
 OWNERSHIP_WARNING_CODE = "OWNERSHIP_CRITICALITY"
@@ -25,8 +29,11 @@ FINDING_EVIDENCE_WARNING_MARKER = (
 )
 FINDING_EVIDENCE_WARNING_CODE = "FINDING_EVIDENCE_UNKNOWN"
 FINDING_EVIDENCE_WARNING_DEDUCTION = 20
-CONTRADICTION_BASIS_WARNING_MARKER = (
-    "basis defects must cover every CONTRADICTED Criterion"
+CONTRADICTION_BASIS_WARNING_MARKERS = (
+    "basis defects must cover every CONTRADICTED Criterion",
+    # A model correction can assign the same root defect to two basis rows.
+    # This is representational duplication, not loss of Criterion evidence.
+    "primary_defect_key: duplicate contradiction basis",
 )
 CONTRADICTION_BASIS_WARNING_CODE = "CONTRADICTION_BASIS_INVALID"
 CONTRADICTION_BASIS_WARNING_DEDUCTION = 5
@@ -41,7 +48,10 @@ def split_aggregation_warnings(errors: list[str]) -> tuple[list[str], list[str]]
             any(marker in error for marker in OWNERSHIP_WARNING_MARKERS)
             or MAPPING_WARNING_MARKER in error
             or FINDING_EVIDENCE_WARNING_MARKER in error
-            or CONTRADICTION_BASIS_WARNING_MARKER in error
+            or any(
+                marker in error
+                for marker in CONTRADICTION_BASIS_WARNING_MARKERS
+            )
         ):
             warnings.append(error)
         else:
@@ -67,7 +77,10 @@ def record_aggregation_warnings(run_dir: Path, warnings: list[str]) -> None:
     ])
     record_contradiction_basis_warning(run_dir, [
         warning for warning in warnings
-        if CONTRADICTION_BASIS_WARNING_MARKER in warning
+        if any(
+            marker in warning
+            for marker in CONTRADICTION_BASIS_WARNING_MARKERS
+        )
     ])
 
 
