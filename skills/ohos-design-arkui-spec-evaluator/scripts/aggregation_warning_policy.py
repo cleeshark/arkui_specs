@@ -34,6 +34,11 @@ CONTRADICTION_BASIS_WARNING_MARKERS = (
     # A model correction can assign the same root defect to two basis rows.
     # This is representational duplication, not loss of Criterion evidence.
     "primary_defect_key: duplicate contradiction basis",
+    # An unresolved root-defect mapping does not invalidate the Criterion
+    # results or their Findings; retain it as a bounded quality warning after
+    # the single Correction turn.
+    "primary_defect_key: unknown defect",
+    "primary_defect_key: defect does not affect any CONTRADICTED Criterion",
 )
 CONTRADICTION_BASIS_WARNING_CODE = "CONTRADICTION_BASIS_INVALID"
 CONTRADICTION_BASIS_WARNING_DEDUCTION = 5

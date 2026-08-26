@@ -114,10 +114,18 @@ class AssembleSemanticResultWarningTest(unittest.TestCase):
                 "aggregation.contradiction_bases[1].primary_defect_key: "
                 "duplicate contradiction basis"
             ),
+            (
+                "aggregation.contradiction_bases[0].primary_defect_key: "
+                "unknown defect 'global.invalid'"
+            ),
+            (
+                "aggregation.contradiction_bases[2].primary_defect_key: "
+                "defect does not affect any CONTRADICTED Criterion"
+            ),
             "aggregation.finding_id: required",
         ])
         self.assertEqual(blocking, ["aggregation.finding_id: required"])
-        self.assertEqual(len(warnings), 2)
+        self.assertEqual(len(warnings), 4)
 
     def test_contradiction_basis_warning_deducts_minor_confidence_once(self) -> None:
         with TemporaryDirectory() as temporary:
