@@ -99,7 +99,11 @@ ERROR_REGISTRY: dict[str, str] = _register({
     "CRITERION_UNKNOWN": MODEL_CORRECTION,
     "OBSERVATION_CLAIM_UNEXPECTED": SERVICE_NORMALIZATION,
     "OBSERVATION_CLAIM_IDS_EMPTY": SERVICE_NORMALIZATION,
-    "OBSERVATION_CLAIM_COVERAGE_INCOMPLETE": SERVICE_NORMALIZATION,
+    # Attaching a missing expected Claim to an Observation is semantic: the
+    # service cannot safely decide which scenario Observation owns it, and the
+    # deterministic normalizer can drop extras but never invent coverage. Route
+    # it to the bounded model Correction turn, mirroring MAPPING_CLAIM_UNMAPPED.
+    "OBSERVATION_CLAIM_COVERAGE_INCOMPLETE": MODEL_CORRECTION,
     "OBSERVATION_FIELD_INVALID": SERVICE_NORMALIZATION,
     "MODELING_BASIS_MISSING": MODEL_CORRECTION,
     "MODELING_BASIS_INVALID": MODEL_CORRECTION,

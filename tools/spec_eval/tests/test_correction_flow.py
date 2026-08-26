@@ -862,6 +862,72 @@ class CorrectionFlowTest(unittest.TestCase):
                 self.assertFalse(is_deterministic_error({"code": code}))
                 self.assertFalse(is_fatal_error({"code": code}))
 
+    def test_observation_coverage_incomplete_routes_to_model_correction(
+        self,
+    ) -> None:
+        # Attaching a missing expected Claim to a scenario Observation is a
+        # semantic decision the deterministic normalizer cannot make (it can
+        # drop extras but never invent coverage). Classifying this as
+        # SERVICE_NORMALIZATION without a repair branch created a dead zone:
+        # the error was neither service-repaired nor delegated to the model,
+        # so the work item failed as CORRECTION_INVALID_TERMINAL even though
+        # one bounded patch could add the missing claim_ids.
+        error = TypedError(
+            "OBSERVATION_CLAIM_COVERAGE_INCOMPLETE",
+            "observation.observations",
+            entity_type="document",
+            actual="missing=['Feat-01/NFR-413'] extra=[]",
+        )
+        self.assertTrue(is_model_correction_error(error))
+        self.assertFalse(is_deterministic_error(error))
+        self.assertFalse(is_fatal_error(error))
+
+        # The validator path must resolve to an executable scope the model can
+        # patch. The old document-level path ".observations.claim_ids" raised
+        # in the resolver (named selector on an unsupported list), so even a
+        # MODEL_CORRECTION classification could not have produced a patch turn.
+        document = {
+            "observations": [
+                {"observation_id": "OBS-1", "claim_ids": ["Feat-01/AC-1.1"]},
+                {"observation_id": "OBS-2", "claim_ids": ["Feat-01/AC-2.1"]},
+            ]
+        }
+        allowed_paths = resolve_typed_error_json_paths(document, error)
+        self.assertEqual(allowed_paths, ["/observations"])
+
+        # A bounded patch that attaches the missing claim to a scenario
+        # Observation is in scope; immutable derived lists remain protected.
+        add_missing = [{
+            "op": "add",
+            "path": "/observations/1/claim_ids/-",
+            "value": "Feat-01/NFR-413",
+        }]
+        self.assertEqual(
+            validate_patch_scope(
+                add_missing,
+                allowed_paths=allowed_paths,
+                immutable_paths=[
+                    "/expected_claim_ids", "/reviewed_claim_ids",
+                    "/completed_checks", "/status",
+                ],
+            ),
+            [],
+        )
+
+    def test_semantic_coverage_mapping_codes_are_model_owned(self) -> None:
+        # Guard against the ea320fa-class regression: coverage/mapping errors
+        # require model judgment to resolve (which Observation/Criterion owns a
+        # claim). None of them can be silently reclassified as service-owned
+        # without a matching deterministic repair, or they become dead zones.
+        for code in (
+            "OBSERVATION_CLAIM_COVERAGE_INCOMPLETE",
+            "MAPPING_CLAIM_UNMAPPED",
+        ):
+            with self.subTest(code=code):
+                self.assertTrue(is_model_correction_error({"code": code}))
+                self.assertFalse(is_deterministic_error({"code": code}))
+                self.assertFalse(is_fatal_error({"code": code}))
+
     def test_mapping_and_evidence_errors_share_one_model_correction(self) -> None:
         errors = [
             {
