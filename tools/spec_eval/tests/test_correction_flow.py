@@ -1132,5 +1132,254 @@ class CorrectionFlowTest(unittest.TestCase):
         )
 
 
+class _Events:
+    def __init__(self) -> None:
+        self.rows: list[tuple[str, dict]] = []
+
+    def append(self, job_id, event_type, payload):
+        self.rows.append((event_type, payload))
+
+    def types(self) -> list[str]:
+        return [event_type for event_type, _ in self.rows]
+
+
+class _FlowExecutor:
+    """Minimal executor: records modes and returns a scripted correction patch."""
+
+    def __init__(self, patches=None) -> None:
+        self.calls: list[str] = []
+        self._patches = patches or []
+
+    def execute(self, work, emit, cancel=None):
+        mode = work.prompt_extras.get("mode", "observe")
+        self.calls.append(mode)
+        if mode == "correct":
+            return C.ExecutionResult(
+                status=C.STATUS_COMPLETED,
+                observation={"patches": list(self._patches)},
+            )
+        raise AssertionError("observe should be pre-seeded via candidate reuse")
+
+
+def _aggregation_work(run_dir: Path) -> C.WorkItemInput:
+    (run_dir / "work-items.json").write_text(
+        json.dumps({"items": []}), encoding="utf-8",
+    )
+    return C.WorkItemInput(
+        job_id="job",
+        func_id="01-01-01",
+        run_id="run-1",
+        work_item_id="aggregation:final",
+        work_item={
+            "observation_type": "aggregation",
+            "observation_profile": "aggregation",
+            "input_resources": [],
+        },
+        run_dir=str(run_dir),
+        input_paths=(),
+        executor_result_path=str(run_dir / "aggregation.result.json"),
+        repo_root=str(run_dir),
+        skill_version="0.3.0",
+        protocol_version="0.2.0",
+        prompt_extras={"payload_kind": "aggregation"},
+    )
+
+
+class CorrectionRoutingDegradeTest(unittest.TestCase):
+    """Dead-zone reclassification + degraded-publish for the correction flow."""
+
+    def _seed_candidate(
+        self, run_dir: Path, output_name: str, document: dict, errors: list[dict],
+        candidate_kind: str = "published_candidate",
+    ) -> None:
+        # Reproduce a GENERATED_INVALID breakpoint: a stored candidate plus its
+        # typed errors, so flow.run resumes straight into the correction path
+        # without an observe turn.
+        from spec_eval.kernel import staged_state as SS
+        items_path = run_dir / "work-items.json"
+        if not items_path.is_file():
+            items_path.write_text(json.dumps({"items": []}), encoding="utf-8")
+        out = run_dir / output_name
+        (out.with_name(f".{out.name}.candidate")).write_text(
+            json.dumps(document), encoding="utf-8",
+        )
+        (out.with_name(f".{out.name}.typed-errors.json")).write_text(
+            json.dumps({
+                "input_fingerprint": "fp",
+                "candidate_kind": candidate_kind,
+                "errors": errors,
+            }),
+            encoding="utf-8",
+        )
+        SS.set_work_item_state(run_dir, "aggregation:final", SS.GENERATED_INVALID)
+
+    def test_raw_candidate_is_normalized_before_severity_repair(self) -> None:
+        # Fix 1: a raw candidate carries a provisional finding key; the severity
+        # error is keyed by canonical id.  Normalizing before the deterministic
+        # repair lets it locate the finding and complete without a model turn.
+        raw = {"criterion_results": [{
+            "criterion_id": "DESIGN-ALGORITHM-DATA-STATE",
+            "findings": [{"key": "f1", "finding_id": None, "severity": "Major"}],
+        }]}
+        normalized = {"criterion_results": [{
+            "criterion_id": "DESIGN-ALGORITHM-DATA-STATE",
+            "findings": [{"key": None, "finding_id": "SEM-x", "severity": "Major"}],
+        }]}
+        severity_error = {
+            "code": "SEVERITY_BELOW_FLOOR",
+            "path": "aggregation.criterion_results[DESIGN-ALGORITHM-DATA-STATE]"
+                    ".findings[].severity",
+            "entity_type": "finding",
+            "entity_id": "SEM-x",
+            "expected": "severity >= Critical for conclusion CONTRADICTED",
+            "actual": "Major",
+            "repairability": "SERVICE_NORMALIZATION",
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp)
+            self._seed_candidate(
+                run_dir, "aggregation.json", raw, [severity_error],
+                candidate_kind="raw_payload",
+            )
+            events = _Events()
+            executor = _FlowExecutor()
+            published: list[dict] = []
+
+            def normalize(_payload):
+                return NormalizationResult(document=normalized)
+
+            def validate(document):
+                sev = document["criterion_results"][0]["findings"][0]["severity"]
+                if sev == "Critical":
+                    return []
+                return [TypedError.from_dict(severity_error)]
+
+            flow = JudgmentFlow(
+                ctx=SimpleNamespace(run_dir=run_dir, job_id="job", run_id="run-1"),
+                executor=executor, jobs=SimpleNamespace(), events=events,
+            )
+            outcome = flow.run(
+                work=_aggregation_work(run_dir),
+                output_path=run_dir / "aggregation.json",
+                template={}, normalize=normalize, validate=validate,
+                base_contract={"payload_kind": "aggregation"},
+                on_publish=lambda d: published.append(d),
+                fingerprint="fp", stage_event="aggregation_completed",
+                allow_degraded_publish=True,
+            )
+        self.assertEqual(outcome.status, C.STATUS_COMPLETED)
+        self.assertEqual(executor.calls, [])  # no model turn needed
+        self.assertEqual(
+            published[0]["criterion_results"][0]["findings"][0]["severity"],
+            "Critical",
+        )
+
+    def test_unresolvable_service_error_is_folded_into_model_turn(self) -> None:
+        # Fix 2: a service error the deterministic repair cannot resolve is sent
+        # to the single model turn alongside model-correctable errors instead of
+        # terminating.  The model patch fixes it and the item completes.
+        document = {"observations": [{"observation_id": "OBS-1", "claim_ids": []}]}
+        empty_error = {
+            "code": "OBSERVATION_CLAIM_IDS_EMPTY",
+            "path": "observation.observations[0].claim_ids",
+            "entity_type": "observation",
+            "entity_id": "OBS-1",
+            "repairability": "SERVICE_NORMALIZATION",
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp)
+            self._seed_candidate(run_dir, "aggregation.json", document, [empty_error])
+            events = _Events()
+            executor = _FlowExecutor(patches=[{
+                "op": "add", "path": "/observations/0/claim_ids/-", "value": "C-1",
+            }])
+            flow = JudgmentFlow(
+                ctx=SimpleNamespace(run_dir=run_dir, job_id="job", run_id="run-1"),
+                executor=executor, jobs=SimpleNamespace(), events=events,
+            )
+
+            def normalize(payload):
+                return NormalizationResult(document=payload)
+
+            def validate(doc):
+                if doc["observations"][0]["claim_ids"]:
+                    return []
+                return [TypedError.from_dict(empty_error)]
+
+            outcome = flow.run(
+                work=_aggregation_work(run_dir),
+                output_path=run_dir / "aggregation.json",
+                template={}, normalize=normalize, validate=validate,
+                base_contract={"payload_kind": "aggregation"},
+                on_publish=lambda d: True,
+                fingerprint="fp", stage_event="aggregation_completed",
+                allow_degraded_publish=True,
+            )
+        # The service error reached the model turn (it was not terminal first).
+        self.assertIn("correct", executor.calls)
+        self.assertEqual(outcome.status, C.STATUS_COMPLETED)
+
+    def test_residual_non_hard_error_degrades_only_for_final_report(self) -> None:
+        # A non-HARD service error the deterministic repair cannot resolve and
+        # whose document-level path does not resolve to a patch target is not
+        # foldable into a model turn.  With allow_degraded_publish the final
+        # report is still published (degraded); without it the item terminates.
+        # CHECK_COVERAGE_INCOMPLETE is a service-owned, MINOR (non-HARD) code
+        # with no deterministic handler.
+        document = {"observations": [{"observation_id": "OBS-1", "check_ids": []}]}
+        residual = {
+            "code": "CHECK_COVERAGE_INCOMPLETE",
+            "path": "aggregation.observations.check_ids",
+            "entity_type": "document",
+            "repairability": "SERVICE_NORMALIZATION",
+        }
+
+        def run_once(allow: bool):
+            with tempfile.TemporaryDirectory() as tmp:
+                run_dir = Path(tmp)
+                self._seed_candidate(
+                    run_dir, "aggregation.json", document, [residual],
+                )
+                events = _Events()
+                executor = _FlowExecutor(patches=[])
+                published: list[dict] = []
+
+                def normalize(payload):
+                    return NormalizationResult(document=payload)
+
+                def validate(_doc):
+                    return [TypedError.from_dict(residual)]
+
+                flow = JudgmentFlow(
+                    ctx=SimpleNamespace(
+                        run_dir=run_dir, job_id="job", run_id="run-1",
+                    ),
+                    executor=executor,
+                    jobs=SimpleNamespace(transition_status=lambda *a, **k: None),
+                    events=events,
+                )
+                outcome = flow.run(
+                    work=_aggregation_work(run_dir),
+                    output_path=run_dir / "aggregation.json",
+                    template={}, normalize=normalize, validate=validate,
+                    base_contract={"payload_kind": "aggregation"},
+                    on_publish=lambda d: published.append(d) or True,
+                    fingerprint="fp", stage_event="aggregation_completed",
+                    allow_degraded_publish=allow,
+                )
+                return outcome, events, published
+
+        degraded_outcome, degraded_events, degraded_published = run_once(True)
+        self.assertEqual(degraded_outcome.status, C.STATUS_COMPLETED)
+        self.assertTrue(degraded_published)
+        self.assertIn("correction_completed_degraded", degraded_events.types())
+        # No model turn was consumed: the residual was non-foldable.
+        self.assertNotIn("correct", _FlowExecutor().calls)
+
+        terminal_outcome, _events, terminal_published = run_once(False)
+        self.assertEqual(terminal_outcome.status, C.STATUS_FAILED)
+        self.assertFalse(terminal_published)
+
+
 if __name__ == "__main__":
     unittest.main()

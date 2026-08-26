@@ -35,6 +35,7 @@ from typing import Any, Callable, Sequence
 from spec_eval.kernel import staged_state as SS
 from spec_eval.kernel.errors import (
     TypedError,
+    has_hard_errors,
     is_non_blocking_warning,
     is_post_correction_warning,
 )
@@ -348,6 +349,7 @@ class JudgmentFlow:
         stage_event: str,
         reproject: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
         normalize_after_correction: Callable[..., NormalizationResult] | None = None,
+        allow_degraded_publish: bool = False,
     ) -> JudgmentOutcome:
         """Run one work item through the state machine.
 
@@ -388,6 +390,37 @@ class JudgmentFlow:
                 "evidence_catalog_size": len(catalog),
             })
             return True
+
+        def degraded_publish(
+            document: dict[str, Any],
+            catalog: list[dict[str, Any]],
+            residual: list[TypedError],
+        ) -> bool:
+            """Publish a usable report after the single correction turn.
+
+            Only the final report (``allow_degraded_publish``) may take this
+            path.  When every residual error is non-HARD/non-fatal, the report
+            is structurally assemblable, so publish it and let ``on_publish``
+            apply its HARD-only gate and confidence deduction.  A HARD or fatal
+            residual still blocks; observation work items never degrade.
+            """
+            if not allow_degraded_publish:
+                return False
+            if has_hard_errors(residual) or any(
+                is_fatal_error(error) for error in residual
+            ):
+                return False
+            published = publish(document, catalog)
+            if published:
+                self.events.append(
+                    self.ctx.job_id, "correction_completed_degraded", {
+                        "work_item_id": work.work_item_id,
+                        "residual_errors": [
+                            error.to_dict() for error in residual
+                        ],
+                    },
+                )
+            return published
 
         def repair_after_model_correction(
             document: dict[str, Any], typed: list[TypedError]
@@ -622,15 +655,59 @@ class JudgmentFlow:
                     {"work_item_id": work.work_item_id, "error": str(exc)},
                     f"cannot read correction candidate: {exc}",
                 )
-            corrected_document, changes, unresolved = apply_deterministic_correction(
-                candidate_document, deterministic_dicts,
+            working_candidate_kind = breakpoint_data.get(
+                "candidate_kind", CANDIDATE_PUBLISHED_DOCUMENT
+            )
+            # Fix 1: identity-keyed service repairs (e.g. SEVERITY_BELOW_FLOOR
+            # located by canonical SEM- id) target the normalized document.  A
+            # raw executor candidate still carries provisional finding keys, so
+            # normalize it first (with the first-pass normalizer, matching the
+            # identity space the validator used) or those repairs cannot locate
+            # their targets and would dead-end the whole work item.  The error
+            # set is then rebuilt by re-validation below, so stale raw-keyed
+            # normalization errors (e.g. duplicate provisional keys already
+            # resolved into distinct canonical ids) are dropped rather than
+            # carried into an inconsistent identity space.
+            repair_base = candidate_document
+            if working_candidate_kind == CANDIDATE_RAW_PAYLOAD:
+                pre = normalize(candidate_document)
+                if not pre.fatal and pre.document is not None:
+                    repair_base = pre.document
+                    working_candidate_kind = CANDIDATE_PUBLISHED_DOCUMENT
+            corrected_document, changes, _unresolved = apply_deterministic_correction(
+                repair_base, deterministic_dicts,
             )
             corrected_document = projected(corrected_document)
-            if unresolved:
+
+            # Re-validate the (possibly normalized + repaired) document to get
+            # the true residual set instead of trusting the stale pre-repair
+            # error list.  Normalization errors keyed to raw provisional
+            # identities (dropped by re-normalization) are not carried forward;
+            # fatal input was already handled by ``fatal_dicts`` above, so any
+            # residual here is a service or model validation error.
+            remaining = typed_of(corrected_document)
+            if not remaining:
+                published = publish(
+                    corrected_document,
+                    _published_evidence_catalog(corrected_document),
+                )
+                if published and changes:
+                    self.events.append(
+                        self.ctx.job_id, "candidate_deterministic_repaired", {
+                            "work_item_id": work.work_item_id,
+                            "changes": changes,
+                        },
+                    )
+                return JudgmentOutcome(C.STATUS_COMPLETED, published=published)
+
+            remaining_fatal = [
+                error for error in remaining if is_fatal_error(error)
+            ]
+            if remaining_fatal:
                 self.events.append(self.ctx.job_id, "correction_skipped", {
                     "work_item_id": work.work_item_id,
                     "reason": "service_deterministic_error",
-                    "errors": [error.to_dict() for error in unresolved],
+                    "errors": [error.to_dict() for error in remaining_fatal],
                 })
                 SS.set_work_item_state(
                     self.ctx.run_dir, work.work_item_id,
@@ -641,70 +718,83 @@ class JudgmentFlow:
                     {
                         "work_item_id": work.work_item_id,
                         "state": SS.CORRECTION_INVALID_TERMINAL,
-                        "errors": [error.to_dict() for error in unresolved],
+                        "errors": [error.to_dict() for error in remaining_fatal],
                         "repair": "deterministic_only",
                     },
-                    "deterministic correction could not resolve: "
-                    + "; ".join(error.code for error in unresolved[:5]),
+                    "deterministic correction still invalid: "
+                    + "; ".join(error.code for error in remaining_fatal[:5]),
                 )
-            if changes:
-                remaining = typed_of(corrected_document)
-                if not remaining:
-                    published = publish(
-                        corrected_document,
-                        _published_evidence_catalog(corrected_document),
-                    )
-                    if published:
-                        self.events.append(
-                            self.ctx.job_id, "candidate_deterministic_repaired", {
-                                "work_item_id": work.work_item_id,
-                                "changes": changes,
-                            },
-                        )
-                    return JudgmentOutcome(C.STATUS_COMPLETED, published=published)
-                # Persist the repaired candidate and send only semantic or
-                # evidence errors to the model.  Deterministic errors that
-                # remain unresolved are never delegated to the model.
-                remaining_dicts = [error.to_dict() for error in remaining]
-                remaining_deterministic = [
-                    error for error in remaining if is_deterministic_error(error)
-                ]
-                remaining_fatal = [
-                    error for error in remaining if is_fatal_error(error)
-                ]
-                if remaining_fatal or remaining_deterministic:
-                    service_errors = remaining_fatal or remaining_deterministic
-                    self.events.append(self.ctx.job_id, "correction_skipped", {
-                        "work_item_id": work.work_item_id,
-                        "reason": "service_deterministic_error",
-                        "errors": [error.to_dict() for error in service_errors],
-                    })
-                    return self._fail(
-                        "semantic_failed",
-                        {
-                            "work_item_id": work.work_item_id,
-                            "state": SS.CORRECTION_INVALID_TERMINAL,
-                            "errors": [error.to_dict() for error in service_errors],
-                            "repair": "deterministic_only",
-                        },
-                        "deterministic correction still invalid: "
-                        + "; ".join(error.code for error in service_errors[:5]),
-                    )
-                _write_json(candidate_path, corrected_document)
-                _write_json(errors_path, {
-                    "input_fingerprint": fingerprint,
-                    "candidate_kind": breakpoint_data.get(
-                        "candidate_kind", CANDIDATE_PUBLISHED_DOCUMENT
-                    ),
-                    "errors": remaining_dicts,
-                    "evidence_catalog": _published_evidence_catalog(corrected_document),
-                    "deterministic_changes": changes,
+
+            # Fix 2: a service error the deterministic repair could not resolve
+            # is reclassified into the single model correction turn together
+            # with the naturally model-correctable residuals, instead of ending
+            # the work item.  Only fold a code whose correction path resolves so
+            # ``_correct_work_input`` cannot raise on an unmappable selector.
+            model_remaining = [
+                error for error in remaining if is_model_correction_error(error)
+            ]
+            foldable_service: list[TypedError] = []
+            for error in remaining:
+                if not is_deterministic_error(error):
+                    continue
+                try:
+                    resolve_typed_error_json_paths(corrected_document, error)
+                except (ValueError, KeyError, TypeError, IndexError):
+                    continue
+                foldable_service.append(error)
+
+            turn_errors = model_remaining + foldable_service
+            if not turn_errors:
+                # Nothing a model turn can fix (no model-correctable errors and
+                # no service error with a resolvable path).  For the final
+                # report, degrade to a usable artifact when the residual is
+                # non-HARD; observations still terminate.
+                if degraded_publish(
+                    corrected_document,
+                    _published_evidence_catalog(corrected_document),
+                    remaining,
+                ):
+                    return JudgmentOutcome(C.STATUS_COMPLETED, published=True)
+                self.events.append(self.ctx.job_id, "correction_skipped", {
+                    "work_item_id": work.work_item_id,
+                    "reason": "service_deterministic_error",
+                    "errors": [error.to_dict() for error in remaining],
                 })
-                typed_dicts = remaining_dicts
-                model_dicts = [
-                    error.to_dict() for error in remaining
-                    if is_model_correction_error(error)
-                ]
+                SS.set_work_item_state(
+                    self.ctx.run_dir, work.work_item_id,
+                    SS.CORRECTION_INVALID_TERMINAL,
+                )
+                return self._fail(
+                    "semantic_failed",
+                    {
+                        "work_item_id": work.work_item_id,
+                        "state": SS.CORRECTION_INVALID_TERMINAL,
+                        "errors": [error.to_dict() for error in remaining],
+                        "repair": "deterministic_only",
+                    },
+                    "deterministic correction still invalid: "
+                    + "; ".join(error.code for error in remaining[:5]),
+                )
+            _write_json(candidate_path, corrected_document)
+            _write_json(errors_path, {
+                "input_fingerprint": fingerprint,
+                "candidate_kind": working_candidate_kind,
+                "errors": [error.to_dict() for error in remaining],
+                "evidence_catalog": _published_evidence_catalog(corrected_document),
+                "deterministic_changes": changes,
+            })
+            if changes:
+                self.events.append(
+                    self.ctx.job_id, "candidate_deterministic_repaired", {
+                        "work_item_id": work.work_item_id,
+                        "changes": changes,
+                    },
+                )
+            breakpoint_data = {
+                **breakpoint_data, "candidate_kind": working_candidate_kind,
+            }
+            typed_dicts = [error.to_dict() for error in remaining]
+            model_dicts = [error.to_dict() for error in turn_errors]
 
         if not model_dicts:
             self.events.append(self.ctx.job_id, "correction_skipped", {
@@ -893,6 +983,15 @@ class JudgmentFlow:
                         normalization.evidence_catalog,
                     )
                     return JudgmentOutcome(C.STATUS_COMPLETED, published=True)
+            # The single correction turn has run.  For the final report, a
+            # structurally usable document whose residual errors are all
+            # non-HARD degrades to a usable artifact instead of terminating.
+            if normalization.document is not None and degraded_publish(
+                projected(normalization.document),
+                normalization.evidence_catalog,
+                list(normalization.errors),
+            ):
+                return JudgmentOutcome(C.STATUS_COMPLETED, published=True)
             _write_json(candidate_path, corrected_candidate_for_failure)
             _write_json(errors_path, {
                 "input_fingerprint": fingerprint,
@@ -923,6 +1022,12 @@ class JudgmentFlow:
                 corrected_document, normalization.evidence_catalog,
             )
             return JudgmentOutcome(C.STATUS_COMPLETED, published=published)
+        # Post-correction residual on a structurally usable document: degrade
+        # the final report when nothing residual is HARD/fatal.
+        if degraded_publish(
+            corrected_document, normalization.evidence_catalog, typed,
+        ):
+            return JudgmentOutcome(C.STATUS_COMPLETED, published=True)
         _write_json(candidate_path, corrected_document)
         _write_json(errors_path, {
             "input_fingerprint": fingerprint,
