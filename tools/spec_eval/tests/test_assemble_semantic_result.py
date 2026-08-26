@@ -104,6 +104,21 @@ class AssembleSemanticResultWarningTest(unittest.TestCase):
         self.assertEqual(len(blocking), 1)
         self.assertEqual(len(warnings), 1)
 
+    def test_post_correction_ownership_and_duplicate_basis_are_warnings(self) -> None:
+        blocking, warnings = split_aggregation_warnings([
+            (
+                "aggregation.defect_ownership[1].primary_criterion_id: "
+                "must own one mapped Finding"
+            ),
+            (
+                "aggregation.contradiction_bases[1].primary_defect_key: "
+                "duplicate contradiction basis"
+            ),
+            "aggregation.finding_id: required",
+        ])
+        self.assertEqual(blocking, ["aggregation.finding_id: required"])
+        self.assertEqual(len(warnings), 2)
+
     def test_contradiction_basis_warning_deducts_minor_confidence_once(self) -> None:
         with TemporaryDirectory() as temporary:
             run_dir = Path(temporary)
