@@ -25,6 +25,11 @@ FINDING_EVIDENCE_WARNING_MARKER = (
 )
 FINDING_EVIDENCE_WARNING_CODE = "FINDING_EVIDENCE_UNKNOWN"
 FINDING_EVIDENCE_WARNING_DEDUCTION = 20
+CONTRADICTION_BASIS_WARNING_MARKER = (
+    "basis defects must cover every CONTRADICTED Criterion"
+)
+CONTRADICTION_BASIS_WARNING_CODE = "CONTRADICTION_BASIS_INVALID"
+CONTRADICTION_BASIS_WARNING_DEDUCTION = 5
 
 
 def split_aggregation_warnings(errors: list[str]) -> tuple[list[str], list[str]]:
@@ -36,6 +41,7 @@ def split_aggregation_warnings(errors: list[str]) -> tuple[list[str], list[str]]
             any(marker in error for marker in OWNERSHIP_WARNING_MARKERS)
             or MAPPING_WARNING_MARKER in error
             or FINDING_EVIDENCE_WARNING_MARKER in error
+            or CONTRADICTION_BASIS_WARNING_MARKER in error
         ):
             warnings.append(error)
         else:
@@ -58,6 +64,10 @@ def record_aggregation_warnings(run_dir: Path, warnings: list[str]) -> None:
     record_finding_evidence_warning(run_dir, [
         warning for warning in warnings
         if FINDING_EVIDENCE_WARNING_MARKER in warning
+    ])
+    record_contradiction_basis_warning(run_dir, [
+        warning for warning in warnings
+        if CONTRADICTION_BASIS_WARNING_MARKER in warning
     ])
 
 
@@ -102,6 +112,23 @@ def record_finding_evidence_warning(
             "frozen Criterion catalog"
         ),
         warning_path="aggregation.criterion_results[].findings[].evidence_ids",
+    )
+
+
+def record_contradiction_basis_warning(
+    run_dir: Path, warnings: list[str]
+) -> None:
+    """Deduct confidence when root-defect basis coverage is incomplete."""
+    _record_confidence_warning(
+        run_dir, warnings,
+        code=CONTRADICTION_BASIS_WARNING_CODE,
+        layer="MINOR",
+        deduction=CONTRADICTION_BASIS_WARNING_DEDUCTION,
+        message=(
+            "contradiction root-defect basis does not cover every contradicted "
+            "Criterion"
+        ),
+        warning_path="aggregation.contradiction_bases",
     )
 
 
