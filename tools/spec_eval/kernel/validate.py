@@ -29,6 +29,7 @@ from .normalize import (
     DEFECT_KEY,
     FINDING_EVIDENCE_WARNING_PREFIX,
     NV_MISSING_EVIDENCE_WARNING_PREFIX,
+    OWNERSHIP_CRITICALITY_WARNING_PREFIX,
     OUTCOME_POLICY_BASIS_CRITERIA,
     is_service_ownership_defect_key,
 )
@@ -670,6 +671,11 @@ def validate_aggregation_document(
             ),
             actual=missing_evidence_recovery_notes[0],
         ))
+    ownership_recovery_notes = [
+        note for note in (notes if isinstance(notes, list) else [])
+        if isinstance(note, str)
+        and note.startswith(OWNERSHIP_CRITICALITY_WARNING_PREFIX)
+    ]
 
     findings_by_id: dict[str, dict[str, Any]] = {}
     contradicted_criteria: list[str] = []
@@ -995,16 +1001,20 @@ def validate_aggregation_document(
         str(record.get("defect_key")) for record in ownership
         if is_service_ownership_defect_key(record.get("defect_key"))
     })
-    if fallback_owners:
+    if fallback_owners or ownership_recovery_notes:
+        recovery_details = []
+        if ownership_recovery_notes:
+            recovery_details.append(ownership_recovery_notes[0])
+        if fallback_owners:
+            recovery_details.append(str(fallback_owners))
         errors.append(_err(
             "OWNERSHIP_CRITICALITY", f"{label}.defect_ownership",
             entity_type="document",
             expected=(
-                "all Findings should use observation-backed defect owners; "
-                f"service fallback retained report consumability for "
-                f"{len(fallback_owners)} unresolved Finding(s)"
+                "duplicate or unresolved Finding ownership was repaired by "
+                "the service; publish with reduced confidence"
             ),
-            actual=str(fallback_owners),
+            actual="; ".join(recovery_details),
         ))
 
     contradictions = _rows(document.get("contradiction_bases"))

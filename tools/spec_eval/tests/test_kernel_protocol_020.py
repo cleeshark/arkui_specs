@@ -22,6 +22,7 @@ from spec_eval.protocol_validator import (
 )
 from spec_eval.kernel import contracts as K
 from spec_eval.kernel.errors import (
+    MODEL_CORRECTION,
     SERVICE_NORMALIZATION,
     TypedError,
     blocking,
@@ -40,6 +41,7 @@ from spec_eval.kernel.machine_contract import (
 from spec_eval.kernel.normalize import (
     FINDING_EVIDENCE_WARNING_PREFIX,
     NV_MISSING_EVIDENCE_WARNING_PREFIX,
+    OWNERSHIP_CRITICALITY_WARNING_PREFIX,
     OUTCOME_POLICY_BASIS_CRITERIA,
     assemble_semantic_result,
     normalize_aggregation,
@@ -1183,6 +1185,135 @@ class NormalizeAggregationTest(unittest.TestCase):
             result.errors[0].path,
             "$.defect_ownership[0].defect_key",
         )
+
+    def test_duplicate_defect_owner_is_model_correction_without_recovery(self) -> None:
+        judgment = self._judgment()
+        judgment["defect_ownership"].append({
+            "defect_key": "competing-owner",
+            "primary_criterion_id": "CORRECTNESS-SOURCE-SUPPORT",
+            "finding_keys": ["f1"],
+            "rationale": "A competing model-owned edge.",
+        })
+
+        result = self._normalize(judgment)
+
+        self.assertEqual(result.fatal, [])
+        self.assertIsNone(result.document)
+        self.assertEqual([error.code for error in result.errors], [
+            "DUPLICATE_DEFECT_OWNER",
+        ])
+        self.assertEqual(result.errors[0].repairability, MODEL_CORRECTION)
+
+    def test_duplicate_defect_owner_resolves_from_context_with_warning(self) -> None:
+        judgment = self._judgment()
+        judgment["defect_ownership"].append({
+            "defect_key": "competing-owner",
+            "primary_criterion_id": "CORRECTNESS-SOURCE-SUPPORT",
+            "finding_keys": ["f1"],
+            "rationale": "A competing model-owned edge.",
+        })
+        context = _compact_context(self._aggregation_context())
+        context["claims"] = {
+            "C:feature:Feat-01/Feat-01/AC-1": {
+                "claim_id": "Feat-01/AC-1",
+                "defect_keys": ["missing-source-proof"],
+            },
+        }
+        context["criteria"][0]["claim_refs"] = [
+            "C:feature:Feat-01/Feat-01/AC-1",
+        ]
+        context["valid_defect_keys"] = [
+            "missing-source-proof", "competing-owner",
+        ]
+
+        result = normalize_aggregation(
+            self._template(), judgment,
+            source_observation_ids=["feature:Feat-01"],
+            aggregation_context=context,
+            recover_duplicate_owners=True,
+        )
+
+        self.assertEqual(result.errors, [])
+        self.assertEqual(result.fatal, [])
+        ownership = result.document["defect_ownership"]
+        self.assertEqual(
+            [record["defect_key"] for record in ownership],
+            ["missing-source-proof"],
+        )
+        warning_notes = [
+            note for note in result.document["notes"]
+            if note.startswith(OWNERSHIP_CRITICALITY_WARNING_PREFIX)
+        ]
+        self.assertEqual(len(warning_notes), 1)
+        warning_payload = json.loads(
+            warning_notes[0][len(OWNERSHIP_CRITICALITY_WARNING_PREFIX):]
+        )
+        recovery = warning_payload["resolved_duplicate_owners"][0]
+        self.assertEqual(recovery["finding_key"], "f1")
+        self.assertEqual(recovery["selected_owner"], "missing-source-proof")
+        self.assertEqual(recovery["discarded_owners"], ["competing-owner"])
+
+        typed = validate_aggregation_document(
+            result.document,
+            criterion_order=list(CRITERIA),
+            aggregation_context=context,
+        )
+        ownership_warnings = [
+            error for error in typed
+            if error.code == "OWNERSHIP_CRITICALITY"
+        ]
+        self.assertEqual(len(ownership_warnings), 1)
+        self.assertFalse(has_hard_errors(typed))
+        confidence = compute_confidence(typed)
+        self.assertEqual(confidence["confidence_score"], 80)
+        self.assertEqual(confidence["deduction_total"], 20)
+
+    def test_ambiguous_duplicate_defect_owner_uses_service_fallback(self) -> None:
+        judgment = self._judgment()
+        judgment["defect_ownership"].append({
+            "defect_key": "competing-owner",
+            "primary_criterion_id": "CORRECTNESS-SOURCE-SUPPORT",
+            "finding_keys": ["f1"],
+            "rationale": "A competing model-owned edge.",
+        })
+        context = _compact_context(self._aggregation_context())
+        context["claims"] = {
+            "C:feature:Feat-01/Feat-01/AC-1": {
+                "claim_id": "Feat-01/AC-1",
+                "defect_keys": ["context-owner-a", "context-owner-b"],
+            },
+        }
+        context["criteria"][0]["claim_refs"] = [
+            "C:feature:Feat-01/Feat-01/AC-1",
+        ]
+        context["valid_defect_keys"] = [
+            "missing-source-proof", "competing-owner",
+            "context-owner-a", "context-owner-b",
+        ]
+
+        result = normalize_aggregation(
+            self._template(), judgment,
+            source_observation_ids=["feature:Feat-01"],
+            aggregation_context=context,
+            recover_duplicate_owners=True,
+        )
+
+        self.assertEqual(result.errors, [])
+        self.assertEqual(result.fatal, [])
+        fallback = [
+            record for record in result.document["defect_ownership"]
+            if record["defect_key"].startswith("service.unresolved-ownership.")
+        ]
+        self.assertEqual(len(fallback), 1)
+        typed = validate_aggregation_document(
+            result.document,
+            criterion_order=list(CRITERIA),
+            aggregation_context=context,
+        )
+        self.assertEqual(
+            sum(error.code == "OWNERSHIP_CRITICALITY" for error in typed), 1,
+        )
+        self.assertFalse(has_hard_errors(typed))
 
     def test_duplicate_finding_key_falls_back_without_orphaning_sem_ids(self) -> None:
         judgment = self._judgment()

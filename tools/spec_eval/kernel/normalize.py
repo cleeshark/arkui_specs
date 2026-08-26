@@ -34,6 +34,9 @@ FINDING_EVIDENCE_WARNING_PREFIX = (
 NV_MISSING_EVIDENCE_WARNING_PREFIX = (
     "service-warning:NV_MISSING_EVIDENCE_RECOVERED:"
 )
+OWNERSHIP_CRITICALITY_WARNING_PREFIX = (
+    "service-warning:OWNERSHIP_CRITICALITY:"
+)
 OUTCOME_POLICY_BASIS_CRITERIA = K.POLICY_BASIS_CRITERION_IDS
 FINDING_SEVERITY_TO_PUBLISHED = {
     "CRITICAL": "Critical",
@@ -564,6 +567,7 @@ def normalize_aggregation(
     source_observation_ids: list[str],
     aggregation_context: dict[str, Any] | None = None,
     allow_ownership_fallback: bool = False,
+    recover_duplicate_owners: bool = False,
 ) -> NormalizationResult:
     """Expand one aggregation judgment payload into the published document.
 
@@ -628,11 +632,15 @@ def normalize_aggregation(
                 repairability=MODEL_CORRECTION,
             ))
     ownership_recovery_enabled = (
-        allow_ownership_fallback or bool(duplicate_occurrences)
+        allow_ownership_fallback
+        or recover_duplicate_owners
+        or bool(duplicate_occurrences)
     )
 
     ownership_rows = _rows(judgment.get("defect_ownership"))
     owners_by_finding_key: dict[str, list[str]] = {}
+    recovered_duplicate_owners: list[dict[str, Any]] = []
+    recovered_duplicate_identities: set[tuple[str, str, str | None]] = set()
     reserved_model_defect_keys: set[str] = set()
     # Build defect_key whitelist from aggregation context
     valid_defect_keys: set[str] = set()
@@ -678,11 +686,11 @@ def normalize_aggregation(
                 and previous != defect_key
                 and not ownership_recovery_enabled
             ):
-                fatal.append(TypedError(
+                errors.append(TypedError(
                     "DUPLICATE_DEFECT_OWNER", "$.defect_ownership",
                     entity_type="finding", entity_id=finding_key,
                     expected="one owner", actual=f"{previous} and {defect_key}",
-                    repairability=FATAL_INPUT,
+                    repairability=MODEL_CORRECTION,
                 ))
             owner = str(defect_key or "")
             if owner and owner not in owners:
@@ -713,6 +721,29 @@ def normalize_aggregation(
             ]
             if len(compatible) == 1:
                 owner = compatible[0]
+                if len(declared_owners) > 1:
+                    recovery_identity = (
+                        finding_key,
+                        owner,
+                        claim_id if isinstance(claim_id, str) else None,
+                    )
+                    if recovery_identity not in recovered_duplicate_identities:
+                        recovered_duplicate_identities.add(recovery_identity)
+                        recovered_duplicate_owners.append({
+                            "finding_key": finding_key,
+                            "criterion_id": criterion_id,
+                            "claim_id": (
+                                claim_id if isinstance(claim_id, str) else None
+                            ),
+                            "selected_owner": owner,
+                            "discarded_owners": sorted(
+                                set(declared_owners) - {owner}
+                            ),
+                        })
+                        changes.append(
+                            "defect_ownership: resolved duplicate owners for "
+                            f"{finding_key!r} to {owner!r} from frozen context"
+                        )
             elif not is_duplicate and len(context_candidates) == 1:
                 owner = next(iter(context_candidates))
         # An omitted finding_keys edge must never leak into the published
@@ -1089,6 +1120,7 @@ def normalize_aggregation(
             and note.startswith((
                 FINDING_EVIDENCE_WARNING_PREFIX,
                 NV_MISSING_EVIDENCE_WARNING_PREFIX,
+                OWNERSHIP_CRITICALITY_WARNING_PREFIX,
             ))
         )
     ]
@@ -1107,6 +1139,16 @@ def normalize_aggregation(
             NV_MISSING_EVIDENCE_WARNING_PREFIX
             + json.dumps(
                 {"criteria": recovered_missing_evidence},
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+        )
+    if recovered_duplicate_owners:
+        notes.append(
+            OWNERSHIP_CRITICALITY_WARNING_PREFIX
+            + json.dumps(
+                {"resolved_duplicate_owners": recovered_duplicate_owners},
                 ensure_ascii=False,
                 sort_keys=True,
                 separators=(",", ":"),
