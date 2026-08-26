@@ -222,6 +222,7 @@ def run_aggregation(
             template, payload,
             source_observation_ids=source_observation_ids,
             aggregation_context=aggregation_context,
+            recover_duplicate_owners=True,
         )
 
     def _normalize_after_correction(payload: dict[str, Any]) -> Any:
