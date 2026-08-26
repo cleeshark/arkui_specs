@@ -958,6 +958,21 @@ class CorrectionFlowTest(unittest.TestCase):
                     entity_type="criterion",
                     entity_id="C",
                 )]
+                # These are intentionally still present after the bounded
+                # Correction turn: JudgmentFlow must publish the consumable
+                # document and retain them as confidence-deducting warnings.
+                errors.extend([
+                    TypedError(
+                        "MAPPING_NV_REQUIRED",
+                        "aggregation.criterion_results[C]",
+                        entity_type="criterion", entity_id="C",
+                    ),
+                    TypedError(
+                        "FINDING_CARDINALITY_VIOLATED",
+                        "aggregation.criterion_results[C].findings",
+                        entity_type="criterion", entity_id="C",
+                    ),
+                ])
                 claims = document.get("observations", [{}])[0].get("claim_ids")
                 if claims == ["claim-1", "claim-1"]:
                     errors.append(TypedError(
@@ -997,10 +1012,14 @@ class CorrectionFlowTest(unittest.TestCase):
             if event_type == "correction_completed_with_warnings"
         ]
         self.assertEqual(len(warning_events), 1)
-        self.assertEqual(len(warning_events[0]["warnings"]), 1)
+        self.assertEqual(len(warning_events[0]["warnings"]), 3)
         self.assertEqual(
             {warning["code"] for warning in warning_events[0]["warnings"]},
-            {"MAPPING_CLAIM_UNMAPPED"},
+            {
+                "MAPPING_CLAIM_UNMAPPED",
+                "MAPPING_NV_REQUIRED",
+                "FINDING_CARDINALITY_VIOLATED",
+            },
         )
 
     def test_correction_schema_is_generated_and_compact(self) -> None:

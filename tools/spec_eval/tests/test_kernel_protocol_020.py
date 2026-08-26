@@ -77,6 +77,7 @@ def _compact_context(context: dict) -> dict:
             "allow_not_applicable": False,
             "outcomes": {},
             "required_evidence_types": [],
+            "constraints": row.get("constraints", {}),
         })
     return {
         "schema_version": 3,
@@ -1494,6 +1495,66 @@ class NormalizeAggregationTest(unittest.TestCase):
         self.assertEqual(
             [error.code for error in errors].count("POLICY_BASIS_INVALID"), 1
         )
+
+    def test_context_required_not_verifiable_overrides_policy_derivation(self) -> None:
+        judgment = self._judgment()
+        for criterion_id in (
+            "COMPATIBILITY-API-VERSION", "COMPATIBILITY-MULTI-DEVICE",
+        ):
+            policy = next(
+                row for row in judgment["outcome_policy_bases"]
+                if row["criterion_id"] == criterion_id
+            )
+            policy.update({
+                "content_status": "PRESENT",
+                "evidence_status": "PARTIAL",
+                "conflict_scope": "NONE",
+                "reason": "No compatible-version evidence was available.",
+            })
+            result = next(
+                row for row in judgment["criterion_results"]
+                if row["criterion_id"] == criterion_id
+            )
+            result["conclusion"] = "PARTIALLY_SUPPORTED"
+
+        context = self._aggregation_context()
+        for mapping in context["criterion_mappings"]:
+            if mapping["criterion_id"] in {
+                "COMPATIBILITY-API-VERSION", "COMPATIBILITY-MULTI-DEVICE",
+            }:
+                mapping["constraints"] = {
+                    "required_conclusion_when_no_adverse": "NOT_VERIFIABLE",
+                    "forbidden_conclusions": ["SUPPORTED", "NOT_APPLICABLE"],
+                }
+        normalized = normalize_aggregation(
+            self._template(), judgment,
+            source_observation_ids=[],
+            aggregation_context=_compact_context(context),
+        )
+        self.assertEqual(normalized.errors, [])
+        self.assertIsNotNone(normalized.document)
+        for criterion_id in (
+            "COMPATIBILITY-API-VERSION", "COMPATIBILITY-MULTI-DEVICE",
+        ):
+            criterion = next(
+                row for row in normalized.document["criterion_results"]
+                if row["criterion_id"] == criterion_id
+            )
+            self.assertEqual(criterion["conclusion"], "NOT_VERIFIABLE")
+            self.assertTrue(criterion["missing_evidence"])
+        errors = validate_aggregation_document(
+            normalized.document, criterion_order=list(CRITERIA),
+            aggregation_context=_compact_context(context),
+        )
+        codes = [error.code for error in errors]
+        self.assertNotIn("MAPPING_NV_REQUIRED", codes)
+        self.assertNotIn("FINDING_CARDINALITY_VIOLATED", codes)
+        self.assertEqual(codes.count("NV_MISSING_EVIDENCE_RECOVERED"), 1)
+        confidence = compute_confidence(errors)
+        # The fixture also carries its pre-existing unmapped claim warning;
+        # the recovered NV warning contributes one additional bounded -5
+        # deduction (warnings are de-duplicated by code).
+        self.assertEqual(confidence["deduction_total"], 10)
 
     def test_contradiction_basis_references_owned_defect_key(self) -> None:
         judgment = self._judgment()

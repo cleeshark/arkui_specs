@@ -404,7 +404,15 @@ class JudgmentFlow:
 
             def downgrade_warnings(errors: list[TypedError]) -> list[TypedError]:
                 for error in errors:
-                    if not is_post_correction_warning(error):
+                    # Once the single model Correction turn has completed,
+                    # any remaining MODEL_CORRECTION issue is a report-quality
+                    # warning.  Keep its original code so aggregation can
+                    # apply the registered confidence deduction.  Fatal and
+                    # service-owned structural errors remain blocking.
+                    if not (
+                        is_post_correction_warning(error)
+                        or is_model_correction_error(error)
+                    ):
                         continue
                     identity = (
                         error.code, error.path,
@@ -415,7 +423,10 @@ class JudgmentFlow:
                         downgraded.append(error)
                 return [
                     error for error in errors
-                    if not is_post_correction_warning(error)
+                    if not (
+                        is_post_correction_warning(error)
+                        or is_model_correction_error(error)
+                    )
                 ]
 
             def record_downgraded() -> None:
@@ -857,6 +868,31 @@ class JudgmentFlow:
                 ),
             )
         if normalization.errors:
+            # A correction against a raw payload can fail during
+            # normalization before a validator-visible document is produced.
+            # If the normalizer did produce a structurally usable document and
+            # every remaining error is model-correctable, apply the same
+            # post-Correction warning policy instead of entering the terminal
+            # state.  Without a document, publishing would be unsafe.
+            if (
+                normalization.document is not None
+                and normalization.errors
+                and all(is_model_correction_error(error)
+                        for error in normalization.errors)
+            ):
+                normalized_document, normalized_typed = (
+                    repair_after_model_correction(
+                        normalization.document,
+                        list(normalization.errors)
+                        + typed_of(normalization.document),
+                    )
+                )
+                if not normalized_typed:
+                    publish(
+                        normalized_document,
+                        normalization.evidence_catalog,
+                    )
+                    return JudgmentOutcome(C.STATUS_COMPLETED, published=True)
             _write_json(candidate_path, corrected_candidate_for_failure)
             _write_json(errors_path, {
                 "input_fingerprint": fingerprint,

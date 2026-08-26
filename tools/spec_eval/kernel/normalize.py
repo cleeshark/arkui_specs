@@ -956,6 +956,18 @@ def normalize_aggregation(
                 conclusion = derived_conclusion
                 for finding in findings:
                     finding["conclusion"] = conclusion
+        # The aggregation context is the safety contract for constrained
+        # criteria. Apply its required fallback after policy derivation so a
+        # generic PARTIALLY_SUPPORTED policy result cannot override a mandated
+        # NOT_VERIFIABLE conclusion.
+        if required_conclusion and conclusion != required_conclusion:
+            changes.append(
+                f"criterion_results[{criterion_id}].conclusion: context requires "
+                f"{required_conclusion}, auto-corrected from {conclusion}"
+            )
+            conclusion = required_conclusion
+            for finding in findings:
+                finding["conclusion"] = conclusion
         criterion_result = {
             "criterion_id": criterion_id,
             "dimension_id": template_row.get("dimension_id"),
@@ -977,14 +989,21 @@ def normalize_aggregation(
             policy_reason = conclusion_basis.get("reason")
             if isinstance(policy_reason, str) and policy_reason.strip():
                 missing_evidence = policy_reason.strip()
-                recovered_missing_evidence.append({
-                    "criterion_id": criterion_id,
-                    "source": "outcome_policy_bases.reason",
-                })
-                changes.append(
-                    f"criterion_results[{criterion_id}].missing_evidence "
-                    "recovered from outcome_policy_bases.reason"
+                source = "outcome_policy_bases.reason"
+            else:
+                missing_evidence = (
+                    "Required evidence is unavailable for this criterion; "
+                    "the result is not verifiable."
                 )
+                source = "service_safe_fallback"
+            recovered_missing_evidence.append({
+                "criterion_id": criterion_id,
+                "source": source,
+            })
+            changes.append(
+                f"criterion_results[{criterion_id}].missing_evidence "
+                f"recovered from {source}"
+            )
         if isinstance(missing_evidence, str) and missing_evidence.strip():
             criterion_result["missing_evidence"] = missing_evidence
         criterion_results.append(criterion_result)
