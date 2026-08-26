@@ -17,6 +17,7 @@ from assemble_semantic_result import (  # noqa: E402
     record_finding_evidence_warning,
     record_mapping_warning,
     record_ownership_warning,
+    record_contradiction_basis_warning,
     split_aggregation_warnings,
 )
 from validate_staged_run import main as validate_staged_main  # noqa: E402
@@ -91,6 +92,33 @@ class AssembleSemanticResultWarningTest(unittest.TestCase):
         ])
         self.assertEqual(len(warnings), 5)
         self.assertEqual(len(blocking), 2)
+
+    def test_contradiction_basis_coverage_is_a_warning(self) -> None:
+        blocking, warnings = split_aggregation_warnings([
+            (
+                "aggregation.contradiction_bases: basis defects must cover every "
+                "CONTRADICTED Criterion through owned Findings; expected ['C1'], got []"
+            ),
+            "aggregation.finding_id: required",
+        ])
+        self.assertEqual(len(blocking), 1)
+        self.assertEqual(len(warnings), 1)
+
+    def test_contradiction_basis_warning_deducts_minor_confidence_once(self) -> None:
+        with TemporaryDirectory() as temporary:
+            run_dir = Path(temporary)
+            record_contradiction_basis_warning(run_dir, ["warning-1"])
+            record_contradiction_basis_warning(run_dir, ["warning-2"])
+            result = json.loads(
+                (run_dir / "confidence-result.json").read_text(encoding="utf-8")
+            )
+        self.assertEqual(result["confidence_score"], 95)
+        self.assertEqual(result["deduction_total"], 5)
+        self.assertEqual(len(result["minor_violations"]), 1)
+        self.assertEqual(
+            result["minor_violations"][0]["code"],
+            "CONTRADICTION_BASIS_INVALID",
+        )
 
     def test_ownership_warning_deducts_confidence_once(self) -> None:
         with TemporaryDirectory() as temporary:
