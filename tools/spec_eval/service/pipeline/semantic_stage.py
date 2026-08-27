@@ -458,11 +458,13 @@ def run_job_pipeline(
 
     # deterministic report (score/stability/report) on the selected run
     job = jobs.get_job(job_id)
-    if job.status == S.RUNNING and job.stage == S.STAGE_AGGREGATION:
+    if job.status == S.RUNNING and job.stage in {S.STAGE_AGGREGATION, S.STAGE_REPORT}:
         from . import report_stage, site_history_stage, archive_stage, projector
-        jobs.transition_status(
-            job_id, S.RUNNING, stage=S.STAGE_REPORT, event_type="enter_report"
-        )
+        if job.stage == S.STAGE_AGGREGATION:
+            jobs.transition_status(
+                job_id, S.RUNNING, stage=S.STAGE_REPORT, event_type="enter_report"
+            )
+        # If already at STAGE_REPORT (e.g., retry after report failure), skip transition
         report_ctx = ctx_for(selected_run_id)
         try:
             aggregate_outputs = report_stage.run_report(
