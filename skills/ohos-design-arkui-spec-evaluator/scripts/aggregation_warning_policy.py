@@ -42,6 +42,15 @@ CONTRADICTION_BASIS_WARNING_MARKERS = (
 )
 CONTRADICTION_BASIS_WARNING_CODE = "CONTRADICTION_BASIS_INVALID"
 CONTRADICTION_BASIS_WARNING_DEDUCTION = 5
+# A Criterion whose evidence is present but of the wrong type for its required
+# evidence types is a bounded data-quality gap, not structural damage. The model
+# cannot fabricate a compliant evidence type without violating the evidence
+# allowlist, and the kernel classifies EVIDENCE_TYPE_MISSING as a non-blocking
+# (MAJOR) confidence deduction. Downgrade the final-gate error so the report can
+# still be published with reduced confidence instead of terminating.
+EVIDENCE_TYPE_WARNING_MARKER = "evidence must include one of"
+EVIDENCE_TYPE_WARNING_CODE = "EVIDENCE_TYPE_MISSING"
+EVIDENCE_TYPE_WARNING_DEDUCTION = 20
 
 
 def split_aggregation_warnings(errors: list[str]) -> tuple[list[str], list[str]]:
@@ -58,6 +67,28 @@ def split_aggregation_warnings(errors: list[str]) -> tuple[list[str], list[str]]
                 for marker in CONTRADICTION_BASIS_WARNING_MARKERS
             )
         ):
+            warnings.append(error)
+        else:
+            blocking.append(error)
+    return blocking, warnings
+
+
+def split_final_candidate_warnings(
+    errors: list[str],
+) -> tuple[list[str], list[str]]:
+    """Return ``(blocking_errors, downgraded_warnings)`` for the final gate.
+
+    The final-candidate protocol validator re-checks required evidence types.
+    A Criterion carrying evidence of the wrong type is a bounded data-quality
+    gap the kernel treats as a non-blocking confidence deduction, and the model
+    cannot fabricate a compliant type without violating the evidence allowlist.
+    Downgrade it so a report that passed the aggregation gate is not re-blocked
+    here for a gap that only warrants reduced confidence.
+    """
+    blocking: list[str] = []
+    warnings: list[str] = []
+    for error in errors:
+        if EVIDENCE_TYPE_WARNING_MARKER in error:
             warnings.append(error)
         else:
             blocking.append(error)
@@ -130,6 +161,21 @@ def record_finding_evidence_warning(
             "frozen Criterion catalog"
         ),
         warning_path="aggregation.criterion_results[].findings[].evidence_ids",
+    )
+
+
+def record_evidence_type_warning(run_dir: Path, warnings: list[str]) -> None:
+    """Deduct confidence when a Criterion lacks its required evidence types."""
+    _record_confidence_warning(
+        run_dir, warnings,
+        code=EVIDENCE_TYPE_WARNING_CODE,
+        layer="MAJOR",
+        deduction=EVIDENCE_TYPE_WARNING_DEDUCTION,
+        message=(
+            "aggregation retains a Criterion whose evidence does not include a "
+            "required evidence type"
+        ),
+        warning_path="aggregation.criterion_results[].evidence",
     )
 
 

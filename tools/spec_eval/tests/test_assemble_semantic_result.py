@@ -20,6 +20,10 @@ from assemble_semantic_result import (  # noqa: E402
     record_contradiction_basis_warning,
     split_aggregation_warnings,
 )
+from aggregation_warning_policy import (  # noqa: E402
+    record_evidence_type_warning,
+    split_final_candidate_warnings,
+)
 from staged_run_support import (  # noqa: E402
     repair_missing_finding_evidence,
 )
@@ -265,6 +269,66 @@ class AssembleSemanticResultWarningTest(unittest.TestCase):
                     "--stage", "final",
                 ])
         self.assertEqual(result, 1)
+
+    def test_evidence_type_missing_is_a_final_warning(self) -> None:
+        # A Criterion whose evidence is present but of the wrong required type is
+        # a bounded data-quality gap: the model cannot fabricate a compliant type
+        # and the kernel treats it as a non-blocking confidence deduction.
+        blocking, warnings = split_final_candidate_warnings([
+            (
+                "CORRECTNESS-SDK-CONTRACT: evidence must include one of "
+                "['sdk_declaration', 'source_citation'], got ['design_location']"
+            ),
+            "SEM-x: unresolved evidence IDs ['EV-1']",
+        ])
+        self.assertEqual(len(warnings), 1)
+        self.assertEqual(blocking, ["SEM-x: unresolved evidence IDs ['EV-1']"])
+
+    def test_final_validation_downgrades_evidence_type_missing(self) -> None:
+        # End-to-end at the final gate: an EVIDENCE_TYPE_MISSING error publishes
+        # (result 0) with an EVIDENCE_TYPE_MISSING confidence deduction instead
+        # of blocking.
+        error = (
+            "CORRECTNESS-SDK-CONTRACT: evidence must include one of "
+            "['sdk_declaration', 'source_citation'], got ['design_location']"
+        )
+        with TemporaryDirectory() as temporary:
+            run_dir = Path(temporary)
+            with (
+                patch(
+                    "validate_staged_run.validate_stage",
+                    return_value=([error], {}, {}),
+                ),
+                patch("validate_staged_run.update_progress"),
+            ):
+                result = validate_staged_main([
+                    "--run-dir", str(run_dir),
+                    "--stage", "final",
+                    "--update-state",
+                ])
+            confidence = json.loads(
+                (run_dir / "confidence-result.json").read_text(encoding="utf-8")
+            )
+        self.assertEqual(result, 0)
+        self.assertIn(
+            "EVIDENCE_TYPE_MISSING",
+            {item["code"] for item in confidence["major_violations"]},
+        )
+
+    def test_evidence_type_warning_deducts_confidence_once(self) -> None:
+        with TemporaryDirectory() as temporary:
+            run_dir = Path(temporary)
+            record_evidence_type_warning(run_dir, ["warning-1"])
+            record_evidence_type_warning(run_dir, ["warning-2"])
+            confidence = json.loads(
+                (run_dir / "confidence-result.json").read_text(encoding="utf-8")
+            )
+        self.assertEqual(confidence["confidence_score"], 80)
+        self.assertEqual(confidence["deduction_total"], 20)
+        self.assertEqual(
+            [item["code"] for item in confidence["major_violations"]],
+            ["EVIDENCE_TYPE_MISSING"],
+        )
 
 
 class RepairMissingFindingEvidenceTest(unittest.TestCase):
