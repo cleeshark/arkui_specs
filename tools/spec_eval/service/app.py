@@ -281,6 +281,23 @@ class SemanticServiceApp:
         target = targets.get(job_id)
         if target is not None:
             targets.update_revision_set(job_id, workspace.revisions)
+        # Clear any stale CORRECTION_PENDING states that would block retry
+        # when the specs revision refresh causes a fingerprint mismatch.
+        run_state_path = (
+            self.settings.jobs_root / job_id / "runs" / "run-1" / "staged" / "run-state.json"
+        )
+        if run_state_path.is_file():
+            import json
+            run_state = json.loads(run_state_path.read_text(encoding="utf-8"))
+            pseudo = run_state.get("pseudo_work_item_states", {})
+            if isinstance(pseudo, dict):
+                cleared = {k: v for k, v in pseudo.items() if v != "CORRECTION_PENDING"}
+                if cleared != pseudo:
+                    run_state["pseudo_work_item_states"] = cleared
+                    run_state_path.write_text(
+                        json.dumps(run_state, ensure_ascii=False, indent=2) + "\n",
+                        encoding="utf-8",
+                    )
         EventRepository(self.store).append(
             job_id,
             "workspace_revision_refreshed",
