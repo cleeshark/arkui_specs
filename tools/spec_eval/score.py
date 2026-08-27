@@ -54,9 +54,20 @@ def _load_json_object(path: Path) -> dict[str, Any]:
 
 
 def _raise_errors(label: str, errors: Iterable[str]) -> None:
+    """Raise ScoreInputError if any blocking errors remain after filtering warnings.
+
+    Some errors are non-blocking warnings after Correction and should not prevent
+    publishing a degraded report. Filter these out before raising.
+    """
+    # Evidence type mismatch warnings - allow degraded publish after Correction
+    # (aligned with aggregation_warning_policy.EVIDENCE_TYPE_WARNING_MARKER)
+    EVIDENCE_TYPE_WARNING_MARKER = "evidence must include one of"
+
     values = list(errors)
-    if values:
-        raise ScoreInputError(f"{label} is invalid:\n" + "\n".join(f"- {item}" for item in values))
+    blocking = [e for e in values if EVIDENCE_TYPE_WARNING_MARKER not in e]
+
+    if blocking:
+        raise ScoreInputError(f"{label} is invalid:\n" + "\n".join(f"- {item}" for item in blocking))
 
 
 def _validate_evidence_manifest(document: dict[str, Any]) -> list[str]:
