@@ -10,10 +10,12 @@ from pathlib import Path
 from aggregation_warning_policy import (
     record_aggregation_warnings,
     record_contradiction_basis_warning,
+    record_evidence_type_warning,
     record_finding_evidence_warning,
     record_mapping_warning,
     record_ownership_warning,
     split_aggregation_warnings,
+    split_final_candidate_warnings,
 )
 from staged_run_support import (
     build_final_candidate,
@@ -84,10 +86,14 @@ def main(argv: list[str] | None = None) -> int:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 2
     errors = validate_final_candidate(candidate, aggregation)
-    if errors:
-        for error in errors:
+    final_blocking, final_warnings = split_final_candidate_warnings(errors)
+    if final_blocking:
+        for error in final_blocking:
             print(f"ERROR: {error}", file=sys.stderr)
         return 1
+    for warning in final_warnings:
+        print(f"WARNING: {warning}", file=sys.stderr)
+    record_evidence_type_warning(run_dir, final_warnings)
     output = run_dir / "semantic-result.json"
     write_object(output, candidate)
     update_progress(run_dir, state, work_items, stage="final")
