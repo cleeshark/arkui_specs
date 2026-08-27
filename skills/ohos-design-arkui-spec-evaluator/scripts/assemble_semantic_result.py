@@ -19,6 +19,7 @@ from staged_run_support import (
     build_final_candidate,
     load_object,
     repair_aggregation_contract,
+    repair_missing_finding_evidence,
     update_progress,
     validate_final_candidate,
     write_object,
@@ -48,6 +49,13 @@ def main(argv: list[str] | None = None) -> int:
         repaired_aggregation, repair_changes = repair_aggregation_contract(
             aggregation
         )
+        # Insert documented-gap placeholders for evidence-required Findings that
+        # are genuinely evidence-less, so a data-quality gap the kernel already
+        # treats as non-blocking does not make the whole report un-publishable.
+        repaired_aggregation, gap_changes = repair_missing_finding_evidence(
+            repaired_aggregation
+        )
+        repair_changes = list(repair_changes) + list(gap_changes)
         if repair_changes:
             write_object(aggregation_path, repaired_aggregation)
     except (KeyError, ValueError) as exc:
@@ -62,6 +70,12 @@ def main(argv: list[str] | None = None) -> int:
     for warning in aggregation_warnings:
         print(f"WARNING: {warning}", file=sys.stderr)
     record_aggregation_warnings(run_dir, aggregation_warnings)
+    if gap_changes:
+        # A documented-gap placeholder was inserted: deduct confidence so the
+        # data-quality gap stays visible in the published report.
+        for change in gap_changes:
+            print(f"WARNING: {change}", file=sys.stderr)
+        record_finding_evidence_warning(run_dir, gap_changes)
     try:
         semantic_template = load_object(run_dir / "semantic-template.json")
         aggregation = load_object(run_dir / "aggregation.json")

@@ -20,6 +20,9 @@ from assemble_semantic_result import (  # noqa: E402
     record_contradiction_basis_warning,
     split_aggregation_warnings,
 )
+from staged_run_support import (  # noqa: E402
+    repair_missing_finding_evidence,
+)
 from validate_staged_run import main as validate_staged_main  # noqa: E402
 
 
@@ -262,6 +265,81 @@ class AssembleSemanticResultWarningTest(unittest.TestCase):
                     "--stage", "final",
                 ])
         self.assertEqual(result, 1)
+
+
+class RepairMissingFindingEvidenceTest(unittest.TestCase):
+    def _criterion(self, conclusion, evidence_ids, severity="Major"):
+        return {
+            "func_id": "03-01-02",
+            "source_revision": "e429c14fdb8edf3d9d8ea1de59e4fa8492f2205d",
+            "criterion_results": [{
+                "criterion_id": "DESIGN-FEAT-RUNTIME-COVERAGE",
+                "conclusion": conclusion,
+                "evidence": [],
+                "findings": [{
+                    "finding_id": "SEM-" + "a" * 24,
+                    "criterion_id": "DESIGN-FEAT-RUNTIME-COVERAGE",
+                    "conclusion": conclusion,
+                    "severity": severity,
+                    "evidence_ids": list(evidence_ids),
+                }],
+            }],
+        }
+
+    def test_empty_evidence_finding_gets_placeholder(self) -> None:
+        doc = self._criterion("MISSING", [])
+        repaired, changes = repair_missing_finding_evidence(doc)
+        self.assertTrue(changes)
+        cr = repaired["criterion_results"][0]
+        # A placeholder evidence item is inserted and referenced.
+        self.assertEqual(len(cr["evidence"]), 1)
+        gap = cr["evidence"][0]
+        self.assertTrue(gap["evidence_id"].startswith("EV-gap-"))
+        self.assertEqual(gap["source_revision"], doc["source_revision"])
+        self.assertRegex(gap["content_hash"], r"^sha256:[0-9a-f]{64}$")
+        # The placeholder type is one the Criterion accepts.
+        self.assertIn(
+            gap["type"],
+            {"design_location", "spec_location", "source_citation", "registry_entry"},
+        )
+        self.assertEqual(cr["findings"][0]["evidence_ids"], [gap["evidence_id"]])
+
+    def test_conclusion_and_severity_are_unchanged(self) -> None:
+        doc = self._criterion("MISSING", [], severity="Major")
+        repaired, _ = repair_missing_finding_evidence(doc)
+        cr = repaired["criterion_results"][0]
+        self.assertEqual(cr["conclusion"], "MISSING")
+        self.assertEqual(cr["findings"][0]["severity"], "Major")
+
+    def test_finding_with_evidence_is_untouched(self) -> None:
+        doc = self._criterion("MISSING", ["EV-real"])
+        doc["criterion_results"][0]["evidence"] = [{
+            "evidence_id": "EV-real", "type": "design_location", "path": "x",
+            "source_revision": doc["source_revision"],
+            "content_hash": "sha256:" + "0" * 64, "description": "real",
+        }]
+        repaired, changes = repair_missing_finding_evidence(doc)
+        self.assertEqual(changes, [])
+        self.assertEqual(
+            repaired["criterion_results"][0]["findings"][0]["evidence_ids"],
+            ["EV-real"],
+        )
+
+    def test_supported_conclusion_is_not_touched(self) -> None:
+        # SUPPORTED is not an evidence-required-finding conclusion for this path.
+        doc = self._criterion("SUPPORTED", [])
+        doc["criterion_results"][0]["findings"] = []
+        repaired, changes = repair_missing_finding_evidence(doc)
+        self.assertEqual(changes, [])
+
+    def test_repair_is_idempotent(self) -> None:
+        doc = self._criterion("MISSING", [])
+        once, _ = repair_missing_finding_evidence(doc)
+        twice, changes = repair_missing_finding_evidence(once)
+        self.assertEqual(changes, [])
+        self.assertEqual(
+            len(twice["criterion_results"][0]["evidence"]), 1,
+        )
 
 
 if __name__ == "__main__":
