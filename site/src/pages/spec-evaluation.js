@@ -229,6 +229,9 @@ function CriterionReview({criterion}) {
               <div className="findingHeader">
                 <span className={`severityBadge severity-${String(finding.severity).toLowerCase()}`}>{finding.severity}</span>
                 <code>{finding.finding_id || 'finding'}</code>
+                {finding.claim_id && (
+                  <code className="findingClaim" title="关联的 Spec Claim">{finding.claim_id}</code>
+                )}
               </div>
               <p>{finding.message}</p>
               {finding.recommendation && <p className="findingRecommendation">建议：{finding.recommendation}</p>}
