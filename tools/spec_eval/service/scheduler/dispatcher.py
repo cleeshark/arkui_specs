@@ -21,7 +21,7 @@ from typing import Callable, Optional
 
 from ..domain import states as S
 from ..domain.errors import IllegalTransitionError, JobNotFoundError
-from ..store.repositories import EventRepository, JobRepository
+from ..store.repositories import EventRepository, JobRepository, RefreshTargetRepository
 from ..store.sqlite_store import SqliteStore
 from .cancellation import CancelRegistry
 from .resource_lock import NamedLockManager
@@ -180,13 +180,14 @@ class Dispatcher:
             f"job state changed to {current.status}; retry the command",
         )
 
-    def retry(self, job_id: str) -> str:
+    def retry(self, job_id: str, *, reason: str | None = None) -> str:
         """Reset a failed/cancelled job to queued and enqueue it. Returns status."""
         jobs = JobRepository(self._store)
         try:
-            job = jobs.retry(job_id)
+            job = jobs.retry(job_id, reason=reason)
         except Exception:  # JobNotFoundError or IllegalTransitionError
             return jobs.get_job(job_id).status if self._job_exists(job_id) else S.FAILED
+        RefreshTargetRepository(self._store).reactivate_for_retry(job.job_id)
         self._enqueue(job.job_id, job.func_id)
         return job.status
 

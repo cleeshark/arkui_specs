@@ -214,28 +214,54 @@ def _object_exists(specs_root: Path, sha: str) -> bool:
     return _git(specs_root, "cat-file", "-e", f"{sha}^{{commit}}").returncode == 0
 
 
-def _fetch_into(specs_root: Path, sha: str, source_branch: str | None) -> str:
+def _fetch_into(
+    specs_root: Path,
+    sha: str,
+    source_branch: str | None,
+    iid: Any = None,
+) -> str:
     """Fetch ``sha`` from origin; return the outcome.
 
     The webhook ``tested`` SHA comes from the PR source branch, which the worker
-    checkout (parked on main) usually does not contain. Fetch the source branch
-    first (precise, cheap); if that does not surface the commit, fall back to a
-    full ``origin`` fetch. ``git fetch`` is idempotent and safe on a clean
-    checkout. Returns ``"fetched_branch"`` / ``"fetched_origin"`` when the commit
-    becomes available, ``"absent"`` when the fetch commands succeeded but the
-    commit is still missing (force-pushed away — a real mismatch), or ``"error"``
-    when every fetch command failed.
+    checkout (parked on main) usually does not contain. Fetch strategies are
+    tried cheapest-and-most-robust first, stopping as soon as ``sha`` surfaces:
+
+    1. ``git fetch origin <sha>`` — precise fetch of the immutable tested commit.
+       This is the only strategy that reaches a **fork** PR head (which lives on
+       the contributor's repo, not on origin) and it is also immune to a moved /
+       deleted source branch and to delivery races. It needs the server to allow
+       fetching arbitrary SHAs (``uploadpack.allowAnySHA1InWant``); GitCode does.
+    2. ``git fetch origin refs/merge-requests/<iid>/head`` — the MR head ref,
+       which mirrors fork heads onto origin. A moving pointer, so only valid for
+       the latest delivery; used as a fallback when the SHA fetch is unavailable.
+    3. ``git fetch origin <source_branch>`` — works only for same-repo PRs whose
+       branch lives on origin (``refs/heads/*``); useless for forks.
+    4. ``git fetch origin`` — full default-refspec fetch (``refs/heads/*`` only),
+       last-resort catch-all.
+
+    ``git fetch`` is idempotent and safe on a clean checkout. Returns a
+    ``"fetched_*"`` tag when the commit becomes available, ``"absent"`` when at
+    least one fetch command succeeded but the commit is still missing (e.g. a
+    same-repo branch force-pushed away — a real mismatch), or ``"error"`` when
+    every fetch command failed.
     """
-    any_ok = False
+    attempts: list[tuple[str, list[str]]] = []
+    if sha:
+        attempts.append(("fetched_sha", ["fetch", "origin", sha]))
+    if iid not in (None, ""):
+        attempts.append(
+            ("fetched_mr", ["fetch", "origin", f"refs/merge-requests/{iid}/head"])
+        )
     if source_branch:
-        if _git(specs_root, "fetch", "origin", source_branch).returncode == 0:
+        attempts.append(("fetched_branch", ["fetch", "origin", source_branch]))
+    attempts.append(("fetched_origin", ["fetch", "origin"]))
+
+    any_ok = False
+    for outcome, argv in attempts:
+        if _git(specs_root, *argv).returncode == 0:
             any_ok = True
             if _object_exists(specs_root, sha):
-                return "fetched_branch"
-    if _git(specs_root, "fetch", "origin").returncode == 0:
-        any_ok = True
-        if _object_exists(specs_root, sha):
-            return "fetched_origin"
+                return outcome
     return "absent" if any_ok else "error"
 
 
@@ -360,6 +386,7 @@ def ensure_specs_at_sha(
     *,
     auto_checkout: bool,
     source_branch: str | None = None,
+    iid: Any = None,
 ) -> tuple[str | None, bool, str, str | None]:
     """Ensure ``ace_engine/specs`` is at ``tested``.
 
@@ -380,11 +407,13 @@ def ensure_specs_at_sha(
     if not auto_checkout:
         return current, False, "skipped_mismatch", None
     # The webhook's tested SHA comes from the PR source branch, which the worker
-    # checkout (parked on main) usually does not contain. Fetch it before
-    # detaching; a SHA still absent after fetch (force-pushed away) is the only
-    # real mismatch.
+    # checkout (parked on main) usually does not contain — and for a fork PR the
+    # head lives on the contributor's repo, not origin. Fetch it before detaching
+    # (by immutable SHA / MR ref / branch; see _fetch_into). "absent" means the
+    # fetches ran but the commit never surfaced (a same-repo branch force-pushed
+    # away) — the only real mismatch.
     if not _object_exists(specs_root, tested):
-        outcome = _fetch_into(specs_root, tested, source_branch)
+        outcome = _fetch_into(specs_root, tested, source_branch, iid)
         if outcome == "error":
             return current, False, "fetch_failed", None
         if outcome == "absent":
@@ -1187,7 +1216,7 @@ def process_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[str, An
     source_branch = (receipt.get("pull_request") or {}).get("source_branch")
     specs_checks: list[SpecCheckResult] | None = None
     specs_head_before, ok, action, restore_ref = ensure_specs_at_sha(
-        ctx.specs_root, tested, auto_checkout=ctx.auto_checkout, source_branch=source_branch
+        ctx.specs_root, tested, auto_checkout=ctx.auto_checkout, source_branch=source_branch, iid=iid
     )
     try:
         if not ok:

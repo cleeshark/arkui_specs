@@ -232,6 +232,79 @@ class CancelRetryTest(_HttpTestBase):
         self.assertEqual(status, 200)
         self.assertEqual(body["status"], "queued")
 
+    def test_retry_latest_specs_action(self) -> None:
+        _, job = self._req("POST", "/api/jobs", {"func_id": "04-01-01"})
+        JobRepository(self.app.store).cancel(job["job_id"])
+        self.app.retry_latest_specs = lambda job_id: ("queued", "a" * 40)
+
+        status, body = self._req(
+            "POST", f"/api/jobs/{job['job_id']}/retry-latest-specs"
+        )
+
+        self.assertEqual(status, 200)
+        self.assertEqual(body["status"], "queued")
+        self.assertEqual(body["specs_revision"], "a" * 40)
+
+    def test_retry_latest_specs_clears_correction_pending_state(self) -> None:
+        """Verify that retry_latest_specs clears CORRECTION_PENDING to allow retry."""
+        _, job = self._req("POST", "/api/jobs", {"func_id": "04-01-01"})
+        job_id = job["job_id"]
+        # Simulate an aggregation failure with CORRECTION_PENDING state
+        jobs_repo = JobRepository(self.app.store)
+        jobs_repo.transition_status(job_id, S.RUNNING, event_type="test_setup", payload={})
+        jobs_repo.transition_status(
+            job_id, S.RUNNING, stage=S.STAGE_AGGREGATION, event_type="test_setup", payload={}
+        )
+        jobs_repo.transition_status(job_id, S.FAILED, event_type="test_setup", payload={})
+
+        # Create run-state.json with CORRECTION_PENDING and another non-CORRECTION_PENDING state
+        run_state_path = (
+            self.settings.jobs_root / job_id / "runs" / "run-1" / "staged" / "run-state.json"
+        )
+        run_state_path.parent.mkdir(parents=True, exist_ok=True)
+        initial_state = {
+            "validated_work_items": [],
+            "pseudo_work_item_states": {
+                "aggregation:final": "CORRECTION_PENDING",
+                "feature:Feat-01": "GENERATED_VALID",
+            },
+            "current_phase": "aggregation",
+        }
+        run_state_path.write_text(
+            json.dumps(initial_state, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+        )
+
+        # Mock the workspace refresh to avoid real git operations
+        from spec_eval.service.workspace.manager import RevisionWorkspaceManager
+        from spec_eval.service.workspace.models import EvaluationWorkspace
+
+        def mock_refresh(self, job):
+            return EvaluationWorkspace(
+                workspace_root=self.settings.data_root / "mock_workspace",
+                repo_root=self.settings.data_root / "mock_repo",
+                specs_root=self.settings.data_root / "mock_specs",
+                schemas_root=self.settings.data_root / "mock_schemas",
+                revisions={"ace_engine": "a"*40, "sdk-js": "b"*40, "sdk_c": "c"*40, "specs": "e"*40},
+            )
+
+        original_refresh = RevisionWorkspaceManager.refresh_specs_revision
+        RevisionWorkspaceManager.refresh_specs_revision = mock_refresh
+
+        try:
+            # Execute retry_latest_specs
+            self.app.retry_latest_specs(job_id)
+        finally:
+            # Restore
+            RevisionWorkspaceManager.refresh_specs_revision = original_refresh
+
+        # Verify CORRECTION_PENDING was cleared but other states preserved
+        run_state = json.loads(run_state_path.read_text(encoding="utf-8"))
+        pseudo = run_state.get("pseudo_work_item_states", {})
+        self.assertNotIn("aggregation:final", pseudo, "CORRECTION_PENDING state should be cleared")
+        self.assertIn("feature:Feat-01", pseudo, "Other states should be preserved")
+        self.assertEqual(pseudo["feature:Feat-01"], "GENERATED_VALID")
+
 
 class ArtifactDownloadTest(_HttpTestBase):
     def test_artifact_served_within_data_root(self) -> None:
@@ -319,6 +392,8 @@ class StaticUITest(_HttpTestBase):
         self.assertEqual(js_status, 200)
         self.assertIn("runJobAction", js)
         self.assertIn("if (!res.ok)", js)
+        self.assertIn("retry-latest-specs", js)
+        self.assertIn("latest specs", js)
 
     def test_ui_contains_independent_function_and_job_pagination(self) -> None:
         status, body = self._req("GET", "/")

@@ -385,6 +385,77 @@ class CodexExecutorTest(unittest.TestCase):
             contract["typed_errors"][0]["code"], "GAP_MISSING_FOR_NV"
         )
 
+    def test_aggregation_correction_prompt_uses_projected_context_contract(self) -> None:
+        schema_path = _write_v3_envelope_schema(self.tmp.name)
+        candidate_path = "/tmp/run/.aggregation.json.candidate"
+        correction_context_path = "/tmp/run/aggregation-correction-context.json"
+        work = replace(
+            self.work,
+            work_item_id="aggregation:final",
+            work_item={
+                "id": "aggregation:final",
+                "observation_type": "aggregation",
+                "observation_profile": "aggregation",
+                "input_resources": [{
+                    "path": correction_context_path,
+                    "role": "aggregation_correction_context",
+                    "citable": False,
+                }],
+            },
+            input_paths=(candidate_path, correction_context_path),
+            prompt_extras={
+                "mode": "correct",
+                "evaluation_protocol_version": "0.2.0",
+                "result_kind": "staged_json_patch",
+                "payload_kind": "correction",
+                "payload_fields": ["patches", "notes"],
+                "schema_path": schema_path,
+                "candidate_path": candidate_path,
+                "correction_context_path": correction_context_path,
+                "typed_errors": [{
+                    "code": "CRITERION_EVIDENCE_UNKNOWN",
+                    "path": "$.criterion_results[C-1].evidence_ids",
+                    "entity_type": "criterion",
+                    "entity_id": "C-1",
+                    "repairability": "MODEL_CORRECTION",
+                }],
+                "correction_contract": {
+                    "base": "raw_payload",
+                    "allowed_paths": [
+                        "/criterion_results/0/evidence_ids",
+                        "/criterion_results/0/findings/0/evidence_ids",
+                    ],
+                },
+                "observation_profile": "aggregation",
+                "machine_contract": {
+                    "observation_profile": "aggregation",
+                    "repair_recipes": {
+                        "CRITERION_EVIDENCE_UNKNOWN": [
+                            "Keep Finding evidence within parent Criterion evidence."
+                        ],
+                    },
+                    "dependency_rules": [
+                        "Finding evidence remains a parent Criterion subset."
+                    ],
+                },
+            },
+        )
+        runner = _FakeRunner(result_doc=_result_doc(work.work_item_id))
+
+        self._executor(runner).execute(work, lambda event: None)
+
+        prompt = json.loads(runner.last_stdin or "{}")
+        constraints = " ".join(prompt["constraints"])
+        self.assertIn("invalid Aggregation candidate", constraints)
+        self.assertIn("aggregation-correction-context.json", constraints)
+        self.assertIn("dependency_rules", constraints)
+        self.assertIn("Criterion/Finding Evidence closure", constraints)
+        self.assertIn("full aggregation-context.json", constraints)
+        self.assertEqual(prompt["phase_references"], [])
+        self.assertEqual(prompt["input_paths"], [
+            candidate_path, correction_context_path,
+        ])
+
     def test_aggregation_prompt_uses_inherited_canonical_evidence(self) -> None:
         schema_path = _write_v3_envelope_schema(self.tmp.name)
         context_path = str(Path(self.tmp.name) / "aggregation-context.json")

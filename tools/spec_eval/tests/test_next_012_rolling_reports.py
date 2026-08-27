@@ -32,6 +32,7 @@ from spec_eval.service.manual_refresh import ManualRefreshService
 from spec_eval.service.http.routes import route_request
 from spec_eval.service.report_registry import ReportRegistry, fingerprint_named_documents
 from spec_eval.service.report_delta import build_report_delta
+from spec_eval.service.scheduler.dispatcher import Dispatcher
 from spec_eval.service.settings import ServiceSettings
 from spec_eval.service.store.repositories import (
     EvaluationReportRepository,
@@ -240,6 +241,173 @@ class ReportRegistryTest(_RollingBase):
         ]
         self.assertIn("orphan_report_reconciled", event_types)
         self.assertEqual(self.registry.reconcile_orphan_reports().repaired, 0)
+
+    def test_app_startup_replaces_stale_current_with_completed_target_report(self) -> None:
+        old_job = self._job("o" * 40, "1" * 40)
+        old_target = self.heads.set_desired_target(
+            old_job.func_id,
+            revision=old_job.source_revision,
+            input_fingerprint="sha256:" + "1" * 64,
+            active_job_id=old_job.job_id,
+        )
+        old_report = self._report(
+            old_job.job_id,
+            old_job.source_revision,
+            old_target.desired_generation,
+            old_target.desired_input_fingerprint or "",
+            completed_at="2026-08-25T00:00:00+00:00",
+        )
+        self.assertEqual(self.registry.register_and_promote(old_report).promotion_status, "PROMOTED")
+
+        retry_job = self._job("r" * 40, "2" * 40)
+        retry_target = self.heads.set_desired_target(
+            retry_job.func_id,
+            revision=retry_job.source_revision,
+            input_fingerprint="sha256:" + "2" * 64,
+            active_job_id=retry_job.job_id,
+        )
+        retry_report = self._report(
+            retry_job.job_id,
+            retry_job.source_revision,
+            retry_target.desired_generation,
+            retry_target.desired_input_fingerprint or "",
+            completed_at="2026-08-25T01:00:00+00:00",
+        )
+        self.reports.insert(retry_report)
+        self._complete_job(retry_job.job_id)
+        self.heads.mark_refresh_failed(retry_job.func_id, retry_job.job_id, "projection gap")
+        self.store.close()
+
+        app = SemanticServiceApp(
+            self.settings,
+            executor=object(),  # type: ignore[arg-type]
+            job_runner=lambda _job_id, _cancel: None,
+        )
+        self.store = app.store
+
+        self.assertEqual(app.startup_reconcile_result.repaired, 1)
+        head = FunctionReportHeadRepository(app.store).get(retry_job.func_id)
+        self.assertEqual(head.current_report_id, retry_report.report_id)  # type: ignore[union-attr]
+        self.assertIn(head.freshness, {FRESH, EXPIRING})  # type: ignore[union-attr]
+        self.assertEqual(head.refresh_status, "IDLE")  # type: ignore[union-attr]
+        self.assertIsNone(head.last_refresh_error)  # type: ignore[union-attr]
+
+    def test_retry_reactivates_failed_refresh_target_and_promotes_report(self) -> None:
+        old_job = self._job("p" * 40, "3" * 40)
+        old_target = self.heads.set_desired_target(
+            old_job.func_id,
+            revision=old_job.source_revision,
+            input_fingerprint="sha256:" + "3" * 64,
+            active_job_id=old_job.job_id,
+        )
+        old_report = self._report(
+            old_job.job_id,
+            old_job.source_revision,
+            old_target.desired_generation,
+            old_target.desired_input_fingerprint or "",
+            completed_at="2026-08-25T00:00:00+00:00",
+        )
+        self.assertEqual(self.registry.register_and_promote(old_report).promotion_status, "PROMOTED")
+
+        retry_job = self._job("q" * 40, "4" * 40)
+        provisional_fingerprint = "sha256:" + "a" * 64
+        fingerprint = "sha256:" + "4" * 64
+        targets = RefreshTargetRepository(self.store)
+        target, created = targets.create_active(
+            job_id=retry_job.job_id,
+            func_id=retry_job.func_id,
+            desired_revision=retry_job.source_revision,
+            revision_set={"ace_engine": retry_job.source_revision},
+            provisional_fingerprint=provisional_fingerprint,
+            dedupe_key="sha256:" + "d" * 64,
+            stale_reasons=(SPEC_CHANGED,),
+        )
+        self.assertTrue(created)
+        targets.bind_fingerprints(
+            retry_job.job_id,
+            input_fingerprint=fingerprint,
+            evidence_fingerprint="sha256:" + "b" * 64,
+        )
+        self.heads.bind_fingerprint(
+            retry_job.func_id,
+            generation=target.generation,
+            job_id=retry_job.job_id,
+            input_fingerprint=fingerprint,
+            stale_reasons=(SPEC_CHANGED,),
+        )
+        self.jobs.transition_status(
+            retry_job.job_id, S.RUNNING, stage=S.STAGE_PREPARING, event_type="enter_preparing"
+        )
+        self.jobs.transition_status(retry_job.job_id, S.FAILED, event_type="job_failed")
+        targets.finish(retry_job.job_id, status="FAILED")
+        self.heads.mark_refresh_failed(retry_job.func_id, retry_job.job_id, "first attempt")
+
+        dispatcher = Dispatcher(self.store, job_runner=lambda _job_id, _cancel: None)
+        self.assertEqual(dispatcher.retry(retry_job.job_id), S.QUEUED)
+
+        restored_target = targets.get(retry_job.job_id)
+        restored_head = self.heads.get(retry_job.func_id)
+        self.assertEqual(restored_target.status, "ACTIVE")  # type: ignore[union-attr]
+        self.assertEqual(restored_head.refresh_status, "REFRESHING")  # type: ignore[union-attr]
+        self.assertEqual(restored_head.active_job_id, retry_job.job_id)  # type: ignore[union-attr]
+        self.assertIsNone(restored_head.last_refresh_error)  # type: ignore[union-attr]
+
+        self._complete_job(retry_job.job_id)
+        retry_report = self._report(
+            retry_job.job_id,
+            retry_job.source_revision,
+            target.generation,
+            fingerprint,
+            completed_at="2026-08-25T01:00:00+00:00",
+        )
+        self.assertEqual(
+            self.registry.register_and_promote(retry_report).promotion_status,
+            "PROMOTED",
+        )
+        targets.finish(retry_job.job_id, status="COMPLETED")
+        head = self.heads.get(retry_job.func_id)
+        self.assertEqual(head.current_report_id, retry_report.report_id)  # type: ignore[union-attr]
+        self.assertIn(head.freshness, {FRESH, EXPIRING})  # type: ignore[union-attr]
+        self.assertEqual(targets.get(retry_job.job_id).status, "COMPLETED")  # type: ignore[union-attr]
+
+    def test_retry_does_not_reactivate_superseded_refresh_target(self) -> None:
+        old_job = self._job("s" * 40, "5" * 40)
+        targets = RefreshTargetRepository(self.store)
+        old_target, _ = targets.create_active(
+            job_id=old_job.job_id,
+            func_id=old_job.func_id,
+            desired_revision=old_job.source_revision,
+            revision_set={"ace_engine": old_job.source_revision},
+            provisional_fingerprint="sha256:" + "5" * 64,
+            dedupe_key="sha256:" + "e" * 64,
+            stale_reasons=(SPEC_CHANGED,),
+        )
+        self.jobs.transition_status(
+            old_job.job_id, S.RUNNING, stage=S.STAGE_PREPARING, event_type="enter_preparing"
+        )
+        self.jobs.transition_status(old_job.job_id, S.FAILED, event_type="job_failed")
+        targets.finish(old_job.job_id, status="FAILED")
+        self.heads.mark_refresh_failed(old_job.func_id, old_job.job_id, "first attempt")
+
+        newer_job = self._job("t" * 40, "6" * 40)
+        newer_target, _ = targets.create_active(
+            job_id=newer_job.job_id,
+            func_id=newer_job.func_id,
+            desired_revision=newer_job.source_revision,
+            revision_set={"ace_engine": newer_job.source_revision},
+            provisional_fingerprint="sha256:" + "6" * 64,
+            dedupe_key="sha256:" + "f" * 64,
+            stale_reasons=(SPEC_CHANGED,),
+        )
+
+        dispatcher = Dispatcher(self.store, job_runner=lambda _job_id, _cancel: None)
+        self.assertEqual(dispatcher.retry(old_job.job_id), S.QUEUED)
+
+        head = self.heads.get(old_job.func_id)
+        self.assertEqual(targets.get(old_job.job_id).status, "FAILED")  # type: ignore[union-attr]
+        self.assertEqual(head.desired_generation, newer_target.generation)  # type: ignore[union-attr]
+        self.assertEqual(head.active_job_id, newer_job.job_id)  # type: ignore[union-attr]
+        self.assertGreater(newer_target.generation, old_target.generation)
 
     def test_reconcile_skips_report_for_old_generation(self) -> None:
         old_job = self._job("1" * 40, "7" * 40)

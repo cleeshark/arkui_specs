@@ -28,6 +28,8 @@ from .errors import (
 from .normalize import (
     DEFECT_KEY,
     FINDING_EVIDENCE_WARNING_PREFIX,
+    NV_MISSING_EVIDENCE_WARNING_PREFIX,
+    OWNERSHIP_CRITICALITY_WARNING_PREFIX,
     OUTCOME_POLICY_BASIS_CRITERIA,
     is_service_ownership_defect_key,
 )
@@ -326,7 +328,7 @@ def validate_observation_document(
 
     if expected_claims and observed_claims != set(expected_claims):
         errors.append(_err(
-            "OBSERVATION_CLAIM_COVERAGE_INCOMPLETE", f"{label}.observations.claim_ids",
+            "OBSERVATION_CLAIM_COVERAGE_INCOMPLETE", f"{label}.observations",
             entity_type="document",
             expected=f"exactly {expected_claims}",
             actual=f"missing={sorted(set(expected_claims) - observed_claims)} "
@@ -654,6 +656,26 @@ def validate_aggregation_document(
             ),
             actual=evidence_recovery_notes[0],
         ))
+    missing_evidence_recovery_notes = [
+        note for note in (notes if isinstance(notes, list) else [])
+        if isinstance(note, str)
+        and note.startswith(NV_MISSING_EVIDENCE_WARNING_PREFIX)
+    ]
+    if missing_evidence_recovery_notes:
+        errors.append(_err(
+            "NV_MISSING_EVIDENCE_RECOVERED", f"{label}.notes",
+            entity_type="document",
+            expected=(
+                "policy-derived missing_evidence restored by service; "
+                "publish with reduced confidence"
+            ),
+            actual=missing_evidence_recovery_notes[0],
+        ))
+    ownership_recovery_notes = [
+        note for note in (notes if isinstance(notes, list) else [])
+        if isinstance(note, str)
+        and note.startswith(OWNERSHIP_CRITICALITY_WARNING_PREFIX)
+    ]
 
     findings_by_id: dict[str, dict[str, Any]] = {}
     contradicted_criteria: list[str] = []
@@ -663,6 +685,15 @@ def validate_aggregation_document(
         criterion_id = str(result.get("criterion_id"))
         conclusion = result.get("conclusion")
         findings = _rows(result.get("findings"))
+        if (
+            conclusion == K.NOT_VERIFIABLE
+            and not str(result.get("missing_evidence") or "").strip()
+        ):
+            errors.append(_err(
+                "GAP_MISSING_FOR_NV", f"{row_label}.missing_evidence",
+                entity_type="criterion", entity_id=criterion_id,
+                expected="non-empty missing_evidence for NOT_VERIFIABLE",
+            ))
         if conclusion in K.FINDING_REQUIRED_CONCLUSIONS and not findings:
             errors.append(_err(
                 "FINDING_CARDINALITY_VIOLATED", f"{row_label}.findings",
@@ -858,6 +889,18 @@ def validate_aggregation_document(
         expected_conclusion = K.expected_policy_conclusion(
             content_status, evidence_status, conflict_scope,
         )
+        # The context-level required conclusion takes precedence over the
+        # generic policy derivation, while malformed policy tuples still
+        # report POLICY_BASIS_INVALID as before.
+        mapping = mappings_by_id.get(criterion_id, {}) if aggregation_context else {}
+        required_conclusion = (
+            mapping.get("constraints", {}).get(
+                "required_conclusion_when_no_adverse"
+            )
+            if isinstance(mapping, dict) else None
+        )
+        if required_conclusion and expected_conclusion is not None:
+            expected_conclusion = required_conclusion
         if expected_conclusion is None:
             actual_conclusion = results_by_id.get(criterion_id, {}).get("conclusion")
             errors.append(_err(
@@ -958,16 +1001,20 @@ def validate_aggregation_document(
         str(record.get("defect_key")) for record in ownership
         if is_service_ownership_defect_key(record.get("defect_key"))
     })
-    if fallback_owners:
+    if fallback_owners or ownership_recovery_notes:
+        recovery_details = []
+        if ownership_recovery_notes:
+            recovery_details.append(ownership_recovery_notes[0])
+        if fallback_owners:
+            recovery_details.append(str(fallback_owners))
         errors.append(_err(
             "OWNERSHIP_CRITICALITY", f"{label}.defect_ownership",
             entity_type="document",
             expected=(
-                "all Findings should use observation-backed defect owners; "
-                f"service fallback retained report consumability for "
-                f"{len(fallback_owners)} unresolved Finding(s)"
+                "duplicate or unresolved Finding ownership was repaired by "
+                "the service; publish with reduced confidence"
             ),
-            actual=str(fallback_owners),
+            actual="; ".join(recovery_details),
         ))
 
     contradictions = _rows(document.get("contradiction_bases"))

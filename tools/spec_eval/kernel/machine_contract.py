@@ -226,6 +226,86 @@ def build_correction_machine_contract(
     }
 
 
+def build_aggregation_correction_machine_contract(
+    *,
+    typed_errors: Iterable[dict[str, Any]],
+    allowed_paths: Iterable[str] = (),
+    evidence_catalog: Iterable[dict[str, Any]] = (),
+    valid_criterion_ids: Iterable[str] = (),
+    correction_context_path: str | None = None,
+    target_criterion_ids: Iterable[str] = (),
+) -> dict[str, Any]:
+    """Build the Aggregation-specific bounded Correction contract.
+
+    Unlike Observation Correction, Aggregation repairs relational rows:
+    Criterion evidence constrains child Findings, policy bases derive
+    conclusions, and Finding identities are referenced by ownership rows.
+    Keep those dependency rules explicit without reinjecting the complete
+    Aggregation generation contract.
+    """
+    errors = [dict(error) for error in typed_errors]
+    error_codes = list(dict.fromkeys(
+        str(error.get("code", "")) for error in errors if error.get("code")
+    ))
+    recipes: dict[str, list[str]] = {
+        "MAPPING_CLAIM_UNMAPPED": [
+            "Use criteria[].allowed_claim_ids as the only values selectable for the named Criterion claim_ids list.",
+            "criteria[].claim_refs are lookup keys into claims and must never be written directly to claim_ids; allowed_claim_ids already contains the resolved claims[ref].claim_id values.",
+            "Keep zero or more semantically representative allowed Claim IDs; remove every C:-prefixed lookup key.",
+        ],
+        "CRITERION_EVIDENCE_UNKNOWN": [
+            "Use only criteria[].evidence_ids from aggregation-correction-context.json for the named Criterion.",
+            "When removing or replacing parent Criterion evidence, update every child Finding that references the changed IDs so Finding evidence remains a subset.",
+        ],
+        "FINDING_EVIDENCE_UNKNOWN": [
+            "Use only the parent Criterion evidence allowlist and keep at least one evidence ID for an adverse Finding.",
+        ],
+        "EVIDENCE_TYPE_MISSING": [
+            "Select canonical Evidence of a required type from the target Criterion allowlist; the global catalog is not an allowlist.",
+        ],
+        "EVIDENCE_REQUIRED_MISSING": [
+            "Select canonical Evidence from the target Criterion allowlist; never invent an EV- ID.",
+        ],
+        "POLICY_BASIS_INVALID": [
+            "Keep the policy basis fields internally consistent and preserve the derived Criterion conclusion unless the corrected basis deterministically changes it.",
+        ],
+        "FINDING_CARDINALITY_VIOLATED": [
+            "Keep Finding additions/removals consistent with defect_ownership references and the Criterion conclusion.",
+        ],
+        "OWNERSHIP_CRITICALITY": [
+            "Keep each root defect's primary Criterion, Finding severity, and ownership references mutually consistent.",
+        ],
+    }
+    contract = build_correction_machine_contract(
+        payload_kind="aggregation",
+        typed_errors=errors,
+        observation_profile="aggregation",
+        allowed_paths=allowed_paths,
+        evidence_catalog=evidence_catalog,
+        valid_criterion_ids=valid_criterion_ids,
+    )
+    contract.update({
+        "correction_context_path": correction_context_path,
+        "target_criterion_ids": list(dict.fromkeys(target_criterion_ids)),
+        "input_authority": {
+            "semantic_context": "aggregation-correction-context.json",
+            "scope": "only target Criteria and their referenced Observation/Claim/Unit/Evidence rows",
+            "criterion_evidence_allowlist": "criteria[].evidence_ids",
+            "global_evidence_catalog_role": "lookup_only",
+        },
+        "dependency_rules": [
+            "Every Finding evidence_ids list must remain a subset of its parent Criterion evidence selection.",
+            "A policy-derived Criterion conclusion must agree with its outcome_policy_bases row.",
+            "Finding key/ID changes and Finding additions/removals must keep defect_ownership references valid.",
+            "Do not change inherited Observation, Claim, or atomic Unit outcomes.",
+        ],
+        "repair_recipes": {
+            code: recipes[code] for code in error_codes if code in recipes
+        },
+    })
+    return contract
+
+
 def build_aggregation_machine_contract(
     *,
     valid_criterion_ids: Iterable[str],

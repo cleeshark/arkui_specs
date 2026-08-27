@@ -10,7 +10,9 @@ from typing import Any
 
 from aggregation_warning_policy import (
     record_aggregation_warnings,
+    record_evidence_type_warning,
     split_aggregation_warnings,
+    split_final_candidate_warnings,
 )
 from staged_run_support import (
     build_final_candidate,
@@ -143,9 +145,12 @@ def main(argv: list[str] | None = None) -> int:
     errors, state, work_items = validate_stage(run_dir, args.stage, args.work_item, candidate)
     if args.stage == "final":
         errors, warnings = split_aggregation_warnings(errors)
+        errors, evidence_type_warnings = split_final_candidate_warnings(errors)
+        warnings.extend(evidence_type_warnings)
         for warning in warnings:
             print(f"WARNING: {warning}", file=sys.stderr)
         record_aggregation_warnings(run_dir, warnings)
+        record_evidence_type_warning(run_dir, evidence_type_warnings)
     if errors:
         for error in errors:
             print(f"ERROR: {error}", file=sys.stderr)

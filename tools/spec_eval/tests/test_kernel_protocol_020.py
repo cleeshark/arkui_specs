@@ -22,6 +22,7 @@ from spec_eval.protocol_validator import (
 )
 from spec_eval.kernel import contracts as K
 from spec_eval.kernel.errors import (
+    MODEL_CORRECTION,
     SERVICE_NORMALIZATION,
     TypedError,
     blocking,
@@ -39,6 +40,8 @@ from spec_eval.kernel.machine_contract import (
 )
 from spec_eval.kernel.normalize import (
     FINDING_EVIDENCE_WARNING_PREFIX,
+    NV_MISSING_EVIDENCE_WARNING_PREFIX,
+    OWNERSHIP_CRITICALITY_WARNING_PREFIX,
     OUTCOME_POLICY_BASIS_CRITERIA,
     assemble_semantic_result,
     normalize_aggregation,
@@ -76,6 +79,7 @@ def _compact_context(context: dict) -> dict:
             "allow_not_applicable": False,
             "outcomes": {},
             "required_evidence_types": [],
+            "constraints": row.get("constraints", {}),
         })
     return {
         "schema_version": 3,
@@ -1182,6 +1186,135 @@ class NormalizeAggregationTest(unittest.TestCase):
             "$.defect_ownership[0].defect_key",
         )
 
+    def test_duplicate_defect_owner_is_model_correction_without_recovery(self) -> None:
+        judgment = self._judgment()
+        judgment["defect_ownership"].append({
+            "defect_key": "competing-owner",
+            "primary_criterion_id": "CORRECTNESS-SOURCE-SUPPORT",
+            "finding_keys": ["f1"],
+            "rationale": "A competing model-owned edge.",
+        })
+
+        result = self._normalize(judgment)
+
+        self.assertEqual(result.fatal, [])
+        self.assertIsNone(result.document)
+        self.assertEqual([error.code for error in result.errors], [
+            "DUPLICATE_DEFECT_OWNER",
+        ])
+        self.assertEqual(result.errors[0].repairability, MODEL_CORRECTION)
+
+    def test_duplicate_defect_owner_resolves_from_context_with_warning(self) -> None:
+        judgment = self._judgment()
+        judgment["defect_ownership"].append({
+            "defect_key": "competing-owner",
+            "primary_criterion_id": "CORRECTNESS-SOURCE-SUPPORT",
+            "finding_keys": ["f1"],
+            "rationale": "A competing model-owned edge.",
+        })
+        context = _compact_context(self._aggregation_context())
+        context["claims"] = {
+            "C:feature:Feat-01/Feat-01/AC-1": {
+                "claim_id": "Feat-01/AC-1",
+                "defect_keys": ["missing-source-proof"],
+            },
+        }
+        context["criteria"][0]["claim_refs"] = [
+            "C:feature:Feat-01/Feat-01/AC-1",
+        ]
+        context["valid_defect_keys"] = [
+            "missing-source-proof", "competing-owner",
+        ]
+
+        result = normalize_aggregation(
+            self._template(), judgment,
+            source_observation_ids=["feature:Feat-01"],
+            aggregation_context=context,
+            recover_duplicate_owners=True,
+        )
+
+        self.assertEqual(result.errors, [])
+        self.assertEqual(result.fatal, [])
+        ownership = result.document["defect_ownership"]
+        self.assertEqual(
+            [record["defect_key"] for record in ownership],
+            ["missing-source-proof"],
+        )
+        warning_notes = [
+            note for note in result.document["notes"]
+            if note.startswith(OWNERSHIP_CRITICALITY_WARNING_PREFIX)
+        ]
+        self.assertEqual(len(warning_notes), 1)
+        warning_payload = json.loads(
+            warning_notes[0][len(OWNERSHIP_CRITICALITY_WARNING_PREFIX):]
+        )
+        recovery = warning_payload["resolved_duplicate_owners"][0]
+        self.assertEqual(recovery["finding_key"], "f1")
+        self.assertEqual(recovery["selected_owner"], "missing-source-proof")
+        self.assertEqual(recovery["discarded_owners"], ["competing-owner"])
+
+        typed = validate_aggregation_document(
+            result.document,
+            criterion_order=list(CRITERIA),
+            aggregation_context=context,
+        )
+        ownership_warnings = [
+            error for error in typed
+            if error.code == "OWNERSHIP_CRITICALITY"
+        ]
+        self.assertEqual(len(ownership_warnings), 1)
+        self.assertFalse(has_hard_errors(typed))
+        confidence = compute_confidence(typed)
+        self.assertEqual(confidence["confidence_score"], 80)
+        self.assertEqual(confidence["deduction_total"], 20)
+
+    def test_ambiguous_duplicate_defect_owner_uses_service_fallback(self) -> None:
+        judgment = self._judgment()
+        judgment["defect_ownership"].append({
+            "defect_key": "competing-owner",
+            "primary_criterion_id": "CORRECTNESS-SOURCE-SUPPORT",
+            "finding_keys": ["f1"],
+            "rationale": "A competing model-owned edge.",
+        })
+        context = _compact_context(self._aggregation_context())
+        context["claims"] = {
+            "C:feature:Feat-01/Feat-01/AC-1": {
+                "claim_id": "Feat-01/AC-1",
+                "defect_keys": ["context-owner-a", "context-owner-b"],
+            },
+        }
+        context["criteria"][0]["claim_refs"] = [
+            "C:feature:Feat-01/Feat-01/AC-1",
+        ]
+        context["valid_defect_keys"] = [
+            "missing-source-proof", "competing-owner",
+            "context-owner-a", "context-owner-b",
+        ]
+
+        result = normalize_aggregation(
+            self._template(), judgment,
+            source_observation_ids=["feature:Feat-01"],
+            aggregation_context=context,
+            recover_duplicate_owners=True,
+        )
+
+        self.assertEqual(result.errors, [])
+        self.assertEqual(result.fatal, [])
+        fallback = [
+            record for record in result.document["defect_ownership"]
+            if record["defect_key"].startswith("service.unresolved-ownership.")
+        ]
+        self.assertEqual(len(fallback), 1)
+        typed = validate_aggregation_document(
+            result.document,
+            criterion_order=list(CRITERIA),
+            aggregation_context=context,
+        )
+        self.assertEqual(
+            sum(error.code == "OWNERSHIP_CRITICALITY" for error in typed), 1,
+        )
+        self.assertFalse(has_hard_errors(typed))
+
     def test_duplicate_finding_key_falls_back_without_orphaning_sem_ids(self) -> None:
         judgment = self._judgment()
         duplicate = copy.deepcopy(judgment["criterion_results"][0]["findings"][0])
@@ -1493,6 +1626,66 @@ class NormalizeAggregationTest(unittest.TestCase):
         self.assertEqual(
             [error.code for error in errors].count("POLICY_BASIS_INVALID"), 1
         )
+
+    def test_context_required_not_verifiable_overrides_policy_derivation(self) -> None:
+        judgment = self._judgment()
+        for criterion_id in (
+            "COMPATIBILITY-API-VERSION", "COMPATIBILITY-MULTI-DEVICE",
+        ):
+            policy = next(
+                row for row in judgment["outcome_policy_bases"]
+                if row["criterion_id"] == criterion_id
+            )
+            policy.update({
+                "content_status": "PRESENT",
+                "evidence_status": "PARTIAL",
+                "conflict_scope": "NONE",
+                "reason": "No compatible-version evidence was available.",
+            })
+            result = next(
+                row for row in judgment["criterion_results"]
+                if row["criterion_id"] == criterion_id
+            )
+            result["conclusion"] = "PARTIALLY_SUPPORTED"
+
+        context = self._aggregation_context()
+        for mapping in context["criterion_mappings"]:
+            if mapping["criterion_id"] in {
+                "COMPATIBILITY-API-VERSION", "COMPATIBILITY-MULTI-DEVICE",
+            }:
+                mapping["constraints"] = {
+                    "required_conclusion_when_no_adverse": "NOT_VERIFIABLE",
+                    "forbidden_conclusions": ["SUPPORTED", "NOT_APPLICABLE"],
+                }
+        normalized = normalize_aggregation(
+            self._template(), judgment,
+            source_observation_ids=[],
+            aggregation_context=_compact_context(context),
+        )
+        self.assertEqual(normalized.errors, [])
+        self.assertIsNotNone(normalized.document)
+        for criterion_id in (
+            "COMPATIBILITY-API-VERSION", "COMPATIBILITY-MULTI-DEVICE",
+        ):
+            criterion = next(
+                row for row in normalized.document["criterion_results"]
+                if row["criterion_id"] == criterion_id
+            )
+            self.assertEqual(criterion["conclusion"], "NOT_VERIFIABLE")
+            self.assertTrue(criterion["missing_evidence"])
+        errors = validate_aggregation_document(
+            normalized.document, criterion_order=list(CRITERIA),
+            aggregation_context=_compact_context(context),
+        )
+        codes = [error.code for error in errors]
+        self.assertNotIn("MAPPING_NV_REQUIRED", codes)
+        self.assertNotIn("FINDING_CARDINALITY_VIOLATED", codes)
+        self.assertEqual(codes.count("NV_MISSING_EVIDENCE_RECOVERED"), 1)
+        confidence = compute_confidence(errors)
+        # The fixture also carries its pre-existing unmapped claim warning;
+        # the recovered NV warning contributes one additional bounded -5
+        # deduction (warnings are de-duplicated by code).
+        self.assertEqual(confidence["deduction_total"], 10)
 
     def test_contradiction_basis_references_owned_defect_key(self) -> None:
         judgment = self._judgment()
@@ -2351,6 +2544,69 @@ class PolicyConclusionDerivationTest(unittest.TestCase):
                 result, expected,
                 f"({content}, {evidence}, {conflict}) → expected {expected}, got {result}",
             )
+
+    def test_policy_nv_missing_evidence_is_recovered_with_warning(self) -> None:
+        criterion_id = "COMPATIBILITY-MULTI-DEVICE"
+        policy_reason = (
+            "Android and iOS deployment evidence is unavailable in the frozen input."
+        )
+        judgment = self._base_judgment(policy_overrides=[{
+            "criterion_id": criterion_id,
+            "content_status": "PRESENT",
+            "evidence_status": "UNAVAILABLE",
+            "conflict_scope": "NONE",
+            "reason": policy_reason,
+        }])
+        result = normalize_aggregation(
+            self._template(), judgment,
+            source_observation_ids=[],
+            aggregation_context=_compact_context(self._aggregation_context()),
+        )
+
+        criterion = next(
+            row for row in result.document["criterion_results"]
+            if row["criterion_id"] == criterion_id
+        )
+        self.assertEqual(criterion["conclusion"], "NOT_VERIFIABLE")
+        self.assertEqual(criterion["missing_evidence"], policy_reason)
+        self.assertTrue(any(
+            isinstance(note, str)
+            and note.startswith(NV_MISSING_EVIDENCE_WARNING_PREFIX)
+            for note in result.document["notes"]
+        ))
+        errors = validate_aggregation_document(
+            result.document, criterion_order=list(CRITERIA),
+        )
+        warnings = [
+            error for error in errors
+            if error.code == "NV_MISSING_EVIDENCE_RECOVERED"
+        ]
+        self.assertEqual(len(warnings), 1)
+        self.assertTrue(is_non_blocking_warning(warnings[0]))
+        self.assertNotIn("GAP_MISSING_FOR_NV", {error.code for error in errors})
+        confidence = compute_confidence(warnings)
+        self.assertEqual(confidence["confidence_score"], 95)
+
+    def test_unrecoverable_aggregation_nv_gap_is_model_correctable(self) -> None:
+        result = normalize_aggregation(
+            self._template(), self._base_judgment(),
+            source_observation_ids=[],
+            aggregation_context=_compact_context(self._aggregation_context()),
+        )
+        criterion = next(
+            row for row in result.document["criterion_results"]
+            if row["criterion_id"] == "CORRECTNESS-SOURCE-SUPPORT"
+        )
+        criterion["conclusion"] = "NOT_VERIFIABLE"
+        criterion.pop("missing_evidence", None)
+
+        errors = validate_aggregation_document(
+            result.document, criterion_order=list(CRITERIA),
+        )
+
+        gaps = [error for error in errors if error.code == "GAP_MISSING_FOR_NV"]
+        self.assertEqual(len(gaps), 1)
+        self.assertEqual(gaps[0].repairability, "MODEL_CORRECTION")
 
     def test_mixed_na_returns_none(self) -> None:
         """Mixed NOT_APPLICABLE is invalid and returns None."""

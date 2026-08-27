@@ -35,6 +35,7 @@ from typing import Any, Callable, Sequence
 from spec_eval.kernel import staged_state as SS
 from spec_eval.kernel.errors import (
     TypedError,
+    has_hard_errors,
     is_non_blocking_warning,
     is_post_correction_warning,
 )
@@ -55,6 +56,10 @@ from spec_eval.service.pipeline.correction import (
     resolve_typed_error_json_paths,
     validate_patch_scope,
     validate_patch_values,
+)
+from spec_eval.service.pipeline.aggregation_correction import (
+    build_aggregation_correction_context,
+    correction_evidence_catalog,
 )
 from spec_eval.service.store.repositories import (
     EventRepository,
@@ -339,11 +344,12 @@ class JudgmentFlow:
         normalize: Callable[..., NormalizationResult],
         validate: Callable[..., list[TypedError]],
         base_contract: dict[str, Any],
-        on_publish: Callable[[dict[str, Any]], None],
+        on_publish: Callable[[dict[str, Any]], bool | None],
         fingerprint: str,
         stage_event: str,
         reproject: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
         normalize_after_correction: Callable[..., NormalizationResult] | None = None,
+        allow_degraded_publish: bool = False,
     ) -> JudgmentOutcome:
         """Run one work item through the state machine.
 
@@ -370,17 +376,51 @@ class JudgmentFlow:
         def projected(document: dict[str, Any]) -> dict[str, Any]:
             return reproject(document) if reproject is not None else document
 
-        def publish(document: dict[str, Any], catalog: list[dict[str, Any]]) -> None:
+        def publish(document: dict[str, Any], catalog: list[dict[str, Any]]) -> bool:
             document = projected(document)
             _write_json(output_path, document)
+            publish_succeeded = on_publish(document)
+            if publish_succeeded is False:
+                return False
             SS.set_work_item_state(self.ctx.run_dir, work.work_item_id, SS.VALIDATED)
-            on_publish(document)
             candidate_path.unlink(missing_ok=True)
             errors_path.unlink(missing_ok=True)
             self.events.append(self.ctx.job_id, stage_event, {
                 "work_item_id": work.work_item_id,
                 "evidence_catalog_size": len(catalog),
             })
+            return True
+
+        def degraded_publish(
+            document: dict[str, Any],
+            catalog: list[dict[str, Any]],
+            residual: list[TypedError],
+        ) -> bool:
+            """Publish a usable report after the single correction turn.
+
+            Only the final report (``allow_degraded_publish``) may take this
+            path.  When every residual error is non-HARD/non-fatal, the report
+            is structurally assemblable, so publish it and let ``on_publish``
+            apply its HARD-only gate and confidence deduction.  A HARD or fatal
+            residual still blocks; observation work items never degrade.
+            """
+            if not allow_degraded_publish:
+                return False
+            if has_hard_errors(residual) or any(
+                is_fatal_error(error) for error in residual
+            ):
+                return False
+            published = publish(document, catalog)
+            if published:
+                self.events.append(
+                    self.ctx.job_id, "correction_completed_degraded", {
+                        "work_item_id": work.work_item_id,
+                        "residual_errors": [
+                            error.to_dict() for error in residual
+                        ],
+                    },
+                )
+            return published
 
         def repair_after_model_correction(
             document: dict[str, Any], typed: list[TypedError]
@@ -397,7 +437,15 @@ class JudgmentFlow:
 
             def downgrade_warnings(errors: list[TypedError]) -> list[TypedError]:
                 for error in errors:
-                    if not is_post_correction_warning(error):
+                    # Once the single model Correction turn has completed,
+                    # any remaining MODEL_CORRECTION issue is a report-quality
+                    # warning.  Keep its original code so aggregation can
+                    # apply the registered confidence deduction.  Fatal and
+                    # service-owned structural errors remain blocking.
+                    if not (
+                        is_post_correction_warning(error)
+                        or is_model_correction_error(error)
+                    ):
                         continue
                     identity = (
                         error.code, error.path,
@@ -408,7 +456,10 @@ class JudgmentFlow:
                         downgraded.append(error)
                 return [
                     error for error in errors
-                    if not is_post_correction_warning(error)
+                    if not (
+                        is_post_correction_warning(error)
+                        or is_model_correction_error(error)
+                    )
                 ]
 
             def record_downgraded() -> None:
@@ -514,8 +565,10 @@ class JudgmentFlow:
             else:
                 typed = typed_of(normalization.document)
                 if not typed:
-                    publish(normalization.document, normalization.evidence_catalog)
-                    return JudgmentOutcome(C.STATUS_COMPLETED, published=True)
+                    published = publish(
+                        normalization.document, normalization.evidence_catalog,
+                    )
+                    return JudgmentOutcome(C.STATUS_COMPLETED, published=published)
                 _write_json(candidate_path, normalization.document)
                 _write_json(errors_path, {
                     "input_fingerprint": fingerprint,
@@ -602,15 +655,59 @@ class JudgmentFlow:
                     {"work_item_id": work.work_item_id, "error": str(exc)},
                     f"cannot read correction candidate: {exc}",
                 )
-            corrected_document, changes, unresolved = apply_deterministic_correction(
-                candidate_document, deterministic_dicts,
+            working_candidate_kind = breakpoint_data.get(
+                "candidate_kind", CANDIDATE_PUBLISHED_DOCUMENT
+            )
+            # Fix 1: identity-keyed service repairs (e.g. SEVERITY_BELOW_FLOOR
+            # located by canonical SEM- id) target the normalized document.  A
+            # raw executor candidate still carries provisional finding keys, so
+            # normalize it first (with the first-pass normalizer, matching the
+            # identity space the validator used) or those repairs cannot locate
+            # their targets and would dead-end the whole work item.  The error
+            # set is then rebuilt by re-validation below, so stale raw-keyed
+            # normalization errors (e.g. duplicate provisional keys already
+            # resolved into distinct canonical ids) are dropped rather than
+            # carried into an inconsistent identity space.
+            repair_base = candidate_document
+            if working_candidate_kind == CANDIDATE_RAW_PAYLOAD:
+                pre = normalize(candidate_document)
+                if not pre.fatal and pre.document is not None:
+                    repair_base = pre.document
+                    working_candidate_kind = CANDIDATE_PUBLISHED_DOCUMENT
+            corrected_document, changes, _unresolved = apply_deterministic_correction(
+                repair_base, deterministic_dicts,
             )
             corrected_document = projected(corrected_document)
-            if unresolved:
+
+            # Re-validate the (possibly normalized + repaired) document to get
+            # the true residual set instead of trusting the stale pre-repair
+            # error list.  Normalization errors keyed to raw provisional
+            # identities (dropped by re-normalization) are not carried forward;
+            # fatal input was already handled by ``fatal_dicts`` above, so any
+            # residual here is a service or model validation error.
+            remaining = typed_of(corrected_document)
+            if not remaining:
+                published = publish(
+                    corrected_document,
+                    _published_evidence_catalog(corrected_document),
+                )
+                if published and changes:
+                    self.events.append(
+                        self.ctx.job_id, "candidate_deterministic_repaired", {
+                            "work_item_id": work.work_item_id,
+                            "changes": changes,
+                        },
+                    )
+                return JudgmentOutcome(C.STATUS_COMPLETED, published=published)
+
+            remaining_fatal = [
+                error for error in remaining if is_fatal_error(error)
+            ]
+            if remaining_fatal:
                 self.events.append(self.ctx.job_id, "correction_skipped", {
                     "work_item_id": work.work_item_id,
                     "reason": "service_deterministic_error",
-                    "errors": [error.to_dict() for error in unresolved],
+                    "errors": [error.to_dict() for error in remaining_fatal],
                 })
                 SS.set_work_item_state(
                     self.ctx.run_dir, work.work_item_id,
@@ -621,67 +718,83 @@ class JudgmentFlow:
                     {
                         "work_item_id": work.work_item_id,
                         "state": SS.CORRECTION_INVALID_TERMINAL,
-                        "errors": [error.to_dict() for error in unresolved],
+                        "errors": [error.to_dict() for error in remaining_fatal],
                         "repair": "deterministic_only",
                     },
-                    "deterministic correction could not resolve: "
-                    + "; ".join(error.code for error in unresolved[:5]),
+                    "deterministic correction still invalid: "
+                    + "; ".join(error.code for error in remaining_fatal[:5]),
                 )
+
+            # Fix 2: a service error the deterministic repair could not resolve
+            # is reclassified into the single model correction turn together
+            # with the naturally model-correctable residuals, instead of ending
+            # the work item.  Only fold a code whose correction path resolves so
+            # ``_correct_work_input`` cannot raise on an unmappable selector.
+            model_remaining = [
+                error for error in remaining if is_model_correction_error(error)
+            ]
+            foldable_service: list[TypedError] = []
+            for error in remaining:
+                if not is_deterministic_error(error):
+                    continue
+                try:
+                    resolve_typed_error_json_paths(corrected_document, error)
+                except (ValueError, KeyError, TypeError, IndexError):
+                    continue
+                foldable_service.append(error)
+
+            turn_errors = model_remaining + foldable_service
+            if not turn_errors:
+                # Nothing a model turn can fix (no model-correctable errors and
+                # no service error with a resolvable path).  For the final
+                # report, degrade to a usable artifact when the residual is
+                # non-HARD; observations still terminate.
+                if degraded_publish(
+                    corrected_document,
+                    _published_evidence_catalog(corrected_document),
+                    remaining,
+                ):
+                    return JudgmentOutcome(C.STATUS_COMPLETED, published=True)
+                self.events.append(self.ctx.job_id, "correction_skipped", {
+                    "work_item_id": work.work_item_id,
+                    "reason": "service_deterministic_error",
+                    "errors": [error.to_dict() for error in remaining],
+                })
+                SS.set_work_item_state(
+                    self.ctx.run_dir, work.work_item_id,
+                    SS.CORRECTION_INVALID_TERMINAL,
+                )
+                return self._fail(
+                    "semantic_failed",
+                    {
+                        "work_item_id": work.work_item_id,
+                        "state": SS.CORRECTION_INVALID_TERMINAL,
+                        "errors": [error.to_dict() for error in remaining],
+                        "repair": "deterministic_only",
+                    },
+                    "deterministic correction still invalid: "
+                    + "; ".join(error.code for error in remaining[:5]),
+                )
+            _write_json(candidate_path, corrected_document)
+            _write_json(errors_path, {
+                "input_fingerprint": fingerprint,
+                "candidate_kind": working_candidate_kind,
+                "errors": [error.to_dict() for error in remaining],
+                "evidence_catalog": _published_evidence_catalog(corrected_document),
+                "deterministic_changes": changes,
+            })
             if changes:
-                remaining = typed_of(corrected_document)
-                if not remaining:
-                    publish(
-                        corrected_document,
-                        _published_evidence_catalog(corrected_document),
-                    )
-                    self.events.append(self.ctx.job_id, "candidate_deterministic_repaired", {
+                self.events.append(
+                    self.ctx.job_id, "candidate_deterministic_repaired", {
                         "work_item_id": work.work_item_id,
                         "changes": changes,
-                    })
-                    return JudgmentOutcome(C.STATUS_COMPLETED, published=True)
-                # Persist the repaired candidate and send only semantic or
-                # evidence errors to the model.  Deterministic errors that
-                # remain unresolved are never delegated to the model.
-                remaining_dicts = [error.to_dict() for error in remaining]
-                remaining_deterministic = [
-                    error for error in remaining if is_deterministic_error(error)
-                ]
-                remaining_fatal = [
-                    error for error in remaining if is_fatal_error(error)
-                ]
-                if remaining_fatal or remaining_deterministic:
-                    service_errors = remaining_fatal or remaining_deterministic
-                    self.events.append(self.ctx.job_id, "correction_skipped", {
-                        "work_item_id": work.work_item_id,
-                        "reason": "service_deterministic_error",
-                        "errors": [error.to_dict() for error in service_errors],
-                    })
-                    return self._fail(
-                        "semantic_failed",
-                        {
-                            "work_item_id": work.work_item_id,
-                            "state": SS.CORRECTION_INVALID_TERMINAL,
-                            "errors": [error.to_dict() for error in service_errors],
-                            "repair": "deterministic_only",
-                        },
-                        "deterministic correction still invalid: "
-                        + "; ".join(error.code for error in service_errors[:5]),
-                    )
-                _write_json(candidate_path, corrected_document)
-                _write_json(errors_path, {
-                    "input_fingerprint": fingerprint,
-                    "candidate_kind": breakpoint_data.get(
-                        "candidate_kind", CANDIDATE_PUBLISHED_DOCUMENT
-                    ),
-                    "errors": remaining_dicts,
-                    "evidence_catalog": _published_evidence_catalog(corrected_document),
-                    "deterministic_changes": changes,
-                })
-                typed_dicts = remaining_dicts
-                model_dicts = [
-                    error.to_dict() for error in remaining
-                    if is_model_correction_error(error)
-                ]
+                    },
+                )
+            breakpoint_data = {
+                **breakpoint_data, "candidate_kind": working_candidate_kind,
+            }
+            typed_dicts = [error.to_dict() for error in remaining]
+            model_dicts = [error.to_dict() for error in turn_errors]
 
         if not model_dicts:
             self.events.append(self.ctx.job_id, "correction_skipped", {
@@ -728,9 +841,41 @@ class JudgmentFlow:
         if failure == "awaiting":
             return JudgmentOutcome(C.STATUS_AWAITING, result.error if result else None)
         if failure is not None:
+            # The correction executor itself failed (e.g. it reported that no
+            # legal patch exists for the residual).  The single correction turn
+            # has still been spent, so for the final report degrade to a usable
+            # artifact when the pre-correction candidate is structurally usable
+            # and its residuals are all non-HARD/non-fatal, instead of leaving
+            # the work item stuck without a published report.
+            if allow_degraded_publish:
+                try:
+                    pending_candidate = json.loads(
+                        candidate_path.read_text(encoding="utf-8")
+                    )
+                except (OSError, json.JSONDecodeError):
+                    pending_candidate = None
+                if pending_candidate is not None:
+                    residual = typed_of(projected(pending_candidate))
+                    if degraded_publish(
+                        projected(pending_candidate),
+                        _published_evidence_catalog(pending_candidate),
+                        residual,
+                    ):
+                        self.events.append(
+                            self.ctx.job_id, "correction_executor_failed_degraded", {
+                                "work_item_id": work.work_item_id,
+                                "error": failure,
+                            },
+                        )
+                        return JudgmentOutcome(C.STATUS_COMPLETED, published=True)
+            SS.set_work_item_state(
+                self.ctx.run_dir, work.work_item_id,
+                SS.CORRECTION_INVALID_TERMINAL,
+            )
             return self._fail(
                 "semantic_failed",
                 {"work_item_id": work.work_item_id, "attempt_type": "correct",
+                 "state": SS.CORRECTION_INVALID_TERMINAL,
                  "error": failure},
                 failure,
             )
@@ -795,11 +940,13 @@ class JudgmentFlow:
                         )
                         corrected_candidate_for_failure = corrected_payload
                     if not typed:
-                        publish(
+                        published = publish(
                             corrected_payload,
                             normalization.evidence_catalog,
                         )
-                        return JudgmentOutcome(C.STATUS_COMPLETED, published=True)
+                        return JudgmentOutcome(
+                            C.STATUS_COMPLETED, published=published,
+                        )
                     normalization = NormalizationResult(
                         document=corrected_payload,
                         errors=typed,
@@ -817,11 +964,11 @@ class JudgmentFlow:
                     )
                     corrected_candidate_for_failure = corrected_payload
                 if not typed:
-                    publish(
+                    published = publish(
                         corrected_payload,
                         _published_evidence_catalog(corrected_payload),
                     )
-                    return JudgmentOutcome(C.STATUS_COMPLETED, published=True)
+                    return JudgmentOutcome(C.STATUS_COMPLETED, published=published)
                 normalization = NormalizationResult(
                     document=None,
                     errors=typed,
@@ -843,6 +990,40 @@ class JudgmentFlow:
                 ),
             )
         if normalization.errors:
+            # A correction against a raw payload can fail during
+            # normalization before a validator-visible document is produced.
+            # If the normalizer did produce a structurally usable document and
+            # every remaining error is model-correctable, apply the same
+            # post-Correction warning policy instead of entering the terminal
+            # state.  Without a document, publishing would be unsafe.
+            if (
+                normalization.document is not None
+                and normalization.errors
+                and all(is_model_correction_error(error)
+                        for error in normalization.errors)
+            ):
+                normalized_document, normalized_typed = (
+                    repair_after_model_correction(
+                        normalization.document,
+                        list(normalization.errors)
+                        + typed_of(normalization.document),
+                    )
+                )
+                if not normalized_typed:
+                    publish(
+                        normalized_document,
+                        normalization.evidence_catalog,
+                    )
+                    return JudgmentOutcome(C.STATUS_COMPLETED, published=True)
+            # The single correction turn has run.  For the final report, a
+            # structurally usable document whose residual errors are all
+            # non-HARD degrades to a usable artifact instead of terminating.
+            if normalization.document is not None and degraded_publish(
+                projected(normalization.document),
+                normalization.evidence_catalog,
+                list(normalization.errors),
+            ):
+                return JudgmentOutcome(C.STATUS_COMPLETED, published=True)
             _write_json(candidate_path, corrected_candidate_for_failure)
             _write_json(errors_path, {
                 "input_fingerprint": fingerprint,
@@ -869,7 +1050,15 @@ class JudgmentFlow:
             normalization.document, typed_of(normalization.document),
         )
         if not typed:
-            publish(corrected_document, normalization.evidence_catalog)
+            published = publish(
+                corrected_document, normalization.evidence_catalog,
+            )
+            return JudgmentOutcome(C.STATUS_COMPLETED, published=published)
+        # Post-correction residual on a structurally usable document: degrade
+        # the final report when nothing residual is HARD/fatal.
+        if degraded_publish(
+            corrected_document, normalization.evidence_catalog, typed,
+        ):
             return JudgmentOutcome(C.STATUS_COMPLETED, published=True)
         _write_json(candidate_path, corrected_document)
         _write_json(errors_path, {
@@ -899,7 +1088,10 @@ class JudgmentFlow:
         breakpoint_data: dict[str, Any],
     ) -> C.WorkItemInput:
         from dataclasses import replace
-        from spec_eval.kernel.machine_contract import build_correction_machine_contract
+        from spec_eval.kernel.machine_contract import (
+            build_aggregation_correction_machine_contract,
+            build_correction_machine_contract,
+        )
 
         result_path = Path(work.executor_result_path)
         correct_result_path = result_path.with_name(
@@ -954,14 +1146,56 @@ class JudgmentFlow:
                 "/completed_checks", "/status",
             ],
         }
-        machine_contract = build_correction_machine_contract(
-            payload_kind=payload_kind,
-            typed_errors=typed_errors,
-            observation_profile=observation_profile,
-            allowed_paths=allowed_paths,
-            evidence_catalog=catalog if needs_evidence else (),
-            valid_criterion_ids=valid_criterion_ids,
-        )
+        aggregation_correction_context: dict[str, Any] | None = None
+        aggregation_correction_context_path: Path | None = None
+        if observation_profile == "aggregation":
+            source_context_path = next((
+                Path(path) for path in work.input_paths
+                if Path(path).name == "aggregation-context.json"
+                and Path(path).is_file()
+            ), None)
+            if source_context_path is not None:
+                source_context = json.loads(
+                    source_context_path.read_text(encoding="utf-8")
+                )
+                aggregation_correction_context = (
+                    build_aggregation_correction_context(
+                        source_context, candidate_document, typed_errors,
+                    )
+                )
+                aggregation_correction_context_path = (
+                    self.ctx.run_dir / "aggregation-correction-context.json"
+                )
+                _write_json(
+                    aggregation_correction_context_path,
+                    aggregation_correction_context,
+                )
+            machine_contract = build_aggregation_correction_machine_contract(
+                typed_errors=typed_errors,
+                allowed_paths=allowed_paths,
+                evidence_catalog=(
+                    correction_evidence_catalog(aggregation_correction_context)
+                    if aggregation_correction_context is not None else ()
+                ),
+                valid_criterion_ids=valid_criterion_ids,
+                correction_context_path=(
+                    str(aggregation_correction_context_path)
+                    if aggregation_correction_context_path is not None else None
+                ),
+                target_criterion_ids=(
+                    aggregation_correction_context.get("target_criterion_ids", [])
+                    if aggregation_correction_context is not None else ()
+                ),
+            )
+        else:
+            machine_contract = build_correction_machine_contract(
+                payload_kind=payload_kind,
+                typed_errors=typed_errors,
+                observation_profile=observation_profile,
+                allowed_paths=allowed_paths,
+                evidence_catalog=catalog if needs_evidence else (),
+                valid_criterion_ids=valid_criterion_ids,
+            )
 
         # Correction never needs the embedded workflow references.  Keep only
         # the candidate and declared frozen inputs relevant to semantic or
@@ -986,34 +1220,53 @@ class JudgmentFlow:
                 return False
             return True
 
-        input_paths = [
-            str(candidate_path),
-            *[
-                path for path in work.input_paths
-                if correction_input_allowed(path)
-            ],
-        ]
+        if observation_profile == "aggregation":
+            input_paths = [str(candidate_path)]
+            if aggregation_correction_context_path is not None:
+                input_paths.append(str(aggregation_correction_context_path))
+        else:
+            input_paths = [
+                str(candidate_path),
+                *[
+                    path for path in work.input_paths
+                    if correction_input_allowed(path)
+                ],
+            ]
         input_paths = list(dict.fromkeys(input_paths))
         work_item = dict(work.work_item)
-        resources = [
-            dict(resource)
-            for resource in work_item.get("input_resources", [])
-            if isinstance(resource, dict)
-            and correction_input_allowed(str(resource.get("path", "")))
-        ]
+        if observation_profile == "aggregation":
+            resources = []
+            if aggregation_correction_context_path is not None:
+                resources.append({
+                    "path": str(aggregation_correction_context_path),
+                    "role": "aggregation_correction_context",
+                    "citable": False,
+                })
+        else:
+            resources = [
+                dict(resource)
+                for resource in work_item.get("input_resources", [])
+                if isinstance(resource, dict)
+                and correction_input_allowed(str(resource.get("path", "")))
+            ]
         work_item["input_resources"] = resources
+        prompt_contract = correct_prompt_contract(
+            base_contract,
+            candidate_path=candidate_path,
+            typed_errors=typed_errors,
+            schema_dir=self.ctx.run_dir,
+            correction_contract=correction_contract,
+            machine_contract=machine_contract,
+            observation_profile=observation_profile,
+        )
+        if aggregation_correction_context_path is not None:
+            prompt_contract["correction_context_path"] = str(
+                aggregation_correction_context_path
+            )
         return replace(
             work,
             work_item=work_item,
             input_paths=tuple(input_paths),
             executor_result_path=str(correct_result_path),
-            prompt_extras=correct_prompt_contract(
-                base_contract,
-                candidate_path=candidate_path,
-                typed_errors=typed_errors,
-                schema_dir=self.ctx.run_dir,
-                correction_contract=correction_contract,
-                machine_contract=machine_contract,
-                observation_profile=observation_profile,
-            ),
+            prompt_extras=prompt_contract,
         )

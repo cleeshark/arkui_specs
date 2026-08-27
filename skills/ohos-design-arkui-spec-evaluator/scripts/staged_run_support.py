@@ -1676,6 +1676,21 @@ def validate_aggregation_document(
             expected_conclusion = "PARTIALLY_SUPPORTED"
         else:
             expected_conclusion = "SUPPORTED"
+        # Honor the context-level required conclusion override, mirroring the
+        # kernel validator (validate.py): required_conclusion_when_no_adverse
+        # takes precedence over the generic policy derivation, so a criterion
+        # whose mapped units force NOT_VERIFIABLE is not rejected here for
+        # deriving MISSING from an ABSENT content status.
+        override_mapping = mappings_by_id.get(criterion_id, {})
+        override_constraints = (
+            override_mapping.get("constraints", {})
+            if isinstance(override_mapping, dict) else {}
+        )
+        required_conclusion = override_constraints.get(
+            "required_conclusion_when_no_adverse"
+        )
+        if required_conclusion:
+            expected_conclusion = required_conclusion
         actual_conclusion = results_by_id.get(criterion_id, {}).get("conclusion")
         if actual_conclusion != expected_conclusion:
             errors.append(
@@ -1842,6 +1857,110 @@ def validate_aggregation_document(
     return errors
 
 
+def _criterion_required_evidence_types() -> dict[str, list[str]]:
+    """Return each Criterion's required_evidence_types from the frozen rubric."""
+    rubric, _complexity, errors = protocol()
+    if errors:
+        return {}
+    result: dict[str, list[str]] = {}
+    for dimension in rubric.get("dimensions", []):
+        for criterion in dimension.get("criteria", []):
+            criterion_id = criterion.get("id")
+            req_types = criterion.get("required_evidence_types")
+            if isinstance(criterion_id, str) and isinstance(req_types, list):
+                result[criterion_id] = [t for t in req_types if isinstance(t, str)]
+    return result
+
+
+# A synthesised documented-gap evidence item. Its evidence_id is deterministic
+# per Criterion so re-running the repair is idempotent. The assemble stage
+# deducts confidence for each inserted placeholder so the gap stays visible.
+EVIDENCE_GAP_PLACEHOLDER_TYPE_FALLBACK = "design_location"
+EVIDENCE_GAP_PLACEHOLDER_DESCRIPTION = (
+    "documented evidence gap: aggregation reported this evidence-required "
+    "finding with no reproducible evidence; placeholder inserted so the report "
+    "remains publishable with reduced confidence"
+)
+
+
+def repair_missing_finding_evidence(
+    document: dict[str, Any],
+) -> tuple[dict[str, Any], list[str]]:
+    """Insert a documented-gap placeholder for evidence-required empty findings.
+
+    A Finding on an evidence-required conclusion (MISSING/CONTRADICTED/...) whose
+    ``evidence_ids`` are genuinely empty makes the report structurally invalid
+    against the semantic-result schema (Major/Critical Findings require
+    ``minItems: 1`` evidence). Rather than block the whole report on a data
+    quality gap the kernel already treats as non-blocking, synthesise one
+    placeholder evidence item of a required type, reference it from the Finding,
+    and let the warning policy deduct confidence. The conclusion, severity, and
+    prose are left unchanged. Findings that already carry evidence are untouched.
+    """
+    repaired = copy.deepcopy(document)
+    results = repaired.get("criterion_results")
+    if not isinstance(results, list):
+        return repaired, []
+    source_revision = repaired.get("source_revision")
+    required_types_by_criterion = _criterion_required_evidence_types()
+    changes: list[str] = []
+    for result_index, result in enumerate(results):
+        if not isinstance(result, dict):
+            continue
+        conclusion = result.get("conclusion")
+        if conclusion not in FINDING_REQUIRED_CONCLUSIONS:
+            continue
+        findings = result.get("findings")
+        if not isinstance(findings, list):
+            continue
+        criterion_id = result.get("criterion_id")
+        empty_findings = [
+            finding for finding in findings
+            if isinstance(finding, dict) and not finding.get("evidence_ids")
+        ]
+        if not empty_findings:
+            continue
+        # Choose a placeholder type the Criterion accepts so the report does not
+        # trip the required-evidence-type check; fall back to a generic one.
+        required_types = required_types_by_criterion.get(criterion_id, [])
+        placeholder_type = (
+            required_types[0] if required_types
+            else EVIDENCE_GAP_PLACEHOLDER_TYPE_FALLBACK
+        )
+        criterion_slug = str(criterion_id or f"criterion-{result_index}").lower()
+        gap_id = "EV-gap-" + re.sub(r"[^a-z0-9._-]+", "-", criterion_slug)
+        evidence = result.get("evidence")
+        if not isinstance(evidence, list):
+            evidence = []
+            result["evidence"] = evidence
+        if not any(
+            isinstance(item, dict) and item.get("evidence_id") == gap_id
+            for item in evidence
+        ):
+            content_hash = "sha256:" + hashlib.sha256(
+                gap_id.encode("utf-8")
+            ).hexdigest()
+            evidence.append({
+                "evidence_id": gap_id,
+                "type": placeholder_type,
+                "path": "(evidence gap: no reproducible evidence available)",
+                "source_revision": source_revision,
+                "content_hash": content_hash,
+                "description": EVIDENCE_GAP_PLACEHOLDER_DESCRIPTION,
+            })
+            changes.append(
+                f"criterion_results[{result_index}].evidence inserted "
+                f"documented-gap placeholder {gap_id}"
+            )
+        for finding in empty_findings:
+            finding["evidence_ids"] = [gap_id]
+            changes.append(
+                f"criterion_results[{result_index}].findings"
+                f"[{finding.get('finding_id')}].evidence_ids referenced {gap_id}"
+            )
+    return repaired, changes
+
+
 def repair_aggregation_contract(
     document: dict[str, Any],
 ) -> tuple[dict[str, Any], list[str]]:
@@ -1965,7 +2084,37 @@ def repair_aggregation_contract(
             continue
         primary = record.get("primary_criterion_id")
         finding_ids = record.get("finding_ids")
-        if not isinstance(primary, str) or not isinstance(finding_ids, list):
+        if not isinstance(finding_ids, list):
+            continue
+        if not isinstance(primary, str) or not primary:
+            # A bounded aggregation correction may omit an ownership row's
+            # primary Criterion while still leaving a complete Finding list.
+            # At assemble time, recover only the unambiguous case: all owned
+            # Findings belong to one Criterion.  This preserves the Finding
+            # and defect identity while allowing the final report to carry the
+            # ownership uncertainty as a confidence warning.
+            if not primary:
+                owned_findings = [
+                    findings_by_id.get(finding_id)
+                    for finding_id in finding_ids
+                    if isinstance(finding_id, str)
+                ]
+                criterion_ids = [
+                    finding.get("criterion_id")
+                    for finding in owned_findings
+                    if isinstance(finding, dict)
+                    and isinstance(finding.get("criterion_id"), str)
+                ]
+                unique_criteria = list(dict.fromkeys(criterion_ids))
+                if len(unique_criteria) == 1:
+                    inferred_primary = unique_criteria[0]
+                    record["primary_criterion_id"] = inferred_primary
+                    primary = inferred_primary
+                    changes.append(
+                        f"defect_ownership[{owner_index}].primary_criterion_id "
+                        f"inferred as {inferred_primary} from owned Findings"
+                    )
+        if not isinstance(primary, str) or not primary:
             continue
         owned_findings = [
             findings_by_id.get(finding_id)

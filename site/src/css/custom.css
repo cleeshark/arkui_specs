@@ -584,6 +584,19 @@
   font-size: 0.82rem;
 }
 
+.findingClaim {
+  background: var(--portal-soft);
+  color: var(--ifm-color-primary);
+  border: 1px solid var(--portal-border);
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+.findingClaim::before {
+  content: 'claim ';
+  opacity: 0.65;
+}
+
 .findingCard p {
   margin: 10px 0 6px;
 }

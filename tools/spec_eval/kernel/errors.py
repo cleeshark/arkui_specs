@@ -89,7 +89,6 @@ ERROR_REGISTRY: dict[str, str] = _register({
     "FROZEN_EVIDENCE_UNREADABLE": FATAL_INPUT,
     "FINDING_ID_MISSING": FATAL_INPUT,
     "FINDING_ID_COLLISION": FATAL_INPUT,
-    "DUPLICATE_DEFECT_OWNER": FATAL_INPUT,
     # --- coverage / mapping -------------------------------------------------
     "CLAIM_SET_MISMATCH": SERVICE_NORMALIZATION,
     "CLAIM_ROW_DUPLICATED": SERVICE_NORMALIZATION,
@@ -100,7 +99,11 @@ ERROR_REGISTRY: dict[str, str] = _register({
     "CRITERION_UNKNOWN": MODEL_CORRECTION,
     "OBSERVATION_CLAIM_UNEXPECTED": SERVICE_NORMALIZATION,
     "OBSERVATION_CLAIM_IDS_EMPTY": SERVICE_NORMALIZATION,
-    "OBSERVATION_CLAIM_COVERAGE_INCOMPLETE": SERVICE_NORMALIZATION,
+    # Attaching a missing expected Claim to an Observation is semantic: the
+    # service cannot safely decide which scenario Observation owns it, and the
+    # deterministic normalizer can drop extras but never invent coverage. Route
+    # it to the bounded model Correction turn, mirroring MAPPING_CLAIM_UNMAPPED.
+    "OBSERVATION_CLAIM_COVERAGE_INCOMPLETE": MODEL_CORRECTION,
     "OBSERVATION_FIELD_INVALID": SERVICE_NORMALIZATION,
     "MODELING_BASIS_MISSING": MODEL_CORRECTION,
     "MODELING_BASIS_INVALID": MODEL_CORRECTION,
@@ -113,6 +116,7 @@ ERROR_REGISTRY: dict[str, str] = _register({
     "EVIDENCE_CARDINALITY_VIOLATED": MODEL_CORRECTION,
     "NV_INSPECTION_EVIDENCE_MISSING": MODEL_CORRECTION,
     "GAP_MISSING_FOR_NV": MODEL_CORRECTION,
+    "NV_MISSING_EVIDENCE_RECOVERED": MODEL_CORRECTION,
     "GAP_UNEXPECTED_FOR_NON_NV": SERVICE_NORMALIZATION,
     "GAP_FIELD_INSUFFICIENT": MODEL_CORRECTION,
     # --- prose quality (model-owned) ---------------------------------------
@@ -128,6 +132,7 @@ ERROR_REGISTRY: dict[str, str] = _register({
     "FINDING_EVIDENCE_UNKNOWN": MODEL_CORRECTION,
     "FINDING_KEY_DUPLICATE": MODEL_CORRECTION,
     "SERVICE_DEFECT_KEY_RESERVED": MODEL_CORRECTION,
+    "DUPLICATE_DEFECT_OWNER": MODEL_CORRECTION,
     "FINDING_OWNER_UNKNOWN": SERVICE_NORMALIZATION,
     "FINDING_MULTI_OWNED": SERVICE_NORMALIZATION,
     "CRITICAL_NOT_PRIMARY": SERVICE_NORMALIZATION,
@@ -141,7 +146,10 @@ ERROR_REGISTRY: dict[str, str] = _register({
     "CONTRADICTION_BASIS_INVALID": MODEL_CORRECTION,
     "CROSS_FEAT_NOT_REVIEWED": MODEL_CORRECTION,
     # --- rubric constraint violations (model-owned) -------------------------
-    "SEVERITY_BELOW_FLOOR": MODEL_CORRECTION,
+    # The validator provides one exact severity floor and identifies the
+    # Finding. Raising a lower value to that floor is deterministic and does
+    # not require a semantic re-evaluation.
+    "SEVERITY_BELOW_FLOOR": SERVICE_NORMALIZATION,
     "NOT_APPLICABLE_FORBIDDEN": MODEL_CORRECTION,
     "EVIDENCE_TYPE_MISSING": MODEL_CORRECTION,
     "EVIDENCE_REQUIRED_MISSING": MODEL_CORRECTION,
@@ -211,6 +219,7 @@ CONFIDENCE_LAYERS: dict[str, str] = {
     "QUALITY_HIGH_NV_RATIO": LAYER_MINOR,
     "QUALITY_DUPLICATE_TEXT": LAYER_MINOR,
     "QUALITY_OBSERVATION_DENSITY": LAYER_MINOR,
+    "NV_MISSING_EVIDENCE_RECOVERED": LAYER_MINOR,
 }
 
 
@@ -225,6 +234,10 @@ NON_BLOCKING_WARNING_CODES = frozenset({
     # The repaired report remains consumable, but loses one bounded MAJOR
     # confidence penalty so the data-quality issue stays visible.
     "FINDING_EVIDENCE_UNKNOWN",
+    # A policy-derived NOT_VERIFIABLE result remains protocol-valid when the
+    # service copies the policy-basis reason into missing_evidence. Preserve a
+    # bounded confidence deduction so the omitted model field stays visible.
+    "NV_MISSING_EVIDENCE_RECOVERED",
 })
 
 # These errors still receive the single bounded model Correction turn.  If

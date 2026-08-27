@@ -281,11 +281,12 @@ class EnsureSpecsFetchTest(unittest.TestCase):
         self.assertIsNone(restore)
         self.assertEqual(git.call_count, 1)
 
-    def test_fetches_source_branch_then_checks_out(self) -> None:
+    def test_fetches_by_tested_sha_then_checks_out(self) -> None:
+        # The immutable tested SHA is fetched first (reaches fork heads too).
         with mock.patch.object(ci_worker, "_git", side_effect=[
             self._proc(0, stdout="main\n"),    # rev-parse -> current=main (!= tested)
             self._proc(1),                     # cat-file -> absent (trigger fetch)
-            self._proc(0),                     # fetch origin feature/x -> ok
+            self._proc(0),                     # fetch origin abc123 -> ok
             self._proc(0),                     # cat-file -> present (_fetch_into hit)
             self._proc(0, stdout="main\n"),    # symbolic-ref -> restore=main
             self._proc(0),                     # checkout --detach -> ok
@@ -295,14 +296,38 @@ class EnsureSpecsFetchTest(unittest.TestCase):
         self.assertTrue(ok)
         self.assertEqual(action, "checked_out")
         self.assertEqual(restore, "main")
-        self.assertEqual(git.call_args_list[2].args[1:], ("fetch", "origin", "feature/x"))
+        self.assertEqual(git.call_args_list[2].args[1:], ("fetch", "origin", "abc123"))
 
-    def test_falls_back_to_origin_when_source_branch_lacks_commit(self) -> None:
+    def test_fork_pr_falls_back_to_mr_ref_when_sha_and_branch_absent(self) -> None:
+        # Fork PR (issue #82): source branch lives on the contributor's repo, not
+        # origin, so `fetch origin <branch>` cannot reach it. The tested SHA fetch
+        # is the primary path; the MR head ref is the labeled fallback we assert.
         with mock.patch.object(ci_worker, "_git", side_effect=[
             self._proc(0, stdout="main\n"),    # rev-parse
             self._proc(1),                     # cat-file -> absent
+            self._proc(1),                     # fetch origin <sha> -> fail (server lacks it)
+            self._proc(0),                     # fetch origin refs/merge-requests/157/head -> ok
+            self._proc(0),                     # cat-file -> present
+            self._proc(0, stdout="main\n"),    # symbolic-ref
+            self._proc(0),                     # checkout
+        ]) as git:
+            _, ok, action, _ = ensure_specs_at_sha(
+                Path("/tmp/specs"), "abc123", auto_checkout=True, source_branch="0819", iid=157)
+        self.assertTrue(ok)
+        self.assertEqual(action, "checked_out")
+        self.assertEqual(
+            git.call_args_list[3].args[1:],
+            ("fetch", "origin", "refs/merge-requests/157/head"),
+        )
+
+    def test_falls_back_to_branch_then_origin_when_sha_fetch_lacks_commit(self) -> None:
+        with mock.patch.object(ci_worker, "_git", side_effect=[
+            self._proc(0, stdout="main\n"),    # rev-parse
+            self._proc(1),                     # cat-file -> absent
+            self._proc(0),                     # fetch origin <sha> -> ok
+            self._proc(1),                     # cat-file -> still absent
             self._proc(0),                     # fetch origin feature/x -> ok
-            self._proc(1),                     # cat-file -> still absent (branch lacks it)
+            self._proc(1),                     # cat-file -> still absent
             self._proc(0),                     # fetch origin -> ok (fallback)
             self._proc(0),                     # cat-file -> present
             self._proc(0, stdout="main\n"),    # symbolic-ref
@@ -312,12 +337,15 @@ class EnsureSpecsFetchTest(unittest.TestCase):
                 Path("/tmp/specs"), "abc123", auto_checkout=True, source_branch="feature/x")
         self.assertTrue(ok)
         self.assertEqual(action, "checked_out")
-        self.assertEqual(git.call_args_list[4].args[1:], ("fetch", "origin"))
+        self.assertEqual(git.call_args_list[4].args[1:], ("fetch", "origin", "feature/x"))
+        self.assertEqual(git.call_args_list[6].args[1:], ("fetch", "origin"))
 
     def test_fetches_origin_directly_when_no_source_branch(self) -> None:
         with mock.patch.object(ci_worker, "_git", side_effect=[
             self._proc(0, stdout="main\n"),    # rev-parse
             self._proc(1),                     # cat-file -> absent
+            self._proc(0),                     # fetch origin <sha>
+            self._proc(1),                     # cat-file -> still absent
             self._proc(0),                     # fetch origin (no source branch)
             self._proc(0),                     # cat-file -> present
             self._proc(0, stdout="main\n"),    # symbolic-ref
@@ -327,12 +355,13 @@ class EnsureSpecsFetchTest(unittest.TestCase):
                 Path("/tmp/specs"), "abc123", auto_checkout=True, source_branch=None)
         self.assertTrue(ok)
         self.assertEqual(action, "checked_out")
-        self.assertEqual(git.call_args_list[2].args[1:], ("fetch", "origin"))
+        self.assertEqual(git.call_args_list[4].args[1:], ("fetch", "origin"))
 
     def test_fetch_command_failure_reports_fetch_failed(self) -> None:
         with mock.patch.object(ci_worker, "_git", side_effect=[
             self._proc(0, stdout="main\n"),    # rev-parse
             self._proc(1),                     # cat-file -> absent
+            self._proc(1),                     # fetch origin <sha> -> fail
             self._proc(1),                     # fetch origin feature/x -> fail
             self._proc(1),                     # fetch origin -> fail
         ]):
@@ -347,6 +376,8 @@ class EnsureSpecsFetchTest(unittest.TestCase):
         with mock.patch.object(ci_worker, "_git", side_effect=[
             self._proc(0, stdout="main\n"),    # rev-parse
             self._proc(1),                     # cat-file -> absent
+            self._proc(0),                     # fetch origin <sha> -> ok
+            self._proc(1),                     # cat-file -> still absent
             self._proc(0),                     # fetch origin feature/x -> ok
             self._proc(1),                     # cat-file -> still absent
             self._proc(0),                     # fetch origin -> ok
