@@ -11,6 +11,11 @@ from spec_eval.protocol_validator import validate_evaluation_report, validate_pr
 
 REPORT_VERSION = "spec-eval-function-report@0.1.0"
 
+# Evidence type mismatch is a bounded data-quality gap that score/assemble stages
+# already degrade to a confidence warning. Filter it here so report assembly does
+# not re-block a report that passed score with reduced confidence.
+EVIDENCE_TYPE_WARNING_MARKER = "evidence must include one of"
+
 
 class FunctionReportInputError(ValueError):
     """Raised when report inputs are incomplete or refer to different artifacts."""
@@ -118,7 +123,9 @@ def build_function_report(
         },
     }
     errors = validate_evaluation_report(report, rubric, complexity_rules, schemas_root)
-    raise_for_errors(errors)
+    # Filter evidence type warnings that score/assemble stages already degraded
+    blocking = [e for e in errors if EVIDENCE_TYPE_WARNING_MARKER not in e]
+    raise_for_errors(blocking)
     return report, render_markdown_report(
         report=report, analysis=analysis_result, stability=stability_result
     )
