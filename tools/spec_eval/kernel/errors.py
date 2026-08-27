@@ -246,6 +246,14 @@ NON_BLOCKING_WARNING_CODES = frozenset({
 # CORRECTION_INVALID_TERMINAL.
 POST_CORRECTION_WARNING_CODES = frozenset({
     "MAPPING_CLAIM_UNMAPPED",
+    # A Criterion referencing evidence outside its allowlist is a bounded
+    # data-quality gap that the model cannot always repair without semantic
+    # re-evaluation. The report remains consumable with reduced confidence.
+    "CRITERION_EVIDENCE_UNKNOWN",
+    # A Criterion carrying evidence of the wrong type is a bounded data-quality
+    # gap the model cannot fabricate without violating the evidence allowlist.
+    # The kernel classifies it as a non-blocking MAJOR confidence deduction.
+    "EVIDENCE_TYPE_MISSING",
 })
 
 
