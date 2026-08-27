@@ -66,6 +66,7 @@ def split_aggregation_warnings(errors: list[str]) -> tuple[list[str], list[str]]
                 marker in error
                 for marker in CONTRADICTION_BASIS_WARNING_MARKERS
             )
+            or EVIDENCE_TYPE_WARNING_MARKER in error
         ):
             warnings.append(error)
         else:
