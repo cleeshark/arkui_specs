@@ -159,14 +159,19 @@ function formatTime(isoString) {
 
 function durationHtml(job) {
   const timing = job.timing || {};
-  const live = ACTIVE_STATES.has(job.status) && timing.started_at && !timing.finished_at;
+  // Live only when a current run segment is in progress (run_started_at set,
+  // job active, not finished). Using run_started_at — not started_at — keeps
+  // the live tick from double-counting retry wait time.
+  const runStartedAt = timing.run_started_at;
+  const live = ACTIVE_STATES.has(job.status) && runStartedAt && !timing.finished_at;
   const activeDurationMs = Number(timing.active_duration_ms || 0);
+  const activeBaseMs = Number(timing.active_base_ms || 0);
   const executorMs = Number(timing.executor_duration_ms || 0);
   const title = `Total wall time: ${formatDuration(Number(timing.duration_ms || 0))}\nExecutor: ${formatDuration(executorMs)}`;
   if (live) {
     return `<span class="job-duration live-duration"
-      data-run-started-at="${esc(timing.started_at)}"
-      data-active-base-ms="${activeDurationMs}"
+      data-run-started-at="${esc(runStartedAt)}"
+      data-active-base-ms="${activeBaseMs}"
       title="${esc(title)}">${formatDuration(activeDurationMs)}</span>`;
   }
   return `<span class="job-duration" title="${esc(title)}">${formatDuration(activeDurationMs)}</span>`;

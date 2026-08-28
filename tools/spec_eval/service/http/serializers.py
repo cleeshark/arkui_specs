@@ -107,7 +107,8 @@ def _timing_to_dict(job: Job, statistics: JobStatistics) -> dict[str, Any]:
     )
     # active_elapsed_ms: cumulative time the job was actually running, excluding
     # retry wait intervals. For a currently-running job, add the current segment.
-    active_elapsed_ms = statistics.active_elapsed_ms
+    active_base_ms = statistics.active_elapsed_ms
+    active_elapsed_ms = active_base_ms
     if statistics.run_started_at and not finished:
         run_started = _parse(statistics.run_started_at)
         if run_started:
@@ -116,9 +117,11 @@ def _timing_to_dict(job: Job, statistics: JobStatistics) -> dict[str, Any]:
     return {
         "started_at": statistics.started_at,
         "finished_at": statistics.finished_at,
+        "run_started_at": statistics.run_started_at,
         "queue_duration_ms": queue_ms,
         "duration_ms": duration_ms,
         "active_duration_ms": active_elapsed_ms,
+        "active_base_ms": active_base_ms,
         "executor_duration_ms": statistics.executor_elapsed_ms,
     }
 
