@@ -244,6 +244,42 @@ class EnsureSpecsAndDiffTest(unittest.TestCase):
         self.assertIn("specs/tools/spec_eval/gitcode_webhook.py", files)
         self.assertIn("specs/05-ui-components/01-layout-components/02-divider/Feat-01-divider-spec.md", files)
 
+    def test_compute_changed_files_uses_three_dot_diff(self) -> None:
+        # A three-dot diff (target...tested) reports only what the PR branch
+        # introduces relative to the merge-base. A two-dot diff would surface
+        # commits unique to target when the branch is behind main, wrongly
+        # forcing a full scan (regression for PR 204).
+        with mock.patch.object(ci_worker, "_git") as git:
+            git.return_value = mock.Mock(returncode=0, stdout="tools/spec_eval/kernel/normalize.py\n")
+            files, status = compute_changed_files(Path("/tmp/specs"), "927e3e3", "caff92c")
+        self.assertEqual(status, "ok")
+        self.assertEqual(files, ["specs/tools/spec_eval/kernel/normalize.py"])
+        git.assert_called_once_with(
+            Path("/tmp/specs"), "diff", "--name-only", "927e3e3...caff92c"
+        )
+
+    def test_compute_changed_files_falls_back_to_two_dot(self) -> None:
+        # Unrelated histories have no merge-base, so three-dot fails; the
+        # function must retry with a two-dot diff rather than report diff_failed.
+        with mock.patch.object(ci_worker, "_git") as git:
+            git.side_effect = [
+                mock.Mock(returncode=128, stdout=""),  # three-dot: no merge-base
+                mock.Mock(returncode=0, stdout="tools/spec_eval/kernel/normalize.py\n"),  # two-dot
+            ]
+            files, status = compute_changed_files(Path("/tmp/specs"), "aaa", "bbb")
+        self.assertEqual(status, "ok")
+        self.assertEqual(files, ["specs/tools/spec_eval/kernel/normalize.py"])
+        self.assertEqual(git.call_count, 2)
+        self.assertEqual(git.call_args_list[0].args[1:], ("diff", "--name-only", "aaa...bbb"))
+        self.assertEqual(git.call_args_list[1].args[1:], ("diff", "--name-only", "aaa", "bbb"))
+
+    def test_compute_changed_files_diff_failed_when_both_fail(self) -> None:
+        with mock.patch.object(ci_worker, "_git") as git:
+            git.return_value = mock.Mock(returncode=128, stdout="")
+            files, status = compute_changed_files(Path("/tmp/specs"), "aaa", "bbb")
+        self.assertEqual(status, "diff_failed")
+        self.assertEqual(files, [])
+
     def test_compute_changed_files_requires_both_shas(self) -> None:
         files, status = compute_changed_files(Path("/tmp/specs"), None, "936b9f4")
         self.assertEqual(status, "missing_target_sha")
