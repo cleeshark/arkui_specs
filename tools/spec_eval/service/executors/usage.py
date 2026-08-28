@@ -1,9 +1,16 @@
-"""Extract non-sensitive token counters from Codex CLI JSONL events.
+"""Extract and normalize token counters from executor JSONL events.
 
-Codex versions have emitted both ``turn.completed.usage`` and the older
-``token_count.info.total_token_usage`` shape.  The adapter accepts either and
-keeps the largest cumulative value observed during one ephemeral invocation.
-Unknown event shapes are ignored instead of inventing usage.
+Supports both Codex and Claude CLI output formats, normalizing to a unified schema:
+    - input_tokens = fresh input + cache creation
+    - cached_input_tokens = cache read
+    - output_tokens = output tokens
+    - total_tokens = input_tokens + output_tokens
+
+Codex emits ``turn.completed.usage`` or legacy ``token_count.info.total_token_usage``.
+Claude emits usage in the final ``result`` event.
+
+The adapter accepts either format and keeps the largest cumulative value observed
+during one ephemeral invocation. Unknown event shapes are ignored.
 """
 
 from __future__ import annotations
@@ -23,8 +30,8 @@ TOKEN_FIELDS = (
 
 _ALIASES = {
     "input_tokens": ("input_tokens", "input"),
-    "cached_input_tokens": ("cached_input_tokens", "cached_input"),
-    "cache_write_input_tokens": ("cache_write_input_tokens", "cache_write_input"),
+    "cached_input_tokens": ("cached_input_tokens", "cached_input", "cache_read_input_tokens"),
+    "cache_write_input_tokens": ("cache_write_input_tokens", "cache_write_input", "cache_creation_input_tokens"),
     "output_tokens": ("output_tokens", "output"),
     "reasoning_output_tokens": ("reasoning_output_tokens", "reasoning_output"),
     "total_tokens": ("total_tokens", "total"),
@@ -33,7 +40,11 @@ _ALIASES = {
 
 @dataclass
 class TokenUsageAccumulator:
-    """Collect the final cumulative usage snapshot for one Codex process."""
+    """Collect the final cumulative usage snapshot for one executor process.
+
+    Accumulates usage from both Codex and Claude CLI output, normalizing to
+    a unified schema where input_tokens includes cache creation.
+    """
 
     values: dict[str, int] = field(
         default_factory=lambda: {name: 0 for name in TOKEN_FIELDS}
@@ -78,9 +89,23 @@ def extract_token_usage(line: str) -> dict[str, int] | None:
 
 
 def _normalize(candidate: Any) -> dict[str, int] | None:
+    """Normalize usage counters to a unified schema.
+
+    Unified schema:
+        input_tokens = fresh_input + cache_creation
+        cached_input_tokens = cache_read
+        output_tokens = output
+        total_tokens = input_tokens + output_tokens
+
+    Handles both Codex and Claude raw formats:
+        - Codex: input_tokens, cache_write_input_tokens, cached_input_tokens
+        - Claude: input_tokens, cache_creation_input_tokens, cache_read_input_tokens
+    """
     if not isinstance(candidate, dict):
         return None
-    values: dict[str, int] = {}
+
+    # Extract raw values using aliases
+    raw_values: dict[str, int] = {}
     found = False
     for canonical, aliases in _ALIASES.items():
         value = 0
@@ -90,9 +115,26 @@ def _normalize(candidate: Any) -> dict[str, int] | None:
                 value = raw
                 found = True
                 break
-        values[canonical] = value
+        raw_values[canonical] = value
+
     if not found:
         return None
-    if values["total_tokens"] == 0:
+
+    # Normalize to unified schema:
+    # input_tokens should include cache_creation/cache_write
+    # For Codex: input_tokens already includes fresh input, add cache_write if separate
+    # For Claude: input_tokens is fresh only, add cache_creation
+    values: dict[str, int] = {}
+    values["input_tokens"] = raw_values["input_tokens"] + raw_values["cache_write_input_tokens"]
+    values["cached_input_tokens"] = raw_values["cached_input_tokens"]
+    values["cache_write_input_tokens"] = raw_values["cache_write_input_tokens"]
+    values["output_tokens"] = raw_values["output_tokens"]
+    values["reasoning_output_tokens"] = raw_values["reasoning_output_tokens"]
+
+    # Calculate total_tokens
+    if raw_values["total_tokens"] > 0:
+        values["total_tokens"] = raw_values["total_tokens"]
+    else:
         values["total_tokens"] = values["input_tokens"] + values["output_tokens"]
+
     return values

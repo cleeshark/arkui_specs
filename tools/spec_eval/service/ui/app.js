@@ -174,7 +174,16 @@ function tokenHtml(job) {
   if (!usage.executor_invocations) return '<span class="muted">—</span>';
   if (!usage.reported) return '<span class="muted" title="Codex did not report usage">not reported</span>';
   const suffix = usage.complete ? "" : " *";
-  const title = usage.complete ? "All executor invocations reported usage" : "Partial: one or more invocations did not report usage";
+  const completeTitle = usage.complete ? "All executor invocations reported usage" : "Partial: one or more invocations did not report usage";
+  const breakdown = [
+    `Total: ${formatNumber(usage.total_tokens)}`,
+    `Input: ${formatNumber(usage.input_tokens)}`,
+    `Output: ${formatNumber(usage.output_tokens)}`,
+  ];
+  if (usage.cached_input_tokens > 0) {
+    breakdown.push(`Cached: ${formatNumber(usage.cached_input_tokens)}`);
+  }
+  const title = `${completeTitle}\n${breakdown.join('\n')}`;
   return `<span title="${esc(title)}">${formatNumber(usage.total_tokens)}${suffix}</span>`;
 }
 
@@ -393,6 +402,7 @@ async function loadDetail(jobId) {
     <div class="metric"><span>Executor time</span><strong>${formatDuration(Number(timing.executor_duration_ms || 0))}</strong></div>
     <div class="metric"><span>Total tokens</span><strong>${usage.reported ? formatNumber(usage.total_tokens) : "not reported"}</strong></div>
     <div class="metric"><span>Input / Output</span><strong>${usage.reported ? `${formatNumber(usage.input_tokens)} / ${formatNumber(usage.output_tokens)}` : "—"}</strong></div>
+    <div class="metric"><span>Cached input</span><strong>${usage.reported && usage.cached_input_tokens > 0 ? formatNumber(usage.cached_input_tokens) : "—"}</strong></div>
     <div class="metric"><span>Tool / command calls</span><strong>${telemetry.reported ? `${formatNumber(telemetry.tool_calls)} / ${formatNumber(telemetry.command_calls)}` : "not reported"}</strong></div>
     <div class="metric"><span>Input / evidence paths</span><strong>${telemetry.reported ? `${formatNumber(telemetry.input_paths_accessed)} / ${formatNumber(telemetry.evidence_paths_accessed)}` : "—"}</strong></div>`;
   document.getElementById("detail-state").textContent = JSON.stringify(jobRes.json, null, 2);
