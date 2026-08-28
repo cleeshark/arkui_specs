@@ -192,11 +192,13 @@ class Job:
 
 @dataclass(frozen=True)
 class JobStatistics:
-    """Durable execution timing and non-sensitive Codex usage counters."""
+    """Durable execution timing and non-sensitive executor usage counters."""
 
     job_id: str
     started_at: str | None
     finished_at: str | None
+    run_started_at: str | None
+    active_elapsed_ms: int
     executor_invocations: int
     usage_reported_invocations: int
     telemetry_reported_invocations: int

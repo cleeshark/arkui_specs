@@ -190,6 +190,8 @@ def _job_statistics_from_row(row: sqlite3.Row) -> JobStatistics:
         job_id=row["job_id"],
         started_at=row["started_at"],
         finished_at=row["finished_at"],
+        run_started_at=row["run_started_at"] if "run_started_at" in row.keys() else None,
+        active_elapsed_ms=int(row["active_elapsed_ms"]) if "active_elapsed_ms" in row.keys() else 0,
         executor_invocations=int(row["executor_invocations"]),
         usage_reported_invocations=int(row["usage_reported_invocations"]),
         telemetry_reported_invocations=int(row["telemetry_reported_invocations"]),
@@ -367,18 +369,30 @@ class JobRepository:
             if new == S.RUNNING and effective_stage == S.STAGE_PREPARING:
                 self._conn.execute(
                     "UPDATE job_statistics SET started_at = COALESCE(started_at, ?), "
-                    "finished_at = NULL, updated_at = ? WHERE job_id = ?",
-                    (now, now, job_id),
+                    "run_started_at = ?, finished_at = NULL, updated_at = ? WHERE job_id = ?",
+                    (now, now, now, job_id),
                 )
             elif new in S.TERMINAL_STATES:
+                # Accumulate active elapsed time from the current run segment
                 self._conn.execute(
-                    "UPDATE job_statistics SET finished_at = ?, updated_at = ? WHERE job_id = ?",
-                    (now, now, job_id),
+                    "UPDATE job_statistics SET "
+                    "active_elapsed_ms = active_elapsed_ms + CASE "
+                    "  WHEN run_started_at IS NOT NULL THEN "
+                    "    MAX(0, CAST((JULIANDAY(?) - JULIANDAY(run_started_at)) * 86400000 AS INTEGER)) "
+                    "  ELSE 0 END, "
+                    "run_started_at = NULL, finished_at = ?, updated_at = ? WHERE job_id = ?",
+                    (now, now, now, job_id),
                 )
             elif new == S.QUEUED:
+                # Job is retrying: accumulate elapsed time from this run segment
                 self._conn.execute(
-                    "UPDATE job_statistics SET finished_at = NULL, updated_at = ? WHERE job_id = ?",
-                    (now, job_id),
+                    "UPDATE job_statistics SET "
+                    "active_elapsed_ms = active_elapsed_ms + CASE "
+                    "  WHEN run_started_at IS NOT NULL THEN "
+                    "    MAX(0, CAST((JULIANDAY(?) - JULIANDAY(run_started_at)) * 86400000 AS INTEGER)) "
+                    "  ELSE 0 END, "
+                    "run_started_at = NULL, finished_at = NULL, updated_at = ? WHERE job_id = ?",
+                    (now, now, job_id),
                 )
             event_payload = {"from": src, "to": new}
             if payload:
