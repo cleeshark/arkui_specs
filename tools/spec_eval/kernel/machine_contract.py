@@ -162,6 +162,47 @@ def build_observation_machine_contract(
     }
 
 
+
+def _check_coverage_hint(errors: list[dict[str, Any]]) -> dict[str, Any]:
+    """Return a contract hint when CHECK_COVERAGE_INCOMPLETE is present.
+
+    Extracts the missing check ids from the typed error's ``actual`` field and
+    surfaces them as a dedicated coverage_correction key so the model knows
+    exactly which checks need observation entries without re-parsing the raw
+    error message.
+    """
+    import re as _re
+    missing: list[str] = []
+    for error in errors:
+        if error.get("code") == "CHECK_COVERAGE_INCOMPLETE":
+            actual = str(error.get("actual", ""))
+            m = _re.search(r"missing=\[([^\]]*)\]", actual)
+            if m and m.group(1).strip():
+                missing = [
+                    s.strip().strip("'\"")
+                    for s in m.group(1).split(",")
+                    if s.strip().strip("'\"")
+                ]
+            break
+    if not missing:
+        return {}
+    return {
+        "coverage_correction": {
+            "missing_check_ids": missing,
+            "instructions": [
+                "The union of observations[].check_ids must cover every id in required_checks.",
+                "Prefer appending the missing check_ids to the most relevant existing observation "
+                "entry (add /observations/{i}/check_ids/-).",
+                "Only add a brand-new observation entry (add /observations/-) when no existing "
+                "entry is thematically appropriate; a new entry requires at least one claim_id "
+                "from expected_claim_ids, a valid local_outcome, and at least one evidence item.",
+                "required_checks and completed_checks are service-derived and immutable; "
+                "do not patch them.",
+            ],
+        },
+    }
+
+
 def build_correction_machine_contract(
     *,
     payload_kind: str,
@@ -214,6 +255,7 @@ def build_correction_machine_contract(
         "allowed_paths": list(dict.fromkeys(str(path) for path in allowed_paths)),
         "valid_criterion_ids": list(dict.fromkeys(valid_criterion_ids)),
         "typed_errors": errors,
+        **_check_coverage_hint(errors),
         "rules": [
             "Patch the published candidate only; do not rewrite the complete document.",
             "Change only paths covered by typed_errors or their directly required sibling fields.",

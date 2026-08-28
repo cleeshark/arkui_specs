@@ -1341,12 +1341,14 @@ class CorrectionRoutingDegradeTest(unittest.TestCase):
         # whose document-level path does not resolve to a patch target is not
         # foldable into a model turn.  With allow_degraded_publish the final
         # report is still published (degraded); without it the item terminates.
-        # CHECK_COVERAGE_INCOMPLETE is a service-owned, MINOR (non-HARD) code
-        # with no deterministic handler.
-        document = {"observations": [{"observation_id": "OBS-1", "check_ids": []}]}
+        # OBSERVATION_FIELD_INVALID is a service-owned, MINOR (non-HARD) code
+        # with no deterministic handler and a non-resolvable document-level path.
+        # (CHECK_COVERAGE_INCOMPLETE was previously used here but is now routed
+        # MODEL_CORRECTION so a turn would run and the assertions no longer hold.)
+        document = {"observations": [{"observation_id": "OBS-1", "unknown_field": "x"}]}
         residual = {
-            "code": "CHECK_COVERAGE_INCOMPLETE",
-            "path": "aggregation.observations.check_ids",
+            "code": "OBSERVATION_FIELD_INVALID",
+            "path": "aggregation.observations.unknown_field",
             "entity_type": "document",
             "repairability": "SERVICE_NORMALIZATION",
         }
@@ -1471,6 +1473,290 @@ class CorrectionRoutingDegradeTest(unittest.TestCase):
         terminal_outcome, _events, terminal_published, _exec = run_once(False)
         self.assertEqual(terminal_outcome.status, C.STATUS_FAILED)
         self.assertFalse(terminal_published)
+
+
+def _observation_work(run_dir: Path, feat_id: str = "feature:Feat-01") -> C.WorkItemInput:
+    """WorkItemInput for a feature-observation work item (mirrors _aggregation_work)."""
+    (run_dir / "work-items.json").write_text(
+        json.dumps({"items": []}), encoding="utf-8",
+    )
+    return C.WorkItemInput(
+        job_id="job",
+        func_id="03-03-01",
+        run_id="run-1",
+        work_item_id=feat_id,
+        work_item={
+            "observation_type": "feature",
+            "observation_profile": "feature",
+            "input_resources": [],
+        },
+        run_dir=str(run_dir),
+        input_paths=(),
+        executor_result_path=str(run_dir / "Feat-01.result.json"),
+        repo_root=str(run_dir),
+        skill_version="0.3.0",
+        protocol_version="0.2.0",
+        prompt_extras={"payload_kind": "observation"},
+    )
+
+
+class CheckCoverageIncompleteModelCorrectionTest(unittest.TestCase):
+    """CHECK_COVERAGE_INCOMPLETE now routes MODEL_CORRECTION; tests the A→B cascade."""
+
+    # Re-use the seed helper from the sibling class without inheritance
+    def _seed_candidate(
+        self, run_dir: Path, output_name: str, document: dict, errors: list[dict],
+        work_item_id: str = "feature:Feat-01",
+        candidate_kind: str = "published_candidate",
+    ) -> None:
+        from spec_eval.kernel import staged_state as SS
+        items_path = run_dir / "work-items.json"
+        if not items_path.is_file():
+            items_path.write_text(json.dumps({"items": []}), encoding="utf-8")
+        out = run_dir / output_name
+        (out.with_name(f".{out.name}.candidate")).write_text(
+            json.dumps(document), encoding="utf-8",
+        )
+        (out.with_name(f".{out.name}.typed-errors.json")).write_text(
+            json.dumps({
+                "input_fingerprint": "fp",
+                "candidate_kind": candidate_kind,
+                "errors": errors,
+            }),
+            encoding="utf-8",
+        )
+        SS.set_work_item_state(run_dir, work_item_id, SS.GENERATED_INVALID)
+
+    def _check_coverage_error(self, missing: list[str]) -> dict:
+        return {
+            "code": "CHECK_COVERAGE_INCOMPLETE",
+            "path": "observation.observations.check_ids",
+            "entity_type": "document",
+            "entity_id": "",
+            "expected": f"exactly {sorted(missing + ['ac_testability'])}",
+            "actual": f"missing={sorted(missing)} extra=[]",
+            "repairability": "MODEL_CORRECTION",
+        }
+
+    def _make_flow(self, run_dir: Path, executor) -> "JudgmentFlow":
+        from spec_eval.service.pipeline.judgment_flow import JudgmentFlow
+        return JudgmentFlow(
+            ctx=SimpleNamespace(run_dir=run_dir, job_id="job", run_id="run-1"),
+            executor=executor,
+            jobs=SimpleNamespace(transition_status=lambda *a, **k: None),
+            events=_Events(),
+        )
+
+    def test_routing_reclassified_to_model_correction(self) -> None:
+        """CHECK_COVERAGE_INCOMPLETE repairability must be MODEL_CORRECTION."""
+        from spec_eval.kernel.errors import repairability_of, MODEL_CORRECTION, confidence_layer_of, LAYER_MINOR
+        self.assertEqual(repairability_of("CHECK_COVERAGE_INCOMPLETE"), MODEL_CORRECTION)
+        self.assertEqual(confidence_layer_of("CHECK_COVERAGE_INCOMPLETE"), LAYER_MINOR)
+
+    def test_path_resolution_returns_append_and_per_entry_paths(self) -> None:
+        """resolve_typed_error_json_paths returns /observations/- and per-entry check_ids."""
+        from spec_eval.service.pipeline.correction import (
+            resolve_typed_error_json_paths, validate_patch_scope,
+        )
+        from spec_eval.kernel.errors import TypedError
+        document = {
+            "observations": [
+                {"observation_id": "OBS-1", "check_ids": ["ac_testability"]},
+                {"observation_id": "OBS-2", "check_ids": ["boundary_state"]},
+            ],
+        }
+        error = TypedError(
+            code="CHECK_COVERAGE_INCOMPLETE",
+            path="observation.observations.check_ids",
+            entity_type="document", entity_id="",
+            expected="exactly [...]", actual="missing=['feat_ownership'] extra=[]",
+            repairability="MODEL_CORRECTION",
+        )
+        paths = resolve_typed_error_json_paths(document, error)
+        self.assertIn("/observations/-", paths)
+        self.assertIn("/observations/0/check_ids", paths)
+        self.assertIn("/observations/1/check_ids", paths)
+
+        # validate_patch_scope accepts append and per-entry check_ids writes
+        violations = validate_patch_scope(
+            [
+                {"op": "add", "path": "/observations/-", "value": {}},
+                {"op": "add", "path": "/observations/0/check_ids/-", "value": "feat_ownership"},
+            ],
+            allowed_paths=paths,
+            immutable_paths=["/completed_checks", "/required_checks"],
+        )
+        self.assertEqual(violations, [], msg=f"unexpected violations: {violations}")
+
+        # completed_checks is immutable
+        immutable_violations = validate_patch_scope(
+            [{"op": "replace", "path": "/completed_checks", "value": []}],
+            allowed_paths=paths,
+            immutable_paths=["/completed_checks", "/required_checks"],
+        )
+        self.assertTrue(immutable_violations)
+
+    def test_a_model_turn_runs_and_fills_missing_checks(self) -> None:
+        """A: model patches missing check_ids into existing obs → publish succeeds."""
+        from spec_eval.service.pipeline.judgment_flow import JudgmentFlow
+        from spec_eval.kernel.errors import TypedError
+        required = ["ac_testability", "boundary_state", "feat_ownership"]
+        document = {
+            "required_checks": required,
+            "observations": [
+                {"observation_id": "OBS-1", "check_ids": ["ac_testability", "boundary_state"]},
+            ],
+        }
+        residual = self._check_coverage_error(["feat_ownership"])
+
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp)
+            self._seed_candidate(run_dir, "Feat-01.json", document, [residual])
+            published: list[dict] = []
+
+            def normalize(payload):
+                return NormalizationResult(document=payload)
+
+            def validate(doc):
+                obs = doc.get("observations", [])
+                covered = {c for e in obs for c in e.get("check_ids", [])}
+                if set(required) <= covered:
+                    return []
+                return [TypedError.from_dict(residual)]
+
+            # Script a patch that appends "feat_ownership" to entry 0's check_ids
+            executor = _FlowExecutor(patches=[
+                {"op": "add", "path": "/observations/0/check_ids/-", "value": "feat_ownership"},
+            ])
+            flow = self._make_flow(run_dir, executor)
+            outcome = flow.run(
+                work=_observation_work(run_dir),
+                output_path=run_dir / "Feat-01.json",
+                template={"required_checks": required},
+                normalize=normalize, validate=validate,
+                base_contract={"payload_kind": "observation"},
+                on_publish=lambda d: published.append(d) or True,
+                fingerprint="fp", stage_event="feature_observation_completed",
+            )
+
+        self.assertIn("correct", executor.calls,
+                      "model correction turn must have been called")
+        self.assertEqual(outcome.status, C.STATUS_COMPLETED)
+        self.assertTrue(published, "document must have been published")
+        published_checks = {
+            c for e in published[0].get("observations", [])
+            for c in e.get("check_ids", [])
+        }
+        self.assertGreaterEqual(published_checks, set(required))
+
+    def test_b_residual_after_correction_turn_degrades_not_terminal(self) -> None:
+        """B: model turn runs but coverage gap remains → publish as warning, not terminal."""
+        from spec_eval.service.pipeline.judgment_flow import JudgmentFlow
+        from spec_eval.kernel.errors import TypedError
+        required = ["ac_testability", "boundary_state", "feat_ownership"]
+        document = {
+            "required_checks": required,
+            "observations": [
+                {"observation_id": "OBS-1", "check_ids": ["ac_testability"]},
+            ],
+        }
+        residual = self._check_coverage_error(["boundary_state", "feat_ownership"])
+
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp)
+            self._seed_candidate(run_dir, "Feat-01.json", document, [residual])
+            published: list[dict] = []
+            events = _Events()
+
+            def normalize(payload):
+                return NormalizationResult(document=payload)
+
+            def validate(_doc):
+                # Patch adds only "boundary_state"; "feat_ownership" still missing
+                return [TypedError.from_dict(residual)]
+
+            executor = _FlowExecutor(patches=[
+                {"op": "add", "path": "/observations/0/check_ids/-", "value": "boundary_state"},
+            ])
+            from spec_eval.service.pipeline.judgment_flow import JudgmentFlow
+            flow = JudgmentFlow(
+                ctx=SimpleNamespace(run_dir=run_dir, job_id="job", run_id="run-1"),
+                executor=executor,
+                jobs=SimpleNamespace(transition_status=lambda *a, **k: None),
+                events=events,
+            )
+            outcome = flow.run(
+                work=_observation_work(run_dir),
+                output_path=run_dir / "Feat-01.json",
+                template={"required_checks": required},
+                normalize=normalize, validate=validate,
+                base_contract={"payload_kind": "observation"},
+                on_publish=lambda d: published.append(d) or True,
+                fingerprint="fp", stage_event="feature_observation_completed",
+            )
+
+        self.assertIn("correct", executor.calls,
+                      "model correction turn must have been called")
+        self.assertEqual(outcome.status, C.STATUS_COMPLETED,
+                         "residual MODEL_CORRECTION MINOR must NOT be terminal")
+        self.assertTrue(published, "document must have been published despite residual")
+        self.assertNotIn("CORRECTION_INVALID_TERMINAL", str(outcome),
+                         "should not end in terminal state")
+
+    def test_hard_residual_after_correction_remains_terminal(self) -> None:
+        """A co-occurring HARD error must keep the work item terminal after correction."""
+        from spec_eval.service.pipeline.judgment_flow import JudgmentFlow
+        from spec_eval.kernel.errors import TypedError
+        required = ["ac_testability", "boundary_state"]
+        document = {
+            "required_checks": required,
+            "observations": [
+                {"observation_id": "OBS-1", "check_ids": ["ac_testability"]},
+            ],
+        }
+        coverage_residual = self._check_coverage_error(["boundary_state"])
+        hard_residual = {
+            "code": "TEMPLATE_MISSING_FIELD",
+            "path": "observation.func_id",
+            "entity_type": "document",
+            "entity_id": "",
+            "expected": "func_id present",
+            "actual": "missing",
+            "repairability": "FATAL_INPUT",
+        }
+
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp)
+            self._seed_candidate(
+                run_dir, "Feat-01.json", document,
+                [coverage_residual, hard_residual],
+            )
+            published: list[dict] = []
+
+            def normalize(payload):
+                return NormalizationResult(document=payload)
+
+            def validate(_doc):
+                return [
+                    TypedError.from_dict(coverage_residual),
+                    TypedError.from_dict(hard_residual),
+                ]
+
+            executor = _FlowExecutor(patches=[])
+            flow = self._make_flow(run_dir, executor)
+            outcome = flow.run(
+                work=_observation_work(run_dir),
+                output_path=run_dir / "Feat-01.json",
+                template={"required_checks": required},
+                normalize=normalize, validate=validate,
+                base_contract={"payload_kind": "observation"},
+                on_publish=lambda d: published.append(d) or True,
+                fingerprint="fp", stage_event="feature_observation_completed",
+            )
+
+        self.assertEqual(outcome.status, C.STATUS_FAILED,
+                         "FATAL_INPUT co-error must keep work item terminal")
+        self.assertFalse(published)
 
 
 if __name__ == "__main__":
