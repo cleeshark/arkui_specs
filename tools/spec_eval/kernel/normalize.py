@@ -1014,19 +1014,31 @@ def normalize_aggregation(
         missing_evidence = row.get("missing_evidence")
         if (
             conclusion == K.NOT_VERIFIABLE
-            and policy_derived
             and not str(missing_evidence or "").strip()
         ):
-            policy_reason = conclusion_basis.get("reason")
-            if isinstance(policy_reason, str) and policy_reason.strip():
-                missing_evidence = policy_reason.strip()
-                source = "outcome_policy_bases.reason"
+            # Recover missing_evidence from policy reason (policy-derived cases)
+            # or supply a safe fallback for any NOT_VERIFIABLE result that lacks
+            # the required field, including model-generated None values.
+            if policy_derived:
+                policy_reason = conclusion_basis.get("reason")
+                if isinstance(policy_reason, str) and policy_reason.strip():
+                    missing_evidence = policy_reason.strip()
+                    source = "outcome_policy_bases.reason"
+                else:
+                    missing_evidence = (
+                        "Required evidence is unavailable for this criterion; "
+                        "the result is not verifiable."
+                    )
+                    source = "service_safe_fallback"
             else:
+                # Model set conclusion to NOT_VERIFIABLE but left missing_evidence
+                # as null or empty; supply a safe fallback so assemble validation
+                # does not fail on a required-field check.
                 missing_evidence = (
                     "Required evidence is unavailable for this criterion; "
                     "the result is not verifiable."
                 )
-                source = "service_safe_fallback"
+                source = "service_safe_fallback_non_policy"
             recovered_missing_evidence.append({
                 "criterion_id": criterion_id,
                 "source": source,
