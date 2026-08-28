@@ -530,6 +530,17 @@ def resolve_typed_error_json_paths(
     ``finding_keys`` list in the same bounded patch turn.
     """
     typed = error if isinstance(error, TypedError) else TypedError.from_dict(error)
+
+    if typed.code == "CHECK_COVERAGE_INCOMPLETE":
+        # The validator path "observation.observations.check_ids" is document-level
+        # and does not resolve to a traversable node via the generic resolver.
+        # Expose the append token plus every existing entry's check_ids so the
+        # model can either extend an existing observation or append a new one.
+        paths = ["/observations/-"]
+        for index, _ in enumerate(_rows(document.get("observations"))):
+            paths.append(f"/observations/{index}/check_ids")
+        return paths
+
     primary_path = resolve_typed_error_json_path(document, typed)
 
     if typed.code == "CRITERION_EVIDENCE_UNKNOWN":
