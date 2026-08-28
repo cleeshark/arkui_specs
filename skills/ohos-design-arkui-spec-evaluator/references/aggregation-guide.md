@@ -13,7 +13,9 @@ Aggregate the smallest mapped units once at Criterion level. Repeated local symp
 
 Apply the Criterion's frozen `outcome_policy` first:
 
-- `SUPPORTED`: every applicable mapped unit is supported and no defect remains.
+- `SUPPORTED`: every applicable mapped unit is supported and no defect remains. **SUPPORTED requires
+  at least one reproducible evidence item.** A Criterion with no mapped Observations, Claims, or Units
+  cannot be SUPPORTED even when no defect was observed.
 - `PARTIALLY_SUPPORTED`: the main body is present and usable, with local omission, inaccuracy,
   conflict, or partial unverifiability.
 - `CONTRADICTED`: the core capability, architecture direction, shared state/dependency assertion,
@@ -21,6 +23,19 @@ Apply the Criterion's frozen `outcome_policy` first:
 - `MISSING`: the policy-required body or covered unit is absent, not merely incomplete.
 - `NOT_APPLICABLE`: reproducible scope evidence proves inapplicability and the Rubric allows it.
 - `NOT_VERIFIABLE`: required evidence is unavailable or insufficient for a defensible conclusion.
+
+**When a Criterion has no mapped Observations**:
+
+- If the Rubric allows `NOT_APPLICABLE` for this Criterion (`allow_not_applicable: true`) and there
+  is reproducible evidence of inapplicability (e.g., SDK contracts outside the frozen repository
+  scope, device capabilities not exercised by this Function), use `NOT_APPLICABLE` with that evidence.
+- If the Rubric does not allow `NOT_APPLICABLE` (`allow_not_applicable: false`) and no Observation
+  covered the required checks, use `MISSING` with a clear statement that Observation did not produce
+  evidence for this Criterion. Provide `missing_evidence` explaining which checks were expected but
+  absent.
+- **Never use `SUPPORTED` with empty `evidence` or `claim_ids`.** The absence of observed defects is
+  not proof of compliance. SUPPORTED requires positive evidence demonstrating that the checked
+  behavior, contract, or coverage meets the Criterion's requirements.
 
 ## Correctness
 
