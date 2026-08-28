@@ -427,7 +427,14 @@ def ensure_specs_at_sha(
 
 
 def compute_changed_files(specs_root: Path, target: str | None, tested: str | None) -> tuple[list[str], str]:
-    """Diff ``target..tested`` and return ``specs/``-prefixed paths.
+    """Diff ``target...tested`` and return ``specs/``-prefixed paths.
+
+    Three-dot ``target...tested`` diffs from the merge-base, so only the commits
+    the PR branch actually introduces are reported. Two-dot ``target tested``
+    would instead report the full snapshot delta: when the PR branch is behind
+    ``target`` (e.g. main advanced after the branch forked), commits unique to
+    ``target`` surface as spurious "changes", which can wrongly touch
+    ``global_roots`` files and force a full scan of every Function.
 
     ``git -C specs diff`` emits specs-root-relative paths (no ``specs/`` prefix),
     but ``ChangedFunctionResolver`` joins candidates onto ``repo_root`` and the
@@ -437,9 +444,13 @@ def compute_changed_files(specs_root: Path, target: str | None, tested: str | No
     """
     if not target or not tested:
         return [], "missing_target_sha"
-    result = _git(specs_root, "diff", "--name-only", target, tested)
+    result = _git(specs_root, "diff", "--name-only", f"{target}...{tested}")
     if result.returncode != 0:
-        return [], "diff_failed"
+        # Three-dot requires a common ancestor; fall back to two-dot for
+        # unrelated histories so a missing merge-base never blocks the run.
+        result = _git(specs_root, "diff", "--name-only", target, tested)
+        if result.returncode != 0:
+            return [], "diff_failed"
     bare = sorted({line.strip() for line in result.stdout.splitlines() if line.strip()})
     prefixed = [f"specs/{path}" for path in bare]
     return prefixed, "ok"
