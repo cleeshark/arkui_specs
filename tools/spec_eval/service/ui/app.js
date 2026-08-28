@@ -160,13 +160,16 @@ function formatTime(isoString) {
 function durationHtml(job) {
   const timing = job.timing || {};
   const live = ACTIVE_STATES.has(job.status) && timing.started_at && !timing.finished_at;
-  const title = `Executor: ${formatDuration(Number(timing.executor_duration_ms || 0))}`;
+  const activeDurationMs = Number(timing.active_duration_ms || 0);
+  const executorMs = Number(timing.executor_duration_ms || 0);
+  const title = `Total wall time: ${formatDuration(Number(timing.duration_ms || 0))}\nExecutor: ${formatDuration(executorMs)}`;
   if (live) {
-    const elapsed = Math.max(0, Date.now() - new Date(timing.started_at).getTime());
     return `<span class="job-duration live-duration"
-      data-started-at="${esc(timing.started_at)}" title="${esc(title)}">${formatDuration(elapsed)}</span>`;
+      data-run-started-at="${esc(timing.started_at)}"
+      data-active-base-ms="${activeDurationMs}"
+      title="${esc(title)}">${formatDuration(activeDurationMs)}</span>`;
   }
-  return `<span class="job-duration" title="${esc(title)}">${formatDuration(Number(timing.duration_ms || 0))}</span>`;
+  return `<span class="job-duration" title="${esc(title)}">${formatDuration(activeDurationMs)}</span>`;
 }
 
 function tokenHtml(job) {
@@ -321,9 +324,11 @@ agentReset.addEventListener("click", () => renderAgentParams(selectedAgent));
 function tickDurations() {
   const now = Date.now();
   document.querySelectorAll(".live-duration").forEach((node) => {
-    const startedAt = node.dataset.startedAt;
-    if (startedAt) {
-      node.textContent = formatDuration(Math.max(0, now - new Date(startedAt).getTime()));
+    const runStartedAt = node.dataset.runStartedAt;
+    const baseMs = Number(node.dataset.activeBaseMs || 0);
+    if (runStartedAt) {
+      const segment = Math.max(0, now - new Date(runStartedAt).getTime());
+      node.textContent = formatDuration(baseMs + segment);
     }
   });
 }
@@ -399,6 +404,7 @@ async function loadDetail(jobId) {
   const telemetry = jobRes.json.executor_telemetry || {};
   document.getElementById("detail-stats").innerHTML = `
     <div class="metric"><span>Duration</span><strong>${durationHtml(jobRes.json)}</strong></div>
+    <div class="metric"><span>Wall time</span><strong>${formatDuration(Number(timing.duration_ms || 0))}</strong></div>
     <div class="metric"><span>Executor time</span><strong>${formatDuration(Number(timing.executor_duration_ms || 0))}</strong></div>
     <div class="metric"><span>Total tokens</span><strong>${usage.reported ? formatNumber(usage.total_tokens) : "not reported"}</strong></div>
     <div class="metric"><span>Input / Output</span><strong>${usage.reported ? `${formatNumber(usage.input_tokens)} / ${formatNumber(usage.output_tokens)}` : "—"}</strong></div>
