@@ -969,8 +969,15 @@ class JudgmentFlow:
                         _published_evidence_catalog(corrected_payload),
                     )
                     return JudgmentOutcome(C.STATUS_COMPLETED, published=published)
+                # Keep the structurally usable corrected document so the
+                # post-correction degraded-publish path can still emit a report
+                # when every residual error is a non-HARD post-correction
+                # warning (e.g. CRITERION_EVIDENCE_UNKNOWN).  A published
+                # candidate has already been through normalization, so the
+                # patched document remains assemblable even with residual
+                # confidence-only warnings.
                 normalization = NormalizationResult(
-                    document=None,
+                    document=corrected_payload,
                     errors=typed,
                     evidence_catalog=_published_evidence_catalog(corrected_payload),
                 )
