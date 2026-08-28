@@ -137,6 +137,31 @@ If aggregation validation fails, use one bounded correction turn with the typed 
 0.2.0 has no legacy reconciliation path; unresolved errors fail the work item. Withhold assembly
 when required evidence or a required repository is unavailable.
 
+**Correction turn requirements**:
+
+When correction is triggered, **all blocking errors must be addressed**, not just the easiest ones.
+In particular:
+
+- **`EVIDENCE_REQUIRED_MISSING`** (a Criterion with conclusion `SUPPORTED` but empty `evidence` or
+  `claim_ids`): this error indicates a logical contradiction that must be resolved. You must either:
+  1. Add at least one evidence item selected from the frozen `evidence_catalog` and cite relevant
+     Claims/Units through `claim_ids`, **or**
+  2. Change the conclusion to `MISSING` (if no Observation covered the required checks and the Rubric
+     does not allow `NOT_APPLICABLE`) or `NOT_APPLICABLE` (if the Rubric allows it and you have
+     reproducible proof), **or**
+  3. Change the conclusion to `PARTIALLY_SUPPORTED` or `NOT_VERIFIABLE` if applicable, with
+     appropriate `missing_evidence` explanation.
+  
+  **Do not leave `SUPPORTED` + empty evidence unresolved.** This error represents an unsupported
+  claim, not a minor data-quality issue that can be deferred.
+
+- **`MAPPING_CLAIM_UNMAPPED`** and other mapping errors: ensure every `claim_ids` entry references a
+  Claim that was actually mapped to this Criterion in `aggregation-context.json`.
+
+If correction successfully resolves all errors, the corrected aggregation passes validation. If some
+errors remain unresolved after correction, they are treated according to their confidence layer (see
+kernel error classification).
+
 ## Delivery
 
 Return the `semantic-result.json` path, Criterion findings grouped by severity, missing evidence and

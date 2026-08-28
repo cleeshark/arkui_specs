@@ -44,3 +44,35 @@ Every local fact must state the evidence-specific proposition. Use NOT_VERIFIABL
 source or contract evidence is unavailable; record the inspected scope and verification gap.
 Use NOT_APPLICABLE only with reproducible proof. Do not assign final Criterion conclusions, scores,
 or aggregate Finding ownership during Observation.
+
+## Feature-level required checks
+
+When completing Feature-level `required_checks`, each check may map to multiple Criteria. Produce
+separate Observations for distinct semantic facets even when they share a check name:
+
+### runtime_design
+
+This check covers **two distinct Criteria** that must be evaluated independently:
+
+1. **DESIGN-IMPLEMENTATION-PATH** (Function-level architecture):
+   - Focus: repositories, modules, responsibilities, end-to-end execution path from entry to output
+   - Scope: the overall Function's architectural structure and cross-module flow
+   - Evidence: `design_location`, `source_citation`, `registry_entry` showing module boundaries and paths
+
+2. **DESIGN-FEAT-RUNTIME-COVERAGE** (per-Feat runtime completeness):
+   - Focus: **every registered non-Deprecated Feat separately** across 6 runtime stages
+   - Required stages per Feat: input/entry, parsing or state update, core processing, observable output,
+     applicable exception/recovery, test handoff
+   - Scope: completeness of each Feat's runtime model, not just the presence of a call chain
+   - Evidence: `design_location`, `spec_location` showing all 6 stages for each Feat
+   - Important: one detailed Feat does not compensate for another Feat with only a title or summary
+
+**When to produce separate Observations**:
+- If the overall architecture path is present but one or more Feats lack detailed runtime stages →
+  one SUPPORTED Observation for DESIGN-IMPLEMENTATION-PATH, one MISSING/PARTIALLY_SUPPORTED Observation
+  for DESIGN-FEAT-RUNTIME-COVERAGE
+- If a Feat's runtime model conflicts with frozen source → map that defect to DESIGN-FEAT-RUNTIME-COVERAGE
+  with a CONFLICT Observation
+
+Do not merge these two Criteria into one Observation. Aggregation relies on independent Observations
+to distinguish between Function-level architecture correctness and per-Feat runtime completeness.

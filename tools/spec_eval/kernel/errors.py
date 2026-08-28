@@ -254,7 +254,15 @@ POST_CORRECTION_WARNING_CODES = frozenset({
     # gap the model cannot fabricate without violating the evidence allowlist.
     # The kernel classifies it as a non-blocking MAJOR confidence deduction.
     "EVIDENCE_TYPE_MISSING",
+    # A Criterion with SUPPORTED conclusion but no evidence is a logical flaw
+    # that should be fixed during Correction (change conclusion or add evidence).
+    # However, if the model cannot resolve it after one Correction turn, allow
+    # degraded publish with a MAJOR confidence deduction rather than terminal
+    # failure — report quality takes precedence over blocking for this bounded
+    # evaluation-quality issue.
+    "EVIDENCE_REQUIRED_MISSING",
 })
+
 
 
 def is_non_blocking_warning(error: TypedError) -> bool:
