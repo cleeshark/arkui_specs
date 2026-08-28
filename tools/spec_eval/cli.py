@@ -385,7 +385,8 @@ def main(argv: list[str] | None = None) -> int:
             )
         if args.command == "changed":
             paths = [line.strip() for line in args.files_from.read_text(encoding="utf-8").splitlines() if line.strip()]
-            contexts = ChangedFunctionResolver(orchestrator.locator).resolve(paths)
+            # Use HEAD as base_ref for CLI mode
+            contexts = ChangedFunctionResolver(orchestrator.locator, base_ref="HEAD").resolve(paths)
             prepare_contexts = getattr(orchestrator, "prepare_contexts", None)
             cached_contexts = False
             cache_probe = getattr(orchestrator, "contexts_are_fully_cached", None)

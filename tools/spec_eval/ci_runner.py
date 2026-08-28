@@ -158,7 +158,9 @@ def run(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         if args.baseline is not None
         else None
     )
-    contexts = ChangedFunctionResolver(orchestrator.locator).resolve(changed_files)
+    # Determine base_ref for registry diff analysis
+    base_ref = args.base if args.base is not None else "HEAD"
+    contexts = ChangedFunctionResolver(orchestrator.locator, base_ref=base_ref).resolve(changed_files)
     prepare_contexts = getattr(orchestrator, "prepare_contexts", None)
     cache_probe = getattr(orchestrator, "contexts_are_fully_cached", None)
     fully_cached = not args.no_cache and callable(cache_probe) and cache_probe(contexts, config.output_root)
