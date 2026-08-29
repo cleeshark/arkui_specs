@@ -202,16 +202,60 @@ function renderJobs(jobs = latestJobs) {
   jobsPage = paged.page;
   const running = jobs.filter((j) => ACTIVE_STATES.has(j.status)).length;
   status.textContent = `${jobs.length} job(s) · ${running} running`;
-  tbody.innerHTML = paged.items.map((job) => `
+
+  // Build an index of currently rendered rows so we can patch in-place instead
+  // of destroying and recreating every row on each poll cycle. Full reconstruction
+  // only happens when the set or order of visible jobs changes.
+  const currentRows = {};
+  for (const tr of tbody.querySelectorAll("tr[data-id]")) {
+    currentRows[tr.dataset.id] = tr;
+  }
+  const newIds = paged.items.map((j) => j.job_id);
+  const oldIds = Object.keys(currentRows);
+  const sameSet =
+    newIds.length === oldIds.length &&
+    newIds.every((id, i) => id === oldIds[i]);
+
+  if (!sameSet) {
+    // Set or order changed — full rebuild is safe here (no live counters lost
+    // because tickDurations immediately restores them on the next 1s tick).
+    tbody.innerHTML = paged.items.map((job) => `
     <tr data-id="${esc(job.job_id)}" class="${ACTIVE_STATES.has(job.status) ? "job-active" : ""}">
       <td>${esc(job.func_id)}</td>
       <td class="badge ${esc(job.status)}">${esc(job.status)}</td>
       <td>${progressHtml(job)}</td>
-      <td>${durationHtml(job)}</td>
+      <td class="col-duration">${durationHtml(job)}</td>
       <td>${tokenHtml(job)}</td>
       <td class="muted" title="${esc(job.updated_at)}">${formatTime(job.updated_at)}</td>
       <td>${rowActions(job)} <button data-act="detail" data-id="${esc(job.job_id)}">detail</button></td>
     </tr>`).join("") || `<tr><td class="muted" colspan="7">no jobs</td></tr>`;
+  } else {
+    // Same rows in same order — patch only the cells that change on every poll.
+    // Duration is intentionally skipped: tickDurations owns the live counter and
+    // the serializer value and tick value now agree, so the only source of flicker
+    // was the full-DOM replacement that this branch avoids.
+    for (const job of paged.items) {
+      const tr = currentRows[job.job_id];
+      if (!tr) continue;
+      const cells = tr.querySelectorAll("td");
+      // [0]=func_id [1]=status [2]=progress [3]=duration [4]=tokens [5]=updated [6]=actions
+      const activeClass = ACTIVE_STATES.has(job.status) ? "job-active" : "";
+      if (tr.className !== activeClass) tr.className = activeClass;
+      cells[1].className = `badge ${esc(job.status)}`;
+      cells[1].textContent = job.status;
+      cells[2].innerHTML = progressHtml(job);
+      // cells[3] = duration: skip — tickDurations updates live-duration spans
+      // and the initial value from durationHtml is already correct. Only
+      // replace when the job transitions between live and non-live (status change).
+      const wasLive = !!cells[3].querySelector(".live-duration");
+      const isLive = ACTIVE_STATES.has(job.status);
+      if (wasLive !== isLive) cells[3].innerHTML = durationHtml(job);
+      cells[4].innerHTML = tokenHtml(job);
+      cells[5].title = job.updated_at || "";
+      cells[5].textContent = formatTime(job.updated_at);
+      cells[6].innerHTML = `${rowActions(job)} <button data-act="detail" data-id="${esc(job.job_id)}">detail</button>`;
+    }
+  }
   updatePagination(paged, jobsPageInfo, jobsPagePrev, jobsPageNext);
 }
 
