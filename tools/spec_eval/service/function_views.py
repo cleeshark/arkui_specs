@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 import yaml
@@ -129,6 +131,53 @@ def _report_summary(report) -> dict[str, Any] | None:
         "archive_path": report.archive_path,
         "manifest_sha256": report.manifest_sha256,
         "summary": report.summary,
+        "kernel_confidence": _kernel_confidence_from_archive(report.archive_path),
+    }
+
+
+def _kernel_confidence_from_archive(archive_path: str | None) -> dict[str, Any] | None:
+    """Project the archived sibling confidence-result.json (report reliability).
+
+    Kernel confidence is reduced by validation-violation deductions and is a
+    per-run sibling artifact archived next to the evaluation report. Older runs
+    predate the sibling, so a missing/unreadable file yields None and the UI
+    degrades to no kernel-confidence display. Kept independent of ``site_export``
+    to avoid a circular import (``site_export`` imports this module).
+    """
+    if not archive_path:
+        return None
+    path = Path(archive_path) / "confidence-result.json"
+    if not path.is_file():
+        return None
+    try:
+        confidence = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    if not isinstance(confidence, dict) or not confidence:
+        return None
+
+    def _violations(key: str) -> list[dict[str, Any]]:
+        result = []
+        for item in confidence.get(key, []) or []:
+            if not isinstance(item, dict):
+                continue
+            result.append({
+                "layer": item.get("layer", ""),
+                "code": item.get("code", ""),
+                "criterion_id": item.get("criterion_id", ""),
+                "deduction": item.get("deduction", 0),
+                "message": str(item.get("message", "")),
+            })
+        return result
+
+    return {
+        "score": confidence.get("confidence_score"),
+        "level": confidence.get("confidence_level", ""),
+        "deduction_total": confidence.get("deduction_total", 0),
+        "total_checks_failed": confidence.get("total_checks_failed", 0),
+        "hard_errors": _violations("hard_errors"),
+        "major_violations": _violations("major_violations"),
+        "minor_violations": _violations("minor_violations"),
     }
 
 

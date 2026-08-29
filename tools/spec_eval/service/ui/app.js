@@ -338,6 +338,23 @@ function tickDurations() {
   });
 }
 
+function kernelConfidenceCell(report) {
+  const kernel = report && report.kernel_confidence;
+  if (!kernel || kernel.score == null) return "—";
+  const violations = [
+    ...(kernel.major_violations || []),
+    ...(kernel.minor_violations || []),
+    ...(kernel.hard_errors || []),
+  ];
+  const level = kernel.level ? ` ${esc(kernel.level)}` : "";
+  const title = violations.length
+    ? `报告缺陷（可靠性降级 -${esc(kernel.deduction_total || 0)}）:\n- ` +
+      violations.map((v) => `${esc(v.code)}${v.message ? " " + esc(v.message) : ""}`).join("\n- ")
+    : "可靠性置信度：基于校验违反扣分，无违反";
+  const cls = `conf-${String(kernel.level || "").toLowerCase()}`;
+  return `<span class="kernel-confidence ${cls}" title="${title}">${esc(kernel.score)}<span class="conf-level">${level}</span></span>`;
+}
+
 function renderFunctions(functions = latestFunctions) {
   const wanted = freshnessFilter.value;
   const filtered = wanted ? functions.filter((item) => item.freshness === wanted) : functions;
@@ -355,10 +372,11 @@ function renderFunctions(functions = latestFunctions) {
       <td><span class="badge freshness ${esc(item.freshness)}">${esc(item.freshness)}</span></td>
       <td>${report ? esc(report.source_revision.slice(0, 10)) : "—"}</td>
       <td>${report ? `${esc(summary.published_score == null ? "—" : summary.published_score)} / ${esc(summary.gate || "—")}` : "—"}</td>
+      <td>${report ? kernelConfidenceCell(report) : "—"}</td>
       <td>${refresh}</td>
       <td><button data-act="function-detail" data-id="${esc(item.func_id)}">${esc(item.history_count)}</button></td>
     </tr>`;
-  }).join("") || `<tr><td class="muted" colspan="7">no functions</td></tr>`;
+  }).join("") || `<tr><td class="muted" colspan="8">no functions</td></tr>`;
   updatePagination(paged, functionsPageInfo, functionsPagePrev, functionsPageNext);
 }
 

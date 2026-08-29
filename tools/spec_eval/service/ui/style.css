@@ -67,6 +67,13 @@ th { color: var(--muted); font-weight: 600; }
 .badge.EXPIRED_TIME, .badge.STALE_INPUT { background: var(--bad); }
 .badge.MISSING { background: var(--muted); }
 
+/* Kernel confidence (report reliability): score + level, defects on hover. */
+.kernel-confidence { cursor: help; white-space: nowrap; }
+.kernel-confidence .conf-level { font-size: 0.7rem; font-weight: 700; }
+.kernel-confidence.conf-high .conf-level { color: var(--ok); }
+.kernel-confidence.conf-medium .conf-level { color: var(--warn); }
+.kernel-confidence.conf-low .conf-level { color: var(--bad); }
+
 .pipeline-progress { min-width: 150px; }
 .pipeline-bar { display: flex; gap: 2px; height: 6px; margin-bottom: 4px; }
 .pipeline-bar .seg { flex: 1; border-radius: 3px; background: #e2e8f0; min-width: 8px;
