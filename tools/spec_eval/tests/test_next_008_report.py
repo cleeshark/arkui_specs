@@ -157,6 +157,50 @@ class Next008ReportTest(unittest.TestCase):
             self.assertEqual(json.loads(json_path.read_text(encoding="utf-8")), report)
             self.assertEqual(md_path.read_text(encoding="utf-8"), markdown)
 
+    def test_kernel_confidence_renders_reliability_and_defects(self) -> None:
+        values = self.inputs()
+        kernel_confidence = {
+            "confidence_score": 75,
+            "confidence_level": "MEDIUM",
+            "deduction_total": 25,
+            "total_checks_failed": 2,
+            "hard_errors": [],
+            "major_violations": [{
+                "layer": "MAJOR", "code": "FINDING_MULTI_OWNED",
+                "criterion_id": "CORRECTNESS-SOURCE-SUPPORT", "deduction": 20,
+                "message": "finding owned by multiple criteria", "path": "aggregation.notes",
+            }],
+            "minor_violations": [{
+                "layer": "MINOR", "code": "NOTE_FORMAT",
+                "criterion_id": "", "deduction": 5, "message": "note not prefixed", "path": "x",
+            }],
+        }
+        report, markdown = build_function_report(
+            static_result=values[0], semantic_result=values[1], score_result=values[2],
+            analysis_result=values[3], stability_result=values[4], rubric=self.rubric,
+            complexity_rules=self.complexity, schemas_root=self.schemas_root,
+            confidence_result=kernel_confidence,
+        )
+        # Kernel confidence is a Markdown-only companion; it never enters the
+        # frozen evaluation-report.json schema.
+        self.assertEqual(validate_evaluation_report(report, self.rubric, self.complexity, self.schemas_root), [])
+        self.assertNotIn("kernel", json.dumps(report).lower())
+        self.assertIn("Kernel confidence: **75 / 100** (MEDIUM)", markdown)
+        self.assertIn("## Kernel confidence (report reliability)", markdown)
+        self.assertIn("Report defects (validation deductions)", markdown)
+        self.assertIn("FINDING_MULTI_OWNED", markdown)
+        self.assertIn("Evidence confidence:", markdown)
+
+    def test_kernel_confidence_absent_is_backward_compatible(self) -> None:
+        values = self.inputs()
+        _, markdown = build_function_report(
+            static_result=values[0], semantic_result=values[1], score_result=values[2],
+            analysis_result=values[3], stability_result=values[4], rubric=self.rubric,
+            complexity_rules=self.complexity, schemas_root=self.schemas_root,
+        )
+        self.assertNotIn("Kernel confidence", markdown)
+        self.assertNotIn("Report defects", markdown)
+
 
 if __name__ == "__main__":
     unittest.main()

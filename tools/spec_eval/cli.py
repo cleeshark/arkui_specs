@@ -105,6 +105,11 @@ def build_parser() -> argparse.ArgumentParser:
     report.add_argument("--score-result", type=Path, required=True)
     report.add_argument("--analysis-result", type=Path, required=True)
     report.add_argument("--stability-result", type=Path, required=True)
+    report.add_argument(
+        "--confidence-result",
+        type=Path,
+        help="Optional kernel confidence-result.json (report-reliability deductions) to render",
+    )
     report.add_argument("--json-write", type=Path, required=True, help="Destination evaluation-report.json")
     report.add_argument("--markdown-write", type=Path, required=True, help="Destination function-report.md")
 
@@ -214,6 +219,7 @@ def main(argv: list[str] | None = None) -> int:
                 score_result_path=args.score_result,
                 analysis_result_path=args.analysis_result,
                 stability_result_path=args.stability_result,
+                confidence_result_path=args.confidence_result,
                 evaluation_root=config.rules_root,
             )
             write_function_report(

@@ -81,6 +81,7 @@ def _archive_job(
     created_at: str,
     gate: str = "fail",
     findings: list[dict] | None = None,
+    confidence_result: dict | None = None,
 ) -> None:
     findings = findings if findings is not None else [
         {"rule_id": "RULE-A", "severity": "Major", "message": "m", "path": "p", "line": 1}
@@ -91,6 +92,8 @@ def _archive_job(
         job_dir / "aggregate-report_json-evaluation-report.json",
         _make_eval_report(func_id, revision, gate=gate, findings=findings),
     )
+    if confidence_result is not None:
+        _write_json(job_dir / "confidence-result.json", confidence_result)
     # The site export reads report age from the archive manifest's created_at.
     _write_json(job_dir / "archive-manifest.json", {"created_at": created_at})
     line = {
@@ -200,6 +203,53 @@ class DynamicArchiveReaderTest(unittest.TestCase):
         )
         self.assertEqual(scores["published_score"], 40)
         self.assertEqual(scores["confidence"], 0.5)
+
+    def test_kernel_confidence_projected_from_sibling(self) -> None:
+        import tempfile
+        confidence = {
+            "confidence_score": 75,
+            "confidence_level": "MEDIUM",
+            "deduction_total": 25,
+            "total_checks_failed": 2,
+            "hard_errors": [],
+            "major_violations": [{
+                "layer": "MAJOR", "code": "FINDING_MULTI_OWNED",
+                "criterion_id": "CORRECTNESS-SOURCE-SUPPORT", "deduction": 20,
+                "message": "finding owned by multiple criteria", "path": "x",
+            }],
+            "minor_violations": [{
+                "layer": "MINOR", "code": "NOTE_FORMAT",
+                "criterion_id": "", "deduction": 5, "message": "note", "path": "y",
+            }],
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            ar = Path(tmp) / "automated"
+            ar.mkdir(parents=True)
+            _archive_job(ar, func_id="01-01-01", job_id="j1", revision="rev1",
+                         created_at="2026-08-21T10:00:00+00:00", confidence_result=confidence)
+            latest = gs._latest_jobs_by_func(ar)
+            report = gs.build_dynamic_semantic_evaluation(
+                latest, self.functions, observed_revision="rev1"
+            )
+        kc = report["functions"][0]["scores"]["kernel_confidence"]
+        self.assertEqual(kc["score"], 75)
+        self.assertEqual(kc["level"], "MEDIUM")
+        self.assertEqual(kc["deduction_total"], 25)
+        self.assertEqual(kc["major_violations"][0]["code"], "FINDING_MULTI_OWNED")
+        self.assertEqual(kc["minor_violations"][0]["deduction"], 5)
+
+    def test_kernel_confidence_absent_falls_back(self) -> None:
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            ar = Path(tmp) / "automated"
+            ar.mkdir(parents=True)
+            _archive_job(ar, func_id="01-01-01", job_id="j1", revision="rev1",
+                         created_at="2026-08-21T10:00:00+00:00")
+            latest = gs._latest_jobs_by_func(ar)
+            report = gs.build_dynamic_semantic_evaluation(
+                latest, self.functions, observed_revision="rev1"
+            )
+        self.assertNotIn("kernel_confidence", report["functions"][0]["scores"])
 
     def test_revision_drift_keeps_confirmed_with_flag(self) -> None:
         # A report whose revision differs from the observed majority stays

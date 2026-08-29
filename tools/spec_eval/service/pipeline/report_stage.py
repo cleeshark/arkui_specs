@@ -123,6 +123,12 @@ def _report(ctx, runner, log_dir, static, semantic_result, score_path, analysis_
         "--json-write", str(report_json),
         "--markdown-write", str(report_md),
     ]
+    # Kernel confidence (report reliability) was written per-run by the
+    # aggregation stage. Pass it through so the Markdown report can render the
+    # validation-violation deductions; absence is tolerated (older runs).
+    confidence_result = ctx.run_dir / "confidence-result.json"
+    if confidence_result.is_file():
+        argv.extend(["--confidence-result", str(confidence_result)])
     _run(ctx, runner, log_dir, "report", argv, timeout)
 
 
