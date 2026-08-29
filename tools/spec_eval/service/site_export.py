@@ -103,10 +103,20 @@ def _build_automated_site_evaluation(
         except (OSError, json.JSONDecodeError):
             continue
         created_at = report_meta.get("completed_at") or _archive_created_at(Path(archive_path))
+        # Kernel confidence (report reliability) is an optional sibling artifact
+        # archived next to the evaluation report; older archives lack it.
+        kernel_confidence = None
+        confidence_path = Path(archive_path) / "confidence-result.json"
+        if confidence_path.is_file():
+            try:
+                kernel_confidence = json.loads(confidence_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                kernel_confidence = None
         entry = _convert_function_entry(
             eval_report, catalog=item,
             observed_revision=observed_revision,
             created_at=created_at,
+            kernel_confidence=kernel_confidence,
         )
         if entry is not None:
             entries.append(entry)
@@ -139,6 +149,7 @@ def _convert_function_entry(
     catalog: dict[str, Any],
     observed_revision: str,
     created_at: str | None = None,
+    kernel_confidence: dict[str, Any] | None = None,
 ) -> dict[str, Any] | None:
     """Convert one evaluation-report.json to a site-evaluation-report function entry."""
     func_id = str(eval_report.get("func_id", ""))
@@ -160,6 +171,13 @@ def _convert_function_entry(
     # scores: convert from score-result format to site format
     score = eval_report.get("score", {})
     scores = _convert_scores(score)
+
+    # Kernel confidence (report reliability): the site's primary confidence
+    # signal, reduced by validation-violation deductions. Distinct from the
+    # score.py evidence confidence already in ``scores``. Absent on older runs.
+    kc = _convert_kernel_confidence(kernel_confidence)
+    if kc is not None:
+        scores["kernel_confidence"] = kc
 
     # Numeric per-criterion deductions live in score.dimensions[].criteria, keyed
     # by criterion_id, while the textual conclusion/reason/findings come from the
@@ -311,6 +329,42 @@ def _convert_scores(score: dict[str, Any]) -> dict[str, Any]:
         "confidence_components": components if isinstance(components, dict) else {},
         "admission": admission.get("status", ""),
         "admission_reasons": [str(r) for r in admission.get("reasons", []) if r],
+    }
+
+
+def _convert_kernel_confidence(
+    confidence: dict[str, Any] | None,
+) -> dict[str, Any] | None:
+    """Project confidence-result.json into a compact site kernel-confidence block.
+
+    Returns None when no kernel confidence is available (older runs) so the site
+    JS falls back to its prior, kernel-confidence-free rendering.
+    """
+    if not isinstance(confidence, dict) or not confidence:
+        return None
+
+    def _violations(key: str) -> list[dict[str, Any]]:
+        result = []
+        for item in confidence.get(key, []) or []:
+            if not isinstance(item, dict):
+                continue
+            result.append({
+                "layer": item.get("layer", ""),
+                "code": item.get("code", ""),
+                "criterion_id": item.get("criterion_id", ""),
+                "deduction": item.get("deduction", 0),
+                "message": str(item.get("message", "")),
+            })
+        return result
+
+    return {
+        "score": confidence.get("confidence_score"),
+        "level": confidence.get("confidence_level", ""),
+        "deduction_total": confidence.get("deduction_total", 0),
+        "total_checks_failed": confidence.get("total_checks_failed", 0),
+        "hard_errors": _violations("hard_errors"),
+        "major_violations": _violations("major_violations"),
+        "minor_violations": _violations("minor_violations"),
     }
 
 

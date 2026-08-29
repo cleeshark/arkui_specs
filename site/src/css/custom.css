@@ -813,6 +813,85 @@
   line-height: 1.5;
 }
 
+/* Kernel confidence (report reliability): level badge + violation list. */
+.confidenceLevel,
+.confidenceLevelMark {
+  font-style: normal;
+  font-weight: 700;
+}
+
+.confidenceLevel {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+}
+
+.confidenceLevelMark {
+  margin-left: 2px;
+  font-size: 0.7rem;
+}
+
+.confidenceLevel.level-high,
+.confidenceLevelMark.level-high {
+  background: rgba(45, 145, 90, 0.15);
+  color: #2d915a;
+}
+
+.confidenceLevel.level-medium,
+.confidenceLevelMark.level-medium {
+  background: rgba(200, 145, 40, 0.18);
+  color: #b6791f;
+}
+
+.confidenceLevel.level-low,
+.confidenceLevelMark.level-low {
+  background: rgba(195, 61, 80, 0.15);
+  color: #c33d50;
+}
+
+.kernelViolationGroups {
+  display: grid;
+  gap: 12px;
+}
+
+.kernelViolationGroup h5 {
+  margin: 0 0 6px;
+  font-size: 0.8rem;
+  color: var(--portal-muted);
+}
+
+.kernelViolation {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 5px;
+  background: var(--portal-soft);
+}
+
+.kernelViolationHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.kernelDeduction {
+  color: #c33d50;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.kernelCriterion {
+  color: var(--portal-muted);
+  font-size: 0.8rem;
+}
+
+.kernelViolation p {
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
 .criterionEvidence {
   padding: 0 12px 12px;
   border-top: 1px solid var(--portal-border);

@@ -275,9 +275,38 @@ function downloadFunctionJson(item) {
   URL.revokeObjectURL(url);
 }
 
+function KernelViolations({kernel}) {
+  const groups = [
+    {key: 'hard_errors', label: 'HARD（阻断）', items: kernel.hard_errors || []},
+    {key: 'major_violations', label: 'MAJOR（核心不变量）', items: kernel.major_violations || []},
+    {key: 'minor_violations', label: 'MINOR（完整性/一致性）', items: kernel.minor_violations || []},
+  ].filter((group) => group.items.length > 0);
+  if (groups.length === 0) return <p className="evalMuted">无校验违反，报告可靠性未被扣分。</p>;
+  return (
+    <div className="kernelViolationGroups">
+      {groups.map((group) => (
+        <div className="kernelViolationGroup" key={group.key}>
+          <h5>{group.label}</h5>
+          {group.items.map((item, index) => (
+            <div className="kernelViolation" key={`${group.key}-${index}`}>
+              <div className="kernelViolationHead">
+                <code>{item.code}</code>
+                {item.deduction > 0 && <span className="kernelDeduction">-{item.deduction}</span>}
+                {item.criterion_id && <code className="kernelCriterion">{item.criterion_id}</code>}
+              </div>
+              {item.message && <p>{item.message}</p>}
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function SemanticReview({review}) {
   if (!review) return <p className="evalMuted">当前 revision 没有 confirmed semantic Review。</p>;
   const score = review.scores || {};
+  const kernel = score.kernel_confidence || null;
   return (
     <section className="semanticReview">
       {review.status === 'EXPIRED' && (
@@ -290,25 +319,26 @@ function SemanticReview({review}) {
         <span>状态 <b>{review.status}</b></span>
         <span>新鲜度 <b>{review.freshness || '-'}</b></span>
         <span>发布分 <b>{score.published_score ?? '-'}</b></span>
-        <span>置信度 <b>{score.confidence ?? '-'}</b>{typeof score.confidence_publishable === 'boolean' && <em className={`confidencePublishable ${score.confidence_publishable ? 'is-yes' : 'is-no'}`}>{score.confidence_publishable ? '可发布' : '不可发布'}</em>}</span>
+        <span>可靠性置信度 <b>{kernel ? `${kernel.score ?? '-'} / 100` : '-'}</b>{kernel?.level && <em className={`confidenceLevel level-${String(kernel.level).toLowerCase()}`}>{kernel.level}</em>}</span>
+        <span>证据置信度 <b>{score.confidence ?? '-'}</b>{typeof score.confidence_publishable === 'boolean' && <em className={`confidencePublishable ${score.confidence_publishable ? 'is-yes' : 'is-no'}`}>{score.confidence_publishable ? '可发布' : '不可发布'}</em>}</span>
         <span>准入 <b>{score.admission ?? '-'}</b></span>
       </div>
       <p className="evalMuted">评价时间：{review.evaluated_at || review.confirmation?.confirmed_at || '-'}</p>
-      <p className="evalMuted">置信度表示证据与评价流程的完整性，不是质量得分。</p>
-      {((score.confidence_reasons || []).length > 0 || (score.admission_reasons || []).length > 0) && (
+      <p className="evalMuted">可靠性置信度：基于校验违反（HARD/MAJOR/MINOR）扣分，反映这份报告结论有多可靠。证据置信度：证据核验覆盖率/人工确认/可复现性——两者语义不同，均非质量得分。</p>
+      {kernel && (
         <div className="deductionTips">
-          {(score.confidence_reasons || []).length > 0 && (
-            <div className="deductionTipGroup">
-              <h5>置信度扣分原因</h5>
-              <ul>{score.confidence_reasons.map((reason, index) => <li key={`conf-${index}`}>{reason}</li>)}</ul>
-            </div>
-          )}
-          {(score.admission_reasons || []).length > 0 && (
-            <div className="deductionTipGroup">
-              <h5>准入未达标原因</h5>
-              <ul>{score.admission_reasons.map((reason, index) => <li key={`adm-${index}`}>{reason}</li>)}</ul>
-            </div>
-          )}
+          <div className="deductionTipGroup">
+            <h5>报告缺陷（可靠性降级扣分，共 -{kernel.deduction_total ?? 0}）</h5>
+            <KernelViolations kernel={kernel} />
+          </div>
+        </div>
+      )}
+      {(score.admission_reasons || []).length > 0 && (
+        <div className="deductionTips">
+          <div className="deductionTipGroup">
+            <h5>准入未达标原因</h5>
+            <ul>{score.admission_reasons.map((reason, index) => <li key={`adm-${index}`}>{reason}</li>)}</ul>
+          </div>
         </div>
       )}
       <RadarChart scores={score.dimensions} rawScore={score.raw_score} publishedScore={score.published_score} />
@@ -578,10 +608,18 @@ export default function SpecEvaluationPage() {
                           <td>
                             {item.semanticReview?.status === 'CONFIRMED' ? (
                               (() => {
-                                const scores = item.semanticReview.scores || {};
-                                const reasons = scores.confidence_reasons || [];
-                                const tip = reasons.length > 0 ? `扣分原因：\n- ${reasons.join('\n- ')}` : '置信度表示证据与评价流程的完整性';
-                                return <span className="confidenceCell" title={tip}>{scores.confidence ?? '-'}{reasons.length > 0 && <sup className="confidenceReasonMark">?</sup>}</span>;
+                                const kernel = item.semanticReview.scores?.kernel_confidence;
+                                if (!kernel) return '-';
+                                const violations = [...(kernel.major_violations || []), ...(kernel.minor_violations || []), ...(kernel.hard_errors || [])];
+                                const tip = violations.length > 0
+                                  ? `报告缺陷（可靠性降级 -${kernel.deduction_total ?? 0}）：\n- ${violations.map((v) => `${v.code}${v.message ? ` ${v.message}` : ''}`).join('\n- ')}`
+                                  : '可靠性置信度：基于校验违反扣分，无违反';
+                                return (
+                                  <span className="confidenceCell" title={tip}>
+                                    {kernel.score ?? '-'}
+                                    {kernel.level && <sup className={`confidenceLevelMark level-${String(kernel.level).toLowerCase()}`}>{kernel.level.charAt(0)}</sup>}
+                                  </span>
+                                );
                               })()
                             ) : '-'}
                           </td>

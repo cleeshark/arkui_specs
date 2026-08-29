@@ -94,6 +94,7 @@ def build_function_report(
     rubric: dict[str, Any],
     complexity_rules: dict[str, Any],
     schemas_root: Path,
+    confidence_result: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], str]:
     """Return a schema-valid core JSON report and deterministic Markdown companion."""
 
@@ -127,12 +128,14 @@ def build_function_report(
     blocking = [e for e in errors if EVIDENCE_TYPE_WARNING_MARKER not in e]
     raise_for_errors(blocking)
     return report, render_markdown_report(
-        report=report, analysis=analysis_result, stability=stability_result
+        report=report, analysis=analysis_result, stability=stability_result,
+        kernel_confidence=confidence_result,
     )
 
 
 def render_markdown_report(
-    *, report: dict[str, Any], analysis: dict[str, Any], stability: dict[str, Any]
+    *, report: dict[str, Any], analysis: dict[str, Any], stability: dict[str, Any],
+    kernel_confidence: dict[str, Any] | None = None,
 ) -> str:
     score = report["score"]
     summary = report["summary"]
@@ -145,15 +148,59 @@ def render_markdown_report(
         f"- Report generator: `{REPORT_VERSION}`",
         f"- Gate: **{summary['gate']}**",
         f"- Score: **{summary['published_score']} / 100** (raw {summary['raw_score']})",
-        f"- Confidence: **{summary['confidence']}**"
+    ]
+    # Kernel confidence (report reliability) is the primary trust signal: it is
+    # reduced by validation-violation deductions (HARD/MAJOR/MINOR). It is a
+    # companion artifact (confidence-result.json), distinct from the score.py
+    # "evidence confidence" below, which measures evidence/verification coverage.
+    if isinstance(kernel_confidence, dict) and kernel_confidence:
+        lines.append(
+            f"- Kernel confidence: **{kernel_confidence.get('confidence_score', '-')} / 100** "
+            f"({kernel_confidence.get('confidence_level', '-')})"
+        )
+    lines.extend([
+        f"- Evidence confidence: **{summary['confidence']}**"
         + (f" (publishable: {'yes' if confidence.get('publishable') else 'no'})" if "publishable" in confidence else ""),
         f"- Admission: **{summary['admission_status']}**",
-    ]
-    # Confidence reflects evidence/process completeness, not quality; surface why
-    # it was reduced so a low confidence is actionable rather than opaque.
+    ])
+    # Report defects: the concrete validation violations that reduced the kernel
+    # confidence — each with its layer, error code, criterion and point deduction.
+    if isinstance(kernel_confidence, dict) and kernel_confidence:
+        hard = kernel_confidence.get("hard_errors", []) or []
+        major = kernel_confidence.get("major_violations", []) or []
+        minor = kernel_confidence.get("minor_violations", []) or []
+        violations = [*hard, *major, *minor]
+        lines.extend([
+            "",
+            "## Kernel confidence (report reliability)",
+            "",
+            f"- Confidence: **{kernel_confidence.get('confidence_score', '-')} / 100** "
+            f"({kernel_confidence.get('confidence_level', '-')})",
+            f"- Total deduction: {kernel_confidence.get('deduction_total', 0)}",
+            f"- Checks failed: {kernel_confidence.get('total_checks_failed', len(violations))}",
+        ])
+        if violations:
+            lines.extend([
+                "",
+                "### Report defects (validation deductions)",
+                "",
+                "| Layer | Code | Criterion | Deduction | Message |",
+                "| --- | --- | --- | ---: | --- |",
+            ])
+            for item in violations:
+                if not isinstance(item, dict):
+                    continue
+                message = str(item.get("message", "")).replace("|", "\\|").replace("\n", " ")
+                lines.append(
+                    f"| {item.get('layer', '')} | `{item.get('code', '')}` "
+                    f"| `{item.get('criterion_id', '') or '-'}` | -{item.get('deduction', 0)} "
+                    f"| {message} |"
+                )
+    # Evidence confidence (score.py) reflects evidence/verification coverage, not
+    # quality; surface why it was reduced so it is actionable rather than opaque.
     confidence_reasons = [str(r) for r in confidence.get("reasons", []) if r]
     if confidence_reasons:
-        lines.extend(["", "## Confidence deductions", ""])
+        lines.extend(["", "## Evidence confidence deductions", ""])
         lines.extend(f"- {reason}" for reason in confidence_reasons)
     components = confidence.get("components", {})
     if isinstance(components, dict) and components:
@@ -266,6 +313,7 @@ def build_function_report_from_paths(
     analysis_result_path: Path,
     stability_result_path: Path,
     evaluation_root: Path,
+    confidence_result_path: Path | None = None,
 ) -> tuple[dict[str, Any], str]:
     rubric, complexity, errors = validate_protocol(evaluation_root)
     raise_for_errors(errors)
@@ -274,6 +322,11 @@ def build_function_report_from_paths(
     score = _load(score_result_path, "score-result.json")
     analysis = _load(analysis_result_path, "function-analysis.json")
     stability = _load(stability_result_path, "stability-result.json")
+    # Kernel confidence is optional: a report can be assembled without it (older
+    # runs, or paths where the aggregation stage did not emit one).
+    confidence = None
+    if confidence_result_path is not None and confidence_result_path.is_file():
+        confidence = _load(confidence_result_path, "confidence-result.json")
     return build_function_report(
         static_result=static,
         semantic_result=semantic,
@@ -283,6 +336,7 @@ def build_function_report_from_paths(
         rubric=rubric,
         complexity_rules=complexity,
         schemas_root=evaluation_root / "schemas",
+        confidence_result=confidence,
     )
 
 

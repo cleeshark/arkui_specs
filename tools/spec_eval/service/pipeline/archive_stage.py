@@ -44,6 +44,7 @@ def write_archive(
     selected_run_id: str,
     site_snapshot_path: Path | None = None,
     aggregation_contexts: dict[str, Path] | None = None,
+    confidence_result_path: Path | None = None,
 ) -> Path:
     """Atomically write the automated archive and return its directory."""
     target = archive_dir_for(settings, job)
@@ -67,6 +68,12 @@ def write_archive(
         copied.append((f"aggregate-{kind}-{suffix}", path))
     if site_snapshot_path is not None:
         copied.append(("site-history-snapshot.json", site_snapshot_path))
+    # Kernel confidence (report-reliability, validation-violation deductions) is
+    # written per-run to run_dir/confidence-result.json but is not otherwise a
+    # durable artifact; archive the selected run's copy as a sibling so the site
+    # and the Markdown report can surface it. Missing (older runs) is tolerated.
+    if confidence_result_path is not None:
+        copied.append(("confidence-result.json", confidence_result_path))
 
     files_meta = []
     for rel, src in copied:

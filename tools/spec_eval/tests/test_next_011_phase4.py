@@ -315,6 +315,36 @@ class ArchiveStageTest(unittest.TestCase):
         # no temp dir left behind
         self.assertFalse(any(p.name.startswith(archive_dir.name + ".tmp") for p in archive_dir.parent.iterdir()))
 
+    def test_confidence_result_archived_as_sibling(self) -> None:
+        job = _make_job()
+        job_root = self.settings.jobs_root / job.job_id
+        job_root.mkdir(parents=True)
+        sr, agg, snap = self._artifacts(job_root)
+        confidence = job_root / "confidence-result.json"
+        confidence.write_text('{"confidence_score": 80, "confidence_level": "HIGH"}', encoding="utf-8")
+        archive_dir = archive_stage.write_archive(
+            self.settings, job, semantic_results=sr, aggregate_outputs=agg,
+            run_ids=["run-1"], selected_run_id="run-1", site_snapshot_path=snap,
+            confidence_result_path=confidence,
+        )
+        archived = archive_dir / "confidence-result.json"
+        self.assertTrue(archived.is_file())
+        self.assertEqual(json.loads(archived.read_text(encoding="utf-8"))["confidence_score"], 80)
+        manifest = json.loads((archive_dir / "archive-manifest.json").read_text(encoding="utf-8"))
+        self.assertIn("confidence-result.json", [entry["path"] for entry in manifest["files"]])
+
+    def test_missing_confidence_result_is_tolerated(self) -> None:
+        job = _make_job()
+        job_root = self.settings.jobs_root / job.job_id
+        job_root.mkdir(parents=True)
+        sr, agg, snap = self._artifacts(job_root)
+        archive_dir = archive_stage.write_archive(
+            self.settings, job, semantic_results=sr, aggregate_outputs=agg,
+            run_ids=["run-1"], selected_run_id="run-1", site_snapshot_path=snap,
+            confidence_result_path=job_root / "confidence-result.json",  # does not exist
+        )
+        self.assertFalse((archive_dir / "confidence-result.json").is_file())
+
     def test_re_archive_is_idempotent(self) -> None:
         job = _make_job()
         job_root = self.settings.jobs_root / job.job_id

@@ -528,6 +528,11 @@ def run_job_pipeline(
                 for run_id, result_path in semantic_results.items()
                 if (result_path.parent / "aggregation-context.json").is_file()
             },
+            confidence_result_path=(
+                semantic_results[selected_run_id].parent / "confidence-result.json"
+                if selected_run_id in semantic_results
+                else None
+            ),
         )
         events.append(job_id, "job_archived", {"archive_dir": str(archive_dir)})
         # design v3 R6/D2: the synchronous critical path ends at the archive.
