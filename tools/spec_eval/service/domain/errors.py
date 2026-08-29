@@ -81,6 +81,10 @@ class FreshnessPolicyError(SemanticServiceError):
     """A freshness policy is invalid or attempts to reuse a version."""
 
 
+class SchedulerConfigError(SemanticServiceError):
+    """An auto-scheduler configuration is invalid or reuses a version."""
+
+
 class ValidationError(SemanticServiceError):
     """A document failed JSON Schema or protocol validation."""
 

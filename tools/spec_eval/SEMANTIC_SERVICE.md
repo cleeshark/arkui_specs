@@ -72,6 +72,49 @@ history instead.
 create a refresh target and therefore does not advance the rolling Function
 report head.
 
+## Auto-scheduler (unattended planning)
+
+The auto-scheduler is a planning layer over the dispatcher worker pool. It runs
+inside `serve` but stays idle until enabled from the UI ("Auto-scheduler" card)
+or `POST /api/scheduler/config`. Configuration is a singleton persisted in
+`scheduler_config` (schema v9); it holds policy only — no tokens or credentials.
+
+Config fields:
+
+- **`enabled`** — master on/off switch.
+- **`start_times`** — one or more `"HH:MM"` daily triggers in **server local
+  time**. Reaching a start time begins a *run*.
+- **`parallel_tasks`** — how many jobs the scheduler keeps in flight. Real
+  concurrency is still bounded by `serve --max-workers`; keep the two aligned.
+- **`executor_priority`** — an ordered executor chain (e.g. `["codex","claude"]`).
+- **`executor_quota`** — per-executor daily token budget (default 10,000,000).
+
+Behaviour:
+
+- While a run is active the scheduler keeps `parallel_tasks` jobs in flight;
+  each time a job finishes it dispatches the next, draining candidates until the
+  quota is spent or no eligible FuncID remains. Dispatch reuses the manual
+  refresh path (fingerprint dedup, workspace preparation, enqueue).
+- **Selection order** per dispatch: freshness tier `MISSING > EXPIRED > EXPIRING
+  > FRESH` (EXPIRED = `EXPIRED_TIME` or `STALE_INPUT`), FuncID ascending within a
+  tier, and FRESH additionally ordered by the current report's `completed_at`
+  ascending (the oldest report is refreshed first).
+- **Per-executor daily quota + failover**: before every dispatch the scheduler
+  sums *all* token consumption since local midnight (from `executor_calls`, so
+  manual, CI and scheduled runs all count) per executor and walks the priority
+  chain, dispatching with the first executor still under its quota. When one is
+  exhausted it fails over to the next; the run stops only when every executor in
+  the chain is spent, resuming after the daily reset.
+- **Failure skip**: a FuncID whose most recent job is `failed`/`cancelled` is
+  skipped and never auto-retried; it becomes eligible again once a human retries
+  it (its latest job leaves the terminal state).
+
+`GET /api/scheduler/status` reports the live run state, in-flight jobs, the
+currently-selected executor, the next start time, and each executor's used vs
+quota tokens for the current day.
+
+
+
 ## HTTP API
 
 | Method | Path | Purpose |
@@ -85,6 +128,9 @@ report head.
 | GET    | `/api/freshness-policies` | list global and per-Function policies |
 | PUT    | `/api/freshness-policies/global` | update the global expiry policy |
 | PUT    | `/api/freshness-policies/{func_id}` | update a Function-specific policy |
+| GET    | `/api/scheduler/config` | read the auto-scheduler configuration |
+| POST   | `/api/scheduler/config` | partial update of the auto-scheduler config |
+| GET    | `/api/scheduler/status` | live run state, in-flight jobs, per-executor usage |
 | POST   | `/api/site/export` | write deterministic automated site JSON |
 | POST   | `/api/jobs` | low-level job creation without rolling promotion |
 | GET    | `/api/jobs[?status=]` | list jobs |

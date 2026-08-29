@@ -14,14 +14,15 @@ from pathlib import Path
 
 from .domain import states as S
 from .domain.errors import IllegalTransitionError
-from .domain.models import CreateJobCommand, DependencySnapshot, FreshnessPolicy, Job
+from .domain.models import CreateJobCommand, DependencySnapshot, FreshnessPolicy, Job, SchedulerConfig
 from .freshness import FreshnessManager
 from .function_views import FunctionViewService
 from .executors.base import SemanticExecutor
-from .executors.registry import create, create_default as _create_default_executor
+from .executors.registry import create, create_default as _create_default_executor, available
 from .pipeline.context import DEFAULT_SKILL_EVALUATOR_VERSION
 from .manual_refresh import ManualRefreshService
 from .report_registry import OrphanReconcileResult, ReportRegistry
+from .scheduler.auto_scheduler import AutoScheduler
 from .scheduler.dispatcher import CancelResult, Dispatcher
 from .scheduler.job_worker import build_runner
 from .settings import ServiceSettings, executor_config_for, executor_profiles
@@ -30,11 +31,13 @@ from .store.repositories import (
     EventRepository,
     FreshnessPolicyRepository,
     EvaluationReportRepository,
+    ExecutorCallRepository,
     FunctionReportHeadRepository,
     JobStatisticsRepository,
     JobRepository,
     DependencySnapshotRepository,
     RefreshTargetRepository,
+    SchedulerConfigRepository,
 )
 from .workspace.manager import RevisionWorkspaceManager, WorkspaceError
 from .store.sqlite_store import SqliteStore, utc_now
@@ -93,6 +96,12 @@ class SemanticServiceApp:
         )
         self.dispatcher = Dispatcher(self.store, job_runner=runner, max_workers=max_workers)
         self.manual_refresh = ManualRefreshService(self)
+        self.auto_scheduler = AutoScheduler(
+            self,
+            config_repo=SchedulerConfigRepository(self.store),
+            usage_repo=ExecutorCallRepository(self.store),
+            jobs_repo=JobRepository(self.store),
+        )
 
     @property
     def executor_config(self) -> dict:
@@ -214,6 +223,56 @@ class SemanticServiceApp:
             policies,
         ).set_policy(policy)
 
+    # --- auto-scheduler ---------------------------------------------------
+    def scheduler_config(self) -> SchedulerConfig:
+        return SchedulerConfigRepository(self.store).get()
+
+    def set_scheduler_config(
+        self,
+        *,
+        enabled: bool | None = None,
+        start_times: list[str] | None = None,
+        parallel_tasks: int | None = None,
+        executor_priority: list[str] | None = None,
+        executor_quota: dict[str, int] | None = None,
+    ) -> SchedulerConfig:
+        """Apply a partial config update, bumping the version, and reconfigure."""
+        repo = SchedulerConfigRepository(self.store)
+        current = repo.get()
+        priority = (
+            tuple(executor_priority)
+            if executor_priority is not None
+            else current.executor_priority
+        )
+        quota = (
+            dict(executor_quota)
+            if executor_quota is not None
+            else dict(current.executor_quota)
+        )
+        # Executor-registry validation lives here (the store layer is registry
+        # agnostic): every named executor must be a registered agent.
+        known = set(available())
+        for name in set(priority) | set(quota):
+            if name not in known:
+                raise ValueError(f"unknown executor: {name!r}")
+        updated = SchedulerConfig(
+            enabled=current.enabled if enabled is None else bool(enabled),
+            start_times=(
+                tuple(start_times) if start_times is not None else current.start_times
+            ),
+            parallel_tasks=(
+                current.parallel_tasks if parallel_tasks is None else int(parallel_tasks)
+            ),
+            executor_priority=priority,
+            executor_quota=quota,
+            version=current.version + 1,
+            updated_at=utc_now(),
+        )
+        return repo.set(updated)
+
+    def scheduler_status(self) -> dict:
+        return self.auto_scheduler.status()
+
     def export_site(self):
         from .site_export import export_automated_site
 
@@ -327,8 +386,10 @@ class SemanticServiceApp:
     # --- lifecycle --------------------------------------------------------
     def start(self) -> None:
         self.dispatcher.start()
+        self.auto_scheduler.start()
 
     def stop(self) -> None:
+        self.auto_scheduler.stop()
         self.dispatcher.shutdown()
         self.store.close()
 

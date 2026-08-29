@@ -8,6 +8,7 @@ for the nullable attempt key columns (service plan decision 3).
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 from typing import Any
 
@@ -19,6 +20,7 @@ from ..domain.errors import (
     JobNotFoundError,
     ReportConflictError,
     ReportPromotionError,
+    SchedulerConfigError,
     SnapshotConflictError,
 )
 from ..domain.models import (
@@ -34,6 +36,7 @@ from ..domain.models import (
     JobStatistics,
     RefreshTarget,
     ReportDelta,
+    SchedulerConfig,
     default_progress,
     make_job_id,
 )
@@ -154,6 +157,19 @@ def _policy_from_row(row: sqlite3.Row) -> FreshnessPolicy:
         scope_key=row["scope_key"],
         max_age_days=int(row["max_age_days"]),
         warning_days=int(row["warning_days"]),
+        version=int(row["version"]),
+        updated_at=row["updated_at"],
+    )
+
+
+def _scheduler_config_from_row(row: sqlite3.Row) -> SchedulerConfig:
+    quota = json.loads(row["executor_quota_json"])
+    return SchedulerConfig(
+        enabled=bool(row["enabled"]),
+        start_times=tuple(json.loads(row["start_times_json"])),
+        parallel_tasks=int(row["parallel_tasks"]),
+        executor_priority=tuple(json.loads(row["executor_priority_json"])),
+        executor_quota={str(k): int(v) for k, v in quota.items()},
         version=int(row["version"]),
         updated_at=row["updated_at"],
     )
@@ -746,6 +762,32 @@ class ExecutorCallRepository:
             )
             return int(cursor.lastrowid or 0)
 
+    def usage_by_executor_since(self, since_iso: str) -> dict[str, int]:
+        """Sum ``total_tokens`` per executor for calls started at/after ``since_iso``.
+
+        Powers the auto-scheduler's daily per-executor token quota. Keys are the
+        stored executor identity (e.g. ``codex-cli`` / ``claude-cli``). Malformed
+        or absent ``total_tokens`` contribute 0 via ``json_extract``/COALESCE.
+        """
+        with self._store._tx() as conn:
+            rows = conn.execute(
+                """
+                SELECT executor,
+                       COALESCE(SUM(CAST(
+                           json_extract(usage_json, '$.total_tokens') AS INTEGER
+                       )), 0) AS tokens
+                FROM executor_calls
+                WHERE started_at >= ?
+                GROUP BY executor
+                """,
+                (since_iso,),
+            ).fetchall()
+        return {row["executor"]: int(row["tokens"] or 0) for row in rows}
+
+    def total_since(self, since_iso: str) -> int:
+        """Sum ``total_tokens`` across all executors since ``since_iso``."""
+        return sum(self.usage_by_executor_since(since_iso).values())
+
     def list_for_job(self, job_id: str) -> list[dict[str, Any]]:
         with self._store._tx() as conn:
             rows = conn.execute(
@@ -1289,6 +1331,85 @@ class FreshnessPolicyRepository:
                 "SELECT * FROM freshness_policies ORDER BY scope_type, scope_key"
             ).fetchall()
             return [_policy_from_row(row) for row in rows]
+
+
+class SchedulerConfigRepository:
+    """Singleton auto-scheduler configuration (schema v9).
+
+    One row keyed by ``id = 1``. Validates structural invariants; whether an
+    executor id is actually registered is checked by the app layer (which owns
+    the executor registry). Updates require a strictly increasing ``version``.
+    """
+
+    _TIME_RE = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
+
+    def __init__(self, store: SqliteStore) -> None:
+        self._store = store
+        self._conn = store._conn
+
+    def ensure_default(self) -> SchedulerConfig:
+        with self._store._tx(immediate=True):
+            self._conn.execute(
+                "INSERT OR IGNORE INTO scheduler_config "
+                "(id, enabled, start_times_json, parallel_tasks, "
+                "executor_priority_json, executor_quota_json, version, updated_at) "
+                "VALUES (1, 0, '[]', 1, '[]', '{}', 1, ?)",
+                (utc_now(),),
+            )
+            row = self._conn.execute(
+                "SELECT * FROM scheduler_config WHERE id = 1"
+            ).fetchone()
+            return _scheduler_config_from_row(row)
+
+    def get(self) -> SchedulerConfig:
+        return self.ensure_default()
+
+    def set(self, config: SchedulerConfig) -> SchedulerConfig:
+        self._validate(config)
+        with self._store._tx(immediate=True):
+            row = self._conn.execute(
+                "SELECT version FROM scheduler_config WHERE id = 1"
+            ).fetchone()
+            if row is not None and config.version <= int(row["version"]):
+                raise SchedulerConfigError("scheduler config version must increase")
+            self._conn.execute(
+                "INSERT INTO scheduler_config (id, enabled, start_times_json, "
+                "parallel_tasks, executor_priority_json, executor_quota_json, "
+                "version, updated_at) VALUES (1, ?, ?, ?, ?, ?, ?, ?) "
+                "ON CONFLICT(id) DO UPDATE SET enabled = excluded.enabled, "
+                "start_times_json = excluded.start_times_json, "
+                "parallel_tasks = excluded.parallel_tasks, "
+                "executor_priority_json = excluded.executor_priority_json, "
+                "executor_quota_json = excluded.executor_quota_json, "
+                "version = excluded.version, updated_at = excluded.updated_at",
+                (
+                    1 if config.enabled else 0,
+                    json.dumps(list(config.start_times), ensure_ascii=False),
+                    config.parallel_tasks,
+                    json.dumps(list(config.executor_priority), ensure_ascii=False),
+                    json.dumps(config.executor_quota, ensure_ascii=False, sort_keys=True),
+                    config.version,
+                    config.updated_at,
+                ),
+            )
+            return config
+
+    def _validate(self, config: SchedulerConfig) -> None:
+        if config.parallel_tasks < 1:
+            raise SchedulerConfigError("parallel_tasks must be >= 1")
+        for value in config.start_times:
+            if not isinstance(value, str) or not self._TIME_RE.match(value):
+                raise SchedulerConfigError(f"invalid start time (want HH:MM): {value!r}")
+        seen: set[str] = set()
+        for name in config.executor_priority:
+            if not isinstance(name, str) or not name:
+                raise SchedulerConfigError("executor_priority entries must be non-empty strings")
+            if name in seen:
+                raise SchedulerConfigError(f"duplicate executor in priority chain: {name!r}")
+            seen.add(name)
+        for name, quota in config.executor_quota.items():
+            if isinstance(quota, bool) or not isinstance(quota, int) or quota < 0:
+                raise SchedulerConfigError(f"quota for {name!r} must be a non-negative integer")
 
 
 class RefreshTargetRepository:
