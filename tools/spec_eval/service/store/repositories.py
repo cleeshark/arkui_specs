@@ -365,8 +365,14 @@ class JobRepository:
                     "UPDATE jobs SET status = ?, updated_at = ? WHERE job_id = ?",
                     (new, now, job_id),
                 )
-            effective_stage = stage if stage is not None else row["stage"]
-            if new == S.RUNNING and effective_stage == S.STAGE_PREPARING:
+            if new == S.RUNNING and src != S.RUNNING:
+                # Entering a fresh run segment: first start (queued -> running)
+                # OR a retry resuming from a non-preparing stage (failed/cancelled
+                # -> queued -> running). Set run_started_at every time so the live
+                # active-duration counter resumes. started_at stays COALESCE so it
+                # only records the very first start. A running -> running stage
+                # advance keeps src == RUNNING and does NOT reset run_started_at,
+                # preserving the in-progress segment's accumulated time.
                 self._conn.execute(
                     "UPDATE job_statistics SET started_at = COALESCE(started_at, ?), "
                     "run_started_at = ?, finished_at = NULL, updated_at = ? WHERE job_id = ?",
