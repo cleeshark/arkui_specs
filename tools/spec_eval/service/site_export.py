@@ -161,6 +161,30 @@ def _convert_function_entry(
     score = eval_report.get("score", {})
     scores = _convert_scores(score)
 
+    # Numeric per-criterion deductions live in score.dimensions[].criteria, keyed
+    # by criterion_id, while the textual conclusion/reason/findings come from the
+    # semantic criterion_summaries above. Merge the numbers in so the site can show
+    # "this criterion lost N points" next to the defect that caused it.
+    deduction_by_criterion: dict[str, dict[str, Any]] = {}
+    for dim in score.get("dimensions", []):
+        if not isinstance(dim, dict):
+            continue
+        for crit in dim.get("criteria", []):
+            if not isinstance(crit, dict):
+                continue
+            crit_id = crit.get("criterion_id")
+            if not isinstance(crit_id, str):
+                continue
+            deduction_by_criterion[crit_id] = {
+                "deduction": crit.get("deduction", 0),
+                "criterion_score": crit.get("score"),
+                "max_score": crit.get("max_score"),
+            }
+    for summary in criteria:
+        detail = deduction_by_criterion.get(summary.get("criterion_id"))
+        if detail is not None:
+            summary.update(detail)
+
     # Freshness is time-based (report age), NOT revision equality. Under rolling
     # per-Function evaluation each Function legitimately sits at its own revision,
     # so a byte-equal "source == observed" check would flip most reports to
@@ -268,13 +292,25 @@ def _convert_scores(score: dict[str, Any]) -> dict[str, Any]:
         if isinstance(dim_id, str):
             dimensions[dim_id] = dim.get("score", 0)
     confidence = score.get("confidence", {})
+    if not isinstance(confidence, dict):
+        confidence = {}
     admission = score.get("admission", {})
+    if not isinstance(admission, dict):
+        admission = {}
+    components = confidence.get("components", {})
     return {
         "dimensions": dimensions,
         "raw_score": score.get("raw_score", 0),
         "published_score": score.get("published_score", 0),
-        "confidence": confidence.get("score", 0) if isinstance(confidence, dict) else 0,
-        "admission": admission.get("status", "") if isinstance(admission, dict) else "",
+        # ``confidence`` stays a bare number for backward compatibility with the
+        # history builder and the site JS; the "why" travels in sibling fields so
+        # a low confidence is explainable without reshaping the existing contract.
+        "confidence": confidence.get("score", 0),
+        "confidence_publishable": bool(confidence.get("publishable", False)),
+        "confidence_reasons": [str(r) for r in confidence.get("reasons", []) if r],
+        "confidence_components": components if isinstance(components, dict) else {},
+        "admission": admission.get("status", ""),
+        "admission_reasons": [str(r) for r in admission.get("reasons", []) if r],
     }
 
 

@@ -741,10 +741,76 @@
   padding: 10px 12px;
 }
 
+.criterionHeading code {
+  margin-right: auto;
+}
+
 .criterionHeading span {
   color: var(--portal-muted);
   font-size: 0.85rem;
   font-weight: 700;
+}
+
+.criterionDeduction {
+  color: #c33d50;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: help;
+}
+
+.confidenceCell {
+  cursor: help;
+}
+
+.confidenceReasonMark {
+  color: #c33d50;
+  font-weight: 700;
+  margin-left: 2px;
+}
+
+.confidencePublishable {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.confidencePublishable.is-yes {
+  background: rgba(45, 145, 90, 0.15);
+  color: #2d915a;
+}
+
+.confidencePublishable.is-no {
+  background: rgba(195, 61, 80, 0.15);
+  color: #c33d50;
+}
+
+.deductionTips {
+  display: grid;
+  gap: 12px;
+  margin: 12px 0;
+  padding: 12px 14px;
+  border-radius: 6px;
+  border-left: 4px solid #c33d50;
+  background: var(--portal-soft);
+}
+
+.deductionTipGroup h5 {
+  margin: 0 0 6px;
+  font-size: 0.85rem;
+  color: var(--portal-muted);
+}
+
+.deductionTipGroup ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.deductionTipGroup li {
+  font-size: 0.85rem;
+  line-height: 1.5;
 }
 
 .criterionEvidence {
