@@ -136,6 +136,8 @@ def render_markdown_report(
 ) -> str:
     score = report["score"]
     summary = report["summary"]
+    confidence = score.get("confidence", {}) if isinstance(score.get("confidence"), dict) else {}
+    admission = score.get("admission", {}) if isinstance(score.get("admission"), dict) else {}
     lines = [
         f"# Function Evaluation Report: {report['func_id']}",
         "",
@@ -143,19 +145,62 @@ def render_markdown_report(
         f"- Report generator: `{REPORT_VERSION}`",
         f"- Gate: **{summary['gate']}**",
         f"- Score: **{summary['published_score']} / 100** (raw {summary['raw_score']})",
-        f"- Confidence: **{summary['confidence']}**",
+        f"- Confidence: **{summary['confidence']}**"
+        + (f" (publishable: {'yes' if confidence.get('publishable') else 'no'})" if "publishable" in confidence else ""),
         f"- Admission: **{summary['admission_status']}**",
+    ]
+    # Confidence reflects evidence/process completeness, not quality; surface why
+    # it was reduced so a low confidence is actionable rather than opaque.
+    confidence_reasons = [str(r) for r in confidence.get("reasons", []) if r]
+    if confidence_reasons:
+        lines.extend(["", "## Confidence deductions", ""])
+        lines.extend(f"- {reason}" for reason in confidence_reasons)
+    components = confidence.get("components", {})
+    if isinstance(components, dict) and components:
+        lines.extend(["", "| Confidence component | Value |", "| --- | ---: |"])
+        for name in sorted(components):
+            lines.append(f"| `{name}` | {components[name]} |")
+    admission_reasons = [str(r) for r in admission.get("reasons", []) if r]
+    if admission_reasons:
+        lines.extend(["", "## Admission blockers", ""])
+        lines.extend(f"- {reason}" for reason in admission_reasons)
+    lines.extend([
         "",
         "## Dimension scores",
         "",
         "| Dimension | Score | Applicable max | Verifiability |",
         "| --- | ---: | ---: | --- |",
-    ]
+    ])
     for dimension in score["dimensions"]:
         lines.append(
             f"| `{dimension['dimension_id']}` | {dimension['score']} / {dimension['max_score']} "
             f"| {dimension['applicable_max_score']} | {dimension['verifiability']} |"
         )
+    # Per-criterion deductions tie each lost point back to a specific criterion
+    # so the score drop is traceable to a concrete defect.
+    deductions = []
+    for dimension in score["dimensions"]:
+        for criterion in dimension.get("criteria", []):
+            if not isinstance(criterion, dict):
+                continue
+            if (criterion.get("deduction") or 0) <= 0:
+                continue
+            deductions.append((str(dimension.get("dimension_id", "")), criterion))
+    if deductions:
+        deductions.sort(key=lambda item: (item[0], str(item[1].get("criterion_id", ""))))
+        lines.extend([
+            "",
+            "## Score deductions (criteria)",
+            "",
+            "| Dimension | Criterion | Conclusion | Deduction | Score / Max |",
+            "| --- | --- | --- | ---: | ---: |",
+        ])
+        for dimension_id, criterion in deductions:
+            lines.append(
+                f"| `{dimension_id}` | `{criterion.get('criterion_id', '')}` "
+                f"| {criterion.get('conclusion', '')} | -{criterion.get('deduction', 0)} "
+                f"| {criterion.get('score')} / {criterion.get('max_score')} |"
+            )
     lines.extend(["", "## Selected semantic run", "", f"- Run ID: `{report['semantic']['run_id']}`"])
     lines.append(f"- Evaluator: `{report['semantic']['evaluator_version']}`")
     lines.append(

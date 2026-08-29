@@ -220,6 +220,9 @@ function CriterionReview({criterion}) {
       <div className="criterionHeading">
         <code>{criterion.criterion_id}</code>
         <span>{criterion.conclusion}</span>
+        {criterion.deduction > 0 && (
+          <span className="criterionDeduction" title={`该 Criterion 扣 ${criterion.deduction} 分（得分 ${criterion.criterion_score ?? '-'} / ${criterion.max_score ?? '-'}）`}>-{criterion.deduction}</span>
+        )}
       </div>
       {actionable && (
         <div className="criterionEvidence">
@@ -287,11 +290,27 @@ function SemanticReview({review}) {
         <span>状态 <b>{review.status}</b></span>
         <span>新鲜度 <b>{review.freshness || '-'}</b></span>
         <span>发布分 <b>{score.published_score ?? '-'}</b></span>
-        <span>置信度 <b>{score.confidence ?? '-'}</b></span>
+        <span>置信度 <b>{score.confidence ?? '-'}</b>{typeof score.confidence_publishable === 'boolean' && <em className={`confidencePublishable ${score.confidence_publishable ? 'is-yes' : 'is-no'}`}>{score.confidence_publishable ? '可发布' : '不可发布'}</em>}</span>
         <span>准入 <b>{score.admission ?? '-'}</b></span>
       </div>
       <p className="evalMuted">评价时间：{review.evaluated_at || review.confirmation?.confirmed_at || '-'}</p>
       <p className="evalMuted">置信度表示证据与评价流程的完整性，不是质量得分。</p>
+      {((score.confidence_reasons || []).length > 0 || (score.admission_reasons || []).length > 0) && (
+        <div className="deductionTips">
+          {(score.confidence_reasons || []).length > 0 && (
+            <div className="deductionTipGroup">
+              <h5>置信度扣分原因</h5>
+              <ul>{score.confidence_reasons.map((reason, index) => <li key={`conf-${index}`}>{reason}</li>)}</ul>
+            </div>
+          )}
+          {(score.admission_reasons || []).length > 0 && (
+            <div className="deductionTipGroup">
+              <h5>准入未达标原因</h5>
+              <ul>{score.admission_reasons.map((reason, index) => <li key={`adm-${index}`}>{reason}</li>)}</ul>
+            </div>
+          )}
+        </div>
+      )}
       <RadarChart scores={score.dimensions} rawScore={score.raw_score} publishedScore={score.published_score} />
       <h4>Actionable Criterion details</h4>
       <div className="criterionList">
@@ -543,7 +562,7 @@ export default function SpecEvaluationPage() {
                 </div>
                 <div className="tableScroll">
                   <table className="portalTable evalTable">
-                    <thead><tr><th>FuncID</th><th>Function</th><th>Gate</th><th>Published</th><th>Admission</th><th>Features</th><th>Findings</th><th>Evidence</th><th></th></tr></thead>
+                    <thead><tr><th>FuncID</th><th>Function</th><th>Gate</th><th>Published</th><th>Confidence</th><th>Admission</th><th>Features</th><th>Findings</th><th>Evidence</th><th></th></tr></thead>
                     <tbody>
                       {functions.map((item) => (
                         <tr key={item.funcId} className={selectedId === item.funcId ? 'selectedRow' : ''}>
@@ -555,6 +574,16 @@ export default function SpecEvaluationPage() {
                             {item.semanticReview?.status === 'CONFIRMED' && item.semanticReview?.revision_current === false && (
                               <span className="revisionDriftMark" title={`评价于 ${String(item.semanticReview.source_revision || '').slice(0, 7)}，当前 ${String(item.semanticReview.observed_revision || '').slice(0, 7)}`}>*</span>
                             )}
+                          </td>
+                          <td>
+                            {item.semanticReview?.status === 'CONFIRMED' ? (
+                              (() => {
+                                const scores = item.semanticReview.scores || {};
+                                const reasons = scores.confidence_reasons || [];
+                                const tip = reasons.length > 0 ? `扣分原因：\n- ${reasons.join('\n- ')}` : '置信度表示证据与评价流程的完整性';
+                                return <span className="confidenceCell" title={tip}>{scores.confidence ?? '-'}{reasons.length > 0 && <sup className="confidenceReasonMark">?</sup>}</span>;
+                              })()
+                            ) : '-'}
                           </td>
                           <td>{item.semanticReview?.status === 'CONFIRMED' ? item.semanticReview.scores?.admission ?? '-' : '-'}</td>
                           <td>{item.featureCount}</td>
