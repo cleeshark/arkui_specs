@@ -43,7 +43,9 @@ select { appearance: none; -webkit-appearance: none; padding-right: 1.7rem; curs
   background-repeat: no-repeat; background-position: right 0.6rem center; }
 form input:not([type="checkbox"]):not([type="radio"]), form select {
   width: 100%; box-sizing: border-box; }
-form small { grid-column: 1 / -1; margin-top: -0.4rem; font-weight: 400;
+form > small { grid-column: 1 / -1; margin-top: -0.4rem; font-weight: 400;
+  text-transform: none; letter-spacing: 0; }
+form label small { margin-top: 0.05rem; font-weight: 400; line-height: 1.4;
   text-transform: none; letter-spacing: 0; }
 button { background: var(--accent); color: #fff; border: 1px solid transparent; border-radius: 6px;
   padding: 0.46rem 0.9rem; margin-right: 0.25rem; cursor: pointer; font-size: 0.8rem;
@@ -62,6 +64,7 @@ button[type="submit"] { justify-self: start; }
   letter-spacing: 0; margin-top: 0.15rem; }
 
 /* auto-scheduler panel */
+#scheduler-form { align-items: start; }
 .switch { flex-direction: row; align-items: center; gap: 0.5rem; margin-left: auto;
   font-size: 0.78rem; font-weight: 600; color: var(--muted); text-transform: none;
   letter-spacing: 0; cursor: pointer; user-select: none; }

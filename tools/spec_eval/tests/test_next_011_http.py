@@ -372,6 +372,24 @@ class StaticUITest(_HttpTestBase):
         self.assertEqual(status, 200)
         self.assertIn("Semantic Evaluation Service", body)
 
+    def test_ui_assets_are_cache_busted_and_not_stored(self) -> None:
+        index = route_request("GET", "/", b"", {}, self.app)
+        self.assertIn(b'/static/style.css?v=', index.body)
+        self.assertIn(b'/static/app.js?v=', index.body)
+
+        css = route_request("GET", "/static/style.css?v=current", b"", {}, self.app)
+        self.assertEqual(css.status, 200)
+        self.assertEqual(css.headers["Cache-Control"], "no-store, max-age=0")
+        self.assertEqual(css.headers["Pragma"], "no-cache")
+
+    def test_manual_refresh_and_scheduler_controls_use_polished_ui(self) -> None:
+        index = route_request("GET", "/", b"", {}, self.app)
+        self.assertIn(b'class="slider"', index.body)
+
+        css = route_request("GET", "/static/style.css", b"", {}, self.app)
+        self.assertIn(b"grid-template-columns: repeat(auto-fill", css.body)
+        self.assertIn(b".switch input:checked + .slider", css.body)
+
     def test_static_asset_served(self) -> None:
         status, _ = self._req("GET", "/static/style.css")
         self.assertEqual(status, 200)

@@ -395,7 +395,13 @@ def _serve_static(ui_dir: Path, name: str, content_type: str) -> Response:
     safe = safe_resolve(ui_dir, ui_dir / name)
     if safe is None:
         return _error(404, "not found")
-    return Response.file(200, safe.read_bytes(), content_type)
+    response = Response.file(200, safe.read_bytes(), content_type)
+    # The service UI is read directly from the checkout and may change while a
+    # long-running local server remains up. Do not let browsers pin an older
+    # stylesheet or script and make fresh UI changes appear ineffective.
+    response.headers["Cache-Control"] = "no-store, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    return response
 
 
 def _parse_query(query: str) -> dict[str, str]:
