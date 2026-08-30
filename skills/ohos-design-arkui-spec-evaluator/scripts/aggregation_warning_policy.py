@@ -51,6 +51,58 @@ CONTRADICTION_BASIS_WARNING_DEDUCTION = 5
 EVIDENCE_TYPE_WARNING_MARKER = "evidence must include one of"
 EVIDENCE_TYPE_WARNING_CODE = "EVIDENCE_TYPE_MISSING"
 EVIDENCE_TYPE_WARNING_DEDUCTION = 20
+POST_CORRECTION_WARNING_FILE = "post-correction-warnings.json"
+OBSERVATION_WARNING_MARKERS = {
+    "UNIT_ROW_INVALID": (
+        ".unit_reviews: expected at least one atomic unit review",
+        ".reviewed_units: enumerate the checked scope units",
+        ".unit_reviews: unit IDs must exactly match reviewed_units in order",
+    ),
+    "UNIT_CLAIM_OUTCOME_CONFLICT": (
+        ".unit_reviews: at least one unit must carry claim outcome",
+        ".unit_reviews: a supported claim requires all units supported",
+        ".unit_reviews: an inapplicable claim requires all units inapplicable",
+    ),
+}
+
+
+def split_observation_warnings(
+    run_dir: Path,
+    errors: list[str],
+) -> tuple[list[str], list[str]]:
+    """Downgrade only observation errors recorded after bounded Correction."""
+    try:
+        document = json.loads(
+            (run_dir / POST_CORRECTION_WARNING_FILE).read_text(encoding="utf-8")
+        )
+    except (OSError, ValueError):
+        return list(errors), []
+    records = document.get("warnings") if isinstance(document, dict) else None
+    if not isinstance(records, list):
+        return list(errors), []
+    eligible: set[tuple[str, str]] = set()
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+        work_item_id = record.get("work_item_id")
+        typed = record.get("error")
+        code = typed.get("code") if isinstance(typed, dict) else None
+        if (
+            isinstance(work_item_id, str)
+            and work_item_id
+            and code in OBSERVATION_WARNING_MARKERS
+        ):
+            eligible.add((work_item_id, code))
+    blocking: list[str] = []
+    warnings: list[str] = []
+    for error in errors:
+        downgraded = any(
+            error.startswith(f"observation[{work_item_id}]")
+            and any(marker in error for marker in OBSERVATION_WARNING_MARKERS[code])
+            for work_item_id, code in eligible
+        )
+        (warnings if downgraded else blocking).append(error)
+    return blocking, warnings
 
 
 def split_aggregation_warnings(errors: list[str]) -> tuple[list[str], list[str]]:
@@ -118,6 +170,10 @@ def record_aggregation_warnings(run_dir: Path, warnings: list[str]) -> None:
             marker in warning
             for marker in CONTRADICTION_BASIS_WARNING_MARKERS
         )
+    ])
+    record_evidence_type_warning(run_dir, [
+        warning for warning in warnings
+        if EVIDENCE_TYPE_WARNING_MARKER in warning
     ])
 
 

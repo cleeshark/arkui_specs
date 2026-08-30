@@ -350,6 +350,8 @@ class JudgmentFlow:
         reproject: Callable[[dict[str, Any]], dict[str, Any]] | None = None,
         normalize_after_correction: Callable[..., NormalizationResult] | None = None,
         allow_degraded_publish: bool = False,
+        degraded_publish_codes: frozenset[str] | None = None,
+        on_post_correction_warnings: Callable[[list[TypedError]], None] | None = None,
     ) -> JudgmentOutcome:
         """Run one work item through the state machine.
 
@@ -366,6 +368,18 @@ class JudgmentFlow:
             and candidate_path.is_file()
             and errors_path.is_file()
         )
+        pending_post_correction_warnings: list[TypedError] = []
+        pending_warning_identities: set[tuple[str, str, str, str]] = set()
+
+        def remember_post_correction_warnings(errors: list[TypedError]) -> None:
+            for error in errors:
+                identity = (
+                    error.code, error.path, error.entity_type, error.entity_id,
+                )
+                if identity in pending_warning_identities:
+                    continue
+                pending_warning_identities.add(identity)
+                pending_post_correction_warnings.append(error)
 
         def typed_of(document: dict[str, Any]) -> list[TypedError]:
             return [
@@ -382,6 +396,20 @@ class JudgmentFlow:
             publish_succeeded = on_publish(document)
             if publish_succeeded is False:
                 return False
+            if pending_post_correction_warnings:
+                if on_post_correction_warnings is not None:
+                    on_post_correction_warnings(
+                        list(pending_post_correction_warnings)
+                    )
+                self.events.append(
+                    self.ctx.job_id, "correction_completed_with_warnings", {
+                        "work_item_id": work.work_item_id,
+                        "warnings": [
+                            error.to_dict()
+                            for error in pending_post_correction_warnings
+                        ],
+                    },
+                )
             SS.set_work_item_state(self.ctx.run_dir, work.work_item_id, SS.VALIDATED)
             candidate_path.unlink(missing_ok=True)
             errors_path.unlink(missing_ok=True)
@@ -396,20 +424,25 @@ class JudgmentFlow:
             catalog: list[dict[str, Any]],
             residual: list[TypedError],
         ) -> bool:
-            """Publish a usable report after the single correction turn.
+            """Publish a usable artifact after the single correction turn.
 
-            Only the final report (``allow_degraded_publish``) may take this
-            path.  When every residual error is non-HARD/non-fatal, the report
-            is structurally assemblable, so publish it and let ``on_publish``
-            apply its HARD-only gate and confidence deduction.  A HARD or fatal
-            residual still blocks; observation work items never degrade.
+            Callers may restrict this path to an explicit error-code family.
+            Every residual must be non-HARD/non-fatal and, when a restriction
+            is supplied, registered by the caller.  This lets observation
+            publish narrowly scoped report-quality gaps while the aggregation
+            stage retains its broader final-report policy.
             """
             if not allow_degraded_publish:
+                return False
+            if degraded_publish_codes is not None and any(
+                error.code not in degraded_publish_codes for error in residual
+            ):
                 return False
             if has_hard_errors(residual) or any(
                 is_fatal_error(error) for error in residual
             ):
                 return False
+            remember_post_correction_warnings(residual)
             published = publish(document, catalog)
             if published:
                 self.events.append(
@@ -442,10 +475,18 @@ class JudgmentFlow:
                     # warning.  Keep its original code so aggregation can
                     # apply the registered confidence deduction.  Fatal and
                     # service-owned structural errors remain blocking.
-                    if not (
+                    registered_warning = (
                         is_post_correction_warning(error)
-                        or is_model_correction_error(error)
-                    ):
+                        and (
+                            degraded_publish_codes is None
+                            or error.code in degraded_publish_codes
+                        )
+                    )
+                    unrestricted_final_warning = (
+                        degraded_publish_codes is None
+                        and is_model_correction_error(error)
+                    )
+                    if not (registered_warning or unrestricted_final_warning):
                         continue
                     identity = (
                         error.code, error.path,
@@ -465,12 +506,7 @@ class JudgmentFlow:
             def record_downgraded() -> None:
                 if not downgraded:
                     return
-                self.events.append(
-                    self.ctx.job_id, "correction_completed_with_warnings", {
-                        "work_item_id": work.work_item_id,
-                        "warnings": [error.to_dict() for error in downgraded],
-                    },
-                )
+                remember_post_correction_warnings(downgraded)
 
             typed = downgrade_warnings(typed)
             deterministic = [

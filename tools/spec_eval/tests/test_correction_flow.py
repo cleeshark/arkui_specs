@@ -8,7 +8,11 @@ import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-from spec_eval.kernel.errors import TypedError, is_post_correction_warning
+from spec_eval.kernel.errors import (
+    TypedError,
+    compute_confidence,
+    is_post_correction_warning,
+)
 from spec_eval.kernel.machine_contract import (
     build_aggregation_correction_machine_contract,
     build_correction_machine_contract,
@@ -32,6 +36,11 @@ from spec_eval.service.pipeline.aggregation_correction import (
     build_aggregation_correction_context,
 )
 from spec_eval.service.pipeline.judgment_flow import JudgmentFlow
+from spec_eval.service.pipeline.confidence_warnings import (
+    load_post_correction_warning_records,
+    load_post_correction_warnings,
+    record_post_correction_warnings,
+)
 
 
 class CorrectionFlowTest(unittest.TestCase):
@@ -175,6 +184,47 @@ class CorrectionFlowTest(unittest.TestCase):
             "candidate_deterministic_repaired",
             [event_type for event_type, _payload in events.rows],
         )
+
+    def test_post_correction_warning_sidecar_is_idempotent(self) -> None:
+        warnings = [
+            TypedError(
+                "UNIT_ROW_INVALID",
+                "observation.claim_reviews[claim-1].unit_reviews",
+                entity_type="claim",
+                entity_id="claim-1",
+                repairability="SERVICE_NORMALIZATION",
+            ),
+            TypedError(
+                "UNIT_CLAIM_OUTCOME_CONFLICT",
+                "observation.claim_reviews[claim-1].unit_reviews",
+                entity_type="claim",
+                entity_id="claim-1",
+                repairability="SERVICE_NORMALIZATION",
+            ),
+            TypedError(
+                "GAP_UNEXPECTED_FOR_NON_NV",
+                "observation.claim_reviews[claim-1].verification_gap",
+                entity_type="claim",
+                entity_id="claim-1",
+                repairability="SERVICE_NORMALIZATION",
+            ),
+        ]
+        with tempfile.TemporaryDirectory() as temporary:
+            run_dir = Path(temporary)
+            record_post_correction_warnings(run_dir, "function-global", warnings)
+            record_post_correction_warnings(run_dir, "function-global", warnings)
+            records = load_post_correction_warning_records(run_dir)
+            typed = load_post_correction_warnings(run_dir)
+            confidence = compute_confidence(typed)
+
+        self.assertEqual(len(records), 2)
+        self.assertEqual(records[0]["work_item_id"], "function-global")
+        self.assertEqual(
+            [error.code for error in typed],
+            ["UNIT_ROW_INVALID", "UNIT_CLAIM_OUTCOME_CONFLICT"],
+        )
+        self.assertEqual(confidence["confidence_score"], 75)
+        self.assertEqual(confidence["deduction_total"], 25)
 
     def test_failed_publish_callback_does_not_mark_work_validated(self) -> None:
         class Executor:
@@ -1208,6 +1258,7 @@ class CorrectionRoutingDegradeTest(unittest.TestCase):
     def _seed_candidate(
         self, run_dir: Path, output_name: str, document: dict, errors: list[dict],
         candidate_kind: str = "published_candidate",
+        work_item_id: str = "aggregation:final",
     ) -> None:
         # Reproduce a GENERATED_INVALID breakpoint: a stored candidate plus its
         # typed errors, so flow.run resumes straight into the correction path
@@ -1228,7 +1279,7 @@ class CorrectionRoutingDegradeTest(unittest.TestCase):
             }),
             encoding="utf-8",
         )
-        SS.set_work_item_state(run_dir, "aggregation:final", SS.GENERATED_INVALID)
+        SS.set_work_item_state(run_dir, work_item_id, SS.GENERATED_INVALID)
 
     def test_raw_candidate_is_normalized_before_severity_repair(self) -> None:
         # Fix 1: a raw candidate carries a provisional finding key; the severity
@@ -1398,6 +1449,125 @@ class CorrectionRoutingDegradeTest(unittest.TestCase):
         terminal_outcome, _events, terminal_published = run_once(False)
         self.assertEqual(terminal_outcome.status, C.STATUS_FAILED)
         self.assertFalse(terminal_published)
+
+    def test_observation_unit_residuals_publish_and_report_warnings(self) -> None:
+        document = {
+            "claim_reviews": [{
+                "claim_id": "claim-1",
+                "local_outcome": "NOT_VERIFIABLE",
+                "reviewed_units": [],
+                "unit_reviews": [],
+            }],
+        }
+        residuals = [
+            {
+                "code": "UNIT_ROW_INVALID",
+                "path": "observation.claim_reviews[0].unit_reviews",
+                "entity_type": "claim",
+                "entity_id": "claim-1",
+                "repairability": "SERVICE_NORMALIZATION",
+            },
+            {
+                "code": "UNIT_CLAIM_OUTCOME_CONFLICT",
+                "path": "observation.claim_reviews[0].unit_reviews",
+                "entity_type": "claim",
+                "entity_id": "claim-1",
+                "repairability": "SERVICE_NORMALIZATION",
+            },
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp)
+            work = _observation_work(run_dir)
+            self._seed_candidate(
+                run_dir,
+                "Feat-01.json",
+                document,
+                residuals,
+                work_item_id=work.work_item_id,
+            )
+            events = _Events()
+            executor = _FlowExecutor(patches=[])
+            published: list[dict] = []
+            reported: list[TypedError] = []
+            flow = JudgmentFlow(
+                ctx=SimpleNamespace(
+                    run_dir=run_dir, job_id="job", run_id="run-1",
+                ),
+                executor=executor,
+                jobs=SimpleNamespace(transition_status=lambda *a, **k: None),
+                events=events,
+            )
+
+            outcome = flow.run(
+                work=work,
+                output_path=run_dir / "Feat-01.json",
+                template={},
+                normalize=lambda payload: NormalizationResult(document=payload),
+                validate=lambda _document: [
+                    TypedError.from_dict(error) for error in residuals
+                ],
+                base_contract={"payload_kind": "observation"},
+                on_publish=lambda value: published.append(value) or True,
+                fingerprint="fp",
+                stage_event="work_item_completed",
+                allow_degraded_publish=True,
+                degraded_publish_codes=frozenset({
+                    "UNIT_ROW_INVALID", "UNIT_CLAIM_OUTCOME_CONFLICT",
+                }),
+                on_post_correction_warnings=reported.extend,
+            )
+
+        self.assertEqual(outcome.status, C.STATUS_COMPLETED)
+        self.assertTrue(published)
+        self.assertIn("correct", executor.calls)
+        self.assertEqual(
+            {error.code for error in reported},
+            {"UNIT_ROW_INVALID", "UNIT_CLAIM_OUTCOME_CONFLICT"},
+        )
+        self.assertIn("correction_completed_with_warnings", events.types())
+
+    def test_observation_degradation_rejects_unregistered_residual(self) -> None:
+        residual = {
+            "code": "OBSERVATION_FIELD_INVALID",
+            "path": "observation.observations.unknown_field",
+            "entity_type": "document",
+            "repairability": "SERVICE_NORMALIZATION",
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp)
+            work = _observation_work(run_dir)
+            self._seed_candidate(
+                run_dir,
+                "Feat-01.json",
+                {"observations": [{"unknown_field": "x"}]},
+                [residual],
+                work_item_id=work.work_item_id,
+            )
+            flow = JudgmentFlow(
+                ctx=SimpleNamespace(
+                    run_dir=run_dir, job_id="job", run_id="run-1",
+                ),
+                executor=_FlowExecutor(),
+                jobs=SimpleNamespace(transition_status=lambda *a, **k: None),
+                events=_Events(),
+            )
+            outcome = flow.run(
+                work=work,
+                output_path=run_dir / "Feat-01.json",
+                template={},
+                normalize=lambda payload: NormalizationResult(document=payload),
+                validate=lambda _document: [TypedError.from_dict(residual)],
+                base_contract={"payload_kind": "observation"},
+                on_publish=lambda _value: True,
+                fingerprint="fp",
+                stage_event="work_item_completed",
+                allow_degraded_publish=True,
+                degraded_publish_codes=frozenset({
+                    "UNIT_ROW_INVALID", "UNIT_CLAIM_OUTCOME_CONFLICT",
+                }),
+            )
+
+        self.assertEqual(outcome.status, C.STATUS_FAILED)
 
     def test_failed_correction_executor_degrades_final_report(self) -> None:
         # The correction executor itself reports failure (e.g. no legal evidence
