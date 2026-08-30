@@ -311,17 +311,22 @@ class SemanticServiceApp:
     def retry_latest_specs(self, job_id: str) -> tuple[str, str]:
         """Retry using the current specs revision while reusing checkpoints.
 
-        Aggregation and report failures are eligible: refreshing specs after
-        observations have completed does not invalidate the existing evidence.
-        Refreshing before observations would make evidence stale, so earlier
-        stages are excluded.
+        Observation, aggregation, and report failures are eligible. Observation
+        retries resume the staged run from its persisted checkpoints, while
+        later-stage retries reuse the completed observation evidence. Earlier
+        stages do not yet have reusable observation progress and are excluded.
         """
         job = self.jobs.get_job(job_id)
         if job.status not in {S.FAILED, S.CANCELLED}:
             raise IllegalTransitionError(job.status, S.QUEUED)
-        if job.stage not in {S.STAGE_AGGREGATION, S.STAGE_REPORT}:
+        if job.stage not in {
+            S.STAGE_OBSERVATION,
+            S.STAGE_AGGREGATION,
+            S.STAGE_REPORT,
+        }:
             raise WorkspaceError(
-                "latest specs retry is only available for aggregation and report failures"
+                "latest specs retry is only available for observation, aggregation, "
+                "and report failures"
             )
         workspace = RevisionWorkspaceManager(self.settings).refresh_specs_revision(job)
         # Keep the persisted execution envelope and eventual report metadata
