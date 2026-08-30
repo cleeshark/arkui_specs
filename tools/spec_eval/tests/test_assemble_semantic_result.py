@@ -23,6 +23,7 @@ from assemble_semantic_result import (  # noqa: E402
 from aggregation_warning_policy import (  # noqa: E402
     record_evidence_type_warning,
     split_final_candidate_warnings,
+    split_observation_warnings,
 )
 from staged_run_support import (  # noqa: E402
     repair_missing_finding_evidence,
@@ -31,6 +32,31 @@ from validate_staged_run import main as validate_staged_main  # noqa: E402
 
 
 class AssembleSemanticResultWarningTest(unittest.TestCase):
+    def test_only_recorded_observation_unit_errors_are_warnings(self) -> None:
+        with TemporaryDirectory() as temporary:
+            run_dir = Path(temporary)
+            (run_dir / "post-correction-warnings.json").write_text(
+                json.dumps({
+                    "schema_version": 1,
+                    "warnings": [{
+                        "work_item_id": "function-global",
+                        "error": {"code": "UNIT_ROW_INVALID"},
+                    }],
+                }),
+                encoding="utf-8",
+            )
+            blocking, warnings = split_observation_warnings(run_dir, [
+                "observation[function-global].claim_reviews[0].unit_reviews: "
+                "expected at least one atomic unit review",
+                "observation[Feat-01].claim_reviews[0].unit_reviews: "
+                "expected at least one atomic unit review",
+                "observation[function-global].status: set to 'complete'",
+            ])
+
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("function-global", warnings[0])
+        self.assertEqual(len(blocking), 2)
+
     def test_assemble_repairs_aggregation_before_validation(self) -> None:
         with TemporaryDirectory() as temporary:
             run_dir = Path(temporary)

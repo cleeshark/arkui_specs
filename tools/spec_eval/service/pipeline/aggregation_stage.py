@@ -40,6 +40,7 @@ from ..store.repositories import (
 from ..store.sqlite_store import utc_now
 from ._subprocess import Runner, default_runner
 from .context import RunContext
+from .confidence_warnings import load_post_correction_warnings
 from .judgment_flow import JudgmentFlow, input_fingerprint
 from .result_payload import (
     load_template,
@@ -144,7 +145,10 @@ def run_aggregation(
     final_status: dict[str, Any] = {"ok": True, "errors": [], "confidence": None}
 
     def _publish(document: dict[str, Any]) -> bool:
-        typed_errors = _validate_existing(document)
+        typed_errors = [
+            *_validate_existing(document),
+            *load_post_correction_warnings(ctx.run_dir),
+        ]
         if has_hard_errors(typed_errors):
             final_status.update(
                 ok=False,

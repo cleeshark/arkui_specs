@@ -13,6 +13,7 @@ from aggregation_warning_policy import (
     record_evidence_type_warning,
     split_aggregation_warnings,
     split_final_candidate_warnings,
+    split_observation_warnings,
 )
 from staged_run_support import (
     build_final_candidate,
@@ -79,6 +80,9 @@ def validate_stage(
                 errors.append(str(exc))
                 continue
             errors.extend(validate_observation_document(document, item, state))
+        errors, observation_warnings = split_observation_warnings(run_dir, errors)
+        for warning in observation_warnings:
+            print(f"WARNING: {warning}", file=sys.stderr)
     if stage in {"aggregation", "final"}:
         try:
             aggregation = load_object(

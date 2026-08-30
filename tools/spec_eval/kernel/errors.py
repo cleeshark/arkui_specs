@@ -210,6 +210,7 @@ CONFIDENCE_LAYERS: dict[str, str] = {
     "EVIDENCE_REQUIRED_MISSING": LAYER_MAJOR,
     "MODELING_BASIS_MISSING": LAYER_MAJOR,
     "MODELING_BASIS_INVALID": LAYER_MAJOR,
+    "UNIT_CLAIM_OUTCOME_CONFLICT": LAYER_MAJOR,
     # MINOR: completeness / consistency
     "MAPPING_CLAIM_UNMAPPED": LAYER_MINOR,
     "CRITERION_EVIDENCE_UNKNOWN": LAYER_MINOR,
@@ -222,6 +223,7 @@ CONFIDENCE_LAYERS: dict[str, str] = {
     "QUALITY_DUPLICATE_TEXT": LAYER_MINOR,
     "QUALITY_OBSERVATION_DENSITY": LAYER_MINOR,
     "NV_MISSING_EVIDENCE_RECOVERED": LAYER_MINOR,
+    "UNIT_ROW_INVALID": LAYER_MINOR,
 }
 
 
@@ -246,8 +248,20 @@ NON_BLOCKING_WARNING_CODES = frozenset({
 # they remain afterwards, the document is structurally consumable and may be
 # published with its normal confidence-layer deduction instead of entering
 # CORRECTION_INVALID_TERMINAL.
+OBSERVATION_POST_CORRECTION_WARNING_CODES = frozenset({
+    # Missing or inconsistent atomic-unit rows leave the claim-level review
+    # readable, but reduce its auditability.  After the one bounded Correction
+    # turn, publish the observation and retain one MINOR confidence deduction.
+    "UNIT_ROW_INVALID",
+    # A claim outcome that is not represented by any atomic unit weakens the
+    # semantic basis of that claim.  The report remains structurally usable,
+    # so retain one bounded MAJOR deduction instead of terminating the run.
+    "UNIT_CLAIM_OUTCOME_CONFLICT",
+})
+
 POST_CORRECTION_WARNING_CODES = frozenset({
     "MAPPING_CLAIM_UNMAPPED",
+    *OBSERVATION_POST_CORRECTION_WARNING_CODES,
     # A Criterion referencing evidence outside its allowlist is a bounded
     # data-quality gap that the model cannot always repair without semantic
     # re-evaluation. The report remains consumable with reduced confidence.
@@ -294,9 +308,19 @@ def compute_confidence(errors: list[TypedError]) -> dict[str, Any]:
     bounded_warning_codes: set[str] = set()
 
     for error in errors:
-        if error.repairability == SERVICE_NORMALIZATION:
+        # Deterministic service-owned issues normally disappear before report
+        # publication and therefore do not affect confidence.  A code that is
+        # explicitly registered for post-Correction degradation is different:
+        # its residual was deliberately published and must stay visible.
+        if (
+            error.repairability == SERVICE_NORMALIZATION
+            and not is_post_correction_warning(error)
+        ):
             continue
-        if is_non_blocking_warning(error):
+        if (
+            is_non_blocking_warning(error)
+            or is_post_correction_warning(error)
+        ):
             if error.code in bounded_warning_codes:
                 continue
             bounded_warning_codes.add(error.code)

@@ -119,6 +119,7 @@ def run_semantic(
     resumes at the single correction turn instead of regenerating.
     """
     from spec_eval.kernel import staged_state as SS
+    from spec_eval.kernel.errors import OBSERVATION_POST_CORRECTION_WARNING_CODES
     from spec_eval.kernel.normalize import (
         normalize_observation,
         project_observation_derived_fields,
@@ -126,6 +127,9 @@ def run_semantic(
     from spec_eval.kernel.validate import validate_observation_document
     from spec_eval.service.pipeline.judgment_flow import (
         JudgmentFlow, input_fingerprint,
+    )
+    from spec_eval.service.pipeline.confidence_warnings import (
+        record_post_correction_warnings,
     )
     from .result_payload import observe_observation_prompt_contract
 
@@ -215,6 +219,12 @@ def run_semantic(
         evidence_resolver = ctx.evidence_resolver(
             required_paths=required_evidence_paths
         )
+
+        def _record_post_correction_warnings(errors) -> None:
+            record_post_correction_warnings(
+                ctx.run_dir, work.work_item_id, errors,
+            )
+
         outcome = flow.run(
             work=work,
             output_path=output_path,
@@ -233,6 +243,9 @@ def run_semantic(
             fingerprint=fingerprint,
             stage_event="work_item_completed",
             reproject=project_observation_derived_fields,
+            allow_degraded_publish=True,
+            degraded_publish_codes=OBSERVATION_POST_CORRECTION_WARNING_CODES,
+            on_post_correction_warnings=_record_post_correction_warnings,
         )
         if outcome.status != C.STATUS_COMPLETED:
             return SemanticStageResult(

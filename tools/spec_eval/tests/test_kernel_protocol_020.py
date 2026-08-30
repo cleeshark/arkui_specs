@@ -3107,6 +3107,46 @@ class ConfidenceModelTest(unittest.TestCase):
         self.assertEqual(result["confidence_score"], 100)
         self.assertEqual(result["total_checks_failed"], 0)
 
+    def test_post_correction_unit_warnings_are_bounded_by_code(self):
+        from spec_eval.kernel.errors import (
+            LAYER_MAJOR,
+            LAYER_MINOR,
+            SERVICE_NORMALIZATION,
+            TypedError,
+            compute_confidence,
+            confidence_layer_of,
+            is_post_correction_warning,
+        )
+        errors = [
+            TypedError(
+                "UNIT_ROW_INVALID", f"observation.claim_reviews[{index}].unit_reviews",
+                entity_type="claim", entity_id=f"claim-{index}",
+                repairability=SERVICE_NORMALIZATION,
+            )
+            for index in range(36)
+        ] + [
+            TypedError(
+                "UNIT_CLAIM_OUTCOME_CONFLICT",
+                f"observation.claim_reviews[{index}].unit_reviews",
+                entity_type="claim", entity_id=f"claim-{index}",
+                repairability=SERVICE_NORMALIZATION,
+            )
+            for index in range(36)
+        ]
+
+        result = compute_confidence(errors)
+
+        self.assertTrue(all(is_post_correction_warning(error) for error in errors))
+        self.assertEqual(confidence_layer_of("UNIT_ROW_INVALID"), LAYER_MINOR)
+        self.assertEqual(
+            confidence_layer_of("UNIT_CLAIM_OUTCOME_CONFLICT"), LAYER_MAJOR,
+        )
+        self.assertEqual(result["confidence_score"], 75)
+        self.assertEqual(result["deduction_total"], 25)
+        self.assertEqual(result["total_checks_failed"], 2)
+        self.assertEqual(len(result["major_violations"]), 1)
+        self.assertEqual(len(result["minor_violations"]), 1)
+
 
 if __name__ == "__main__":
     unittest.main()
