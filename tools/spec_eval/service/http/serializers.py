@@ -17,6 +17,7 @@ from ..domain.models import (
     FreshnessPolicy,
     Job,
     JobStatistics,
+    SchedulerConfig,
 )
 from ..domain import states as S
 
@@ -224,4 +225,16 @@ def freshness_policy_to_dict(policy: FreshnessPolicy) -> dict[str, Any]:
         "warning_days": policy.warning_days,
         "version": policy.version,
         "updated_at": policy.updated_at,
+    }
+
+
+def scheduler_config_to_dict(config: SchedulerConfig) -> dict[str, Any]:
+    return {
+        "enabled": config.enabled,
+        "start_times": list(config.start_times),
+        "parallel_tasks": config.parallel_tasks,
+        "executor_priority": list(config.executor_priority),
+        "executor_quota": dict(config.executor_quota),
+        "version": config.version,
+        "updated_at": config.updated_at,
     }

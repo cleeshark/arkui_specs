@@ -25,9 +25,11 @@ from typing import Any
 from .domain import states as S
 from .settings import ServiceSettings
 from .store.repositories import JobRepository
-from .store.sqlite_store import SqliteStore, utc_now
+from .store.sqlite_store import SqliteStore, utc_now, _SCHEMA_VERSION
 
-_EXPECTED_SCHEMA_VERSION = "7"
+# Bind backup verification to the store's current schema version so the two can
+# never drift (this previously hard-coded "7" and lagged the store).
+_EXPECTED_SCHEMA_VERSION = _SCHEMA_VERSION
 
 
 def cleanup_temp(

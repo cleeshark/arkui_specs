@@ -38,6 +38,22 @@ button:disabled { background: #cbd5e1; color: #64748b; cursor: default; filter: 
 .agent-params label { min-width: 180px; }
 .param-source { display: block; font-size: 0.78rem; margin-top: 0.2rem; }
 
+/* auto-scheduler panel */
+.switch { flex-direction: row; align-items: center; gap: 0.4rem; font-size: 0.8rem;
+  color: inherit; cursor: pointer; }
+.switch input { margin: 0; }
+.scheduler-executors { flex-basis: 100%; border: 1px solid var(--line); border-radius: 6px;
+  padding: 0.6rem 0.75rem; }
+.scheduler-executors legend { font-size: 0.8rem; color: var(--muted); padding: 0 0.35rem; }
+#scheduler-executor-list { list-style: none; margin: 0.4rem 0 0; padding: 0;
+  display: flex; flex-direction: column; gap: 0.4rem; }
+#scheduler-executor-list li { display: flex; align-items: center; gap: 0.5rem; }
+#scheduler-executor-list label { flex-direction: row; align-items: center; gap: 0.3rem;
+  min-width: 120px; color: inherit; }
+#scheduler-executor-list input[type="number"] { width: 9rem; }
+#scheduler-executor-list button { padding: 0.2rem 0.45rem; }
+#scheduler-status { margin-top: 0.9rem; }
+
 .table-scroll { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
 th, td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--line); }

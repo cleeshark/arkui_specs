@@ -27,7 +27,7 @@ from typing import Any, Iterator
 from ..domain import states as S
 from ..settings import ServiceSettings
 
-_SCHEMA_VERSION = "8"
+_SCHEMA_VERSION = "9"
 
 def utc_now() -> str:
     """Current UTC timestamp as an ISO-8601 string (seconds precision)."""
@@ -121,6 +121,15 @@ class SqliteStore:
                     UPDATE schema_meta SET value = '8' WHERE key = 'schema_version';
                 """)
                 version = "8"
+            if version == "8":
+                # v9 additive-only: the auto-scheduler config table and the
+                # executor_calls(started_at) index are created idempotently by
+                # schema.sql above; this block only stamps the version forward
+                # so existing v8 databases pass the equality guard below.
+                self._conn.executescript("""
+                    UPDATE schema_meta SET value = '9' WHERE key = 'schema_version';
+                """)
+                version = "9"
             if version != _SCHEMA_VERSION:
                 raise RuntimeError(
                     f"database has incompatible schema version {version!r}; "

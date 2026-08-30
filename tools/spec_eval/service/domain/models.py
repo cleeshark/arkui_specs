@@ -119,6 +119,26 @@ class FreshnessPolicy:
 
 
 @dataclass(frozen=True)
+class SchedulerConfig:
+    """Singleton auto-scheduler policy (schema v9).
+
+    ``start_times`` are ``"HH:MM"`` local-time daily triggers. ``executor_priority``
+    is an ordered chain of registered executor ids; dispatch uses the first
+    executor whose daily token usage is still under its ``executor_quota`` entry,
+    failing over down the chain and stopping the run only when all are exhausted.
+    Holds policy only — never tokens, credentials or prompts.
+    """
+
+    enabled: bool
+    start_times: tuple[str, ...]
+    parallel_tasks: int
+    executor_priority: tuple[str, ...]
+    executor_quota: dict[str, int]
+    version: int
+    updated_at: str
+
+
+@dataclass(frozen=True)
 class RefreshTarget:
     """Frozen target metadata binding a manual refresh Job to one generation."""
 

@@ -83,6 +83,10 @@ def route_request(
     if segments[:2] == ["api", "freshness-policies"]:
         return _route_freshness_policies(method, segments[2:], body, app)
 
+    # --- /api/scheduler --------------------------------------------------
+    if segments[:2] == ["api", "scheduler"]:
+        return _route_scheduler(method, segments[2:], body, app)
+
     # --- /api/functions/{func_id}/refresh --------------------------------
     if (
         len(segments) == 4
@@ -340,6 +344,41 @@ def _route_freshness_policies(method: str, rest: list[str], body: bytes, app: An
     except Exception as exc:
         return _error(409, str(exc))
     return Response.json(200, serializers.freshness_policy_to_dict(policy))
+
+
+def _route_scheduler(method: str, rest: list[str], body: bytes, app: Any) -> Response:
+    # /api/scheduler/config
+    if rest == ["config"]:
+        if method == "GET":
+            return Response.json(200, serializers.scheduler_config_to_dict(app.scheduler_config()))
+        if method == "POST":
+            try:
+                payload = json.loads(body.decode("utf-8")) if body else {}
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                return _error(400, "invalid JSON body")
+            if not isinstance(payload, dict):
+                return _error(400, "body must be a JSON object")
+            allowed = {
+                "enabled", "start_times", "parallel_tasks",
+                "executor_priority", "executor_quota",
+            }
+            unknown = set(payload) - allowed
+            if unknown:
+                return _error(400, f"unsupported field(s): {', '.join(sorted(unknown))}")
+            try:
+                config = app.set_scheduler_config(**payload)
+            except (TypeError, ValueError) as exc:
+                return _error(400, f"invalid scheduler config: {exc}")
+            except Exception as exc:  # noqa: BLE001 - version/conflict etc.
+                return _error(409, str(exc))
+            return Response.json(200, serializers.scheduler_config_to_dict(config))
+        return _error(405, "method not allowed")
+    # /api/scheduler/status
+    if rest == ["status"]:
+        if method == "GET":
+            return Response.json(200, app.scheduler_status())
+        return _error(405, "method not allowed")
+    return _error(404, "not found")
 
 
 def _serve_artifact(job_id: str, kind: str, app: Any) -> Response:

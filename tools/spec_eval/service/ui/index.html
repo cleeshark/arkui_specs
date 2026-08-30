@@ -29,6 +29,29 @@
     <p id="create-error" class="error" hidden></p>
   </section>
 
+  <section class="card" id="scheduler-card">
+    <h2>Auto-scheduler
+      <label class="switch">
+        <input type="checkbox" id="scheduler-enabled" />
+        <span id="scheduler-enabled-label">disabled</span>
+      </label>
+    </h2>
+    <form id="scheduler-form">
+      <label>Start times <input id="scheduler-start-times" placeholder="02:00, 14:00" />
+        <small class="muted">Comma-separated HH:MM (server local time). A run drains tasks until quota is spent.</small>
+      </label>
+      <label>Parallel tasks <input id="scheduler-parallel" type="number" min="1" value="1" /></label>
+      <fieldset class="scheduler-executors">
+        <legend>Executor priority &amp; daily token quota</legend>
+        <small class="muted">Top runs first; when its quota is spent the run fails over to the next enabled executor.</small>
+        <ul id="scheduler-executor-list"></ul>
+      </fieldset>
+      <button type="submit">Save schedule</button>
+    </form>
+    <p id="scheduler-error" class="error" hidden></p>
+    <div id="scheduler-status" class="metric-grid compact"></div>
+  </section>
+
   <section class="card">
     <h2>Execution statistics <span id="metrics-updated" class="muted"></span></h2>
     <div id="metrics" class="metric-grid">

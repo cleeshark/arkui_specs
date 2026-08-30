@@ -36,6 +36,19 @@ const agentSelect = document.getElementById("agent-select");
 const agentParams = document.getElementById("agent-params");
 const agentReset = document.getElementById("agent-reset");
 
+const SCHEDULER_DEFAULT_QUOTA = 10000000;
+let schedulerExecOrder = [];
+let schedulerExecEnabled = new Set();
+let schedulerExecQuota = {};
+const schedulerEnabled = document.getElementById("scheduler-enabled");
+const schedulerEnabledLabel = document.getElementById("scheduler-enabled-label");
+const schedulerForm = document.getElementById("scheduler-form");
+const schedulerStartTimes = document.getElementById("scheduler-start-times");
+const schedulerParallel = document.getElementById("scheduler-parallel");
+const schedulerExecList = document.getElementById("scheduler-executor-list");
+const schedulerError = document.getElementById("scheduler-error");
+const schedulerStatusEl = document.getElementById("scheduler-status");
+
 function esc(s) {
   return String(s == null ? "" : s).replace(/[&<>"]/g, (c) =>
     ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
@@ -333,6 +346,136 @@ async function loadAgents() {
   renderAgentParams(agentProfiles.find((profile) => profile.default) || agentProfiles[0]);
 }
 
+// --- auto-scheduler panel ---------------------------------------------------
+function schedulerMetric(label, value) {
+  return `<div class="metric"><span>${esc(label)}</span><strong>${esc(value)}</strong></div>`;
+}
+
+function renderSchedulerExecutors() {
+  schedulerExecList.innerHTML = schedulerExecOrder.map((id, idx) => {
+    const profile = agentProfiles.find((p) => p.id === id);
+    const name = profile ? (profile.name || id) : id;
+    const enabled = schedulerExecEnabled.has(id);
+    const quota = schedulerExecQuota[id] == null ? SCHEDULER_DEFAULT_QUOTA : schedulerExecQuota[id];
+    return `<li data-id="${esc(id)}">
+      <button type="button" data-sact="up" ${idx === 0 ? "disabled" : ""} aria-label="move up">↑</button>
+      <button type="button" data-sact="down" ${idx === schedulerExecOrder.length - 1 ? "disabled" : ""} aria-label="move down">↓</button>
+      <label><input type="checkbox" data-sexec="${esc(id)}" ${enabled ? "checked" : ""} /> ${esc(name)}</label>
+      <input type="number" min="0" step="1000000" data-squota="${esc(id)}" value="${esc(quota)}" aria-label="${esc(name)} daily token quota" />
+    </li>`;
+  }).join("");
+}
+
+function syncSchedulerExecFromDom() {
+  schedulerExecList.querySelectorAll("[data-sexec]").forEach((cb) => {
+    if (cb.checked) schedulerExecEnabled.add(cb.dataset.sexec);
+    else schedulerExecEnabled.delete(cb.dataset.sexec);
+  });
+  schedulerExecList.querySelectorAll("[data-squota]").forEach((inp) => {
+    schedulerExecQuota[inp.dataset.squota] = Number(inp.value) || 0;
+  });
+}
+
+function applySchedulerConfig(cfg) {
+  schedulerEnabled.checked = !!cfg.enabled;
+  schedulerEnabledLabel.textContent = cfg.enabled ? "enabled" : "disabled";
+  schedulerStartTimes.value = (cfg.start_times || []).join(", ");
+  schedulerParallel.value = cfg.parallel_tasks || 1;
+  const allIds = agentProfiles.map((p) => p.id);
+  const priority = (cfg.executor_priority || []).filter((id) => allIds.includes(id));
+  schedulerExecOrder = [...priority, ...allIds.filter((id) => !priority.includes(id))];
+  schedulerExecEnabled = new Set(priority.length ? priority : allIds);
+  schedulerExecQuota = {};
+  allIds.forEach((id) => {
+    const q = cfg.executor_quota ? cfg.executor_quota[id] : null;
+    schedulerExecQuota[id] = q == null ? SCHEDULER_DEFAULT_QUOTA : q;
+  });
+  renderSchedulerExecutors();
+}
+
+async function loadSchedulerConfig() {
+  const result = await api("GET", "/api/scheduler/config");
+  if (result.ok && result.json) applySchedulerConfig(result.json);
+}
+
+function renderSchedulerStatus(s) {
+  const state = s.run_active ? "running" : (s.enabled ? "idle" : "off");
+  const rows = [
+    schedulerMetric("State", state),
+    schedulerMetric("Active executor", s.active_executor || "—"),
+    schedulerMetric("In-flight", `${s.inflight_count} / ${s.parallel_tasks}`),
+    schedulerMetric("Next start", s.next_start_time || "—"),
+    schedulerMetric("Last dispatched", s.last_dispatched_func || "—"),
+  ];
+  (s.executors || []).forEach((x) => {
+    rows.push(schedulerMetric(
+      `${x.agent_id} tokens`,
+      `${formatNumber(x.used_tokens)} / ${formatNumber(x.quota_tokens)}`,
+    ));
+  });
+  schedulerStatusEl.innerHTML = rows.join("");
+}
+
+async function refreshSchedulerStatus() {
+  const result = await api("GET", "/api/scheduler/status");
+  if (result.ok && result.json) renderSchedulerStatus(result.json);
+}
+
+async function saveSchedulerConfig(partial) {
+  schedulerError.hidden = true;
+  const res = await api("POST", "/api/scheduler/config", partial);
+  if (res.ok && res.json) {
+    applySchedulerConfig(res.json);
+  } else {
+    schedulerError.textContent = (res.json && res.json.error) || "save failed";
+    schedulerError.hidden = false;
+  }
+  return res.ok;
+}
+
+schedulerExecList.addEventListener("click", (e) => {
+  const btn = e.target.closest("button[data-sact]");
+  if (!btn) return;
+  const li = btn.closest("li[data-id]");
+  const id = li.dataset.id;
+  const idx = schedulerExecOrder.indexOf(id);
+  syncSchedulerExecFromDom();
+  if (btn.dataset.sact === "up" && idx > 0) {
+    [schedulerExecOrder[idx - 1], schedulerExecOrder[idx]] =
+      [schedulerExecOrder[idx], schedulerExecOrder[idx - 1]];
+  } else if (btn.dataset.sact === "down" && idx < schedulerExecOrder.length - 1) {
+    [schedulerExecOrder[idx + 1], schedulerExecOrder[idx]] =
+      [schedulerExecOrder[idx], schedulerExecOrder[idx + 1]];
+  }
+  renderSchedulerExecutors();
+});
+
+schedulerEnabled.addEventListener("change", async () => {
+  schedulerEnabledLabel.textContent = schedulerEnabled.checked ? "enabled" : "disabled";
+  await saveSchedulerConfig({ enabled: schedulerEnabled.checked });
+  refreshSchedulerStatus();
+});
+
+schedulerForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  syncSchedulerExecFromDom();
+  const startTimes = schedulerStartTimes.value.split(",")
+    .map((s) => s.trim()).filter(Boolean);
+  const executorPriority = schedulerExecOrder.filter((id) => schedulerExecEnabled.has(id));
+  const executorQuota = {};
+  Object.keys(schedulerExecQuota).forEach((id) => {
+    executorQuota[id] = schedulerExecQuota[id];
+  });
+  const ok = await saveSchedulerConfig({
+    enabled: schedulerEnabled.checked,
+    start_times: startTimes,
+    parallel_tasks: Number(schedulerParallel.value) || 1,
+    executor_priority: executorPriority,
+    executor_quota: executorQuota,
+  });
+  if (ok) refreshSchedulerStatus();
+});
+
 function readAgentOverrides() {
   const params = {};
   if (!selectedAgent) return params;
@@ -419,6 +562,7 @@ async function refresh() {
     }
     if (selectedJob) loadDetail(selectedJob);
     refreshMetrics();
+    refreshSchedulerStatus();
   } else {
     status.textContent = "error";
   }
@@ -591,6 +735,6 @@ jobsPageNext.addEventListener("click", () => {
   renderJobs();
 });
 refresh();
-loadAgents();
+loadAgents().then(loadSchedulerConfig);
 setInterval(refresh, POLL_MS);
 setInterval(tickDurations, 1000);

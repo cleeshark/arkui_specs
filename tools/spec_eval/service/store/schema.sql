@@ -1,4 +1,4 @@
--- SQLite schema for the semantic evaluation service Job Store (schema_version 8).
+-- SQLite schema for the semantic evaluation service Job Store (schema_version 9).
 -- Loaded idempotently by sqlite_store._run_migrations. PRAGMAs are applied in
 -- code (they are connection-scoped / must run outside a transaction). The
 -- load-bearing constraints are:
@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS schema_meta (
     key   TEXT PRIMARY KEY,
     value TEXT NOT NULL
 );
-INSERT OR IGNORE INTO schema_meta (key, value) VALUES ('schema_version', '8');
+INSERT OR IGNORE INTO schema_meta (key, value) VALUES ('schema_version', '9');
 
 -- schema v6 (protocol 0.2.0 S3, design R6): six-state lifecycle + stage.
 CREATE TABLE IF NOT EXISTS jobs (
@@ -244,6 +244,9 @@ CREATE TABLE IF NOT EXISTS executor_calls (
 CREATE INDEX IF NOT EXISTS idx_executor_calls_job ON executor_calls (job_id);
 CREATE INDEX IF NOT EXISTS idx_executor_calls_work_item
   ON executor_calls (job_id, run_id, work_item_id);
+-- schema v9: window-scan token accounting for the auto-scheduler daily quota.
+CREATE INDEX IF NOT EXISTS idx_executor_calls_started
+  ON executor_calls (started_at);
 
 -- Finding Ledger: per-FuncID lifecycle tracking for convergence (0.2.1 S3).
 CREATE TABLE IF NOT EXISTS finding_ledger (
@@ -264,3 +267,18 @@ CREATE TABLE IF NOT EXISTS finding_ledger (
 );
 CREATE INDEX IF NOT EXISTS idx_ledger_func ON finding_ledger (func_id);
 CREATE INDEX IF NOT EXISTS idx_ledger_status ON finding_ledger (func_id, status);
+
+-- schema v9: singleton auto-scheduler configuration. One row (id = 1). Holds
+-- only non-sensitive scheduling policy (start times, concurrency cap, ordered
+-- executor priority chain and per-executor daily token quotas). No tokens,
+-- credentials or prompts are stored here.
+CREATE TABLE IF NOT EXISTS scheduler_config (
+    id                     INTEGER PRIMARY KEY CHECK (id = 1),
+    enabled                INTEGER NOT NULL DEFAULT 0 CHECK (enabled IN (0, 1)),
+    start_times_json       TEXT NOT NULL DEFAULT '[]',
+    parallel_tasks         INTEGER NOT NULL DEFAULT 1 CHECK (parallel_tasks >= 1),
+    executor_priority_json TEXT NOT NULL DEFAULT '[]',
+    executor_quota_json    TEXT NOT NULL DEFAULT '{}',
+    version                INTEGER NOT NULL DEFAULT 1 CHECK (version >= 1),
+    updated_at             TEXT NOT NULL
+);

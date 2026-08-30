@@ -16,6 +16,7 @@ from pathlib import Path
 from spec_eval.service.domain import states as S
 from spec_eval.service.domain.models import Artifact, CreateJobCommand
 from spec_eval.service.governance import backup_database, cleanup_temp, disk_usage
+from spec_eval.service.store.sqlite_store import _SCHEMA_VERSION
 from spec_eval.service.metrics import collect_metrics, write_metrics_csv, write_metrics_json
 from spec_eval.service.settings import ServiceSettings
 from spec_eval.service.store.repositories import (
@@ -171,7 +172,7 @@ class BackupDiskTest(_GovTestBase):
         conn = sqlite3.connect(str(dest))
         row = conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()
         conn.close()
-        self.assertEqual(row[0], "7")
+        self.assertEqual(row[0], _SCHEMA_VERSION)
         # the live DB still works after backup
         self.assertEqual(len(self.jobs.list_jobs()), 1)
 
