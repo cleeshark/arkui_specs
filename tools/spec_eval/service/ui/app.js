@@ -97,7 +97,11 @@ function rowActions(job) {
     ? `<button data-act="retry" data-id="${esc(job.job_id)}">retry</button>` : "";
   const retryLatestSpecs = (
     (job.status === "failed" || job.status === "cancelled") &&
-    (job.stage === "aggregation" || job.stage === "report")
+    (
+      job.stage === "observation" ||
+      job.stage === "aggregation" ||
+      job.stage === "report"
+    )
   )
     ? `<button data-act="retry-latest-specs" data-id="${esc(job.job_id)}"` +
       ` title="Refresh the specs workspace to current HEAD before retrying">` +

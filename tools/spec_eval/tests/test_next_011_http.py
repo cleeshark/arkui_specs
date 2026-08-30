@@ -245,6 +245,49 @@ class CancelRetryTest(_HttpTestBase):
         self.assertEqual(body["status"], "queued")
         self.assertEqual(body["specs_revision"], "a" * 40)
 
+    def test_retry_latest_specs_accepts_observation_failure(self) -> None:
+        _, job = self._req("POST", "/api/jobs", {"func_id": "04-01-01"})
+        job_id = job["job_id"]
+        jobs = JobRepository(self.app.store)
+        jobs.transition_status(job_id, S.RUNNING, event_type="enter_running")
+        jobs.transition_status(
+            job_id,
+            S.RUNNING,
+            stage=S.STAGE_OBSERVATION,
+            event_type="enter_observation",
+        )
+        jobs.transition_status(job_id, S.FAILED, event_type="observation_failed")
+
+        from spec_eval.service.workspace.manager import RevisionWorkspaceManager
+        from spec_eval.service.workspace.models import EvaluationWorkspace
+
+        def mock_refresh(self, current_job):
+            return EvaluationWorkspace(
+                workspace_root=self.settings.data_root / "mock_workspace",
+                repo_root=self.settings.data_root / "mock_repo",
+                specs_root=self.settings.data_root / "mock_specs",
+                schemas_root=self.settings.data_root / "mock_schemas",
+                revisions={
+                    "ace_engine": "a" * 40,
+                    "sdk-js": "b" * 40,
+                    "sdk_c": "c" * 40,
+                    "specs": "e" * 40,
+                },
+            )
+
+        original_refresh = RevisionWorkspaceManager.refresh_specs_revision
+        RevisionWorkspaceManager.refresh_specs_revision = mock_refresh
+        try:
+            status, specs_revision = self.app.retry_latest_specs(job_id)
+        finally:
+            RevisionWorkspaceManager.refresh_specs_revision = original_refresh
+
+        self.assertEqual(status, S.QUEUED)
+        self.assertEqual(specs_revision, "e" * 40)
+        retried = jobs.get_job(job_id)
+        self.assertEqual(retried.status, S.QUEUED)
+        self.assertEqual(retried.stage, S.STAGE_OBSERVATION)
+
     def test_retry_latest_specs_clears_correction_pending_state(self) -> None:
         """Verify that retry_latest_specs clears CORRECTION_PENDING to allow retry."""
         _, job = self._req("POST", "/api/jobs", {"func_id": "04-01-01"})
@@ -372,6 +415,24 @@ class StaticUITest(_HttpTestBase):
         self.assertEqual(status, 200)
         self.assertIn("Semantic Evaluation Service", body)
 
+    def test_ui_assets_are_cache_busted_and_not_stored(self) -> None:
+        index = route_request("GET", "/", b"", {}, self.app)
+        self.assertIn(b'/static/style.css?v=', index.body)
+        self.assertIn(b'/static/app.js?v=', index.body)
+
+        css = route_request("GET", "/static/style.css?v=current", b"", {}, self.app)
+        self.assertEqual(css.status, 200)
+        self.assertEqual(css.headers["Cache-Control"], "no-store, max-age=0")
+        self.assertEqual(css.headers["Pragma"], "no-cache")
+
+    def test_manual_refresh_and_scheduler_controls_use_polished_ui(self) -> None:
+        index = route_request("GET", "/", b"", {}, self.app)
+        self.assertIn(b'class="slider"', index.body)
+
+        css = route_request("GET", "/static/style.css", b"", {}, self.app)
+        self.assertIn(b"grid-template-columns: repeat(auto-fill", css.body)
+        self.assertIn(b".switch input:checked + .slider", css.body)
+
     def test_static_asset_served(self) -> None:
         status, _ = self._req("GET", "/static/style.css")
         self.assertEqual(status, 200)
@@ -393,6 +454,7 @@ class StaticUITest(_HttpTestBase):
         self.assertIn("runJobAction", js)
         self.assertIn("if (!res.ok)", js)
         self.assertIn("retry-latest-specs", js)
+        self.assertIn('job.stage === "observation"', js)
         self.assertIn("latest specs", js)
 
     def test_ui_contains_independent_function_and_job_pagination(self) -> None:
