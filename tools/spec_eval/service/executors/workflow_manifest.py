@@ -31,6 +31,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from .workflow_shard_schema import (
+    CLAIM_SCHEMA_FILE,
+    CRITERION_ITEM_SCHEMA_FILE,
+    VALIDATE_SCRIPT_FILE,
+    write_shard_schemas,
+)
+
 
 # ---------------------------------------------------------------------------
 # Public API
@@ -81,6 +88,14 @@ def build_manifest(spec: ManifestSpec) -> dict[str, Any]:
         "claim_units": claim_units,
         "criterion_units": criterion_units,
         "aux_file": "aux.json",
+        # Authoritative per-shard schemas + validation script (written by
+        # write_manifest). The session MUST validate every shard against these
+        # rather than a self-authored field-name check.
+        "shard_schemas": {
+            "claim_schema": CLAIM_SCHEMA_FILE,
+            "criterion_item_schema": CRITERION_ITEM_SCHEMA_FILE,
+            "validate_script": VALIDATE_SCRIPT_FILE,
+        },
         "output_rules": spec.output_rules,
     }
 
@@ -104,6 +119,10 @@ def write_manifest(
     (shard_dir / "claims").mkdir(exist_ok=True)
     (shard_dir / "criteria").mkdir(exist_ok=True)
 
+    # Write the authoritative per-shard schemas + validation script so the
+    # session validates each shard against the real nested schema on disk.
+    write_shard_schemas(shard_dir)
+
     manifest = build_manifest(spec)
     manifest_path = shard_dir / "_manifest.json"
     manifest_path.write_text(
@@ -125,7 +144,14 @@ _DEFAULT_OUTPUT_RULES: dict[str, Any] = {
         "evidence key/path, check_ids, contract_family."
     ),
     "claim_shard": {
-        "description": "One claimJudgment object (not an array).",
+        "description": (
+            "One claimJudgment object (not an array). Its exact schema — "
+            "including nested field TYPES — is in shard_schemas.claim_schema. "
+            "Note verification_gap.checked_scope and verification_gap."
+            "missing_evidence are ARRAYS of strings (not strings); "
+            "verification_gap is required (non-null) only when local_outcome "
+            "is NOT_VERIFIABLE, null otherwise."
+        ),
         "required_fields": [
             "claim_id", "local_outcome", "evidence_refs",
             "reason", "verification_gap", "defect_keys", "unit_reviews",
@@ -133,8 +159,9 @@ _DEFAULT_OUTPUT_RULES: dict[str, Any] = {
     },
     "criterion_shard": {
         "description": (
-            "A JSON array of observationJudgment objects for this criterion.  "
-            "Empty array [] when the criterion is NOT_APPLICABLE."
+            "A JSON array of observationJudgment objects for this criterion. "
+            "Empty array [] when the criterion is NOT_APPLICABLE. Each item's "
+            "exact schema is in shard_schemas.criterion_item_schema."
         ),
         "required_fields": [
             "criterion_ids", "check_ids", "claim_ids", "local_outcome",
@@ -156,8 +183,12 @@ _DEFAULT_OUTPUT_RULES: dict[str, Any] = {
     ),
     "write_protocol": (
         "Write each shard as <file>.tmp then rename to <file> atomically. "
-        "Immediately after renaming, validate with a one-line Python check that "
-        "prints only OK or the field name that is missing."
+        "Immediately after renaming, validate it with the AUTHORITATIVE script: "
+        "  python3 shard_schemas.validate_script claim claims/<file>       (claim shard) "
+        "  python3 shard_schemas.validate_script criterion criteria/<file> (criterion shard) "
+        "The script prints OK or the exact schema errors; a shard is only done "
+        "when it prints OK. Do NOT rely on your own field-name check — it misses "
+        "type errors (e.g. array vs string)."
     ),
     "no_dump_large_json": True,
 }

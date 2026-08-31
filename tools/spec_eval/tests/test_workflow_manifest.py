@@ -125,7 +125,8 @@ class TestBuildManifest(unittest.TestCase):
         self.assertEqual(
             set(self.manifest.keys()),
             {"feat_id", "work_item_id", "schema_version",
-             "claim_units", "criterion_units", "aux_file", "output_rules"},
+             "claim_units", "criterion_units", "aux_file",
+             "shard_schemas", "output_rules"},
         )
 
     def test_feat_id(self):
