@@ -32,6 +32,7 @@ from pathlib import Path
 from typing import Any
 
 from .workflow_shard_schema import (
+    AUX_SCHEMA_FILE,
     CLAIM_SCHEMA_FILE,
     CRITERION_ITEM_SCHEMA_FILE,
     VALIDATE_SCRIPT_FILE,
@@ -94,6 +95,7 @@ def build_manifest(spec: ManifestSpec) -> dict[str, Any]:
         "shard_schemas": {
             "claim_schema": CLAIM_SCHEMA_FILE,
             "criterion_item_schema": CRITERION_ITEM_SCHEMA_FILE,
+            "aux_schema": AUX_SCHEMA_FILE,
             "validate_script": VALIDATE_SCRIPT_FILE,
         },
         "output_rules": spec.output_rules,
@@ -171,8 +173,15 @@ _DEFAULT_OUTPUT_RULES: dict[str, Any] = {
     },
     "aux_shard": {
         "description": (
-            "An object with keys evidence_declarations (array), "
-            "open_questions (array of strings), notes (array of strings)."
+            "An object with three required keys: "
+            "evidence_declarations (array of evidenceDeclaration objects — "
+            "each must have key, type, path, lines, description; "
+            "type must be one of the allowed evidence type enum values, "
+            "and path must be a canonical repository-relative path inside "
+            "ace_engine, sdk-js, or sdk_c — NOT a specs/ path), "
+            "open_questions (array of strings), notes (array of strings). "
+            "The exact schema is in shard_schemas.aux_schema. "
+            "Validate with: python3 <validate_script> aux aux.json"
         ),
     },
     "self_recovery": (

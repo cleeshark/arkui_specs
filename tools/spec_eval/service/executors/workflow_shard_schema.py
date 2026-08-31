@@ -27,6 +27,13 @@ from spec_eval.kernel.schema_gen import build_envelope_schema
 # Shard kinds -> the $def that is the shard's root object.
 CLAIM_SHARD_DEF = "claimJudgment"
 OBSERVATION_SHARD_DEF = "observationJudgment"
+EVIDENCE_DECLARATION_DEF = "evidenceDeclaration"
+
+# Filenames written into the shard directory by the manifest generator.
+CLAIM_SCHEMA_FILE = "claim.schema.json"
+CRITERION_ITEM_SCHEMA_FILE = "criterion-item.schema.json"
+AUX_SCHEMA_FILE = "aux.schema.json"
+VALIDATE_SCRIPT_FILE = "validate_shard.py"
 
 
 def _observation_defs() -> dict[str, Any]:
@@ -63,6 +70,38 @@ def criterion_item_schema() -> dict[str, Any]:
     return _root_schema_for_def(OBSERVATION_SHARD_DEF)
 
 
+def aux_shard_schema() -> dict[str, Any]:
+    """Standalone schema for the aux.json shard.
+
+    Validates the three top-level arrays: evidence_declarations (array of
+    evidenceDeclaration objects), open_questions (array of strings), and notes
+    (array of strings).  All three are required; evidence_declarations items
+    are validated against the same evidenceDeclaration $def the envelope uses.
+    """
+    defs = _observation_defs()
+    return {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "additionalProperties": False,
+        "required": ["evidence_declarations", "open_questions", "notes"],
+        "properties": {
+            "evidence_declarations": {
+                "type": "array",
+                "items": {"$ref": "#/$defs/evidenceDeclaration"},
+            },
+            "open_questions": {
+                "type": "array",
+                "items": {"type": "string"},
+            },
+            "notes": {
+                "type": "array",
+                "items": {"type": "string"},
+            },
+        },
+        "$defs": defs,
+    }
+
+
 # Filenames written into the shard directory by the manifest generator.
 CLAIM_SCHEMA_FILE = "claim.schema.json"
 CRITERION_ITEM_SCHEMA_FILE = "criterion-item.schema.json"
@@ -73,13 +112,15 @@ def _validate_script_source() -> str:
     """The authoritative shard validation script (runs on disk, no LLM).
 
     Usage inside the session:
-        python3 validate_shard.py claim   claims/claim-<id>.json
+        python3 validate_shard.py claim     claims/claim-<id>.json
         python3 validate_shard.py criterion criteria/obs-<crit>.json
+        python3 validate_shard.py aux       aux.json
 
     Prints "OK" on success; on failure prints each schema error (one per line)
     and exits non-zero.  A claim file is validated as one object; a criterion
     file is validated as an array whose every element must match the item
-    schema (empty array is allowed = NOT_APPLICABLE).
+    schema (empty array is allowed = NOT_APPLICABLE); an aux file is validated
+    as a top-level object with three required arrays.
     """
     # Kept dependency-free (stdlib + the repo's validator on PYTHONPATH). The
     # session runs it via Bash with the same interpreter that ran the manifest.
@@ -102,8 +143,8 @@ def _validate(instance, schema_file):
 
 
 def main() -> int:
-    if len(sys.argv) != 3 or sys.argv[1] not in ("claim", "criterion"):
-        print("usage: validate_shard.py {claim|criterion} <file>")
+    if len(sys.argv) != 3 or sys.argv[1] not in ("claim", "criterion", "aux"):
+        print("usage: validate_shard.py {claim|criterion|aux} <file>")
         return 2
     kind, path = sys.argv[1], sys.argv[2]
     try:
@@ -118,13 +159,18 @@ def main() -> int:
             print("claim shard must be a JSON object")
             return 1
         errors = _validate(data, "claim.schema.json")
-    else:
+    elif kind == "criterion":
         if not isinstance(data, list):
             print("criterion shard must be a JSON array")
             return 1
         for i, item in enumerate(data):
             for e in _validate(item, "criterion-item.schema.json"):
                 errors.append(f"[{i}]{e}")
+    else:  # aux
+        if not isinstance(data, dict):
+            print("aux shard must be a JSON object")
+            return 1
+        errors = _validate(data, "aux.schema.json")
 
     if errors:
         for e in errors:
@@ -140,7 +186,7 @@ if __name__ == "__main__":
 
 
 def write_shard_schemas(shard_dir) -> dict[str, str]:
-    """Write claim/criterion schemas + the validation script into ``shard_dir``.
+    """Write claim/criterion/aux schemas + the validation script into ``shard_dir``.
 
     Returns a mapping of logical name -> relative filename for the manifest.
     """
@@ -156,11 +202,16 @@ def write_shard_schemas(shard_dir) -> dict[str, str]:
         json.dumps(criterion_item_schema(), ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
+    (shard_dir / AUX_SCHEMA_FILE).write_text(
+        json.dumps(aux_shard_schema(), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
     (shard_dir / VALIDATE_SCRIPT_FILE).write_text(
         _validate_script_source(), encoding="utf-8",
     )
     return {
         "claim_schema": CLAIM_SCHEMA_FILE,
         "criterion_item_schema": CRITERION_ITEM_SCHEMA_FILE,
+        "aux_schema": AUX_SCHEMA_FILE,
         "validate_script": VALIDATE_SCRIPT_FILE,
     }
