@@ -34,11 +34,13 @@ from spec_eval.protocol_validator import (
 )
 
 from . import contract as C
-from ._prompt import build_executor_prompt
+from ._prompt import build_executor_prompt, workflow_shard_dir
 from .process import ProcessResult, run_subprocess
 from .redaction import redact_jsonl
 from .telemetry import ExecutionTelemetryAccumulator
 from .usage import TokenUsageAccumulator
+from .workflow_manifest import make_spec_from_work_item, write_manifest
+from .workflow_synthesis import SynthesisError, synthesize
 
 DEFAULT_TIMEOUT = 3600.0
 
@@ -107,20 +109,48 @@ class ClaudeCliExecutor:
         emit: C.EventSink,
         cancel: threading.Event | None = None,
     ) -> C.ExecutionResult:
-        schema_error = self._work_schema_error(work)
-        if schema_error is not None:
-            return C.ExecutionResult(status=C.STATUS_FAILED, error=schema_error)
+        # The payload_root transport-schema check does not apply to the
+        # workflow-shards path (it uses the small completion-signal schema).
+        if not _use_workflow_shards(work):
+            schema_error = self._work_schema_error(work)
+            if schema_error is not None:
+                return C.ExecutionResult(
+                    status=C.STATUS_FAILED, error=schema_error
+                )
         if not self.is_available():
             return C.ExecutionResult(
                 status=C.STATUS_AWAITING,
                 error="claude CLI not available",
             )
 
-        schema_content, schema_metadata = self._transport_schema(work)
-        argv = self._build_argv(work, schema_content)
-        prompt = build_executor_prompt(work, output_transport="payload_root")
+        use_workflow = _use_workflow_shards(work)
+        if use_workflow:
+            # Claude-only observation path: disk-driven workflow shards.
+            # correction / aggregation still use the payload_root path below.
+            schema_content, schema_metadata = _workflow_signal_schema()
+            argv = self._build_argv(work, schema_content, allow_write=True)
+            prompt = build_executor_prompt(
+                work, output_transport="workflow_shards"
+            )
+        else:
+            schema_content, schema_metadata = self._transport_schema(work)
+            argv = self._build_argv(work, schema_content)
+            prompt = build_executor_prompt(work, output_transport="payload_root")
+
         result_parent = Path(work.executor_result_path).parent
         result_parent.mkdir(parents=True, exist_ok=True)
+
+        if use_workflow:
+            # Pre-generate the manifest + empty shard directories BEFORE the
+            # session starts, so the model only consumes them (design §4.4).
+            try:
+                self._prepare_workflow_manifest(work)
+            except Exception as exc:  # noqa: BLE001 - surface as executor failure
+                return C.ExecutionResult(
+                    status=C.STATUS_FAILED,
+                    error=f"cannot prepare workflow manifest: {exc}",
+                )
+
         log_tag = _safe_work_item_tag(work.work_item_id)
         mode = work.prompt_extras.get("mode", "observe")
         if mode != "observe":
@@ -203,7 +233,7 @@ class ClaudeCliExecutor:
 
         return self._capture_and_validate(
             work, proc_result, event_count, started, usage, telemetry,
-            stdout_log, schema_metadata,
+            stdout_log, schema_metadata, use_workflow=use_workflow,
         )
 
     # --- internals --------------------------------------------------------
@@ -217,6 +247,7 @@ class ClaudeCliExecutor:
         telemetry: ExecutionTelemetryAccumulator,
         stdout_log: str,
         schema_metadata: dict[str, Any],
+        use_workflow: bool = False,
     ) -> C.ExecutionResult:
         # stdout_log is a stream-json NDJSON file; find the final result event.
         result_event = _find_result_event(stdout_log)
@@ -277,6 +308,16 @@ class ClaudeCliExecutor:
                 cost_usd=cost_usd,
                 num_turns=num_turns,
                 model_usage=model_usage,
+            )
+
+        if use_workflow:
+            # structured is only a tiny completion signal; the real product is
+            # the shard files on disk. Synthesize the canonical envelope from
+            # them (design §6.3). Failure is attributed per-unit for retry.
+            return self._synthesize_workflow_result(
+                work, proc_result, event_count, started, usage, telemetry,
+                summary, structured,
+                cost_usd=cost_usd, num_turns=num_turns, model_usage=model_usage,
             )
 
         structured = _wrap_payload_root(work, structured)
@@ -492,11 +533,13 @@ class ClaudeCliExecutor:
         return env
 
     def _build_argv(
-        self, work: C.WorkItemInput, schema_content: str
+        self, work: C.WorkItemInput, schema_content: str,
+        *, allow_write: bool = False,
     ) -> list[str]:
         argv = [self._command, "-p"]
         if self._model:
             argv += ["--model", str(self._model)]
+        allowed_tools = "Bash Read Grep Write" if allow_write else "Bash Read Grep"
         argv += [
             "--output-format", "stream-json",
             "--verbose",
@@ -504,7 +547,7 @@ class ClaudeCliExecutor:
             "--add-dir", str(work.run_dir),
             "--no-session-persistence",
             "--permission-mode", self._permission_mode,
-            "--allowedTools", "Bash Read Grep",
+            "--allowedTools", allowed_tools,
         ]
         return argv
 
@@ -533,6 +576,110 @@ class ClaudeCliExecutor:
         if isinstance(schema_path, str) and schema_path:
             return Path(schema_path)
         return self._output_schema_path
+
+    # --- workflow-shards observation path (Claude-only) -------------------
+    def _prepare_workflow_manifest(self, work: C.WorkItemInput) -> Path:
+        """Write _manifest.json + empty shard dirs before the session starts."""
+        feat_id = str(work.work_item.get("feat_id", work.work_item_id))
+        shard_dir = Path(workflow_shard_dir(work.run_dir, feat_id))
+        machine_contract = work.prompt_extras.get("machine_contract", {})
+        valid_criterion_ids = list(
+            machine_contract.get("valid_criterion_ids", ())
+        )
+        spec = make_spec_from_work_item(work.work_item, valid_criterion_ids)
+        return write_manifest(shard_dir, spec)
+
+    def _synthesize_workflow_result(
+        self,
+        work: C.WorkItemInput,
+        proc_result: ProcessResult,
+        event_count: int,
+        started: float,
+        usage: TokenUsageAccumulator,
+        telemetry: ExecutionTelemetryAccumulator,
+        summary: dict[str, Any],
+        signal: dict[str, Any],
+        *,
+        cost_usd: float | None,
+        num_turns: int | None,
+        model_usage: dict[str, Any] | None,
+    ) -> C.ExecutionResult:
+        """Assemble the canonical envelope from on-disk shards, then validate."""
+        feat_id = str(work.work_item.get("feat_id", work.work_item_id))
+        shard_dir = Path(workflow_shard_dir(work.run_dir, feat_id))
+        manifest_path = shard_dir / "_manifest.json"
+
+        # Model may self-report failure via the completion signal.
+        if signal.get("status") == "failed":
+            summary["result_status"] = "workflow_model_reported_failure"
+            _write_execution_summary(work, summary)
+            error = signal.get("error")
+            if not isinstance(error, str) or not error.strip():
+                error = "workflow session reported failure without an error message"
+            return _execution_result(
+                usage, telemetry,
+                status=C.STATUS_FAILED,
+                exit_code=proc_result.exit_code,
+                error=error,
+                elapsed_seconds=time.monotonic() - started,
+                event_count=event_count,
+                cost_usd=cost_usd, num_turns=num_turns, model_usage=model_usage,
+            )
+
+        try:
+            result = synthesize(manifest_path, work.work_item_id)
+        except SynthesisError as exc:
+            summary["result_status"] = "workflow_synthesis_failed"
+            summary["workflow_shard_errors"] = [
+                {
+                    "unit_type": e.unit_type,
+                    "unit_id": e.unit_id,
+                    "file": e.file,
+                    "reason": e.reason,
+                }
+                for e in exc.shard_errors
+            ]
+            _write_execution_summary(work, summary)
+            return _execution_result(
+                usage, telemetry,
+                status=C.STATUS_FAILED,
+                exit_code=proc_result.exit_code,
+                error=str(exc),
+                elapsed_seconds=time.monotonic() - started,
+                event_count=event_count,
+                cost_usd=cost_usd, num_turns=num_turns, model_usage=model_usage,
+            )
+
+        summary["result_status"] = "workflow_synthesized"
+        summary["transport_normalizations"] = ["synthesized_from_shards"]
+        summary["workflow_counts"] = {
+            "claims": result.claim_count,
+            "observations": result.observation_count,
+            "evidence": result.evidence_count,
+        }
+        _write_execution_summary(work, summary)
+
+        try:
+            Path(work.executor_result_path).write_text(
+                json.dumps(result.envelope, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+        except OSError as exc:
+            return _execution_result(
+                usage, telemetry,
+                status=C.STATUS_FAILED,
+                exit_code=proc_result.exit_code,
+                error=f"cannot write synthesized result file: {exc}",
+                elapsed_seconds=time.monotonic() - started,
+                event_count=event_count,
+                cost_usd=cost_usd, num_turns=num_turns, model_usage=model_usage,
+            )
+
+        # Same final schema gate as the payload_root path (design C2).
+        return self._validate_result(
+            work, proc_result, event_count, started, usage, telemetry,
+            cost_usd=cost_usd, num_turns=num_turns, model_usage=model_usage,
+        )
 
 
 # --- NDJSON result extraction -------------------------------------------------
@@ -619,6 +766,57 @@ def _wrap_payload_root(
         "payload": payload,
         "notes": [],
         "error": None,
+    }
+
+
+def _use_workflow_shards(work: C.WorkItemInput) -> bool:
+    """Whether this work item uses the Claude disk-driven workflow path.
+
+    Only feature / function-global Observation turns (mode=observe,
+    payload_kind=observation) use workflow shards.  Correction (mode=correct)
+    and Aggregation (payload_kind=aggregation) keep the payload_root path.
+    """
+    extras = work.prompt_extras
+    mode = extras.get("mode", "observe")
+    if mode != "observe":
+        return False
+    payload_kind = extras.get("payload_kind")
+    if payload_kind is not None:
+        return payload_kind == "observation"
+    # Fall back to the machine contract's observation_profile.
+    profile = extras.get("machine_contract", {}).get("observation_profile")
+    return profile in {"feature", "function_global"}
+
+
+def _workflow_signal_schema() -> tuple[str, dict[str, Any]]:
+    """The tiny completion-signal schema for the workflow-shards path.
+
+    This is what ``--json-schema`` constrains: a small object reporting only
+    success/failure and the files written.  It never carries the payload, so it
+    cannot truncate.  Returns (json_string, metadata).
+    """
+    schema = {
+        "type": "object",
+        "additionalProperties": False,
+        "required": [
+            "status", "written_claim_files", "written_criterion_files",
+            "aux_written", "error",
+        ],
+        "properties": {
+            "status": {"type": "string", "enum": ["completed", "failed"]},
+            "written_claim_files": {"type": "array", "items": {"type": "string"}},
+            "written_criterion_files": {
+                "type": "array", "items": {"type": "string"},
+            },
+            "aux_written": {"type": "string"},
+            "error": {"type": ["string", "null"]},
+        },
+    }
+    content = json.dumps(schema, ensure_ascii=False, separators=(",", ":"))
+    return content, {
+        "path": "<workflow-signal>",
+        "transport_bytes": len(content.encode("utf-8")),
+        "payload_transport": "workflow_completion_signal",
     }
 
 

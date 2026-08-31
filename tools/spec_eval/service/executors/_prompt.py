@@ -26,8 +26,15 @@ def build_executor_prompt(
     represented elsewhere in the prompt are omitted from the descriptive
     work-item copy to avoid duplicate prompt tokens.
     """
-    if output_transport not in {"canonical_envelope", "payload_root"}:
+    if output_transport not in {
+        "canonical_envelope", "payload_root", "workflow_shards"
+    }:
         raise ValueError(f"unknown output transport: {output_transport!r}")
+    if output_transport == "workflow_shards":
+        # Claude-only observation path: disk-driven workflow, not a single
+        # final structured payload.  Fully isolated from the codex /
+        # payload_root paths below so their behaviour is unchanged (C1/C3).
+        return _build_workflow_shards_prompt(work)
     payload_root = output_transport == "payload_root"
     contract = dict(work.prompt_extras)
     mode = contract.get("mode", "observe")
@@ -276,6 +283,190 @@ def build_executor_prompt(
         "protocol_version": work.protocol_version,
         "result_contract": result_contract,
         "machine_contract": machine_contract,
+        "output": output,
+    }
+    return json.dumps(payload, ensure_ascii=False, indent=2)
+
+
+# ---------------------------------------------------------------------------
+# Claude-only: workflow-shards observation prompt
+# ---------------------------------------------------------------------------
+#
+# This path is used ONLY by the Claude executor for feature/function-global
+# Observation.  Instead of asking the model to emit one large structured
+# payload at the end (which truncates for large claim sets), it drives a
+# disk-based workflow: the model verifies each claim/criterion in turn, writes
+# a small shard file per unit, and the service synthesizes the final envelope
+# off-session (see workflow_synthesis.py / workflow_manifest.py).
+#
+# It shares NO code path with the codex / payload_root prompt above, so those
+# executors' behaviour is unchanged (design C1/C3).
+
+# Directory convention shared with the Claude adapter (P4) and manifest
+# generator (P2): <run_dir>/observations/<feat_id>/
+_WORKFLOW_SHARD_SUBDIR = "observations"
+
+
+def workflow_shard_dir(run_dir: str, feat_id: str) -> str:
+    """Absolute shard directory for one feature's workflow observation.
+
+    Single source of truth for the path convention, imported by the Claude
+    adapter and the manifest generator so the prompt, the on-disk manifest,
+    and synthesis all agree.
+    """
+    from pathlib import PurePosixPath
+
+    return str(PurePosixPath(run_dir) / _WORKFLOW_SHARD_SUBDIR / feat_id)
+
+
+def _workflow_recovery_rules() -> list[str]:
+    """Top-priority self-recovery rules (survive context compression)."""
+    return [
+        "DISK IS THE ONLY SOURCE OF TRUTH. Do not rely on this conversation's "
+        "history for progress or rules; it may be compressed at any time.",
+        "At the start of EVERY unit, first run: `cat <manifest>` to re-read the "
+        "full todo list and output rules, then `ls <shard_dir>/claims` and "
+        "`ls <shard_dir>/criteria` to see which units are already written.",
+        "The next unit to process is the first manifest entry whose shard file "
+        "does not yet exist on disk. Never redo a unit whose valid shard exists.",
+        "You are DONE when every claim_unit and criterion_unit file in the "
+        "manifest exists on disk and the aux file is written.",
+    ]
+
+
+def _workflow_write_rules() -> list[str]:
+    """How each shard is produced and self-checked."""
+    return [
+        "For each claim_unit: verify the claim against frozen source, then Write "
+        "the shard to its manifest `file` path as ONE claimJudgment object "
+        "(not an array) containing exactly the claim_shard required_fields.",
+        "For each criterion_unit: read back the already-written claim shards it "
+        "depends on (use targeted sed/head, never dump whole files), then Write "
+        "the shard as a JSON ARRAY of observationJudgment objects for that "
+        "criterion. Write an empty array [] when the criterion is NOT_APPLICABLE.",
+        "Write each shard atomically: Write to `<file>.tmp`, then move it to "
+        "`<file>`. Immediately re-read and validate the shard with a one-line "
+        "check that prints only `OK` or the first missing/invalid field name.",
+        "After all claim and criterion shards exist, Write the aux shard "
+        "(evidence_declarations, open_questions, notes) named by manifest.aux_file.",
+        "Natural-language fields (reason, fact, ...) in Simplified Chinese; keep "
+        "all IDs and enums verbatim (claim_id, criterion_id, local_outcome, ...).",
+        "Never print, cat, tee or otherwise dump a complete shard or the "
+        "assembled payload to stdout; keep each tool command output small.",
+    ]
+
+
+def _build_workflow_shards_prompt(work: C.WorkItemInput) -> str:
+    """Build the Claude workflow-shards observation prompt.
+
+    The manifest and empty shard directories are pre-created by the service
+    (workflow_manifest.write_manifest) BEFORE this session starts, so the
+    model only consumes them.  The final structured output is a tiny result
+    signal (see the ``output`` block); the real product is the shard files.
+    """
+    contract = dict(work.prompt_extras)
+    machine_contract = contract.get("machine_contract", {})
+    observation_profile = contract.get(
+        "observation_profile",
+        machine_contract.get("observation_profile", "feature"),
+    )
+    phase_references = list(contract.get("phase_references", []))
+    feat_id = str(work.work_item.get("feat_id", work.work_item_id))
+
+    shard_dir = workflow_shard_dir(work.run_dir, feat_id)
+    manifest_path = f"{shard_dir}/_manifest.json"
+
+    reference_constraint = (
+        "The phase_references contents are already loaded in this prompt; "
+        "follow them as phase instructions and do not reread their source paths."
+        if phase_references else
+        "Follow only the declared machine contract and explicitly allowed "
+        "input paths."
+    )
+
+    constraints = [
+        reference_constraint,
+        "Treat input_resources.citable=false files as context only; never "
+        "declare them as evidence.",
+        "Evidence paths must be canonical repository-relative POSIX paths. "
+        "Never emit absolute paths, '..', evidence/... or runs/... service paths.",
+        "Do not read paths in forbidden_paths (confirmed reviews or other runs).",
+        "Do not modify any formal Spec, Design, Registry, source or test file.",
+        "Do not modify the manifest; the service owns it.",
+        "Provide judgments only; treat the top-level machine_contract as normative.",
+        *_workflow_recovery_rules(),
+        *_workflow_write_rules(),
+    ]
+    if observation_profile == "function_global":
+        constraints.append(
+            "This is Function-global Observation; keep judgments at Function scope."
+        )
+    else:
+        constraints.append(
+            "This is Feature Observation; keep judgments local to the current "
+            "Feature claims."
+        )
+
+    # Duplicate-field trimming mirrors the main path so the prompt stays compact.
+    prompt_work_item = dict(work.work_item)
+    for duplicated_field in (
+        "input_paths", "input_resources", "output_path",
+    ):
+        prompt_work_item.pop(duplicated_field, None)
+
+    result_contract = {
+        key: value for key, value in contract.items()
+        if key not in {"machine_contract", "phase_references"}
+    }
+    result_contract["output_transport"] = "workflow_shards"
+
+    # The final structured output is a tiny completion signal, NOT the payload.
+    # It only lets the service cross-check reported vs. on-disk shard files and
+    # detect model-reported failure; synthesis reads the shard files directly.
+    output = {
+        "transport": "workflow_shards",
+        "shard_dir": shard_dir,
+        "manifest_path": manifest_path,
+        "requirement": (
+            "Do NOT emit the observation payload as structured output. Instead, "
+            "write one shard file per manifest unit as instructed, then finish by "
+            "returning ONLY the tiny completion signal object with fields: "
+            "status ('completed' or 'failed'), written_claim_files (array of the "
+            "claim shard paths you wrote), written_criterion_files (array of the "
+            "criterion shard paths you wrote), aux_written (the aux file path or "
+            "empty string), and error (a non-empty string when status='failed', "
+            "else null). The service assembles and validates the canonical "
+            "envelope from the shard files on disk."
+        ),
+    }
+
+    payload: dict[str, Any] = {
+        "task": (
+            "Produce the feature observation by writing one shard file per "
+            "manifest unit (disk-driven workflow), then return the completion "
+            "signal."
+        ),
+        "constraints": constraints,
+        "func_id": work.func_id,
+        "run_id": work.run_id,
+        "work_item": prompt_work_item,
+        "phase_references": phase_references,
+        "input_paths": list(work.input_paths),
+        "input_resources": list(work.work_item.get("input_resources", [])),
+        "forbidden_paths": list(work.forbidden_paths),
+        "skill_version": work.skill_version,
+        "protocol_version": work.protocol_version,
+        "result_contract": result_contract,
+        "machine_contract": machine_contract,
+        "manifest": {
+            "path": manifest_path,
+            "shard_dir": shard_dir,
+            "note": (
+                "Pre-generated by the service. It lists claim_units, "
+                "criterion_units, aux_file, and output_rules. Re-read it at the "
+                "start of every unit."
+            ),
+        },
         "output": output,
     }
     return json.dumps(payload, ensure_ascii=False, indent=2)
