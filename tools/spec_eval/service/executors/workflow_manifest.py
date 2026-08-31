@@ -220,9 +220,16 @@ def make_spec_from_work_item(
     output_rules:
         Override the default output rules embedded in the manifest.
         When ``None`` the module-level ``_DEFAULT_OUTPUT_RULES`` are used.
+
+    Notes
+    -----
+    Function-global work items have no ``feat_id``; their ``id`` (e.g.
+    ``"function-global"``) is used as the shard-directory identifier instead,
+    matching the fallback in ``claude_cli._prepare_workflow_manifest`` and the
+    workflow prompt builder.
     """
-    feat_id: str = work_item["feat_id"]
     work_item_id: str = work_item["id"]
+    feat_id: str = str(work_item.get("feat_id") or work_item_id)
     expected_claim_ids: list[str] = list(work_item["expected_claim_ids"])
     return ManifestSpec(
         feat_id=feat_id,
