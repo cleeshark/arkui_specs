@@ -339,14 +339,24 @@ def _workflow_write_rules() -> list[str]:
     return [
         "For each claim_unit: verify the claim against frozen source, then Write "
         "the shard to its manifest `file` path as ONE claimJudgment object "
-        "(not an array) containing exactly the claim_shard required_fields.",
+        "(not an array) matching shard_schemas.claim_schema EXACTLY, including "
+        "nested field types.",
+        "verification_gap.checked_scope and verification_gap.missing_evidence "
+        "are ARRAYS of strings (not a single string); verification_gap is a "
+        "non-null object only when local_outcome is NOT_VERIFIABLE, else null.",
         "For each criterion_unit: read back the already-written claim shards it "
         "depends on (use targeted sed/head, never dump whole files), then Write "
-        "the shard as a JSON ARRAY of observationJudgment objects for that "
-        "criterion. Write an empty array [] when the criterion is NOT_APPLICABLE.",
+        "the shard as a JSON ARRAY of observationJudgment objects matching "
+        "shard_schemas.criterion_item_schema. Write an empty array [] when the "
+        "criterion is NOT_APPLICABLE.",
         "Write each shard atomically: Write to `<file>.tmp`, then move it to "
-        "`<file>`. Immediately re-read and validate the shard with a one-line "
-        "check that prints only `OK` or the first missing/invalid field name.",
+        "`<file>`. Immediately validate it with the AUTHORITATIVE script named "
+        "in shard_schemas.validate_script: "
+        "`python3 <validate_script> claim <file>` for a claim shard or "
+        "`python3 <validate_script> criterion <file>` for a criterion shard. "
+        "The shard is done only when the script prints OK; if it prints schema "
+        "errors, fix the shard and re-validate. Do NOT rely on your own "
+        "field-name check — it misses type errors like array-vs-string.",
         "After all claim and criterion shards exist, Write the aux shard "
         "(evidence_declarations, open_questions, notes) named by manifest.aux_file.",
         "Natural-language fields (reason, fact, ...) in Simplified Chinese; keep "
