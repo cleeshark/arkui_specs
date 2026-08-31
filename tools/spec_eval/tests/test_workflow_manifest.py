@@ -121,13 +121,13 @@ class TestBuildManifest(unittest.TestCase):
         self.spec = _make_spec()
         self.manifest = build_manifest(self.spec)
 
-    def test_top_keys(self):
-        self.assertEqual(
-            set(self.manifest.keys()),
-            {"feat_id", "work_item_id", "schema_version",
-             "claim_units", "criterion_units", "aux_file",
-             "shard_schemas", "output_rules"},
-        )
+    def test_shard_schemas_keys(self):
+        self.assertIn("shard_schemas", self.manifest)
+        ss = self.manifest["shard_schemas"]
+        self.assertIn("claim_schema", ss)
+        self.assertIn("criterion_item_schema", ss)
+        self.assertIn("aux_schema", ss)
+        self.assertIn("validate_script", ss)
 
     def test_feat_id(self):
         self.assertEqual(self.manifest["feat_id"], "Feat-01")

@@ -358,7 +358,11 @@ def _workflow_write_rules() -> list[str]:
         "errors, fix the shard and re-validate. Do NOT rely on your own "
         "field-name check — it misses type errors like array-vs-string.",
         "After all claim and criterion shards exist, Write the aux shard "
-        "(evidence_declarations, open_questions, notes) named by manifest.aux_file.",
+        "(evidence_declarations, open_questions, notes) named by manifest.aux_file. "
+        "evidence_declarations paths must be canonical repository-relative paths "
+        "inside ace_engine, sdk-js, or sdk_c — NEVER a specs/ path. "
+        "After writing, validate: `python3 <validate_script> aux aux.json`. "
+        "The shard is done only when the script prints OK.",
         "Natural-language fields (reason, fact, ...) in Simplified Chinese; keep "
         "all IDs and enums verbatim (claim_id, criterion_id, local_outcome, ...).",
         "Never print, cat, tee or otherwise dump a complete shard or the "
