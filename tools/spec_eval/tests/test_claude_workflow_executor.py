@@ -303,6 +303,58 @@ class TestUseWorkflowShards(_Base):
         self.assertTrue(_use_workflow_shards(w))
 
 
+class TestFunctionGlobalWorkflow(_Base):
+    """Function-global work items (no feat_id) must prepare a manifest without
+    crashing — regression for 'cannot prepare workflow manifest: feat_id'."""
+
+    def _fg_work(self):
+        return C.WorkItemInput(
+            job_id="j1",
+            func_id="03-05-02",
+            run_id="run-1",
+            work_item_id="function-global",
+            work_item={
+                "id": "function-global",
+                "type": "function_global",
+                "observation_profile": "function_global",
+                # NOTE: no feat_id
+                "expected_claim_ids": ["Func/G-1", "Func/G-2"],
+                "input_paths": [],
+            },
+            run_dir=self.tmp.name,
+            input_paths=(),
+            executor_result_path=str(Path(self.tmp.name) / "fg.executor-result.json"),
+            repo_root=self.settings.repo_root,
+            skill_version="x",
+            protocol_version="0.2.0",
+            prompt_extras={
+                "schema_path": str(self.schema_path),
+                "mode": "observe",
+                "payload_kind": "observation",
+                "machine_contract": {
+                    "observation_profile": "function_global",
+                    "valid_criterion_ids": _VALID_CRITERION_IDS,
+                },
+            },
+        )
+
+    def test_uses_workflow(self):
+        self.assertTrue(_use_workflow_shards(self._fg_work()))
+
+    def test_prepare_manifest_no_keyerror(self):
+        work = self._fg_work()
+        ex = self._executor(_WorkflowFakeRunner(
+            run_dir=self.tmp.name, feat_id="function-global",
+        ))
+        manifest_path = ex._prepare_workflow_manifest(work)
+        self.assertTrue(manifest_path.exists())
+        # Shard dir is keyed by the work-item id, not a feat_id.
+        self.assertIn("function-global", str(manifest_path))
+        data = json.loads(manifest_path.read_text(encoding="utf-8"))
+        self.assertEqual(data["feat_id"], "function-global")
+        self.assertEqual(len(data["claim_units"]), 2)
+
+
 class TestWorkflowSignalSchema(unittest.TestCase):
     def test_schema_is_small_and_valid_json(self):
         content, meta = _workflow_signal_schema()

@@ -281,6 +281,57 @@ class TestMakeSpecFromWorkItem(unittest.TestCase):
         self.assertEqual(spec.output_rules, custom)
 
 
+class TestFunctionGlobalWorkItem(unittest.TestCase):
+    """Function-global work items have no feat_id; id is used instead.
+
+    Regression for real failure: 'cannot prepare workflow manifest: feat_id'.
+    """
+
+    _FG_WORK_ITEM = {
+        "id": "function-global",
+        "type": "function_global",
+        "observation_profile": "function_global",
+        "status": "pending",
+        # NOTE: no "feat_id" key at all
+        "expected_claim_ids": [
+            "Func/GLOBAL-1", "Func/GLOBAL-2", "Func/GLOBAL-3",
+        ],
+        "required_checks": ["registry_and_cross_doc", "traceability_graph"],
+    }
+
+    def test_make_spec_falls_back_to_id(self):
+        spec = make_spec_from_work_item(
+            self._FG_WORK_ITEM, _VALID_CRITERION_IDS
+        )
+        self.assertEqual(spec.feat_id, "function-global")
+        self.assertEqual(spec.work_item_id, "function-global")
+
+    def test_make_spec_null_feat_id_falls_back(self):
+        wi = dict(self._FG_WORK_ITEM, feat_id=None)
+        spec = make_spec_from_work_item(wi, _VALID_CRITERION_IDS)
+        self.assertEqual(spec.feat_id, "function-global")
+
+    def test_build_manifest_no_keyerror(self):
+        spec = make_spec_from_work_item(
+            self._FG_WORK_ITEM, _VALID_CRITERION_IDS
+        )
+        manifest = build_manifest(spec)
+        self.assertEqual(manifest["feat_id"], "function-global")
+        self.assertEqual(len(manifest["claim_units"]), 3)
+        self.assertEqual(len(manifest["criterion_units"]), 20)
+
+    def test_write_manifest_creates_shard_tree(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            shard_dir = Path(tmpdir) / "function-global"
+            spec = make_spec_from_work_item(
+                self._FG_WORK_ITEM, _VALID_CRITERION_IDS
+            )
+            manifest_path = write_manifest(shard_dir, spec)
+            self.assertTrue(manifest_path.exists())
+            self.assertTrue((shard_dir / "claims").is_dir())
+            self.assertTrue((shard_dir / "criteria").is_dir())
+
+
 # ---------------------------------------------------------------------------
 # Integration: manifest produced from real job work-item is
 # compatible with workflow_synthesis (round-trip shape check)
