@@ -32,7 +32,7 @@
 | 02 跨平台适配层 | 01 跨平台适配层 | 03 iOS平台适配 | `02-01-03` | `02-cross-platform/01-platform-adapter/03-ios-platform-adapter/` | *待补充* | 0 |
 | 02 跨平台适配层 | 01 跨平台适配层 | 04 预览器平台适配 | `02-01-04` | `02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/` | [design.md](02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/design.md) | 3 |
 | 02 跨平台适配层 | 02 渲染后端适配 | 01 Rosen渲染后端对接 | `02-02-01` | `02-cross-platform/02-render-backend-adapter/01-rosen-render-backend-adapter/` | [design.md](02-cross-platform/02-render-backend-adapter/01-rosen-render-backend-adapter/design.md) | 3 |
-| 03 引擎框架层 | 01 渲染管线 | 01 渲染管线 | `03-01-01` | `03-engine-framework/01-render-pipeline/01-basic-render-pipeline/` | [design.md](03-engine-framework/01-render-pipeline/01-basic-render-pipeline/design.md) | 1 |
+| 03 引擎框架层 | 01 渲染管线 | 01 渲染管线 | `03-01-01` | `03-engine-framework/01-render-pipeline/01-basic-render-pipeline/` | [design.md](03-engine-framework/01-render-pipeline/01-basic-render-pipeline/design.md) | 4 |
 | 03 引擎框架层 | 01 渲染管线 | 02 多级渲染管线 | `03-01-02` | `03-engine-framework/01-render-pipeline/02-multi-level-render-pipeline/` | [design.md](03-engine-framework/01-render-pipeline/02-multi-level-render-pipeline/design.md) | 1 |
 | 03 引擎框架层 | 02 动效能力 | 01 动效框架 | `03-02-01` | `03-engine-framework/02-animation-capability/01-animation-framework/` | [design.md](03-engine-framework/02-animation-capability/01-animation-framework/design.md) | 1 |
 | 03 引擎框架层 | 02 动效能力 | 02 属性动画 | `03-02-02` | `03-engine-framework/02-animation-capability/02-property-animation/` | [design.md](03-engine-framework/02-animation-capability/02-property-animation/design.md) | 1 |
@@ -387,6 +387,9 @@
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
 | Feat-01 | 渲染主流程 | [Feat-01-render-main-flow-spec.md](03-engine-framework/01-render-pipeline/01-basic-render-pipeline/Feat-01-render-main-flow-spec.md) | Baselined |
+| Feat-02 | Build 阶段细化（待补充） | *待补充* | 待补充 |
+| Feat-03 | Layout 阶段细化（待补充） | *待补充* | 待补充 |
+| Feat-04 | Render 阶段与渲染树同步 | [Feat-04-render-stage-spec.md](03-engine-framework/01-render-pipeline/01-basic-render-pipeline/Feat-04-render-stage-spec.md) | Draft |
 
 ### 03-01-02 多级渲染管线
 

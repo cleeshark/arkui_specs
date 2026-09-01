@@ -9,7 +9,7 @@
 | Design ID | DESIGN-Func-03-01-01 |
 | 关联需求 | 已有能力补录（无独立 requirement.md） |
 | 关联 Epic | 无 |
-| 目标 Feature | Feat-01 渲染主流程 |
+| 目标 Feature | Feat-01 渲染主流程；Feat-04 Render 阶段与渲染树同步 |
 | 复杂度 | 复杂 |
 | 目标版本 | API 9 及以后（基线以 master HEAD 行为为准，关键差异标注 API target version） |
 | Owner | ArkUI SIG / 渲染管线团队 |
@@ -20,8 +20,8 @@
 | 字段 | 内容 |
 |------|------|
 | 问题陈述 | NG 框架下，从 RenderService 产生 VSync 信号到一帧画面提交回 RS，需要在单一线程上、单次帧调度内完成：动画 tick、手势分发、状态驱动的 FrameNode 重建、Measure/Layout、Paint/Render、RSNode 变更回写。该编排是所有上层组件正确渲染的前提，错序或漏阶段会引发掉帧、闪烁、状态不一致。 |
-| 核心目标 | （Feat-01）固化 PipelineContext 一帧编排：VSync → Animation → Touch/Drag → Build → Layout → Render → Modifier/FrameRate/Messages → 二次 UI Tasks。任何上层能力不得绕过该序列。 |
-| P0 AC | （Feat-01）AC-1.1 单次 VSync 触发恰好一次 FlushVsync；AC-2.1 一帧内 Flush 子阶段顺序固定；AC-6.1 FlushMessages 是 RS 提交的唯一边界；AC-7.1 后台/无 onShow 窗口不主动 RequestFrame。 |
+| 核心目标 | （Feat-01）固化 PipelineContext 一帧编排：VSync → Animation → Touch/Drag → Build → Layout → Render → Modifier/FrameRate/Messages → 二次 UI Tasks。任何上层能力不得绕过该序列。（Feat-04）固化逻辑节点树到 RS 渲染节点树的同步链路、isPendingState_ 生命周期及 Render dirty/Paint 执行：MarkNeedSyncRenderTree → RebuildRenderContextTree → ProcessRenderTreeDiff → AttachToRenderTree/DetachFromRenderTree → RebuildFrame → FlushRenderTask → PaintWrapper::FlushRender。 |
+| P0 AC | （Feat-01）AC-1.1 单次 VSync 触发恰好一次 FlushVsync；AC-2.1 一帧内 Flush 子阶段顺序固定；AC-6.1 FlushMessages 是 RS 提交的唯一边界；AC-7.1 后台/无 onShow 窗口不主动 RequestFrame。（Feat-04）AC-2.1..2.8 isPendingState_ 上下树配对；AC-3.1..3.3 ProcessRenderTreeDiff 时序与同帧重上树已知缺陷；AC-6.1..6.5 NodeRenderStatusMonitor 注册与上限；AC-7.1..7.6 Render dirty 与 Paint 分流。 |
 
 ## 上下文和现状
 
@@ -37,6 +37,11 @@
 | foundation/arkui/ace_engine | frameworks/core/components_ng/render/adapter/rosen_window.cpp | VSync 接收、帧合并、SendMessages 提交 | 锁定 VSync/提交边界 |
 | foundation/arkui/ace_engine | frameworks/core/common/window.cpp / window.h | Window 抽象接口（VSync 回调列表、RequestFrame） | 多容器 VSync 分发 |
 | foundation/arkui/ace_engine | frameworks/core/components_ng/pattern/custom/custom_node_base.cpp | CustomNode rebuild、MarkNeedUpdate | 锁定 Build 入队边界 |
+| foundation/arkui/ace_engine（Feat-04） | frameworks/core/components_ng/base/ui_node.cpp/.h | MarkNeedSyncRenderTree 调用点、disappearingChildren_ 合并 | 锁定子节点增删移触发同步 |
+| foundation/arkui/ace_engine（Feat-04） | frameworks/core/components_ng/base/node_render_status_monitor.cpp/.h | NodeRenderStatusMonitor 注册/状态遍历/释放回调 | 锁定渲染状态监控 |
+| foundation/arkui/ace_engine（Feat-04） | frameworks/core/components_ng/base/frame_node_multi_thread.cpp | RebuildRenderContextTreeMultiThread | 锁定跨线程投递 UI 线程 |
+| foundation/arkui/ace_engine（Feat-04） | frameworks/core/components_ng/render/render_context.h | RebuildFrame 虚函数、isNeedRebuildRSTree_ | 锁定 RS 重建门控 |
+| foundation/arkui/ace_engine（Feat-04） | frameworks/core/components_ng/pattern/image/image_pattern.cpp | OnAttachToMainRenderTree/OnWindowHide | 依赖方示例 |
 
 ### 调用链层级分析
 
@@ -49,7 +54,11 @@
 | Build 阶段 | `frameworks/core/components_ng/pattern/custom/custom_node_base.cpp` | CustomNode rebuild、MarkNeedUpdate、FlushDirtyNodeUpdate | 无修改（规格补录） |
 | Layout 阶段 | `frameworks/core/components_ng/base/frame_node.cpp` | FrameNode 生命周期、MarkDirtyNode、CreateLayoutTask（Measure/Layout） | 无修改（规格补录） |
 | Render 阶段 | `frameworks/core/components_ng/render/paint_wrapper.cpp/.h` | PaintWrapper::FlushRender，Modifier(Content/Overlay/Foreground) vs Draw 路径分发 | 无修改（规格补录） |
-| RS 桥接 | `frameworks/core/components_ng/render/adapter/rosen_render_context.cpp/.h` | RenderContext 与 Rosen RSNode 桥接、StartRecording/FinishRecording | 无修改（规格补录） |
+| RS 桥接 | `frameworks/core/components_ng/render/adapter/rosen_render_context.cpp/.h` | RenderContext 与 Rosen RSNode 桥接、StartRecording/StopRecordingIfNeeded | 无修改（规格补录） |
+| 渲染树同步（Feat-04） | `frameworks/core/components_ng/base/frame_node.cpp/.h`、`ui_node.cpp/.h` | MarkNeedSyncRenderTree → RebuildRenderContextTree → ProcessRenderTreeDiff（Attach/Detach）→ RebuildFrame | 无修改（规格补录） |
+| isPendingState_ 生命周期（Feat-04） | `frameworks/core/components_ng/base/frame_node.cpp/.h` | AttachToRenderTree/DetachFromRenderTree 配对、CleanRenderTreeLifeCycle 析构兜底 | 无修改（规格补录）；R-14 同帧重上树为已知缺陷 |
+| 渲染状态监控（Feat-04） | `frameworks/core/components_ng/base/node_render_status_monitor.cpp/.h` | RegisterNodeRenderStatusListener、WalkThroughAncestorForStateListener | 无修改（规格补录） |
+| 渲染状态公开接口（Feat-04） | `interface/sdk-js/api/@ohos.arkui.UIContext.d.ts`、`interface/sdk-js/api/@ohos.arkui.UIContext.static.d.ets`、`interfaces/napi/kits/observer/` | API 20+ dynamic 与 API 26+ static 的 nodeRenderState 注册/注销、立即回调和 161001 错误码 | 无修改（SDK 与实现核验） |
 
 ### 适用架构规则
 
@@ -67,7 +76,7 @@
 | 性能 | 展开设计：FlushVsync 内的耗时受 maxFlushTimes=3 / ENDORSE_LAYOUT_COUNT=2 双重保护，超额工作延入下一帧；不在本 Feat 中量化指标，仅锁定行为。 |
 | 安全与权限 | N/A：基础管线不涉及权限检查，权限由上层 API 控制。 |
 | 兼容性 | 展开设计：关键版本差异（如 aspect-ratio 的 VERSION_TEN 门控、IsPageOverflowEnabled）在 Feat-01-spec 兼容性章节登记；后续 Feat 增加版本差异需追加。 |
-| API/SDK | N/A：基础管线为框架内部能力，不对外暴露 ArkTS / C-API。 |
+| API/SDK | 展开设计：渲染树同步主体为框架内部能力，但 NodeRenderStatusMonitor 已通过 UIContext nodeRenderState API 对外开放；动态接口 since API 20，静态接口 since API 26。 |
 | IPC/跨进程 | 展开设计：与 RenderService 的 IPC 在 rsUIDirector_->SendMessages 单点收敛；FrameReport / ResSchedReport 走 OHOS 系统 API。 |
 | 构建与部件 | N/A：不引入新部件/BUILD.gn 变更，纯属补录。 |
 
@@ -79,8 +88,11 @@
 | ADR-2 | Layout 与 Render 是否各自暴露 Flush 接口 | 由同一个 UITaskScheduler::FlushTask（do-while 循环，ENDORSE_LAYOUT_COUNT=2）统一驱动 FlushLayoutTask 与 FlushRenderTask | PipelineContext 各暴露 FlushLayout/FlushRender | 统一驱动保证 Layout 完毕后立刻 Render，且支持 geometryTransition 二次布局 | ui_task_scheduler.cpp:300-337 |
 | ADR-3 | 一帧内重复请求 VSync 如何合并 | RosenWindow::RequestFrame 用 isRequestVsync_ 自合并，且 !forceVsync_ && !onShow_ 时整体跳过；Window::callbacks_ 多容器扇出；ForceFlushVsync 使用 frameCount=UINT64_MAX 哨兵作为 500ms 兜底 | 每次都调用 RS，依赖 RS 端去重 | 客户端合并降低 IPC 频次；后台不绘制；哨兵让 DFX 恢复路径不污染 DisplaySync | rosen_window.cpp:222-289 |
 | ADR-4 | dirty 节点如何分级收集 | 分为 dirtyPropertyNodes_（NodeAPI diff，先排）、dirtyNodes_（CustomNode 重建，maxFlushTimes=3）、taskScheduler_.dirtyLayoutNodes_、taskScheduler_.dirtyRenderNodes_ 四条队列 | 单一 dirty 列表 + 多标志位 | 分级队列让 Build 与 Layout/Render 阶段可独立排空与去重；isLayoutDirtyMarked_/isRenderDirtyMarked_ 单帧幂等 | pipeline_context.cpp:475-597, 666-708；frame_node.cpp:3321-3499 |
-| ADR-5 | Paint 阶段是否统一接口 | PaintWrapper::FlushRender 优先 ContentModifier/Overlay/Foreground 三类 Modifier；缺失时回退 StartRecording/DrawFunction/FinishRecording 旧路径 | 全部走录制 Draw、统一改 Modifier | Modifier 路径让属性可独立动画且无需重发 draw 指令；旧组件渐进式迁移 | paint_wrapper.cpp:125-180 |
+| ADR-5 | Paint 阶段是否统一接口 | PaintWrapper::FlushRender 先更新 Content/Overlay/Foreground Modifier，再无条件调用 StartRecording；每类 Modifier 仅抑制同类型 Draw，未覆盖的 Draw 经 DrawOnNode 独立录制，最后由 StopRecordingIfNeeded 收口；free RenderContext 延迟到挂载主树后执行，其他情况仅对 CanvasNode 生效并委托 FinishRecording | 全部走 Draw 或全部改为 Modifier | Modifier 路径支持属性独立动画，同时允许未迁移的绘制类型继续使用 Draw；Start/Stop 维护主 recording 生命周期，不等同于把三类 Draw 录制到同一个 canvas | `paint_wrapper.cpp:152-240`；`rosen_render_context.cpp:115-123,504-520,4989-5068`；`foundation/graphic/graphic_2d/rosen/modules/render_service_client/core/ui/rs_canvas_node.cpp:98-120,149-170,186-215` |
 | ADR-6 | RS 状态何时真正提交 | 每帧仅在 FlushMessages → Window::FlushTasks → rsUIDirector_->SendMessages 一处提交；之后的 RS 改动进入下一帧；OnShow 与组件截图等极少数路径走 FlushImplicitTransaction 旁路 | 多点提交、自动批处理 | 单点提交是一帧"完成"的语义边界；旁路严格受限，可枚举 | pipeline_context.cpp:1068-1075；rosen_window.cpp:309-388 |
+| ADR-F4-1 | 逻辑节点树变更如何同步到 RS 渲染节点树 | 由 MarkNeedSyncRenderTree 置 needSyncRenderTree_=true，在 RebuildRenderContextTree 中快照旧 frameChildren_、重建新 multiset、ProcessRenderTreeDiff 计算 Attach/Detach、renderContext_->RebuildFrame 重建 RS 子树、pattern_->OnRebuildFrame | 每次变更全量重建 RS 子树 | diff 仅在 ProcessRenderTreeDiff 与 ReCreateRsNodeTreeByTargetList 层做增量，避免全量 Add/Remove | `frameworks/core/components_ng/base/frame_node.cpp:3331-3364` |
+| ADR-F4-2 | Attach/Detach 与 isPendingState_ 的配对语义 | isPendingState_ 仅在 isOnMainTree=true 且与当前值不同时翻转，并配对触发 OnAttachToMainRenderTree/OnDetachFromMainRenderTree；isOnMainTree=false 一律 early-return | 允许 isOnMainTree=false 时也翻转状态 | 显式守卫避免子树在非主树时误触发上下树回调，保护 Image 等依赖 Pattern | `frameworks/core/components_ng/base/frame_node.cpp:3417-3449` |
+| ADR-F4-3 | 同帧跨父节点重上树时 isPendingState_ 时序 | 不保证跨父节点 ProcessRenderTreeDiff 的执行顺序；新父 Attach 因子节点 isPendingState_=true 而 early-return，旧父 Detach 错误置 false（已知缺陷，R-14） | 全局排序所有父节点的 ProcessRenderTreeDiff | 全局排序代价高且破坏帧内独立性；当前以已知缺陷+风险行承接，待修复方案另行评估 | `frameworks/core/components_ng/base/frame_node.cpp:3398,3405` |
 
 ## 设计骨架
 
@@ -109,7 +121,7 @@
 | TASK-1 | 一帧主流程总体编排 | Feat-01-render-main-flow-spec.md | 无（基线） |
 | TASK-2（规划） | Build 阶段细化 | Feat-02-build-stage-spec.md | TASK-1 |
 | TASK-3（规划） | Layout 阶段细化 | Feat-03-layout-stage-spec.md | TASK-1 |
-| TASK-4（规划） | Render 阶段细化 | Feat-04-render-stage-spec.md | TASK-1 |
+| TASK-4 | Render 阶段与渲染树同步 | Feat-04-render-stage-spec.md | TASK-1 |
 | TASK-5（规划） | VSync 与 commit 旁路 | Feat-05-vsync-and-commit-spec.md | TASK-1 |
 
 ## API 签名、Kit 与权限
@@ -120,7 +132,16 @@
 |----------|------|-----------|----------|--------|
 | — | — | — | — | — |
 
-> 本功能域为框架内部渲染管线，无 Public/System API 变更。
+> 本次不新增 API。
+
+### 关联既有 API
+
+| API 签名 | 类型 | d.ts 位置 | 权限要求 | SysCap |
+|----------|------|-----------|----------|--------|
+| `on(type: 'nodeRenderState', nodeIdentity: NodeIdentity, callback: NodeRenderStateChangeCallback): void` | Public ArkTS dynamic，API 20+ | `interface/sdk-js/api/@ohos.arkui.UIContext.d.ts:2607-2621` | 无显式权限；超限抛 161001 | `SystemCapability.ArkUI.ArkUI.Full` |
+| `off(type: 'nodeRenderState', nodeIdentity: NodeIdentity, callback?: NodeRenderStateChangeCallback): void` | Public ArkTS dynamic，API 20+ | `interface/sdk-js/api/@ohos.arkui.UIContext.d.ts:2623-2635` | 无显式权限 | `SystemCapability.ArkUI.ArkUI.Full` |
+| `onNodeRenderState(nodeIdentity: NodeIdentity, callback: NodeRenderStateChangeCallback): void` | Public ArkTS static，API 26+ | `interface/sdk-js/api/@ohos.arkui.UIContext.static.d.ets:2035-2071` | 无显式权限；超限抛 161001 | `SystemCapability.ArkUI.ArkUI.Full` |
+| `offNodeRenderState(nodeIdentity: NodeIdentity, callback?: NodeRenderStateChangeCallback): void` | Public ArkTS static，API 26+ | `interface/sdk-js/api/@ohos.arkui.UIContext.static.d.ets:2073-2082` | 无显式权限 | `SystemCapability.ArkUI.ArkUI.Full` |
 
 ### 变更/废弃 API
 
@@ -173,7 +194,7 @@ graph TB
                 subgraph Render["FlushRenderTask"]
                     RT["PaintWrapper::FlushRender"]
                     MOD["Modifier 路径<br/>Content/Overlay/Foreground"]
-                    DRAW["Draw fallback<br/>StartRecording/Draw/Finish"]
+                    DRAW["Draw 分流<br/>StartRecording<br/>DrawOnNode by type<br/>StopRecordingIfNeeded"]
                 end
             end
 
@@ -193,6 +214,34 @@ graph TB
 
     RT --> MOD
     RT --> DRAW
+```
+
+#### 渲染树同步架构图（Feat-04）
+
+```mermaid
+graph TD
+    subgraph 触发["逻辑树变更触发"]
+        A1["AddChild / RemoveChild / MovePosition<br/>frameworks/core/components_ng/base/ui_node.cpp:418/548/859/1215-1246"]
+    end
+    MN["FrameNode::MarkNeedSyncRenderTree<br/>needSyncRenderTree_ = true<br/>frameworks/core/components_ng/base/frame_node.cpp:6827"]
+    A1 --> MN
+    RR{"RebuildRenderContextTree<br/>frameworks/core/components_ng/base/frame_node.cpp:3331"}
+    MN --> RR
+    RR -->|"needSyncRenderTree_ = false"| SKIP["no-op 早返回 :3335"]
+    RR -->|"true"| SNAP["快照旧 frameChildren_ :3342<br/>清空 :3343"]
+    SNAP --> GEN["GenerateRenderTreeFrameChildren :3345→3366<br/>可见 + 转场 + overlay + a11y"]
+    GEN --> REB["重建 frameChildren_ multiset :3346<br/>ZIndexComparator 升序"]
+    REB --> DIFF["ProcessRenderTreeDiff :3351"]
+    DIFF --> ATT["新增子节点 AttachToRenderTree :3398"]
+    DIFF --> DET["移除子节点 DetachFromRenderTree :3405"]
+    ATT --> P1["isPendingState_ 翻转 + OnAttachToMainRenderTree :3439/3440"]
+    DET --> P2["isPendingState_ 翻转 + OnDetachFromMainRenderTree :3422/3431"]
+    REB --> RB["renderContext_->RebuildFrame :3354"]
+    RB --> ORF["pattern_->OnRebuildFrame :3355"]
+    ORF --> DEL{"isDeleteRsNode_ ?"}
+    DEL -->|"true"| PUP["父级 MarkNeedSyncRenderTree +<br/>RebuildRenderContextTree :3356-3362"]
+    DEL -->|"false"| CLR["needSyncRenderTree_ = false :3363"]
+    PUP --> CLR
 ```
 
 ### 数据流/控制流
@@ -285,6 +334,55 @@ constexpr PropertyChangeFlag PROPERTY_UPDATE_RENDER              = 1 << 3;
 constexpr PropertyChangeFlag PROPERTY_UPDATE_BY_CHILD_REQUEST    = 1 << 4;
 constexpr PropertyChangeFlag PROPERTY_UPDATE_RENDER_BY_CHILD_REQUEST = 1 << 5;
 constexpr PropertyChangeFlag PROPERTY_UPDATE_DIFF                = 1 << 6;
+```
+
+#### 渲染树同步数据模型（Feat-04）
+
+C++（框架层，简化字段）：
+
+```cpp
+// frameworks/core/components_ng/base/frame_node.h（节选，Feat-04）
+class FrameNode : public UINode, public LayoutWrapper {
+private:
+    bool isPendingState_ = false;                       // :1946 逻辑上下树状态，根节点构造置 true(:695)
+    bool needSyncRenderTree_ = false;                   //       渲染树待同步脏标记
+    bool isDeleteRsNode_ = false;                       //       删除 RS 节点后需上推父级(:3356)
+    bool isLayoutNode_ = false;                         // :699  布局代理节点，MarkNeedSyncRenderTree 委托父级
+    bool isActive_ = false;                             //       active 状态，影响可见子节点收集
+    RefPtr<FrameNode> overlayNode_;                     //       覆盖层，追加到 traversal-order children(:3370)
+    RefPtr<FrameNode> accessibilityFocusPaintNode_;     //       无障碍焦点绘制节点(:3376)
+    std::multiset<WeakPtr<FrameNode>, ZIndexComparator> frameChildren_; // :1839 按 Z 序排序的可见子节点
+
+    struct ZIndexComparator {                           // :423
+        bool operator()(const WeakPtr<FrameNode>& l, const WeakPtr<FrameNode>& r) const; // :729 升序，允许重复
+    };
+public:
+    bool IsPendingOnMainRenderTree() const { return isPendingState_; } // :1625
+private:
+    void AttachToRenderTree(bool isOnMainTree, bool recursive = true); // :3434
+    void DetachFromRenderTree(bool isOnMainTree, bool recursive = true); // :3417
+    void CleanRenderTreeLifeCycle();                    // :3410 析构兜底
+    void ProcessRenderTreeDiff(...);                    // :3381
+};
+
+// frameworks/core/components_ng/base/ui_node.h（节选，Feat-04）
+class UINode {
+protected:
+    std::list<std::tuple<RefPtr<UINode>, size_t, int32_t>> disappearingChildren_; // 转场中保留的消失子节点
+};
+```
+
+```cpp
+// frameworks/core/components_ng/base/node_render_status_monitor.cpp（节选，Feat-04）
+constexpr size_t MAX_NODE_RENDER_STATE_LISTENERS = 64; // :27
+
+// frameworks/core/components_ng/base/node_render_status_monitor.h（节选，Feat-04）
+enum class NodeRenderState { ABOUT_TO_RENDER_IN = 0, ABOUT_TO_RENDER_OUT = 1 };
+enum class RenderMonitorReason { RENDER_CHANGE = 0, NODE_RELEASE = 1 };
+enum class MonitorSourceType { ... , OBSERVER = 1 };
+class NodeRenderStatusMonitor {
+    std::unordered_map<FrameNode*, std::shared_ptr<NodeRenderStatusSourceListener>> nodeRenderStatusListeners_;
+};
 ```
 
 ## 详细设计
@@ -387,7 +485,7 @@ FlushRenderTask                                     # :337
 入口：`UITaskScheduler::FlushRenderTask`（`ui_task_scheduler.cpp:230`）。
 - 移动 `dirtyRenderNodes_` 到局部 → 逐个 `node->CreateRenderTask(force)`（`frame_node.cpp:3057`）。
 - `CreateRenderTask` 通过 `CreatePaintWrapper` 构建 PaintWrapper：调用 `pattern_->BeforeCreatePaintWrapper`，清 `isRenderDirtyMarked_`（`:3078`），由 pattern 的 `CreateNodePaintMethod` 返回绘制方法或默认实现。
-- `PaintWrapper::FlushRender`（`paint_wrapper.cpp:125`）：优先 ContentModifier (:130)、OverlayModifier (:139)、ForegroundModifier (:147) — 对应 RS modifier adapter（`rosen_modifier_adapter.cpp:45/58/71`）；不存在 modifier 时 fallback `renderContext->StartRecording` → DrawFunction → `FinishRecording`（`rosen_render_context.cpp:398/412`）（ADR-5）。
+- `PaintWrapper::FlushRender`（`paint_wrapper.cpp:152-240`）：先更新 Content/Overlay/Foreground Modifier，再无条件调用 `StartRecording`；每类 Modifier 仅跳过同类型 Draw，未被覆盖的 Draw 按 Content → Foreground → Overlay 经 `FlushXxxDrawFunction → RSNode::DrawOnNode` 独立录制，最后调用 `StopRecordingIfNeeded`。free RenderContext 通过 `FREE_RS_CONTEXT_CHECK` 延迟到挂载主树后执行；其他情况仅对 CanvasNode 生效并委托 `RSCanvasNode::FinishRecording`，无活动录制或空 command list 不产生新的 recording 更新（ADR-5）。
 
 ### RS 提交边界
 
@@ -404,6 +502,41 @@ FlushRenderTask                                     # :337
 
 `Window::SetVsyncCallback`（`window.cpp:60`）维护多容器回调列表，单次 VSync 经 `Window::OnVsync`（`window.cpp:48`）扇出，再进入 `PipelineBase::OnVsyncEvent`（`pipeline_base.cpp:748`）。
 
+### 渲染树同步与 isPendingState_ 生命周期
+
+入口：`FrameNode::RebuildRenderContextTree`（`frameworks/core/components_ng/base/frame_node.cpp:3331`），在 `FlushTask` 阶段由各 dirty FrameNode 触发。链路：
+
+```text
+RebuildRenderContextTree(node):                            # frameworks/core/components_ng/base/frame_node.cpp:3331
+  if !needSyncRenderTree_: return                          # :3335
+  oldFrameChildren = move(frameChildren_)                   # :3342
+  frameChildren_.clear()                                   # :3343
+  GenerateRenderTreeFrameChildren(children)                # :3345 → :3366
+    GenerateOneDepthVisibleFrameWithTransition(children)   # :3369
+    if overlayNode_ visible: children.push_back            # :3370-3375
+    if accessibilityFocusPaintNode_: children.push_back   # :3376-3378
+  for child in children: frameChildren_.emplace(child)     # :3346-3348；另存 multiset 按 ZIndex 排序
+  ProcessRenderTreeDiff(children, oldFrameChildren)         # :3351
+    for new in children not in old: AttachToRenderTree(isPendingState_)  # :3398
+    for old in old not in new: DetachFromRenderTree(isPendingState_)     # :3405
+  renderContext_->RebuildFrame(node, children)            # :3354
+  pattern_->OnRebuildFrame()                               # :3355
+  if isDeleteRsNode_: parent->MarkNeedSyncRenderTree + RebuildRenderContextTree  # :3356-3362
+  needSyncRenderTree_ = false                              # :3363
+```
+
+`children` 保持 `GenerateRenderTreeFrameChildren` 的遍历/追加顺序并传给 `ProcessRenderTreeDiff` 与 `RebuildFrame`；只有另存的 `frameChildren_` multiset 按 `ZIndexComparator` 排序。overlay 与 accessibility 节点被追加到 `children`，但不能据此推导其必定位于排序后的 `frameChildren_` 末尾。
+
+isPendingState_ 配对（`frameworks/core/components_ng/base/frame_node.cpp:3417-3449`）：
+- `AttachToRenderTree(isOnMainTree, recursive)`：`!isOnMainTree || isPendingState_` early-return；否则置 `isPendingState_=true` → `OnAttachToMainRenderTree()` → 递归子节点 Attach。
+- `DetachFromRenderTree(isOnMainTree, recursive)`：`!isOnMainTree || !isPendingState_` early-return；否则置 `isPendingState_=false` → 递归子节点 Detach → `OnDetachFromMainRenderTree()`。
+- 根节点构造时 `isPendingState_=true`（`frameworks/core/components_ng/base/frame_node.cpp:695-696`）；析构经 `CleanRenderTreeLifeCycle` 兜底 Detach（`:799`、`:3410-3415`）。
+- `ProcessRenderTreeDiff` 传父节点 `isPendingState_` 作子节点 `isOnMainTree` 参数（`:3398/3405`）。
+
+RS 子树重建（`frameworks/core/components_ng/render/adapter/rosen_render_context.cpp`）：`RebuildFrame`（`:5107`）按 `MountPolicy::MIXED` 分流。普通路径 `ReCreateRsNodeTree`（`:5459`）使用传入 `children`；MIXED 路径 `ReCreateMixedRsNodeTree`（`:5479`）忽略该参数，仅从宿主的 mixed render child list 构造目标列表（`:5266-5280`）。两条路径在本重建链路内最终由 `ReCreateRsNodeTreeByTargetList`（`:5498`）做 diff。源码另有独立的直接 RS 子节点操作路径，因此不把该结论扩展为全局“禁止绕过”。
+
+渲染状态监控（`frameworks/core/components_ng/base/node_render_status_monitor.cpp`）：注册返回 ID+当前 state，`interfaces/napi/kits/observer/ui_observer.cpp:1747-1788` 随后立即执行首次回调。`resourceId=0` 的 OBSERVER 每节点仅一份，非零 resourceId 按 resourceId 去重。64 上限统计 FrameNode map key；公开 API 在注册前先检查上限，达到 64 条后拒绝后续注册并报告 161001。状态算法先检查目标节点的 visible/active/on-main-tree；目标无 parent 返回 OUT；遍历到 root 时直接返回 IN且不检查 root 状态；遍历未到 root 返回 OUT。该算法不读取 `isPendingState_` 或 RS 物理树状态。`WalkThroughAncestorForStateListener` 在 `PipelineContext::FlushVsync` 的 `FlushTask` 与资源重载之后执行（`frameworks/core/pipeline_ng/pipeline_context.cpp:1294-1303`），早于 `FlushAfterRenderTask`。
+
 ## 风险和开放问题
 
 | 项 | 类型 | 影响 | 处理方式 | Owner |
@@ -414,6 +547,8 @@ FlushRenderTask                                     # :337
 | Paint 阶段 Modifier 与 Draw fallback 并存，Draw 路径修改不会触发离帧动画，迁移过程中可能出现新旧组件行为不一致 | API | 中 | 在 Feat-04 Render spec 标注每个组件路径；不强制统一 | 渲染管线团队 |
 | `FlushMessages` 之后的 RC 修改进入下一帧，组件代码在该边界后写属性会有一帧延迟 | 文档 | 低 | 文档化"RS 提交边界"概念；不在管线层做防御 | 渲染管线团队 |
 | `frameCount==UINT64_MAX` 哨兵语义与 RS 真实 frameCount 共享同一参数，未来 RS 协议变更需注意 | 兼容性 | 低 | 在 Feat-05 vsync spec 标注；保留至少一处常量 | 渲染管线团队 |
+| `ProcessRenderTreeDiff` 中 `isPendingState_` 作 `isOnMainTree` 传递，同帧跨父节点重上树时新父 Attach 因 `isPendingState_=true` early-return、旧父 Detach 错误置 false（R-14 已知缺陷） | 架构 | 中：导致 `OnAttachToMainRenderTree`/`OnDetachFromMainRenderTree` 回调错乱，依赖该回调的 Pattern（如 `ImagePattern::OnAttachToMainRenderTree`）受影响 | 当前以已知缺陷承接，不在本 Feat 修复；修复需保证跨父节点 ProcessRenderTreeDiff 时序，并同步验证 `OnAttachToMainRenderTree`/`OnDetachFromMainRenderTree` 重写方 | 渲染管线团队 |
+| SDK 将 nodeRenderState 描述为参与/离开渲染树，源码却同时用 visible/active/on-main-tree 判定，且遇到 root 时不检查 root 状态 | 兼容性 | 中：应用收到的状态可能与仅按 RS 物理树理解的结果不同 | SDK 作为外部契约；源码偏差显式保留，后续行为变更需做 API 兼容评估 | ArkUI API / 渲染管线团队 |
 
 ## 设计审批
 
