@@ -829,7 +829,6 @@ def _aggregation_evidence_catalog(
     """Re-key one observation's evidence into the run-level aggregation namespace."""
     rows: list[dict[str, Any]] = []
     by_source_id: dict[str, str] = {}
-    source_rows_by_id: dict[str, dict[str, Any]] = {}
     by_aggregation_id: dict[str, dict[str, Any]] = {}
     for observation in document.get("observations", []):
         if not isinstance(observation, dict):
@@ -868,17 +867,22 @@ def _aggregation_evidence_catalog(
                 "source_work_item_id": work_item_id,
                 "source_evidence_id": source_id,
             }
+            # ``aggregation_id`` is derived solely from the physical identity
+            # tuple (work item, source id, type, path, line span, content
+            # hash); it deliberately excludes annotation prose such as
+            # ``description`` and ``claim_id``.  A source id that maps to the
+            # same aggregation_id therefore refers to the same physical
+            # evidence, so divergent annotations (e.g. a correction step adding
+            # an observation that reuses the id with a reworded description)
+            # are benign — the first-seen row wins.  Only a source id that
+            # resolves to a *different* physical identity is a real collision.
             previous_id = by_source_id.get(source_id)
-            previous_row = source_rows_by_id.get(source_id)
-            if previous_id is not None and (
-                previous_id != aggregation_id or previous_row != row
-            ):
+            if previous_id is not None and previous_id != aggregation_id:
                 raise ValueError(
                     f"observation {work_item_id} reuses evidence ID {source_id} "
                     "for different evidence rows"
                 )
             by_source_id[source_id] = aggregation_id
-            source_rows_by_id[source_id] = row
             if aggregation_id not in by_aggregation_id:
                 by_aggregation_id[aggregation_id] = row
                 rows.append(row)

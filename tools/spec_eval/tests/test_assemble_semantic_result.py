@@ -28,6 +28,7 @@ from aggregation_warning_policy import (  # noqa: E402
     split_observation_warnings,
 )
 from staged_run_support import (  # noqa: E402
+    _aggregation_evidence_catalog,
     repair_missing_finding_evidence,
 )
 from validate_staged_run import main as validate_staged_main  # noqa: E402
@@ -475,6 +476,48 @@ class RepairMissingFindingEvidenceTest(unittest.TestCase):
         self.assertEqual(
             len(twice["criterion_results"][0]["evidence"]), 1,
         )
+
+
+class AggregationEvidenceCatalogTest(unittest.TestCase):
+    def _evidence(self, description: str, claim_id: str = "Feat-01/AC-1.1") -> dict:
+        return {
+            "evidence_id": "EV-21",
+            "type": "test",
+            "path": "test/unittest/core/x_test.cpp",
+            "line_start": 10,
+            "line_end": 42,
+            "content_hash": "abc123",
+            "source_revision": "rev-1",
+            "claim_id": claim_id,
+            "description": description,
+        }
+
+    def _document(self, *evidence_rows: dict) -> dict:
+        return {
+            "observations": [
+                {"evidence": [row]} for row in evidence_rows
+            ]
+        }
+
+    def test_same_id_tolerates_description_drift(self) -> None:
+        # A correction step reusing EV-21 with a reworded description points at
+        # the same physical evidence; it must collapse to one row, not abort.
+        doc = self._document(
+            self._evidence("SDK 声明文件可用性审查"),
+            self._evidence("运行时验证数据可用性审查", claim_id="Feat-01/AC-1.2"),
+        )
+        rows, by_source_id = _aggregation_evidence_catalog("feature:Feat-01", doc)
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["description"], "SDK 声明文件可用性审查")
+        self.assertEqual(len(by_source_id), 1)
+
+    def test_same_id_different_physical_evidence_still_raises(self) -> None:
+        first = self._evidence("desc")
+        second = self._evidence("desc")
+        second["content_hash"] = "different-hash"
+        doc = self._document(first, second)
+        with self.assertRaises(ValueError):
+            _aggregation_evidence_catalog("feature:Feat-01", doc)
 
 
 if __name__ == "__main__":
