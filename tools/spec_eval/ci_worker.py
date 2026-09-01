@@ -463,6 +463,7 @@ def run_ci_runner(
     baseline: Path,
     output_dir: Path,
     repo_root: Path,
+    registry_base: str | None = None,
     top: int = 5,
     no_cache: bool = False,
     python: str = "python3",
@@ -483,6 +484,12 @@ def run_ci_runner(
         "--json",
         "--quiet",
     ]
+    if registry_base:
+        # Pass the target SHA so the registry diff analyzer can compare
+        # features.yaml against the merge-base rather than HEAD, which would
+        # always be empty because the specs repo is checked out to the tested
+        # commit before ci_runner runs.
+        command.extend(["--registry-base", registry_base])
     if no_cache:
         command.append("--no-cache")
     started = time.perf_counter()
@@ -1283,6 +1290,7 @@ def process_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[str, An
             baseline=ctx.baseline,
             output_dir=archive_dir / "out",
             repo_root=ctx.repo_root,
+            registry_base=target,
             top=ctx.top,
             no_cache=ctx.no_cache,
             python=ctx.python,

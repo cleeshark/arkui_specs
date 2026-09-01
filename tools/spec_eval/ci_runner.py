@@ -35,6 +35,14 @@ def build_parser() -> argparse.ArgumentParser:
     source.add_argument("--files-from", type=Path, help="newline-delimited changed file list")
     source.add_argument("--base", help="Git base revision used with --head")
     parser.add_argument("--head", default="HEAD", help="Git head revision; defaults to HEAD")
+    parser.add_argument(
+        "--registry-base",
+        help=(
+            "Git base revision for registry (features.yaml/functions.yaml) diff analysis; "
+            "used with --files-from where the working tree is checked out to the tested commit "
+            "so HEAD-based diffs would be empty. Defaults to --base or HEAD."
+        ),
+    )
     parser.add_argument("--output", type=Path, help="artifact root; defaults to out/spec-evaluation")
     gate = parser.add_mutually_exclusive_group()
     gate.add_argument("--enforce", action="store_true", help="return 1 when an absolute Function gate fails")
@@ -158,8 +166,11 @@ def run(args: argparse.Namespace) -> tuple[dict[str, Any], int]:
         if args.baseline is not None
         else None
     )
-    # Determine base_ref for registry diff analysis
-    base_ref = args.base if args.base is not None else "HEAD"
+    # Determine base_ref for registry diff analysis. Prefer an explicit
+    # --registry-base (CI passes the target SHA here because the specs repo is
+    # checked out to the tested commit, making HEAD-based diffs empty), then
+    # fall back to --base, then HEAD for local/interactive use.
+    base_ref = args.registry_base or args.base or "HEAD"
     contexts = ChangedFunctionResolver(orchestrator.locator, base_ref=base_ref).resolve(changed_files)
     prepare_contexts = getattr(orchestrator, "prepare_contexts", None)
     cache_probe = getattr(orchestrator, "contexts_are_fully_cached", None)
