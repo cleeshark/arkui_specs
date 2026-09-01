@@ -90,9 +90,9 @@
 
 ### US-5: Paint Modifier 与 Draw 分流
 
-- As a 组件作者
-- I want `PaintWrapper::FlushRender` 按 Content/Foreground/Overlay 类型分别选择 Modifier 或 Draw，并统一维护 recording 生命周期
-- So that 支持属性独立动画的同时保持旧组件可用
+- **作为** 组件作者
+- **我想要** `PaintWrapper::FlushRender` 按 Content/Foreground/Overlay 类型分别选择 Modifier 或 Draw，并统一维护 recording 生命周期
+- **以便** 支持属性独立动画的同时保持旧组件可用
 
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
