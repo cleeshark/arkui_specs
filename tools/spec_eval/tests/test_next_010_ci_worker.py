@@ -31,6 +31,7 @@ from spec_eval.ci_worker import (
     processed_set,
     rebuild_site,
     render_comment,
+    render_full_report,
     reset_pr_test,
     run_specs_checks,
     specs_checks_passed,
@@ -207,6 +208,56 @@ class RenderCommentTest(unittest.TestCase):
         summary = json.loads((FIXTURES / "ci-summary-n-affected-with-added.json").read_text(encoding="utf-8"))
         body = render_comment(summary, _receipt(iid=9, delivery="9_probe"), shas={"tested": "936b9f4abc", "target": "dd3687695c"}, ensure_action="matched")
         self.assertNotIn("Full report", body)
+
+
+class RenderFullReportTest(unittest.TestCase):
+    def _summary(self, n: int) -> dict:
+        findings = [
+            {
+                "severity": "Major",
+                "rule_id": f"RULE-{i:03d}",
+                "path": f"specs/x/Feat-0{i}-spec.md",
+                "line": 10 + i,
+                "count": 1,
+                "message": f"finding number {i}",
+                "feat_id": f"Feat-0{i}",
+            }
+            for i in range(1, n + 1)
+        ]
+        return {
+            "affected_function_count": 1,
+            "delta": {"added": n, "resolved": 0, "reclassified": 0},
+            "baseline": {"path": "current.json", "source_revision": "ad62911"},
+            "source_revision": "5313ac9",
+            "functions": [
+                {
+                    "func_id": "03-01-01",
+                    "gate": "fail",
+                    "delta": {"added": n},
+                    "top_added_findings": findings[:5],
+                    "added_findings": findings,
+                }
+            ],
+        }
+
+    def test_lists_every_added_finding_not_just_top(self) -> None:
+        report = render_full_report(
+            self._summary(24),
+            _receipt(iid=225, delivery="225_abc"),
+            shas={"tested": "c2f85b0", "target": "71b49f0"},
+        )
+        # All 24 findings present (comment would only show 5)
+        for i in (1, 5, 6, 24):
+            self.assertIn(f"finding number {i}", report)
+        self.assertIn("### 03-01-01", report)
+        self.assertIn("24 finding(s)", report)
+        self.assertIn("| # | Severity | Rule | Feature | Location | Count | Message |", report)
+
+    def test_no_delta_message_when_empty(self) -> None:
+        summary = self._summary(0)
+        summary["functions"] = []
+        report = render_full_report(summary, _receipt(iid=1, delivery="1_x"), shas={"tested": "a", "target": "b"})
+        self.assertIn("No delta findings", report)
 
 
 class WhitelistAndLedgerTest(unittest.TestCase):

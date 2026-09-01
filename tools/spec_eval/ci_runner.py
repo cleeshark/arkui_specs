@@ -147,6 +147,10 @@ def _attach_delta(
     item["top_added_findings"] = added[:limit]
     item["top_resolved_findings"] = resolved[:limit]
     item["top_reclassified_findings"] = reclassified[:limit]
+    # Full (untruncated) delta lists so the archived report can list every
+    # finding; the PR comment still reads the top_* samples above to stay lean.
+    item["added_findings"] = added
+    item["resolved_findings"] = resolved
     item["delta_reasons"] = delta_gate["reasons"]
 
 
