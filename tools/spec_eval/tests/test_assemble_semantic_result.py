@@ -21,7 +21,9 @@ from assemble_semantic_result import (  # noqa: E402
     split_aggregation_warnings,
 )
 from aggregation_warning_policy import (  # noqa: E402
+    record_claim_coverage_warning,
     record_evidence_type_warning,
+    split_claim_coverage_warnings,
     split_final_candidate_warnings,
     split_observation_warnings,
 )
@@ -224,6 +226,49 @@ class AssembleSemanticResultWarningTest(unittest.TestCase):
             result["minor_violations"][0]["code"],
             "MAPPING_CLAIM_UNMAPPED",
         )
+
+    def test_claim_coverage_error_is_downgraded_unconditionally(self) -> None:
+        blocking, warnings = split_claim_coverage_warnings([
+            "observation[Feat-01].claim_reviews[3].criterion_ids: at least "
+            "one Criterion is required",
+            "observation[Feat-01].status: set to 'complete'",
+        ])
+        self.assertEqual(len(warnings), 1)
+        self.assertIn("criterion_ids", warnings[0])
+        self.assertEqual(len(blocking), 1)
+        self.assertIn("status", blocking[0])
+
+    def test_claim_coverage_warning_deducts_minor_confidence_once(self) -> None:
+        with TemporaryDirectory() as temporary:
+            run_dir = Path(temporary)
+            (run_dir / "confidence-result.json").write_text(
+                json.dumps({
+                    "confidence_score": 100,
+                    "confidence_level": "HIGH",
+                    "hard_errors": [],
+                    "major_violations": [],
+                    "minor_violations": [],
+                    "total_checks_failed": 0,
+                    "deduction_total": 0,
+                }),
+                encoding="utf-8",
+            )
+            record_claim_coverage_warning(run_dir, ["warning-1"])
+            record_claim_coverage_warning(run_dir, ["warning-2"])
+            result = json.loads((run_dir / "confidence-result.json").read_text())
+        self.assertEqual(result["confidence_score"], 95)
+        self.assertEqual(result["deduction_total"], 5)
+        self.assertEqual(len(result["minor_violations"]), 1)
+        self.assertEqual(
+            result["minor_violations"][0]["code"],
+            "OBSERVATION_CLAIM_COVERAGE",
+        )
+
+    def test_claim_coverage_recorder_noop_without_warnings(self) -> None:
+        with TemporaryDirectory() as temporary:
+            run_dir = Path(temporary)
+            record_claim_coverage_warning(run_dir, [])
+            self.assertFalse((run_dir / "confidence-result.json").exists())
 
     def test_finding_evidence_recovery_deducts_major_confidence_once(
         self,
