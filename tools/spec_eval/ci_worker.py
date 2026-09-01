@@ -40,6 +40,10 @@ LOGGER = logging.getLogger("spec_eval.ci_worker")
 COMMENT_MARKER = "<!-- spec-eval-bot:updatable:v1 -->"
 DEFAULT_BOT_LOGIN = "arkui_architecture"
 DEFAULT_ALLOW_PROJECTS = ("arkui_architecture/arkui-specs",)
+# URL segment under the report base URL where the webhook server serves
+# per-delivery CI archives. Must match ``gitcode_webhook.ARCHIVE_URL_SEGMENT``;
+# a link built here resolves to that route.
+ARCHIVE_URL_SEGMENT = "ci"
 
 # GitCode MR webhook ``action`` values that signal a completed merge. A merge
 # receipt does not represent a PR head to evaluate; instead it triggers a
@@ -98,6 +102,10 @@ class WorkerContext:
     force_sync: bool = False
     rebuild_site_on_merge: bool = True
     site_base_url: str = "/arkui_specs/"
+    # Public origin+base where the webhook server serves per-delivery archives,
+    # e.g. "http://host:6003/arkui_specs". When set, the PR comment links to the
+    # full report; when None, the comment omits the link.
+    report_base_url: str | None = None
     site_mode: str = "static"
 
 
@@ -651,6 +659,7 @@ def render_comment(
     ensure_action: str,
     exit_code: int = EXIT_OK,
     specs_checks: list[SpecCheckResult] | None = None,
+    report_base_url: str | None = None,
 ) -> str:
     """Render the updatable PR comment markdown from a ci-summary.
 
@@ -756,6 +765,18 @@ def render_comment(
         f"**Delta vs baseline:** ➕ added {added} · ➖ resolved {resolved} · 🔄 reclassified {reclassified}"
     )
     lines.append("")
+
+    # The findings tables below only sample the top few findings per Function
+    # (ci_runner --top). Link the full archive so PR authors can browse/download
+    # every finding (ci-summary.json) and the per-Function report.md under out/.
+    if report_base_url:
+        safe_delivery = (delivery or "unknown").replace("/", "_")
+        delivery_url = f"{report_base_url.rstrip('/')}/{ARCHIVE_URL_SEGMENT}/pr-{iid}/{safe_delivery}/"
+        lines.append(
+            f"📄 **Full report:** [browse & download all findings]({delivery_url}) "
+            "— the tables below show only the top findings per Function."
+        )
+        lines.append("")
 
     if affected > 0 and added > 0:
         lines += ["### New findings", "", "| Function | Rule | Severity | Location | Message |", "|---|---|---|---|---|"]
@@ -1324,6 +1345,7 @@ def process_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[str, An
             ensure_action=action,
             exit_code=exit_code,
             specs_checks=specs_checks,
+            report_base_url=ctx.report_base_url,
         )
         (archive_dir / "comment-body.md").write_text(comment_body, encoding="utf-8")
         try:
@@ -1463,6 +1485,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="BASE_URL passed to `npm run build` so site assets resolve under the served path (default /arkui_specs/)",
     )
     parser.add_argument(
+        "--report-base-url",
+        default=None,
+        help=(
+            "Public origin+base URL where the webhook server serves per-delivery archives "
+            "(e.g. http://host:6003/arkui_specs). When set, each PR comment links to the full "
+            "report; the webhook must run with --archive-root pointing at --output-root."
+        ),
+    )
+    parser.add_argument(
         "--site-mode",
         choices=["static", "dynamic"],
         default="static",
@@ -1523,6 +1554,7 @@ def build_context(args: argparse.Namespace) -> WorkerContext:
         force_sync=args.force_sync,
         rebuild_site_on_merge=not args.no_rebuild_site,
         site_base_url=args.site_base_url,
+        report_base_url=args.report_base_url,
         site_mode=args.site_mode,
         oh_gc=args.oh_gc,
         python=args.python,

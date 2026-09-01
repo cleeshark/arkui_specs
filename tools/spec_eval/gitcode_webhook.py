@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import hmac
+import html
 import ipaddress
 import json
 import logging
@@ -25,6 +26,12 @@ DEFAULT_WEBHOOK_PATH = "/webhooks/gitcode"
 DEFAULT_EVENTS_FILE = Path("specs/.evaluator/webhook/receipts.ndjson")
 DEFAULT_MAX_BODY_BYTES = 1024 * 1024
 DEFAULT_SITE_BASE_PATH = "/arkui_specs"
+# URL segment, appended to the site base path, under which per-delivery CI
+# archives (report.md / static-result.json / ci-summary.json) are served so PR
+# authors can browse and download the full report the comment only samples.
+# ci_worker builds report links against ``<site_base_path>/<segment>/pr-<iid>/<delivery>/``;
+# keep the two in sync.
+ARCHIVE_URL_SEGMENT = "ci"
 MERGE_REQUEST_EVENT = "Merge Request Hook"
 SHA_PATTERN = re.compile(r"^[0-9a-fA-F]{40,64}$")
 
@@ -276,6 +283,76 @@ def _serve_site_path(
     handler.wfile.write(data)
 
 
+def _serve_archive_path(
+    handler: BaseHTTPRequestHandler,
+    raw_path: str,
+    archive_root: Path,
+    archive_base: str,
+) -> None:
+    """Serve a CI archive file, or an HTML directory listing, under ``archive_base``.
+
+    Lets PR authors browse and download the full per-delivery report
+    (``report.md`` / ``static-result.json`` / ``ci-summary.json`` and the
+    per-Function ``out/<sha>/<func_id>/`` tree) that the PR comment only
+    samples. Public (unauthenticated) read; path traversal outside
+    ``archive_root`` resolves to a 404. Unlike the Docusaurus site route,
+    directory requests render a listing rather than an ``index.html``.
+    """
+    url_path = raw_path.split("?", 1)[0]
+    rel = url_path[len(archive_base):].lstrip("/")
+    archive_root_resolved = archive_root.resolve()
+    candidate = (archive_root_resolved / rel) if rel else archive_root_resolved
+    try:
+        resolved = candidate.resolve()
+        resolved.relative_to(archive_root_resolved)
+    except ValueError:
+        _json_response(handler, 404, {"status": "error", "code": "NOT_FOUND"})
+        return
+
+    if resolved.is_dir():
+        _serve_archive_listing(handler, resolved, url_path)
+        return
+    if not resolved.is_file():
+        _json_response(handler, 404, {"status": "error", "code": "NOT_FOUND"})
+        return
+
+    content_type, _ = mimetypes.guess_type(str(resolved))
+    if content_type is None:
+        # Serve .md and other unknown text as UTF-8 text so browsers render it
+        # inline instead of forcing a download of mojibake.
+        content_type = "text/plain; charset=utf-8" if resolved.suffix == ".md" else "application/octet-stream"
+    elif content_type.startswith("text/") or content_type in {"application/javascript", "application/json"}:
+        content_type = f"{content_type}; charset=utf-8"
+    data = resolved.read_bytes()
+    handler.send_response(200)
+    handler.send_header("Content-Type", content_type)
+    handler.send_header("Content-Length", str(len(data)))
+    handler.end_headers()
+    handler.wfile.write(data)
+
+
+def _serve_archive_listing(handler: BaseHTTPRequestHandler, directory: Path, url_path: str) -> None:
+    """Render a minimal HTML directory listing for an archive directory."""
+    base = url_path if url_path.endswith("/") else url_path + "/"
+    entries = sorted(directory.iterdir(), key=lambda p: (p.is_file(), p.name))
+    rows = ['<li><a href="../">../</a></li>']
+    for entry in entries:
+        name = entry.name + ("/" if entry.is_dir() else "")
+        href = html.escape(base + name, quote=True)
+        rows.append(f'<li><a href="{href}">{html.escape(name)}</a></li>')
+    body = (
+        "<!doctype html><html><head><meta charset=\"utf-8\">"
+        f"<title>{html.escape(url_path)}</title></head><body>"
+        f"<h1>Index of {html.escape(url_path)}</h1><ul>{''.join(rows)}</ul>"
+        "</body></html>"
+    ).encode("utf-8")
+    handler.send_response(200)
+    handler.send_header("Content-Type", "text/html; charset=utf-8")
+    handler.send_header("Content-Length", str(len(body)))
+    handler.end_headers()
+    handler.wfile.write(body)
+
+
 def create_server(
     host: str,
     port: int,
@@ -287,6 +364,7 @@ def create_server(
     max_body_bytes: int = DEFAULT_MAX_BODY_BYTES,
     site_root: Path | None = None,
     site_base_path: str = DEFAULT_SITE_BASE_PATH,
+    archive_root: Path | None = None,
 ) -> ThreadingHTTPServer:
     """Create a configured HTTP server without starting its event loop."""
 
@@ -294,17 +372,19 @@ def create_server(
         raise ValueError("webhook_path must start with /")
     if max_body_bytes <= 0:
         raise ValueError("max_body_bytes must be positive")
-    if site_root is not None:
-        if not site_base_path.startswith("/"):
-            raise ValueError("site_base_path must start with /")
-        if not site_root.is_dir():
-            # The build dir is produced by the first merge-rebuild; until it
-            # exists, /arkui_specs simply 404s at request time. Do not abort
-            # startup, or the webhook can never receive the merge that builds it.
-            LOGGER.warning(
-                "site_root %s does not exist yet; %s will 404 until a rebuild creates it",
-                site_root, site_base_path,
-            )
+    if not site_base_path.startswith("/"):
+        raise ValueError("site_base_path must start with /")
+    if site_root is not None and not site_root.is_dir():
+        # The build dir is produced by the first merge-rebuild; until it
+        # exists, /arkui_specs simply 404s at request time. Do not abort
+        # startup, or the webhook can never receive the merge that builds it.
+        LOGGER.warning(
+            "site_root %s does not exist yet; %s will 404 until a rebuild creates it",
+            site_root, site_base_path,
+        )
+    # Per-delivery CI archives are served at <site_base_path>/ci/... . This is a
+    # sub-path of the site base, so it must be matched before the site route.
+    archive_base = f"{site_base_path.rstrip('/')}/{ARCHIVE_URL_SEGMENT}"
 
     class GitCodeWebhookHandler(BaseHTTPRequestHandler):
         server_version = "ArkUISpecEvalWebhook/0.1"
@@ -315,6 +395,11 @@ def create_server(
 
         def do_GET(self) -> None:  # noqa: N802 - BaseHTTPRequestHandler API
             url_path = self.path.split("?", 1)[0]
+            # Archive route first: <site_base_path>/ci/... is a sub-path of the
+            # site base, so the more specific prefix must win.
+            if archive_root is not None and (url_path == archive_base or url_path.startswith(archive_base + "/")):
+                _serve_archive_path(self, self.path, archive_root, archive_base)
+                return
             if site_root is not None and (url_path == site_base_path or url_path.startswith(site_base_path + "/")):
                 _serve_site_path(self, self.path, site_root, site_base_path)
                 return
@@ -426,6 +511,10 @@ def build_parser() -> argparse.ArgumentParser:
                         help="Directory of the rebuilt Docusaurus site to serve at --site-base-path (default: site not served)")
     parser.add_argument("--site-base-path", default=DEFAULT_SITE_BASE_PATH,
                         help=f"URL path prefix for the served site (default {DEFAULT_SITE_BASE_PATH})")
+    parser.add_argument("--archive-root", type=Path, default=None,
+                        help=("Directory of per-delivery CI archives (ci_worker --output-root, "
+                              f"e.g. specs/.evaluator/ci) to serve at <site-base-path>/{ARCHIVE_URL_SEGMENT} "
+                              "for full-report browsing/download (default: not served)"))
     parser.add_argument("--token-env", default="GITCODE_WEBHOOK_TOKEN")
     parser.add_argument("--signature-secret-env", default="GITCODE_WEBHOOK_SIGNATURE_SECRET")
     return parser
@@ -450,6 +539,7 @@ def main(argv: list[str] | None = None) -> int:
             max_body_bytes=args.max_body_bytes,
             site_root=args.site_root,
             site_base_path=args.site_base_path,
+            archive_root=args.archive_root,
         )
     except (OSError, ValueError) as error:
         parser.error(str(error))

@@ -344,5 +344,102 @@ class SiteStaticServeTest(unittest.TestCase):
             self.assertEqual(status, 200)
 
 
+class ArchiveServeTest(unittest.TestCase):
+    """The webhook server serves per-delivery CI archives at <base>/ci/... ."""
+
+    def setUp(self) -> None:
+        self._servers: list = []
+
+    def tearDown(self) -> None:
+        for server, thread in self._servers:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=5)
+
+    def _serve(self, *, archive_root: Path | None = None, site_root: Path | None = None):
+        receipts = Path(tempfile.mkdtemp()) / "receipts.ndjson"
+        kwargs: dict = {"store": ReceiptStore(receipts)}
+        if archive_root is not None:
+            kwargs["archive_root"] = archive_root
+        if site_root is not None:
+            kwargs["site_root"] = site_root
+        server = create_server("127.0.0.1", 0, **kwargs)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        self._servers.append((server, thread))
+        return server
+
+    @staticmethod
+    def _get(server, path: str) -> tuple[int, bytes, str]:
+        connection = http.client.HTTPConnection(*server.server_address, timeout=5)
+        connection.request("GET", path)
+        response = connection.getresponse()
+        body = response.read()
+        content_type = response.getheader("Content-Type", "")
+        connection.close()
+        return response.status, body, content_type
+
+    def _delivery(self) -> Path:
+        root = Path(tempfile.mkdtemp())
+        d = root / "pr-225" / "225_abc"
+        (d / "out" / "sha1" / "03-01-01").mkdir(parents=True)
+        (d / "ci-summary.json").write_text('{"affected_function_count": 1}', encoding="utf-8")
+        (d / "out" / "sha1" / "03-01-01" / "report.md").write_text("# full report\n", encoding="utf-8")
+        return root
+
+    def test_serves_archive_file_as_utf8(self) -> None:
+        root = self._delivery()
+        server = self._serve(archive_root=root)
+        status, body, content_type = self._get(
+            server, "/arkui_specs/ci/pr-225/225_abc/out/sha1/03-01-01/report.md"
+        )
+        self.assertEqual(status, 200)
+        self.assertIn(b"full report", body)
+        self.assertIn("charset=utf-8", content_type)
+
+    def test_serves_json_finding_summary(self) -> None:
+        root = self._delivery()
+        server = self._serve(archive_root=root)
+        status, body, content_type = self._get(server, "/arkui_specs/ci/pr-225/225_abc/ci-summary.json")
+        self.assertEqual(status, 200)
+        self.assertIn(b"affected_function_count", body)
+        self.assertIn("application/json", content_type)
+
+    def test_directory_listing_links_entries(self) -> None:
+        root = self._delivery()
+        server = self._serve(archive_root=root)
+        status, body, content_type = self._get(server, "/arkui_specs/ci/pr-225/225_abc/")
+        self.assertEqual(status, 200)
+        self.assertIn("text/html", content_type)
+        self.assertIn(b"ci-summary.json", body)
+        self.assertIn(b"out/", body)  # subdirectory linked with trailing slash
+
+    def test_traversal_outside_archive_root_is_404(self) -> None:
+        root = self._delivery()
+        server = self._serve(archive_root=root)
+        status, _, _ = self._get(server, "/arkui_specs/ci/../../../../etc/passwd")
+        self.assertEqual(status, 404)
+
+    def test_archive_route_wins_over_site_route(self) -> None:
+        # /arkui_specs/ci is a sub-path of the site base; the archive must win.
+        archive = self._delivery()
+        with tempfile.TemporaryDirectory() as site_dir:
+            site = Path(site_dir)
+            (site / "index.html").write_text("<html>site</html>", encoding="utf-8")
+            server = self._serve(archive_root=archive, site_root=site)
+            status, body, _ = self._get(server, "/arkui_specs/ci/pr-225/225_abc/ci-summary.json")
+            self.assertEqual(status, 200)
+            self.assertIn(b"affected_function_count", body)
+            # site route still works for non-ci paths
+            status, body, _ = self._get(server, "/arkui_specs/")
+            self.assertEqual(status, 200)
+            self.assertIn(b"site", body)
+
+    def test_archive_root_none_is_404(self) -> None:
+        server = self._serve(archive_root=None)
+        status, _, _ = self._get(server, "/arkui_specs/ci/pr-225/225_abc/ci-summary.json")
+        self.assertEqual(status, 404)
+
+
 if __name__ == "__main__":
     unittest.main()
