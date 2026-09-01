@@ -178,10 +178,13 @@ _DEFAULT_OUTPUT_RULES: dict[str, Any] = {
             "each must have key, type, path, lines, description; "
             "type must be one of the allowed evidence type enum values, "
             "and path must be a canonical repository-relative path inside "
-            "ace_engine, sdk-js, or sdk_c — NOT a specs/ path), "
+            "ace_engine, sdk-js, or sdk_c — NOT a specs/ path — that points at "
+            "a file which ACTUALLY EXISTS (verify with ls/find; do not guess "
+            "directory levels)), "
             "open_questions (array of strings), notes (array of strings). "
             "The exact schema is in shard_schemas.aux_schema. "
-            "Validate with: python3 <validate_script> aux aux.json"
+            "Validate with: python3 <validate_script> aux aux.json "
+            "(this also checks every evidence path exists in the frozen repos)."
         ),
     },
     "self_recovery": (
