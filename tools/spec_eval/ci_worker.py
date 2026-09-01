@@ -773,8 +773,8 @@ def render_comment(
         safe_delivery = (delivery or "unknown").replace("/", "_")
         delivery_url = f"{report_base_url.rstrip('/')}/{ARCHIVE_URL_SEGMENT}/pr-{iid}/{safe_delivery}/"
         lines.append(
-            f"📄 **Full report:** [browse & download all findings]({delivery_url}) "
-            "— the tables below show only the top findings per Function."
+            f"📄 **Full report:** [complete findings (Markdown)]({delivery_url}full-report.md) "
+            f"· [browse archive]({delivery_url}) — the tables below show only the top findings per Function."
         )
         lines.append("")
 
@@ -821,6 +821,111 @@ def render_comment(
         "</details>",
         "",
     ]
+    return "\n".join(lines)
+
+
+def _finding_row(index: int, finding: dict[str, Any]) -> str:
+    """One markdown table row for a finding in the full report."""
+    severity = finding.get("severity", "Info")
+    location = finding.get("path", "")
+    line_no = finding.get("line")
+    if line_no:
+        location = f"{location}:{line_no}"
+    message = (finding.get("message", "") or "").replace("|", "\\|").replace("\n", " ")
+    rule_id = finding.get("rule_id", "")
+    count = int(finding.get("count", 1) or 1)
+    feat = finding.get("feat_id", "") or ""
+    return (
+        f"| {index} | {SEVERITY_EMOJI.get(severity, '')} {severity} | {rule_id} | {feat} "
+        f"| `{location}` | {count} | {message} |"
+    )
+
+
+def render_full_report(
+    ci_summary: dict[str, Any],
+    receipt: dict[str, Any],
+    *,
+    shas: dict[str, str | None],
+) -> str:
+    """Render a complete, human-readable markdown of every delta finding.
+
+    Unlike the PR comment (which samples ``top_*`` per Function), this lists
+    all ``added_findings`` and ``resolved_findings`` for each affected Function
+    so the archived report is the authoritative, readable view of the run.
+    Pure function: no I/O.
+    """
+    pull_request = receipt.get("pull_request") or {}
+    iid = pull_request.get("iid")
+    source_branch = pull_request.get("source_branch", "")
+    target_branch = pull_request.get("target_branch", "")
+    delivery = receipt.get("delivery_id", "")
+    delta = ci_summary.get("delta") or {}
+    added = int(delta.get("added", 0) or 0)
+    resolved = int(delta.get("resolved", 0) or 0)
+    reclassified = int(delta.get("reclassified", 0) or 0)
+    affected = int(ci_summary.get("affected_function_count", 0) or 0)
+    error_count = int(ci_summary.get("error_count", 0) or 0)
+    functions = ci_summary.get("functions") or []
+    baseline = ci_summary.get("baseline") or {}
+    src_rev = ci_summary.get("source_revision", "")
+    tested = shas.get("tested")
+    target = shas.get("target")
+
+    lines: list[str] = [
+        f"# spec-evaluator full report — PR !{iid}",
+        "",
+        "| | |",
+        "|---|---|",
+        f"| **PR** | !{iid} ({source_branch} → {target_branch}) |",
+        f"| **Delivery** | `{delivery}` |",
+        f"| **Specs head** | `{_short(tested)}` · **Target** `{_short(target)}` |",
+        f"| **ace_engine** | `{_short(src_rev)}` |",
+        f"| **Baseline** | {Path(baseline.get('path', 'current.json')).name} @ `{_short(baseline.get('source_revision'))}`"
+        f" (rule v{baseline.get('rule_version', '?')}, identity v{baseline.get('identity_version', '?')}) |",
+        "",
+        f"**Result:** {affected} affected Function(s) · added {added} · resolved {resolved} · reclassified {reclassified}",
+        "",
+    ]
+
+    header = "| # | Severity | Rule | Feature | Location | Count | Message |"
+    divider = "|---|---|---|---|---|---|---|"
+
+    # Per-Function new findings — the complete list, not just the top N.
+    added_funcs = [f for f in functions if f.get("added_findings")]
+    if added_funcs:
+        lines += ["## New findings (added vs baseline)", ""]
+        for function in sorted(added_funcs, key=lambda f: str(f.get("func_id", ""))):
+            func_id = function.get("func_id", "")
+            findings = function.get("added_findings") or []
+            total = sum(int(f.get("count", 1) or 1) for f in findings)
+            lines += [f"### {func_id} — {len(findings)} finding(s), {total} occurrence(s)", "", header, divider]
+            for i, finding in enumerate(findings, 1):
+                lines.append(_finding_row(i, finding))
+            lines.append("")
+
+    # Incomplete evaluations (per-Function errors).
+    error_funcs = [f for f in functions if f.get("gate") == "error"]
+    if error_funcs:
+        lines += ["## Incomplete evaluations", ""]
+        for function in sorted(error_funcs, key=lambda f: str(f.get("func_id", ""))):
+            lines.append(f"- `{function.get('func_id', '')}`: {function.get('error', 'evaluation error')}")
+        lines.append("")
+
+    # Resolved findings, collapsed — useful context but not the headline.
+    resolved_funcs = [f for f in functions if f.get("resolved_findings")]
+    if resolved_funcs:
+        lines += ["## Resolved findings (present in baseline, gone now)", ""]
+        for function in sorted(resolved_funcs, key=lambda f: str(f.get("func_id", ""))):
+            func_id = function.get("func_id", "")
+            findings = function.get("resolved_findings") or []
+            lines += [f"### {func_id} — {len(findings)} resolved", "", header, divider]
+            for i, finding in enumerate(findings, 1):
+                lines.append(_finding_row(i, finding))
+            lines.append("")
+
+    if not added_funcs and not error_funcs and not resolved_funcs:
+        lines += ["_No delta findings: this run introduced no new errors and resolved none._", ""]
+
     return "\n".join(lines)
 
 
@@ -1338,6 +1443,11 @@ def process_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[str, An
             return result
 
         incomplete = exit_code == EXIT_INCOMPLETE
+        # Complete, human-readable report of every delta finding, archived and
+        # linked from the comment (the comment itself only samples top_*).
+        (archive_dir / "full-report.md").write_text(
+            render_full_report(summary, receipt, shas=shas), encoding="utf-8"
+        )
         comment_body = render_comment(
             summary,
             receipt,

@@ -23,7 +23,9 @@
 #   CI_REBUILD_SITE         set to 0 to skip rebuilding the Docusaurus site after a merge-sync (default: enabled)
 #   CI_SITE_BASE_PATH       URL path the site is served at + BASE_URL for the build (default /arkui_specs)
 #   CI_PUBLIC_ORIGIN        public scheme://host:port the site+archives are reachable at, for PR-comment
-#                           full-report links (default http://121.43.52.4:6003; empty = no link)
+#                           full-report links (read from ci_service.conf; empty = no link)
+#   CI_SERVICE_CONF         path to deployment-local config sourced at startup
+#                           (default specs/tools/spec_eval/ci_service.conf)
 #   CI_DYNAMIC_SITE          set to 0 to disable the dynamic site data watcher (default: enabled). The watcher
 #                            refreshes specs/site/{static,build}/data/*.json from the newest archived reports so
 #                            a browser reload shows the latest report state without a rebuild.
@@ -39,6 +41,15 @@ if [ -z "${GITCODE_WEBHOOK_TOKEN:-}" ] && [ -f "$HOME/.gitcode_webhook_token" ];
     export GITCODE_WEBHOOK_TOKEN="$(tr -d '\n' < "$HOME/.gitcode_webhook_token")"
 fi
 
+# Deployment-local config (public origin URL, overrides, ...). Sourced so the
+# site/archive URL is not hardcoded in this script. Override path via
+# CI_SERVICE_CONF; env vars already set take precedence (conf uses :- defaults).
+CI_SERVICE_CONF="${CI_SERVICE_CONF:-$SCRIPT_DIR/ci_service.conf}"
+if [ -f "$CI_SERVICE_CONF" ]; then
+    # shellcheck disable=SC1090
+    . "$CI_SERVICE_CONF"
+fi
+
 REPO="${SPEC_EVAL_REPO:-arkui_architecture/arkui-specs}"
 HOST="${WEBHOOK_HOST:-127.0.0.1}"
 PORT="${WEBHOOK_PORT:-8765}"
@@ -48,10 +59,10 @@ RECEIPTS="specs/.evaluator/webhook/receipts.ndjson"
 LEDGER="specs/.evaluator/ci/processed.ndjson"
 ARCHIVE_ROOT="specs/.evaluator/ci"
 # Public origin (scheme://host:port) the site + archives are reachable at, e.g.
-# via frp reverse proxy. Combined with SITE_BASE_PATH to build the report links
-# posted into PR comments. Override CI_PUBLIC_ORIGIN for a different deployment;
-# leave it empty to omit the full-report link entirely.
-PUBLIC_ORIGIN="${CI_PUBLIC_ORIGIN:-http://121.43.52.4:6003}"
+# via frp reverse proxy. Read from the config file above (or env); leave unset
+# to omit the full-report link entirely. Combined with SITE_BASE_PATH to build
+# the report links posted into PR comments.
+PUBLIC_ORIGIN="${CI_PUBLIC_ORIGIN:-}"
 REPORT_BASE_URL="${PUBLIC_ORIGIN:+${PUBLIC_ORIGIN}${SITE_BASE_PATH}}"
 
 mkdir -p specs/.evaluator/webhook specs/.evaluator/ci
