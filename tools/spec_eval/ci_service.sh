@@ -25,7 +25,7 @@
 #   CI_PUBLIC_ORIGIN        public scheme://host:port the site+archives are reachable at, for PR-comment
 #                           full-report links (read from ci_service.conf; empty = no link)
 #   CI_SERVICE_CONF         path to deployment-local config sourced at startup
-#                           (default specs/tools/spec_eval/ci_service.conf)
+#                           (default ${XDG_CONFIG_HOME:-~/.config}/spec_eval/ci_service.conf)
 #   CI_DYNAMIC_SITE          set to 0 to disable the dynamic site data watcher (default: enabled). The watcher
 #                            refreshes specs/site/{static,build}/data/*.json from the newest archived reports so
 #                            a browser reload shows the latest report state without a rebuild.
@@ -41,10 +41,10 @@ if [ -z "${GITCODE_WEBHOOK_TOKEN:-}" ] && [ -f "$HOME/.gitcode_webhook_token" ];
     export GITCODE_WEBHOOK_TOKEN="$(tr -d '\n' < "$HOME/.gitcode_webhook_token")"
 fi
 
-# Deployment-local config (public origin URL, overrides, ...). Sourced so the
-# site/archive URL is not hardcoded in this script. Override path via
+# Deployment-local config (public origin URL, overrides, ...), kept OUT of the
+# repo. Sourced so the site/archive URL is not hardcoded here. Override path via
 # CI_SERVICE_CONF; env vars already set take precedence (conf uses :- defaults).
-CI_SERVICE_CONF="${CI_SERVICE_CONF:-$SCRIPT_DIR/ci_service.conf}"
+CI_SERVICE_CONF="${CI_SERVICE_CONF:-${XDG_CONFIG_HOME:-$HOME/.config}/spec_eval/ci_service.conf}"
 if [ -f "$CI_SERVICE_CONF" ]; then
     # shellcheck disable=SC1090
     . "$CI_SERVICE_CONF"
