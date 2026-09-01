@@ -259,6 +259,33 @@ class RenderFullReportTest(unittest.TestCase):
         report = render_full_report(summary, _receipt(iid=1, delivery="1_x"), shas={"tested": "a", "target": "b"})
         self.assertIn("No delta findings", report)
 
+    def test_falls_back_to_top_findings_when_full_absent(self) -> None:
+        # Simulates an older ci_runner in the evaluated tree that emits only
+        # top_added_findings (no added_findings). The report must still list them.
+        summary = self._summary(6)
+        for f in summary["functions"]:
+            f["top_added_findings"] = f.pop("added_findings")  # drop the full field
+        report = render_full_report(summary, _receipt(iid=1, delivery="1_x"), shas={"tested": "a", "target": "b"})
+        for i in (1, 6):
+            self.assertIn(f"finding number {i}", report)
+        self.assertNotIn("No delta findings", report)
+
+    def test_comment_caps_rows_per_function(self) -> None:
+        # With a large archive --top the summary holds all findings; the comment
+        # must still cap the table to max_rows_per_func.
+        summary = self._summary(24)
+        # emulate ARCHIVE_TOP: top_added_findings holds every finding
+        summary["functions"][0]["top_added_findings"] = summary["functions"][0]["added_findings"]
+        body = render_comment(
+            summary,
+            _receipt(iid=9, delivery="9_x"),
+            shas={"tested": "a", "target": "b"},
+            ensure_action="matched",
+            max_rows_per_func=5,
+        )
+        self.assertIn("finding number 5", body)
+        self.assertNotIn("finding number 6", body)
+
 
 class WhitelistAndLedgerTest(unittest.TestCase):
     def test_whitelist(self) -> None:

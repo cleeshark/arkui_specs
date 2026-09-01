@@ -44,6 +44,12 @@ DEFAULT_ALLOW_PROJECTS = ("arkui_architecture/arkui-specs",)
 # per-delivery CI archives. Must match ``gitcode_webhook.ARCHIVE_URL_SEGMENT``;
 # a link built here resolves to that route.
 ARCHIVE_URL_SEGMENT = "ci"
+# ci_runner --top for the archived run: large enough that the summary's
+# ``top_*`` lists hold every finding, so full-report.md is complete regardless
+# of the ci_runner version in the evaluated tree. The PR comment slices this
+# down to COMMENT_MAX_ROWS_PER_FUNC itself.
+ARCHIVE_TOP = 100000
+COMMENT_MAX_ROWS_PER_FUNC = 5
 
 # GitCode MR webhook ``action`` values that signal a completed merge. A merge
 # receipt does not represent a PR head to evaluate; instead it triggers a
@@ -660,6 +666,7 @@ def render_comment(
     exit_code: int = EXIT_OK,
     specs_checks: list[SpecCheckResult] | None = None,
     report_base_url: str | None = None,
+    max_rows_per_func: int = COMMENT_MAX_ROWS_PER_FUNC,
 ) -> str:
     """Render the updatable PR comment markdown from a ci-summary.
 
@@ -782,7 +789,9 @@ def render_comment(
         lines += ["### New findings", "", "| Function | Rule | Severity | Location | Message |", "|---|---|---|---|---|"]
         rows = 0
         for function in functions:
-            for finding in function.get("top_added_findings") or []:
+            # The archived run uses a large --top, so cap per Function here to
+            # keep the comment lean; the full list is in the linked full-report.
+            for finding in (function.get("top_added_findings") or [])[:max(max_rows_per_func, 0)]:
                 severity = finding.get("severity", "Info")
                 location = finding.get("path", "")
                 line_no = finding.get("line")
@@ -890,13 +899,22 @@ def render_full_report(
     header = "| # | Severity | Rule | Feature | Location | Count | Message |"
     divider = "|---|---|---|---|---|---|---|"
 
+    # Full list preferred; fall back to the top_* sample when the evaluated
+    # tree's ci_runner predates the added_findings/resolved_findings fields (a
+    # large archive --top makes that sample effectively complete anyway).
+    def _added(f: dict[str, Any]) -> list:
+        return f.get("added_findings") or f.get("top_added_findings") or []
+
+    def _resolved(f: dict[str, Any]) -> list:
+        return f.get("resolved_findings") or f.get("top_resolved_findings") or []
+
     # Per-Function new findings — the complete list, not just the top N.
-    added_funcs = [f for f in functions if f.get("added_findings")]
+    added_funcs = [f for f in functions if _added(f)]
     if added_funcs:
         lines += ["## New findings (added vs baseline)", ""]
         for function in sorted(added_funcs, key=lambda f: str(f.get("func_id", ""))):
             func_id = function.get("func_id", "")
-            findings = function.get("added_findings") or []
+            findings = _added(function)
             total = sum(int(f.get("count", 1) or 1) for f in findings)
             lines += [f"### {func_id} — {len(findings)} finding(s), {total} occurrence(s)", "", header, divider]
             for i, finding in enumerate(findings, 1):
@@ -912,12 +930,12 @@ def render_full_report(
         lines.append("")
 
     # Resolved findings, collapsed — useful context but not the headline.
-    resolved_funcs = [f for f in functions if f.get("resolved_findings")]
+    resolved_funcs = [f for f in functions if _resolved(f)]
     if resolved_funcs:
         lines += ["## Resolved findings (present in baseline, gone now)", ""]
         for function in sorted(resolved_funcs, key=lambda f: str(f.get("func_id", ""))):
             func_id = function.get("func_id", "")
-            findings = function.get("resolved_findings") or []
+            findings = _resolved(function)
             lines += [f"### {func_id} — {len(findings)} resolved", "", header, divider]
             for i, finding in enumerate(findings, 1):
                 lines.append(_finding_row(i, finding))
@@ -1417,7 +1435,7 @@ def process_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[str, An
             output_dir=archive_dir / "out",
             repo_root=ctx.repo_root,
             registry_base=target,
-            top=ctx.top,
+            top=ARCHIVE_TOP,
             no_cache=ctx.no_cache,
             python=ctx.python,
         )
@@ -1456,6 +1474,7 @@ def process_receipt(receipt: dict[str, Any], ctx: WorkerContext) -> dict[str, An
             exit_code=exit_code,
             specs_checks=specs_checks,
             report_base_url=ctx.report_base_url,
+            max_rows_per_func=ctx.top,
         )
         (archive_dir / "comment-body.md").write_text(comment_body, encoding="utf-8")
         try:
