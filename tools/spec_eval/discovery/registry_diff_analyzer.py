@@ -19,6 +19,26 @@ class RegistryDiffAnalyzer:
         self.repo_root = repo_root
 
     @staticmethod
+    def _merge_base(git_root: Path, a: str, b: str) -> str | None:
+        """Return the merge-base of two refs, or None if there is none.
+
+        ``a == b`` (e.g. both HEAD in local use) resolves to that commit, so
+        the caller can transparently fall back to a plain ``git diff HEAD``.
+        """
+        try:
+            result = subprocess.run(
+                ["git", "merge-base", a, b],
+                cwd=git_root,
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+        except (OSError, subprocess.SubprocessError):
+            return None
+        base = result.stdout.strip()
+        return base or None
+
+    @staticmethod
     def _discover_git_root(file_path: Path) -> Path | None:
         """Find the git repository root that actually tracks ``file_path``.
 
@@ -102,9 +122,16 @@ class RegistryDiffAnalyzer:
                 rel_path = file_path.relative_to(self.repo_root)
 
             if target_ref is None:
-                # Diff against working tree - check both staged and unstaged changes
-                # First try: staged changes (HEAD vs index)
-                cmd_staged = ["git", "diff", "--cached", base_ref, "--", str(rel_path)]
+                # Diff against the working tree from the merge-base of base_ref
+                # and HEAD, so a PR branch behind the base does not surface
+                # base-only edits to the registry as spurious changes (matches
+                # the three-dot semantics used for changed-file computation).
+                # In local use base_ref is HEAD, so the merge-base is HEAD and
+                # this reduces to `git diff HEAD` (uncommitted edits included).
+                effective_base = self._merge_base(git_root, base_ref, "HEAD") or base_ref
+
+                # First try: staged changes (base vs index)
+                cmd_staged = ["git", "diff", "--cached", effective_base, "--", str(rel_path)]
                 result_staged = subprocess.run(
                     cmd_staged,
                     cwd=git_root,
@@ -113,8 +140,8 @@ class RegistryDiffAnalyzer:
                     check=False,
                 )
 
-                # Second try: unstaged changes (index vs working tree)
-                cmd_unstaged = ["git", "diff", base_ref, "--", str(rel_path)]
+                # Second try: unstaged changes (base vs working tree)
+                cmd_unstaged = ["git", "diff", effective_base, "--", str(rel_path)]
                 result_unstaged = subprocess.run(
                     cmd_unstaged,
                     cwd=git_root,
