@@ -360,8 +360,12 @@ def _workflow_write_rules() -> list[str]:
         "After all claim and criterion shards exist, Write the aux shard "
         "(evidence_declarations, open_questions, notes) named by manifest.aux_file. "
         "evidence_declarations paths must be canonical repository-relative paths "
-        "inside ace_engine, sdk-js, or sdk_c — NEVER a specs/ path. "
+        "inside ace_engine, sdk-js, or sdk_c — NEVER a specs/ path — and each "
+        "path must point at a file that ACTUALLY EXISTS. Verify with ls/find "
+        "before declaring it; do not guess directory levels. "
         "After writing, validate: `python3 <validate_script> aux aux.json`. "
+        "This also checks every evidence path exists in the frozen repos; if it "
+        "reports EVIDENCE_PATH_NOT_FOUND, find the correct path and fix it. "
         "The shard is done only when the script prints OK.",
         "Natural-language fields (reason, fact, ...) in Simplified Chinese; keep "
         "all IDs and enums verbatim (claim_id, criterion_id, local_outcome, ...).",
