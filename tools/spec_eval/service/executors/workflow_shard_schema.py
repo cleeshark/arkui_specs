@@ -121,6 +121,11 @@ def _validate_script_source() -> str:
     file is validated as an array whose every element must match the item
     schema (empty array is allowed = NOT_APPLICABLE); an aux file is validated
     as a top-level object with three required arrays.
+
+    For an aux file, once it is schema-valid, every evidence_declarations[].path
+    is additionally checked for existence in the frozen repos (ace_engine /
+    sdk-js / sdk_c), so a well-formed but non-existent path is caught here
+    instead of only at the service normalize stage.
     """
     # Kept dependency-free (stdlib + the repo's validator on PYTHONPATH). The
     # session runs it via Bash with the same interpreter that ran the manifest.
@@ -136,10 +141,69 @@ except Exception as exc:  # pragma: no cover - environment guard
 
 HERE = Path(__file__).resolve().parent
 
+# Evidence types whose path points at a directory (not a file).
+_DIRECTORY_EVIDENCE_TYPES = {"review_record"}
+
 
 def _validate(instance, schema_file):
     v = JsonSchemaSubsetValidator(HERE)
     return v.validate_file(instance, HERE / schema_file)
+
+
+def _evidence_resolver():
+    """Build a resolver over the frozen repos rooted at the session cwd.
+
+    The session runs with cwd == ace_engine repo_root, matching how the service
+    builds the resolver.  Returns None when the resolver cannot be constructed
+    (e.g. spec_eval kernel not importable), in which case path existence is not
+    checked here and is left to the service's normalize stage.
+    """
+    try:
+        from spec_eval.kernel.evidence_paths import FrozenEvidencePathResolver
+    except Exception:
+        return None
+    repo_root = Path.cwd()
+    oh_root = repo_root.parents[2] if len(repo_root.parents) >= 3 else repo_root
+    roots = {"ace_engine": repo_root}
+    sdk_js = oh_root / "interface" / "sdk-js"
+    sdk_c = oh_root / "interface" / "sdk_c"
+    if sdk_js.exists():
+        roots["sdk-js"] = sdk_js
+    if sdk_c.exists():
+        roots["sdk_c"] = sdk_c
+    try:
+        return FrozenEvidencePathResolver(roots)
+    except Exception:
+        return None
+
+
+def _check_evidence_paths(evidence_declarations) -> list:
+    """Verify each evidence path resolves to a real file/dir in a frozen repo.
+
+    Catches the common case of a path that is well-formed but points at a file
+    that does not exist (e.g. a mis-remembered directory level), which would
+    otherwise only surface as EVIDENCE_PATH_NOT_FOUND at the normalize stage.
+    """
+    resolver = _evidence_resolver()
+    if resolver is None:
+        return []
+    errors = []
+    for i, decl in enumerate(evidence_declarations):
+        if not isinstance(decl, dict):
+            continue
+        path_text = decl.get("path")
+        if not isinstance(path_text, str) or not path_text:
+            continue
+        allow_dir = decl.get("type") in _DIRECTORY_EVIDENCE_TYPES
+        try:
+            resolver.resolve(path_text, allow_directory=allow_dir)
+        except Exception as exc:
+            code = getattr(exc, "code", "EVIDENCE_PATH_NOT_FOUND")
+            errors.append(
+                f"evidence_declarations[{i}].path: {code}: {path_text} "
+                f"(no such file in the frozen repos; check the exact path)"
+            )
+    return errors
 
 
 def main() -> int:
@@ -171,6 +235,9 @@ def main() -> int:
             print("aux shard must be a JSON object")
             return 1
         errors = _validate(data, "aux.schema.json")
+        # Only check evidence paths when the shard is schema-valid so far.
+        if not errors:
+            errors = _check_evidence_paths(data.get("evidence_declarations", []))
 
     if errors:
         for e in errors:
