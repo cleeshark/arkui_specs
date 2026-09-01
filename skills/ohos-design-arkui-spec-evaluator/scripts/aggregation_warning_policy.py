@@ -51,6 +51,17 @@ CONTRADICTION_BASIS_WARNING_DEDUCTION = 5
 EVIDENCE_TYPE_WARNING_MARKER = "evidence must include one of"
 EVIDENCE_TYPE_WARNING_CODE = "EVIDENCE_TYPE_MISSING"
 EVIDENCE_TYPE_WARNING_DEDUCTION = 20
+# A claim published with empty ``criterion_ids`` means no observation mapped a
+# Criterion onto it.  The Criterion results and Findings are still intact — this
+# is a bounded coverage gap, semantically identical to the aggregation-side
+# ``MAPPING_CLAIM_UNMAPPED`` (an unmapped Claim), so it warrants the same MINOR
+# deduction rather than terminating the whole job at the aggregation preflight.
+# Unlike the unit-review markers below, this error is emitted by the skill
+# validator itself and is never pre-registered in post-correction-warnings.json,
+# so it is downgraded unconditionally (see split_claim_coverage_warnings).
+CLAIM_COVERAGE_WARNING_MARKER = "criterion_ids: at least one Criterion is required"
+CLAIM_COVERAGE_WARNING_CODE = "OBSERVATION_CLAIM_COVERAGE"
+CLAIM_COVERAGE_WARNING_DEDUCTION = 5
 POST_CORRECTION_WARNING_FILE = "post-correction-warnings.json"
 OBSERVATION_WARNING_MARKERS = {
     "UNIT_ROW_INVALID": (
@@ -102,6 +113,27 @@ def split_observation_warnings(
             for work_item_id, code in eligible
         )
         (warnings if downgraded else blocking).append(error)
+    return blocking, warnings
+
+
+def split_claim_coverage_warnings(
+    errors: list[str],
+) -> tuple[list[str], list[str]]:
+    """Downgrade observation claim-coverage errors unconditionally.
+
+    An empty-``criterion_ids`` claim review is a bounded coverage gap, not
+    structural damage: every Criterion result and Finding is intact.  Because
+    the skill validator raises this error directly (it is never recorded in
+    ``post-correction-warnings.json``), it cannot be gated by the eligibility
+    check in :func:`split_observation_warnings`; it is downgraded whenever the
+    marker appears.
+    """
+    blocking: list[str] = []
+    warnings: list[str] = []
+    for error in errors:
+        (warnings if CLAIM_COVERAGE_WARNING_MARKER in error else blocking).append(
+            error
+        )
     return blocking, warnings
 
 
@@ -201,6 +233,21 @@ def record_mapping_warning(run_dir: Path, warnings: list[str]) -> None:
         deduction=MAPPING_WARNING_DEDUCTION,
         message="aggregation retains Claim IDs outside the Criterion mapping",
         warning_path="aggregation.criterion_results[].claim_ids",
+    )
+
+
+def record_claim_coverage_warning(run_dir: Path, warnings: list[str]) -> None:
+    """Deduct confidence for claims left without a mapped Criterion."""
+    _record_confidence_warning(
+        run_dir, warnings,
+        code=CLAIM_COVERAGE_WARNING_CODE,
+        layer="MINOR",
+        deduction=CLAIM_COVERAGE_WARNING_DEDUCTION,
+        message=(
+            "observation retains a Claim not covered by any Criterion "
+            "(empty criterion_ids)"
+        ),
+        warning_path="observation.claim_reviews[].criterion_ids",
     )
 
 
