@@ -22,6 +22,8 @@
 #   CI_FORCE_SYNC           set to 1 to reset --hard even repos with uncommitted local changes (default: off)
 #   CI_REBUILD_SITE         set to 0 to skip rebuilding the Docusaurus site after a merge-sync (default: enabled)
 #   CI_SITE_BASE_PATH       URL path the site is served at + BASE_URL for the build (default /arkui_specs)
+#   CI_PUBLIC_ORIGIN        public scheme://host:port the site+archives are reachable at, for PR-comment
+#                           full-report links (default http://121.43.52.4:6003; empty = no link)
 #   CI_DYNAMIC_SITE          set to 0 to disable the dynamic site data watcher (default: enabled). The watcher
 #                            refreshes specs/site/{static,build}/data/*.json from the newest archived reports so
 #                            a browser reload shows the latest report state without a rebuild.
@@ -44,13 +46,21 @@ POLL="${CI_POLL_INTERVAL:-10}"
 SITE_BASE_PATH="${CI_SITE_BASE_PATH:-/arkui_specs}"
 RECEIPTS="specs/.evaluator/webhook/receipts.ndjson"
 LEDGER="specs/.evaluator/ci/processed.ndjson"
+ARCHIVE_ROOT="specs/.evaluator/ci"
+# Public origin (scheme://host:port) the site + archives are reachable at, e.g.
+# via frp reverse proxy. Combined with SITE_BASE_PATH to build the report links
+# posted into PR comments. Override CI_PUBLIC_ORIGIN for a different deployment;
+# leave it empty to omit the full-report link entirely.
+PUBLIC_ORIGIN="${CI_PUBLIC_ORIGIN:-http://121.43.52.4:6003}"
+REPORT_BASE_URL="${PUBLIC_ORIGIN:+${PUBLIC_ORIGIN}${SITE_BASE_PATH}}"
 
 mkdir -p specs/.evaluator/webhook specs/.evaluator/ci
 
-echo "[ci_service] starting webhook receiver on ${HOST}:${PORT} (site at ${SITE_BASE_PATH})"
+echo "[ci_service] starting webhook receiver on ${HOST}:${PORT} (site at ${SITE_BASE_PATH}, archives at ${SITE_BASE_PATH}/ci)"
 python3 specs/tools/spec_eval/gitcode_webhook.py \
     --host "$HOST" --port "$PORT" --events-file "$RECEIPTS" \
-    --site-root specs/site/build --site-base-path "$SITE_BASE_PATH" &
+    --site-root specs/site/build --site-base-path "$SITE_BASE_PATH" \
+    --archive-root "$ARCHIVE_ROOT" &
 RECEIVER_PID=$!
 
 cleanup() {
@@ -101,6 +111,9 @@ TEST_ARGS=""
 # build's BASE_URL aligned with the path the webhook server serves the site at.
 [ "${CI_REBUILD_SITE:-1}" = "0" ] && TEST_ARGS="$TEST_ARGS --no-rebuild-site"
 TEST_ARGS="$TEST_ARGS --site-base-url ${SITE_BASE_PATH}/"
+# Link PR comments to the full per-delivery report served by the webhook at
+# ${REPORT_BASE_URL}/ci/... . Omitted when no public origin is configured.
+[ -n "$REPORT_BASE_URL" ] && TEST_ARGS="$TEST_ARGS --report-base-url $REPORT_BASE_URL"
 # When the dynamic site data watcher is enabled, the merge-time full rebuild also
 # uses dynamic mode so the runtime descriptor and data files stay consistent.
 [ "${CI_DYNAMIC_SITE:-1}" = "1" ] && TEST_ARGS="$TEST_ARGS --site-mode dynamic"

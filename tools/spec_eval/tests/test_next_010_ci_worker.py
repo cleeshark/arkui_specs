@@ -190,6 +190,24 @@ class RenderCommentTest(unittest.TestCase):
         self.assertIn("05-01-02", body)
         self.assertIn("simulated orchestrator failure", body)
 
+    def test_full_report_link_added_when_base_url_set(self) -> None:
+        summary = json.loads((FIXTURES / "ci-summary-n-affected-with-added.json").read_text(encoding="utf-8"))
+        body = render_comment(
+            summary,
+            _receipt(iid=9, delivery="9_probe/x"),
+            shas={"tested": "936b9f4abc", "target": "dd3687695c"},
+            ensure_action="matched",
+            report_base_url="http://121.43.52.4:6003/arkui_specs/",
+        )
+        # trailing slash on base is trimmed; delivery '/' is sanitized to '_'
+        self.assertIn("http://121.43.52.4:6003/arkui_specs/ci/pr-9/9_probe_x/", body)
+        self.assertIn("Full report", body)
+
+    def test_full_report_link_absent_without_base_url(self) -> None:
+        summary = json.loads((FIXTURES / "ci-summary-n-affected-with-added.json").read_text(encoding="utf-8"))
+        body = render_comment(summary, _receipt(iid=9, delivery="9_probe"), shas={"tested": "936b9f4abc", "target": "dd3687695c"}, ensure_action="matched")
+        self.assertNotIn("Full report", body)
+
 
 class WhitelistAndLedgerTest(unittest.TestCase):
     def test_whitelist(self) -> None:
