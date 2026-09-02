@@ -162,8 +162,9 @@ _DEFAULT_OUTPUT_RULES: dict[str, Any] = {
     "criterion_shard": {
         "description": (
             "A JSON array of observationJudgment objects for this criterion. "
-            "Empty array [] when the criterion is NOT_APPLICABLE. Each item's "
-            "exact schema is in shard_schemas.criterion_item_schema."
+            "When the criterion is NOT_APPLICABLE, write the file as an empty "
+            "array [] (zero items); do NOT write an item with empty claim_ids. "
+            "Each item's exact schema is in shard_schemas.criterion_item_schema."
         ),
         "required_fields": [
             "criterion_ids", "check_ids", "claim_ids", "local_outcome",

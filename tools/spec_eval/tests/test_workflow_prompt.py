@@ -152,7 +152,8 @@ class TestWorkflowShardsPrompt(unittest.TestCase):
     def test_criterion_empty_array_when_na(self):
         p = self._prompt()
         text = " ".join(p["constraints"])
-        self.assertIn("empty array", text)
+        self.assertIn("empty JSON array", text)
+        self.assertIn("claim_ids is empty", text)
 
     def test_feature_scope_note(self):
         p = self._prompt()

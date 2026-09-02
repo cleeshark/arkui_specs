@@ -347,8 +347,11 @@ def _workflow_write_rules() -> list[str]:
         "For each criterion_unit: read back the already-written claim shards it "
         "depends on (use targeted sed/head, never dump whole files), then Write "
         "the shard as a JSON ARRAY of observationJudgment objects matching "
-        "shard_schemas.criterion_item_schema. Write an empty array [] when the "
-        "criterion is NOT_APPLICABLE.",
+        "shard_schemas.criterion_item_schema. When a criterion is NOT_APPLICABLE "
+        "to this feature, write the shard file as an empty JSON array [] "
+        "(containing zero observationJudgment items). Do NOT write an "
+        "observationJudgment item whose claim_ids is empty — that is invalid "
+        "and will be rejected; instead write [] for the whole shard.",
         "Write each shard atomically: Write to `<file>.tmp`, then move it to "
         "`<file>`. Immediately validate it with the AUTHORITATIVE script named "
         "in shard_schemas.validate_script: "
