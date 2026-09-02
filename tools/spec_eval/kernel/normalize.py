@@ -224,6 +224,14 @@ def project_observation_derived_fields(
         observation["criterion_ids"] = criterion_ids
         observation["check_ids"] = check_ids
         observation["claim_ids"] = claim_ids
+        # Drop evidence rows added by correction patches without canonical ids.
+        # A row missing evidence_id or path bypassed the evidence_declarations
+        # resolution path and cannot be referenced by any claim or validated.
+        observation["evidence"] = [
+            ev for ev in _rows(observation.get("evidence"))
+            if isinstance(ev.get("evidence_id"), str) and ev["evidence_id"]
+            and isinstance(ev.get("path"), str) and ev["path"]
+        ]
         for claim_id in claim_ids:
             mapped = criteria_by_claim.setdefault(claim_id, [])
             for criterion_id in criterion_ids:
