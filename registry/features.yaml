@@ -44,6 +44,21 @@ features:
   title: 渲染主流程
   spec: 03-engine-framework/01-render-pipeline/01-basic-render-pipeline/Feat-01-render-main-flow-spec.md
   status: Baselined
+- func_id: 03-01-01
+  id: Feat-02
+  title: Build 阶段细化
+  spec: null
+  status: Draft
+- func_id: 03-01-01
+  id: Feat-03
+  title: Layout 阶段细化
+  spec: null
+  status: Draft
+- func_id: 03-01-01
+  id: Feat-04
+  title: Render 阶段与渲染树同步
+  spec: 03-engine-framework/01-render-pipeline/01-basic-render-pipeline/Feat-04-render-stage-spec.md
+  status: Draft
 - func_id: 03-05-01
   id: Feat-01
   title: Window抽象与RosenWindow创建初始化
