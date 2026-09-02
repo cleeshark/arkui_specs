@@ -22,8 +22,10 @@ from assemble_semantic_result import (  # noqa: E402
 )
 from aggregation_warning_policy import (  # noqa: E402
     record_claim_coverage_warning,
+    record_evidence_field_warning,
     record_evidence_type_warning,
     split_claim_coverage_warnings,
+    split_evidence_field_warnings,
     split_final_candidate_warnings,
     split_observation_warnings,
 )
