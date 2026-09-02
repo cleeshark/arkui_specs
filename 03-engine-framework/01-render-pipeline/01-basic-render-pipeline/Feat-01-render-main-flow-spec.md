@@ -88,16 +88,16 @@
 | AC-4.4 | WHEN `isLayouting_` 已为真时 `FlushTaskWithCheck` 再次被调用 THEN 自增 `multiLayoutCount_` 并返回，不进行嵌套 layout。来源：`ui_task_scheduler.cpp:290-298` | 正常 |
 | AC-4.5 | WHEN 布局轮数超过 `ENDORSE_LAYOUT_COUNT` THEN 剩余工作通过 `RequestFrameOnLayoutCountExceeds` 延入下一帧。来源：`ui_task_scheduler.cpp:310,364` | 边界 |
 
-### US-5: Paint 优先 Modifier 路径
+### US-5: Paint Modifier 与 Draw 分流
 
 - As a 组件作者
-- I want `PaintWrapper::FlushRender` 在存在 Modifier 时仅走 Modifier 路径，无 Modifier 时回退到 Draw 录制
+- I want `PaintWrapper::FlushRender` 按 Content/Foreground/Overlay 类型分别选择 Modifier 或 Draw，并统一维护 recording 生命周期
 - So that 支持属性独立动画的同时保持旧组件可用
 
 | AC编号 | 验收标准 | 类型 |
 |--------|---------|------|
-| AC-5.1 | WHEN `PaintWrapper::FlushRender` 被调用且存在 Modifier THEN 先尝试 `GetContentModifier/GetOverlayModifier/GetForegroundModifier`；任一存在则调用对应 `UpdateXxxModifier` 并返回，不再录制 draw。来源：`paint_wrapper.cpp:125-152` | 正常 |
-| AC-5.2 | WHEN 全部 Modifier 缺失 THEN 调用 `renderContext->StartRecording`，依次执行 ContentDraw/ForegroundDraw/OverlayDraw 函数，再 `FinishRecording`。来源：`paint_wrapper.cpp:155-180`、`rosen_render_context.cpp:398/412` | 异常 |
+| AC-5.1 | WHEN `PaintWrapper::FlushRender` 被调用且任一类型存在 Modifier THEN 先调用对应 `UpdateXxxModifier`；仅跳过同类型 Draw，其他未被 Modifier 覆盖的类型仍可执行 Draw；无论 Modifier 是否存在都继续执行 `StartRecording` 与 `StopRecordingIfNeeded`。来源：`frameworks/core/components_ng/render/paint_wrapper.cpp:152-240` | 正常 |
+| AC-5.2 | WHEN 某类型不存在 Modifier 且存在 Draw 回调 THEN 通过对应 `FlushXxxDrawFunction` 调用 `RSNode::DrawOnNode` 独立录制该类型；`StopRecordingIfNeeded` 在 free RenderContext 上延迟到挂载主树后执行，否则仅对 CanvasNode 生效并委托 `RSCanvasNode::FinishRecording`，后者对无活动录制或空 command list 执行 no-op。来源：`frameworks/core/components_ng/render/paint_wrapper.cpp:182-240`、`frameworks/core/components_ng/render/adapter/rosen_render_context.cpp:115-123,504-520`、跨仓 graphic_2d 的 RSCanvasNode 实现（BeginRecording / FinishRecording / DrawOnNode） | 正常 |
 | AC-5.3 | WHEN `FrameNode::CreateRenderTask` 被调用且 `!isRenderDirtyMarked_` THEN 直接返回空任务；在 `CreatePaintWrapper` 中清 `isRenderDirtyMarked_=false`。来源：`frame_node.cpp:3057-3093,3075-3098` | 正常 |
 
 ### US-6: RS 提交仅一处边界
@@ -180,7 +180,7 @@
 | R-12 | 行为 | — | `FlushDirtyNodeUpdate` 主循环 `maxFlushTimes=3`；每轮 `decltype(dirtyNodes_) dirtyNodes(std::move(dirtyNodes_));` 然后遍历调用 `customNode->Update()`，剩余 dirty 留待下一轮或下一帧。来源：`pipeline_context.cpp:691-703`。 | — | — |
 | R-13 | 行为 | — | `UITaskScheduler::FlushTask` do-while 循环上限 `ENDORSE_LAYOUT_COUNT=2`，循环结束执行 `FlushAllSingleNodeTasks` 与 `FlushRenderTask`。来源：`ui_task_scheduler.cpp:300-337`。 | — | — |
 | R-14 | 行为 | — | `FrameNode::CreateLayoutTask` 在 `!isLayoutDirtyMarked_` 时直接返回；设置 `RootMeasureNode(true)`、`UpdateLayoutPropertyFlag()`，再 `Measure → Layout`。来源：`frame_node.cpp:2830-2869`。 | — | — |
-| R-15 | 行为 | — | `PaintWrapper::FlushRender` 三类 Modifier 优先；缺失时 `StartRecording → DrawFunctions → FinishRecording`。来源：`paint_wrapper.cpp:125-180`。 | — | — |
+| R-15 | 行为 | `PaintWrapper::FlushRender` 执行 | 先更新 Content/Overlay/Foreground Modifier，再无条件调用 `StartRecording`；每类 Modifier 仅抑制同类型 Draw，未覆盖的 Draw 经 `FlushXxxDrawFunction → RSNode::DrawOnNode` 独立录制；末尾调用 `StopRecordingIfNeeded`，free RenderContext 延迟到挂载主树后执行，其他情况仅对 CanvasNode 生效并委托 `RSCanvasNode::FinishRecording` 安全收尾。来源：`frameworks/core/components_ng/render/paint_wrapper.cpp:152-240`、`frameworks/core/components_ng/render/adapter/rosen_render_context.cpp:115-123,504-520,4989-5068`、跨仓 graphic_2d 的 RSCanvasNode 实现（BeginRecording / FinishRecording / DrawOnNode）。 | 非 CanvasNode、无活动录制或空 command list 不产生新的 recording 更新 | AC-5.1, AC-5.2 |
 | R-16 | 行为 | — | `FrameNode::MarkNeedRender` 标记 `PROPERTY_UPDATE_RENDER`，向父节点冒泡 `PROPERTY_UPDATE_RENDER_BY_CHILD_REQUEST`，并 `AddDirtyRenderNode`。来源：`frame_node.cpp:3430-3461`。 | — | — |
 | R-17 | 行为 | — | `RosenWindow::RequestFrame` 路径：`onShow` 门控 → `isRequestVsync_` 合并 → `rsWindow_->RequestVsync(vsyncCallback_)` → `PostVsyncTimeoutDFXTask(500ms)` → `OnIdle` 延迟任务（IDLE_TASK_DELAY_MILLISECOND）。超时任务与 OnIdle 仅在成功发起 RequestVsync 的分支中注册。来源：`rosen_window.cpp:258-289`。 | — | — |
 | R-18 | 行为 | — | 多实例：`RosenWindow::Init` 在 `rsUIDirector_->SetRequestVsyncCallback` 中检查 `SystemProperties::GetMultiInstanceEnabled()` 并向子窗口扇出。来源：`rosen_window.cpp:147-178`。 | — | — |
@@ -352,18 +352,20 @@
   When 调用入口检测
   Then multiLayoutCount_++ 并立即返回，不进行嵌套 layout
 
-场景 9: Modifier 优先 Paint 路径 (AC-5.1)
-  Given FrameNode 的 NodePaintMethod 提供 ContentModifier
+场景 9: Modifier 与 Draw 按类型共存 (AC-5.1)
+  Given FrameNode 的 NodePaintMethod 提供 ContentModifier，但 ForegroundModifier 缺失且存在 ForegroundDraw
   When PaintWrapper::FlushRender 被调用
   Then UpdateContentModifier 被调用
-   And StartRecording / DrawFunction / FinishRecording 不被调用
+   And ContentDraw 被跳过
+   And StartRecording 仍被调用，ForegroundDraw 经 DrawOnNode 独立录制
+   And StopRecordingIfNeeded 在末尾被调用
 
-场景 10: 无 Modifier 时回退 Draw 录制 (AC-5.2)
+场景 10: 无 Modifier 时按类型录制 Draw (AC-5.2)
   Given FrameNode 的 NodePaintMethod 三类 Modifier 均为空
   When PaintWrapper::FlushRender 被调用
   Then renderContext->StartRecording 被调用
-   And ContentDraw / ForegroundDraw / OverlayDraw 函数依序执行
-   And renderContext->FinishRecording 收尾
+   And ContentDraw / ForegroundDraw / OverlayDraw 依序经 DrawOnNode 独立录制
+   And renderContext->StopRecordingIfNeeded 安全关闭可能存在的 CanvasNode recording
 
 场景 11: RS 仅一次提交 (AC-6.1, AC-6.2, AC-6.4, R-5)
   Given 任意非空 dirty 集合
@@ -425,8 +427,9 @@
 - `frameworks/core/components_ng/property/property.h:45-74`（PROPERTY_UPDATE_* 标志）
 - `frameworks/core/components_ng/pattern/custom/custom_node_base.cpp:283-305`（MarkNeedUpdate / FireRecycleSelf）
 - `frameworks/core/components_ng/pattern/custom/custom_node.cpp:34-126`（Build / Render / FlushReload）
-- `frameworks/core/components_ng/render/paint_wrapper.cpp:125-180`（FlushRender Modifier vs Draw）
-- `frameworks/core/components_ng/render/adapter/rosen_render_context.cpp:398-412`（StartRecording / FinishRecording）
+- `frameworks/core/components_ng/render/paint_wrapper.cpp:152-240`（FlushRender Modifier 与 Draw 按类型分流）
+- `frameworks/core/components_ng/render/adapter/rosen_render_context.cpp:504-520,4989-5068`（StartRecording / StopRecordingIfNeeded / DrawOnNode 适配）
+- 跨仓 graphic_2d 的 RSCanvasNode 实现（BeginRecording / FinishRecording / DrawOnNode）
 - `frameworks/core/components_ng/render/adapter/rosen_render_context.cpp:817-867`（SyncGeometryProperties）
 - `frameworks/core/components_ng/render/adapter/rosen_render_context.cpp:8403-8443`（FlushImplicitTransaction 旁路）
 - `frameworks/core/components_ng/render/adapter/rosen_window.cpp:63-106`（vsyncCallback_->onCallback）
