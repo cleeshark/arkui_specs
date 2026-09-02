@@ -11,10 +11,12 @@ from typing import Any
 from aggregation_warning_policy import (
     record_aggregation_warnings,
     record_claim_coverage_warning,
+    record_evidence_field_warning,
     record_evidence_type_warning,
     record_nv_inspection_warning,
     split_aggregation_warnings,
     split_claim_coverage_warnings,
+    split_evidence_field_warnings,
     split_final_candidate_warnings,
     split_nv_inspection_warnings,
     split_observation_warnings,
@@ -87,9 +89,11 @@ def validate_stage(
         errors, observation_warnings = split_observation_warnings(run_dir, errors)
         errors, coverage_warnings = split_claim_coverage_warnings(errors)
         errors, nv_inspection_warnings = split_nv_inspection_warnings(errors)
+        errors, evidence_field_warnings = split_evidence_field_warnings(errors)
         record_claim_coverage_warning(run_dir, coverage_warnings)
         record_nv_inspection_warning(run_dir, nv_inspection_warnings)
-        for warning in (*observation_warnings, *coverage_warnings, *nv_inspection_warnings):
+        record_evidence_field_warning(run_dir, evidence_field_warnings)
+        for warning in (*observation_warnings, *coverage_warnings, *nv_inspection_warnings, *evidence_field_warnings):
             print(f"WARNING: {warning}", file=sys.stderr)
     if stage in {"aggregation", "final"}:
         try:

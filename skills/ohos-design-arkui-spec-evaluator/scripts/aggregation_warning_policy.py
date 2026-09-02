@@ -71,6 +71,17 @@ CLAIM_COVERAGE_WARNING_DEDUCTION = 5
 NV_INSPECTION_WARNING_MARKER = "NOT_VERIFIABLE must reference review_record inspection evidence"
 NV_INSPECTION_WARNING_CODE = "NV_INSPECTION_EVIDENCE_MISSING"
 NV_INSPECTION_WARNING_DEDUCTION = 5
+# A correction patch can add a raw evidence row (e.g. review_record) directly
+# into observation.evidence without assigning a canonical evidence_id or path,
+# bypassing the EV-* resolution path.  The row is structurally incomplete, but
+# the rest of the observation and its claim mappings are intact.  Downgrade
+# unconditionally (MINOR -5) so the preflight does not terminate the whole job.
+EVIDENCE_FIELD_WARNING_MARKERS = (
+    ".evidence_id: expected a non-empty string",
+    ".path: expected a non-empty string",
+)
+EVIDENCE_FIELD_WARNING_CODE = "OBSERVATION_EVIDENCE_FIELD_INVALID"
+EVIDENCE_FIELD_WARNING_DEDUCTION = 5
 POST_CORRECTION_WARNING_FILE = "post-correction-warnings.json"
 OBSERVATION_WARNING_MARKERS = {
     "UNIT_ROW_INVALID": (
@@ -122,6 +133,26 @@ def split_observation_warnings(
             for work_item_id, code in eligible
         )
         (warnings if downgraded else blocking).append(error)
+    return blocking, warnings
+
+
+def split_evidence_field_warnings(
+    errors: list[str],
+) -> tuple[list[str], list[str]]:
+    """Downgrade evidence-row missing-field errors unconditionally.
+
+    A correction patch can add a raw evidence row (e.g. review_record) directly
+    into observation.evidence without a canonical evidence_id or path.  The rest
+    of the observation and its claim mappings remain intact, so downgrade
+    unconditionally (MINOR -5) rather than terminating the whole job.
+    """
+    blocking: list[str] = []
+    warnings: list[str] = []
+    for error in errors:
+        (
+            warnings if any(m in error for m in EVIDENCE_FIELD_WARNING_MARKERS)
+            else blocking
+        ).append(error)
     return blocking, warnings
 
 
@@ -291,6 +322,21 @@ def record_nv_inspection_warning(run_dir: Path, warnings: list[str]) -> None:
             "no inspection record was declared for this observation"
         ),
         warning_path="observation.claim_reviews[].evidence_ids",
+    )
+
+
+def record_evidence_field_warning(run_dir: Path, warnings: list[str]) -> None:
+    """Deduct confidence for evidence rows missing required fields."""
+    _record_confidence_warning(
+        run_dir, warnings,
+        code=EVIDENCE_FIELD_WARNING_CODE,
+        layer="MINOR",
+        deduction=EVIDENCE_FIELD_WARNING_DEDUCTION,
+        message=(
+            "observation evidence row is missing evidence_id or path "
+            "(injected by correction without canonical resolution)"
+        ),
+        warning_path="observation.observations[].evidence[]",
     )
 
 
