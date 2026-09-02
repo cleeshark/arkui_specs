@@ -62,6 +62,15 @@ EVIDENCE_TYPE_WARNING_DEDUCTION = 20
 CLAIM_COVERAGE_WARNING_MARKER = "criterion_ids: at least one Criterion is required"
 CLAIM_COVERAGE_WARNING_CODE = "OBSERVATION_CLAIM_COVERAGE"
 CLAIM_COVERAGE_WARNING_DEDUCTION = 5
+# A NOT_VERIFIABLE claim that references no review_record evidence means the
+# model could not locate an existing inspection record to cite.  The correction
+# model is also unable to fabricate one.  The observation conclusion is still
+# semantically valid; downgrade unconditionally (MINOR -5) rather than blocking
+# the whole job.  Both the claim_review and unit_review paths use the same
+# marker suffix so one check covers both.
+NV_INSPECTION_WARNING_MARKER = "NOT_VERIFIABLE must reference review_record inspection evidence"
+NV_INSPECTION_WARNING_CODE = "NV_INSPECTION_EVIDENCE_MISSING"
+NV_INSPECTION_WARNING_DEDUCTION = 5
 POST_CORRECTION_WARNING_FILE = "post-correction-warnings.json"
 OBSERVATION_WARNING_MARKERS = {
     "UNIT_ROW_INVALID": (
@@ -113,6 +122,25 @@ def split_observation_warnings(
             for work_item_id, code in eligible
         )
         (warnings if downgraded else blocking).append(error)
+    return blocking, warnings
+
+
+def split_nv_inspection_warnings(
+    errors: list[str],
+) -> tuple[list[str], list[str]]:
+    """Downgrade NOT_VERIFIABLE missing-inspection-evidence errors unconditionally.
+
+    A NOT_VERIFIABLE claim that references no review_record evidence means no
+    inspection record was ever declared — a bounded quality gap the model cannot
+    fix after the fact.  Downgrade unconditionally (MINOR -5) so the job can
+    still produce a report.
+    """
+    blocking: list[str] = []
+    warnings: list[str] = []
+    for error in errors:
+        (warnings if NV_INSPECTION_WARNING_MARKER in error else blocking).append(
+            error
+        )
     return blocking, warnings
 
 
@@ -248,6 +276,21 @@ def record_claim_coverage_warning(run_dir: Path, warnings: list[str]) -> None:
             "(empty criterion_ids)"
         ),
         warning_path="observation.claim_reviews[].criterion_ids",
+    )
+
+
+def record_nv_inspection_warning(run_dir: Path, warnings: list[str]) -> None:
+    """Deduct confidence when a NOT_VERIFIABLE claim lacks review_record evidence."""
+    _record_confidence_warning(
+        run_dir, warnings,
+        code=NV_INSPECTION_WARNING_CODE,
+        layer="MINOR",
+        deduction=NV_INSPECTION_WARNING_DEDUCTION,
+        message=(
+            "NOT_VERIFIABLE claim references no review_record inspection evidence; "
+            "no inspection record was declared for this observation"
+        ),
+        warning_path="observation.claim_reviews[].evidence_ids",
     )
 
 
