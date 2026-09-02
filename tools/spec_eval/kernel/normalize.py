@@ -433,6 +433,20 @@ def normalize_observation(
             "primary_criterion_id": primary_criterion,
             "evidence": evidence_rows,
         })
+    # SERVICE_NORMALIZATION: drop observations whose claim_ids is empty.
+    # An observation with no claim references is semantically NOT_APPLICABLE
+    # and carries no claim→criterion mapping.  Keeping it would trigger
+    # OBSERVATION_CLAIM_IDS_EMPTY at validation and is not model-repairable.
+    pre_filter = len(observations)
+    observations = [obs for obs in observations if obs["claim_ids"]]
+    if len(observations) < pre_filter:
+        dropped = pre_filter - len(observations)
+        changes.append(
+            f"observations: dropped {dropped} observation(s) with empty claim_ids"
+        )
+        for i, obs in enumerate(observations):
+            obs["observation_id"] = f"OBS-{i + 1}"
+
     claim_referenced_keys: list[str] = []
     for row in _rows(judgment.get("claim_reviews")):
         claim_referenced_keys.extend(_strings(row.get("evidence_refs")))
