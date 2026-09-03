@@ -328,7 +328,8 @@ def _workflow_recovery_rules() -> list[str]:
         "full todo list and output rules, then `ls <shard_dir>/claims` and "
         "`ls <shard_dir>/criteria` to see which units are already written.",
         "The next unit to process is the first manifest entry whose shard file "
-        "does not yet exist on disk. Never redo a unit whose valid shard exists.",
+        "does not yet exist on disk. Use the EXACT `file` path from the manifest "
+        "entry (it includes prefixes and .json extension); never abbreviate it.",
         "You are DONE when every claim_unit and criterion_unit file in the "
         "manifest exists on disk and the aux file is written.",
     ]
@@ -338,16 +339,22 @@ def _workflow_write_rules() -> list[str]:
     """How each shard is produced and self-checked."""
     return [
         "For each claim_unit: verify the claim against frozen source, then Write "
-        "the shard to its manifest `file` path as ONE claimJudgment object "
-        "(not an array) matching shard_schemas.claim_schema EXACTLY, including "
-        "nested field types.",
+        "the shard to the EXACT path given in the claim_unit's `file` field "
+        "(e.g. claims/claim-Feat-02__AC-1.1.json — the full name includes a "
+        "claim- prefix, the Feat ID with __ separator, and a .json extension; "
+        "do NOT abbreviate, omit the prefix, or drop the extension) as ONE "
+        "claimJudgment object (not an array) matching shard_schemas.claim_schema "
+        "EXACTLY, including nested field types.",
         "verification_gap.checked_scope and verification_gap.missing_evidence "
         "are ARRAYS of strings (not a single string); verification_gap is a "
         "non-null object only when local_outcome is NOT_VERIFIABLE, else null.",
         "For each criterion_unit: read back the already-written claim shards it "
         "depends on (use targeted sed/head, never dump whole files), then Write "
-        "the shard as a JSON ARRAY of observationJudgment objects matching "
-        "shard_schemas.criterion_item_schema. When a criterion is NOT_APPLICABLE "
+        "the shard to the EXACT path given in the criterion_unit's `file` field "
+        "(e.g. criteria/obs-CORRECTNESS-SOURCE-SUPPORT.json — includes obs- "
+        "prefix and .json extension; do NOT abbreviate) as a JSON ARRAY of "
+        "observationJudgment objects matching shard_schemas.criterion_item_schema. "
+        "When a criterion is NOT_APPLICABLE "
         "to this feature, write the shard file as an empty JSON array [] "
         "(containing zero observationJudgment items). Do NOT write an "
         "observationJudgment item whose claim_ids is empty — that is invalid "
