@@ -18,6 +18,10 @@ OWNERSHIP_WARNING_MARKERS = (
     # preserve the ownership inconsistency as a bounded warning.
     "must own one mapped Finding",
     "expected one of observation owners",
+    # A Finding whose defect_key has no entry in defect_ownership (or the entry
+    # maps to zero/multiple owners).  The Findings and their Criterion results
+    # are still intact; the ownership gap is bounded.
+    "must have exactly one owner",
 )
 OWNERSHIP_WARNING_CODE = "OWNERSHIP_CRITICALITY"
 OWNERSHIP_WARNING_DEDUCTION = 20
