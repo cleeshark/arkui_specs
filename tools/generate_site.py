@@ -632,6 +632,69 @@ def load_static_evaluation() -> tuple[dict[str, Any], dict[str, Any], dict[str, 
     return spec_evaluation, semantic_evaluation, evaluation_history
 
 
+def publish_archive() -> None:
+    """Snapshot the real CI runtime archives into the committed ``.evaluator/`` set.
+
+    This is the publish-time entry point that replaces the old
+    ``scan --all`` + ``site-evaluation`` (reviews) pipeline. It reuses
+    :func:`load_dynamic_evaluation` to build the three site documents from the
+    newest archived CI job per Function (``.evaluator/service-data/archives/
+    automated``) and writes them to the version-controlled ``.evaluator/``
+    snapshot that STATIC mode (and the GitHub Pages deploy) consumes:
+
+    - ``site-report.json`` + ``latest.json`` (via ``SiteReporter.write_archive``)
+    - ``site-evaluation-report.json`` (full semantic document)
+    - ``site-evaluation-history.json`` (full history, retains ``activeFindings``)
+    - ``spec-evaluation-history-full.json`` sidecar (gitignored, for next chain)
+
+    All three share one ``observed_revision`` by construction, so the STATIC
+    consistency guards in :func:`load_static_evaluation` are satisfied. The
+    snapshot is intentionally mixed-revision: each Function contributes its own
+    latest CI evaluation and the top-level revision is the modal one.
+    """
+    from spec_eval.report.site_reporter import SiteReporter
+
+    functions_data = load_yaml(FUNCTIONS_FILE)
+    features_data = load_yaml(FEATURES_FILE)
+    functions = functions_data.get("functions", [])
+    features = features_data.get("features", [])
+
+    spec_evaluation, semantic_evaluation, evaluation_history = load_dynamic_evaluation(
+        functions, features
+    )
+    if not spec_evaluation.get("available"):
+        raise SystemExit(
+            "no CI runtime archives found under "
+            f"{AUTOMATED_ARCHIVE_DIR.relative_to(ROOT)}; cannot publish an empty "
+            "snapshot. Run the CI evaluation service first."
+        )
+
+    source_revision = str(spec_evaluation.get("sourceRevision") or "")
+    if not source_revision:
+        raise SystemExit("dynamic spec evaluation has no sourceRevision; aborting")
+
+    SPEC_EVAL_ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
+    # site-report.json (compact) + latest.json pointer, identical to ``scan``.
+    report_path = SiteReporter().write_archive(
+        SPEC_EVAL_ARCHIVE_DIR, source_revision, spec_evaluation
+    )
+    # Semantic + history archives (indented, matching the committed format).
+    _write_json(SPEC_EVAL_ARCHIVE_DIR / "site-evaluation-report.json", semantic_evaluation)
+    _write_json(SPEC_EVAL_ARCHIVE_DIR / "site-evaluation-history.json", evaluation_history)
+    # Un-stripped history sidecar (gitignored) for the next day-over-day chain.
+    _write_json(SPEC_EVAL_HISTORY_FULL_JSON, evaluation_history)
+
+    for path in (
+        report_path,
+        SPEC_EVAL_ARCHIVE_DIR / "latest.json",
+        SPEC_EVAL_ARCHIVE_DIR / "site-evaluation-report.json",
+        SPEC_EVAL_ARCHIVE_DIR / "site-evaluation-history.json",
+        SPEC_EVAL_HISTORY_FULL_JSON,
+    ):
+        print(f"published {path.relative_to(ROOT)}")
+    print(f"source revision {source_revision}")
+
+
 def generate_data_only(mode: str) -> None:
     """Regenerate only the evaluation data files (no docs/sidebar/registry).
 
@@ -777,6 +840,18 @@ def main() -> int:
         ),
     )
     parser.add_argument(
+        "--publish-archive",
+        action="store_true",
+        help=(
+            "snapshot the real CI runtime archives into the committed "
+            ".evaluator/ set (site-report.json + latest.json + "
+            "site-evaluation-report.json + site-evaluation-history.json) that "
+            "STATIC mode and the deploy workflow consume. Run on a host that has "
+            ".evaluator/service-data/archives/automated. Does not touch "
+            "site/static/data."
+        ),
+    )
+    parser.add_argument(
         "--data-only",
         action="store_true",
         help=(
@@ -801,7 +876,9 @@ def main() -> int:
         help="seconds between archive-log checks in --watch mode (default 60).",
     )
     args = parser.parse_args()
-    if args.watch:
+    if args.publish_archive:
+        publish_archive()
+    elif args.watch:
         watch_data_only(args.mode, args.poll_interval)
     elif args.data_only:
         generate_data_only(args.mode)

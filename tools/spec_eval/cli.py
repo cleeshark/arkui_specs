@@ -25,10 +25,6 @@ from spec_eval.orchestrator import EvaluationOrchestrator
 from spec_eval.report.baseline_reporter import BaselineReporter
 from spec_eval.report.performance_reporter import PerformanceReporter
 from spec_eval.report.site_reporter import SiteReporter
-from spec_eval.report.site_evaluation_reporter import (
-    build_site_evaluation_report_from_paths,
-    write_site_evaluation_report,
-)
 from spec_eval.report.site_evaluation_history import (
     build_site_evaluation_history_from_paths,
     write_site_evaluation_history,
@@ -112,13 +108,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     report.add_argument("--json-write", type=Path, required=True, help="Destination evaluation-report.json")
     report.add_argument("--markdown-write", type=Path, required=True, help="Destination function-report.md")
-
-    site_evaluation = sub.add_parser(
-        "site-evaluation", help="Export confirmed Review records for the semantic site view"
-    )
-    site_evaluation.add_argument("--reviews-root", type=Path, required=True)
-    site_evaluation.add_argument("--site-report", type=Path, required=True)
-    site_evaluation.add_argument("--write", type=Path, required=True, help="Destination site-evaluation-report.json")
 
     site_history = sub.add_parser(
         "site-evaluation-history", help="Update compact trend and Finding delta history"
@@ -240,27 +229,6 @@ def main(argv: list[str] | None = None) -> int:
                 },
                 args,
                 gate=report["summary"]["gate"],
-            )
-        if args.command == "site-evaluation":
-            result = build_site_evaluation_report_from_paths(
-                reviews_root=args.reviews_root,
-                site_report_path=args.site_report,
-                schemas_root=config.rules_root / "schemas",
-            )
-            write_site_evaluation_report(args.write, result)
-            return emit(
-                {
-                    "output_path": args.write.as_posix(),
-                    "source_revision": result["sourceRevision"],
-                    "function_count": result["summary"]["functionCount"],
-                    "confirmed_function_count": result["summary"]["confirmedFunctionCount"],
-                    "expired_function_count": result["summary"]["expiredFunctionCount"],
-                    "finding_count": result["summary"]["findingCount"],
-                    "expired_finding_count": result["summary"]["expiredFindingCount"],
-                    "gate": "pass",
-                },
-                args,
-                gate="pass",
             )
         if args.command == "site-evaluation-history":
             result = build_site_evaluation_history_from_paths(
