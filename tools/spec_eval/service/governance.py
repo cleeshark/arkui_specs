@@ -1,7 +1,8 @@
 """Data governance (TASK-011-09): retention cleanup, backup/restore, disk usage.
 
-* **cleanup** removes only disposable per-job run directories (staged evidence,
-  logs) for jobs that reached a terminal state older than the retention window.
+* **cleanup** removes only disposable per-job directories (staged evidence,
+  logs under ``jobs/`` and leaked evaluation worktrees under ``workspaces/``)
+  for jobs that reached a terminal state older than the retention window.
   Completed automated archives are retained by default; nothing under
   ``archives/`` is ever deleted here.
 * **backup** checkpoints the WAL, copies the SQLite DB, and verifies the copy
@@ -41,8 +42,11 @@ def cleanup_temp(
 ) -> dict[str, Any]:
     """Delete disposable run dirs for terminal jobs older than ``retention_days``.
 
-    Archives are never touched. Returns a summary of freed bytes and affected
-    job ids.
+    Archives are never touched. For each expired terminal job both the staged
+    run dir (``jobs/<id>``) and the evaluation workspace (``workspaces/<id>``)
+    are removed — a job can leak its workspace while the staged dir was already
+    cleaned by an earlier pass, so the two are handled independently. Returns a
+    summary of freed bytes and affected job ids.
     """
     now = now or datetime.now(timezone.utc)
     cutoff = now - timedelta(days=retention_days)
@@ -55,13 +59,17 @@ def cleanup_temp(
         updated = _parse(job.updated_at)
         if updated is None or updated > cutoff:
             continue
-        run_root = settings.jobs_root / job.job_id
-        if not run_root.is_dir():
-            continue
-        size = _dir_size(run_root)
-        shutil.rmtree(run_root, ignore_errors=True)
-        cleaned.append(job.job_id)
-        freed += size
+        removed_any = False
+        for root in (settings.jobs_root, settings.workspaces_root):
+            target = root / job.job_id
+            if not target.is_dir():
+                continue
+            size = _dir_size(target)
+            shutil.rmtree(target, ignore_errors=True)
+            freed += size
+            removed_any = True
+        if removed_any:
+            cleaned.append(job.job_id)
     return {"cleaned_job_ids": cleaned, "freed_bytes": freed, "retention_days": retention_days}
 
 

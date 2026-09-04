@@ -4,7 +4,9 @@ import json
 import os
 import subprocess
 import tempfile
+import time
 import unittest
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
 
@@ -15,6 +17,7 @@ from spec_eval.ci_worker import (
     RepoSyncResult,
     SpecCheckResult,
     WorkerContext,
+    cleanup_ci_archive,
     compute_changed_files,
     capture_master_snapshot,
     current_pr_head_sha,
@@ -1498,6 +1501,134 @@ class MirrorRepoTableTest(unittest.TestCase):
         self.assertEqual(branches["specs"], "main")
         for name in ("ace_engine", "sdk-js", "sdk_c"):
             self.assertEqual(branches[name], "master")
+
+
+class CleanupCiArchiveTest(unittest.TestCase):
+    """cleanup_ci_archive retention pass (issue #84): prune out/ of expired
+    non-latest deliveries, keep each PR's latest report whole."""
+
+    def _delivery(
+        self,
+        root: Path,
+        iid: int,
+        name: str,
+        *,
+        status: str = "ok",
+        finished_at: str | None = None,
+        with_out: bool = True,
+    ) -> Path:
+        delivery = root / f"pr-{iid}" / name
+        delivery.mkdir(parents=True, exist_ok=True)
+        if with_out:
+            out_func = delivery / "out" / "04-01-01"
+            out_func.mkdir(parents=True, exist_ok=True)
+            (out_func / "static-result.json").write_text("x" * 512, encoding="utf-8")
+            (delivery / "out" / ".cache").mkdir(exist_ok=True)
+            (delivery / "out" / ".cache" / "cached.bin").write_text("y" * 256, encoding="utf-8")
+        meta: dict[str, object] = {"status": status}
+        if finished_at is not None:
+            meta["finished_at"] = finished_at
+        (delivery / "run-meta.json").write_text(json.dumps(meta), encoding="utf-8")
+        (delivery / "full-report.md").write_text("# full report", encoding="utf-8")
+        return delivery
+
+    @staticmethod
+    def _iso(days_ago: float) -> str:
+        return (datetime.now(timezone.utc) - timedelta(days=days_ago)).isoformat()
+
+    def test_old_delivery_out_removed_small_files_kept(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            old = self._delivery(root, 61, "61-old", finished_at=self._iso(30))
+            self._delivery(root, 61, "61-new", finished_at=self._iso(1))
+            summary = cleanup_ci_archive(root, 14)
+            self.assertFalse((old / "out").exists())
+            self.assertTrue((old / "run-meta.json").is_file())
+            self.assertTrue((old / "full-report.md").is_file())
+            self.assertIn("pr-61/61-old", summary["cleaned_deliveries"])
+            self.assertEqual(summary["freed_bytes"], 512 + 256)
+            self.assertEqual(summary["pr_count"], 1)
+
+    def test_latest_report_delivery_kept_even_when_old(self) -> None:
+        # A PR whose newest report delivery is itself expired keeps it whole
+        # (the browsable-report floor); newer merge deliveries carry no out/.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            report = self._delivery(root, 61, "61-report", finished_at=self._iso(90))
+            self._delivery(root, 61, "61-merge", status="merge_synced",
+                           finished_at=self._iso(80), with_out=False)
+            summary = cleanup_ci_archive(root, 14)
+            self.assertTrue((report / "out").is_dir())
+            self.assertEqual(summary["cleaned_deliveries"], [])
+
+    def test_newer_echo_delivery_does_not_starve_last_report(self) -> None:
+        # The newest delivery may be a test-writeback echo without a report;
+        # the last report-bearing delivery must keep out/ (the PR comment
+        # links to its full-report.md).
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            report = self._delivery(root, 61, "61-report", finished_at=self._iso(30))
+            self._delivery(root, 61, "61-echo", status="skipped_unchanged_head",
+                           finished_at=self._iso(29), with_out=False)
+            cleanup_ci_archive(root, 14)
+            self.assertTrue((report / "out").is_dir())
+
+    def test_mtime_fallback_when_meta_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            no_meta = self._delivery(root, 62, "62-no-meta", finished_at=self._iso(1))
+            (no_meta / "run-meta.json").unlink()
+            backdated = time.time() - 40 * 86400
+            os.utime(no_meta, (backdated, backdated))
+            self._delivery(root, 62, "62-new")
+            summary = cleanup_ci_archive(root, 14)
+            self.assertFalse((no_meta / "out").exists())
+            self.assertIn("pr-62/62-no-meta", summary["cleaned_deliveries"])
+            self.assertTrue((root / "pr-62" / "62-new" / "out").is_dir())
+
+    def test_processed_ndjson_untouched(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            ledger = root / "processed.ndjson"
+            ledger.write_text('{"delivery_id": "d1"}\n', encoding="utf-8")
+            self._delivery(root, 63, "63-old", finished_at=self._iso(90))
+            self._delivery(root, 63, "63-newer", finished_at=self._iso(80))
+            cleanup_ci_archive(root, 14)
+            self.assertEqual(ledger.read_text(encoding="utf-8"), '{"delivery_id": "d1"}\n')
+
+    def test_idempotent_second_run_frees_nothing(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._delivery(root, 64, "64-a", finished_at=self._iso(30))
+            self._delivery(root, 64, "64-b", finished_at=self._iso(1))
+            first = cleanup_ci_archive(root, 14)
+            self.assertGreater(first["freed_bytes"], 0)
+            second = cleanup_ci_archive(root, 14)
+            self.assertEqual(second["freed_bytes"], 0)
+            self.assertEqual(second["cleaned_deliveries"], [])
+
+    def test_missing_output_root_is_noop(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            summary = cleanup_ci_archive(Path(tmp) / "absent", 14)
+        self.assertEqual(summary["freed_bytes"], 0)
+        self.assertEqual(summary["pr_count"], 0)
+        self.assertEqual(summary["cleaned_deliveries"], [])
+
+    def test_cli_cleanup_archive_prunes_and_exits(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self._delivery(root, 65, "65-old", finished_at=self._iso(30))
+            self._delivery(root, 65, "65-new", finished_at=self._iso(1))
+            exit_code = main([
+                "--cleanup-archive",
+                "--retention-days", "14",
+                "--output-root", str(root),
+                "--receipts", str(root / "receipts.ndjson"),
+                "--processed-ledger", str(root / "processed.ndjson"),
+            ])
+            self.assertEqual(exit_code, ci_worker.EXIT_OK)
+            self.assertFalse((root / "pr-65" / "65-old" / "out").exists())
+            self.assertTrue((root / "pr-65" / "65-new" / "out").is_dir())
 
 
 if __name__ == "__main__":

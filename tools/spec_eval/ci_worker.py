@@ -21,6 +21,7 @@ import argparse
 import json
 import logging
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -28,7 +29,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -1136,6 +1137,109 @@ def _last_processed_head_for(output_root: Path, iid: Any) -> str | None:
     return best[1] if best else None
 
 
+def cleanup_ci_archive(
+    output_root: Path,
+    retention_days: int,
+    *,
+    now: datetime | None = None,
+) -> dict[str, Any]:
+    """Prune the heavy ``out/`` payload of expired non-latest per-PR deliveries.
+
+    For every ``pr-*/<delivery>/`` directory the delivery age comes from
+    ``run-meta.json.finished_at`` (falling back to the directory mtime). Each PR
+    keeps its latest report-bearing delivery (run-meta ``status`` ok/incomplete,
+    the same filter ``_last_processed_head_for`` applies) whole: its ``out/`` is
+    the report the PR comment links to and its ``run-meta.json`` drives
+    test-writeback echo detection. When a PR has no report-bearing delivery the
+    newest delivery by timestamp is kept instead, so a newer echo or merge
+    delivery never starves the last real report. Every other delivery older
+    than ``retention_days`` loses only ``out/``; the small metadata files
+    (run-meta.json, full-report.md, ci-summary.json, ...) stay so history and
+    echo detection remain readable. ``processed.ndjson`` and anything else
+    directly under ``output_root`` are never touched. Idempotent: a second run
+    finds nothing left to delete.
+
+    Returns a summary with freed bytes, examined PR dirs and cleaned deliveries.
+    """
+    now = now or datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=retention_days)
+    summary: dict[str, Any] = {
+        "retention_days": retention_days,
+        "pr_count": 0,
+        "cleaned_deliveries": [],
+        "freed_bytes": 0,
+    }
+    if not output_root.is_dir():
+        return summary
+    for pr_dir in sorted(output_root.glob("pr-*")):
+        if not pr_dir.is_dir():
+            continue
+        summary["pr_count"] += 1
+        deliveries = [entry for entry in pr_dir.iterdir() if entry.is_dir()]
+        keep = _delivery_to_keep(deliveries)
+        for delivery in deliveries:
+            if delivery == keep:
+                continue
+            if _delivery_finished_at(delivery) > cutoff:
+                continue
+            out_dir = delivery / "out"
+            if not out_dir.is_dir():
+                continue
+            size = _tree_size(out_dir)
+            shutil.rmtree(out_dir, ignore_errors=True)
+            summary["freed_bytes"] += size
+            summary["cleaned_deliveries"].append(delivery.relative_to(output_root).as_posix())
+    return summary
+
+
+def _delivery_meta(delivery: Path) -> dict[str, Any]:
+    """Best-effort ``run-meta.json`` content for one delivery ({} when unreadable)."""
+    try:
+        value = json.loads((delivery / "run-meta.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return value if isinstance(value, dict) else {}
+
+
+def _delivery_finished_at(delivery: Path) -> datetime:
+    """Delivery timestamp: run-meta ``finished_at``, else the directory mtime."""
+    raw = _delivery_meta(delivery).get("finished_at")
+    if isinstance(raw, str) and raw:
+        try:
+            ts = datetime.fromisoformat(raw)
+        except ValueError:
+            ts = None
+        else:
+            return ts.replace(tzinfo=timezone.utc) if ts.tzinfo is None else ts
+    return datetime.fromtimestamp(delivery.stat().st_mtime, tz=timezone.utc)
+
+
+def _delivery_to_keep(deliveries: list[Path]) -> Path | None:
+    """Pick the delivery whose ``out/`` must survive cleanup for one PR."""
+    if not deliveries:
+        return None
+
+    def sort_key(path: Path) -> tuple[datetime, str]:
+        return (_delivery_finished_at(path), path.name)
+
+    report_bearing = [
+        d for d in deliveries if _delivery_meta(d).get("status") in {"ok", "incomplete"}
+    ]
+    return max(report_bearing or deliveries, key=sort_key)
+
+
+def _tree_size(path: Path) -> int:
+    """Total size in bytes of all files under ``path`` (unreadable files skipped)."""
+    total = 0
+    for item in path.rglob("*"):
+        if item.is_file():
+            try:
+                total += item.stat().st_size
+            except OSError:
+                continue
+    return total
+
+
 def write_run_meta(
     archive_dir: Path,
     *,
@@ -1644,6 +1748,20 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--process-limit", type=int, default=0, help="process at most N unprocessed receipts (0=all)")
     parser.add_argument(
+        "--cleanup-archive",
+        action="store_true",
+        help=(
+            "delete out/ under expired non-latest per-PR deliveries in --output-root "
+            "(keeps each PR's latest report whole, never touches processed.ndjson), then exit"
+        ),
+    )
+    parser.add_argument(
+        "--retention-days",
+        type=int,
+        default=14,
+        help="with --cleanup-archive, prune deliveries older than this many days (default 14)",
+    )
+    parser.add_argument(
         "--watch",
         action="store_true",
         help="stay resident: poll the receipts file and process new deliveries as they arrive",
@@ -1720,6 +1838,16 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
     ctx = build_context(args)
+    if args.cleanup_archive:
+        # Standalone retention pass (cron-friendly): prune and exit, never
+        # entering receipt processing / watch mode.
+        summary = cleanup_ci_archive(ctx.output_root, args.retention_days)
+        LOGGER.info(
+            "cleanup-archive: freed %d bytes from %d delivery(ies) across %d PR dir(s) (retention=%dd)",
+            summary["freed_bytes"], len(summary["cleaned_deliveries"]),
+            summary["pr_count"], summary["retention_days"],
+        )
+        return EXIT_OK
     if args.watch:
         # In watch mode every tick drains all pending receipts; --process-limit
         # is a one-shot batch control and does not apply per tick.
