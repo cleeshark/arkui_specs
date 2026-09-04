@@ -177,24 +177,22 @@ python3 specs/tools/spec_eval/cli.py --json report \
 
 `evaluation-report.json` 只包含冻结协议允许的 static、semantic、score 和 summary 字段；`function-analysis.json` 与 `stability-result.json` 保持为伴随机器输入，不扩展冻结 Schema。显式选定的 semantic run 必须与 stability 的 `selected_run` 一致，多数 Criterion 共识不会改写正式结论或分数。
 
-### 3.7 导出 confirmed Review 站点语义归档
+### 3.7 发布站点归档（从真实 CI 评估）
 
-站点发布使用已确认 Review 和已归档静态 `site-report.json`，不重新扫描源码、SDK 或调用模型：
+站点发布现已改用 **CI 运行时归档**（每 Function 的最新 automated 评估）替代手工确认 Review 范例：
 
 ```bash
-python3 specs/tools/spec_eval/cli.py --json site-evaluation \
-  --reviews-root specs/evaluation/reviews \
-  --site-report specs/.evaluator/site-report.json \
-  --write specs/.evaluator/site-evaluation-report.json
+# 在有 .evaluator/service-data/archives/automated/ 的本机执行
+python3 specs/tools/generate_site.py --publish-archive
 ```
 
-只有 `status: confirmed` 的 Review 会进入归档。Review 的 `func_id + source_revision` 与静态报告不一致时保留记录但标记为 `EXPIRED`，不会计入当前 revision 的 `findingCount`。输出通过 `evaluation/schemas/site-evaluation-report.schema.json` 校验，并包含人工分数、20 项 Criterion 摘要、静态/语义 Finding、recommendation、证据路径和确认信息。
+该命令读取每 Function 的最新 CI 归档作业，构建 spec/semantic/history 三件套并写入 `.evaluator/` 提交快照。快照为**混合 revision**（每 Function 反映其最新评估，顶层取模数 revision）；语义状态基于新鲜度（>30 天判 `EXPIRED`），`confirmation` 由 `automated-evaluator` 合成而非人工确认。GitHub Pages 发布工作流以 static 模式消费本次提交的快照。
 
-站点详情页将五维分数绘制为 SVG 雷达图，并同时显示 published/raw 总分；对 `CONTRADICTED` 和 `PARTIALLY_SUPPORTED` Criterion，在同一 Criterion 区块内展示具体 Finding、关联证据路径和 recommendation，不再把建议和证据拆成独立列表。详情页支持下载单个 Function JSON 输入包，作为负责人后续优化的上下文输入。
+站点详情页将五维分数绘制为 SVG 雷达图，并同时显示 published/raw 总分；对 `CONTRADICTED` 和 `PARTIALLY_SUPPORTED` Criterion，在同一 Criterion 区块内展示具体 Finding、关联证据路径和 recommendation。详情页支持下载单个 Function JSON 输入包作为后续优化的上下文输入。
 
 ### 3.8 更新站点趋势和 Finding 差异归档
 
-confirmed Review 站点归档生成后，可更新轻量历史文件：
+`--publish-archive` 已在内部同步历史归档。若需从既有 `site-evaluation-report.json` 单独重算轻量历史文件（如手工修补场景），可运行：
 
 ```bash
 python3 specs/tools/spec_eval/cli.py --json site-evaluation-history \
@@ -207,8 +205,8 @@ python3 specs/tools/spec_eval/cli.py --json site-evaluation-history \
 不会重复保存每个 revision 的完整报告。差异基于 `source + func_id + finding_id` 和严重度/消息分类，
 输出新增、已解决、持续存在和重新分类数量，以及受影响 Function 和有限数量的下钻详情。
 
-同一 revision、同一 confirmed Review 指纹重复运行时输出保持不变；源码 revision 变化或同 revision
-下人工 Review 发生变化时才追加/更新快照并重新计算差异。站点生成器会移除 `activeFindings`，只把约
+同一 revision、同一评估指纹重复运行时输出保持不变；源码 revision 变化或同 revision
+下评估内容发生变化时才追加/更新快照并重新计算差异。站点生成器会移除 `activeFindings`，只把约
 数 KB 的趋势摘要打入页面数据。
 
 ### 3.9 根据变更文件评价受影响 Function
@@ -547,7 +545,7 @@ Worker 处理每条 receipt 时：校验项目白名单 → 解析 tested/target
 | `stability-result.json` | `stability` 命令生成的多run分数波动、Criterion共识、同伴一致率、离群标记和显式选定run |
 | `evaluation-report.json` | `report` 命令生成的冻结 Schema 兼容 Function 核心报告 |
 | `function-report.md` | `report` 命令生成的整改项、Feat 风险和稳定性 Markdown 总报告 |
-| `site-evaluation-report.json` | `site-evaluation` 命令导出的 confirmed Review 语义站点归档 |
+| `site-evaluation-report.json` | `generate_site.py --publish-archive` 从真实 CI 运行时归档生成的语义站点归档 |
 | `performance.json` | 单 Function 的 parser/checker/证据/写盘阶段耗时 |
 | `report.md` | 面向人工阅读的 Function 静态评价报告 |
 | `ci-summary.json` | 变更影响Function的CI摘要 |

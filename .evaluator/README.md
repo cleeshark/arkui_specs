@@ -14,34 +14,17 @@
 
 ## 更新归档
 
-在包含 `foundation/arkui/ace_engine`、`interface/sdk-js` 和 `interface/sdk_c` 的完整 OpenHarmony 工作区中，从 `ace_engine` 根目录按顺序执行。**四步缺一不可**，跳过第 2、3 步会导致站点生成失败（见下节）。
+在有 CI 运行时归档（`.evaluator/service-data/archives/automated/`）的本机，从 `ace_engine` 根目录执行：
 
 ```bash
-# 1. 全量静态扫描，更新 site-report.json 与 latest.json
-python3 specs/tools/spec_eval/cli.py \
-  --output specs/.evaluator \
-  --no-cache \
-  --quiet \
-  scan --all \
-  --report-only
+# 从真实 CI 运行时归档生成静态站点快照（推荐，覆盖全部 Function）
+python3 specs/tools/generate_site.py --publish-archive
 
-# 2. 用最新 site-report.json 重新导出语义归档（revision 自动对齐）
-python3 specs/tools/spec_eval/cli.py --json site-evaluation \
-  --reviews-root specs/evaluation/reviews \
-  --site-report specs/.evaluator/site-report.json \
-  --write specs/.evaluator/site-evaluation-report.json
-
-# 3. 同步站点趋势与 Finding 差异历史
-python3 specs/tools/spec_eval/cli.py --json site-evaluation-history \
-  --site-evaluation-report specs/.evaluator/site-evaluation-report.json \
-  --history specs/.evaluator/site-evaluation-history.json \
-  --write specs/.evaluator/site-evaluation-history.json
-
-# 4. 生成站点，验证能读取新归档
+# 可选：验证 static 模式能读取新快照（一致性校验）
 python3 specs/tools/generate_site.py
 ```
 
-第 1 步会扫描 `registry/functions.yaml` 中的全部 Function，保留单 Function 异常并继续执行，最后更新 `latest.json`。`site-evaluation` 只读已确认 Review 与已归档的 `site-report.json`，不重扫源码、不调用模型，重跑是确定性输出。GitHub Pages 发布任务不执行全量扫描，只读取本目录已入库的最新报告。
+`--publish-archive` 复用 `--mode dynamic` 的构建路径（读取每 Function 的最新 CI 评估归档），将构建的 spec/semantic/history 三件套落盘到 `.evaluator/` 提交快照。快照为**混合 revision**：每 Function 反映其最新 CI 评估，顶层 `sourceRevision` 取模数 revision；语义状态基于新鲜度（>30 天判 EXPIRED），`confirmation` 由 automated-evaluator 合成，非人工确认。revision 一致性天然满足（三者源自同一 `observed_revision`）。GitHub Pages 发布任务（`.github/workflows/deploy-pages.yml`）以 static 模式读取本目录已入库的最新快照。
 
 ## 站点归档的 revision 一致性
 
