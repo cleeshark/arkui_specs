@@ -1883,7 +1883,7 @@
       "staleness": {
         "reason": "review_source_revision_mismatch",
         "review_source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
-        "static_source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+        "static_source_revision": "f161ff718d941c9d53ae3afc4baaad1e810e1315"
       },
       "static_report_reference": {
         "available": true,
@@ -1891,7 +1891,7 @@
         "func_id": "01-01-01",
         "gate": "fail",
         "path": "site-report.json",
-        "source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+        "source_revision": "f161ff718d941c9d53ae3afc4baaad1e810e1315"
       },
       "status": "EXPIRED",
       "title": "编译构建"
@@ -4142,7 +4142,7 @@
       "staleness": {
         "reason": "review_source_revision_mismatch",
         "review_source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
-        "static_source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+        "static_source_revision": "f161ff718d941c9d53ae3afc4baaad1e810e1315"
       },
       "static_report_reference": {
         "available": true,
@@ -4150,7 +4150,7 @@
         "func_id": "02-01-04",
         "gate": "fail",
         "path": "site-report.json",
-        "source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+        "source_revision": "f161ff718d941c9d53ae3afc4baaad1e810e1315"
       },
       "status": "EXPIRED",
       "title": "预览器平台适配"
@@ -7175,7 +7175,7 @@
       "staleness": {
         "reason": "review_source_revision_mismatch",
         "review_source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
-        "static_source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+        "static_source_revision": "f161ff718d941c9d53ae3afc4baaad1e810e1315"
       },
       "static_report_reference": {
         "available": true,
@@ -7183,7 +7183,7 @@
         "func_id": "02-02-01",
         "gate": "fail",
         "path": "site-report.json",
-        "source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+        "source_revision": "f161ff718d941c9d53ae3afc4baaad1e810e1315"
       },
       "status": "EXPIRED",
       "title": "Rosen渲染后端对接"
@@ -9286,7 +9286,7 @@
       "staleness": {
         "reason": "review_source_revision_mismatch",
         "review_source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
-        "static_source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+        "static_source_revision": "f161ff718d941c9d53ae3afc4baaad1e810e1315"
       },
       "static_report_reference": {
         "available": true,
@@ -9294,7 +9294,7 @@
         "func_id": "03-02-08",
         "gate": "fail",
         "path": "site-report.json",
-        "source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+        "source_revision": "f161ff718d941c9d53ae3afc4baaad1e810e1315"
       },
       "status": "EXPIRED",
       "title": "路径动画"
@@ -12222,7 +12222,7 @@
       "staleness": {
         "reason": "review_source_revision_mismatch",
         "review_source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
-        "static_source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+        "static_source_revision": "f161ff718d941c9d53ae3afc4baaad1e810e1315"
       },
       "static_report_reference": {
         "available": true,
@@ -12230,7 +12230,7 @@
         "func_id": "03-07-01",
         "gate": "fail",
         "path": "site-report.json",
-        "source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+        "source_revision": "f161ff718d941c9d53ae3afc4baaad1e810e1315"
       },
       "status": "EXPIRED",
       "title": "无障碍能力"
@@ -15417,6 +15417,16 @@
         },
         {
           "feat_id": "Feat-02",
+          "finding_id": "FND-1f38a3681de38ac4abd1d389",
+          "line": 279,
+          "message": "source citation is ambiguous: `enums.d.ts`; use the complete repository-relative path, for example `interface/sdk-js/.../enums.d.ts` for an SDK declaration or `frameworks/.../enums.d.ts` for an ace_engine source",
+          "path": "specs/04-common-capability/04-common-events/01-touch-events/Feat-02-touch-event-multipoint-data-model-spec.md",
+          "rule_id": "REF-AMBIGUOUS-001",
+          "severity": "Major",
+          "source": "static"
+        },
+        {
+          "feat_id": "Feat-02",
           "finding_id": "FND-975654d9655928bda5a9a4cb",
           "line": 280,
           "message": "source citation is ambiguous: `common.d.ts`; use the complete repository-relative path, for example `interface/sdk-js/.../common.d.ts` for an SDK declaration or `frameworks/.../common.d.ts` for an ace_engine source",
@@ -15460,6 +15470,16 @@
           "finding_id": "FND-975654d9655928bda5a9a4cb",
           "line": 284,
           "message": "source citation is ambiguous: `common.d.ts`; use the complete repository-relative path, for example `interface/sdk-js/.../common.d.ts` for an SDK declaration or `frameworks/.../common.d.ts` for an ace_engine source",
+          "path": "specs/04-common-capability/04-common-events/01-touch-events/Feat-02-touch-event-multipoint-data-model-spec.md",
+          "rule_id": "REF-AMBIGUOUS-001",
+          "severity": "Major",
+          "source": "static"
+        },
+        {
+          "feat_id": "Feat-02",
+          "finding_id": "FND-1f38a3681de38ac4abd1d389",
+          "line": 285,
+          "message": "source citation is ambiguous: `enums.d.ts`; use the complete repository-relative path, for example `interface/sdk-js/.../enums.d.ts` for an SDK declaration or `frameworks/.../enums.d.ts` for an ace_engine source",
           "path": "specs/04-common-capability/04-common-events/01-touch-events/Feat-02-touch-event-multipoint-data-model-spec.md",
           "rule_id": "REF-AMBIGUOUS-001",
           "severity": "Major",
@@ -15517,9 +15537,29 @@
         },
         {
           "feat_id": "Feat-02",
+          "finding_id": "FND-1f38a3681de38ac4abd1d389",
+          "line": 308,
+          "message": "source citation is ambiguous: `enums.d.ts`; use the complete repository-relative path, for example `interface/sdk-js/.../enums.d.ts` for an SDK declaration or `frameworks/.../enums.d.ts` for an ace_engine source",
+          "path": "specs/04-common-capability/04-common-events/01-touch-events/Feat-02-touch-event-multipoint-data-model-spec.md",
+          "rule_id": "REF-AMBIGUOUS-001",
+          "severity": "Major",
+          "source": "static"
+        },
+        {
+          "feat_id": "Feat-02",
           "finding_id": "FND-09bc0b5468ea5aa301373f3a",
           "line": 317,
           "message": "source citation is ambiguous: `mmi_event_convertor.cpp`; use the complete repository-relative path from the ace_engine root, for example `frameworks/.../mmi_event_convertor.cpp`",
+          "path": "specs/04-common-capability/04-common-events/01-touch-events/Feat-02-touch-event-multipoint-data-model-spec.md",
+          "rule_id": "REF-AMBIGUOUS-001",
+          "severity": "Major",
+          "source": "static"
+        },
+        {
+          "feat_id": "Feat-02",
+          "finding_id": "FND-1f38a3681de38ac4abd1d389",
+          "line": 319,
+          "message": "source citation is ambiguous: `enums.d.ts`; use the complete repository-relative path, for example `interface/sdk-js/.../enums.d.ts` for an SDK declaration or `frameworks/.../enums.d.ts` for an ace_engine source",
           "path": "specs/04-common-capability/04-common-events/01-touch-events/Feat-02-touch-event-multipoint-data-model-spec.md",
           "rule_id": "REF-AMBIGUOUS-001",
           "severity": "Major",
@@ -15541,6 +15581,16 @@
           "line": 320,
           "message": "source citation is ambiguous: `pipeline_context.cpp`; use the complete repository-relative path from the ace_engine root, for example `frameworks/.../pipeline_context.cpp`",
           "path": "specs/04-common-capability/04-common-events/01-touch-events/Feat-02-touch-event-multipoint-data-model-spec.md",
+          "rule_id": "REF-AMBIGUOUS-001",
+          "severity": "Major",
+          "source": "static"
+        },
+        {
+          "feat_id": "Feat-03",
+          "finding_id": "FND-5b3463f7fd17f4b4eb52fed6",
+          "line": 32,
+          "message": "source citation is ambiguous: `enums.d.ts`; use the complete repository-relative path, for example `interface/sdk-js/.../enums.d.ts` for an SDK declaration or `frameworks/.../enums.d.ts` for an ace_engine source",
+          "path": "specs/04-common-capability/04-common-events/01-touch-events/Feat-03-history-sampling-advanced-touch-info-spec.md",
           "rule_id": "REF-AMBIGUOUS-001",
           "severity": "Major",
           "source": "static"
@@ -15801,6 +15851,15 @@
           "source": "static"
         },
         {
+          "finding_id": "FND-a88374ea0724614007902486",
+          "line": 164,
+          "message": "source citation is ambiguous: `enums.d.ts`; use the complete repository-relative path, for example `interface/sdk-js/.../enums.d.ts` for an SDK declaration or `frameworks/.../enums.d.ts` for an ace_engine source",
+          "path": "specs/04-common-capability/04-common-events/01-touch-events/design.md",
+          "rule_id": "REF-AMBIGUOUS-001",
+          "severity": "Major",
+          "source": "static"
+        },
+        {
           "finding_id": "FND-846fe2f49affa3d8f4e5ee00",
           "line": 164,
           "message": "source citation is ambiguous: `common.d.ts`; use the complete repository-relative path, for example `interface/sdk-js/.../common.d.ts` for an SDK declaration or `frameworks/.../common.d.ts` for an ace_engine source",
@@ -16002,6 +16061,15 @@
           "finding_id": "FND-846fe2f49affa3d8f4e5ee00",
           "line": 589,
           "message": "source citation is ambiguous: `common.d.ts`; use the complete repository-relative path, for example `interface/sdk-js/.../common.d.ts` for an SDK declaration or `frameworks/.../common.d.ts` for an ace_engine source",
+          "path": "specs/04-common-capability/04-common-events/01-touch-events/design.md",
+          "rule_id": "REF-AMBIGUOUS-001",
+          "severity": "Major",
+          "source": "static"
+        },
+        {
+          "finding_id": "FND-a88374ea0724614007902486",
+          "line": 589,
+          "message": "source citation is ambiguous: `enums.d.ts`; use the complete repository-relative path, for example `interface/sdk-js/.../enums.d.ts` for an SDK declaration or `frameworks/.../enums.d.ts` for an ace_engine source",
           "path": "specs/04-common-capability/04-common-events/01-touch-events/design.md",
           "rule_id": "REF-AMBIGUOUS-001",
           "severity": "Major",
@@ -16413,15 +16481,15 @@
       "staleness": {
         "reason": "review_source_revision_mismatch",
         "review_source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
-        "static_source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+        "static_source_revision": "f161ff718d941c9d53ae3afc4baaad1e810e1315"
       },
       "static_report_reference": {
         "available": true,
-        "finding_count": 234,
+        "finding_count": 241,
         "func_id": "04-04-01",
         "gate": "fail",
         "path": "site-report.json",
-        "source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+        "source_revision": "f161ff718d941c9d53ae3afc4baaad1e810e1315"
       },
       "status": "EXPIRED",
       "title": "触摸事件"
@@ -18459,7 +18527,7 @@
       "staleness": {
         "reason": "review_source_revision_mismatch",
         "review_source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
-        "static_source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+        "static_source_revision": "f161ff718d941c9d53ae3afc4baaad1e810e1315"
       },
       "static_report_reference": {
         "available": true,
@@ -18467,7 +18535,7 @@
         "func_id": "04-20-01",
         "gate": "fail",
         "path": "site-report.json",
-        "source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+        "source_revision": "f161ff718d941c9d53ae3afc4baaad1e810e1315"
       },
       "status": "EXPIRED",
       "title": "MediaQuery"
@@ -20571,7 +20639,7 @@
       "staleness": {
         "reason": "review_source_revision_mismatch",
         "review_source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
-        "static_source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+        "static_source_revision": "f161ff718d941c9d53ae3afc4baaad1e810e1315"
       },
       "static_report_reference": {
         "available": true,
@@ -20579,7 +20647,7 @@
         "func_id": "05-01-02",
         "gate": "fail",
         "path": "site-report.json",
-        "source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+        "source_revision": "f161ff718d941c9d53ae3afc4baaad1e810e1315"
       },
       "status": "EXPIRED",
       "title": "Divider"
@@ -22731,7 +22799,7 @@
       "staleness": {
         "reason": "review_source_revision_mismatch",
         "review_source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
-        "static_source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+        "static_source_revision": "f161ff718d941c9d53ae3afc4baaad1e810e1315"
       },
       "static_report_reference": {
         "available": true,
@@ -22739,7 +22807,7 @@
         "func_id": "05-03-10",
         "gate": "fail",
         "path": "site-report.json",
-        "source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+        "source_revision": "f161ff718d941c9d53ae3afc4baaad1e810e1315"
       },
       "status": "EXPIRED",
       "title": "WaterFlow/FlowItem"
@@ -27528,7 +27596,7 @@
       "staleness": {
         "reason": "review_source_revision_mismatch",
         "review_source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
-        "static_source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+        "static_source_revision": "f161ff718d941c9d53ae3afc4baaad1e810e1315"
       },
       "static_report_reference": {
         "available": true,
@@ -27536,7 +27604,7 @@
         "func_id": "05-09-02",
         "gate": "fail",
         "path": "site-report.json",
-        "source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+        "source_revision": "f161ff718d941c9d53ae3afc4baaad1e810e1315"
       },
       "status": "EXPIRED",
       "title": "RichEditor"
@@ -28979,7 +29047,7 @@
       "staleness": {
         "reason": "review_source_revision_mismatch",
         "review_source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
-        "static_source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+        "static_source_revision": "f161ff718d941c9d53ae3afc4baaad1e810e1315"
       },
       "static_report_reference": {
         "available": true,
@@ -28987,7 +29055,7 @@
         "func_id": "07-02-02",
         "gate": "fail",
         "path": "site-report.json",
-        "source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+        "source_revision": "f161ff718d941c9d53ae3afc4baaad1e810e1315"
       },
       "status": "EXPIRED",
       "title": "状态管理V1数据对象内状态管理"
@@ -31170,7 +31238,7 @@
       "staleness": {
         "reason": "review_source_revision_mismatch",
         "review_source_revision": "d91b4e4990a990da2bfe809514e573e35852193e",
-        "static_source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+        "static_source_revision": "f161ff718d941c9d53ae3afc4baaad1e810e1315"
       },
       "static_report_reference": {
         "available": true,
@@ -31178,7 +31246,7 @@
         "func_id": "10-01-01",
         "gate": "fail",
         "path": "site-report.json",
-        "source_revision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+        "source_revision": "f161ff718d941c9d53ae3afc4baaad1e810e1315"
       },
       "status": "EXPIRED",
       "title": "弧形组件"
@@ -31186,14 +31254,14 @@
   ],
   "reportVersion": "spec-eval-site-evaluation@0.2.0",
   "schemaVersion": 1,
-  "sourceRevision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863",
+  "sourceRevision": "f161ff718d941c9d53ae3afc4baaad1e810e1315",
   "staticReport": {
     "path": "site-report.json",
-    "sourceRevision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863"
+    "sourceRevision": "f161ff718d941c9d53ae3afc4baaad1e810e1315"
   },
   "summary": {
     "confirmedFunctionCount": 0,
-    "expiredFindingCount": 1146,
+    "expiredFindingCount": 1153,
     "expiredFunctionCount": 12,
     "findingCount": 0,
     "functionCount": 12

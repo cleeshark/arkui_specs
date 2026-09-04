@@ -1,533 +1,18 @@
 {
   "activeFindings": [],
   "available": true,
-  "currentRevision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863",
+  "currentRevision": "f161ff718d941c9d53ae3afc4baaad1e810e1315",
   "recentDelta": {
-    "functions": [
-      {
-        "added": 0,
-        "funcId": "05-09-02",
-        "reclassified": 0,
-        "resolved": 358,
-        "title": "RichEditor"
-      },
-      {
-        "added": 0,
-        "funcId": "04-04-01",
-        "reclassified": 0,
-        "resolved": 255,
-        "title": "触摸事件"
-      },
-      {
-        "added": 0,
-        "funcId": "03-07-01",
-        "reclassified": 0,
-        "resolved": 98,
-        "title": "无障碍能力"
-      },
-      {
-        "added": 0,
-        "funcId": "02-02-01",
-        "reclassified": 0,
-        "resolved": 84,
-        "title": "Rosen渲染后端对接"
-      },
-      {
-        "added": 0,
-        "funcId": "05-03-10",
-        "reclassified": 0,
-        "resolved": 84,
-        "title": "WaterFlow/FlowItem"
-      },
-      {
-        "added": 0,
-        "funcId": "10-01-01",
-        "reclassified": 0,
-        "resolved": 76,
-        "title": "弧形组件"
-      },
-      {
-        "added": 0,
-        "funcId": "03-02-08",
-        "reclassified": 0,
-        "resolved": 45,
-        "title": "路径动画"
-      },
-      {
-        "added": 0,
-        "funcId": "02-01-04",
-        "reclassified": 0,
-        "resolved": 39,
-        "title": "预览器平台适配"
-      },
-      {
-        "added": 0,
-        "funcId": "01-01-01",
-        "reclassified": 0,
-        "resolved": 36,
-        "title": "编译构建"
-      },
-      {
-        "added": 0,
-        "funcId": "05-01-02",
-        "reclassified": 0,
-        "resolved": 28,
-        "title": "Divider"
-      },
-      {
-        "added": 0,
-        "funcId": "07-02-02",
-        "reclassified": 0,
-        "resolved": 26,
-        "title": "状态管理V1数据对象内状态管理"
-      },
-      {
-        "added": 0,
-        "funcId": "04-20-01",
-        "reclassified": 0,
-        "resolved": 25,
-        "title": "MediaQuery"
-      }
-    ],
+    "functions": [],
     "summary": {
       "added": 0,
       "persistent": 0,
       "reclassified": 0,
-      "resolved": 1154
+      "resolved": 0
     },
     "topAdded": [],
     "topReclassified": [],
-    "topResolved": [
-      {
-        "count": 1,
-        "criterionId": "DESIGN-IMPLEMENTATION-PATH",
-        "findingId": "SEM-303462e3134913e12afcb407",
-        "funcId": "02-02-01",
-        "message": "Design的核心分层和调用链包含多个不存在的类、错误路径及错误调用方向，与冻结实现实质冲突。",
-        "severity": "Critical",
-        "source": "semantic",
-        "title": "Rosen渲染后端对接"
-      },
-      {
-        "count": 1,
-        "criterionId": "DESIGN-ALGORITHM-DATA-STATE",
-        "findingId": "SEM-36e6f6482bb1b21b364e9071",
-        "funcId": "02-02-01",
-        "message": "关键资源生命周期、状态转换和转换算法基于错误模型，且缺少并发、所有权和恢复设计。",
-        "severity": "Critical",
-        "source": "semantic",
-        "title": "Rosen渲染后端对接"
-      },
-      {
-        "count": 1,
-        "criterionId": "CORRECTNESS-SOURCE-SUPPORT",
-        "findingId": "SEM-f8f282db93e7aaf408b5d0ea",
-        "funcId": "02-02-01",
-        "message": "多个核心接口、运行链和类型模型与冻结源码直接冲突，Feat-02与Feat-03主体适配模型已明显漂移。",
-        "severity": "Critical",
-        "source": "semantic",
-        "title": "Rosen渲染后端对接"
-      },
-      {
-        "count": 1,
-        "criterionId": "CORRECTNESS-SDK-CONTRACT",
-        "findingId": "SEM-030208000000000000000002",
-        "funcId": "03-02-08",
-        "message": "“无C API”与冻结接口直接冲突，Static API 23和C API错误码契约均未纳入公开接口矩阵。",
-        "severity": "Critical",
-        "source": "semantic",
-        "title": "路径动画"
-      },
-      {
-        "count": 1,
-        "criterionId": "DESIGN-IMPLEMENTATION-PATH",
-        "findingId": "SEM-030208000000000000000009",
-        "funcId": "03-02-08",
-        "message": "Design将普通RS直达链和SharedTransition ACE Evaluator链错误串成同一端到端调用链。",
-        "severity": "Critical",
-        "source": "semantic",
-        "title": "路径动画"
-      },
-      {
-        "count": 1,
-        "criterionId": "CORRECTNESS-SOURCE-SUPPORT",
-        "findingId": "SEM-b39734ea75f6391e6bd96a74",
-        "funcId": "03-07-01",
-        "message": "no-hide-descendants查询、朗读字段、动作blocker、属性事件类型和NDK回调五类核心行为与冻结源码冲突。",
-        "severity": "Critical",
-        "source": "semantic",
-        "title": "无障碍能力"
-      },
-      {
-        "count": 1,
-        "criterionId": "DESIGN-ALGORITHM-DATA-STATE",
-        "findingId": "SEM-e84580636606fb0310e79557",
-        "funcId": "03-07-01",
-        "message": "查询、字段组装、事件阻塞、事件转换和异步回调五类关键状态模型与实现不一致。",
-        "severity": "Critical",
-        "source": "semantic",
-        "title": "无障碍能力"
-      },
-      {
-        "count": 1,
-        "criterionId": "DESIGN-IMPLEMENTATION-PATH",
-        "findingId": "SEM-f176492c82c39e005d787965",
-        "funcId": "03-07-01",
-        "message": "Design的“仅运行时回调、无编译期无障碍依赖”与OSAL真实external_deps直接冲突。",
-        "severity": "Critical",
-        "source": "semantic",
-        "title": "无障碍能力"
-      },
-      {
-        "count": 1,
-        "criterionId": "CORRECTNESS-SDK-CONTRACT",
-        "findingId": "SEM-040401000000000000000002",
-        "funcId": "04-04-01",
-        "message": "四类已确认固化行为与公开SDK的pointerIndex、历史点和pressure契约存在可观察偏差。",
-        "severity": "Critical",
-        "source": "semantic",
-        "title": "触摸事件"
-      },
-      {
-        "count": 1,
-        "criterionId": "DESIGN-ALGORITHM-DATA-STATE",
-        "findingId": "SEM-040401000000000000000009",
-        "funcId": "04-04-01",
-        "message": "关键重采样算法的时间窗、反弹和预测限制被错误泛化，无法准确解释实际插值和回退结果。",
-        "severity": "Critical",
-        "source": "semantic",
-        "title": "触摸事件"
-      },
-      {
-        "count": 1,
-        "criterionId": "CORRECTNESS-SDK-CONTRACT",
-        "findingId": "SEM-042001000000000000000002",
-        "funcId": "04-20-01",
-        "message": "文档将Dynamic模块级matchMediaSync记录为无废弃API，与SDK自API 18废弃并迁移至UIContext的公开契约直接冲突。",
-        "severity": "Critical",
-        "source": "semantic",
-        "title": "MediaQuery"
-      },
-      {
-        "count": 14,
-        "featId": "Feat-01",
-        "findingId": "FND-1bc3a662c31888b5891663bb",
-        "funcId": "01-01-01",
-        "message": "Rule is not linked from any AC",
-        "path": "specs/01-architecture/01-architecture-design/01-build-system/Feat-01-build-gn-structure-spec.md",
-        "ruleId": "TRACE-RULE-ORPHAN-001",
-        "severity": "Major",
-        "source": "static",
-        "title": "编译构建"
-      },
-      {
-        "count": 1,
-        "featId": "Feat-01",
-        "findingId": "FND-5e129ac0211440c8693d417f",
-        "funcId": "01-01-01",
-        "message": "user story `US-1: 识别平台发现和全局配置` must contain non-empty `**作为**`, `**我想要**`, and `**以便**` lines in order",
-        "path": "specs/01-architecture/01-architecture-design/01-build-system/Feat-01-build-gn-structure-spec.md",
-        "ruleId": "SPEC-STRUCT-USER-STORY-001",
-        "severity": "Major",
-        "source": "static",
-        "title": "编译构建"
-      },
-      {
-        "count": 1,
-        "featId": "Feat-01",
-        "findingId": "FND-6946ed1b243f9ff0851b565f",
-        "funcId": "01-01-01",
-        "message": "user story `US-4: 识别接口、扩展组件和验证入口` must contain non-empty `**作为**`, `**我想要**`, and `**以便**` lines in order",
-        "path": "specs/01-architecture/01-architecture-design/01-build-system/Feat-01-build-gn-structure-spec.md",
-        "ruleId": "SPEC-STRUCT-USER-STORY-001",
-        "severity": "Major",
-        "source": "static",
-        "title": "编译构建"
-      },
-      {
-        "count": 1,
-        "featId": "Feat-01",
-        "findingId": "FND-84b4ba07718c6138a8a667ba",
-        "funcId": "01-01-01",
-        "message": "source citation line range is outside the file",
-        "path": "specs/01-architecture/01-architecture-design/01-build-system/Feat-01-build-gn-structure-spec.md",
-        "ruleId": "REF-LINE-RANGE-001",
-        "severity": "Major",
-        "source": "static",
-        "title": "编译构建"
-      },
-      {
-        "count": 1,
-        "featId": "Feat-01",
-        "findingId": "FND-865944f6825dedfb4f763246",
-        "funcId": "01-01-01",
-        "message": "user story `US-5: 识别 ArkUI-X adapter 参考构建` must contain non-empty `**作为**`, `**我想要**`, and `**以便**` lines in order",
-        "path": "specs/01-architecture/01-architecture-design/01-build-system/Feat-01-build-gn-structure-spec.md",
-        "ruleId": "SPEC-STRUCT-USER-STORY-001",
-        "severity": "Major",
-        "source": "static",
-        "title": "编译构建"
-      },
-      {
-        "count": 1,
-        "featId": "Feat-01",
-        "findingId": "FND-bb413ea446a0baab5f437bd4",
-        "funcId": "01-01-01",
-        "message": "user story `US-3: 识别前端桥接和生成物依赖` must contain non-empty `**作为**`, `**我想要**`, and `**以便**` lines in order",
-        "path": "specs/01-architecture/01-architecture-design/01-build-system/Feat-01-build-gn-structure-spec.md",
-        "ruleId": "SPEC-STRUCT-USER-STORY-001",
-        "severity": "Major",
-        "source": "static",
-        "title": "编译构建"
-      },
-      {
-        "count": 1,
-        "findingId": "FND-ef9d20a6cad28c6cd3cfd229",
-        "funcId": "01-01-01",
-        "message": "source citation line range is outside the file",
-        "path": "specs/01-architecture/01-architecture-design/01-build-system/design.md",
-        "ruleId": "REF-LINE-RANGE-001",
-        "severity": "Major",
-        "source": "static",
-        "title": "编译构建"
-      },
-      {
-        "count": 1,
-        "featId": "Feat-01",
-        "findingId": "FND-f728367a27f8fe4e12fffa21",
-        "funcId": "01-01-01",
-        "message": "user story `US-2: 识别主库和框架聚合关系` must contain non-empty `**作为**`, `**我想要**`, and `**以便**` lines in order",
-        "path": "specs/01-architecture/01-architecture-design/01-build-system/Feat-01-build-gn-structure-spec.md",
-        "ruleId": "SPEC-STRUCT-USER-STORY-001",
-        "severity": "Major",
-        "source": "static",
-        "title": "编译构建"
-      },
-      {
-        "count": 1,
-        "criterionId": "CORRECTNESS-SOURCE-SUPPORT",
-        "findingId": "SEM-000000000000000000000001",
-        "funcId": "01-01-01",
-        "message": "多个核心事实仍可验证，但NDK、core模板归属、关联仓构建结构及大量引用区间与当前冻结证据不完全一致。",
-        "severity": "Major",
-        "source": "semantic",
-        "title": "编译构建"
-      },
-      {
-        "count": 1,
-        "criterionId": "CORRECTNESS-BOUNDARY-STATE",
-        "findingId": "SEM-000000000000000000000002",
-        "funcId": "01-01-01",
-        "message": "平台、产品、NDK和主库状态分支没有按当前实现形成完整且互斥的边界模型。",
-        "severity": "Major",
-        "source": "semantic",
-        "title": "编译构建"
-      },
-      {
-        "count": 1,
-        "criterionId": "CORRECTNESS-CROSS-DOC-CONSISTENCY",
-        "findingId": "SEM-000000000000000000000003",
-        "funcId": "01-01-01",
-        "message": "注册关系正确，但旧KB链接、共享的过期NDK结论和未冻结关联仓使跨文档基线无法完整复现。",
-        "severity": "Major",
-        "source": "semantic",
-        "title": "编译构建"
-      },
-      {
-        "count": 1,
-        "criterionId": "SPEC-AC-TESTABILITY",
-        "findingId": "SEM-000000000000000000000004",
-        "funcId": "01-01-01",
-        "message": "AC可人工审查，但无法仅按文档直接完成构建、执行并判定逐AC结果。",
-        "severity": "Major",
-        "source": "semantic",
-        "title": "编译构建"
-      },
-      {
-        "count": 1,
-        "criterionId": "SPEC-RULE-COMPLETENESS",
-        "findingId": "SEM-000000000000000000000005",
-        "funcId": "01-01-01",
-        "message": "规则数量较多，但必要前提、边界字段和当前新增构建分支没有形成完整规格。",
-        "severity": "Major",
-        "source": "semantic",
-        "title": "编译构建"
-      },
-      {
-        "count": 1,
-        "criterionId": "SPEC-TRACEABILITY",
-        "findingId": "SEM-000000000000000000000006",
-        "funcId": "01-01-01",
-        "message": "AC、Rule和VM已有基础关系，但孤儿规则、越界证据和低证据覆盖使追溯链不能闭环。",
-        "severity": "Major",
-        "source": "semantic",
-        "title": "编译构建"
-      },
-      {
-        "count": 1,
-        "criterionId": "DESIGN-IMPLEMENTATION-PATH",
-        "findingId": "SEM-000000000000000000000007",
-        "funcId": "01-01-01",
-        "message": "主构建层次存在，但部分调用边、模块归属和新增产物路径不准确或缺失。",
-        "severity": "Major",
-        "source": "semantic",
-        "title": "编译构建"
-      },
-      {
-        "count": 1,
-        "criterionId": "DESIGN-FEAT-RUNTIME-COVERAGE",
-        "findingId": "SEM-000000000000000000000008",
-        "funcId": "01-01-01",
-        "message": "Feat主执行链可定位，但输出、异常、恢复、部署及测试交接未达到逐Feat闭环。",
-        "severity": "Major",
-        "source": "semantic",
-        "title": "编译构建"
-      },
-      {
-        "count": 1,
-        "criterionId": "DESIGN-ALGORITHM-DATA-STATE",
-        "findingId": "SEM-000000000000000000000009",
-        "funcId": "01-01-01",
-        "message": "核心平台算法存在，但配置优先级、产物状态、生命周期和失败恢复模型不足。",
-        "severity": "Major",
-        "source": "semantic",
-        "title": "编译构建"
-      },
-      {
-        "count": 1,
-        "criterionId": "DESIGN-DECISION-QUALITY",
-        "findingId": "SEM-00000000000000000000000a",
-        "funcId": "01-01-01",
-        "message": "ADR具备真实候选和理由，但成本、适用条件、兼容性、验证及当前演进状态不完整。",
-        "severity": "Major",
-        "source": "semantic",
-        "title": "编译构建"
-      },
-      {
-        "count": 1,
-        "criterionId": "DESIGN-IMPACT-COVERAGE",
-        "findingId": "SEM-00000000000000000000000b",
-        "funcId": "01-01-01",
-        "message": "构建入口覆盖较广，但实际产物、依赖、注册、加载和部署链仍有关键遗漏。",
-        "severity": "Major",
-        "source": "semantic",
-        "title": "编译构建"
-      },
-      {
-        "count": 1,
-        "criterionId": "DESIGN-VERIFICATION-PLAN",
-        "findingId": "SEM-00000000000000000000000c",
-        "funcId": "01-01-01",
-        "message": "已有验证方向，但不具备逐AC可执行命令、精确范围、预期结果和风险关闭证据。",
-        "severity": "Major",
-        "source": "semantic",
-        "title": "编译构建"
-      },
-      {
-        "count": 1,
-        "criterionId": "COMPATIBILITY-SYSTEM-IMPACT",
-        "findingId": "SEM-00000000000000000000000d",
-        "funcId": "01-01-01",
-        "message": "无新增依赖结论成立，但存量外部部件、接口暴露和条件依赖影响没有完整承接。",
-        "severity": "Major",
-        "source": "semantic",
-        "title": "编译构建"
-      },
-      {
-        "count": 1,
-        "criterionId": "COMPATIBILITY-MULTI-DEVICE",
-        "findingId": "SEM-00000000000000000000000e",
-        "funcId": "01-01-01",
-        "message": "多设备无差异声明与wearable构建宏、组件裁剪及产物集合差异直接冲突。",
-        "severity": "Major",
-        "source": "semantic",
-        "title": "编译构建"
-      },
-      {
-        "count": 1,
-        "featId": "Feat-03",
-        "findingId": "FND-0914d7d808859ec8c0382839",
-        "funcId": "02-01-04",
-        "message": "section `验收追溯` table fields do not match the standard header: missing fields: `AC编号`; unexpected fields: `AC`",
-        "path": "specs/02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/Feat-03-previewer-sdk-packaging-spec.md",
-        "ruleId": "SPEC-STRUCT-TABLE-FIELD-001",
-        "severity": "Major",
-        "source": "static",
-        "title": "预览器平台适配"
-      },
-      {
-        "count": 1,
-        "featId": "Feat-01",
-        "findingId": "FND-0d922dc40d7a42f482c9270e",
-        "funcId": "02-01-04",
-        "message": "ambiguous ID range `R-1~R-3` must be expanded explicitly",
-        "path": "specs/02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/Feat-01-previewer-platform-build-spec.md",
-        "ruleId": "TRACE-RANGE-ID-001",
-        "severity": "Major",
-        "source": "static",
-        "title": "预览器平台适配"
-      },
-      {
-        "count": 2,
-        "featId": "Feat-03",
-        "findingId": "FND-207d90026999e6158852a83d",
-        "funcId": "02-01-04",
-        "message": "ambiguous ID range `AC-1.1~AC-1.3` must be expanded explicitly",
-        "path": "specs/02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/Feat-03-previewer-sdk-packaging-spec.md",
-        "ruleId": "TRACE-RANGE-ID-001",
-        "severity": "Major",
-        "source": "static",
-        "title": "预览器平台适配"
-      },
-      {
-        "count": 3,
-        "featId": "Feat-02",
-        "findingId": "FND-240ab24c4dfc30712399d9fe",
-        "funcId": "02-01-04",
-        "message": "ambiguous ID range `AC-2.1~AC-2.3` must be expanded explicitly",
-        "path": "specs/02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/Feat-02-previewer-runtime-mock-spec.md",
-        "ruleId": "TRACE-RANGE-ID-001",
-        "severity": "Major",
-        "source": "static",
-        "title": "预览器平台适配"
-      },
-      {
-        "count": 2,
-        "featId": "Feat-01",
-        "findingId": "FND-3146d91bf087e74b03141fef",
-        "funcId": "02-01-04",
-        "message": "ambiguous ID range `AC-2.1~AC-2.3` must be expanded explicitly",
-        "path": "specs/02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/Feat-01-previewer-platform-build-spec.md",
-        "ruleId": "TRACE-RANGE-ID-001",
-        "severity": "Major",
-        "source": "static",
-        "title": "预览器平台适配"
-      },
-      {
-        "count": 2,
-        "featId": "Feat-03",
-        "findingId": "FND-3e6320a7c2e7792087fca04e",
-        "funcId": "02-01-04",
-        "message": "ambiguous ID range `AC-2.1~AC-2.3` must be expanded explicitly",
-        "path": "specs/02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/Feat-03-previewer-sdk-packaging-spec.md",
-        "ruleId": "TRACE-RANGE-ID-001",
-        "severity": "Major",
-        "source": "static",
-        "title": "预览器平台适配"
-      },
-      {
-        "count": 1,
-        "featId": "Feat-03",
-        "findingId": "FND-415884e1e1e9cda34c01d208",
-        "funcId": "02-01-04",
-        "message": "ambiguous ID range `R-4~R-6` must be expanded explicitly",
-        "path": "specs/02-cross-platform/01-platform-adapter/04-previewer-platform-adapter/Feat-03-previewer-sdk-packaging-spec.md",
-        "ruleId": "TRACE-RANGE-ID-001",
-        "severity": "Major",
-        "source": "static",
-        "title": "预览器平台适配"
-      }
-    ]
+    "topResolved": []
   },
   "reportVersion": "spec-eval-site-history@0.1.0",
   "schemaVersion": 1,
@@ -767,16 +252,46 @@
       "topCriteria": [],
       "topFunctions": [],
       "topRules": []
+    },
+    {
+      "admissionCounts": {},
+      "confidenceAverage": 0.0,
+      "confirmedAt": null,
+      "dimensionAverages": {
+        "compatibility_system_impact": 0.0,
+        "correctness": 0.0,
+        "design_quality": 0.0,
+        "function_modeling": 0.0,
+        "spec_executability": 0.0
+      },
+      "findingCount": 0,
+      "fingerprint": "5d39a071ede320c156ae509c201195bf3fb9341e183c7008bfdeb47127524306",
+      "functionCount": 0,
+      "gateCounts": {},
+      "publishedScoreAverage": 0.0,
+      "severityCounts": {
+        "Critical": 0,
+        "Info": 0,
+        "Major": 0,
+        "Minor": 0
+      },
+      "snapshotAt": "2026-09-04T04:00:23.292972+00:00",
+      "snapshotDay": "2026-09-04",
+      "sourceCounts": {},
+      "sourceRevision": "f161ff718d941c9d53ae3afc4baaad1e810e1315",
+      "topCriteria": [],
+      "topFunctions": [],
+      "topRules": []
     }
   ],
   "summary": {
     "addedFindingCount": 0,
-    "baselineRevision": "d91b4e4990a990da2bfe809514e573e35852193e",
+    "baselineRevision": "75e8f3bfb44b10fef323744e1b5f1bbab2239863",
     "comparisonStatus": "REVISION_CHANGED",
     "currentFindingCount": 0,
     "persistentFindingCount": 0,
     "reclassifiedFindingCount": 0,
-    "resolvedFindingCount": 1154,
-    "snapshotCount": 2
+    "resolvedFindingCount": 0,
+    "snapshotCount": 3
   }
 }
