@@ -29,6 +29,7 @@ from spec_eval.service.pipeline.correction import (
     resolve_typed_error_json_path,
     resolve_typed_error_json_paths,
     typed_error_json_path,
+    validate_patch_evidence_refs,
     validate_patch_scope,
     validate_patch_values,
 )
@@ -470,6 +471,74 @@ class CorrectionFlowTest(unittest.TestCase):
                     path: ["CORRECTNESS-SOURCE-SUPPORT"]
                 },
             )
+        )
+
+    def test_patch_evidence_refs_reject_fabricated_ids(self) -> None:
+        """Issue #88: a correction fixing NV_INSPECTION_EVIDENCE_MISSING
+        must cite declared evidence — inventing ids is rejected."""
+        published = {
+            "observations": [{
+                "observation_id": "OBS-1",
+                "evidence": [{
+                    "evidence_id": "EV-1",
+                    "type": "design_location",
+                    "path": "specs/x/design.md",
+                }],
+            }],
+            "claim_reviews": [{
+                "claim_id": "Feat-01/C-1",
+                "evidence_ids": ["EV-1"],
+            }],
+        }
+        self.assertEqual(
+            validate_patch_evidence_refs(
+                [{"op": "replace", "path": "/claim_reviews/0/evidence_ids",
+                  "value": json.dumps(["EV-1"])}],
+                published,
+            ),
+            [],
+        )
+        violations = validate_patch_evidence_refs(
+            [{"op": "replace", "path": "/claim_reviews/0/evidence_ids",
+              "value": json.dumps(["EV-1", "EV-R1"])}],
+            published,
+        )
+        self.assertTrue(violations)
+        self.assertIn("EV-R1", violations[0])
+
+    def test_patch_evidence_refs_accept_declared_additions(self) -> None:
+        """A declaration-add patch introduces its key for later references;
+        a published evidence-row add introduces its evidence_id."""
+        raw_payload = {"evidence_declarations": [], "claim_reviews": []}
+        self.assertEqual(
+            validate_patch_evidence_refs(
+                [
+                    {"op": "add", "path": "/evidence_declarations/-",
+                     "value": json.dumps({"key": "e9", "type": "review_record",
+                                          "path": "inputs/x.cpp"})},
+                    {"op": "add", "path": "/claim_reviews/0/evidence_refs",
+                     "value": json.dumps(["e9"])},
+                ],
+                raw_payload,
+            ),
+            [],
+        )
+        published = {
+            "observations": [{"observation_id": "OBS-1", "evidence": []}],
+            "claim_reviews": [{"claim_id": "Feat-01/C-1"}],
+        }
+        self.assertEqual(
+            validate_patch_evidence_refs(
+                [
+                    {"op": "add", "path": "/observations/0/evidence/-",
+                     "value": json.dumps({"evidence_id": "EV-2",
+                                          "type": "review_record"})},
+                    {"op": "add", "path": "/claim_reviews/0/evidence_ids",
+                     "value": json.dumps(["EV-2"])},
+                ],
+                published,
+            ),
+            [],
         )
 
     def test_typed_error_path_becomes_json_pointer(self) -> None:

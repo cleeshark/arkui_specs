@@ -54,6 +54,7 @@ from spec_eval.service.pipeline.correction import (
     is_fatal_error,
     is_model_correction_error,
     resolve_typed_error_json_paths,
+    validate_patch_evidence_refs,
     validate_patch_scope,
     validate_patch_values,
 )
@@ -943,6 +944,9 @@ class JudgmentFlow:
                     allowed_values_by_path=correction_contract.get(
                         "allowed_values_by_path", {}
                     ),
+                ))
+                violations.extend(validate_patch_evidence_refs(
+                    patches, candidate_document,
                 ))
                 if violations:
                     raise ValueError("; ".join(violations))
