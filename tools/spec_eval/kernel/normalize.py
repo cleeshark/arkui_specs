@@ -290,6 +290,32 @@ def normalize_observation(
             changes.append(f"{label} deduplicated")
         return unique_values
 
+    def _canonical_check_ids(value: Any, label: str) -> list[str]:
+        """Drop check_ids outside the work item's required_checks registry.
+
+        The check registry is service-owned (design D3): observations may
+        only map the canonical checks named by the template.  Models
+        sometimes invent per-facet sub-check ids (`CHK-*` / `check-*`)
+        alongside canonical ones; those carry no registry meaning and make
+        the document fail the aggregation checkpoint gate.  When every
+        canonical check stays mapped elsewhere, dropping the inventions is
+        purely structural; otherwise the residual coverage gap goes to the
+        correction turn.  An empty template registry (cannot judge) is kept
+        verbatim.
+        """
+        check_ids = _deduplicated_strings(value, label)
+        if not required_checks:
+            return check_ids
+        allowed = set(required_checks)
+        kept = [c for c in check_ids if c in allowed]
+        dropped = [c for c in check_ids if c not in allowed]
+        if dropped:
+            changes.append(
+                f"{label}: dropped unknown check_ids {dropped} "
+                f"(not in required_checks registry)"
+            )
+        return kept
+
     # empty expected sets are legitimate (synthetic loop fixtures, empty
     # features); claim-set mismatches are the validator's job
     expected_claims = _strings(template.get("expected_claim_ids"))
@@ -425,7 +451,7 @@ def normalize_observation(
                 entry.get("criterion_ids"),
                 f"observations[{obs_index}].criterion_ids",
             ),
-            "check_ids": _deduplicated_strings(
+            "check_ids": _canonical_check_ids(
                 entry.get("check_ids"),
                 f"observations[{obs_index}].check_ids",
             ),
