@@ -148,6 +148,55 @@ class CleanupTest(_GovTestBase):
         self.assertTrue((self.settings.jobs_root / new_id).exists())
         self.assertGreater(summary["freed_bytes"], 0)
 
+    def test_old_terminal_workspace_removed_too(self) -> None:
+        old_id = self._complete_job("o" * 40)
+        new_id = self._complete_job("n" * 40)
+        self._set_updated_at(old_id, (datetime.now(timezone.utc) - timedelta(days=30)).isoformat(timespec="seconds"))
+        for jid in (old_id, new_id):
+            run_dir = self.settings.jobs_root / jid / "runs" / "run-1"
+            run_dir.mkdir(parents=True, exist_ok=True)
+            (run_dir / "x.json").write_text("{}", encoding="utf-8")
+            workspace = self.settings.workspaces_root / jid / "oh" / "foundation"
+            workspace.mkdir(parents=True, exist_ok=True)
+            (workspace / "big.bin").write_text("x" * 256, encoding="utf-8")
+
+        summary = cleanup_temp(self.settings, self.store, retention_days=14)
+        self.assertIn(old_id, summary["cleaned_job_ids"])
+        self.assertFalse((self.settings.jobs_root / old_id).exists())
+        self.assertFalse((self.settings.workspaces_root / old_id).exists())
+        # the recent terminal job keeps both its run dir and its workspace
+        self.assertNotIn(new_id, summary["cleaned_job_ids"])
+        self.assertTrue((self.settings.jobs_root / new_id).exists())
+        self.assertTrue((self.settings.workspaces_root / new_id).exists())
+        self.assertGreaterEqual(summary["freed_bytes"], 256)
+
+    def test_leaked_workspace_removed_even_when_run_dir_absent(self) -> None:
+        # The field leak: cleanup_temp only ever deleted jobs/<id>, so old jobs
+        # can have no staged dir left while their worktree workspace survives.
+        leaked_id = self._complete_job("l" * 40)
+        self._set_updated_at(leaked_id, (datetime.now(timezone.utc) - timedelta(days=30)).isoformat(timespec="seconds"))
+        workspace = self.settings.workspaces_root / leaked_id / "oh"
+        workspace.mkdir(parents=True, exist_ok=True)
+        (workspace / "manifest.json").write_text("{}", encoding="utf-8")
+
+        summary = cleanup_temp(self.settings, self.store, retention_days=14)
+        self.assertIn(leaked_id, summary["cleaned_job_ids"])
+        self.assertFalse((self.settings.workspaces_root / leaked_id).exists())
+        self.assertGreater(summary["freed_bytes"], 0)
+
+    def test_non_terminal_old_job_workspace_kept(self) -> None:
+        # A queued (non-terminal) job is not expired even when its updated_at is
+        # old: only terminal states are eligible for workspace removal.
+        queued_id = self._create_job("q" * 40)
+        self._set_updated_at(queued_id, (datetime.now(timezone.utc) - timedelta(days=30)).isoformat(timespec="seconds"))
+        workspace = self.settings.workspaces_root / queued_id / "oh"
+        workspace.mkdir(parents=True, exist_ok=True)
+        (workspace / "manifest.json").write_text("{}", encoding="utf-8")
+
+        summary = cleanup_temp(self.settings, self.store, retention_days=14)
+        self.assertNotIn(queued_id, summary["cleaned_job_ids"])
+        self.assertTrue((self.settings.workspaces_root / queued_id).exists())
+
     def test_archives_are_never_deleted(self) -> None:
         job_id = self._complete_job("z" * 40)
         archive = self.settings.archives_root / "rev" / "04-01-01" / job_id
@@ -156,6 +205,13 @@ class CleanupTest(_GovTestBase):
         self._set_updated_at(job_id, (datetime.now(timezone.utc) - timedelta(days=90)).isoformat(timespec="seconds"))
         cleanup_temp(self.settings, self.store, retention_days=1)
         self.assertTrue((archive / "archive-manifest.json").is_file())
+
+    def _create_job(self, job_id: str) -> str:
+        self.jobs.create_job(
+            CreateJobCommand(func_id="04-01-01", source_revision="rev", run_count=1, job_id=job_id),
+            evaluator_version=EVALUATOR_VERSION,
+        )
+        return job_id
 
     def _set_updated_at(self, job_id: str, ts: str) -> None:
         conn = sqlite3.connect(str(self.settings.db_path))

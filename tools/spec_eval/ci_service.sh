@@ -31,6 +31,13 @@
 #                            a browser reload shows the latest report state without a rebuild.
 #   CI_DYNAMIC_SITE_POLL     archive-log poll interval in seconds for the watcher (default 60)
 #   EXTRA_WORKER_ARGS       extra flags forwarded to ci_worker (e.g. "--dry-run")
+#
+# Retention (issue #84): the service does not auto-tick cleanup; schedule it via
+# cron. Suggested crontab (prunes expired ci/ archives + service-data, keeping
+# each PR's latest delivery and the site/DB sources — see cleanup_ci_archive /
+# governance.cleanup_temp):
+#   17 4 * * *  cd <ace_engine> && python3 specs/tools/spec_eval/ci_worker.py --cleanup-archive --retention-days 14
+#   23 4 * * *  cd <ace_engine> && PYTHONPATH=specs/tools python3 -m spec_eval.service_cli cleanup --retention-days 14
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

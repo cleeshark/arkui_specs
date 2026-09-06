@@ -48,7 +48,10 @@ def build_parser() -> argparse.ArgumentParser:
     metrics.add_argument("--write", type=Path, required=True, help="destination path")
     metrics.add_argument("--format", choices=["json", "csv"], default="json")
 
-    cleanup = sub.add_parser("cleanup", help="delete disposable run dirs for old terminal jobs")
+    cleanup = sub.add_parser(
+        "cleanup",
+        help="delete disposable run dirs and workspaces for old terminal jobs",
+    )
     cleanup.add_argument("--retention-days", type=int, default=14)
 
     sub.add_parser("backup", help="checkpoint WAL, copy the DB, verify it restores")
