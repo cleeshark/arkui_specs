@@ -391,11 +391,10 @@ class TestManifestRoundTripWithRealJobData(unittest.TestCase):
             valid_criterion_ids,
         )
 
-    def test_empty_shards_produce_synthesis_error_with_correct_units(self):
+    def test_empty_shards_degrade_all_units_to_placeholders(self):
         """write_manifest + synthesize with empty shard dirs →
-        SynthesisError listing every claim and criterion as missing."""
+        every claim and criterion degraded to a NOT_VERIFIABLE placeholder."""
         from spec_eval.service.executors.workflow_synthesis import (
-            SynthesisError,
             synthesize,
         )
 
@@ -415,21 +414,25 @@ class TestManifestRoundTripWithRealJobData(unittest.TestCase):
             spec = make_spec_from_work_item(feat01, valid_criterion_ids)
             manifest_path = write_manifest(shard_dir, spec)
 
-            with self.assertRaises(SynthesisError) as ctx:
-                synthesize(manifest_path, feat01["id"])
+            result = synthesize(manifest_path, feat01["id"])
 
-            # Every claim and criterion should appear as a missing error
-            error_unit_ids = {e.unit_id for e in ctx.exception.shard_errors}
+            # Every claim and criterion should be attributed as degraded
+            placeholder_unit_ids = {e.unit_id for e in result.placeholders}
             for cid in feat01["expected_claim_ids"]:
                 self.assertIn(
-                    cid, error_unit_ids,
-                    msg=f"Expected missing claim {cid} in shard_errors",
+                    cid, placeholder_unit_ids,
+                    msg=f"Expected missing claim {cid} in placeholders",
                 )
             for crid in valid_criterion_ids:
                 self.assertIn(
-                    crid, error_unit_ids,
-                    msg=f"Expected missing criterion {crid} in shard_errors",
+                    crid, placeholder_unit_ids,
+                    msg=f"Expected missing criterion {crid} in placeholders",
                 )
+            payload = result.envelope["payload"]
+            for row in payload["claim_reviews"]:
+                self.assertEqual(row["local_outcome"], "NOT_VERIFIABLE")
+            for obs in payload["observations"]:
+                self.assertEqual(obs["local_outcome"], "NOT_VERIFIABLE")
 
 
 if __name__ == "__main__":

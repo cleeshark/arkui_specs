@@ -650,8 +650,24 @@ class ClaudeCliExecutor:
                 cost_usd=cost_usd, num_turns=num_turns, model_usage=model_usage,
             )
 
-        summary["result_status"] = "workflow_synthesized"
+        summary["result_status"] = (
+            "workflow_synthesized_degraded"
+            if result.placeholders
+            else "workflow_synthesized"
+        )
         summary["transport_normalizations"] = ["synthesized_from_shards"]
+        if result.repairs:
+            summary["workflow_repairs"] = result.repairs
+        if result.placeholders:
+            summary["workflow_shard_errors"] = [
+                {
+                    "unit_type": e.unit_type,
+                    "unit_id": e.unit_id,
+                    "file": e.file,
+                    "reason": e.reason,
+                }
+                for e in result.placeholders
+            ]
         summary["workflow_counts"] = {
             "claims": result.claim_count,
             "observations": result.observation_count,

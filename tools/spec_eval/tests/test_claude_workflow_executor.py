@@ -435,8 +435,28 @@ class TestWorkflowFailureDegradation(_Base):
             omit_claim="Feat-01/AC-1.1",
         )
         result = self._executor(runner).execute(self.work, lambda e: None)
-        self.assertEqual(result.status, C.STATUS_FAILED)
-        self.assertIn("Feat-01/AC-1.1", result.error)
+        self.assertEqual(result.status, C.STATUS_COMPLETED)
+        doc = json.loads(
+            Path(self.work.executor_result_path).read_text(encoding="utf-8")
+        )
+        degraded = [r for r in doc["payload"]["claim_reviews"]
+                    if r["claim_id"] == "Feat-01/AC-1.1"]
+        self.assertEqual(len(degraded), 1)
+        self.assertEqual(degraded[0]["local_outcome"], "NOT_VERIFIABLE")
+        self.assertEqual(len(doc["payload"]["claim_reviews"]), len(_CLAIM_IDS))
+        summary = json.loads(
+            (
+                Path(self.work.executor_result_path).parent
+                / "claude.feature_Feat-01.execution-summary.json"
+            ).read_text(encoding="utf-8")
+        )
+        self.assertEqual(
+            summary["result_status"], "workflow_synthesized_degraded"
+        )
+        self.assertIn(
+            "Feat-01/AC-1.1",
+            " ".join(e["unit_id"] for e in summary["workflow_shard_errors"]),
+        )
 
     def test_model_reported_failure_propagates(self):
         runner = _WorkflowFakeRunner(
