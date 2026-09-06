@@ -46,14 +46,18 @@ Every observation must:
   the work item's `required_checks` list (the canonical registry) — NEVER invent sub-check ids
   such as `CHK-*` / `check-*` facet names, they are unknown to the registry and reject the run;
   derive `completed_checks` from those mappings;
-- cite at least one contract-valid evidence item;
 - use `NOT_VERIFIABLE` only with a DECLARED `review_record` evidence item:
   add an evidence declaration whose `type` is `review_record`, whose `path`
   is the frozen path you actually inspected (a directory or file;
   `content_hash` may be null), and cite it from the claim, unit, and
   observation `evidence_refs`.  The `verification_gap` object alone does NOT
   satisfy the inspection-evidence requirement, and citing an evidence id you
-  never declared fails the run;
+  never declared fails the run.  This includes input-availability
+  conclusions: before judging a check `NOT_VERIFIABLE` because an input
+  seems absent, expand into the frozen tree (the function context's
+  `design_path` and sibling documents are readable under `repo_root`) and
+  anchor the review_record at what you actually inspected; "absent from my
+  input list" is not itself an inspection;
 - use `NOT_APPLICABLE` only with reproducible proof of inapplicability.
 
 For `CONFLICT` or `MISSING`, use a stable `defect_key` and primary Criterion, and include that

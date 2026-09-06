@@ -319,6 +319,13 @@ def main(argv: list[str] | None = None) -> int:
                     citable=False,
                 ),
                 _input_resource(spec_path, "frozen_evidence", citable=True),
+                # Design-coverage criteria (DESIGN-FEAT-RUNTIME-COVERAGE and
+                # siblings) review the design document itself; without it the
+                # session can only answer NOT_VERIFIABLE (issue #89).
+                _input_resource(design_path, "frozen_evidence", citable=True),
+                _input_resource(
+                    design_shard_path, "semantic_input", citable=False
+                ),
                 _input_resource(shard_path, "semantic_input", citable=False),
                 *[
                     _input_resource(path, "source_scope", citable=False)
