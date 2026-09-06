@@ -377,6 +377,81 @@ def apply_json_patch(document: dict[str, Any], patches: Iterable[dict[str, Any]]
     return result
 
 
+def validate_patch_evidence_refs(
+    patches: Iterable[dict[str, Any]],
+    candidate_document: dict[str, Any],
+) -> list[str]:
+    """Reject correction patches that reference undeclared evidence.
+
+    The bounded Correction turn must not fabricate inspection evidence
+    (issue #88: a correction asked to fix NV_INSPECTION_EVIDENCE_MISSING
+    invented ``EV-R1`` / ``EV-R2`` references).  Any patch that appends to
+    or replaces an evidence reference array may only cite evidence the
+    candidate already defines — declaration keys for raw-payload candidates,
+    ``EV-*`` rows hosted by observations for published candidates.  Patches
+    that add a declaration (or an evidence row) may introduce one new id,
+    which later reference patches in the same batch may then use.
+    """
+    defined: set[str] = set()
+    for declaration in _rows(candidate_document.get("evidence_declarations")):
+        key = declaration.get("key")
+        if isinstance(key, str):
+            defined.add(key)
+    for entry in _rows(candidate_document.get("observations")):
+        for row in _rows(entry.get("evidence")):
+            evidence_id = row.get("evidence_id")
+            if isinstance(evidence_id, str):
+                defined.add(evidence_id)
+
+    violations: list[str] = []
+    for patch in patches:
+        if not isinstance(patch, dict) or patch.get("op") == "remove":
+            continue
+        path = patch.get("path")
+        if not isinstance(path, str):
+            continue
+        raw_value = patch.get("value")
+        # Correction contracts transport values as JSON-encoded strings
+        # (mirroring apply_json_patch's decoding).
+        try:
+            value = (
+                json.loads(raw_value) if isinstance(raw_value, str) else raw_value
+            )
+        except json.JSONDecodeError:
+            value = raw_value
+        if path.endswith("/evidence_declarations/-") or path == "/evidence_declarations":
+            added = value if isinstance(value, list) else [value]
+            for declaration in added:
+                if isinstance(declaration, dict) and isinstance(
+                    declaration.get("key"), str
+                ):
+                    defined.add(declaration["key"])
+            continue
+        if re.search(r"/evidence/-\d*$", path) or path.endswith("/evidence"):
+            added = value if isinstance(value, list) else [value]
+            for row in added:
+                if isinstance(row, dict) and isinstance(
+                    row.get("evidence_id"), str
+                ):
+                    defined.add(row["evidence_id"])
+            continue
+        if path.endswith("/evidence_refs") or path.endswith("/evidence_ids"):
+            referenced = value if isinstance(value, list) else [value]
+            unknown = sorted(
+                {
+                    item
+                    for item in referenced
+                    if isinstance(item, str) and item not in defined
+                }
+            )
+            if unknown:
+                violations.append(
+                    f"{path}: references undeclared evidence {unknown}; "
+                    f"declare the evidence first (defined: {sorted(defined)})"
+                )
+    return violations
+
+
 def typed_error_json_path(path: str) -> str:
     """Convert a validator path to a diagnostic JSON Pointer-like path.
 

@@ -263,6 +263,187 @@ def project_observation_derived_fields(
     return projected
 
 
+_NV_ANCHOR_PATH_RE = re.compile(
+    r"(?:[A-Za-z0-9_.-]+/)+[A-Za-z0-9_.-]+\.[A-Za-z0-9]+"
+)
+
+
+def _rekey_nv_inspection_evidence(
+    published: dict[str, Any],
+    evidence_by_key: dict[str, dict[str, Any]],
+    resolver: FrozenEvidencePathResolver,
+    changes: list[str],
+) -> None:
+    """Deterministically re-key NV inspection evidence (issue #88).
+
+    A NOT_VERIFIABLE row must cite a declared ``review_record`` inspection.
+    When the model performed the inspection but only recorded its scope in
+    ``verification_gap`` (so the correction turn was left to fabricate
+    undeclared evidence ids — jobs 82b2851d / a2d5647f), declare the record
+    service-side: the anchor must be a frozen path the model itself named in
+    the gap and that resolves in the frozen repositories (design D3: the
+    evidence registry is service-owned).  Rows without any resolvable anchor
+    keep ``NV_INSPECTION_EVIDENCE_MISSING`` (MODEL_CORRECTION) for the
+    bounded Correction turn.
+    """
+    observations = published.get("observations") or []
+    defined_rows: dict[str, dict[str, Any]] = {
+        e["evidence_id"]: e
+        for o in observations
+        for e in o.get("evidence") or []
+        if isinstance(e.get("evidence_id"), str)
+    }
+
+    def _anchor(texts: list[str]) -> str | None:
+        seen: list[str] = []
+        for text in texts:
+            for candidate in _NV_ANCHOR_PATH_RE.findall(str(text)):
+                if candidate not in seen:
+                    seen.append(candidate)
+        # prefer implementation/SDK scope over spec-tree anchors
+        ordered = [c for c in seen if not c.startswith("specs/")]
+        ordered += [c for c in seen if c.startswith("specs/")]
+        for candidate in ordered:
+            try:
+                return resolver.resolve(
+                    candidate, allow_directory=True
+                ).canonical_path
+            except EvidencePathError:
+                continue
+        return None
+
+    def _declare(
+        anchor: str, host: dict[str, Any], reason: str
+    ) -> str | None:
+        for e in host.get("evidence") or []:
+            if e.get("type") == K.REVIEW_RECORD and e.get("path") == anchor:
+                return e["evidence_id"]
+        try:
+            resolution = resolver.resolve(anchor, allow_directory=True)
+        except EvidencePathError:
+            return None
+        numbers = [
+            int(evidence_id.split("-")[1])
+            for evidence_id in defined_rows
+            if evidence_id.startswith("EV-")
+            and evidence_id.split("-")[1].isdigit()
+        ]
+        evidence_id = f"EV-{max(numbers, default=0) + 1}"
+        if resolution.absolute_path.is_dir():
+            hash_value = None
+        else:
+            hash_value = _content_hash(resolution.absolute_path)
+        record = {
+            "evidence_id": evidence_id,
+            "type": K.REVIEW_RECORD,
+            "path": resolution.canonical_path,
+            "source_revision": published.get("source_revision"),
+            "content_hash": hash_value,
+            "description": (
+                "服务重锚的检查记录：该 NOT_VERIFIABLE 结论的检查范围取自"
+                f"模型在 verification_gap 中自述的冻结路径（{reason}）；"
+                "证据注册表为服务所有，已按 issue #88 规则重锚。"
+            ),
+        }
+        host.setdefault("evidence", []).append(record)
+        defined_rows[evidence_id] = record
+        changes.append(
+            f"evidence: declared review_record {evidence_id} anchored at "
+            f"{anchor} ({reason})"
+        )
+        return evidence_id
+
+    def _host_for_claim(row: dict[str, Any]) -> dict[str, Any] | None:
+        covering = [
+            o for o in observations
+            if row.get("claim_id") in (o.get("claim_ids") or [])
+        ]
+        nv = [o for o in covering if o.get("local_outcome") == K.NOT_VERIFIABLE]
+        return (nv or covering or observations[:1] or [None])[0]
+
+    # 1. NOT_VERIFIABLE observations lacking a review_record: anchor at the
+    #    inspected scope named by the covered NV claims' gaps.
+    for obs in observations:
+        if obs.get("local_outcome") != K.NOT_VERIFIABLE:
+            continue
+        if any(
+            e.get("type") == K.REVIEW_RECORD for e in obs.get("evidence") or []
+        ):
+            continue
+        texts: list[str] = []
+        for row in published.get("claim_reviews") or []:
+            if (
+                row.get("claim_id") in (obs.get("claim_ids") or [])
+                and row.get("local_outcome") == K.NOT_VERIFIABLE
+            ):
+                gap = row.get("verification_gap") or {}
+                texts += list(gap.get("checked_scope") or [])
+                texts += list(gap.get("missing_evidence") or [])
+        texts.append(obs.get("fact") or "")
+        anchor = _anchor(texts)
+        if anchor is None:
+            continue
+        evidence_id = _declare(
+            anchor, obs, "覆盖该观察的 NV claim 检查范围"
+        )
+        if evidence_id:
+            changes.append(
+                f"observations[{obs.get('observation_id')}]: attached "
+                f"{evidence_id}"
+            )
+
+    # 2. NOT_VERIFIABLE claims citing undeclared evidence ids (a correction
+    #    turn may have invented them): drop the inventions; if that strips
+    #    the claim's only review_record basis, re-key to a declared record
+    #    anchored at its own gap scope.
+    for row in published.get("claim_reviews") or []:
+        if row.get("local_outcome") != K.NOT_VERIFIABLE:
+            continue
+        containers = [row] + list(row.get("unit_reviews") or [])
+        unknown = sorted({
+            e for c in containers for e in c.get("evidence_ids") or []
+            if e not in defined_rows
+        })
+        if unknown:
+            for container in containers:
+                container["evidence_ids"] = [
+                    e for e in container.get("evidence_ids") or []
+                    if e not in unknown
+                ]
+            changes.append(
+                f"claim_reviews[{row.get('claim_id')}]: dropped undeclared "
+                f"evidence ids {unknown}"
+            )
+        if any(
+            (defined_rows.get(e) or {}).get("type") == K.REVIEW_RECORD
+            for e in row.get("evidence_ids") or []
+        ):
+            continue
+        gap = row.get("verification_gap") or {}
+        anchor = _anchor(
+            list(gap.get("checked_scope") or [])
+            + list(gap.get("missing_evidence") or [])
+        )
+        if anchor is None:
+            continue
+        host = _host_for_claim(row)
+        if host is None:
+            continue
+        evidence_id = _declare(anchor, host, "该 claim 的检查范围")
+        if evidence_id is None:
+            continue
+        for container in containers:
+            container["evidence_ids"] = list(
+                dict.fromkeys(
+                    (container.get("evidence_ids") or []) + [evidence_id]
+                )
+            )
+        changes.append(
+            f"claim_reviews[{row.get('claim_id')}]: re-keyed NV inspection "
+            f"evidence to {evidence_id}"
+        )
+
+
 def normalize_observation(
     template: dict[str, Any],
     judgment: dict[str, Any],
@@ -577,6 +758,9 @@ def normalize_observation(
 
     published["claim_reviews"] = claim_reviews
     published["observations"] = observations
+    _rekey_nv_inspection_evidence(
+        published, evidence_by_key, resolver, changes
+    )
     published["open_questions"] = copy.deepcopy(judgment.get("open_questions") or [])
     published["notes"] = copy.deepcopy(judgment.get("notes") or [])
     published["status"] = "complete"

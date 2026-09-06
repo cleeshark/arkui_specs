@@ -569,6 +569,115 @@ class NormalizeObservationTest(unittest.TestCase):
         )]
         self.assertIn("CHECK_COVERAGE_INCOMPLETE", codes)
 
+    def _nv_claim(self, claim_id: str, checked_scope: list[str]) -> dict:
+        return {
+            "claim_id": claim_id,
+            "local_outcome": "NOT_VERIFIABLE",
+            "evidence_refs": ["e1"],
+            "reason": "The inspected scope cannot support this claim.",
+            "verification_gap": {
+                "checked_scope": checked_scope,
+                "missing_evidence": ["the generated binding file"],
+                "consequence": "The claim cannot be verified from frozen inputs.",
+            },
+            "defect_keys": [],
+            "unit_reviews": [{
+                "unit_id": f"{claim_id.replace('/', '-')}-u1",
+                "facet_type": "condition",
+                "local_outcome": "NOT_VERIFIABLE",
+                "evidence_refs": ["e1"],
+                "fact": "Inspected scope recorded; proof is missing.",
+                "verification_gap": {
+                    "checked_scope": checked_scope,
+                    "missing_evidence": ["the generated binding file"],
+                    "consequence": "The unit cannot be verified.",
+                },
+            }],
+        }
+
+    def test_nv_inspection_evidence_rekeyed_from_gap_anchor(self) -> None:
+        """Issue #88: an NV claim whose gap names a frozen path the model
+        actually inspected gets a service-declared review_record instead of
+        entering the fabrication-prone correction turn."""
+        (self.root / "inputs").mkdir(exist_ok=True)
+        (self.root / "inputs/inspected.cpp").write_text(
+            "inspected content\n", encoding="utf-8"
+        )
+        judgment = _judgment(self.evidence_rel)
+        ac2 = judgment["claim_reviews"][1]
+        nv = self._nv_claim(
+            "Feat-01/AC-1",
+            ["inputs/inspected.cpp存在确认", "inputs/generated.h不可引用"],
+        )
+        judgment["claim_reviews"] = [nv, ac2]
+        judgment["observations"] = [self._observation(
+            "CORRECTNESS-SOURCE-SUPPORT",
+            ["claim_source_support", "boundary_state"],
+        )]
+        result = normalize_observation(
+            self.template, judgment, repo_root=self.root
+        )
+        self.assertEqual(result.fatal, [])
+        self.assertEqual(result.errors, [])
+        document = result.document
+        nv_row = document["claim_reviews"][0]
+        rr_ids = [
+            e["evidence_id"] for o in document["observations"]
+            for e in o.get("evidence") or [] if e["type"] == "review_record"
+        ]
+        self.assertEqual(len(rr_ids), 1)
+        self.assertIn(rr_ids[0], nv_row["evidence_ids"])
+        self.assertIn(
+            "declared review_record",
+            " ".join(result.changes),
+        )
+        residual = validate_observation_document(
+            document,
+            valid_criterion_ids=("CORRECTNESS-SOURCE-SUPPORT",),
+            required_checks=self.template["required_checks"],
+        )
+        self.assertEqual(
+            [e.code for e in residual], [],
+            msg=f"unexpected residual: {[e.code for e in residual]}",
+        )
+
+    def test_nv_claim_without_anchor_keeps_correction_path(self) -> None:
+        """No resolvable anchor in the gap: the row keeps its
+        NV_INSPECTION_EVIDENCE_MISSING error for the correction turn, and a
+        fabricated evidence reference is dropped deterministically."""
+        judgment = _judgment(self.evidence_rel)
+        ac2 = judgment["claim_reviews"][1]
+        nv = self._nv_claim(
+            "Feat-01/AC-1",
+            ["ArkUIGeneratedNativeModule.ets（生成文件，不可引用）"],
+        )
+        nv["evidence_refs"] = ["e1", "e9"]  # e9 never declared
+        nv["unit_reviews"][0]["evidence_refs"] = ["e1", "e9"]
+        judgment["claim_reviews"] = [nv, ac2]
+        judgment["observations"] = [self._observation(
+            "CORRECTNESS-SOURCE-SUPPORT",
+            ["claim_source_support", "boundary_state"],
+        )]
+        result = normalize_observation(
+            self.template, judgment, repo_root=self.root
+        )
+        self.assertEqual(result.fatal, [])
+        document = result.document
+        nv_row = document["claim_reviews"][0]
+        self.assertNotIn("e9", nv_row["evidence_ids"])
+        self.assertIn(
+            "dropped undeclared evidence ids",
+            " ".join(result.changes),
+        )
+        codes = [
+            e.code for e in validate_observation_document(
+                document,
+                valid_criterion_ids=("CORRECTNESS-SOURCE-SUPPORT",),
+                required_checks=self.template["required_checks"],
+            )
+        ]
+        self.assertIn("NV_INSPECTION_EVIDENCE_MISSING", codes)
+
     def test_normalize_is_idempotent_on_published_shape(self) -> None:
         judgment = _judgment(self.evidence_rel)
         first = normalize_observation(self.template, judgment, repo_root=self.root)
