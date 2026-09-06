@@ -149,6 +149,11 @@ _DEFAULT_OUTPUT_RULES: dict[str, Any] = {
         "description": (
             "One claimJudgment object (not an array). Its exact schema — "
             "including nested field TYPES — is in shard_schemas.claim_schema. "
+            "Copy claim_id VERBATIM from _manifest.json "
+            "claim_units[].claim_id (canonical 'Feat-NN/<local-id>' form "
+            "with a '/'); NEVER derive it from the shard file name (which "
+            "uses '__') or from spec section labels — a wrong claim_id "
+            "fails synthesis. "
             "Note verification_gap.checked_scope and verification_gap."
             "missing_evidence are ARRAYS of strings (not strings); "
             "verification_gap is required (non-null) only when local_outcome "
@@ -164,6 +169,8 @@ _DEFAULT_OUTPUT_RULES: dict[str, Any] = {
             "A JSON array of observationJudgment objects for this criterion. "
             "When the criterion is NOT_APPLICABLE, write the file as an empty "
             "array [] (zero items); do NOT write an item with empty claim_ids. "
+            "Copy every claim_ids entry VERBATIM from _manifest.json "
+            "claim_units[].claim_id ('Feat-NN/<local-id>' form with a '/'). "
             "Each item's exact schema is in shard_schemas.criterion_item_schema."
         ),
         "required_fields": [
