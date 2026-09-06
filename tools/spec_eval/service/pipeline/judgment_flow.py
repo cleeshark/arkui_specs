@@ -947,6 +947,9 @@ class JudgmentFlow:
                 ))
                 violations.extend(validate_patch_evidence_refs(
                     patches, candidate_document,
+                    allowed_evidence_ids=set(
+                        correction_contract.get("allowed_evidence_ids", ())
+                    ),
                 ))
                 if violations:
                     raise ValueError("; ".join(violations))
@@ -1216,6 +1219,19 @@ class JudgmentFlow:
                 _write_json(
                     aggregation_correction_context_path,
                     aggregation_correction_context,
+                )
+                # The evidence_catalog is the correction's authoritative
+                # selection menu (the candidate's criterion evidence arrays
+                # are often empty precisely because the judgment is being
+                # corrected for evidence selection).  Publish it through the
+                # contract so patch validation accepts exactly these ids
+                # instead of reading them off an empty candidate (issue #89
+                # follow-up: the aggregation false rejection).
+                correction_contract["allowed_evidence_ids"] = sorted(
+                    (
+                        aggregation_correction_context.get("evidence_catalog")
+                        or {}
+                    ).keys()
                 )
             machine_contract = build_aggregation_correction_machine_contract(
                 typed_errors=typed_errors,

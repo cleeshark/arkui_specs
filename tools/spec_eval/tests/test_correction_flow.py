@@ -541,6 +541,48 @@ class CorrectionFlowTest(unittest.TestCase):
             [],
         )
 
+    def test_patch_evidence_refs_accept_catalog_selection_for_aggregation(
+        self) -> None:
+        """Issue #89 follow-up (job 68d585a2 aggregation:final): the
+        aggregation candidate's criterion_results carry no hosted evidence
+        rows — that is why the correction is re-selecting evidence_ids from
+        the correction context's catalog.  With the catalog passed as
+        allowed_evidence_ids the honest selection passes; an id outside the
+        catalog is still rejected."""
+        aggregation_candidate = {
+            "criterion_results": [
+                {"criterion_id": "CORRECTNESS-SOURCE-SUPPORT",
+                 "evidence": [], "evidence_ids": []},
+                {"criterion_id": "SPEC-AC-TESTABILITY",
+                 "evidence": [], "evidence_ids": []},
+            ],
+        }
+        catalog = {"EV-daf1ad018434520528fd27a3", "EV-9118a3513fa134687b966715"}
+        self.assertEqual(
+            validate_patch_evidence_refs(
+                [{"op": "replace",
+                  "path": "/criterion_results/1/evidence_ids",
+                  "value": json.dumps([
+                      "EV-daf1ad018434520528fd27a3",
+                      "EV-9118a3513fa134687b966715",
+                  ])}],
+                aggregation_candidate,
+                allowed_evidence_ids=catalog,
+            ),
+            [],
+        )
+        violations = validate_patch_evidence_refs(
+            [{"op": "replace", "path": "/criterion_results/1/evidence_ids",
+              "value": json.dumps([
+                  "EV-daf1ad018434520528fd27a3",
+                  "EV-R1",
+              ])}],
+            aggregation_candidate,
+            allowed_evidence_ids=catalog,
+        )
+        self.assertTrue(violations)
+        self.assertIn("EV-R1", violations[0])
+
     def test_typed_error_path_becomes_json_pointer(self) -> None:
         self.assertEqual(
             typed_error_json_path("observation.claim_reviews[12].defect_keys"),

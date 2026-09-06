@@ -380,6 +380,8 @@ def apply_json_patch(document: dict[str, Any], patches: Iterable[dict[str, Any]]
 def validate_patch_evidence_refs(
     patches: Iterable[dict[str, Any]],
     candidate_document: dict[str, Any],
+    *,
+    allowed_evidence_ids: set[str] | None = None,
 ) -> list[str]:
     """Reject correction patches that reference undeclared evidence.
 
@@ -388,20 +390,27 @@ def validate_patch_evidence_refs(
     invented ``EV-R1`` / ``EV-R2`` references).  Any patch that appends to
     or replaces an evidence reference array may only cite evidence the
     candidate already defines — declaration keys for raw-payload candidates,
-    ``EV-*`` rows hosted by observations for published candidates.  Patches
-    that add a declaration (or an evidence row) may introduce one new id,
-    which later reference patches in the same batch may then use.
+    ``EV-*`` rows hosted by observations for published candidates, rows
+    hosted by ``criterion_results`` for aggregation candidates — or ids on
+    the correction flow's own menu via ``allowed_evidence_ids`` (the
+    aggregation correction context's evidence_catalog: the candidate's
+    criterion evidence arrays are often empty precisely because the judgment
+    is being corrected for evidence selection, so the menu — not the
+    candidate — is the authoritative source there).  Patches that add a
+    declaration (or an evidence row) may introduce one new id, which later
+    reference patches in the same batch may then use.
     """
-    defined: set[str] = set()
+    defined: set[str] = set(allowed_evidence_ids or set())
     for declaration in _rows(candidate_document.get("evidence_declarations")):
         key = declaration.get("key")
         if isinstance(key, str):
             defined.add(key)
-    for entry in _rows(candidate_document.get("observations")):
-        for row in _rows(entry.get("evidence")):
-            evidence_id = row.get("evidence_id")
-            if isinstance(evidence_id, str):
-                defined.add(evidence_id)
+    for collection in ("observations", "criterion_results"):
+        for entry in _rows(candidate_document.get(collection)):
+            for row in _rows(entry.get("evidence")):
+                evidence_id = row.get("evidence_id")
+                if isinstance(evidence_id, str):
+                    defined.add(evidence_id)
 
     violations: list[str] = []
     for patch in patches:
