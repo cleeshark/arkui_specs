@@ -490,6 +490,85 @@ class NormalizeObservationTest(unittest.TestCase):
             {k: v for k, v in template_copy.items() if k != "_evidence_path"},
         )
 
+    def _observation(self, criterion_id: str, check_ids: list[str]) -> dict:
+        return {
+            "criterion_ids": [criterion_id],
+            "check_ids": check_ids,
+            "claim_ids": ["Feat-01/AC-1", "Feat-01/AC-2"],
+            "local_outcome": "SUPPORTED",
+            "breadth": "feat_core",
+            "contract_family": "synthetic-contract",
+            "fact": "The frozen evidence covers both claims.",
+            "defect_key": None,
+            "primary_criterion_id": None,
+            "evidence_refs": ["e1"],
+        }
+
+    def test_invented_check_ids_dropped_when_coverage_survives(self) -> None:
+        """job 82b2851d / a2d5647f class: models mix canonical check ids with
+        invented per-facet sub-checks (`CHK-*` / `check-*`); the registry is
+        service-owned, so normalize drops the inventions and the document
+        publishes clean when canonical coverage survives.
+        """
+        judgment = _judgment(self.evidence_rel)
+        judgment["observations"] = [
+            self._observation(
+                "CORRECTNESS-SOURCE-SUPPORT",
+                ["claim_source_support", "CHK-src-node", "check-source-blur"],
+            ),
+            self._observation(
+                "SPEC-AC-TESTABILITY",
+                ["boundary_state", "CHK-boundary-empty-id"],
+            ),
+        ]
+        result = normalize_observation(
+            self.template, judgment, repo_root=self.root
+        )
+        self.assertEqual(result.fatal, [])
+        document = result.document
+        self.assertEqual(
+            [o["check_ids"] for o in document["observations"]],
+            [["claim_source_support"], ["boundary_state"]],
+        )
+        self.assertEqual(
+            document["completed_checks"],
+            ["boundary_state", "claim_source_support"],
+        )
+        dropped_changes = [c for c in result.changes if "unknown check_ids" in c]
+        self.assertEqual(len(dropped_changes), 2)
+        residual = validate_observation_document(
+            document,
+            valid_criterion_ids=(
+                "CORRECTNESS-SOURCE-SUPPORT", "SPEC-AC-TESTABILITY",
+            ),
+            required_checks=self.template["required_checks"],
+        )
+        self.assertEqual(
+            [e.code for e in residual], [],
+            msg=f"unexpected residual: {[e.code for e in residual]}",
+        )
+
+    def test_all_invented_check_ids_leave_coverage_gap(self) -> None:
+        judgment = _judgment(self.evidence_rel)
+        judgment["observations"] = [
+            self._observation(
+                "CORRECTNESS-SOURCE-SUPPORT",
+                ["CHK-src-node", "check-source-blur"],
+            ),
+        ]
+        result = normalize_observation(
+            self.template, judgment, repo_root=self.root
+        )
+        self.assertEqual(result.fatal, [])
+        document = result.document
+        self.assertEqual(document["observations"][0]["check_ids"], [])
+        codes = [e.code for e in validate_observation_document(
+            document,
+            valid_criterion_ids=("CORRECTNESS-SOURCE-SUPPORT",),
+            required_checks=self.template["required_checks"],
+        )]
+        self.assertIn("CHECK_COVERAGE_INCOMPLETE", codes)
+
     def test_normalize_is_idempotent_on_published_shape(self) -> None:
         judgment = _judgment(self.evidence_rel)
         first = normalize_observation(self.template, judgment, repo_root=self.root)

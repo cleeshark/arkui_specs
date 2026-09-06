@@ -42,7 +42,10 @@ Every observation must:
 
 - contain evidence-backed local facts, a `local_outcome`, semantic `breadth`, and stable
   `contract_family`;
-- map required checks through `check_ids`; derive `completed_checks` from those mappings;
+- map required checks through `check_ids`; every `check_ids` entry must be copied VERBATIM from
+  the work item's `required_checks` list (the canonical registry) — NEVER invent sub-check ids
+  such as `CHK-*` / `check-*` facet names, they are unknown to the registry and reject the run;
+  derive `completed_checks` from those mappings;
 - cite at least one contract-valid evidence item;
 - use `NOT_VERIFIABLE` with a `review_record` that names checked scope, missing evidence, and the
   verification consequence;
