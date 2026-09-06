@@ -207,6 +207,31 @@ _DEFAULT_OUTPUT_RULES: dict[str, Any] = {
 }
 
 
+_ACE_ENGINE_MARKER = "/foundation/arkui/ace_engine/"
+
+
+def placeholder_anchor_path(work_item: dict[str, Any]) -> str | None:
+    """Derive a frozen source-tree anchor path for service placeholder rows.
+
+    When synthesis degrades lost shards to NOT_VERIFIABLE placeholders, those
+    rows reference a synthetic ``review_record`` evidence declaration that
+    must resolve inside the frozen repositories.  This picks the first staged
+    input path that lives in the frozen ace_engine checkout outside
+    ``specs/`` (spec-tree evidence paths are excluded by convention, and
+    service job data is outside the repos entirely) and returns it as a
+    repository-relative POSIX path, or ``None`` when no candidate exists.
+    """
+    for raw in work_item.get("input_paths", []) or []:
+        text = str(raw)
+        if _ACE_ENGINE_MARKER not in text:
+            continue
+        rel = text.split(_ACE_ENGINE_MARKER, 1)[1]
+        if not rel or rel.startswith("specs/") or rel.startswith(".evaluator/"):
+            continue
+        return rel
+    return None
+
+
 def make_spec_from_work_item(
     work_item: dict[str, Any],
     valid_criterion_ids: list[str],
@@ -224,6 +249,8 @@ def make_spec_from_work_item(
     output_rules:
         Override the default output rules embedded in the manifest.
         When ``None`` the module-level ``_DEFAULT_OUTPUT_RULES`` are used.
+        Either way the derived ``placeholder_anchor_path`` (when available)
+        is merged in for the service-side synthesis degradation path.
 
     Notes
     -----
@@ -235,10 +262,16 @@ def make_spec_from_work_item(
     work_item_id: str = work_item["id"]
     feat_id: str = str(work_item.get("feat_id") or work_item_id)
     expected_claim_ids: list[str] = list(work_item["expected_claim_ids"])
+    rules: dict[str, Any] = dict(
+        output_rules if output_rules is not None else _DEFAULT_OUTPUT_RULES
+    )
+    anchor = placeholder_anchor_path(work_item)
+    if anchor:
+        rules["placeholder_anchor_path"] = anchor
     return ManifestSpec(
         feat_id=feat_id,
         work_item_id=work_item_id,
         expected_claim_ids=expected_claim_ids,
         valid_criterion_ids=list(valid_criterion_ids),
-        output_rules=output_rules if output_rules is not None else _DEFAULT_OUTPUT_RULES,
+        output_rules=rules,
     )
