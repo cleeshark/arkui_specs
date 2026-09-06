@@ -887,8 +887,11 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             citable_flags = [resource["citable"] for resource in feature_resources]
             self.assertFalse(citable_flags[0])
             self.assertTrue(citable_flags[1])
+            # Issue #90: the design document is the review object of the
+            # design-coverage criteria and ships as the second citable input.
+            self.assertTrue(citable_flags[2])
             self.assertTrue(
-                all(flag is False for flag in citable_flags[2:]),
+                all(flag is False for flag in citable_flags[3:]),
                 citable_flags,
             )
             self.assertTrue(
@@ -901,7 +904,10 @@ class Next007EvaluatorSkillFrameworkTest(unittest.TestCase):
             self.assertTrue(
                 feature_resources[1]["canonical_path"].startswith("specs/")
             )
-            self.assertNotIn("canonical_path", feature_resources[2])
+            self.assertTrue(
+                feature_resources[2]["canonical_path"].startswith("specs/")
+            )
+            self.assertNotIn("canonical_path", feature_resources[3])
 
             for item in work_items["items"]:
                 output = Path(item["output_path"])
