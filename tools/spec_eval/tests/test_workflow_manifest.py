@@ -191,6 +191,26 @@ class TestBuildManifest(unittest.TestCase):
         self.assertIsInstance(self.manifest["output_rules"], dict)
         self.assertGreater(len(self.manifest["output_rules"]), 0)
 
+    def test_output_rules_demand_verbatim_claim_ids(self):
+        """Contract lock: shard rules must pin claim ids to the manifest.
+
+        job 2fa40bd6a357002e81efe3f9 lost a full session because 62 of 92
+        claim shards drifted to bare (`AC-3.1`) or filename-derived
+        (`Feat-01__R-19`) ids; the executor-side schema cannot catch that
+        (only the service knows the expected prefix), so the manifest rules
+        are the prompt-level guard and must keep naming the manifest as the
+        verbatim source for both shard kinds.
+        """
+        claim_rules = self.manifest["output_rules"]["claim_shard"]["description"]
+        self.assertIn("VERBATIM", claim_rules)
+        self.assertIn("claim_units[].claim_id", claim_rules)
+        self.assertIn("'Feat-NN/<local-id>'", claim_rules)
+        criterion_rules = (
+            self.manifest["output_rules"]["criterion_shard"]["description"]
+        )
+        self.assertIn("VERBATIM", criterion_rules)
+        self.assertIn("claim_units[].claim_id", criterion_rules)
+
     def test_all_20_criteria_included(self):
         actual = {u["criterion_id"] for u in self.manifest["criterion_units"]}
         self.assertEqual(actual, set(_VALID_CRITERION_IDS))
