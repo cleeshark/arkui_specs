@@ -17,6 +17,8 @@ from aggregation_warning_policy import (
     split_aggregation_warnings,
     split_claim_coverage_warnings,
     split_evidence_field_warnings,
+    FINDING_CARDINALITY_WARNING_MARKERS,
+    EVIDENCE_TYPE_WARNING_MARKER,
     split_final_candidate_warnings,
     split_nv_inspection_warnings,
     split_observation_warnings,
@@ -161,12 +163,19 @@ def main(argv: list[str] | None = None) -> int:
     errors, state, work_items = validate_stage(run_dir, args.stage, args.work_item, candidate)
     if args.stage == "final":
         errors, warnings = split_aggregation_warnings(errors)
-        errors, evidence_type_warnings = split_final_candidate_warnings(errors)
-        warnings.extend(evidence_type_warnings)
+        errors, final_warnings = split_final_candidate_warnings(errors)
+        warnings.extend(final_warnings)
         for warning in warnings:
             print(f"WARNING: {warning}", file=sys.stderr)
         record_aggregation_warnings(run_dir, warnings)
-        record_evidence_type_warning(run_dir, evidence_type_warnings)
+        record_evidence_type_warning(run_dir, [
+            warning for warning in final_warnings
+            if EVIDENCE_TYPE_WARNING_MARKER in warning
+        ])
+        record_finding_cardinality_warning(run_dir, [
+            warning for warning in final_warnings
+            if any(marker in warning for marker in FINDING_CARDINALITY_WARNING_MARKERS)
+        ])
     if errors:
         for error in errors:
             print(f"ERROR: {error}", file=sys.stderr)

@@ -8,6 +8,8 @@ import sys
 from pathlib import Path
 
 from aggregation_warning_policy import (
+    EVIDENCE_TYPE_WARNING_MARKER,
+    FINDING_CARDINALITY_WARNING_MARKERS,
     record_aggregation_warnings,
     record_contradiction_basis_warning,
     record_evidence_type_warning,
@@ -93,7 +95,14 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     for warning in final_warnings:
         print(f"WARNING: {warning}", file=sys.stderr)
-    record_evidence_type_warning(run_dir, final_warnings)
+    record_evidence_type_warning(run_dir, [
+        warning for warning in final_warnings
+        if EVIDENCE_TYPE_WARNING_MARKER in warning
+    ])
+    record_finding_cardinality_warning(run_dir, [
+        warning for warning in final_warnings
+        if any(marker in warning for marker in FINDING_CARDINALITY_WARNING_MARKERS)
+    ])
     output = run_dir / "semantic-result.json"
     write_object(output, candidate)
     update_progress(run_dir, state, work_items, stage="final")

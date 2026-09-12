@@ -290,6 +290,10 @@ def build_aggregation_correction_machine_contract(
         str(error.get("code", "")) for error in errors if error.get("code")
     ))
     recipes: dict[str, list[str]] = {
+        "MAPPING_CONCLUSION_FORBIDDEN": [
+            "A Criterion conclusion without mapped evidence is forbidden: map the conclusion to criteria[].evidence_ids with at least one evidence-backed finding, or change the conclusion.",
+            "When the changed conclusion is PARTIALLY_SUPPORTED / CONTRADICTED / MISSING, the replacement row must include at least one finding whose evidence_ids cite the Criterion allowlist (or the global catalog) — a conclusion swap without findings fails the final gate.",
+        ],
         "MAPPING_CLAIM_UNMAPPED": [
             "Use criteria[].allowed_claim_ids as the only values selectable for the named Criterion claim_ids list.",
             "criteria[].claim_refs are lookup keys into claims and must never be written directly to claim_ids; allowed_claim_ids already contains the resolved claims[ref].claim_id values.",
@@ -313,6 +317,7 @@ def build_aggregation_correction_machine_contract(
         ],
         "FINDING_CARDINALITY_VIOLATED": [
             "Keep Finding additions/removals consistent with defect_ownership references and the Criterion conclusion.",
+            "A PARTIALLY_SUPPORTED / CONTRADICTED / MISSING conclusion requires at least one finding; add one whose evidence_ids cite the Criterion allowlist before finalizing.",
         ],
         "OWNERSHIP_CRITICALITY": [
             "Keep each root defect's primary Criterion, Finding severity, and ownership references mutually consistent.",
