@@ -3335,6 +3335,36 @@ class ConfidenceModelTest(unittest.TestCase):
         self.assertEqual(len(result["major_violations"]), 1)
         self.assertEqual(len(result["minor_violations"]), 1)
 
+    def test_nv_inspection_evidence_missing_is_post_correction_warning(self):
+        from spec_eval.kernel.errors import (
+            LAYER_MINOR,
+            MODEL_CORRECTION,
+            TypedError,
+            compute_confidence,
+            confidence_layer_of,
+            is_post_correction_warning,
+        )
+        errors = [
+            TypedError(
+                "NV_INSPECTION_EVIDENCE_MISSING",
+                f"observation.observations[{index}].evidence",
+                entity_type="observation", entity_id=f"OBS-{index}",
+                repairability=MODEL_CORRECTION,
+            )
+            for index in range(7)
+        ]
+
+        result = compute_confidence(errors)
+
+        self.assertTrue(all(is_post_correction_warning(error) for error in errors))
+        self.assertEqual(
+            confidence_layer_of("NV_INSPECTION_EVIDENCE_MISSING"), LAYER_MINOR,
+        )
+        self.assertEqual(result["confidence_score"], 95)
+        self.assertEqual(result["deduction_total"], 5)
+        self.assertEqual(result["total_checks_failed"], 1)
+        self.assertEqual(len(result["minor_violations"]), 1)
+
 
 if __name__ == "__main__":
     unittest.main()
