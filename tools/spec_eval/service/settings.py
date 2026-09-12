@@ -30,7 +30,7 @@ def _claude_executor_config() -> dict[str, Any]:
     return {
         "type": "claude-cli",
         "command": "claude",
-        "model": "claude-opus-4-6[1m]",
+        "model": "GLM-5.3-Flash[1m]",
         "permission_mode": "bypassPermissions",
         "timeout_seconds": 3600,
         "max_parallel": 2,
@@ -59,7 +59,7 @@ _EXECUTOR_PARAM_SCHEMAS: dict[str, tuple[dict[str, Any], ...]] = {
     "claude": (
         {
             "key": "model", "label": "Model", "type": "string",
-            "default": "claude-opus-4-6[1m]",
+            "default": "GLM-5.3-Flash[1m]",
         },
         {
             "key": "permission_mode", "label": "Permission mode", "type": "enum",
