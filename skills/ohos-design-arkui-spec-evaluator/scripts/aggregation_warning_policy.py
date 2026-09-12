@@ -91,6 +91,17 @@ EVIDENCE_FIELD_WARNING_MARKERS = (
 )
 EVIDENCE_FIELD_WARNING_CODE = "OBSERVATION_EVIDENCE_FIELD_INVALID"
 EVIDENCE_FIELD_WARNING_DEDUCTION = 5
+# A criterion concluded PARTIALLY_SUPPORTED / CONTRADICTED / MISSING without
+# its evidence-backed finding (issue #89 follow-up, job 8f707229): the
+# conclusion itself is honest and the finding bookkeeping is the gap.  The
+# single Correction turn already ran; re-blocking the report at the final
+# gate would only discard it.  Publish with a MAJOR confidence deduction.
+FINDING_CARDINALITY_WARNING_MARKERS = (
+    "requires an evidence-backed finding",  # protocol_validator final gate
+    "at least one finding for",             # kernel aggregation gate
+)
+FINDING_CARDINALITY_WARNING_CODE = "FINDING_CARDINALITY_VIOLATED"
+FINDING_CARDINALITY_WARNING_DEDUCTION = 20
 POST_CORRECTION_WARNING_FILE = "post-correction-warnings.json"
 OBSERVATION_WARNING_MARKERS = {
     "UNIT_ROW_INVALID": (
@@ -221,6 +232,10 @@ def split_aggregation_warnings(errors: list[str]) -> tuple[list[str], list[str]]
                 for marker in CONTRADICTION_BASIS_WARNING_MARKERS
             )
             or EVIDENCE_TYPE_WARNING_MARKER in error
+            or any(
+                marker in error
+                for marker in FINDING_CARDINALITY_WARNING_MARKERS
+            )
         ):
             warnings.append(error)
         else:
@@ -233,17 +248,26 @@ def split_final_candidate_warnings(
 ) -> tuple[list[str], list[str]]:
     """Return ``(blocking_errors, downgraded_warnings)`` for the final gate.
 
-    The final-candidate protocol validator re-checks required evidence types.
-    A Criterion carrying evidence of the wrong type is a bounded data-quality
-    gap the kernel treats as a non-blocking confidence deduction, and the model
-    cannot fabricate a compliant type without violating the evidence allowlist.
-    Downgrade it so a report that passed the aggregation gate is not re-blocked
-    here for a gap that only warrants reduced confidence.
+    The final-candidate protocol validator re-checks required evidence types
+    and finding cardinality.  Both are bounded data-quality gaps the kernel
+    treats as non-blocking confidence deductions: a Criterion carrying
+    evidence of the wrong type cannot be fixed by fabricating a compliant
+    type, and a Criterion concluded PARTIALLY_SUPPORTED / CONTRADICTED /
+    MISSING without its evidence-backed finding already ran its single
+    Correction turn.  Downgrade both so a report that passed the aggregation
+    gate is not re-blocked here for gaps that only warrant reduced
+    confidence.
     """
     blocking: list[str] = []
     warnings: list[str] = []
     for error in errors:
-        if EVIDENCE_TYPE_WARNING_MARKER in error:
+        if (
+            EVIDENCE_TYPE_WARNING_MARKER in error
+            or any(
+                marker in error
+                for marker in FINDING_CARDINALITY_WARNING_MARKERS
+            )
+        ):
             warnings.append(error)
         else:
             blocking.append(error)
@@ -277,6 +301,31 @@ def record_aggregation_warnings(run_dir: Path, warnings: list[str]) -> None:
         warning for warning in warnings
         if EVIDENCE_TYPE_WARNING_MARKER in warning
     ])
+    record_finding_cardinality_warning(run_dir, [
+        warning for warning in warnings
+        if any(
+            marker in warning
+            for marker in FINDING_CARDINALITY_WARNING_MARKERS
+        )
+    ])
+
+
+def record_finding_cardinality_warning(
+    run_dir: Path, warnings: list[str]
+) -> None:
+    """Deduct confidence for criteria concluded without required findings."""
+    _record_confidence_warning(
+        run_dir, warnings,
+        code=FINDING_CARDINALITY_WARNING_CODE,
+        layer="MAJOR",
+        deduction=FINDING_CARDINALITY_WARNING_DEDUCTION,
+        message=(
+            "aggregation retains a criterion concluded "
+            "PARTIALLY_SUPPORTED/CONTRADICTED/MISSING whose evidence-backed "
+            "finding is missing"
+        ),
+        warning_path="aggregation.criterion_results[].findings",
+    )
 
 
 def record_ownership_warning(run_dir: Path, warnings: list[str]) -> None:
