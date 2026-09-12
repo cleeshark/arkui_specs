@@ -257,6 +257,14 @@ OBSERVATION_POST_CORRECTION_WARNING_CODES = frozenset({
     # semantic basis of that claim.  The report remains structurally usable,
     # so retain one bounded MAJOR deduction instead of terminating the run.
     "UNIT_CLAIM_OUTCOME_CONFLICT",
+    # A NOT_VERIFIABLE row citing no review_record inspection evidence means
+    # no inspection record was declared.  The bounded Correction turn cannot
+    # fabricate one (correction patches may only reference declared evidence),
+    # and the NOT_VERIFIABLE conclusion itself stays protocol-valid, so allow
+    # a degraded publish with the default MINOR deduction instead of
+    # CORRECTION_INVALID_TERMINAL (job 9c5e0c3e: seven NOT_VERIFIABLE
+    # observations carrying only design/static evidence terminated the run).
+    "NV_INSPECTION_EVIDENCE_MISSING",
 })
 
 POST_CORRECTION_WARNING_CODES = frozenset({

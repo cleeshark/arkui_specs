@@ -24,9 +24,11 @@ from aggregation_warning_policy import (  # noqa: E402
     record_claim_coverage_warning,
     record_evidence_field_warning,
     record_evidence_type_warning,
+    record_nv_inspection_warning,
     split_claim_coverage_warnings,
     split_evidence_field_warnings,
     split_final_candidate_warnings,
+    split_nv_inspection_warnings,
     split_observation_warnings,
 )
 from staged_run_support import (  # noqa: E402
@@ -272,6 +274,48 @@ class AssembleSemanticResultWarningTest(unittest.TestCase):
             run_dir = Path(temporary)
             record_claim_coverage_warning(run_dir, [])
             self.assertFalse((run_dir / "confidence-result.json").exists())
+
+    def test_nv_inspection_errors_are_downgraded_for_both_spellings(self) -> None:
+        # The claim_review/unit_review paths emit "must reference" while the
+        # observation evidence path emits "requires" (job 9c5e0c3e); both
+        # describe the same bounded gap and must downgrade identically.
+        blocking, warnings = split_nv_inspection_warnings([
+            "observation[function-global].claim_reviews[0].evidence_ids: "
+            "NOT_VERIFIABLE must reference review_record inspection evidence",
+            "observation[function-global].observations[1].evidence: "
+            "NOT_VERIFIABLE requires review_record inspection evidence",
+            "observation[function-global].status: set to 'complete'",
+        ])
+        self.assertEqual(len(warnings), 2)
+        self.assertTrue(all("review_record inspection evidence" in w for w in warnings))
+        self.assertEqual(len(blocking), 1)
+        self.assertIn("status", blocking[0])
+
+    def test_nv_inspection_warning_deducts_minor_confidence_once(self) -> None:
+        with TemporaryDirectory() as temporary:
+            run_dir = Path(temporary)
+            (run_dir / "confidence-result.json").write_text(
+                json.dumps({
+                    "confidence_score": 100,
+                    "confidence_level": "HIGH",
+                    "hard_errors": [],
+                    "major_violations": [],
+                    "minor_violations": [],
+                    "total_checks_failed": 0,
+                    "deduction_total": 0,
+                }),
+                encoding="utf-8",
+            )
+            record_nv_inspection_warning(run_dir, ["warning-1"])
+            record_nv_inspection_warning(run_dir, ["warning-2"])
+            result = json.loads((run_dir / "confidence-result.json").read_text())
+        self.assertEqual(result["confidence_score"], 95)
+        self.assertEqual(result["deduction_total"], 5)
+        self.assertEqual(len(result["minor_violations"]), 1)
+        self.assertEqual(
+            result["minor_violations"][0]["code"],
+            "NV_INSPECTION_EVIDENCE_MISSING",
+        )
 
     def test_finding_evidence_recovery_deducts_major_confidence_once(
         self,

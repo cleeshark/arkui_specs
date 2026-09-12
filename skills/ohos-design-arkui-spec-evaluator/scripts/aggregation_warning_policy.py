@@ -66,13 +66,18 @@ EVIDENCE_TYPE_WARNING_DEDUCTION = 20
 CLAIM_COVERAGE_WARNING_MARKER = "criterion_ids: at least one Criterion is required"
 CLAIM_COVERAGE_WARNING_CODE = "OBSERVATION_CLAIM_COVERAGE"
 CLAIM_COVERAGE_WARNING_DEDUCTION = 5
-# A NOT_VERIFIABLE claim that references no review_record evidence means the
+# A NOT_VERIFIABLE row that references no review_record evidence means the
 # model could not locate an existing inspection record to cite.  The correction
 # model is also unable to fabricate one.  The observation conclusion is still
 # semantically valid; downgrade unconditionally (MINOR -5) rather than blocking
-# the whole job.  Both the claim_review and unit_review paths use the same
-# marker suffix so one check covers both.
-NV_INSPECTION_WARNING_MARKER = "NOT_VERIFIABLE must reference review_record inspection evidence"
+# the whole job.  The claim_review and unit_review paths emit "must reference"
+# (staged_run_support claim/unit checks) and the observation path emits
+# "requires" (staged_run_support observation evidence check); both spellings
+# describe the same bounded gap, so one marker per spelling covers all three.
+NV_INSPECTION_WARNING_MARKERS = (
+    "NOT_VERIFIABLE must reference review_record inspection evidence",
+    "NOT_VERIFIABLE requires review_record inspection evidence",
+)
 NV_INSPECTION_WARNING_CODE = "NV_INSPECTION_EVIDENCE_MISSING"
 NV_INSPECTION_WARNING_DEDUCTION = 5
 # A correction patch can add a raw evidence row (e.g. review_record) directly
@@ -165,17 +170,19 @@ def split_nv_inspection_warnings(
 ) -> tuple[list[str], list[str]]:
     """Downgrade NOT_VERIFIABLE missing-inspection-evidence errors unconditionally.
 
-    A NOT_VERIFIABLE claim that references no review_record evidence means no
-    inspection record was ever declared — a bounded quality gap the model cannot
-    fix after the fact.  Downgrade unconditionally (MINOR -5) so the job can
-    still produce a report.
+    A NOT_VERIFIABLE claim, unit, or observation that references no
+    review_record evidence means no inspection record was ever declared — a
+    bounded quality gap the model cannot fix after the fact.  Downgrade
+    unconditionally (MINOR -5) so the job can still produce a report.
     """
     blocking: list[str] = []
     warnings: list[str] = []
     for error in errors:
-        (warnings if NV_INSPECTION_WARNING_MARKER in error else blocking).append(
-            error
-        )
+        (
+            warnings
+            if any(marker in error for marker in NV_INSPECTION_WARNING_MARKERS)
+            else blocking
+        ).append(error)
     return blocking, warnings
 
 
@@ -315,17 +322,25 @@ def record_claim_coverage_warning(run_dir: Path, warnings: list[str]) -> None:
 
 
 def record_nv_inspection_warning(run_dir: Path, warnings: list[str]) -> None:
-    """Deduct confidence when a NOT_VERIFIABLE claim lacks review_record evidence."""
+    """Deduct confidence when a NOT_VERIFIABLE row lacks review_record evidence."""
+    observation_variant = any(
+        "requires review_record inspection evidence" in warning
+        for warning in warnings
+    )
     _record_confidence_warning(
         run_dir, warnings,
         code=NV_INSPECTION_WARNING_CODE,
         layer="MINOR",
         deduction=NV_INSPECTION_WARNING_DEDUCTION,
         message=(
-            "NOT_VERIFIABLE claim references no review_record inspection evidence; "
-            "no inspection record was declared for this observation"
+            "NOT_VERIFIABLE claim/observation references no review_record "
+            "inspection evidence; no inspection record was declared"
         ),
-        warning_path="observation.claim_reviews[].evidence_ids",
+        warning_path=(
+            "observation.observations[].evidence"
+            if observation_variant
+            else "observation.claim_reviews[].evidence_ids"
+        ),
     )
 
 
