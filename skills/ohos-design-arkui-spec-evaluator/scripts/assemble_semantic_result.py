@@ -13,6 +13,7 @@ from aggregation_warning_policy import (
     record_aggregation_warnings,
     record_contradiction_basis_warning,
     record_evidence_type_warning,
+    record_finding_cardinality_warning,
     record_finding_evidence_warning,
     record_mapping_warning,
     record_ownership_warning,

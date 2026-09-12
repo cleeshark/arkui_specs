@@ -13,6 +13,7 @@ from aggregation_warning_policy import (
     record_claim_coverage_warning,
     record_evidence_field_warning,
     record_evidence_type_warning,
+    record_finding_cardinality_warning,
     record_nv_inspection_warning,
     split_aggregation_warnings,
     split_claim_coverage_warnings,
