@@ -62,9 +62,21 @@ def _raise_errors(label: str, errors: Iterable[str]) -> None:
     # Evidence type mismatch warnings - allow degraded publish after Correction
     # (aligned with aggregation_warning_policy.EVIDENCE_TYPE_WARNING_MARKER)
     EVIDENCE_TYPE_WARNING_MARKER = "evidence must include one of"
+    # Finding-cardinality gaps - same degrade semantics (aligned with
+    # aggregation_warning_policy.FINDING_CARDINALITY_WARNING_MARKERS); the
+    # MAJOR confidence deduction is recorded in confidence-result.json at the
+    # aggregation publish, so scoring proceeds with the reduced confidence.
+    FINDING_CARDINALITY_WARNING_MARKERS = (
+        "requires an evidence-backed finding",
+        "at least one finding for",
+    )
 
     values = list(errors)
-    blocking = [e for e in values if EVIDENCE_TYPE_WARNING_MARKER not in e]
+    blocking = [
+        e for e in values
+        if EVIDENCE_TYPE_WARNING_MARKER not in e
+        and not any(marker in e for marker in FINDING_CARDINALITY_WARNING_MARKERS)
+    ]
 
     if blocking:
         raise ScoreInputError(f"{label} is invalid:\n" + "\n".join(f"- {item}" for item in blocking))

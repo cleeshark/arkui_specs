@@ -9,7 +9,32 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from spec_eval.protocol_validator import validate_protocol, validate_score_result
-from spec_eval.score import ScoreInputError, build_score_result
+from spec_eval.score import ScoreInputError, _raise_errors, build_score_result
+
+
+class RaiseErrorsDegradedPublishTest(unittest.TestCase):
+    """Issue #89/#91: finding-cardinality gaps degrade to confidence
+    deductions upstream and must not abort the score stage."""
+
+    def test_finding_cardinality_gap_is_exempt(self):
+        _raise_errors("semantic-result.json", [
+            "SPEC-SCOPE-BOUNDARY: PARTIALLY_SUPPORTED requires an evidence-backed finding",
+            "DESIGN-IMPLEMENTATION-PATH: PARTIALLY_SUPPORTED requires an evidence-backed finding",
+        ])
+
+    def test_kernel_message_form_is_exempt(self):
+        _raise_errors("semantic-result.json", [
+            "SPEC-SCOPE-BOUNDARY: at least one finding for PARTIALLY_SUPPORTED",
+        ])
+
+    def test_structural_errors_still_raise(self):
+        with self.assertRaisesRegex(
+            ScoreInputError, "criterion_results must contain every rubric criterion"
+        ):
+            _raise_errors("semantic-result.json", [
+                "semantic criterion_results must contain every rubric criterion "
+                "once in rubric order",
+            ])
 
 
 class Next008AggregationTest(unittest.TestCase):
