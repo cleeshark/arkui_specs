@@ -148,6 +148,17 @@ assign the final Function-level Criterion conclusion or score.
 
 When an observation reports a Function modeling defect, include a `modeling_basis`:
 
+`issue_type` MUST be exactly one of: `ambiguous_boundary`, `fragmented_feat`,
+`oversized_feat`, `ownership_overlap`, `unowned_capability`. Regardless of the issue
+type, the four fields `issue_type`, `capability`,
+`why_dependency_or_detail_is_insufficient`, and `feat_roles` are REQUIRED:
+`capability` and `why_dependency_or_detail_is_insufficient` are non-empty strings,
+`feat_roles` is a non-empty list of `{feat_id, role, acceptance_claim_ids}` objects.
+Do not substitute alternative structures (registry listings, scope-conflict notes, or
+numbering analyses belong in the observation `fact`/`reason` prose, not in
+`modeling_basis`).
+
+Example (`ownership_overlap`):
 ```json
 {
   "issue_type": "ownership_overlap",

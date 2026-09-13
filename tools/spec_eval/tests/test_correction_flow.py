@@ -898,6 +898,33 @@ class CorrectionFlowTest(unittest.TestCase):
         self.assertIn("allowed_claim_ids", recipe)
         self.assertIn("must never be written directly", recipe)
 
+    def test_modeling_basis_recipes_pin_contract_schema(self) -> None:
+        """Job 3cfadb52: the correction invented a parallel modeling_basis
+        structure (registered_features/scope_conflicts) instead of the
+        contract schema, and the old downgrade policy published it into a
+        preflight rejection.  The recipes must pin the exact issue_type enum
+        and the required non-empty fields."""
+        machine = build_aggregation_correction_machine_contract(
+            typed_errors=[
+                TypedError(
+                    "MODELING_BASIS_MISSING", "$.observations[9]",
+                    entity_type="observation", entity_id="OBS-10",
+                ).to_dict(),
+                TypedError(
+                    "MODELING_BASIS_INVALID",
+                    "$.observations[9].modeling_basis.issue_type",
+                    entity_type="observation", entity_id="OBS-10",
+                ).to_dict(),
+            ],
+            target_criterion_ids=["C-1"],
+        )
+        for code in ("MODELING_BASIS_MISSING", "MODELING_BASIS_INVALID"):
+            recipe = " ".join(machine["repair_recipes"][code])
+            self.assertIn("ambiguous_boundary", recipe)
+            self.assertIn("unowned_capability", recipe)
+            self.assertIn("non-empty", recipe)
+            self.assertIn("Do not substitute alternative structures", recipe)
+
     def test_aggregation_duplicate_key_prompt_allows_keys_and_owner_refs(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             run_dir = Path(temporary)

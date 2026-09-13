@@ -290,6 +290,16 @@ def build_aggregation_correction_machine_contract(
         str(error.get("code", "")) for error in errors if error.get("code")
     ))
     recipes: dict[str, list[str]] = {
+        "MODELING_BASIS_MISSING": [
+            "Add a modeling_basis whose issue_type is exactly one of: ambiguous_boundary, fragmented_feat, oversized_feat, ownership_overlap, unowned_capability.",
+            "capability and why_dependency_or_detail_is_insufficient are non-empty strings; feat_roles is a non-empty list of {feat_id, role, acceptance_claim_ids} objects.",
+            "Do not substitute alternative structures (registry listings, scope-conflict notes, numbering analyses) — those belong in the observation fact/reason prose.",
+        ],
+        "MODELING_BASIS_INVALID": [
+            "issue_type must be exactly one of: ambiguous_boundary, fragmented_feat, oversized_feat, ownership_overlap, unowned_capability (exact spelling).",
+            "Repair capability and why_dependency_or_detail_is_insufficient to non-empty strings and feat_roles to a non-empty list of {feat_id, role, acceptance_claim_ids} objects.",
+            "Do not substitute alternative structures; keep the modeling analysis in the observation fact/reason prose.",
+        ],
         "MAPPING_CONCLUSION_FORBIDDEN": [
             "A Criterion conclusion without mapped evidence is forbidden: map the conclusion to criteria[].evidence_ids with at least one evidence-backed finding, or change the conclusion.",
             "When the changed conclusion is PARTIALLY_SUPPORTED / CONTRADICTED / MISSING, the replacement row must include at least one finding whose evidence_ids cite the Criterion allowlist (or the global catalog) — a conclusion swap without findings fails the final gate.",
