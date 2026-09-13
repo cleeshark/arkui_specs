@@ -25,6 +25,8 @@ from .aggregation_context import criteria_by_id, criterion_evidence_catalog, tab
 from .errors import FATAL_INPUT, MODEL_CORRECTION, TypedError
 from .evidence_paths import EvidencePathError, FrozenEvidencePathResolver
 
+SEM_FINDING_ID_RE = re.compile(r"^SEM-[0-9a-f]{24}$")
+
 DEFECT_KEY = re.compile(K.DEFECT_KEY_PATTERN)
 SEMANTIC_FINDING_IDENTITY_VERSION = 1
 SERVICE_OWNERSHIP_PREFIX = "service.unresolved-ownership."
@@ -111,6 +113,56 @@ def semantic_finding_id(
         identity, ensure_ascii=False, sort_keys=True, separators=(",", ":")
     ).encode("utf-8")
     return "SEM-" + hashlib.sha256(encoded).hexdigest()[:24]
+
+
+def rederive_aggregation_finding_ids(document: dict[str, Any]) -> list[str]:
+    """Deterministically replace non-canonical aggregation finding ids.
+
+    The canonical finding id is service-derived (``SEM-`` + sha256 of the
+    finding identity, :func:`semantic_finding_id`); the model can neither
+    compute nor guess it, so a Correction patch that adds findings must not
+    carry ``finding_id`` values.  When it does (job 61cfc52:
+    ``SEM-pending-spec-traceability-1``), the semantic-result schema rejects
+    them at assemble.  Re-derive each non-canonical id from the finding's own
+    identity — pure bookkeeping, nothing is invented — and return the change
+    notes.  Canonical ids are left untouched.
+    """
+    changes: list[str] = []
+    func_id = str(document.get("func_id") or "")
+    results = document.get("criterion_results")
+    if not isinstance(results, list):
+        return changes
+    for result_index, result in enumerate(results):
+        if not isinstance(result, dict):
+            continue
+        criterion_id = str(result.get("criterion_id") or "")
+        for finding_index, finding in enumerate(result.get("findings") or []):
+            if not isinstance(finding, dict):
+                continue
+            finding_id = finding.get("finding_id")
+            if (
+                isinstance(finding_id, str)
+                and SEM_FINDING_ID_RE.match(finding_id)
+            ):
+                continue
+            identity = json.dumps({
+                "identity_version": SEMANTIC_FINDING_IDENTITY_VERSION,
+                "func_id": func_id,
+                "defect_key": None,
+                "criterion_id": criterion_id,
+                "claim_id": finding.get("claim_id") if isinstance(
+                    finding.get("claim_id"), str) else None,
+                "provisional_key": str(finding.get("key") or f"index-{finding_index}"),
+            }, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+            new_id = "SEM-" + hashlib.sha256(
+                identity.encode("utf-8")
+            ).hexdigest()[:24]
+            changes.append(
+                f"criterion_results[{result_index}].findings[{finding_index}]: "
+                f"finding_id rederived to {new_id} (was {finding_id!r})"
+            )
+            finding["finding_id"] = new_id
+    return changes
 
 
 def service_ownership_defect_key(
@@ -1142,6 +1194,32 @@ def normalize_aggregation(
                     finding_id = None
                 else:
                     canonical_ids.add(finding_id)
+            elif isinstance(criterion_id, str):
+                # Unowned findings (e.g. the correction-added bookkeeping in
+                # job 61cfc52: "SEM-pending-spec-traceability-1") still need
+                # canonical ids for the semantic-result schema gate.  The id
+                # is pure bookkeeping: derive it from the criterion plus the
+                # payload's own finding key — nothing is invented.
+                finding_id = semantic_finding_id(
+                    func_id=func_id,
+                    defect_key=f"unowned:{finding.get('key') or f'index-{finding_index}'}",
+                    criterion_id=criterion_id,
+                    claim_id=claim_id if isinstance(claim_id, str) else None,
+                )
+                if finding_id in canonical_ids:
+                    fatal.append(TypedError(
+                        "FINDING_ID_COLLISION",
+                        f"$.criterion_results[{criterion_id}].findings",
+                        entity_type="finding", entity_id=str(finding_key),
+                        actual=finding_id, repairability=FATAL_INPUT,
+                    ))
+                    finding_id = None
+                else:
+                    canonical_ids.add(finding_id)
+                    changes.append(
+                        f"criterion_results[{criterion_id}]: derived canonical "
+                        f"finding id for unowned finding {finding_key}"
+                    )
             raw_finding_evidence_ids = _strings(finding.get("evidence_ids"))
             finding_evidence_ids = _unique_strings(finding.get("evidence_ids"))
             if finding_evidence_ids != raw_finding_evidence_ids:
