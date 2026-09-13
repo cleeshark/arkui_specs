@@ -17,7 +17,10 @@ from spec_eval.kernel.machine_contract import (
     build_aggregation_correction_machine_contract,
     build_correction_machine_contract,
 )
-from spec_eval.kernel.normalize import NormalizationResult
+from spec_eval.kernel.normalize import (
+    NormalizationResult,
+    rederive_aggregation_finding_ids,
+)
 from spec_eval.kernel.schema_gen import build_envelope_schema
 from spec_eval.service.executors import contract as C
 from spec_eval.service.pipeline.correction import (
@@ -472,6 +475,58 @@ class CorrectionFlowTest(unittest.TestCase):
                 },
             )
         )
+
+    def test_rederive_aggregation_finding_ids(self) -> None:
+        """Job 61cfc52 (04-05-04): the correction added findings with
+        invented human-readable ids; the service re-derives canonical
+        SEM-<sha256> ids without inventing content."""
+        document = {
+            "func_id": "04-05-04",
+            "criterion_results": [
+                {"criterion_id": "SPEC-TRACEABILITY",
+                 "findings": [{
+                     "finding_id": "SEM-pending-spec-traceability-1",
+                     "severity": "Major",
+                     "message": "The partial basis is documented.",
+                     "evidence_ids": ["EV-1"],
+                 }]},
+                {"criterion_id": "SPEC-AC-TESTABILITY",
+                 "findings": [{
+                     "finding_id": "SEM-0123456789abcdef01234567",
+                     "severity": "Minor",
+                     "message": "Already canonical.",
+                     "evidence_ids": ["EV-1"],
+                 }]},
+            ],
+        }
+        changes = rederive_aggregation_finding_ids(document)
+        self.assertEqual(len(changes), 1)
+        first = document["criterion_results"][0]["findings"][0]
+        self.assertRegex(first["finding_id"], r"^SEM-[0-9a-f]{24}$")
+        kept = document["criterion_results"][1]["findings"][0]
+        self.assertEqual(kept["finding_id"], "SEM-0123456789abcdef01234567")
+        self.assertIn("rederived", changes[0])
+
+    def test_rederive_dedupes_identical_invented_ids(self) -> None:
+        """Two findings with the same invented id get distinct canonical ids."""
+        document = {
+            "func_id": "04-05-04",
+            "criterion_results": [
+                {"criterion_id": "SPEC-TRACEABILITY",
+                 "findings": [
+                     {"finding_id": "SEM-pending-spec-traceability-1",
+                      "severity": "Major", "message": "A", "evidence_ids": []},
+                     {"finding_id": "SEM-pending-spec-traceability-1",
+                      "severity": "Major", "message": "B", "evidence_ids": []},
+                 ]},
+            ],
+        }
+        changes = rederive_aggregation_finding_ids(document)
+        findings = document["criterion_results"][0]["findings"]
+        ids = [f["finding_id"] for f in findings]
+        self.assertEqual(len(set(ids)), 2)
+        for i in ids:
+            self.assertRegex(i, r"^SEM-[0-9a-f]{24}$")
 
     def test_patch_evidence_refs_reject_fabricated_ids(self) -> None:
         """Issue #88: a correction fixing NV_INSPECTION_EVIDENCE_MISSING

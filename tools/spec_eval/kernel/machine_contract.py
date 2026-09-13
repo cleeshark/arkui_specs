@@ -350,6 +350,11 @@ def build_aggregation_correction_machine_contract(
             "criterion_evidence_allowlist": "criteria[].evidence_ids",
             "global_evidence_catalog_role": "lookup_only",
         },
+        "finding_id_policy": (
+            "Never set finding_id on added or replaced findings; the service "
+            "derives canonical SEM ids at publish time. An invented id fails "
+            "the final schema."
+        ),
         "dependency_rules": [
             "Every Finding evidence_ids list must remain a subset of its parent Criterion evidence selection.",
             "A policy-derived Criterion conclusion must agree with its outcome_policy_bases row.",

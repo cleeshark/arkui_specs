@@ -39,7 +39,10 @@ from spec_eval.kernel.errors import (
     is_non_blocking_warning,
     is_post_correction_warning,
 )
-from spec_eval.kernel.normalize import NormalizationResult
+from spec_eval.kernel.normalize import (
+    NormalizationResult,
+    rederive_aggregation_finding_ids,
+)
 from spec_eval.service.domain import states as S
 from spec_eval.service.executors import contract as C
 from spec_eval.service.executors.base import SemanticExecutor
@@ -954,6 +957,11 @@ class JudgmentFlow:
                 if violations:
                     raise ValueError("; ".join(violations))
                 corrected_payload = apply_json_patch(candidate_document, patches)
+                # Deterministic bookkeeping: the model can neither compute nor
+                # guess canonical SEM finding ids, so re-derive any invented
+                # ones before validation/publish (issue #89 follow-up).
+                if "criterion_results" in corrected_payload:
+                    rederive_aggregation_finding_ids(corrected_payload)
                 corrected_candidate_for_failure = corrected_payload
             except (OSError, json.JSONDecodeError, ValueError, TypeError) as exc:
                 return self._fail(
