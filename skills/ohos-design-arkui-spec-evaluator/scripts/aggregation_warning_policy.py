@@ -114,6 +114,20 @@ OBSERVATION_WARNING_MARKERS = {
         ".unit_reviews: a supported claim requires all units supported",
         ".unit_reviews: an inapplicable claim requires all units inapplicable",
     ),
+    # Issue #92 (job 3cfadb52): a Function modeling defect whose
+    # modeling_basis is missing or structurally invalid — the conclusion and
+    # its prose analysis are preserved; the malformed structured basis is a
+    # MAJOR confidence deduction, not a report blocker.
+    "MODELING_BASIS_MISSING": (
+        ".modeling_basis: required for Function modeling defects",
+        ".modeling_basis: modeling_basis object required",
+    ),
+    "MODELING_BASIS_INVALID": (
+        ".modeling_basis.issue_type:",
+        ".modeling_basis.capability:",
+        ".modeling_basis.why_dependency_or_detail_is_insufficient:",
+        ".modeling_basis.feat_roles:",
+    ),
 }
 
 

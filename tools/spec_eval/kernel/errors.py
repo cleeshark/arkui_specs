@@ -265,6 +265,14 @@ OBSERVATION_POST_CORRECTION_WARNING_CODES = frozenset({
     # CORRECTION_INVALID_TERMINAL (job 9c5e0c3e: seven NOT_VERIFIABLE
     # observations carrying only design/static evidence terminated the run).
     "NV_INSPECTION_EVIDENCE_MISSING",
+    # A Function modeling defect whose modeling_basis is missing or carries an
+    # unsupported issue_type / empty required fields: the MISSING/CONFLICT
+    # conclusion is the model's own judgment and its prose analysis is
+    # preserved, while the structured basis is bookkeeping the model cannot
+    # re-derive after its one Correction turn (issue #92, job 3cfadb52).
+    # Publish with the MAJOR deduction instead of terminating the run.
+    "MODELING_BASIS_MISSING",
+    "MODELING_BASIS_INVALID",
 })
 
 POST_CORRECTION_WARNING_CODES = frozenset({
