@@ -15,6 +15,15 @@ REPORT_VERSION = "spec-eval-function-report@0.1.0"
 # already degrade to a confidence warning. Filter it here so report assembly does
 # not re-block a report that passed score with reduced confidence.
 EVIDENCE_TYPE_WARNING_MARKER = "evidence must include one of"
+# Same degrade semantics for the finding-cardinality policy (issue #91): a
+# criterion concluded PARTIALLY_SUPPORTED / CONTRADICTED / MISSING without its
+# evidence-backed finding carries a recorded MAJOR confidence deduction; the
+# report path must not re-block it (both the protocol_validator and kernel
+# message forms are covered).
+FINDING_CARDINALITY_WARNING_MARKERS = (
+    "requires an evidence-backed finding",
+    "at least one finding for",
+)
 
 
 class FunctionReportInputError(ValueError):
@@ -124,8 +133,12 @@ def build_function_report(
         },
     }
     errors = validate_evaluation_report(report, rubric, complexity_rules, schemas_root)
-    # Filter evidence type warnings that score/assemble stages already degraded
-    blocking = [e for e in errors if EVIDENCE_TYPE_WARNING_MARKER not in e]
+    # Filter policy gaps that score/assemble stages already degraded
+    blocking = [
+        e for e in errors
+        if EVIDENCE_TYPE_WARNING_MARKER not in e
+        and not any(marker in e for marker in FINDING_CARDINALITY_WARNING_MARKERS)
+    ]
     raise_for_errors(blocking)
     return report, render_markdown_report(
         report=report, analysis=analysis_result, stability=stability_result,
