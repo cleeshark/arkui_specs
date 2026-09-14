@@ -1303,12 +1303,12 @@ features:
   id: Feat-04
   title: 模态 UIExtension UIContext ArkTS API 与转场效果
   spec: null
-  status: 待补充
+  status: Draft
 - func_id: 05-12-03
   id: Feat-05
   title: UEC/SUEC 窗口旋转布局通知合一
   spec: null
-  status: 待补充
+  status: Draft
 - func_id: 05-12-04
   id: Feat-01
   title: EmbeddedComponent创建/选项/DPI策略
