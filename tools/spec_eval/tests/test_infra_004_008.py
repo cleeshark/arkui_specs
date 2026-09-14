@@ -172,6 +172,41 @@ class Infra004To008Test(unittest.TestCase):
             self.assertEqual(finding.details["actual_id"], "`DESIGN-Func-04-01-01`")
             self.assertEqual(finding.details["expected_id"], "DESIGN-Func-04-01-01")
 
+    def test_draft_feature_without_design_target_is_exempt(self) -> None:
+        self._register_extra_feature("Draft")
+        findings = self._design_target_findings()
+        self.assertEqual(findings, [])
+
+    def test_baselined_feature_without_design_target_is_reported(self) -> None:
+        self._register_extra_feature("Baselined")
+        findings = self._design_target_findings()
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0].feat_id, "Feat-02")
+
+    def _register_extra_feature(self, status: str) -> None:
+        registry = self.fixture.config.features_registry
+        data = yaml.safe_load(registry.read_text(encoding="utf-8"))
+        data["features"].append(
+            {
+                "func_id": "04-01-01",
+                "id": "Feat-02",
+                "title": "sample extra",
+                "spec": None,
+                "status": status,
+            }
+        )
+        registry.write_text(yaml.safe_dump(data, allow_unicode=True), encoding="utf-8")
+
+    def _design_target_findings(self) -> list:
+        context = FunctionLocator(self.fixture.config).locate("04-01-01")
+        parser = MarkdownParser(self.fixture.config)
+        documents = [parser.parse(path) for path in context.all_documents() if path.is_file()]
+        return [
+            item
+            for item in DesignStructureChecker(self.fixture.config).run(context, documents)
+            if item.rule_id == "DESIGN-STRUCT-TARGET-FEAT-001"
+        ]
+
     def test_trace_table_alias_reports_field_error_instead_of_missing_table(self) -> None:
         original = self.fixture.spec_path.read_text(encoding="utf-8")
         self.fixture.spec_path.write_text(

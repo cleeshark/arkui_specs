@@ -208,7 +208,7 @@ Registry检查不会修改Registry，也不会自动生成索引。
 | `DESIGN-STRUCT-H2-ORDER-001` | 已存在的标准H2顺序错误 | Major/fail | 按标准顺序重新排列 |
 | `DESIGN-STRUCT-FEAT-H2-001` | 使用 `## Feat-XX ...` 建立独立顶级章节 | Major/fail | 将增量内容合并进共享Design固定章节 |
 | `DESIGN-STRUCT-ID-001` | Design ID不是纯文本 `DESIGN-Func-<FuncID>`；Markdown反引号包裹也属于格式错误 | Major/fail | 修正Design元数据，移除ID两侧反引号 |
-| `DESIGN-STRUCT-TARGET-FEAT-001` | “目标 Feature”没有覆盖某个Registry Feature | Major/fail | 在元数据中显式列出全部目标FeatID |
+| `DESIGN-STRUCT-TARGET-FEAT-001` | “目标 Feature”没有覆盖某个Registry Feature；Registry中状态为Draft的Feature豁免（与 `REG-SPEC-PATH-EMPTY-001` 的Draft豁免口径一致） | Major/fail | 在元数据中显式列出全部目标FeatID；Feature转Baselined前补齐Design目标声明 |
 | `DESIGN-STRUCT-ADR-ID-001` | ADR编号既不符合 `ADR-N`，也不符合 `ADR-FN-N` | Major/fail | 基础ADR用 `ADR-N`，增量ADR用 `ADR-F<Feat序号>-N` |
 | `DESIGN-STRUCT-ADR-FEAT-001` | 增量ADR引用了未登记的Feature | Major/fail | 修正ADR中的Feature序号或补齐Registry |
 
