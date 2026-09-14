@@ -222,7 +222,7 @@
 | 05 组件层 | 11 卡片框架组件 | 02 FormLink | `05-11-02` | `05-ui-components/11-card-framework-components/02-form-link/` | *待补充* | 0 |
 | 05 组件层 | 12 显示嵌入组件 | 01 PluginComponent | `05-12-01` | `05-ui-components/12-embedded-display-components/01-plugin-component/` | [design.md](05-ui-components/12-embedded-display-components/01-plugin-component/design.md) | 2 |
 | 05 组件层 | 12 显示嵌入组件 | 02 AbilityComponent | `05-12-02` | `05-ui-components/12-embedded-display-components/02-ability-component/` | [design.md](05-ui-components/12-embedded-display-components/02-ability-component/design.md) | 1 |
-| 05 组件层 | 12 显示嵌入组件 | 03 UIExtensionComponent | `05-12-03` | `05-ui-components/12-embedded-display-components/03-ui-extension-component/` | [design.md](05-ui-components/12-embedded-display-components/03-ui-extension-component/design.md) | 3 |
+| 05 组件层 | 12 显示嵌入组件 | 03 UIExtensionComponent | `05-12-03` | `05-ui-components/12-embedded-display-components/03-ui-extension-component/` | [design.md](05-ui-components/12-embedded-display-components/03-ui-extension-component/design.md) | 5 |
 | 05 组件层 | 12 显示嵌入组件 | 04 EmbeddedComponent | `05-12-04` | `05-ui-components/12-embedded-display-components/04-embedded-component/` | [design.md](05-ui-components/12-embedded-display-components/04-embedded-component/design.md) | 2 |
 | 05 组件层 | 12 显示嵌入组件 | 05 IsolatedComponent | `05-12-05` | `05-ui-components/12-embedded-display-components/05-isolated-component/` | [design.md](05-ui-components/12-embedded-display-components/05-isolated-component/design.md) | 1 |
 | 05 组件层 | 12 显示嵌入组件 | 06 SecurityUIExtensionComponent | `05-12-06` | `05-ui-components/12-embedded-display-components/06-security-ui-extension-component/` | [design.md](05-ui-components/12-embedded-display-components/06-security-ui-extension-component/design.md) | 2 |
@@ -1848,6 +1848,8 @@
 | Feat-01 | UIExtensionComponent创建/选项/Proxy通信 | [Feat-01-ui-extension-creation-proxy-spec.md](05-ui-components/12-embedded-display-components/03-ui-extension-component/Feat-01-ui-extension-creation-proxy-spec.md) | Baselined |
 | Feat-02 | UIExtensionComponent事件回调 | [Feat-02-ui-extension-events-spec.md](05-ui-components/12-embedded-display-components/03-ui-extension-component/Feat-02-ui-extension-events-spec.md) | Baselined |
 | Feat-03 | UIExtensionComponent废弃事件与兼容性 | [Feat-03-ui-extension-deprecated-compat-spec.md](05-ui-components/12-embedded-display-components/03-ui-extension-component/Feat-03-ui-extension-deprecated-compat-spec.md) | Baselined |
+| Feat-04 | 模态 UIExtension UIContext ArkTS API 与转场效果 | *待补充* | Draft |
+| Feat-05 | UEC/SUEC 窗口旋转布局通知合一 | *待补充* | Draft |
 
 ### 05-12-04 EmbeddedComponent
 
