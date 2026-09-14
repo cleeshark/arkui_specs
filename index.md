@@ -65,7 +65,7 @@
 | 04 通用能力层 | 01 图片加载能力 | 01 图片加载机制 | `04-01-01` | `04-common-capability/01-image-loading/01-image-loading-mechanism/` | [design.md](04-common-capability/01-image-loading/01-image-loading-mechanism/design.md) | 1 |
 | 04 通用能力层 | 01 图片加载能力 | 02 Svg解析 | `04-01-02` | `04-common-capability/01-image-loading/02-svg-parsing/` | [design.md](04-common-capability/01-image-loading/02-svg-parsing/design.md) | 4 |
 | 04 通用能力层 | 01 图片加载能力 | 03 DrawableDescriptor 能力 | `04-01-03` | `04-common-capability/01-image-loading/03-drawable-descriptor/` | [design.md](04-common-capability/01-image-loading/03-drawable-descriptor/design.md) | 1 |
-| 04 通用能力层 | 02 安全区机制 | 01 安全区机制 | `04-02-01` | `04-common-capability/02-safe-area/01-safe-area-mechanism/` | [design.md](04-common-capability/02-safe-area/01-safe-area-mechanism/design.md) | 5 |
+| 04 通用能力层 | 02 安全区机制 | 01 安全区机制 | `04-02-01` | `04-common-capability/02-safe-area/01-safe-area-mechanism/` | [design.md](04-common-capability/02-safe-area/01-safe-area-mechanism/design.md) | 7 |
 | 04 通用能力层 | 03 通用属性 | 01 布局属性 | `04-03-01` | `04-common-capability/03-common-attributes/01-layout-attributes/` | [design.md](04-common-capability/03-common-attributes/01-layout-attributes/design.md) | 3 |
 | 04 通用能力层 | 03 通用属性 | 02 视效属性 | `04-03-02` | `04-common-capability/03-common-attributes/02-visual-effect-attributes/` | [design.md](04-common-capability/03-common-attributes/02-visual-effect-attributes/design.md) | 1 |
 | 04 通用能力层 | 03 通用属性 | 03 基础属性 | `04-03-03` | `04-common-capability/03-common-attributes/03-basic-attributes/` | [design.md](04-common-capability/03-common-attributes/03-basic-attributes/design.md) | 5 |
@@ -637,6 +637,8 @@
 | Feat-03 | 组件级安全区内边距与 SAE 累积 | [Feat-03-safe-area-padding-sae-accumulation-spec.md](04-common-capability/02-safe-area/01-safe-area-mechanism/Feat-03-safe-area-padding-sae-accumulation-spec.md) | Baselined |
 | Feat-04 | 布局安全区忽略与多阶段调度 | [Feat-04-ignore-layout-safe-area-scheduling-spec.md](04-common-capability/02-safe-area/01-safe-area-mechanism/Feat-04-ignore-layout-safe-area-scheduling-spec.md) | Baselined |
 | Feat-05 | 键盘安全区联动与页面避让 | [Feat-05-keyboard-safe-area-page-avoidance-spec.md](04-common-capability/02-safe-area/01-safe-area-mechanism/Feat-05-keyboard-safe-area-page-avoidance-spec.md) | Baselined |
+| Feat-06 | OverlaySafeAreaHelper 弹窗安全区避让工具类 | *待补充* | Draft |
+| Feat-07 | 弹窗类组件适配OverlaySafeAreaHelper | *待补充* | Draft |
 
 ### 04-03-01 布局属性
 
