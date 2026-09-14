@@ -102,18 +102,22 @@ class DesignStructureChecker:
                     )
                 )
         targets = metadata.get("目标 Feature", "")
-        for feat_id in context.feature_ids():
-            if feat_id not in targets:
-                findings.append(
-                    self._finding(
-                        context,
-                        document,
-                        "DESIGN-STRUCT-TARGET-FEAT-001",
-                        f"design metadata does not include `{feat_id}`",
-                        1,
-                        feat_id=feat_id,
-                    )
+        for entry in context.feature_registry_entries:
+            feat_id = str(entry.get("id", ""))
+            if not feat_id or feat_id in targets:
+                continue
+            if str(entry.get("status")) == "Draft":
+                continue
+            findings.append(
+                self._finding(
+                    context,
+                    document,
+                    "DESIGN-STRUCT-TARGET-FEAT-001",
+                    f"design metadata does not include `{feat_id}`",
+                    1,
+                    feat_id=feat_id,
                 )
+            )
 
         adr_tables = [table for table in document.tables if "决策 ID" in table.headers]
         for table in adr_tables:
