@@ -699,6 +699,16 @@ features:
   title: Image 组件基础内存与加载上下文生命周期
   spec: 05-ui-components/08-image-components/01-image/Feat-05-image-base-memory-opt-spec.md
   status: Baselined
+- func_id: 05-08-01
+  id: Feat-06
+  title: Image 内存分级策略框架
+  spec: null
+  status: Draft
+- func_id: 05-08-01
+  id: Feat-07
+  title: PC/PAD 差异化配置与 YUV 拉齐
+  spec: null
+  status: Draft
 - func_id: 05-08-02
   id: Feat-01
   title: ImageAnimator 帧数据与显示缓存
