@@ -4,6 +4,16 @@ features:
   title: BUILD.gn 结构
   spec: 01-architecture/01-architecture-design/01-build-system/Feat-01-build-gn-structure-spec.md
   status: Baselined
+- func_id: 01-02-02
+  id: Feat-01
+  title: 视效属性内存优化（材质/渐变/光照）
+  spec: null
+  status: Draft
+- func_id: 01-02-02
+  id: Feat-02
+  title: FrameNode 低频成员懒分配内存优化
+  spec: null
+  status: Draft
 - func_id: 02-01-01
   id: Feat-01
   title: 平台抽象基类与构建适配

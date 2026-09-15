@@ -92,6 +92,19 @@ functions:
   path: 01-architecture/02-architecture-optimization/01-product-decoupling/
   design: null
   status: active
+- id: 01-02-02
+  l1:
+    id: '01'
+    title: 架构通用设计
+  l2:
+    id: '02'
+    title: 架构优化
+  l3:
+    id: '02'
+    title: 内存优化
+  path: 01-architecture/02-architecture-optimization/02-memory-compact/
+  design: null
+  status: active
 - id: 02-01-01
   l1:
     id: '02'
