@@ -27,6 +27,7 @@
 | 01 架构通用设计 | 01 架构设计 | 02 目录结构 | `01-01-02` | `01-architecture/01-architecture-design/02-directory-structure/` | *待补充* | 0 |
 | 01 架构通用设计 | 01 架构设计 | 03 部件化 | `01-01-03` | `01-architecture/01-architecture-design/03-modularization/` | *待补充* | 0 |
 | 01 架构通用设计 | 02 架构优化 | 01 产品化解耦 | `01-02-01` | `01-architecture/02-architecture-optimization/01-product-decoupling/` | *待补充* | 0 |
+| 01 架构通用设计 | 02 架构优化 | 02 内存优化 | `01-02-02` | `01-architecture/02-architecture-optimization/02-memory-compact/` | *待补充* | 2 |
 | 02 跨平台适配层 | 01 跨平台适配层 | 01 OH平台适配 | `02-01-01` | `02-cross-platform/01-platform-adapter/01-oh-platform-adapter/` | [design.md](02-cross-platform/01-platform-adapter/01-oh-platform-adapter/design.md) | 1 |
 | 02 跨平台适配层 | 01 跨平台适配层 | 02 Android平台适配 | `02-01-02` | `02-cross-platform/01-platform-adapter/02-android-platform-adapter/` | *待补充* | 0 |
 | 02 跨平台适配层 | 01 跨平台适配层 | 03 iOS平台适配 | `02-01-03` | `02-cross-platform/01-platform-adapter/03-ios-platform-adapter/` | *待补充* | 0 |
@@ -350,6 +351,13 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+
+### 01-02-02 内存优化
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | 视效属性内存优化（材质/渐变/光照） | *待补充* | Draft |
+| Feat-02 | FrameNode 低频成员懒分配内存优化 | *待补充* | Draft |
 
 ### 02-01-01 OH平台适配
 
