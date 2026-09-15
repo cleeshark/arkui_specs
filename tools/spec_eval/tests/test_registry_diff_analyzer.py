@@ -252,6 +252,151 @@ class TestRegistryDiffAnalyzer(unittest.TestCase):
         # Should return None to trigger full scan
         self.assertIsNone(affected)
 
+    FUNCTION_ENTRY_FILE = """top_levels:
+- id: '04'
+  slug: 04-common-capability
+  title: Common Capability
+  description: Original description
+functions:
+- id: 04-03-11
+  l1:
+    id: '04'
+    title: Common Capability Layer
+  l2:
+    id: '03'
+    title: Common Attributes
+  l3:
+    id: '11'
+    title: Text Common Attributes
+  path: 04-common-capability/03-common-attributes/11-text-common-attributes/
+  design: null
+  status: active
+"""
+
+    def _write_and_commit_functions_yaml(self, content: str, message: str) -> Path:
+        functions_file = self.repo_root / "functions.yaml"
+        functions_file.write_text(content, encoding="utf-8")
+        subprocess.run(["git", "add", "."], cwd=self.repo_root, check=True, capture_output=True)
+        subprocess.run(
+            ["git", "commit", "-m", message],
+            cwd=self.repo_root,
+            check=True,
+            capture_output=True,
+        )
+        return functions_file
+
+    def test_functions_yaml_function_entry_added_is_incremental(self) -> None:
+        """Adding one functions entry returns its func_id instead of a full scan."""
+        functions_file = self._write_and_commit_functions_yaml(
+            self.FUNCTION_ENTRY_FILE, "Add functions.yaml"
+        )
+
+        functions_file.write_text(
+            self.FUNCTION_ENTRY_FILE.replace(
+                "functions:\n",
+                """functions:
+- id: 04-03-12
+  l1:
+    id: '04'
+    title: Common Capability Layer
+  l2:
+    id: '03'
+    title: Common Attributes
+  l3:
+    id: '12'
+    title: Memory Compact
+  path: 04-common-capability/03-common-attributes/12-memory-compact/
+  design: null
+  status: active
+""",
+            ),
+            encoding="utf-8",
+        )
+
+        affected = self.analyzer.get_affected_func_ids_from_diff(functions_file, "HEAD")
+        self.assertIsNotNone(affected)
+        self.assertEqual(affected, {"04-03-12"})
+
+    def test_functions_yaml_function_entry_removed_is_incremental(self) -> None:
+        """Removing one functions entry returns that func_id."""
+        content = self.FUNCTION_ENTRY_FILE.replace(
+            "functions:\n",
+            """functions:
+- id: 04-03-12
+  l1:
+    id: '04'
+    title: Common Capability Layer
+  l2:
+    id: '03'
+    title: Common Attributes
+  l3:
+    id: '12'
+    title: Memory Compact
+  path: 04-common-capability/03-common-attributes/12-memory-compact/
+  design: null
+  status: active
+""",
+        )
+        functions_file = self._write_and_commit_functions_yaml(content, "Add functions.yaml")
+
+        functions_file.write_text(self.FUNCTION_ENTRY_FILE, encoding="utf-8")
+
+        affected = self.analyzer.get_affected_func_ids_from_diff(functions_file, "HEAD")
+        self.assertIsNotNone(affected)
+        self.assertEqual(affected, {"04-03-12"})
+
+    def test_functions_yaml_entry_edit_attributes_enclosing_entry(self) -> None:
+        """An edit inside an entry (entry id line in the hunk) hits that func_id."""
+        functions_file = self._write_and_commit_functions_yaml(
+            self.FUNCTION_ENTRY_FILE, "Add functions.yaml"
+        )
+
+        functions_file.write_text(
+            self.FUNCTION_ENTRY_FILE.replace(
+                "    title: Common Capability Layer",
+                "    title: Common Capability Layer MODIFIED",
+            ),
+            encoding="utf-8",
+        )
+
+        affected = self.analyzer.get_affected_func_ids_from_diff(functions_file, "HEAD")
+        self.assertIsNotNone(affected)
+        self.assertEqual(affected, {"04-03-11"})
+
+    def test_functions_yaml_deep_edit_without_entry_id_stays_metadata(self) -> None:
+        """An edit deeper than the hunk context cannot be attributed and stays no-op.
+
+        Git only carries 3 context lines, so an entry edit far below its
+        ``- id:`` line (e.g. the ``path:`` field) shows no entry id in the
+        hunk. Unattributable non-id lines keep the historical metadata-only
+        semantics (empty set) instead of forcing a full scan.
+        """
+        functions_file = self._write_and_commit_functions_yaml(
+            self.FUNCTION_ENTRY_FILE, "Add functions.yaml"
+        )
+
+        functions_file.write_text(
+            self.FUNCTION_ENTRY_FILE.replace(
+                "  path: 04-common-capability/03-common-attributes/11-text-common-attributes/",
+                "  path: 04-common-capability/03-common-attributes/11-text-attrs/",
+            ),
+            encoding="utf-8",
+        )
+
+        affected = self.analyzer.get_affected_func_ids_from_diff(functions_file, "HEAD")
+        self.assertIsNotNone(affected)
+        self.assertEqual(affected, set())
+
+    def test_functions_yaml_orphan_nested_id_triggers_full_scan(self) -> None:
+        """A nested two-digit id without its entry id in the hunk stays conservative."""
+        diff_content = """@@ -10,3 +10,4 @@
+     id: '03'
+     title: Common Attributes
++    id: '99'
+   l3:
+"""
+        self.assertEqual(self.analyzer._parse_functions_diff(diff_content), None)
+
 
 if __name__ == "__main__":
     unittest.main()

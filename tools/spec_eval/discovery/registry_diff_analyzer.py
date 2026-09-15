@@ -223,40 +223,58 @@ class RegistryDiffAnalyzer:
 
     def _parse_functions_diff(self, diff_content: str) -> set[str] | None:
         """
-        Parse functions.yaml diff to extract affected function hierarchies.
+        Parse functions.yaml diff to extract affected function entries.
 
-        functions.yaml contains top-level categories, not individual func_ids.
-        Changes to this file typically affect metadata, not evaluation scope.
+        ``functions.yaml`` mixes two entry shapes keyed by different ``id:``s:
+
+        - ``functions`` entries start with a full ``- id: XX-XX-XX`` line and
+          own the nested ``l1``/``l2``/``l3`` two-digit ids. Adding, removing,
+          or editing one entry only affects that Function, so its func_id is
+          returned for incremental evaluation. The old implementation compared
+          bare two-digit id prefixes, so a new entry (``- id: 04-03-12`` plus
+          nested ``id: '04'``) looked like a structural change and forced a
+          full scan of every Function.
+        - ``top_levels`` entries start with a two-digit ``- id:`` line. Adding
+          or removing one renumbers whole subtrees, so any such change falls
+          back to ``None`` (full scan).
 
         Strategy:
-        1. Check if only metadata changed (title, description, slug)
-        2. If structural changes (new/removed top_levels), return None (full scan)
-        3. If only metadata, return empty set (no functions affected)
+        1. Walk the diff, tracking the enclosing Function entry via its
+           ``- id: XX-XX-XX`` line (context lines included, reset per hunk).
+        2. An added/removed line inside a Function entry (the entry id itself,
+           a nested l1/l2/l3 id, or any entry field) marks that func_id
+           affected.
+        3. An added/removed two-digit id line with no enclosing Function entry
+           is a top_levels change (or a nested id whose entry id lies outside
+           the hunk) -> return None (full scan).
+        4. Any other added/removed line -> metadata only
+           (title/description/slug), leaving the set (possibly empty) as is.
         """
-        # Extract added/removed lines
-        added_lines = [
-            line[1:].strip()
-            for line in diff_content.split("\n")
-            if line.startswith("+") and not line.startswith("+++")
-        ]
-        removed_lines = [
-            line[1:].strip()
-            for line in diff_content.split("\n")
-            if line.startswith("-") and not line.startswith("---")
-        ]
+        func_entry_pattern = re.compile(r"^\s*-\s*id:\s*['\"]?(\d{2}-\d{2}-\d{2})['\"]?")
+        top_level_id_pattern = re.compile(r"^\s*-?\s*id:\s*['\"]?(\d{2})['\"]?\s*$")
 
-        # Check for structural changes (id field changes)
-        id_pattern = re.compile(r"^\s*-?\s*id:\s*['\"]?(\d{2})['\"]?")
-        added_ids = {match.group(1) for line in added_lines if (match := id_pattern.match(line))}
-        removed_ids = {match.group(1) for line in removed_lines if (match := id_pattern.match(line))}
+        affected_func_ids: set[str] = set()
+        current_func_id: str | None = None
 
-        # If top-level categories were added/removed, trigger full scan
-        if added_ids != removed_ids:
-            return None
+        for line in diff_content.split("\n"):
+            # A hunk header invalidates entry context: the enclosing entry id
+            # may sit above the hunk, so attribution must not leak across hunks.
+            if line.startswith("@@"):
+                current_func_id = None
+                continue
+            if line.startswith(("+++", "---")) or not line.startswith(("+", "-", " ")):
+                continue
+            content = line[1:].strip()
+            entry_match = func_entry_pattern.match(content)
+            if entry_match:
+                current_func_id = entry_match.group(1)
+            if line[0] in "+-":
+                if current_func_id is not None:
+                    affected_func_ids.add(current_func_id)
+                elif top_level_id_pattern.match(content):
+                    return None
 
-        # Only metadata changes (title, description, slug) - no functions affected
-        # Return empty set to signal "no affected functions"
-        return set()
+        return affected_func_ids
 
     def should_exclude_from_global_paths(self, file_path: Path) -> bool:
         """
