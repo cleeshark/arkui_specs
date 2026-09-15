@@ -271,6 +271,7 @@
 | 07 前端层 | 01 ArkTS高级组件 | 24 ToolBar | `07-01-24` | `07-frontend/01-arkts-advanced-components/24-tool-bar/` | *待补充* | 0 |
 | 07 前端层 | 01 ArkTS高级组件 | 25 TreeView | `07-01-25` | `07-frontend/01-arkts-advanced-components/25-tree-view/` | *待补充* | 0 |
 | 07 前端层 | 01 ArkTS高级组件 | 26 FoldSplitContainer | `07-01-26` | `07-frontend/01-arkts-advanced-components/26-fold-split-container/` | *待补充* | 0 |
+| 07 前端层 | 01 ArkTS高级组件 | 27 Charts图表 | `07-01-27` | `07-frontend/01-arkts-advanced-components/27-charts/` | *待补充* | 1 |
 | 07 前端层 | 02 状态管理框架 | 01 状态管理V1组件内状态管理 | `07-02-01` | `07-frontend/02-state-management/01-v1-component-state/` | [design.md](07-frontend/02-state-management/01-v1-component-state/design.md) | 9 |
 | 07 前端层 | 02 状态管理框架 | 02 状态管理V1数据对象内状态管理 | `07-02-02` | `07-frontend/02-state-management/02-v1-data-object-state/` | [design.md](07-frontend/02-state-management/02-v1-data-object-state/design.md) | 1 |
 | 07 前端层 | 02 状态管理框架 | 03 状态管理V1应用内状态管理 | `07-02-03` | `07-frontend/02-state-management/03-v1-app-state/` | [design.md](07-frontend/02-state-management/03-v1-app-state/design.md) | 4 |
@@ -2129,6 +2130,12 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+
+### 07-01-27 Charts图表
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | Charts图表基础框架 | *待补充* | Draft |
 
 ### 07-02-01 状态管理V1组件内状态管理
 
