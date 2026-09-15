@@ -53,7 +53,7 @@
 | 03 引擎框架层 | 05 窗口机制 | 01 窗口机制 | `03-05-01` | `03-engine-framework/05-window-mechanism/01-window-mechanism/` | [design.md](03-engine-framework/05-window-mechanism/01-window-mechanism/design.md) | 4 |
 | 03 引擎框架层 | 05 窗口机制 | 02 子窗机制 | `03-05-02` | `03-engine-framework/05-window-mechanism/02-subwindow-mechanism/` | [design.md](03-engine-framework/05-window-mechanism/02-subwindow-mechanism/design.md) | 3 |
 | 03 引擎框架层 | 06 多实例管理 | 01 多实例管理 | `03-06-01` | `03-engine-framework/06-multi-instance-management/01-multi-instance-management/` | [design.md](03-engine-framework/06-multi-instance-management/01-multi-instance-management/design.md) | 1 |
-| 03 引擎框架层 | 07 无障碍机制 | 01 无障碍能力 | `03-07-01` | `03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/` | [design.md](03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/design.md) | 7 |
+| 03 引擎框架层 | 07 无障碍机制 | 01 无障碍能力 | `03-07-01` | `03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/` | [design.md](03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/design.md) | 8 |
 | 03 引擎框架层 | 07 无障碍机制 | 02 Inspector | `03-07-02` | `03-engine-framework/07-accessibility-mechanism/02-inspector/` | [design.md](03-engine-framework/07-accessibility-mechanism/02-inspector/design.md) | 2 |
 | 03 引擎框架层 | 08 DFX | 01 日志 | `03-08-01` | `03-engine-framework/08-dfx-foundation/01-logging/` | [design.md](03-engine-framework/08-dfx-foundation/01-logging/design.md) | 3 |
 | 03 引擎框架层 | 08 DFX | 02 内存管理 | `03-08-02` | `03-engine-framework/08-dfx-foundation/02-memory-management/` | [design.md](03-engine-framework/08-dfx-foundation/02-memory-management/design.md) | 4 |
@@ -175,12 +175,12 @@
 | 05 组件层 | 04 输入表单类 | 04 Radio | `05-04-04` | `05-ui-components/04-input-form-components/04-radio/` | [design.md](05-ui-components/04-input-form-components/04-radio/design.md) | 1 |
 | 05 组件层 | 04 输入表单类 | 05 Slider | `05-04-05` | `05-ui-components/04-input-form-components/05-slider/` | [design.md](05-ui-components/04-input-form-components/05-slider/design.md) | 4 |
 | 05 组件层 | 04 输入表单类 | 06 Toggle | `05-04-06` | `05-ui-components/04-input-form-components/06-toggle/` | [design.md](05-ui-components/04-input-form-components/06-toggle/design.md) | 1 |
-| 05 组件层 | 05 选择类组件 | 01 Calendar/CalendarPicker | `05-05-01` | `05-ui-components/05-picker-components/01-calendar-calendar-picker/` | [design.md](05-ui-components/05-picker-components/01-calendar-calendar-picker/design.md) | 1 |
+| 05 组件层 | 05 选择类组件 | 01 Calendar/CalendarPicker | `05-05-01` | `05-ui-components/05-picker-components/01-calendar-calendar-picker/` | [design.md](05-ui-components/05-picker-components/01-calendar-calendar-picker/design.md) | 2 |
 | 05 组件层 | 05 选择类组件 | 02 DatePicker | `05-05-02` | `05-ui-components/05-picker-components/02-date-picker/` | [design.md](05-ui-components/05-picker-components/02-date-picker/design.md) | 1 |
 | 05 组件层 | 05 选择类组件 | 03 TextPicker | `05-05-03` | `05-ui-components/05-picker-components/03-text-picker/` | [design.md](05-ui-components/05-picker-components/03-text-picker/design.md) | 1 |
 | 05 组件层 | 05 选择类组件 | 04 TimePicker | `05-05-04` | `05-ui-components/05-picker-components/04-time-picker/` | [design.md](05-ui-components/05-picker-components/04-time-picker/design.md) | 1 |
 | 05 组件层 | 05 选择类组件 | 05 Select | `05-05-05` | `05-ui-components/05-picker-components/05-select/` | [design.md](05-ui-components/05-picker-components/05-select/design.md) | 1 |
-| 05 组件层 | 05 选择类组件 | 06 Picker | `05-05-06` | `05-ui-components/05-picker-components/06-picker/` | [design.md](05-ui-components/05-picker-components/06-picker/design.md) | 1 |
+| 05 组件层 | 05 选择类组件 | 06 Picker | `05-05-06` | `05-ui-components/05-picker-components/06-picker/` | [design.md](05-ui-components/05-picker-components/06-picker/design.md) | 2 |
 | 05 组件层 | 06 弹窗类组件 | 01 Menu/MenuItem/MenuItemGroup | `05-06-01` | `05-ui-components/06-popup-components/01-menu-menu-item-menu-item-group/` | [design.md](05-ui-components/06-popup-components/01-menu-menu-item-menu-item-group/design.md) | 3 |
 | 05 组件层 | 06 弹窗类组件 | 02 警告弹窗 | `05-06-02` | `05-ui-components/06-popup-components/02-alert-dialog/` | [design.md](05-ui-components/06-popup-components/02-alert-dialog/design.md) | 1 |
 | 05 组件层 | 06 弹窗类组件 | 03 列表选择弹窗 | `05-06-03` | `05-ui-components/06-popup-components/03-list-selection-dialog/` | [design.md](05-ui-components/06-popup-components/03-list-selection-dialog/design.md) | 1 |
@@ -271,6 +271,7 @@
 | 07 前端层 | 01 ArkTS高级组件 | 24 ToolBar | `07-01-24` | `07-frontend/01-arkts-advanced-components/24-tool-bar/` | *待补充* | 0 |
 | 07 前端层 | 01 ArkTS高级组件 | 25 TreeView | `07-01-25` | `07-frontend/01-arkts-advanced-components/25-tree-view/` | *待补充* | 0 |
 | 07 前端层 | 01 ArkTS高级组件 | 26 FoldSplitContainer | `07-01-26` | `07-frontend/01-arkts-advanced-components/26-fold-split-container/` | *待补充* | 0 |
+| 07 前端层 | 01 ArkTS高级组件 | 27 Charts图表 | `07-01-27` | `07-frontend/01-arkts-advanced-components/27-charts/` | *待补充* | 1 |
 | 07 前端层 | 02 状态管理框架 | 01 状态管理V1组件内状态管理 | `07-02-01` | `07-frontend/02-state-management/01-v1-component-state/` | [design.md](07-frontend/02-state-management/01-v1-component-state/design.md) | 9 |
 | 07 前端层 | 02 状态管理框架 | 02 状态管理V1数据对象内状态管理 | `07-02-02` | `07-frontend/02-state-management/02-v1-data-object-state/` | [design.md](07-frontend/02-state-management/02-v1-data-object-state/design.md) | 1 |
 | 07 前端层 | 02 状态管理框架 | 03 状态管理V1应用内状态管理 | `07-02-03` | `07-frontend/02-state-management/03-v1-app-state/` | [design.md](07-frontend/02-state-management/03-v1-app-state/design.md) | 4 |
@@ -539,6 +540,7 @@
 | Feat-05 | 无障碍子树注册与跨进程接入 | [Feat-05-accessibility-childtree-cross-process-spec.md](03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-05-accessibility-childtree-cross-process-spec.md) | Draft |
 | Feat-06 | 应用自绘组件无障碍接入（NDK Provider） | [Feat-06-accessibility-native-provider-spec.md](03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-06-accessibility-native-provider-spec.md) | Draft |
 | Feat-07 | 无障碍事件通知 | [Feat-07-accessibility-event-notification-spec.md](03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-07-accessibility-event-notification-spec.md) | Draft |
+| Feat-08 | 三方框架无障碍 hover 接入（CAPI 注册/解注册） | *待补充* | Draft |
 
 ### 03-07-02 Inspector
 
@@ -1481,6 +1483,7 @@
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
 | Feat-01 | CalendarPicker 组件全量规格 | [Feat-01-calendar-picker-full-spec.md](05-ui-components/05-picker-components/01-calendar-calendar-picker/Feat-01-calendar-picker-full-spec.md) | Baselined |
+| Feat-02 | CalendarPicker firstDayOfWeek API 与国际化 | *待补充* | Draft |
 
 ### 05-05-02 DatePicker
 
@@ -1511,6 +1514,7 @@
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
 | Feat-01 | UIPickerComponent/Picker 组件全量规格 | [Feat-01-uipicker-component-full-spec.md](05-ui-components/05-picker-components/06-picker/Feat-01-uipicker-component-full-spec.md) | Baselined |
+| Feat-02 | UIPickerComponent digitalCrownSensitivity 表冠灵敏度 | *待补充* | Draft |
 
 ### 05-06-01 Menu/MenuItem/MenuItemGroup
 
@@ -1889,7 +1893,7 @@
 | Feat-06 | HDR 亮度与背景色 | [Feat-06-hdr-brightness-background-spec.md](05-ui-components/13-platform-components/01-xcomponent/Feat-06-hdr-brightness-background-spec.md) | Baselined |
 | Feat-07 | AI 图像分析（analyzer） | [Feat-07-ai-image-analyzer-spec.md](05-ui-components/13-platform-components/01-xcomponent/Feat-07-ai-image-analyzer-spec.md) | Baselined |
 | Feat-08 | 无障碍 provider | [Feat-08-accessibility-provider-spec.md](05-ui-components/13-platform-components/01-xcomponent/Feat-08-accessibility-provider-spec.md) | Baselined |
-| Feat-09 | buffer 队列大小配置（bufferQueueSize） | [Feat-09-buffer-queue-size-spec.md](05-ui-components/13-platform-components/01-xcomponent/Feat-09-buffer-queue-size-spec.md) | Draft |
+| Feat-09 | buffer 队列大小配置（bufferQueueSize） | *待补充* | Draft |
 
 ### 05-13-02 Video
 
@@ -2130,6 +2134,12 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+
+### 07-01-27 Charts图表
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | Charts图表基础框架 | *待补充* | Draft |
 
 ### 07-02-01 状态管理V1组件内状态管理
 
