@@ -1481,7 +1481,7 @@
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
 | Feat-01 | CalendarPicker 组件全量规格 | [Feat-01-calendar-picker-full-spec.md](05-ui-components/05-picker-components/01-calendar-calendar-picker/Feat-01-calendar-picker-full-spec.md) | Baselined |
-| Feat-02 | CalendarPicker firstDayOfWeek API 与国际化 | — | Draft |
+| Feat-02 | CalendarPicker firstDayOfWeek API 与国际化 | *待补充* | Draft |
 
 ### 05-05-02 DatePicker
 
@@ -1512,7 +1512,7 @@
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
 | Feat-01 | UIPickerComponent/Picker 组件全量规格 | [Feat-01-uipicker-component-full-spec.md](05-ui-components/05-picker-components/06-picker/Feat-01-uipicker-component-full-spec.md) | Baselined |
-| Feat-02 | UIPickerComponent digitalCrownSensitivity 表冠灵敏度 | — | Draft |
+| Feat-02 | UIPickerComponent digitalCrownSensitivity 表冠灵敏度 | *待补充* | Draft |
 
 ### 05-06-01 Menu/MenuItem/MenuItemGroup
 
