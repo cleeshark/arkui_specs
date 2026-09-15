@@ -16,7 +16,7 @@
 | 06 | `06-common-interface` | 通用接口层 | 前端桥接、Inner 接口、其它范式接入 |
 | 07 | `07-frontend` | 前端层 | ArkTS 高级组件、状态管理、自定义组件、渲染控制、响应式环境变量、生成式 UI |
 | 08 | `08-ndk` | NDK | Node C-API、XComponent C-API 等 NDK 接口 |
-| 09 | `09-developer-tools` | 开发者工具 | 预览器、工具链、开发者文档、Sample、ComponentTest |
+| 09 | `09-developer-tools` | 开发者工具 | 预览器、工具链、开发者文档、Sample、ComponentTest、AI Agent Skill |
 | 10 | `10-product-customization` | 产品化定制 | 穿戴等产品化定制能力 |
 
 ### 二级域（L2）→ 三级域（L3）→ 功能域
@@ -322,6 +322,10 @@
 | 09 开发者工具 | 03 开发者文档 | 02 API指南文档 | `09-03-02` | `09-developer-tools/03-developer-docs/02-api-guide-docs/` | *待补充* | 0 |
 | 09 开发者工具 | 04 Sample应用 | 01 能力示范sample | `09-04-01` | `09-developer-tools/04-sample-apps/01-capability-sample/` | *待补充* | 0 |
 | 09 开发者工具 | 05 ComponnetTest | 01 ComponnetTest测试框架 | `09-05-01` | `09-developer-tools/05-component-test/01-component-test-framework/` | *待补充* | 0 |
+| 09 开发者工具 | 06 AI Agent Skill | 01 ArkUI状态管理V1/V2迁移混用Skill | `09-06-01` | `09-developer-tools/06-agent-skills/01-arkui-v1-v2-migration-mixusage/` | *待补充* | 1 |
+| 09 开发者工具 | 06 AI Agent Skill | 02 深浅色功能接入和高性能适配Skill | `09-06-02` | `09-developer-tools/06-agent-skills/02-dark-light-mode/` | *待补充* | 1 |
+| 09 开发者工具 | 06 AI Agent Skill | 03 ArkUI通用无障碍快速接入Skill | `09-06-03` | `09-developer-tools/06-agent-skills/03-accessibility-integration/` | *待补充* | 1 |
+| 09 开发者工具 | 06 AI Agent Skill | 04 ArkUI命令式框架快速接入Skill | `09-06-04` | `09-developer-tools/06-agent-skills/04-imperative-framework/` | *待补充* | 1 |
 | 10 产品化定制 | 01 穿戴 | 01 弧形组件 | `10-01-01` | `10-product-customization/01-wearable/01-arc-component/` | [design.md](10-product-customization/01-wearable/01-arc-component/design.md) | 2 |
 
 > 新增功能域时请在此表中按编号顺序添加行；未创建的设计文档以 `待补充` 标记。
@@ -2457,6 +2461,30 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+
+### 09-06-01 ArkUI状态管理V1/V2迁移混用Skill
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | ArkUI状态管理V1/V2迁移混用Skill | *待补充* | Draft |
+
+### 09-06-02 深浅色功能接入和高性能适配Skill
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | 深浅色功能接入和高性能适配Skill | *待补充* | Draft |
+
+### 09-06-03 ArkUI通用无障碍快速接入Skill
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | ArkUI通用无障碍快速接入Skill | *待补充* | Draft |
+
+### 09-06-04 ArkUI命令式框架快速接入Skill
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | ArkUI命令式框架快速接入Skill | *待补充* | Draft |
 
 ### 10-01-01 弧形组件
 
