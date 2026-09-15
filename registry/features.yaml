@@ -3172,6 +3172,8 @@ features:
 - func_id: 05-05-06
   id: Feat-02
   title: UIPickerComponent digitalCrownSensitivity 表冠灵敏度
+  spec: null
+  status: Draft
 - func_id: 09-06-01
   id: Feat-01
   title: ArkUI状态管理V1/V2迁移混用Skill
