@@ -140,7 +140,7 @@
 | 04 通用能力层 | 23 AI能力 | 01 Image分析能力 | `04-23-01` | `04-common-capability/23-ai-capability/01-image-analysis/` | [design.md](04-common-capability/23-ai-capability/01-image-analysis/design.md) | 2 |
 | 04 通用能力层 | 24 布局通用能力 | 01 像素取整能力 | `04-24-01` | `04-common-capability/24-layout-common-capability/01-pixel-rounding/` | [design.md](04-common-capability/24-layout-common-capability/01-pixel-rounding/design.md) | 1 |
 | 04 通用能力层 | 25 热重载能力 | 01 热重载机制 | `04-25-01` | `04-common-capability/25-hot-reload/01-hot-reload-mechanism/` | *待补充* | 0 |
-| 04 通用能力层 | 26 取色能力 | 01 全局取色 | `04-26-01` | `04-common-capability/26-color-picking/01-global-color-picking/` | [design.md](04-common-capability/26-color-picking/01-global-color-picking/design.md) | 1 |
+| 04 通用能力层 | 26 取色能力 | 01 全局取色 | `04-26-01` | `04-common-capability/26-color-picking/01-global-color-picking/` | *待补充* | 1 |
 | 05 组件层 | 01 布局类组件 | 01 Blank | `05-01-01` | `05-ui-components/01-layout-components/01-blank/` | [design.md](05-ui-components/01-layout-components/01-blank/design.md) | 1 |
 | 05 组件层 | 01 布局类组件 | 02 Divider | `05-01-02` | `05-ui-components/01-layout-components/02-divider/` | [design.md](05-ui-components/01-layout-components/02-divider/design.md) | 1 |
 | 05 组件层 | 01 布局类组件 | 03 Column | `05-01-03` | `05-ui-components/01-layout-components/03-column/` | [design.md](05-ui-components/01-layout-components/03-column/design.md) | 4 |
@@ -1201,7 +1201,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | 全局取色器（colorPickerController） | [Feat-01-global-color-picker-spec.md](04-common-capability/26-color-picking/01-global-color-picking/Feat-01-global-color-picker-spec.md) | Draft |
+| Feat-01 | 全局取色器（colorPickerController） | *待补充* | Draft |
 
 ### 05-01-01 Blank
 

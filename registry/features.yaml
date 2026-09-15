@@ -3197,5 +3197,5 @@ features:
 - func_id: 04-26-01
   id: Feat-01
   title: 全局取色器（colorPickerController）
-  spec: 04-common-capability/26-color-picking/01-global-color-picking/Feat-01-global-color-picker-spec.md
+  spec: null
   status: Draft

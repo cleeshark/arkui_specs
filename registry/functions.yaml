@@ -1572,7 +1572,7 @@ functions:
     id: '01'
     title: 全局取色
   path: 04-common-capability/26-color-picking/01-global-color-picking/
-  design: 04-common-capability/26-color-picking/01-global-color-picking/design.md
+  design: null
   status: active
 - id: 05-01-01
   l1:
