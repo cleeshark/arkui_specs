@@ -34,7 +34,7 @@ top_levels:
 - id: 09
   slug: 09-developer-tools
   title: 开发者工具
-  description: 预览器、工具链、开发者文档、Sample、ComponentTest
+  description: 预览器、工具链、开发者文档、Sample、ComponentTest、AI Agent Skill
 - id: '10'
   slug: 10-product-customization
   title: 产品化定制
@@ -3925,6 +3925,58 @@ functions:
     id: '01'
     title: ComponnetTest测试框架
   path: 09-developer-tools/05-component-test/01-component-test-framework/
+  design: null
+  status: active
+- id: 09-06-01
+  l1:
+    id: 09
+    title: 开发者工具
+  l2:
+    id: '06'
+    title: AI Agent Skill
+  l3:
+    id: '01'
+    title: ArkUI状态管理V1/V2迁移混用Skill
+  path: 09-developer-tools/06-agent-skills/01-arkui-v1-v2-migration-mixusage/
+  design: null
+  status: active
+- id: 09-06-02
+  l1:
+    id: 09
+    title: 开发者工具
+  l2:
+    id: '06'
+    title: AI Agent Skill
+  l3:
+    id: '02'
+    title: 深浅色功能接入和高性能适配Skill
+  path: 09-developer-tools/06-agent-skills/02-dark-light-mode/
+  design: null
+  status: active
+- id: 09-06-03
+  l1:
+    id: 09
+    title: 开发者工具
+  l2:
+    id: '06'
+    title: AI Agent Skill
+  l3:
+    id: '03'
+    title: ArkUI通用无障碍快速接入Skill
+  path: 09-developer-tools/06-agent-skills/03-accessibility-integration/
+  design: null
+  status: active
+- id: 09-06-04
+  l1:
+    id: 09
+    title: 开发者工具
+  l2:
+    id: '06'
+    title: AI Agent Skill
+  l3:
+    id: '04'
+    title: ArkUI命令式框架快速接入Skill
+  path: 09-developer-tools/06-agent-skills/04-imperative-framework/
   design: null
   status: active
 - id: 10-01-01
