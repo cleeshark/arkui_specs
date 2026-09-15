@@ -227,7 +227,7 @@
 | 05 组件层 | 12 显示嵌入组件 | 05 IsolatedComponent | `05-12-05` | `05-ui-components/12-embedded-display-components/05-isolated-component/` | [design.md](05-ui-components/12-embedded-display-components/05-isolated-component/design.md) | 1 |
 | 05 组件层 | 12 显示嵌入组件 | 06 SecurityUIExtensionComponent | `05-12-06` | `05-ui-components/12-embedded-display-components/06-security-ui-extension-component/` | [design.md](05-ui-components/12-embedded-display-components/06-security-ui-extension-component/design.md) | 2 |
 | 05 组件层 | 12 显示嵌入组件 | 07 DynamicComponent | `05-12-07` | `05-ui-components/12-embedded-display-components/07-dynamic-component/` | [design.md](05-ui-components/12-embedded-display-components/07-dynamic-component/design.md) | 1 |
-| 05 组件层 | 13 平台类组件 | 01 XComponent | `05-13-01` | `05-ui-components/13-platform-components/01-xcomponent/` | [design.md](05-ui-components/13-platform-components/01-xcomponent/design.md) | 8 |
+| 05 组件层 | 13 平台类组件 | 01 XComponent | `05-13-01` | `05-ui-components/13-platform-components/01-xcomponent/` | [design.md](05-ui-components/13-platform-components/01-xcomponent/design.md) | 9 |
 | 05 组件层 | 13 平台类组件 | 02 Video | `05-13-02` | `05-ui-components/13-platform-components/02-video/` | [design.md](05-ui-components/13-platform-components/02-video/design.md) | 3 |
 | 05 组件层 | 14 绘制类组件 | 01 Shape | `05-14-01` | `05-ui-components/14-drawing-components/01-shape/` | [design.md](05-ui-components/14-drawing-components/01-shape/design.md) | 6 |
 | 05 组件层 | 14 绘制类组件 | 02 Canvas | `05-14-02` | `05-ui-components/14-drawing-components/02-canvas/` | [design.md](05-ui-components/14-drawing-components/02-canvas/design.md) | 7 |
@@ -1893,6 +1893,7 @@
 | Feat-06 | HDR 亮度与背景色 | [Feat-06-hdr-brightness-background-spec.md](05-ui-components/13-platform-components/01-xcomponent/Feat-06-hdr-brightness-background-spec.md) | Baselined |
 | Feat-07 | AI 图像分析（analyzer） | [Feat-07-ai-image-analyzer-spec.md](05-ui-components/13-platform-components/01-xcomponent/Feat-07-ai-image-analyzer-spec.md) | Baselined |
 | Feat-08 | 无障碍 provider | [Feat-08-accessibility-provider-spec.md](05-ui-components/13-platform-components/01-xcomponent/Feat-08-accessibility-provider-spec.md) | Baselined |
+| Feat-09 | buffer 队列大小配置（bufferQueueSize） | *待补充* | Draft |
 
 ### 05-13-02 Video
 
