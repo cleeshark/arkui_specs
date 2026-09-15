@@ -3264,6 +3264,19 @@ functions:
   path: 07-frontend/01-arkts-advanced-components/26-fold-split-container/
   design: null
   status: active
+- id: 07-01-27
+  l1:
+    id: '07'
+    title: 前端层
+  l2:
+    id: '01'
+    title: ArkTS高级组件
+  l3:
+    id: '27'
+    title: Charts图表
+  path: 07-frontend/01-arkts-advanced-components/27-charts/
+  design: null
+  status: active
 - id: 07-02-01
   l1:
     id: '07'

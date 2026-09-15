@@ -1474,6 +1474,11 @@ features:
   title: OffscreenCanvas 图像导出与转移
   spec: 05-ui-components/14-drawing-components/03-offscreen-canvas/Feat-03-offscreen-canvas-export-transfer-spec.md
   status: Baselined
+- func_id: 07-01-27
+  id: Feat-01
+  title: Charts图表基础框架
+  spec: null
+  status: Draft
 - func_id: 05-03-02
   id: Feat-01
   title: AlphabetIndexer 创建与基础样式
