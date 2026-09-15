@@ -1574,6 +1574,19 @@ functions:
   path: 04-common-capability/25-hot-reload/01-hot-reload-mechanism/
   design: null
   status: active
+- id: 04-26-01
+  l1:
+    id: '04'
+    title: 通用能力层
+  l2:
+    id: '26'
+    title: 取色能力
+  l3:
+    id: '01'
+    title: 全局取色
+  path: 04-common-capability/26-color-picking/01-global-color-picking/
+  design: null
+  status: active
 - id: 05-01-01
   l1:
     id: '05'
