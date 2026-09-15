@@ -114,6 +114,11 @@ features:
   title: 无障碍事件通知
   spec: 03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/Feat-07-accessibility-event-notification-spec.md
   status: Draft
+- func_id: 03-07-01
+  id: Feat-08
+  title: 三方框架无障碍 hover 接入（CAPI 注册/解注册）
+  spec: null
+  status: Draft
 - func_id: 03-07-02
   id: Feat-01
   title: Inspector 同步树转储与属性过滤
