@@ -3149,3 +3149,13 @@ features:
   title: Counter 多范式接口与 C-API
   spec: 05-ui-components/10-information-display-components/10-counter/Feat-03-counter-multi-paradigm-capi-spec.md
   status: Baselined
+- func_id: 05-05-01
+  id: Feat-02
+  title: CalendarPicker firstDayOfWeek API 与国际化
+  spec: null
+  status: Draft
+- func_id: 05-05-06
+  id: Feat-02
+  title: UIPickerComponent digitalCrownSensitivity 表冠灵敏度
+  spec: null
+  status: Draft

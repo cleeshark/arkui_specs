@@ -175,12 +175,12 @@
 | 05 组件层 | 04 输入表单类 | 04 Radio | `05-04-04` | `05-ui-components/04-input-form-components/04-radio/` | [design.md](05-ui-components/04-input-form-components/04-radio/design.md) | 1 |
 | 05 组件层 | 04 输入表单类 | 05 Slider | `05-04-05` | `05-ui-components/04-input-form-components/05-slider/` | [design.md](05-ui-components/04-input-form-components/05-slider/design.md) | 4 |
 | 05 组件层 | 04 输入表单类 | 06 Toggle | `05-04-06` | `05-ui-components/04-input-form-components/06-toggle/` | [design.md](05-ui-components/04-input-form-components/06-toggle/design.md) | 1 |
-| 05 组件层 | 05 选择类组件 | 01 Calendar/CalendarPicker | `05-05-01` | `05-ui-components/05-picker-components/01-calendar-calendar-picker/` | [design.md](05-ui-components/05-picker-components/01-calendar-calendar-picker/design.md) | 1 |
+| 05 组件层 | 05 选择类组件 | 01 Calendar/CalendarPicker | `05-05-01` | `05-ui-components/05-picker-components/01-calendar-calendar-picker/` | [design.md](05-ui-components/05-picker-components/01-calendar-calendar-picker/design.md) | 2 |
 | 05 组件层 | 05 选择类组件 | 02 DatePicker | `05-05-02` | `05-ui-components/05-picker-components/02-date-picker/` | [design.md](05-ui-components/05-picker-components/02-date-picker/design.md) | 1 |
 | 05 组件层 | 05 选择类组件 | 03 TextPicker | `05-05-03` | `05-ui-components/05-picker-components/03-text-picker/` | [design.md](05-ui-components/05-picker-components/03-text-picker/design.md) | 1 |
 | 05 组件层 | 05 选择类组件 | 04 TimePicker | `05-05-04` | `05-ui-components/05-picker-components/04-time-picker/` | [design.md](05-ui-components/05-picker-components/04-time-picker/design.md) | 1 |
 | 05 组件层 | 05 选择类组件 | 05 Select | `05-05-05` | `05-ui-components/05-picker-components/05-select/` | [design.md](05-ui-components/05-picker-components/05-select/design.md) | 1 |
-| 05 组件层 | 05 选择类组件 | 06 Picker | `05-05-06` | `05-ui-components/05-picker-components/06-picker/` | [design.md](05-ui-components/05-picker-components/06-picker/design.md) | 1 |
+| 05 组件层 | 05 选择类组件 | 06 Picker | `05-05-06` | `05-ui-components/05-picker-components/06-picker/` | [design.md](05-ui-components/05-picker-components/06-picker/design.md) | 2 |
 | 05 组件层 | 06 弹窗类组件 | 01 Menu/MenuItem/MenuItemGroup | `05-06-01` | `05-ui-components/06-popup-components/01-menu-menu-item-menu-item-group/` | [design.md](05-ui-components/06-popup-components/01-menu-menu-item-menu-item-group/design.md) | 3 |
 | 05 组件层 | 06 弹窗类组件 | 02 警告弹窗 | `05-06-02` | `05-ui-components/06-popup-components/02-alert-dialog/` | [design.md](05-ui-components/06-popup-components/02-alert-dialog/design.md) | 1 |
 | 05 组件层 | 06 弹窗类组件 | 03 列表选择弹窗 | `05-06-03` | `05-ui-components/06-popup-components/03-list-selection-dialog/` | [design.md](05-ui-components/06-popup-components/03-list-selection-dialog/design.md) | 1 |
@@ -1481,6 +1481,7 @@
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
 | Feat-01 | CalendarPicker 组件全量规格 | [Feat-01-calendar-picker-full-spec.md](05-ui-components/05-picker-components/01-calendar-calendar-picker/Feat-01-calendar-picker-full-spec.md) | Baselined |
+| Feat-02 | CalendarPicker firstDayOfWeek API 与国际化 | — | Draft |
 
 ### 05-05-02 DatePicker
 
@@ -1511,6 +1512,7 @@
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
 | Feat-01 | UIPickerComponent/Picker 组件全量规格 | [Feat-01-uipicker-component-full-spec.md](05-ui-components/05-picker-components/06-picker/Feat-01-uipicker-component-full-spec.md) | Baselined |
+| Feat-02 | UIPickerComponent digitalCrownSensitivity 表冠灵敏度 | — | Draft |
 
 ### 05-06-01 Menu/MenuItem/MenuItemGroup
 
