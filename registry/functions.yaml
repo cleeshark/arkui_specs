@@ -4005,6 +4005,19 @@ functions:
   path: 09-developer-tools/06-agent-skills/04-imperative-framework/
   design: null
   status: active
+- id: 09-07-01
+  l1:
+    id: 09
+    title: 开发者工具
+  l2:
+    id: '07'
+    title: 内存分析工具
+  l3:
+    id: '01'
+    title: ArkUI 内存分析DFX工具
+  path: 09-developer-tools/07-memory-analysis-tools/01-memory-dfx/
+  design: null
+  status: active
 - id: 10-01-01
   l1:
     id: '10'
