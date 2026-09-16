@@ -68,7 +68,7 @@
 | 04 通用能力层 | 01 图片加载能力 | 03 DrawableDescriptor 能力 | `04-01-03` | `04-common-capability/01-image-loading/03-drawable-descriptor/` | [design.md](04-common-capability/01-image-loading/03-drawable-descriptor/design.md) | 1 |
 | 04 通用能力层 | 02 安全区机制 | 01 安全区机制 | `04-02-01` | `04-common-capability/02-safe-area/01-safe-area-mechanism/` | [design.md](04-common-capability/02-safe-area/01-safe-area-mechanism/design.md) | 8 |
 | 04 通用能力层 | 03 通用属性 | 01 布局属性 | `04-03-01` | `04-common-capability/03-common-attributes/01-layout-attributes/` | [design.md](04-common-capability/03-common-attributes/01-layout-attributes/design.md) | 3 |
-| 04 通用能力层 | 03 通用属性 | 02 视效属性 | `04-03-02` | `04-common-capability/03-common-attributes/02-visual-effect-attributes/` | [design.md](04-common-capability/03-common-attributes/02-visual-effect-attributes/design.md) | 1 |
+| 04 通用能力层 | 03 通用属性 | 02 视效属性 | `04-03-02` | `04-common-capability/03-common-attributes/02-visual-effect-attributes/` | [design.md](04-common-capability/03-common-attributes/02-visual-effect-attributes/design.md) | 2 |
 | 04 通用能力层 | 03 通用属性 | 03 基础属性 | `04-03-03` | `04-common-capability/03-common-attributes/03-basic-attributes/` | [design.md](04-common-capability/03-common-attributes/03-basic-attributes/design.md) | 5 |
 | 04 通用能力层 | 03 通用属性 | 04 交互属性 | `04-03-04` | `04-common-capability/03-common-attributes/04-interaction-attributes/` | [design.md](04-common-capability/03-common-attributes/04-interaction-attributes/design.md) | 3 |
 | 04 通用能力层 | 03 通用属性 | 05 弹窗类属性 | `04-03-05` | `04-common-capability/03-common-attributes/05-popup-attributes/` | [design.md](04-common-capability/03-common-attributes/05-popup-attributes/design.md) | 1 |
@@ -186,7 +186,7 @@
 | 05 组件层 | 06 弹窗类组件 | 01 Menu/MenuItem/MenuItemGroup | `05-06-01` | `05-ui-components/06-popup-components/01-menu-menu-item-menu-item-group/` | [design.md](05-ui-components/06-popup-components/01-menu-menu-item-menu-item-group/design.md) | 3 |
 | 05 组件层 | 06 弹窗类组件 | 02 警告弹窗 | `05-06-02` | `05-ui-components/06-popup-components/02-alert-dialog/` | [design.md](05-ui-components/06-popup-components/02-alert-dialog/design.md) | 1 |
 | 05 组件层 | 06 弹窗类组件 | 03 列表选择弹窗 | `05-06-03` | `05-ui-components/06-popup-components/03-list-selection-dialog/` | [design.md](05-ui-components/06-popup-components/03-list-selection-dialog/design.md) | 1 |
-| 05 组件层 | 06 弹窗类组件 | 04 自定义弹窗 | `05-06-04` | `05-ui-components/06-popup-components/04-custom-dialog/` | [design.md](05-ui-components/06-popup-components/04-custom-dialog/design.md) | 3 |
+| 05 组件层 | 06 弹窗类组件 | 04 自定义弹窗 | `05-06-04` | `05-ui-components/06-popup-components/04-custom-dialog/` | [design.md](05-ui-components/06-popup-components/04-custom-dialog/design.md) | 4 |
 | 05 组件层 | 06 弹窗类组件 | 05 CalendarPickerDialog | `05-06-05` | `05-ui-components/06-popup-components/05-calendar-picker-dialog/` | [design.md](05-ui-components/06-popup-components/05-calendar-picker-dialog/design.md) | 1 |
 | 05 组件层 | 06 弹窗类组件 | 06 DatePickerDialog | `05-06-06` | `05-ui-components/06-popup-components/06-date-picker-dialog/` | [design.md](05-ui-components/06-popup-components/06-date-picker-dialog/design.md) | 1 |
 | 05 组件层 | 06 弹窗类组件 | 07 TimePickerDialog | `05-06-07` | `05-ui-components/06-popup-components/07-time-picker-dialog/` | [design.md](05-ui-components/06-popup-components/07-time-picker-dialog/design.md) | 1 |
@@ -669,6 +669,7 @@
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
 | Feat-01 | 图像效果 | [Feat-01-image-effects-spec.md](04-common-capability/03-common-attributes/02-visual-effect-attributes/Feat-01-image-effects-spec.md) | Baselined |
+| Feat-02 | 材质和渐变属性 | *待补充* | Draft |
 
 ### 04-03-03 基础属性
 
@@ -1563,6 +1564,7 @@
 | Feat-01 | CustomDialogController 生命周期与布局属性及命令式弹窗 API | [Feat-01-custom-dialog-lifecycle-layout-spec.md](05-ui-components/06-popup-components/04-custom-dialog/Feat-01-custom-dialog-lifecycle-layout-spec.md) | Baselined |
 | Feat-02 | AlertDialog/ActionSheet 命令式 API | [Feat-02-alert-action-sheet-spec.md](05-ui-components/06-popup-components/04-custom-dialog/Feat-02-alert-action-sheet-spec.md) | Baselined |
 | Feat-03 | Dialog C API（ArkUI_NativeDialogAPI_1/2/3、OH_ArkUI_CustomDialog 函数族） | [Feat-03-dialog-capi-spec.md](05-ui-components/06-popup-components/04-custom-dialog/Feat-03-dialog-capi-spec.md) | Baselined |
+| Feat-04 | 弹窗跟手属性 | *待补充* | Draft |
 
 ### 05-06-05 CalendarPickerDialog
 

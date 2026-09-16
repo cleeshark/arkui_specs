@@ -354,6 +354,11 @@ features:
   title: 图像效果
   spec: 04-common-capability/03-common-attributes/02-visual-effect-attributes/Feat-01-image-effects-spec.md
   status: Baselined
+- func_id: 04-03-02
+  id: Feat-02
+  title: 材质和渐变属性
+  spec: null
+  status: Draft
 - func_id: 04-03-03
   id: Feat-01
   title: 组件标识与显隐
@@ -1609,6 +1614,11 @@ features:
   title: Dialog C API（ArkUI_NativeDialogAPI_1/2/3、OH_ArkUI_CustomDialog 函数族）
   spec: 05-ui-components/06-popup-components/04-custom-dialog/Feat-03-dialog-capi-spec.md
   status: Baselined
+- func_id: 05-06-04
+  id: Feat-04
+  title: 弹窗跟手属性
+  spec: null
+  status: Draft
 - func_id: 05-06-05
   id: Feat-01
   title: CalendarPickerDialog 完整能力
