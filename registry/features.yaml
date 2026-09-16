@@ -894,6 +894,11 @@ features:
   title: 事件回调 (onCopy/onWillCopy/onTextSelectionChange/onMarqueeStateChange)
   spec: 05-ui-components/09-text-components/04-text/Feat-07-event-callbacks-spec.md
   status: Baselined
+- func_id: 05-09-04
+  id: Feat-08
+  title: 文本描边 (strokeWidth/strokeColor/strokeJoinStyle)
+  spec: null
+  status: Draft
 - func_id: 05-09-05
   id: Feat-01
   title: 内容创建与控制器 (TextAreaOptions/TextArea构造/setTextAreaOptions/TextAreaController:caretPosition/setTextSelection/stopEditing)
@@ -2344,6 +2349,11 @@ features:
   title: Progress 组件全量规格
   spec: 05-ui-components/10-information-display-components/05-progress/Feat-01-progress-full-spec.md
   status: Baselined
+- func_id: 05-10-05
+  id: Feat-02
+  title: Progress 国际化（i18n）本地化
+  spec: null
+  status: Draft
 - func_id: 05-10-06
   id: Feat-01
   title: QRCode 组件核心规格
@@ -2369,6 +2379,11 @@ features:
   title: TextClock 事件、配置变更与组件化
   spec: 05-ui-components/10-information-display-components/07-text-clock/Feat-04-events-config-componentization-spec.md
   status: Baselined
+- func_id: 05-10-07
+  id: Feat-05
+  title: TextClock 国际化（i18n）本地化
+  spec: null
+  status: Draft
 - func_id: 05-10-08
   id: Feat-01
   title: TextTimer 计时模式与格式化
@@ -2389,6 +2404,11 @@ features:
   title: TextTimer 可见区优化与组件化
   spec: 05-ui-components/10-information-display-components/08-text-timer/Feat-04-visibility-componentization-spec.md
   status: Baselined
+- func_id: 05-10-08
+  id: Feat-05
+  title: TextTimer 国际化（i18n）本地化
+  spec: null
+  status: Draft
 - func_id: 05-10-09
   id: Feat-01
   title: Badge 内容模式
@@ -2409,6 +2429,11 @@ features:
   title: Badge 无障碍与组件化
   spec: 05-ui-components/10-information-display-components/09-badge/Feat-04-accessibility-componentization-spec.md
   status: Baselined
+- func_id: 05-10-09
+  id: Feat-05
+  title: Badge 国际化（i18n）本地化
+  spec: null
+  status: Draft
 - func_id: 05-15-01
   id: Feat-01
   title: WithTheme 主题作用域组件全量规格
@@ -3159,6 +3184,11 @@ features:
   title: Gauge 高级能力
   spec: 05-ui-components/10-information-display-components/02-gauge/Feat-03-gauge-advanced-spec.md
   status: Baselined
+- func_id: 05-10-02
+  id: Feat-04
+  title: Gauge 国际化（i18n）本地化
+  spec: null
+  status: Draft
 - func_id: 05-10-03
   id: Feat-01
   title: LoadingProgress 全量规格
