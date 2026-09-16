@@ -3214,3 +3214,519 @@ features:
   title: 全局取色器（colorPickerController）
   spec: null
   status: Draft
+
+- func_id: 07-04-01
+  id: Feat-01
+  title: 消息类型与协议版本契约
+  spec: null
+  status: Draft
+- func_id: 07-04-01
+  id: Feat-02
+  title: Surface 生命周期与 catalogId 匹配
+  spec: null
+  status: Draft
+- func_id: 07-04-01
+  id: Feat-03
+  title: 组件描述与增量更新
+  spec: null
+  status: Draft
+- func_id: 07-04-01
+  id: Feat-04
+  title: 数据模型更新与绑定刷新
+  spec: null
+  status: Draft
+- func_id: 07-04-01
+  id: Feat-05
+  title: 流式渐进渲染
+  spec: null
+  status: Draft
+- func_id: 07-04-01
+  id: Feat-06
+  title: 多 Surface 管理
+  spec: null
+  status: Draft
+- func_id: 07-04-01
+  id: Feat-07
+  title: Catalog 与能力查询
+  spec: null
+  status: Draft
+- func_id: 07-04-02
+  id: Feat-01
+  title: Row 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-02
+  id: Feat-02
+  title: Column 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-02
+  id: Feat-03
+  title: List 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-03
+  id: Feat-01
+  title: Text 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-03
+  id: Feat-02
+  title: Image 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-03
+  id: Feat-03
+  title: Icon 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-03
+  id: Feat-04
+  title: Divider 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-04
+  id: Feat-01
+  title: Button 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-04
+  id: Feat-02
+  title: TextField 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-04
+  id: Feat-03
+  title: CheckBox 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-04
+  id: Feat-04
+  title: Slider 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-04
+  id: Feat-05
+  title: DateTimeInput 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-04
+  id: Feat-06
+  title: ChoicePicker 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-05
+  id: Feat-01
+  title: Card 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-05
+  id: Feat-02
+  title: Modal 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-05
+  id: Feat-03
+  title: Tabs 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-06
+  id: Feat-01
+  title: Video 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-06
+  id: Feat-02
+  title: AudioPlayer 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-07
+  id: Feat-01
+  title: required 函数
+  spec: null
+  status: Draft
+- func_id: 07-04-07
+  id: Feat-02
+  title: regex 函数
+  spec: null
+  status: Draft
+- func_id: 07-04-07
+  id: Feat-03
+  title: length 函数
+  spec: null
+  status: Draft
+- func_id: 07-04-07
+  id: Feat-04
+  title: numeric 函数
+  spec: null
+  status: Draft
+- func_id: 07-04-07
+  id: Feat-05
+  title: email 函数
+  spec: null
+  status: Draft
+- func_id: 07-04-08
+  id: Feat-01
+  title: formatString 函数
+  spec: null
+  status: Draft
+- func_id: 07-04-08
+  id: Feat-02
+  title: formatNumber 函数
+  spec: null
+  status: Draft
+- func_id: 07-04-08
+  id: Feat-03
+  title: formatCurrency 函数
+  spec: null
+  status: Draft
+- func_id: 07-04-08
+  id: Feat-04
+  title: formatDate 函数
+  spec: null
+  status: Draft
+- func_id: 07-04-08
+  id: Feat-05
+  title: pluralize 函数
+  spec: null
+  status: Draft
+- func_id: 07-04-09
+  id: Feat-01
+  title: and 函数
+  spec: null
+  status: Draft
+- func_id: 07-04-09
+  id: Feat-02
+  title: or 函数
+  spec: null
+  status: Draft
+- func_id: 07-04-09
+  id: Feat-03
+  title: not 函数
+  spec: null
+  status: Draft
+- func_id: 07-04-09
+  id: Feat-04
+  title: openUrl 函数
+  spec: null
+  status: Draft
+- func_id: 07-04-10
+  id: Feat-01
+  title: Row 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-10
+  id: Feat-02
+  title: Column 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-10
+  id: Feat-03
+  title: List 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-10
+  id: Feat-04
+  title: Stack 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-10
+  id: Feat-05
+  title: Grid 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-11
+  id: Feat-01
+  title: Text 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-11
+  id: Feat-02
+  title: Image 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-11
+  id: Feat-03
+  title: Divider 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-11
+  id: Feat-04
+  title: Progress 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-12
+  id: Feat-01
+  title: Button 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-12
+  id: Feat-02
+  title: TextInput 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-12
+  id: Feat-03
+  title: Select 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-12
+  id: Feat-04
+  title: Toggle 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-12
+  id: Feat-05
+  title: Radio 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-12
+  id: Feat-06
+  title: Checkbox 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-12
+  id: Feat-07
+  title: CheckboxGroup 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-13
+  id: Feat-01
+  title: Tabs 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-13
+  id: Feat-02
+  title: TabContent 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-13
+  id: Feat-03
+  title: NavContainer 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-13
+  id: Feat-04
+  title: Web 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-15
+  id: Feat-01
+  title: If 组件
+  spec: null
+  status: Draft
+- func_id: 07-04-16
+  id: Feat-01
+  title: getRadioValue 函数
+  spec: null
+  status: Draft
+- func_id: 07-04-16
+  id: Feat-02
+  title: getCheckboxGroupValues 函数
+  spec: null
+  status: Draft
+- func_id: 07-04-16
+  id: Feat-03
+  title: getToggleValue 函数
+  spec: null
+  status: Draft
+- func_id: 07-04-16
+  id: Feat-04
+  title: getSelectValue 函数
+  spec: null
+  status: Draft
+- func_id: 07-04-16
+  id: Feat-05
+  title: break 函数
+  spec: null
+  status: Draft
+- func_id: 07-04-16
+  id: Feat-06
+  title: setDataModel 函数
+  spec: null
+  status: Draft
+- func_id: 07-04-16
+  id: Feat-07
+  title: setAttributes 函数
+  spec: null
+  status: Draft
+- func_id: 07-04-16
+  id: Feat-08
+  title: navigate 函数
+  spec: null
+  status: Draft
+- func_id: 07-04-17
+  id: Feat-01
+  title: 子组件模板声明与实例化
+  spec: null
+  status: Draft
+- func_id: 07-04-18
+  id: Feat-01
+  title: 尺寸与布局样式
+  spec: null
+  status: Draft
+- func_id: 07-04-18
+  id: Feat-02
+  title: 间距与边框样式
+  spec: null
+  status: Draft
+- func_id: 07-04-18
+  id: Feat-03
+  title: 背景与颜色样式
+  spec: null
+  status: Draft
+- func_id: 07-04-18
+  id: Feat-04
+  title: 视效样式
+  spec: null
+  status: Draft
+- func_id: 07-04-18
+  id: Feat-05
+  title: 显示与裁切
+  spec: null
+  status: Draft
+- func_id: 07-04-19
+  id: Feat-01
+  title: 通用事件模型与触发契约
+  spec: null
+  status: Draft
+- func_id: 07-04-19
+  id: Feat-02
+  title: 事件数据与分发
+  spec: null
+  status: Draft
+- func_id: 07-04-20
+  id: Feat-01
+  title: 自定义组件注册与使用
+  spec: null
+  status: Draft
+- func_id: 07-04-20
+  id: Feat-02
+  title: 自定义函数注册与调用
+  spec: null
+  status: Draft
+- func_id: 07-04-21
+  id: Feat-01
+  title: DataModel 读写契约
+  spec: null
+  status: Draft
+- func_id: 07-04-21
+  id: Feat-02
+  title: 路径绑定
+  spec: null
+  status: Draft
+- func_id: 07-04-21
+  id: Feat-03
+  title: 表达式绑定
+  spec: null
+  status: Draft
+- func_id: 07-04-21
+  id: Feat-04
+  title: 变量系统
+  spec: null
+  status: Draft
+- func_id: 07-04-22
+  id: Feat-01
+  title: 交互模型
+  spec: null
+  status: Draft
+- func_id: 07-04-22
+  id: Feat-02
+  title: 事件处理链语义
+  spec: null
+  status: Draft
+- func_id: 07-04-23
+  id: Feat-01
+  title: 响应式断点
+  spec: null
+  status: Draft
+- func_id: 07-04-23
+  id: Feat-02
+  title: 自适应单位
+  spec: null
+  status: Draft
+- func_id: 07-04-23
+  id: Feat-03
+  title: 条件组件与断点重渲染
+  spec: null
+  status: Draft
+- func_id: 07-04-24
+  id: Feat-01
+  title: 主题与色彩模式
+  spec: null
+  status: Draft
+- func_id: 07-04-24
+  id: Feat-02
+  title: 扩展组件默认深浅色
+  spec: null
+  status: Draft
+- func_id: 07-04-25
+  id: Feat-01
+  title: Form 裁剪协议契约
+  spec: null
+  status: Draft
+- func_id: 07-04-25
+  id: Feat-02
+  title: 卡片场景与受限交互
+  spec: null
+  status: Draft
+- func_id: 07-04-25
+  id: Feat-03
+  title: 桌面卡片与动态更新
+  spec: null
+  status: Draft
+- func_id: 07-04-26
+  id: Feat-01
+  title: 错误码与异常行为契约
+  spec: null
+  status: Draft
+- func_id: 07-04-26
+  id: Feat-02
+  title: 维测可观测契约
+  spec: null
+  status: Draft
+- func_id: 07-04-26
+  id: Feat-03
+  title: 大数据打点
+  spec: null
+  status: Draft
+- func_id: 07-04-27
+  id: Feat-01
+  title: 通用能力
+  spec: null
+  status: Draft
+- func_id: 07-04-27
+  id: Feat-02
+  title: 展示能力
+  spec: null
+  status: Draft
+- func_id: 07-04-27
+  id: Feat-03
+  title: 交互能力
+  spec: null
+  status: Draft
+- func_id: 07-04-27
+  id: Feat-04
+  title: 绘制能力
+  spec: null
+  status: Draft
+- func_id: 07-04-28
+  id: Feat-01
+  title: 通用能力
+  spec: null
+  status: Draft
+- func_id: 07-04-28
+  id: Feat-02
+  title: 展示能力
+  spec: null
+  status: Draft
+- func_id: 07-04-28
+  id: Feat-03
+  title: 交互能力
+  spec: null
+  status: Draft
+- func_id: 07-04-28
+  id: Feat-04
+  title: 绘制能力
+  spec: null
+  status: Draft

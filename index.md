@@ -295,9 +295,34 @@
 | 07 前端层 | 03 自定义组件 | 05 自定义测量/布局 | `07-03-05` | `07-frontend/03-custom-components/05-custom-measure-layout/` | [design.md](07-frontend/03-custom-components/05-custom-measure-layout/design.md) | 1 |
 | 07 前端层 | 03 自定义组件 | 06 组件扩展 | `07-03-06` | `07-frontend/03-custom-components/06-component-extension/` | *待补充* | 0 |
 | 07 前端层 | 03 自定义组件 | 07 静态自定义组件状态相关 | `07-03-07` | `07-frontend/03-custom-components/07-static-custom-component-state/` | [design.md](07-frontend/03-custom-components/07-static-custom-component-state/design.md) | 0 |
-| 07 前端层 | 04 生成式UI | 01 A2UI标准协议 | `07-04-01` | `07-frontend/04-generative-ui/01-a2ui-standard-protocol/` | *待补充* | 0 |
-| 07 前端层 | 04 生成式UI | 02 A2UI扩展协议 | `07-04-02` | `07-frontend/04-generative-ui/02-a2ui-extension-protocol/` | *待补充* | 0 |
-| 07 前端层 | 04 生成式UI | 03 A2UI高级垂域组件 | `07-04-03` | `07-frontend/04-generative-ui/03-a2ui-advanced-domain-components/` | *待补充* | 0 |
+| 07 前端层 | 04 生成式UI | 01 基础框架与消息模型 | `07-04-01` | `07-frontend/04-generative-ui/01-protocol-core-message-model/` | *待补充* | 7 |
+| 07 前端层 | 04 生成式UI | 02 标准协议布局组件 | `07-04-02` | `07-frontend/04-generative-ui/02-a2ui-standard-layout-components/` | *待补充* | 3 |
+| 07 前端层 | 04 生成式UI | 03 标准协议展示组件 | `07-04-03` | `07-frontend/04-generative-ui/03-a2ui-standard-display-components/` | *待补充* | 4 |
+| 07 前端层 | 04 生成式UI | 04 标准协议交互组件 | `07-04-04` | `07-frontend/04-generative-ui/04-a2ui-standard-interaction-components/` | *待补充* | 6 |
+| 07 前端层 | 04 生成式UI | 05 标准协议容器组件 | `07-04-05` | `07-frontend/04-generative-ui/05-a2ui-standard-container-components/` | *待补充* | 3 |
+| 07 前端层 | 04 生成式UI | 06 标准协议高级组件 | `07-04-06` | `07-frontend/04-generative-ui/06-a2ui-standard-advanced-components/` | *待补充* | 2 |
+| 07 前端层 | 04 生成式UI | 07 标准协议校验函数 | `07-04-07` | `07-frontend/04-generative-ui/07-a2ui-standard-validation-functions/` | *待补充* | 5 |
+| 07 前端层 | 04 生成式UI | 08 标准协议格式化函数 | `07-04-08` | `07-frontend/04-generative-ui/08-a2ui-standard-format-functions/` | *待补充* | 5 |
+| 07 前端层 | 04 生成式UI | 09 标准协议逻辑与系统函数 | `07-04-09` | `07-frontend/04-generative-ui/09-a2ui-standard-logic-system-functions/` | *待补充* | 4 |
+| 07 前端层 | 04 生成式UI | 10 扩展协议布局组件 | `07-04-10` | `07-frontend/04-generative-ui/10-a2ui-extended-layout-components/` | *待补充* | 5 |
+| 07 前端层 | 04 生成式UI | 11 扩展协议展示组件 | `07-04-11` | `07-frontend/04-generative-ui/11-a2ui-extended-display-components/` | *待补充* | 4 |
+| 07 前端层 | 04 生成式UI | 12 扩展协议交互组件 | `07-04-12` | `07-frontend/04-generative-ui/12-a2ui-extended-interaction-components/` | *待补充* | 7 |
+| 07 前端层 | 04 生成式UI | 13 扩展协议容器组件 | `07-04-13` | `07-frontend/04-generative-ui/13-a2ui-extended-container-components/` | *待补充* | 4 |
+| 07 前端层 | 04 生成式UI | 14 扩展协议绘制组件 | `07-04-14` | `07-frontend/04-generative-ui/14-a2ui-extended-drawing-components/` | *待补充* | 0 |
+| 07 前端层 | 04 生成式UI | 15 扩展协议条件组件 | `07-04-15` | `07-frontend/04-generative-ui/15-a2ui-extended-conditional-components/` | *待补充* | 1 |
+| 07 前端层 | 04 生成式UI | 16 扩展协议内置函数 | `07-04-16` | `07-frontend/04-generative-ui/16-a2ui-extended-functions/` | *待补充* | 8 |
+| 07 前端层 | 04 生成式UI | 17 子组件模板 | `07-04-17` | `07-frontend/04-generative-ui/17-child-component-template/` | *待补充* | 1 |
+| 07 前端层 | 04 生成式UI | 18 通用样式与属性 | `07-04-18` | `07-frontend/04-generative-ui/18-common-styles-attributes/` | *待补充* | 5 |
+| 07 前端层 | 04 生成式UI | 19 通用事件 | `07-04-19` | `07-frontend/04-generative-ui/19-common-events/` | *待补充* | 2 |
+| 07 前端层 | 04 生成式UI | 20 自定义组件与自定义函数 | `07-04-20` | `07-frontend/04-generative-ui/20-custom-components-functions/` | *待补充* | 2 |
+| 07 前端层 | 04 生成式UI | 21 动态数据绑定 | `07-04-21` | `07-frontend/04-generative-ui/21-dynamic-data-binding/` | *待补充* | 4 |
+| 07 前端层 | 04 生成式UI | 22 交互行为链 | `07-04-22` | `07-frontend/04-generative-ui/22-interaction-action-chain/` | *待补充* | 2 |
+| 07 前端层 | 04 生成式UI | 23 多设备自适应 | `07-04-23` | `07-frontend/04-generative-ui/23-multi-device-adaptation/` | *待补充* | 3 |
+| 07 前端层 | 04 生成式UI | 24 主题与深浅色 | `07-04-24` | `07-frontend/04-generative-ui/24-theme-color-mode/` | *待补充* | 2 |
+| 07 前端层 | 04 生成式UI | 25 生成式卡片 | `07-04-25` | `07-frontend/04-generative-ui/25-generative-form/` | *待补充* | 3 |
+| 07 前端层 | 04 生成式UI | 26 异常处理与DFX | `07-04-26` | `07-frontend/04-generative-ui/26-error-dfx/` | *待补充* | 3 |
+| 07 前端层 | 04 生成式UI | 27 扩展域-1 | `07-04-27` | `07-frontend/04-generative-ui/27-extension-domain-1/` | *待补充* | 4 |
+| 07 前端层 | 04 生成式UI | 28 扩展域-2 | `07-04-28` | `07-frontend/04-generative-ui/28-extension-domain-2/` | *待补充* | 4 |
 | 07 前端层 | 05 渲染控制 | 01 渲染控制语法 | `07-05-01` | `07-frontend/05-render-control/01-render-control-syntax/` | [design.md](07-frontend/05-render-control/01-render-control-syntax/design.md) | 3 |
 | 07 前端层 | 05 渲染控制 | 02 LazyForEach | `07-05-02` | `07-frontend/05-render-control/02-lazy-foreach/` | [design.md](07-frontend/05-render-control/02-lazy-foreach/design.md) | 5 |
 | 07 前端层 | 05 渲染控制 | 03 Repeat | `07-05-03` | `07-frontend/05-render-control/03-repeat/` | [design.md](07-frontend/05-render-control/03-repeat/design.md) | 4 |
@@ -2321,20 +2346,248 @@
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
 
-### 07-04-01 A2UI标准协议
+### 07-04-01 基础框架与消息模型
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | 消息类型与协议版本契约 | *待补充* | Draft |
+| Feat-02 | Surface 生命周期与 catalogId 匹配 | *待补充* | Draft |
+| Feat-03 | 组件描述与增量更新 | *待补充* | Draft |
+| Feat-04 | 数据模型更新与绑定刷新 | *待补充* | Draft |
+| Feat-05 | 流式渐进渲染 | *待补充* | Draft |
+| Feat-06 | 多 Surface 管理 | *待补充* | Draft |
+| Feat-07 | Catalog 与能力查询 | *待补充* | Draft |
+
+### 07-04-02 标准协议布局组件
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | Row 组件 | *待补充* | Draft |
+| Feat-02 | Column 组件 | *待补充* | Draft |
+| Feat-03 | List 组件 | *待补充* | Draft |
+
+### 07-04-03 标准协议展示组件
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | Text 组件 | *待补充* | Draft |
+| Feat-02 | Image 组件 | *待补充* | Draft |
+| Feat-03 | Icon 组件 | *待补充* | Draft |
+| Feat-04 | Divider 组件 | *待补充* | Draft |
+
+### 07-04-04 标准协议交互组件
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | Button 组件 | *待补充* | Draft |
+| Feat-02 | TextField 组件 | *待补充* | Draft |
+| Feat-03 | CheckBox 组件 | *待补充* | Draft |
+| Feat-04 | Slider 组件 | *待补充* | Draft |
+| Feat-05 | DateTimeInput 组件 | *待补充* | Draft |
+| Feat-06 | ChoicePicker 组件 | *待补充* | Draft |
+
+### 07-04-05 标准协议容器组件
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | Card 组件 | *待补充* | Draft |
+| Feat-02 | Modal 组件 | *待补充* | Draft |
+| Feat-03 | Tabs 组件 | *待补充* | Draft |
+
+### 07-04-06 标准协议高级组件
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | Video 组件 | *待补充* | Draft |
+| Feat-02 | AudioPlayer 组件 | *待补充* | Draft |
+
+### 07-04-07 标准协议校验函数
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | required 函数 | *待补充* | Draft |
+| Feat-02 | regex 函数 | *待补充* | Draft |
+| Feat-03 | length 函数 | *待补充* | Draft |
+| Feat-04 | numeric 函数 | *待补充* | Draft |
+| Feat-05 | email 函数 | *待补充* | Draft |
+
+### 07-04-08 标准协议格式化函数
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | formatString 函数 | *待补充* | Draft |
+| Feat-02 | formatNumber 函数 | *待补充* | Draft |
+| Feat-03 | formatCurrency 函数 | *待补充* | Draft |
+| Feat-04 | formatDate 函数 | *待补充* | Draft |
+| Feat-05 | pluralize 函数 | *待补充* | Draft |
+
+### 07-04-09 标准协议逻辑与系统函数
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | and 函数 | *待补充* | Draft |
+| Feat-02 | or 函数 | *待补充* | Draft |
+| Feat-03 | not 函数 | *待补充* | Draft |
+| Feat-04 | openUrl 函数 | *待补充* | Draft |
+
+### 07-04-10 扩展协议布局组件
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | Row 组件 | *待补充* | Draft |
+| Feat-02 | Column 组件 | *待补充* | Draft |
+| Feat-03 | List 组件 | *待补充* | Draft |
+| Feat-04 | Stack 组件 | *待补充* | Draft |
+| Feat-05 | Grid 组件 | *待补充* | Draft |
+
+### 07-04-11 扩展协议展示组件
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | Text 组件 | *待补充* | Draft |
+| Feat-02 | Image 组件 | *待补充* | Draft |
+| Feat-03 | Divider 组件 | *待补充* | Draft |
+| Feat-04 | Progress 组件 | *待补充* | Draft |
+
+### 07-04-12 扩展协议交互组件
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | Button 组件 | *待补充* | Draft |
+| Feat-02 | TextInput 组件 | *待补充* | Draft |
+| Feat-03 | Select 组件 | *待补充* | Draft |
+| Feat-04 | Toggle 组件 | *待补充* | Draft |
+| Feat-05 | Radio 组件 | *待补充* | Draft |
+| Feat-06 | Checkbox 组件 | *待补充* | Draft |
+| Feat-07 | CheckboxGroup 组件 | *待补充* | Draft |
+
+### 07-04-13 扩展协议容器组件
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | Tabs 组件 | *待补充* | Draft |
+| Feat-02 | TabContent 组件 | *待补充* | Draft |
+| Feat-03 | NavContainer 组件 | *待补充* | Draft |
+| Feat-04 | Web 组件 | *待补充* | Draft |
+
+### 07-04-14 扩展协议绘制组件
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
 
-### 07-04-02 A2UI扩展协议
+### 07-04-15 扩展协议条件组件
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | If 组件 | *待补充* | Draft |
 
-### 07-04-03 A2UI高级垂域组件
+### 07-04-16 扩展协议内置函数
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | getRadioValue 函数 | *待补充* | Draft |
+| Feat-02 | getCheckboxGroupValues 函数 | *待补充* | Draft |
+| Feat-03 | getToggleValue 函数 | *待补充* | Draft |
+| Feat-04 | getSelectValue 函数 | *待补充* | Draft |
+| Feat-05 | break 函数 | *待补充* | Draft |
+| Feat-06 | setDataModel 函数 | *待补充* | Draft |
+| Feat-07 | setAttributes 函数 | *待补充* | Draft |
+| Feat-08 | navigate 函数 | *待补充* | Draft |
+
+### 07-04-17 子组件模板
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | 子组件模板声明与实例化 | *待补充* | Draft |
+
+### 07-04-18 通用样式与属性
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | 尺寸与布局样式 | *待补充* | Draft |
+| Feat-02 | 间距与边框样式 | *待补充* | Draft |
+| Feat-03 | 背景与颜色样式 | *待补充* | Draft |
+| Feat-04 | 视效样式 | *待补充* | Draft |
+| Feat-05 | 显示与裁切 | *待补充* | Draft |
+
+### 07-04-19 通用事件
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | 通用事件模型与触发契约 | *待补充* | Draft |
+| Feat-02 | 事件数据与分发 | *待补充* | Draft |
+
+### 07-04-20 自定义组件与自定义函数
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | 自定义组件注册与使用 | *待补充* | Draft |
+| Feat-02 | 自定义函数注册与调用 | *待补充* | Draft |
+
+### 07-04-21 动态数据绑定
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | DataModel 读写契约 | *待补充* | Draft |
+| Feat-02 | 路径绑定 | *待补充* | Draft |
+| Feat-03 | 表达式绑定 | *待补充* | Draft |
+| Feat-04 | 变量系统 | *待补充* | Draft |
+
+### 07-04-22 交互行为链
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | 交互模型 | *待补充* | Draft |
+| Feat-02 | 事件处理链语义 | *待补充* | Draft |
+
+### 07-04-23 多设备自适应
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | 响应式断点 | *待补充* | Draft |
+| Feat-02 | 自适应单位 | *待补充* | Draft |
+| Feat-03 | 条件组件与断点重渲染 | *待补充* | Draft |
+
+### 07-04-24 主题与深浅色
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | 主题与色彩模式 | *待补充* | Draft |
+| Feat-02 | 扩展组件默认深浅色 | *待补充* | Draft |
+
+### 07-04-25 生成式卡片
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | Form 裁剪协议契约 | *待补充* | Draft |
+| Feat-02 | 卡片场景与受限交互 | *待补充* | Draft |
+| Feat-03 | 桌面卡片与动态更新 | *待补充* | Draft |
+
+### 07-04-26 异常处理与DFX
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | 错误码与异常行为契约 | *待补充* | Draft |
+| Feat-02 | 维测可观测契约 | *待补充* | Draft |
+| Feat-03 | 大数据打点 | *待补充* | Draft |
+
+### 07-04-27 扩展域-1
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | 通用能力 | *待补充* | Draft |
+| Feat-02 | 展示能力 | *待补充* | Draft |
+| Feat-03 | 交互能力 | *待补充* | Draft |
+| Feat-04 | 绘制能力 | *待补充* | Draft |
+
+### 07-04-28 扩展域-2
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | 通用能力 | *待补充* | Draft |
+| Feat-02 | 展示能力 | *待补充* | Draft |
+| Feat-03 | 交互能力 | *待补充* | Draft |
+| Feat-04 | 绘制能力 | *待补充* | Draft |
 
 ### 07-05-01 渲染控制语法
 
