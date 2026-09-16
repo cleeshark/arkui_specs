@@ -57,7 +57,7 @@
 | 03 引擎框架层 | 07 无障碍机制 | 01 无障碍能力 | `03-07-01` | `03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/` | [design.md](03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/design.md) | 8 |
 | 03 引擎框架层 | 07 无障碍机制 | 02 Inspector | `03-07-02` | `03-engine-framework/07-accessibility-mechanism/02-inspector/` | [design.md](03-engine-framework/07-accessibility-mechanism/02-inspector/design.md) | 2 |
 | 03 引擎框架层 | 08 DFX | 01 日志 | `03-08-01` | `03-engine-framework/08-dfx-foundation/01-logging/` | [design.md](03-engine-framework/08-dfx-foundation/01-logging/design.md) | 3 |
-| 03 引擎框架层 | 08 DFX | 02 内存管理 | `03-08-02` | `03-engine-framework/08-dfx-foundation/02-memory-management/` | [design.md](03-engine-framework/08-dfx-foundation/02-memory-management/design.md) | 4 |
+| 03 引擎框架层 | 08 DFX | 02 内存管理 | `03-08-02` | `03-engine-framework/08-dfx-foundation/02-memory-management/` | [design.md](03-engine-framework/08-dfx-foundation/02-memory-management/design.md) | 7 |
 | 03 引擎框架层 | 08 DFX | 03 Trace打点 | `03-08-03` | `03-engine-framework/08-dfx-foundation/03-trace/` | [design.md](03-engine-framework/08-dfx-foundation/03-trace/design.md) | 3 |
 | 03 引擎框架层 | 08 DFX | 04 Dump机制 | `03-08-04` | `03-engine-framework/08-dfx-foundation/04-dump-mechanism/` | [design.md](03-engine-framework/08-dfx-foundation/04-dump-mechanism/design.md) | 4 |
 | 03 引擎框架层 | 08 DFX | 05 Benchmark | `03-08-05` | `03-engine-framework/08-dfx-foundation/05-benchmark/` | *待补充* | 0 |
@@ -578,6 +578,9 @@
 | Feat-02 | MemoryMonitor调试分配监控 | [Feat-02-memory-monitor-spec.md](03-engine-framework/08-dfx-foundation/02-memory-management/Feat-02-memory-monitor-spec.md) | Baselined |
 | Feat-03 | NG MemoryManager内存回收管线 | [Feat-03-ng-memory-manager-recycle-spec.md](03-engine-framework/08-dfx-foundation/02-memory-management/Feat-03-ng-memory-manager-recycle-spec.md) | Baselined |
 | Feat-04 | 系统内存压力监听与全局GC | [Feat-04-memory-pressure-global-gc-spec.md](03-engine-framework/08-dfx-foundation/02-memory-management/Feat-04-memory-pressure-global-gc-spec.md) | Baselined |
+| Feat-05 | ArkUI 内存静态分析 Skill（③热点分析 + ④用例构造指南） | *待补充* | Draft |
+| Feat-06 | ArkUI 内存分析脚本工具（①定性定量+可视化 + ②Top10） | *待补充* | Draft |
+| Feat-07 | Debug debugline 内存溯源（engine 加 debugline + 扩展 P2 可视化） | *待补充* | Draft |
 
 ### 03-08-03 Trace打点
 
