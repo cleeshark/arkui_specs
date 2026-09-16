@@ -57,7 +57,7 @@
 | 03 引擎框架层 | 07 无障碍机制 | 01 无障碍能力 | `03-07-01` | `03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/` | [design.md](03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/design.md) | 8 |
 | 03 引擎框架层 | 07 无障碍机制 | 02 Inspector | `03-07-02` | `03-engine-framework/07-accessibility-mechanism/02-inspector/` | [design.md](03-engine-framework/07-accessibility-mechanism/02-inspector/design.md) | 2 |
 | 03 引擎框架层 | 08 DFX | 01 日志 | `03-08-01` | `03-engine-framework/08-dfx-foundation/01-logging/` | [design.md](03-engine-framework/08-dfx-foundation/01-logging/design.md) | 3 |
-| 03 引擎框架层 | 08 DFX | 02 内存管理 | `03-08-02` | `03-engine-framework/08-dfx-foundation/02-memory-management/` | [design.md](03-engine-framework/08-dfx-foundation/02-memory-management/design.md) | 7 |
+| 03 引擎框架层 | 08 DFX | 02 内存管理 | `03-08-02` | `03-engine-framework/08-dfx-foundation/02-memory-management/` | [design.md](03-engine-framework/08-dfx-foundation/02-memory-management/design.md) | 4 |
 | 03 引擎框架层 | 08 DFX | 03 Trace打点 | `03-08-03` | `03-engine-framework/08-dfx-foundation/03-trace/` | [design.md](03-engine-framework/08-dfx-foundation/03-trace/design.md) | 3 |
 | 03 引擎框架层 | 08 DFX | 04 Dump机制 | `03-08-04` | `03-engine-framework/08-dfx-foundation/04-dump-mechanism/` | [design.md](03-engine-framework/08-dfx-foundation/04-dump-mechanism/design.md) | 4 |
 | 03 引擎框架层 | 08 DFX | 05 Benchmark | `03-08-05` | `03-engine-framework/08-dfx-foundation/05-benchmark/` | *待补充* | 0 |
@@ -328,6 +328,7 @@
 | 09 开发者工具 | 06 AI Agent Skill | 02 深浅色功能接入和高性能适配Skill | `09-06-02` | `09-developer-tools/06-agent-skills/02-dark-light-mode/` | *待补充* | 1 |
 | 09 开发者工具 | 06 AI Agent Skill | 03 ArkUI通用无障碍快速接入Skill | `09-06-03` | `09-developer-tools/06-agent-skills/03-accessibility-integration/` | *待补充* | 1 |
 | 09 开发者工具 | 06 AI Agent Skill | 04 ArkUI命令式框架快速接入Skill | `09-06-04` | `09-developer-tools/06-agent-skills/04-imperative-framework/` | *待补充* | 1 |
+| 09 开发者工具 | 07 内存分析工具 | 01 ArkUI 内存分析DFX工具 | `09-07-01` | `09-developer-tools/07-memory-analysis-tools/01-memory-dfx/` | *待补充* | 3 |
 | 10 产品化定制 | 01 穿戴 | 01 弧形组件 | `10-01-01` | `10-product-customization/01-wearable/01-arc-component/` | [design.md](10-product-customization/01-wearable/01-arc-component/design.md) | 2 |
 
 > 新增功能域时请在此表中按编号顺序添加行；未创建的设计文档以 `待补充` 标记。
@@ -578,9 +579,6 @@
 | Feat-02 | MemoryMonitor调试分配监控 | [Feat-02-memory-monitor-spec.md](03-engine-framework/08-dfx-foundation/02-memory-management/Feat-02-memory-monitor-spec.md) | Baselined |
 | Feat-03 | NG MemoryManager内存回收管线 | [Feat-03-ng-memory-manager-recycle-spec.md](03-engine-framework/08-dfx-foundation/02-memory-management/Feat-03-ng-memory-manager-recycle-spec.md) | Baselined |
 | Feat-04 | 系统内存压力监听与全局GC | [Feat-04-memory-pressure-global-gc-spec.md](03-engine-framework/08-dfx-foundation/02-memory-management/Feat-04-memory-pressure-global-gc-spec.md) | Baselined |
-| Feat-05 | ArkUI 内存静态分析 Skill（③热点分析 + ④用例构造指南） | *待补充* | Draft |
-| Feat-06 | ArkUI 内存分析脚本工具（①定性定量+可视化 + ②Top10） | *待补充* | Draft |
-| Feat-07 | Debug debugline 内存溯源（engine 加 debugline + 扩展 P2 可视化） | *待补充* | Draft |
 
 ### 03-08-03 Trace打点
 
@@ -2507,6 +2505,14 @@
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
 | Feat-01 | ArkUI命令式框架快速接入Skill | *待补充* | Draft |
+
+### 09-07-01 ArkUI 内存分析DFX工具
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | ArkUI 内存静态分析 Skill（③热点分析 + ④用例构造指南） | *待补充* | Draft |
+| Feat-02 | ArkUI 内存分析脚本工具（①定性定量+可视化 + ②Top10） | *待补充* | Draft |
+| Feat-03 | Debug debugline 内存溯源（engine 加 debugline + 扩展 P2 可视化） | *待补充* | Draft |
 
 ### 10-01-01 弧形组件
 

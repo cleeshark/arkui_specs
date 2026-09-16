@@ -174,21 +174,6 @@ features:
   title: 系统内存压力监听与全局GC
   spec: 03-engine-framework/08-dfx-foundation/02-memory-management/Feat-04-memory-pressure-global-gc-spec.md
   status: Baselined
-- func_id: 03-08-02
-  id: Feat-05
-  title: ArkUI 内存静态分析 Skill（③热点分析 + ④用例构造指南）
-  spec: null
-  status: Draft
-- func_id: 03-08-02
-  id: Feat-06
-  title: ArkUI 内存分析脚本工具（①定性定量+可视化 + ②Top10）
-  spec: null
-  status: Draft
-- func_id: 03-08-02
-  id: Feat-07
-  title: Debug debugline 内存溯源（engine 加 debugline + 扩展 P2 可视化）
-  spec: null
-  status: Draft
 - func_id: 03-08-03
   id: Feat-01
   title: ACE Trace核心框架与FrameTrace适配
@@ -3237,6 +3222,21 @@ features:
 - func_id: 09-06-04
   id: Feat-01
   title: ArkUI命令式框架快速接入Skill
+  spec: null
+  status: Draft
+- func_id: 09-07-01
+  id: Feat-01
+  title: ArkUI 内存静态分析 Skill（③热点分析 + ④用例构造指南）
+  spec: null
+  status: Draft
+- func_id: 09-07-01
+  id: Feat-02
+  title: ArkUI 内存分析脚本工具（①定性定量+可视化 + ②Top10）
+  spec: null
+  status: Draft
+- func_id: 09-07-01
+  id: Feat-03
+  title: Debug debugline 内存溯源（engine 加 debugline + 扩展 P2 可视化）
   spec: null
   status: Draft
 - func_id: 04-26-01
