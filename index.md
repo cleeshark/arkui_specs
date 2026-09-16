@@ -49,7 +49,7 @@
 | 03 引擎框架层 | 03 资源主题 | 02 主题分层访问 | `03-03-02` | `03-engine-framework/03-resource-theme/02-theme-layered-access/` | [design.md](03-engine-framework/03-resource-theme/02-theme-layered-access/design.md) | 1 |
 | 03 引擎框架层 | 03 资源主题 | 03 Theme框架 | `03-03-03` | `03-engine-framework/03-resource-theme/03-theme-framework/` | [design.md](03-engine-framework/03-resource-theme/03-theme-framework/design.md) | 2 |
 | 03 引擎框架层 | 03 资源主题 | 04 资源动态切换 | `03-03-04` | `03-engine-framework/03-resource-theme/04-resource-dynamic-switching/` | [design.md](03-engine-framework/03-resource-theme/04-resource-dynamic-switching/design.md) | 1 |
-| 03 引擎框架层 | 04 事件框架 | 01 事件基础框架 | `03-04-01` | `03-engine-framework/04-event-framework/01-event-base-framework/` | [design.md](03-engine-framework/04-event-framework/01-event-base-framework/design.md) | 5 |
+| 03 引擎框架层 | 04 事件框架 | 01 事件基础框架 | `03-04-01` | `03-engine-framework/04-event-framework/01-event-base-framework/` | [design.md](03-engine-framework/04-event-framework/01-event-base-framework/design.md) | 6 |
 | 03 引擎框架层 | 04 事件框架 | 02 拖拽框架 | `03-04-02` | `03-engine-framework/04-event-framework/02-drag-framework/` | [design.md](03-engine-framework/04-event-framework/02-drag-framework/design.md) | 6 |
 | 03 引擎框架层 | 05 窗口机制 | 01 窗口机制 | `03-05-01` | `03-engine-framework/05-window-mechanism/01-window-mechanism/` | [design.md](03-engine-framework/05-window-mechanism/01-window-mechanism/design.md) | 4 |
 | 03 引擎框架层 | 05 窗口机制 | 02 子窗机制 | `03-05-02` | `03-engine-framework/05-window-mechanism/02-subwindow-mechanism/` | [design.md](03-engine-framework/05-window-mechanism/02-subwindow-mechanism/design.md) | 3 |
@@ -270,7 +270,7 @@
 | 07 前端层 | 01 ArkTS高级组件 | 21 SubHeader | `07-01-21` | `07-frontend/01-arkts-advanced-components/21-sub-header/` | *待补充* | 0 |
 | 07 前端层 | 01 ArkTS高级组件 | 22 SwipeRefresher | `07-01-22` | `07-frontend/01-arkts-advanced-components/22-swipe-refresher/` | *待补充* | 0 |
 | 07 前端层 | 01 ArkTS高级组件 | 23 TabTitleBar | `07-01-23` | `07-frontend/01-arkts-advanced-components/23-tab-title-bar/` | *待补充* | 0 |
-| 07 前端层 | 01 ArkTS高级组件 | 24 ToolBar | `07-01-24` | `07-frontend/01-arkts-advanced-components/24-tool-bar/` | *待补充* | 0 |
+| 07 前端层 | 01 ArkTS高级组件 | 24 ToolBar | `07-01-24` | `07-frontend/01-arkts-advanced-components/24-tool-bar/` | *待补充* | 1 |
 | 07 前端层 | 01 ArkTS高级组件 | 25 TreeView | `07-01-25` | `07-frontend/01-arkts-advanced-components/25-tree-view/` | *待补充* | 0 |
 | 07 前端层 | 01 ArkTS高级组件 | 26 FoldSplitContainer | `07-01-26` | `07-frontend/01-arkts-advanced-components/26-fold-split-container/` | *待补充* | 0 |
 | 07 前端层 | 01 ArkTS高级组件 | 27 Charts图表 | `07-01-27` | `07-frontend/01-arkts-advanced-components/27-charts/` | *待补充* | 1 |
@@ -533,6 +533,7 @@
 | Feat-03 | 输入事件分发与采样管线 | [Feat-03-input-dispatch-and-sampling-pipeline-spec.md](03-engine-framework/04-event-framework/01-event-base-framework/Feat-03-input-dispatch-and-sampling-pipeline-spec.md) | Baselined |
 | Feat-04 | 手势仲裁与响应控制 | [Feat-04-gesture-referee-and-response-control-spec.md](03-engine-framework/04-event-framework/01-event-base-framework/Feat-04-gesture-referee-and-response-control-spec.md) | Baselined |
 | Feat-05 | 事件诊断与维测 | [Feat-05-event-diagnostics-and-inspection-spec.md](03-engine-framework/04-event-framework/01-event-base-framework/Feat-05-event-diagnostics-and-inspection-spec.md) | Baselined |
+| Feat-06 | 握姿和操作位置感知与分发 | *待补充* | Draft |
 
 ### 03-04-02 拖拽框架
 
@@ -2179,6 +2180,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | 高级组件工具栏 | *待补充* | Draft |
 
 ### 07-01-25 TreeView
 

@@ -474,6 +474,11 @@ features:
   title: 事件诊断与维测
   spec: 03-engine-framework/04-event-framework/01-event-base-framework/Feat-05-event-diagnostics-and-inspection-spec.md
   status: Baselined
+- func_id: 03-04-01
+  id: Feat-06
+  title: 握姿和操作位置感知与分发
+  spec: null
+  status: Draft
 - func_id: 04-04-01
   id: Feat-01
   title: 触摸回调与传播控制
@@ -3788,5 +3793,10 @@ features:
 - func_id: 07-04-28
   id: Feat-04
   title: 绘制能力
+  spec: null
+  status: Draft
+- func_id: 07-01-24
+  id: Feat-01
+  title: 高级组件工具栏
   spec: null
   status: Draft
