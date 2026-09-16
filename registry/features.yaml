@@ -209,6 +209,11 @@ features:
   title: 可访问性Dump与事件Dump
   spec: 03-engine-framework/08-dfx-foundation/04-dump-mechanism/Feat-04-accessibility-event-dump-spec.md
   status: Baselined
+- func_id: 03-08-04
+  id: Feat-05
+  title: 无障碍树Dump属性信息获取
+  spec: null
+  status: Draft
 - func_id: 03-08-06
   id: Feat-01
   title: 布局边界显示调试能力

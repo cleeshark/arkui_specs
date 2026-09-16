@@ -59,7 +59,7 @@
 | 03 引擎框架层 | 08 DFX | 01 日志 | `03-08-01` | `03-engine-framework/08-dfx-foundation/01-logging/` | [design.md](03-engine-framework/08-dfx-foundation/01-logging/design.md) | 3 |
 | 03 引擎框架层 | 08 DFX | 02 内存管理 | `03-08-02` | `03-engine-framework/08-dfx-foundation/02-memory-management/` | [design.md](03-engine-framework/08-dfx-foundation/02-memory-management/design.md) | 4 |
 | 03 引擎框架层 | 08 DFX | 03 Trace打点 | `03-08-03` | `03-engine-framework/08-dfx-foundation/03-trace/` | [design.md](03-engine-framework/08-dfx-foundation/03-trace/design.md) | 3 |
-| 03 引擎框架层 | 08 DFX | 04 Dump机制 | `03-08-04` | `03-engine-framework/08-dfx-foundation/04-dump-mechanism/` | [design.md](03-engine-framework/08-dfx-foundation/04-dump-mechanism/design.md) | 4 |
+| 03 引擎框架层 | 08 DFX | 04 Dump机制 | `03-08-04` | `03-engine-framework/08-dfx-foundation/04-dump-mechanism/` | [design.md](03-engine-framework/08-dfx-foundation/04-dump-mechanism/design.md) | 5 |
 | 03 引擎框架层 | 08 DFX | 05 Benchmark | `03-08-05` | `03-engine-framework/08-dfx-foundation/05-benchmark/` | *待补充* | 0 |
 | 03 引擎框架层 | 08 DFX | 06 布局边界显示 | `03-08-06` | `03-engine-framework/08-dfx-foundation/06-layout-boundary-display/` | [design.md](03-engine-framework/08-dfx-foundation/06-layout-boundary-display/design.md) | 1 |
 | 03 引擎框架层 | 09 UISession | 01 UISession 服务 | `03-09-01` | `03-engine-framework/09-uisession/01-uisession-service/` | [design.md](03-engine-framework/09-uisession/01-uisession-service/design.md) | 10 |
@@ -595,6 +595,7 @@
 | Feat-02 | Inspector树形诊断系统 | [Feat-02-inspector-tree-diagnostic-spec.md](03-engine-framework/08-dfx-foundation/04-dump-mechanism/Feat-02-inspector-tree-diagnostic-spec.md) | Baselined |
 | Feat-03 | SimplifiedInspector与简化树 | [Feat-03-simplified-inspector-spec.md](03-engine-framework/08-dfx-foundation/04-dump-mechanism/Feat-03-simplified-inspector-spec.md) | Baselined |
 | Feat-04 | 可访问性Dump与事件Dump | [Feat-04-accessibility-event-dump-spec.md](03-engine-framework/08-dfx-foundation/04-dump-mechanism/Feat-04-accessibility-event-dump-spec.md) | Baselined |
+| Feat-05 | 无障碍树Dump属性信息获取 | *待补充* | Draft |
 
 ### 03-08-05 Benchmark
 
