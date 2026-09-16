@@ -203,7 +203,7 @@
 | 05 组件层 | 09 文本类组件 | 01 Marquee | `05-09-01` | `05-ui-components/09-text-components/01-marquee/` | [design.md](05-ui-components/09-text-components/01-marquee/design.md) | 3 |
 | 05 组件层 | 09 文本类组件 | 02 RichEditor | `05-09-02` | `05-ui-components/09-text-components/02-rich-editor/` | [design.md](05-ui-components/09-text-components/02-rich-editor/design.md) | 9 |
 | 05 组件层 | 09 文本类组件 | 03 Search | `05-09-03` | `05-ui-components/09-text-components/03-search/` | [design.md](05-ui-components/09-text-components/03-search/design.md) | 7 |
-| 05 组件层 | 09 文本类组件 | 04 Text | `05-09-04` | `05-ui-components/09-text-components/04-text/` | [design.md](05-ui-components/09-text-components/04-text/design.md) | 7 |
+| 05 组件层 | 09 文本类组件 | 04 Text | `05-09-04` | `05-ui-components/09-text-components/04-text/` | [design.md](05-ui-components/09-text-components/04-text/design.md) | 8 |
 | 05 组件层 | 09 文本类组件 | 05 TextArea | `05-09-05` | `05-ui-components/09-text-components/05-text-area/` | [design.md](05-ui-components/09-text-components/05-text-area/design.md) | 6 |
 | 05 组件层 | 09 文本类组件 | 06 Span类 | `05-09-06` | `05-ui-components/09-text-components/06-span-components/` | [design.md](05-ui-components/09-text-components/06-span-components/design.md) | 4 |
 | 05 组件层 | 09 文本类组件 | 07 SymbolGlyph | `05-09-07` | `05-ui-components/09-text-components/07-symbol-glyph/` | [design.md](05-ui-components/09-text-components/07-symbol-glyph/design.md) | 8 |
@@ -211,14 +211,14 @@
 | 05 组件层 | 09 文本类组件 | 09 HyperLink | `05-09-09` | `05-ui-components/09-text-components/09-hyperlink/` | [design.md](05-ui-components/09-text-components/09-hyperlink/design.md) | 3 |
 | 05 组件层 | 09 文本类组件 | 10 属性字符串 | `05-09-10` | `05-ui-components/09-text-components/10-attributed-string/` | [design.md](05-ui-components/09-text-components/10-attributed-string/design.md) | 9 |
 | 05 组件层 | 10 信息展示类组件 | 01 DataPanel | `05-10-01` | `05-ui-components/10-information-display-components/01-data-panel/` | [design.md](05-ui-components/10-information-display-components/01-data-panel/design.md) | 3 |
-| 05 组件层 | 10 信息展示类组件 | 02 Gauge | `05-10-02` | `05-ui-components/10-information-display-components/02-gauge/` | [design.md](05-ui-components/10-information-display-components/02-gauge/design.md) | 3 |
+| 05 组件层 | 10 信息展示类组件 | 02 Gauge | `05-10-02` | `05-ui-components/10-information-display-components/02-gauge/` | [design.md](05-ui-components/10-information-display-components/02-gauge/design.md) | 4 |
 | 05 组件层 | 10 信息展示类组件 | 03 LoadingProgress | `05-10-03` | `05-ui-components/10-information-display-components/03-loading-progress/` | [design.md](05-ui-components/10-information-display-components/03-loading-progress/design.md) | 1 |
 | 05 组件层 | 10 信息展示类组件 | 04 PatternLock | `05-10-04` | `05-ui-components/10-information-display-components/04-pattern-lock/` | [design.md](05-ui-components/10-information-display-components/04-pattern-lock/design.md) | 3 |
-| 05 组件层 | 10 信息展示类组件 | 05 Progress | `05-10-05` | `05-ui-components/10-information-display-components/05-progress/` | [design.md](05-ui-components/10-information-display-components/05-progress/design.md) | 1 |
+| 05 组件层 | 10 信息展示类组件 | 05 Progress | `05-10-05` | `05-ui-components/10-information-display-components/05-progress/` | [design.md](05-ui-components/10-information-display-components/05-progress/design.md) | 2 |
 | 05 组件层 | 10 信息展示类组件 | 06 QRCode | `05-10-06` | `05-ui-components/10-information-display-components/06-qr-code/` | [design.md](05-ui-components/10-information-display-components/06-qr-code/design.md) | 1 |
-| 05 组件层 | 10 信息展示类组件 | 07 TextClock | `05-10-07` | `05-ui-components/10-information-display-components/07-text-clock/` | [design.md](05-ui-components/10-information-display-components/07-text-clock/design.md) | 4 |
-| 05 组件层 | 10 信息展示类组件 | 08 TextTimer | `05-10-08` | `05-ui-components/10-information-display-components/08-text-timer/` | [design.md](05-ui-components/10-information-display-components/08-text-timer/design.md) | 4 |
-| 05 组件层 | 10 信息展示类组件 | 09 Badge | `05-10-09` | `05-ui-components/10-information-display-components/09-badge/` | [design.md](05-ui-components/10-information-display-components/09-badge/design.md) | 4 |
+| 05 组件层 | 10 信息展示类组件 | 07 TextClock | `05-10-07` | `05-ui-components/10-information-display-components/07-text-clock/` | [design.md](05-ui-components/10-information-display-components/07-text-clock/design.md) | 5 |
+| 05 组件层 | 10 信息展示类组件 | 08 TextTimer | `05-10-08` | `05-ui-components/10-information-display-components/08-text-timer/` | [design.md](05-ui-components/10-information-display-components/08-text-timer/design.md) | 5 |
+| 05 组件层 | 10 信息展示类组件 | 09 Badge | `05-10-09` | `05-ui-components/10-information-display-components/09-badge/` | [design.md](05-ui-components/10-information-display-components/09-badge/design.md) | 5 |
 | 05 组件层 | 10 信息展示类组件 | 10 Counter | `05-10-10` | `05-ui-components/10-information-display-components/10-counter/` | [design.md](05-ui-components/10-information-display-components/10-counter/design.md) | 3 |
 | 05 组件层 | 11 卡片框架组件 | 01 FormComponent | `05-11-01` | `05-ui-components/11-card-framework-components/01-form-component/` | *待补充* | 0 |
 | 05 组件层 | 11 卡片框架组件 | 02 FormLink | `05-11-02` | `05-ui-components/11-card-framework-components/02-form-link/` | *待补充* | 0 |
@@ -1697,6 +1697,7 @@
 | Feat-05 | 选择与复制 | [Feat-05-selection-copy-spec.md](05-ui-components/09-text-components/04-text/Feat-05-selection-copy-spec.md) | Baselined |
 | Feat-06 | 系统能力（数据检测、隐私、震感） | [Feat-06-system-capabilities-spec.md](05-ui-components/09-text-components/04-text/Feat-06-system-capabilities-spec.md) | Baselined |
 | Feat-07 | 事件回调 (onCopy/onWillCopy/onTextSelectionChange/onMarqueeStateChange) | [Feat-07-event-callbacks-spec.md](05-ui-components/09-text-components/04-text/Feat-07-event-callbacks-spec.md) | Baselined |
+| Feat-08 | 文本描边 (strokeWidth/strokeColor/strokeJoinStyle) | *待补充* | Draft |
 
 ### 05-09-05 TextArea
 
@@ -1783,6 +1784,7 @@
 | Feat-01 | Gauge 核心属性 | [Feat-01-gauge-core-spec.md](05-ui-components/10-information-display-components/02-gauge/Feat-01-gauge-core-spec.md) | Baselined |
 | Feat-02 | Gauge 高级配置 | [Feat-02-gauge-advanced-config-spec.md](05-ui-components/10-information-display-components/02-gauge/Feat-02-gauge-advanced-config-spec.md) | Baselined |
 | Feat-03 | Gauge 高级能力 | [Feat-03-gauge-advanced-spec.md](05-ui-components/10-information-display-components/02-gauge/Feat-03-gauge-advanced-spec.md) | Baselined |
+| Feat-04 | Gauge 国际化（i18n）本地化 | *待补充* | Draft |
 
 ### 05-10-03 LoadingProgress
 
@@ -1803,6 +1805,7 @@
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
 | Feat-01 | Progress 组件全量规格 | [Feat-01-progress-full-spec.md](05-ui-components/10-information-display-components/05-progress/Feat-01-progress-full-spec.md) | Baselined |
+| Feat-02 | Progress 国际化（i18n）本地化 | *待补充* | Draft |
 
 ### 05-10-06 QRCode
 
@@ -1818,6 +1821,7 @@
 | Feat-02 | TextClock 控制器与更新调度 | [Feat-02-controller-scheduling-spec.md](05-ui-components/10-information-display-components/07-text-clock/Feat-02-controller-scheduling-spec.md) | Baselined |
 | Feat-03 | TextClock 文本样式与 ContentModifier | [Feat-03-style-content-modifier-spec.md](05-ui-components/10-information-display-components/07-text-clock/Feat-03-style-content-modifier-spec.md) | Baselined |
 | Feat-04 | TextClock 事件、配置变更与组件化 | [Feat-04-events-config-componentization-spec.md](05-ui-components/10-information-display-components/07-text-clock/Feat-04-events-config-componentization-spec.md) | Baselined |
+| Feat-05 | TextClock 国际化（i18n）本地化 | *待补充* | Draft |
 
 ### 05-10-08 TextTimer
 
@@ -1827,6 +1831,7 @@
 | Feat-02 | TextTimer 控制器与事件 | [Feat-02-controller-events-spec.md](05-ui-components/10-information-display-components/08-text-timer/Feat-02-controller-events-spec.md) | Baselined |
 | Feat-03 | TextTimer 文本样式与 ContentModifier | [Feat-03-style-content-modifier-spec.md](05-ui-components/10-information-display-components/08-text-timer/Feat-03-style-content-modifier-spec.md) | Baselined |
 | Feat-04 | TextTimer 可见区优化与组件化 | [Feat-04-visibility-componentization-spec.md](05-ui-components/10-information-display-components/08-text-timer/Feat-04-visibility-componentization-spec.md) | Baselined |
+| Feat-05 | TextTimer 国际化（i18n）本地化 | *待补充* | Draft |
 
 ### 05-10-09 Badge
 
@@ -1836,6 +1841,7 @@
 | Feat-02 | Badge 位置与布局 | [Feat-02-position-layout-spec.md](05-ui-components/10-information-display-components/09-badge/Feat-02-position-layout-spec.md) | Baselined |
 | Feat-03 | Badge 样式、主题与老年模式 | [Feat-03-style-theme-aging-spec.md](05-ui-components/10-information-display-components/09-badge/Feat-03-style-theme-aging-spec.md) | Baselined |
 | Feat-04 | Badge 无障碍与组件化 | [Feat-04-accessibility-componentization-spec.md](05-ui-components/10-information-display-components/09-badge/Feat-04-accessibility-componentization-spec.md) | Baselined |
+| Feat-05 | Badge 国际化（i18n）本地化 | *待补充* | Draft |
 
 ### 05-10-10 Counter
 
