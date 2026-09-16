@@ -334,6 +334,11 @@ features:
   title: safeAreaInset 自定义内容组件级安全区
   spec: null
   status: Draft
+- func_id: 04-02-01
+  id: Feat-09
+  title: UIContext新增配置安全区避让、沉浸式策略统一接口
+  spec: null
+  status: Draft
 - func_id: 04-03-01
   id: Feat-01
   title: 尺寸属性 (width/height/size/constraintSize/padding/margin)
