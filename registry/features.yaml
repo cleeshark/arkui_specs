@@ -1549,6 +1549,11 @@ features:
   title: Charts图表基础框架
   spec: null
   status: Draft
+- func_id: 07-01-27
+  id: Feat-02
+  title: LineChart 折线图组件
+  spec: null
+  status: Draft
 - func_id: 05-03-02
   id: Feat-01
   title: AlphabetIndexer 创建与基础样式
