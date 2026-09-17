@@ -3795,6 +3795,41 @@ features:
   title: 绘制能力
   spec: null
   status: Draft
+- func_id: 08-01-12
+  id: Feat-01
+  title: 控件树采集
+  spec: null
+  status: Draft
+- func_id: 08-01-12
+  id: Feat-02
+  title: 图片采集
+  spec: null
+  status: Draft
+- func_id: 08-01-12
+  id: Feat-03
+  title: 文本采集
+  spec: null
+  status: Draft
+- func_id: 08-01-12
+  id: Feat-04
+  title: 交互手势感知
+  spec: null
+  status: Draft
+- func_id: 08-01-12
+  id: Feat-05
+  title: 非精确目标操控与按键注入
+  spec: null
+  status: Draft
+- func_id: 08-01-12
+  id: Feat-06
+  title: 控件直接操控注入
+  spec: null
+  status: Draft
+- func_id: 08-01-12
+  id: Feat-07
+  title: 页面变化感知
+  spec: null
+  status: Draft
 - func_id: 07-01-24
   id: Feat-01
   title: 高级组件工具栏

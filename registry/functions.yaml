@@ -4148,6 +4148,19 @@ functions:
   path: 08-ndk/01-node-c-api/11-layout-api/
   design: null
   status: active
+- id: 08-01-12
+  l1:
+    id: 08
+    title: NDK
+  l2:
+    id: '01'
+    title: Node C-API
+  l3:
+    id: '12'
+    title: UI感知与操控
+  path: 08-ndk/01-node-c-api/12-ui-perception-and-control/
+  design: null
+  status: active
 - id: 08-02-01
   l1:
     id: 08

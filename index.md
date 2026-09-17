@@ -339,6 +339,7 @@
 | 08 NDK | 01 Node C-API | 09 绘制DrawableDescriptor | `08-01-09` | `08-ndk/01-node-c-api/09-drawable-descriptor/` | *待补充* | 0 |
 | 08 NDK | 01 Node C-API | 10 组件扩展 | `08-01-10` | `08-ndk/01-node-c-api/10-component-extension/` | *待补充* | 0 |
 | 08 NDK | 01 Node C-API | 11 布局接口 | `08-01-11` | `08-ndk/01-node-c-api/11-layout-api/` | *待补充* | 0 |
+| 08 NDK | 01 Node C-API | 12 UI感知与操控 | `08-01-12` | `08-ndk/01-node-c-api/12-ui-perception-and-control/` | *待补充* | 7 |
 | 08 NDK | 02 XComponent C-API | 01 Native XComponent | `08-02-01` | `08-ndk/02-xcomponent-c-api/01-native-xcomponent/` | *待补充* | 0 |
 | 09 开发者工具 | 01 预览器 | 01 组件预览 | `09-01-01` | `09-developer-tools/01-previewer/01-component-preview/` | *待补充* | 0 |
 | 09 开发者工具 | 01 预览器 | 02 基础预览 | `09-01-02` | `09-developer-tools/01-previewer/02-basic-preview/` | *待补充* | 0 |
@@ -2692,6 +2693,18 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+
+### 08-01-12 UI感知与操控
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | 控件树采集 | *待补充* | Draft |
+| Feat-02 | 图片采集 | *待补充* | Draft |
+| Feat-03 | 文本采集 | *待补充* | Draft |
+| Feat-04 | 交互手势感知 | *待补充* | Draft |
+| Feat-05 | 非精确目标操控与按键注入 | *待补充* | Draft |
+| Feat-06 | 控件直接操控注入 | *待补充* | Draft |
+| Feat-07 | 页面变化感知 | *待补充* | Draft |
 
 ### 08-02-01 Native XComponent
 
