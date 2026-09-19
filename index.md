@@ -50,7 +50,7 @@
 | 03 引擎框架层 | 03 资源主题 | 03 Theme框架 | `03-03-03` | `03-engine-framework/03-resource-theme/03-theme-framework/` | [design.md](03-engine-framework/03-resource-theme/03-theme-framework/design.md) | 2 |
 | 03 引擎框架层 | 03 资源主题 | 04 资源动态切换 | `03-03-04` | `03-engine-framework/03-resource-theme/04-resource-dynamic-switching/` | [design.md](03-engine-framework/03-resource-theme/04-resource-dynamic-switching/design.md) | 1 |
 | 03 引擎框架层 | 04 事件框架 | 01 事件基础框架 | `03-04-01` | `03-engine-framework/04-event-framework/01-event-base-framework/` | [design.md](03-engine-framework/04-event-framework/01-event-base-framework/design.md) | 6 |
-| 03 引擎框架层 | 04 事件框架 | 02 拖拽框架 | `03-04-02` | `03-engine-framework/04-event-framework/02-drag-framework/` | [design.md](03-engine-framework/04-event-framework/02-drag-framework/design.md) | 6 |
+| 03 引擎框架层 | 04 事件框架 | 02 拖拽框架 | `03-04-02` | `03-engine-framework/04-event-framework/02-drag-framework/` | [design.md](03-engine-framework/04-event-framework/02-drag-framework/design.md) | 7 |
 | 03 引擎框架层 | 05 窗口机制 | 01 窗口机制 | `03-05-01` | `03-engine-framework/05-window-mechanism/01-window-mechanism/` | [design.md](03-engine-framework/05-window-mechanism/01-window-mechanism/design.md) | 4 |
 | 03 引擎框架层 | 05 窗口机制 | 02 子窗机制 | `03-05-02` | `03-engine-framework/05-window-mechanism/02-subwindow-mechanism/` | [design.md](03-engine-framework/05-window-mechanism/02-subwindow-mechanism/design.md) | 3 |
 | 03 引擎框架层 | 06 多实例管理 | 01 多实例管理 | `03-06-01` | `03-engine-framework/06-multi-instance-management/01-multi-instance-management/` | [design.md](03-engine-framework/06-multi-instance-management/01-multi-instance-management/design.md) | 1 |
@@ -548,6 +548,7 @@
 | Feat-04 | Drag preview overlay animation and visual effects | [Feat-04-drag-preview-overlay-animation-visual-effects-spec.md](03-engine-framework/04-event-framework/02-drag-framework/Feat-04-drag-preview-overlay-animation-visual-effects-spec.md) | Baselined |
 | Feat-05 | Drag hover detection | [Feat-05-drag-spring-loading-specialized-modes-spec.md](03-engine-framework/04-event-framework/02-drag-framework/Feat-05-drag-spring-loading-specialized-modes-spec.md) | Baselined |
 | Feat-06 | Drag multi-display device and container integration | [Feat-06-drag-multi-display-device-container-integration-spec.md](03-engine-framework/04-event-framework/02-drag-framework/Feat-06-drag-multi-display-device-container-integration-spec.md) | Baselined |
+| Feat-07 | DragEvent GetSummary file suffix NDK C API | *待补充* | Draft |
 
 ### 03-05-01 窗口机制
 

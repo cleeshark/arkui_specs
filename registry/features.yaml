@@ -2499,6 +2499,11 @@ features:
   title: Drag multi-display device and container integration
   spec: 03-engine-framework/04-event-framework/02-drag-framework/Feat-06-drag-multi-display-device-container-integration-spec.md
   status: Baselined
+- func_id: 03-04-02
+  id: Feat-07
+  title: DragEvent GetSummary file suffix NDK C API
+  spec: null
+  status: Draft
 - func_id: 04-04-07
   id: Feat-01
   title: Component drag source and target configuration
