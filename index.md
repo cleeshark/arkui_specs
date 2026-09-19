@@ -81,7 +81,7 @@
 | 04 通用能力层 | 04 通用事件 | 01 触摸事件 | `04-04-01` | `04-common-capability/04-common-events/01-touch-events/` | [design.md](04-common-capability/04-common-events/01-touch-events/design.md) | 3 |
 | 04 通用能力层 | 04 通用事件 | 02 按键事件 | `04-04-02` | `04-common-capability/04-common-events/02-key-events/` | [design.md](04-common-capability/04-common-events/02-key-events/design.md) | 2 |
 | 04 通用能力层 | 04 通用事件 | 03 事件分发和拦截 | `04-04-03` | `04-common-capability/04-common-events/03-event-dispatch-intercept/` | [design.md](04-common-capability/04-common-events/03-event-dispatch-intercept/design.md) | 4 |
-| 04 通用能力层 | 04 通用事件 | 04 组件组合键 | `04-04-04` | `04-common-capability/04-common-events/04-component-shortcuts/` | [design.md](04-common-capability/04-common-events/04-component-shortcuts/design.md) | 1 |
+| 04 通用能力层 | 04 通用事件 | 04 组件组合键 | `04-04-04` | `04-common-capability/04-common-events/04-component-shortcuts/` | [design.md](04-common-capability/04-common-events/04-component-shortcuts/design.md) | 2 |
 | 04 通用能力层 | 04 通用事件 | 05 鼠标事件 | `04-04-05` | `04-common-capability/04-common-events/05-mouse-events/` | [design.md](04-common-capability/04-common-events/05-mouse-events/design.md) | 4 |
 | 04 通用能力层 | 04 通用事件 | 06 手势能力 | `04-04-06` | `04-common-capability/04-common-events/06-gesture-capability/` | [design.md](04-common-capability/04-common-events/06-gesture-capability/design.md) | 5 |
 | 04 通用能力层 | 04 通用事件 | 07 拖拽能力 | `04-04-07` | `04-common-capability/04-common-events/07-drag-capability/` | [design.md](04-common-capability/04-common-events/07-drag-capability/design.md) | 7 |
@@ -89,6 +89,7 @@
 | 04 通用能力层 | 04 通用事件 | 09 组件相关事件 | `04-04-09` | `04-common-capability/04-common-events/09-component-related-events/` | [design.md](04-common-capability/04-common-events/09-component-related-events/design.md) | 2 |
 | 04 通用能力层 | 04 通用事件 | 10 可见区域机制 | `04-04-10` | `04-common-capability/04-common-events/10-visible-area-mechanism/` | [design.md](04-common-capability/04-common-events/10-visible-area-mechanism/design.md) | 2 |
 | 04 通用能力层 | 04 通用事件 | 11 交互归一化 | `04-04-11` | `04-common-capability/04-common-events/11-interaction-normalization/` | [design.md](04-common-capability/04-common-events/11-interaction-normalization/design.md) | 4 |
+| 04 通用能力层 | 04 通用事件 | 12 触控板事件 | `04-04-12` | `04-common-capability/04-common-events/12-touchpad-events/` | *待补充* | 1 |
 | 04 通用能力层 | 05 自定义扩展能力 | 01 动态绘制属性 | `04-05-01` | `04-common-capability/05-custom-extension/01-draw-modifier/` | [design.md](04-common-capability/05-custom-extension/01-draw-modifier/design.md) | 3 |
 | 04 通用能力层 | 05 自定义扩展能力 | 02 动态属性 | `04-05-02` | `04-common-capability/05-custom-extension/02-dynamic-attributes/` | [design.md](04-common-capability/05-custom-extension/02-dynamic-attributes/design.md) | 2 |
 | 04 通用能力层 | 05 自定义扩展能力 | 03 自定义内容 -（表单类组件） | `04-05-03` | `04-common-capability/05-custom-extension/03-content-modifier-form/` | [design.md](04-common-capability/05-custom-extension/03-content-modifier-form/design.md) | 1 |
@@ -97,7 +98,7 @@
 | 04 通用能力层 | 05 自定义扩展能力 | 06 组件Modifier | `04-05-06` | `04-common-capability/05-custom-extension/06-component-modifier/` | [design.md](04-common-capability/05-custom-extension/06-component-modifier/design.md) | 2 |
 | 04 通用能力层 | 05 自定义扩展能力 | 07 手势Modifier | `04-05-07` | `04-common-capability/05-custom-extension/07-gesture-modifier/` | [design.md](04-common-capability/05-custom-extension/07-gesture-modifier/design.md) | 1 |
 | 04 通用能力层 | 06 自定义节点能力 | 01 占位组件 | `04-06-01` | `04-common-capability/06-custom-node/01-placeholder-component/` | [design.md](04-common-capability/06-custom-node/01-placeholder-component/design.md) | 1 |
-| 04 通用能力层 | 06 自定义节点能力 | 02 FrameNode | `04-06-02` | `04-common-capability/06-custom-node/02-frame-node/` | [design.md](04-common-capability/06-custom-node/02-frame-node/design.md) | 8 |
+| 04 通用能力层 | 06 自定义节点能力 | 02 FrameNode | `04-06-02` | `04-common-capability/06-custom-node/02-frame-node/` | [design.md](04-common-capability/06-custom-node/02-frame-node/design.md) | 9 |
 | 04 通用能力层 | 06 自定义节点能力 | 03 RenderNode | `04-06-03` | `04-common-capability/06-custom-node/03-render-node/` | [design.md](04-common-capability/06-custom-node/03-render-node/design.md) | 1 |
 | 04 通用能力层 | 06 自定义节点能力 | 04 BuilderNode | `04-06-04` | `04-common-capability/06-custom-node/04-builder-node/` | [design.md](04-common-capability/06-custom-node/04-builder-node/design.md) | 8 |
 | 04 通用能力层 | 06 自定义节点能力 | 05 ComponentContent | `04-06-05` | `04-common-capability/06-custom-node/05-component-content/` | [design.md](04-common-capability/06-custom-node/05-component-content/design.md) | 5 |
@@ -273,7 +274,7 @@
 | 07 前端层 | 01 ArkTS高级组件 | 24 ToolBar | `07-01-24` | `07-frontend/01-arkts-advanced-components/24-tool-bar/` | *待补充* | 1 |
 | 07 前端层 | 01 ArkTS高级组件 | 25 TreeView | `07-01-25` | `07-frontend/01-arkts-advanced-components/25-tree-view/` | *待补充* | 0 |
 | 07 前端层 | 01 ArkTS高级组件 | 26 FoldSplitContainer | `07-01-26` | `07-frontend/01-arkts-advanced-components/26-fold-split-container/` | *待补充* | 0 |
-| 07 前端层 | 01 ArkTS高级组件 | 27 Charts图表 | `07-01-27` | `07-frontend/01-arkts-advanced-components/27-charts/` | *待补充* | 2 |
+| 07 前端层 | 01 ArkTS高级组件 | 27 Charts图表 | `07-01-27` | `07-frontend/01-arkts-advanced-components/27-charts/` | *待补充* | 4 |
 | 07 前端层 | 02 状态管理框架 | 01 状态管理V1组件内状态管理 | `07-02-01` | `07-frontend/02-state-management/01-v1-component-state/` | [design.md](07-frontend/02-state-management/01-v1-component-state/design.md) | 9 |
 | 07 前端层 | 02 状态管理框架 | 02 状态管理V1数据对象内状态管理 | `07-02-02` | `07-frontend/02-state-management/02-v1-data-object-state/` | [design.md](07-frontend/02-state-management/02-v1-data-object-state/design.md) | 1 |
 | 07 前端层 | 02 状态管理框架 | 03 状态管理V1应用内状态管理 | `07-02-03` | `07-frontend/02-state-management/03-v1-app-state/` | [design.md](07-frontend/02-state-management/03-v1-app-state/design.md) | 4 |
@@ -800,6 +801,7 @@
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
 | Feat-01 | 组件组合键注册与触发 | [Feat-01-component-shortcut-registration-trigger-spec.md](04-common-capability/04-common-events/04-component-shortcuts/Feat-01-component-shortcut-registration-trigger-spec.md) | Baselined |
+| Feat-02 | FunctionKey 枚举扩展 14 个功能键 | *待补充* | Draft |
 
 ### 04-04-05 鼠标事件
 
@@ -863,6 +865,12 @@
 | Feat-02 | 多源点击交互归一化 | [Feat-02-multi-source-click-interaction-normalization-spec.md](04-common-capability/04-common-events/11-interaction-normalization/Feat-02-multi-source-click-interaction-normalization-spec.md) | Baselined |
 | Feat-03 | 多源滑动与平移归一化 | [Feat-03-multi-source-slide-pan-normalization-spec.md](04-common-capability/04-common-events/11-interaction-normalization/Feat-03-multi-source-slide-pan-normalization-spec.md) | Baselined |
 | Feat-04 | 多源缩放与旋转归一化 | [Feat-04-multi-source-scale-rotation-normalization-spec.md](04-common-capability/04-common-events/11-interaction-normalization/Feat-04-multi-source-scale-rotation-normalization-spec.md) | Baselined |
+
+### 04-04-12 触控板事件
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | 触控板原始触点事件 | *待补充* | Draft |
 
 ### 04-05-01 动态绘制属性
 
@@ -928,6 +936,7 @@
 | Feat-06 | 事件交互与 UIState | [Feat-06-event-interaction-ui-state-spec.md](04-common-capability/06-custom-node/02-frame-node/Feat-06-event-interaction-ui-state-spec.md) | Baselined |
 | Feat-07 | 节点动画 | [Feat-07-node-animation-spec.md](04-common-capability/06-custom-node/02-frame-node/Feat-07-node-animation-spec.md) | Baselined |
 | Feat-08 | 生命周期、回收与跨语言 | [Feat-08-lifecycle-recycle-cross-language-spec.md](04-common-capability/06-custom-node/02-frame-node/Feat-08-lifecycle-recycle-cross-language-spec.md) | Baselined |
+| Feat-09 | FrameNode 输入事件派发 | *待补充* | Draft |
 
 ### 04-06-03 RenderNode
 
@@ -2201,6 +2210,8 @@
 |--------|----------|-----------|------|
 | Feat-01 | Charts图表基础框架 | *待补充* | Draft |
 | Feat-02 | LineChart 折线图组件 | *待补充* | Draft |
+| Feat-03 | RingChart 环形图组件 | *待补充* | Draft |
+| Feat-04 | BarChart 柱状图组件 | *待补充* | Draft |
 
 ### 07-02-01 状态管理V1组件内状态管理
 

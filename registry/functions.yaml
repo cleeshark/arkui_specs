@@ -898,6 +898,19 @@ functions:
   path: 04-common-capability/04-common-events/11-interaction-normalization/
   design: 04-common-capability/04-common-events/11-interaction-normalization/design.md
   status: active
+- id: 04-04-12
+  l1:
+    id: '04'
+    title: 通用能力层
+  l2:
+    id: '04'
+    title: 通用事件
+  l3:
+    id: '12'
+    title: 触控板事件
+  path: 04-common-capability/04-common-events/12-touchpad-events/
+  design: null
+  status: active
 - id: 04-05-01
   l1:
     id: '04'
