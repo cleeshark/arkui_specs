@@ -4343,6 +4343,19 @@ functions:
   path: 09-developer-tools/06-agent-skills/04-imperative-framework/
   design: null
   status: active
+- id: 09-06-05
+  l1:
+    id: 09
+    title: 开发者工具
+  l2:
+    id: '06'
+    title: AI Agent Skill
+  l3:
+    id: '05'
+    title: ArkUI跨平台迁移Skill
+  path: 09-developer-tools/06-agent-skills/05-cross-platform-migration/
+  design: null
+  status: active
 - id: 09-07-01
   l1:
     id: 09

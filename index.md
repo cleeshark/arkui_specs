@@ -354,6 +354,7 @@
 | 09 开发者工具 | 06 AI Agent Skill | 02 深浅色功能接入和高性能适配Skill | `09-06-02` | `09-developer-tools/06-agent-skills/02-dark-light-mode/` | *待补充* | 1 |
 | 09 开发者工具 | 06 AI Agent Skill | 03 ArkUI通用无障碍快速接入Skill | `09-06-03` | `09-developer-tools/06-agent-skills/03-accessibility-integration/` | *待补充* | 1 |
 | 09 开发者工具 | 06 AI Agent Skill | 04 ArkUI命令式框架快速接入Skill | `09-06-04` | `09-developer-tools/06-agent-skills/04-imperative-framework/` | *待补充* | 1 |
+| 09 开发者工具 | 06 AI Agent Skill | 05 ArkUI跨平台迁移Skill | `09-06-05` | `09-developer-tools/06-agent-skills/05-cross-platform-migration/` | *待补充* | 2 |
 | 09 开发者工具 | 07 内存分析工具 | 01 ArkUI 内存分析DFX工具 | `09-07-01` | `09-developer-tools/07-memory-analysis-tools/01-memory-dfx/` | *待补充* | 3 |
 | 10 产品化定制 | 01 穿戴 | 01 弧形组件 | `10-01-01` | `10-product-customization/01-wearable/01-arc-component/` | [design.md](10-product-customization/01-wearable/01-arc-component/design.md) | 2 |
 
@@ -2782,6 +2783,13 @@
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
 | Feat-01 | ArkUI命令式框架快速接入Skill | *待补充* | Draft |
+
+### 09-06-05 ArkUI跨平台迁移Skill
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | 跨平台骨架代码生成 | *待补充* | Draft |
+| Feat-02 | 跨平台接口扫描适配报告 | *待补充* | Draft |
 
 ### 09-07-01 ArkUI 内存分析DFX工具
 
