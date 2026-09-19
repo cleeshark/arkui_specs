@@ -9,7 +9,7 @@
 | Design ID | DESIGN-Func-04-03-02 |
 | 关联需求 | 已有能力补录（无独立 requirement.md） |
 | 关联 Epic | 无 |
-| 目标 Feature | Feat-01 图像效果 |
+| 目标 Feature | Feat-01 图像效果、Feat-03 图形变化、Feat-04 形状裁剪 |
 | 复杂度 | 复杂 |
 | 目标版本 | ArkTS dynamic API 7 起支持，API 11/12/18/19 有重载或行为差异；ArkTS static API 23 起支持；C API `NODE_BACKDROP_BLUR` API 15 起支持 |
 | Owner | ArkUI SIG |
