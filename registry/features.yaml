@@ -627,8 +627,8 @@ features:
 - func_id: 04-04-10
   id: Feat-03
   title: 可见区域计算负载优化（离树节点剪枝）
-  spec: 04-common-capability/04-common-events/10-visible-area-mechanism/Feat-03-visible-area-render-tree-pruning-spec.md
-  status: Draft
+  spec: null
+  status: 待补充
 - func_id: 04-04-11
   id: Feat-01
   title: 按键意图归一化（KeyIntention / IntentionCode）
