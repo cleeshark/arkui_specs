@@ -274,6 +274,11 @@ features:
   title: WM UIContentRemoteObj 验证链路
   spec: 03-engine-framework/09-uisession/01-uisession-service/Feat-10-wm-uicontent-remoteobj-verification-spec.md
   status: Draft
+- func_id: 03-09-01
+  id: Feat-11
+  title: 内容变化开始、取消事件上报与生命周期管理
+  spec: null
+  status: Draft
 - func_id: 04-01-01
   id: Feat-01
   title: 图片加载机制
