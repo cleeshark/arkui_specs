@@ -9,7 +9,7 @@
 | Design ID | DESIGN-Func-04-04-10 |
 | 关联需求 | 已有能力补录（无独立 requirement.md） |
 | 关联 Epic | 无 |
-| 目标 Feature | Feat-01 精确可见区域变化监听，Feat-02 近似可见区域变化监听 |
+| 目标 Feature | Feat-01 精确可见区域变化监听，Feat-02 近似可见区域变化监听，Feat-03 可见区域计算负载优化（离树剪枝） |
 | 复杂度 | 复杂 |
 | 目标版本 | Feat-01：Dynamic API 9/22，Static API 23/26，Native API 12/17/21；Feat-02：UICommonEvent API 12，Dynamic API 18，Native API 17/21 |
 | Owner | ArkUI SIG |
@@ -599,10 +599,30 @@ options setter 对负数 interval 恢复 1000 ms，对 0~99 ms 钳制到 100 ms�
 
 两条链路均派发 direction 和 ratio，但 generic 保留调用方 eventId、实际 nodeId 和 userData，convenience 的 eventId 固定为 0。convenience callback map 使用 `insert`，重复注册或注销后重注册保留首次 callback；generic 公共 reset 表对近似事件为空，注销后可能只删除 metadata 而保留核心监听，依据 `frameworks/core/interfaces/native/node/node_common_modifier.cpp:10189-10207,11026-11045`、`interfaces/native/node/node_model.cpp:734-763,1779-1825` 和 `frameworks/core/interfaces/native/node/node_api.cpp:718-750`。
 
+### 离树节点剪枝（Feat-03）
+
+> 性能优化：对外行为与 Feat-01/02 等价，仅对已析出渲染树的节点跳过可见性计算。
+
+**剪枝判据**：`renderContext_->IsOnRenderTree()`（=`rsNode_->GetIsOnTheTree()`）。`RebuildRenderContextTree → RebuildFrame → ReCreateRsNodeTree` 在 `FlushRebuildRenderTree`（早）同步维护 RSNode 子树「在树」标记，`HandleVisibleAreaChangeEvent`（晚）才读取，同帧已 settle，依据 `frameworks/core/components_ng/render/adapter/rosen_render_context.h:621-627`、`frameworks/core/components_ng/render/adapter/rosen_render_context.cpp:5468-5561`、`frameworks/core/pipeline_ng/pipeline_context.cpp:1234,1357`。
+
+**剪枝落点**（两处）：
+1. 精确路径 `FrameNode::IsFrameDisappear` 快速检查区新增 `!IsOnRenderTree()`，命中即 disappear 并跳过 `IsFrameAncestorDisappear`（祖先遍历）与 `GetCacheVisibleRect`（祖先链 rect 裁切）。
+2. 近似路径 `FrameNode::ThrottledVisibleTask` 在 `GetCacheVisibleRect` 前新增同源短路（该路径先调 `GetCacheVisibleRect` 再判 `IsFrameDisappear`，仅靠 IsFrameDisappear 剪枝不足以覆盖 rect 裁切）。
+
+**触发原因**：新增 `VisibleAreaChangeTriggerReason::NOT_ON_RENDER_TREE = 8`，与 SELF_INVISIBLE / IS_NOT_ON_MAINTREE / BACKGROUND 并列落 DFX。
+
+**判据守卫**：`isOnRenderTree = !renderContext || renderContext->IsOnRenderTree()`——仅对「非空且明确不在树」剪枝；renderContext 为空（可见区域单测中普遍）不剪枝，避免误判。
+
+**正确性等价（INV）**：
+- INV-1：任意注册可见区域的节点，若 `!IsOnRenderTree()` 则可见比例必为 0（等价 disappear）。离树前置为叶子节点 `!isActive_ || (!IsVisible() && 无 transition-out)`（`OnGenerateOneDepthVisibleFrameWithTransition`），与 `IsFrameAncestorDisappear` 检查的 isActive_/IsVisible 同源。
+- INV-2：剪枝只跳过计算，不改变回调（isVisible/ratio/时机）。
+- INV-3：剪枝命中进 disappear 分支必 `ClearCachedIsFrameDisappear` 并置 reason，保证重新上树恢复正确。
+
+**残留风险**：同帧 re-parent / transition-out / offscreen / MIXED 挂载策略需以可控 mock + 集成/设备双重验证闭环（见 design 专项验证与 `docs/kb/issues/lifecycle/ispending-state-render-tree-diff.md`）。
+
 ## 风险和开放问题
 
 | 项 | 类型 | 影响 | 处理方式 | Owner |
-|----|------|------|----------|-------|
 | 目标仓库基线未纳入同版本的 canonical SDK；Dynamic/Static 行号来自已核查但版本基线未完全匹配的 SDK 证据 | API | 中 | 合入前用 manifest 匹配版本再次核对签名和 `@since`；不据此修改现有实现 | ArkUI API Owner |
 | 当前仓 Static inner 声明只有两参，但 Dynamic Modifier/JS Bridge 已支持第三参 | API | 中 | 在兼容性矩阵显式记录，不静默推断所有 Static 版本均支持 | ArkUI Frontend Owner |
 | Dynamic/Native 直接 ratios 与 options 的越界归一化策略不同 | API | 中 | 保留分通道规则并增加边界测试 | ArkUI API Owner |
