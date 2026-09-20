@@ -2661,8 +2661,8 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | ArkUI C API UI线程误用检测能力 | *待补充* | Draft |
-| Feat-02 | ArkUI C API UAF检测能力 | *待补充* | Draft |
+| Feat-01 | NativeModule基础框架 | *待补充* | Draft |
+| Feat-02 | CAPI维测能力 | *待补充* | Draft |
 
 ### 08-01-02 组件API
 

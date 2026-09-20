@@ -3862,12 +3862,12 @@ features:
   status: Draft
 - func_id: 08-01-01
   id: Feat-01
-  title: ArkUI C API UI线程误用检测能力
+  title: NativeModule基础框架
   spec: null
   status: Draft
 - func_id: 08-01-01
   id: Feat-02
-  title: ArkUI C API UAF检测能力
+  title: CAPI维测能力
   spec: null
   status: Draft
 - func_id: 08-01-12
