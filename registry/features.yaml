@@ -3860,6 +3860,16 @@ features:
   title: 绘制能力
   spec: null
   status: Draft
+- func_id: 08-01-01
+  id: Feat-01
+  title: NativeModule基础框架
+  spec: null
+  status: Draft
+- func_id: 08-01-01
+  id: Feat-02
+  title: CAPI维测能力
+  spec: null
+  status: Draft
 - func_id: 08-01-12
   id: Feat-01
   title: 控件树采集

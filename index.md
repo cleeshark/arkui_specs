@@ -329,7 +329,7 @@
 | 07 前端层 | 05 渲染控制 | 03 Repeat | `07-05-03` | `07-frontend/05-render-control/03-repeat/` | [design.md](07-frontend/05-render-control/03-repeat/design.md) | 4 |
 | 07 前端层 | 06 响应式环境变量 | 01 系统环境变量 | `07-06-01` | `07-frontend/06-reactive-env/01-system-env/` | *待补充* | 0 |
 | 07 前端层 | 06 响应式环境变量 | 02 自定义环境变量 | `07-06-02` | `07-frontend/06-reactive-env/02-custom-env/` | *待补充* | 0 |
-| 08 NDK | 01 Node C-API | 01 基础机制NativeModule | `08-01-01` | `08-ndk/01-node-c-api/01-native-module-base/` | *待补充* | 0 |
+| 08 NDK | 01 Node C-API | 01 基础机制NativeModule | `08-01-01` | `08-ndk/01-node-c-api/01-native-module-base/` | *待补充* | 2 |
 | 08 NDK | 01 Node C-API | 02 组件API | `08-01-02` | `08-ndk/01-node-c-api/02-component-api/` | *待补充* | 0 |
 | 08 NDK | 01 Node C-API | 03 动效NativeAnimate | `08-01-03` | `08-ndk/01-node-c-api/03-native-animate/` | *待补充* | 0 |
 | 08 NDK | 01 Node C-API | 04 视效接口 | `08-01-04` | `08-ndk/01-node-c-api/04-visual-effect-api/` | *待补充* | 0 |
@@ -2661,6 +2661,8 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | NativeModule基础框架 | *待补充* | Draft |
+| Feat-02 | CAPI维测能力 | *待补充* | Draft |
 
 ### 08-01-02 组件API
 
