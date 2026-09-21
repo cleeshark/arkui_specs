@@ -602,6 +602,7 @@ options setter 对负数 interval 恢复 1000 ms，对 0~99 ms 钳制到 100 ms�
 ## 风险和开放问题
 
 | 项 | 类型 | 影响 | 处理方式 | Owner |
+|----|------|------|----------|-------|
 | 目标仓库基线未纳入同版本的 canonical SDK；Dynamic/Static 行号来自已核查但版本基线未完全匹配的 SDK 证据 | API | 中 | 合入前用 manifest 匹配版本再次核对签名和 `@since`；不据此修改现有实现 | ArkUI API Owner |
 | 当前仓 Static inner 声明只有两参，但 Dynamic Modifier/JS Bridge 已支持第三参 | API | 中 | 在兼容性矩阵显式记录，不静默推断所有 Static 版本均支持 | ArkUI Frontend Owner |
 | Dynamic/Native 直接 ratios 与 options 的越界归一化策略不同 | API | 中 | 保留分通道规则并增加边界测试 | ArkUI API Owner |
