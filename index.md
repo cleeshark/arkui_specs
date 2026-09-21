@@ -87,7 +87,7 @@
 | 04 通用能力层 | 04 通用事件 | 07 拖拽能力 | `04-04-07` | `04-common-capability/04-common-events/07-drag-capability/` | [design.md](04-common-capability/04-common-events/07-drag-capability/design.md) | 7 |
 | 04 通用能力层 | 04 通用事件 | 08 手写笔能力 | `04-04-08` | `04-common-capability/04-common-events/08-stylus-capability/` | [design.md](04-common-capability/04-common-events/08-stylus-capability/design.md) | 4 |
 | 04 通用能力层 | 04 通用事件 | 09 组件相关事件 | `04-04-09` | `04-common-capability/04-common-events/09-component-related-events/` | [design.md](04-common-capability/04-common-events/09-component-related-events/design.md) | 2 |
-| 04 通用能力层 | 04 通用事件 | 10 可见区域机制 | `04-04-10` | `04-common-capability/04-common-events/10-visible-area-mechanism/` | [design.md](04-common-capability/04-common-events/10-visible-area-mechanism/design.md) | 2 |
+| 04 通用能力层 | 04 通用事件 | 10 可见区域机制 | `04-04-10` | `04-common-capability/04-common-events/10-visible-area-mechanism/` | [design.md](04-common-capability/04-common-events/10-visible-area-mechanism/design.md) | 3 |
 | 04 通用能力层 | 04 通用事件 | 11 交互归一化 | `04-04-11` | `04-common-capability/04-common-events/11-interaction-normalization/` | [design.md](04-common-capability/04-common-events/11-interaction-normalization/design.md) | 4 |
 | 04 通用能力层 | 04 通用事件 | 12 触控板事件 | `04-04-12` | `04-common-capability/04-common-events/12-touchpad-events/` | *待补充* | 1 |
 | 04 通用能力层 | 05 自定义扩展能力 | 01 动态绘制属性 | `04-05-01` | `04-common-capability/05-custom-extension/01-draw-modifier/` | [design.md](04-common-capability/05-custom-extension/01-draw-modifier/design.md) | 3 |
@@ -861,6 +861,7 @@
 |--------|----------|-----------|------|
 | Feat-01 | 精确可见区域变化监听 | [Feat-01-exact-visible-area-change-listening-spec.md](04-common-capability/04-common-events/10-visible-area-mechanism/Feat-01-exact-visible-area-change-listening-spec.md) | Baselined |
 | Feat-02 | 近似可见区域变化监听 | [Feat-02-approximate-visible-area-change-listening-spec.md](04-common-capability/04-common-events/10-visible-area-mechanism/Feat-02-approximate-visible-area-change-listening-spec.md) | Baselined |
+| Feat-03 | 可见区域计算负载优化（离树节点剪枝） | *待补充* | Draft |
 
 ### 04-04-11 交互归一化
 
