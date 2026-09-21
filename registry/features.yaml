@@ -628,7 +628,7 @@ features:
   id: Feat-03
   title: 可见区域计算负载优化（离树节点剪枝）
   spec: null
-  status: 待补充
+  status: Draft
 - func_id: 04-04-11
   id: Feat-01
   title: 按键意图归一化（KeyIntention / IntentionCode）

@@ -9,7 +9,7 @@
 | Design ID | DESIGN-Func-04-04-10 |
 | 关联需求 | 已有能力补录（无独立 requirement.md） |
 | 关联 Epic | 无 |
-| 目标 Feature | Feat-01 精确可见区域变化监听，Feat-02 近似可见区域变化监听 |
+| 目标 Feature | Feat-01 精确可见区域变化监听，Feat-02 近似可见区域变化监听，Feat-03 可见区域计算负载优化（离树剪枝） |
 | 复杂度 | 复杂 |
 | 目标版本 | Feat-01：Dynamic API 9/22，Static API 23/26，Native API 12/17/21；Feat-02：UICommonEvent API 12，Dynamic API 18，Native API 17/21 |
 | Owner | ArkUI SIG |

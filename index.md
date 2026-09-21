@@ -854,7 +854,7 @@
 |--------|----------|-----------|------|
 | Feat-01 | 精确可见区域变化监听 | [Feat-01-exact-visible-area-change-listening-spec.md](04-common-capability/04-common-events/10-visible-area-mechanism/Feat-01-exact-visible-area-change-listening-spec.md) | Baselined |
 | Feat-02 | 近似可见区域变化监听 | [Feat-02-approximate-visible-area-change-listening-spec.md](04-common-capability/04-common-events/10-visible-area-mechanism/Feat-02-approximate-visible-area-change-listening-spec.md) | Baselined |
-| Feat-03 | 可见区域计算负载优化（离树节点剪枝） | *待补充* | 待补充 |
+| Feat-03 | 可见区域计算负载优化（离树节点剪枝） | *待补充* | Draft |
 
 ### 04-04-11 交互归一化
 
