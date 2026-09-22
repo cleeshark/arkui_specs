@@ -3587,7 +3587,7 @@ functions:
     id: '01'
     title: 基础框架与消息模型
   path: 07-frontend/04-generative-ui/01-protocol-core-message-model/
-  design: null
+  design: 07-frontend/04-generative-ui/01-protocol-core-message-model/design.md
   status: active
 - id: 07-04-02
   l1:
@@ -3600,7 +3600,7 @@ functions:
     id: '02'
     title: 标准协议布局组件
   path: 07-frontend/04-generative-ui/02-a2ui-standard-layout-components/
-  design: null
+  design: 07-frontend/04-generative-ui/02-a2ui-standard-layout-components/design.md
   status: active
 - id: 07-04-03
   l1:
@@ -3613,7 +3613,7 @@ functions:
     id: '03'
     title: 标准协议展示组件
   path: 07-frontend/04-generative-ui/03-a2ui-standard-display-components/
-  design: null
+  design: 07-frontend/04-generative-ui/03-a2ui-standard-display-components/design.md
   status: active
 - id: 07-04-04
   l1:
@@ -3626,7 +3626,7 @@ functions:
     id: '04'
     title: 标准协议交互组件
   path: 07-frontend/04-generative-ui/04-a2ui-standard-interaction-components/
-  design: null
+  design: 07-frontend/04-generative-ui/04-a2ui-standard-interaction-components/design.md
   status: active
 - id: 07-04-05
   l1:
@@ -3639,7 +3639,7 @@ functions:
     id: '05'
     title: 标准协议容器组件
   path: 07-frontend/04-generative-ui/05-a2ui-standard-container-components/
-  design: null
+  design: 07-frontend/04-generative-ui/05-a2ui-standard-container-components/design.md
   status: active
 - id: 07-04-06
   l1:
@@ -3652,7 +3652,7 @@ functions:
     id: '06'
     title: 标准协议高级组件
   path: 07-frontend/04-generative-ui/06-a2ui-standard-advanced-components/
-  design: null
+  design: 07-frontend/04-generative-ui/06-a2ui-standard-advanced-components/design.md
   status: active
 - id: 07-04-07
   l1:
@@ -3665,7 +3665,7 @@ functions:
     id: '07'
     title: 标准协议校验函数
   path: 07-frontend/04-generative-ui/07-a2ui-standard-validation-functions/
-  design: null
+  design: 07-frontend/04-generative-ui/07-a2ui-standard-validation-functions/design.md
   status: active
 - id: 07-04-08
   l1:
@@ -3678,7 +3678,7 @@ functions:
     id: '08'
     title: 标准协议格式化函数
   path: 07-frontend/04-generative-ui/08-a2ui-standard-format-functions/
-  design: null
+  design: 07-frontend/04-generative-ui/08-a2ui-standard-format-functions/design.md
   status: active
 - id: 07-04-09
   l1:
@@ -3691,7 +3691,7 @@ functions:
     id: '09'
     title: 标准协议逻辑与系统函数
   path: 07-frontend/04-generative-ui/09-a2ui-standard-logic-system-functions/
-  design: null
+  design: 07-frontend/04-generative-ui/09-a2ui-standard-logic-system-functions/design.md
   status: active
 - id: 07-04-10
   l1:
@@ -3704,7 +3704,7 @@ functions:
     id: '10'
     title: 扩展协议布局组件
   path: 07-frontend/04-generative-ui/10-a2ui-extended-layout-components/
-  design: null
+  design: 07-frontend/04-generative-ui/10-a2ui-extended-layout-components/design.md
   status: active
 - id: 07-04-11
   l1:
@@ -3717,7 +3717,7 @@ functions:
     id: '11'
     title: 扩展协议展示组件
   path: 07-frontend/04-generative-ui/11-a2ui-extended-display-components/
-  design: null
+  design: 07-frontend/04-generative-ui/11-a2ui-extended-display-components/design.md
   status: active
 - id: 07-04-12
   l1:
@@ -3730,7 +3730,7 @@ functions:
     id: '12'
     title: 扩展协议交互组件
   path: 07-frontend/04-generative-ui/12-a2ui-extended-interaction-components/
-  design: null
+  design: 07-frontend/04-generative-ui/12-a2ui-extended-interaction-components/design.md
   status: active
 - id: 07-04-13
   l1:
@@ -3743,7 +3743,7 @@ functions:
     id: '13'
     title: 扩展协议容器组件
   path: 07-frontend/04-generative-ui/13-a2ui-extended-container-components/
-  design: null
+  design: 07-frontend/04-generative-ui/13-a2ui-extended-container-components/design.md
   status: active
 - id: 07-04-14
   l1:
@@ -3769,7 +3769,7 @@ functions:
     id: '15'
     title: 扩展协议条件组件
   path: 07-frontend/04-generative-ui/15-a2ui-extended-conditional-components/
-  design: null
+  design: 07-frontend/04-generative-ui/15-a2ui-extended-conditional-components/design.md
   status: active
 - id: 07-04-16
   l1:
@@ -3782,7 +3782,7 @@ functions:
     id: '16'
     title: 扩展协议内置函数
   path: 07-frontend/04-generative-ui/16-a2ui-extended-functions/
-  design: null
+  design: 07-frontend/04-generative-ui/16-a2ui-extended-functions/design.md
   status: active
 - id: 07-04-17
   l1:
@@ -3795,7 +3795,7 @@ functions:
     id: '17'
     title: 子组件模板
   path: 07-frontend/04-generative-ui/17-child-component-template/
-  design: null
+  design: 07-frontend/04-generative-ui/17-child-component-template/design.md
   status: active
 - id: 07-04-18
   l1:
@@ -3808,7 +3808,7 @@ functions:
     id: '18'
     title: 通用样式与属性
   path: 07-frontend/04-generative-ui/18-common-styles-attributes/
-  design: null
+  design: 07-frontend/04-generative-ui/18-common-styles-attributes/design.md
   status: active
 - id: 07-04-19
   l1:
@@ -3821,7 +3821,7 @@ functions:
     id: '19'
     title: 通用事件
   path: 07-frontend/04-generative-ui/19-common-events/
-  design: null
+  design: 07-frontend/04-generative-ui/19-common-events/design.md
   status: active
 - id: 07-04-20
   l1:
@@ -3834,7 +3834,7 @@ functions:
     id: '20'
     title: 自定义组件与自定义函数
   path: 07-frontend/04-generative-ui/20-custom-components-functions/
-  design: null
+  design: 07-frontend/04-generative-ui/20-custom-components-functions/design.md
   status: active
 - id: 07-04-21
   l1:
@@ -3847,7 +3847,7 @@ functions:
     id: '21'
     title: 动态数据绑定
   path: 07-frontend/04-generative-ui/21-dynamic-data-binding/
-  design: null
+  design: 07-frontend/04-generative-ui/21-dynamic-data-binding/design.md
   status: active
 - id: 07-04-22
   l1:
@@ -3860,7 +3860,7 @@ functions:
     id: '22'
     title: 交互行为链
   path: 07-frontend/04-generative-ui/22-interaction-action-chain/
-  design: null
+  design: 07-frontend/04-generative-ui/22-interaction-action-chain/design.md
   status: active
 - id: 07-04-23
   l1:
@@ -3873,7 +3873,7 @@ functions:
     id: '23'
     title: 多设备自适应
   path: 07-frontend/04-generative-ui/23-multi-device-adaptation/
-  design: null
+  design: 07-frontend/04-generative-ui/23-multi-device-adaptation/design.md
   status: active
 - id: 07-04-24
   l1:
@@ -3886,7 +3886,7 @@ functions:
     id: '24'
     title: 主题与深浅色
   path: 07-frontend/04-generative-ui/24-theme-color-mode/
-  design: null
+  design: 07-frontend/04-generative-ui/24-theme-color-mode/design.md
   status: active
 - id: 07-04-25
   l1:
@@ -3912,7 +3912,7 @@ functions:
     id: '26'
     title: 异常处理与DFX
   path: 07-frontend/04-generative-ui/26-error-dfx/
-  design: null
+  design: 07-frontend/04-generative-ui/26-error-dfx/design.md
   status: active
 - id: 07-04-27
   l1:

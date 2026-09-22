@@ -295,32 +295,32 @@
 | 07 前端层 | 03 自定义组件 | 05 自定义测量/布局 | `07-03-05` | `07-frontend/03-custom-components/05-custom-measure-layout/` | [design.md](07-frontend/03-custom-components/05-custom-measure-layout/design.md) | 1 |
 | 07 前端层 | 03 自定义组件 | 06 组件扩展 | `07-03-06` | `07-frontend/03-custom-components/06-component-extension/` | *待补充* | 0 |
 | 07 前端层 | 03 自定义组件 | 07 静态自定义组件状态相关 | `07-03-07` | `07-frontend/03-custom-components/07-static-custom-component-state/` | [design.md](07-frontend/03-custom-components/07-static-custom-component-state/design.md) | 0 |
-| 07 前端层 | 04 生成式UI | 01 基础框架与消息模型 | `07-04-01` | `07-frontend/04-generative-ui/01-protocol-core-message-model/` | *待补充* | 7 |
-| 07 前端层 | 04 生成式UI | 02 标准协议布局组件 | `07-04-02` | `07-frontend/04-generative-ui/02-a2ui-standard-layout-components/` | *待补充* | 3 |
-| 07 前端层 | 04 生成式UI | 03 标准协议展示组件 | `07-04-03` | `07-frontend/04-generative-ui/03-a2ui-standard-display-components/` | *待补充* | 4 |
-| 07 前端层 | 04 生成式UI | 04 标准协议交互组件 | `07-04-04` | `07-frontend/04-generative-ui/04-a2ui-standard-interaction-components/` | *待补充* | 6 |
-| 07 前端层 | 04 生成式UI | 05 标准协议容器组件 | `07-04-05` | `07-frontend/04-generative-ui/05-a2ui-standard-container-components/` | *待补充* | 3 |
-| 07 前端层 | 04 生成式UI | 06 标准协议高级组件 | `07-04-06` | `07-frontend/04-generative-ui/06-a2ui-standard-advanced-components/` | *待补充* | 2 |
-| 07 前端层 | 04 生成式UI | 07 标准协议校验函数 | `07-04-07` | `07-frontend/04-generative-ui/07-a2ui-standard-validation-functions/` | *待补充* | 5 |
-| 07 前端层 | 04 生成式UI | 08 标准协议格式化函数 | `07-04-08` | `07-frontend/04-generative-ui/08-a2ui-standard-format-functions/` | *待补充* | 5 |
-| 07 前端层 | 04 生成式UI | 09 标准协议逻辑与系统函数 | `07-04-09` | `07-frontend/04-generative-ui/09-a2ui-standard-logic-system-functions/` | *待补充* | 4 |
-| 07 前端层 | 04 生成式UI | 10 扩展协议布局组件 | `07-04-10` | `07-frontend/04-generative-ui/10-a2ui-extended-layout-components/` | *待补充* | 5 |
-| 07 前端层 | 04 生成式UI | 11 扩展协议展示组件 | `07-04-11` | `07-frontend/04-generative-ui/11-a2ui-extended-display-components/` | *待补充* | 4 |
-| 07 前端层 | 04 生成式UI | 12 扩展协议交互组件 | `07-04-12` | `07-frontend/04-generative-ui/12-a2ui-extended-interaction-components/` | *待补充* | 7 |
-| 07 前端层 | 04 生成式UI | 13 扩展协议容器组件 | `07-04-13` | `07-frontend/04-generative-ui/13-a2ui-extended-container-components/` | *待补充* | 4 |
+| 07 前端层 | 04 生成式UI | 01 基础框架与消息模型 | `07-04-01` | `07-frontend/04-generative-ui/01-protocol-core-message-model/` | [design.md](07-frontend/04-generative-ui/01-protocol-core-message-model/design.md) | 7 |
+| 07 前端层 | 04 生成式UI | 02 标准协议布局组件 | `07-04-02` | `07-frontend/04-generative-ui/02-a2ui-standard-layout-components/` | [design.md](07-frontend/04-generative-ui/02-a2ui-standard-layout-components/design.md) | 3 |
+| 07 前端层 | 04 生成式UI | 03 标准协议展示组件 | `07-04-03` | `07-frontend/04-generative-ui/03-a2ui-standard-display-components/` | [design.md](07-frontend/04-generative-ui/03-a2ui-standard-display-components/design.md) | 4 |
+| 07 前端层 | 04 生成式UI | 04 标准协议交互组件 | `07-04-04` | `07-frontend/04-generative-ui/04-a2ui-standard-interaction-components/` | [design.md](07-frontend/04-generative-ui/04-a2ui-standard-interaction-components/design.md) | 6 |
+| 07 前端层 | 04 生成式UI | 05 标准协议容器组件 | `07-04-05` | `07-frontend/04-generative-ui/05-a2ui-standard-container-components/` | [design.md](07-frontend/04-generative-ui/05-a2ui-standard-container-components/design.md) | 3 |
+| 07 前端层 | 04 生成式UI | 06 标准协议高级组件 | `07-04-06` | `07-frontend/04-generative-ui/06-a2ui-standard-advanced-components/` | [design.md](07-frontend/04-generative-ui/06-a2ui-standard-advanced-components/design.md) | 2 |
+| 07 前端层 | 04 生成式UI | 07 标准协议校验函数 | `07-04-07` | `07-frontend/04-generative-ui/07-a2ui-standard-validation-functions/` | [design.md](07-frontend/04-generative-ui/07-a2ui-standard-validation-functions/design.md) | 5 |
+| 07 前端层 | 04 生成式UI | 08 标准协议格式化函数 | `07-04-08` | `07-frontend/04-generative-ui/08-a2ui-standard-format-functions/` | [design.md](07-frontend/04-generative-ui/08-a2ui-standard-format-functions/design.md) | 5 |
+| 07 前端层 | 04 生成式UI | 09 标准协议逻辑与系统函数 | `07-04-09` | `07-frontend/04-generative-ui/09-a2ui-standard-logic-system-functions/` | [design.md](07-frontend/04-generative-ui/09-a2ui-standard-logic-system-functions/design.md) | 4 |
+| 07 前端层 | 04 生成式UI | 10 扩展协议布局组件 | `07-04-10` | `07-frontend/04-generative-ui/10-a2ui-extended-layout-components/` | [design.md](07-frontend/04-generative-ui/10-a2ui-extended-layout-components/design.md) | 5 |
+| 07 前端层 | 04 生成式UI | 11 扩展协议展示组件 | `07-04-11` | `07-frontend/04-generative-ui/11-a2ui-extended-display-components/` | [design.md](07-frontend/04-generative-ui/11-a2ui-extended-display-components/design.md) | 4 |
+| 07 前端层 | 04 生成式UI | 12 扩展协议交互组件 | `07-04-12` | `07-frontend/04-generative-ui/12-a2ui-extended-interaction-components/` | [design.md](07-frontend/04-generative-ui/12-a2ui-extended-interaction-components/design.md) | 7 |
+| 07 前端层 | 04 生成式UI | 13 扩展协议容器组件 | `07-04-13` | `07-frontend/04-generative-ui/13-a2ui-extended-container-components/` | [design.md](07-frontend/04-generative-ui/13-a2ui-extended-container-components/design.md) | 4 |
 | 07 前端层 | 04 生成式UI | 14 扩展协议绘制组件 | `07-04-14` | `07-frontend/04-generative-ui/14-a2ui-extended-drawing-components/` | *待补充* | 0 |
-| 07 前端层 | 04 生成式UI | 15 扩展协议条件组件 | `07-04-15` | `07-frontend/04-generative-ui/15-a2ui-extended-conditional-components/` | *待补充* | 1 |
-| 07 前端层 | 04 生成式UI | 16 扩展协议内置函数 | `07-04-16` | `07-frontend/04-generative-ui/16-a2ui-extended-functions/` | *待补充* | 8 |
-| 07 前端层 | 04 生成式UI | 17 子组件模板 | `07-04-17` | `07-frontend/04-generative-ui/17-child-component-template/` | *待补充* | 1 |
-| 07 前端层 | 04 生成式UI | 18 通用样式与属性 | `07-04-18` | `07-frontend/04-generative-ui/18-common-styles-attributes/` | *待补充* | 5 |
-| 07 前端层 | 04 生成式UI | 19 通用事件 | `07-04-19` | `07-frontend/04-generative-ui/19-common-events/` | *待补充* | 2 |
-| 07 前端层 | 04 生成式UI | 20 自定义组件与自定义函数 | `07-04-20` | `07-frontend/04-generative-ui/20-custom-components-functions/` | *待补充* | 2 |
-| 07 前端层 | 04 生成式UI | 21 动态数据绑定 | `07-04-21` | `07-frontend/04-generative-ui/21-dynamic-data-binding/` | *待补充* | 4 |
-| 07 前端层 | 04 生成式UI | 22 交互行为链 | `07-04-22` | `07-frontend/04-generative-ui/22-interaction-action-chain/` | *待补充* | 2 |
-| 07 前端层 | 04 生成式UI | 23 多设备自适应 | `07-04-23` | `07-frontend/04-generative-ui/23-multi-device-adaptation/` | *待补充* | 3 |
-| 07 前端层 | 04 生成式UI | 24 主题与深浅色 | `07-04-24` | `07-frontend/04-generative-ui/24-theme-color-mode/` | *待补充* | 2 |
+| 07 前端层 | 04 生成式UI | 15 扩展协议条件组件 | `07-04-15` | `07-frontend/04-generative-ui/15-a2ui-extended-conditional-components/` | [design.md](07-frontend/04-generative-ui/15-a2ui-extended-conditional-components/design.md) | 1 |
+| 07 前端层 | 04 生成式UI | 16 扩展协议内置函数 | `07-04-16` | `07-frontend/04-generative-ui/16-a2ui-extended-functions/` | [design.md](07-frontend/04-generative-ui/16-a2ui-extended-functions/design.md) | 8 |
+| 07 前端层 | 04 生成式UI | 17 子组件模板 | `07-04-17` | `07-frontend/04-generative-ui/17-child-component-template/` | [design.md](07-frontend/04-generative-ui/17-child-component-template/design.md) | 1 |
+| 07 前端层 | 04 生成式UI | 18 通用样式与属性 | `07-04-18` | `07-frontend/04-generative-ui/18-common-styles-attributes/` | [design.md](07-frontend/04-generative-ui/18-common-styles-attributes/design.md) | 5 |
+| 07 前端层 | 04 生成式UI | 19 通用事件 | `07-04-19` | `07-frontend/04-generative-ui/19-common-events/` | [design.md](07-frontend/04-generative-ui/19-common-events/design.md) | 2 |
+| 07 前端层 | 04 生成式UI | 20 自定义组件与自定义函数 | `07-04-20` | `07-frontend/04-generative-ui/20-custom-components-functions/` | [design.md](07-frontend/04-generative-ui/20-custom-components-functions/design.md) | 2 |
+| 07 前端层 | 04 生成式UI | 21 动态数据绑定 | `07-04-21` | `07-frontend/04-generative-ui/21-dynamic-data-binding/` | [design.md](07-frontend/04-generative-ui/21-dynamic-data-binding/design.md) | 4 |
+| 07 前端层 | 04 生成式UI | 22 交互行为链 | `07-04-22` | `07-frontend/04-generative-ui/22-interaction-action-chain/` | [design.md](07-frontend/04-generative-ui/22-interaction-action-chain/design.md) | 2 |
+| 07 前端层 | 04 生成式UI | 23 多设备自适应 | `07-04-23` | `07-frontend/04-generative-ui/23-multi-device-adaptation/` | [design.md](07-frontend/04-generative-ui/23-multi-device-adaptation/design.md) | 3 |
+| 07 前端层 | 04 生成式UI | 24 主题与深浅色 | `07-04-24` | `07-frontend/04-generative-ui/24-theme-color-mode/` | [design.md](07-frontend/04-generative-ui/24-theme-color-mode/design.md) | 2 |
 | 07 前端层 | 04 生成式UI | 25 生成式卡片 | `07-04-25` | `07-frontend/04-generative-ui/25-generative-form/` | *待补充* | 3 |
-| 07 前端层 | 04 生成式UI | 26 异常处理与DFX | `07-04-26` | `07-frontend/04-generative-ui/26-error-dfx/` | *待补充* | 3 |
+| 07 前端层 | 04 生成式UI | 26 异常处理与DFX | `07-04-26` | `07-frontend/04-generative-ui/26-error-dfx/` | [design.md](07-frontend/04-generative-ui/26-error-dfx/design.md) | 3 |
 | 07 前端层 | 04 生成式UI | 27 扩展域-1 | `07-04-27` | `07-frontend/04-generative-ui/27-extension-domain-1/` | *待补充* | 4 |
 | 07 前端层 | 04 生成式UI | 28 扩展域-2 | `07-04-28` | `07-frontend/04-generative-ui/28-extension-domain-2/` | *待补充* | 4 |
 | 07 前端层 | 05 渲染控制 | 01 渲染控制语法 | `07-05-01` | `07-frontend/05-render-control/01-render-control-syntax/` | [design.md](07-frontend/05-render-control/01-render-control-syntax/design.md) | 3 |
@@ -2366,125 +2366,125 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | 消息类型与协议版本契约 | *待补充* | Draft |
-| Feat-02 | Surface 生命周期与 catalogId 匹配 | *待补充* | Draft |
-| Feat-03 | 组件描述与增量更新 | *待补充* | Draft |
-| Feat-04 | 数据模型更新与绑定刷新 | *待补充* | Draft |
-| Feat-05 | 流式渐进渲染 | *待补充* | Draft |
-| Feat-06 | 多 Surface 管理 | *待补充* | Draft |
-| Feat-07 | Catalog 与能力查询 | *待补充* | Draft |
+| Feat-01 | 消息类型与协议版本契约 | [Feat-01-message-type-and-protocol-version-contract-spec.md](07-frontend/04-generative-ui/01-protocol-core-message-model/Feat-01-message-type-and-protocol-version-contract-spec.md) | Baselined |
+| Feat-02 | Surface 生命周期与 catalogId 匹配 | [Feat-02-surface-lifecycle-and-catalogid-matching-spec.md](07-frontend/04-generative-ui/01-protocol-core-message-model/Feat-02-surface-lifecycle-and-catalogid-matching-spec.md) | Baselined |
+| Feat-03 | 组件描述与增量更新 | [Feat-03-component-description-and-incremental-update-spec.md](07-frontend/04-generative-ui/01-protocol-core-message-model/Feat-03-component-description-and-incremental-update-spec.md) | Baselined |
+| Feat-04 | 数据模型更新与绑定刷新 | [Feat-04-data-model-update-and-binding-refresh-spec.md](07-frontend/04-generative-ui/01-protocol-core-message-model/Feat-04-data-model-update-and-binding-refresh-spec.md) | Baselined |
+| Feat-05 | 流式渐进渲染 | [Feat-05-streaming-progressive-rendering-spec.md](07-frontend/04-generative-ui/01-protocol-core-message-model/Feat-05-streaming-progressive-rendering-spec.md) | Baselined |
+| Feat-06 | 多 Surface 管理 | [Feat-06-multi-surface-management-spec.md](07-frontend/04-generative-ui/01-protocol-core-message-model/Feat-06-multi-surface-management-spec.md) | Baselined |
+| Feat-07 | Catalog 与能力查询 | [Feat-07-catalog-and-capability-query-spec.md](07-frontend/04-generative-ui/01-protocol-core-message-model/Feat-07-catalog-and-capability-query-spec.md) | Baselined |
 
 ### 07-04-02 标准协议布局组件
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | Row 组件 | *待补充* | Draft |
-| Feat-02 | Column 组件 | *待补充* | Draft |
-| Feat-03 | List 组件 | *待补充* | Draft |
+| Feat-01 | Row 组件 | [Feat-01-row-layout-spec.md](07-frontend/04-generative-ui/02-a2ui-standard-layout-components/Feat-01-row-layout-spec.md) | Baselined |
+| Feat-02 | Column 组件 | [Feat-02-column-layout-spec.md](07-frontend/04-generative-ui/02-a2ui-standard-layout-components/Feat-02-column-layout-spec.md) | Baselined |
+| Feat-03 | List 组件 | [Feat-03-list-layout-spec.md](07-frontend/04-generative-ui/02-a2ui-standard-layout-components/Feat-03-list-layout-spec.md) | Baselined |
 
 ### 07-04-03 标准协议展示组件
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | Text 组件 | *待补充* | Draft |
-| Feat-02 | Image 组件 | *待补充* | Draft |
-| Feat-03 | Icon 组件 | *待补充* | Draft |
-| Feat-04 | Divider 组件 | *待补充* | Draft |
+| Feat-01 | Text 组件 | [Feat-01-text-display-spec.md](07-frontend/04-generative-ui/03-a2ui-standard-display-components/Feat-01-text-display-spec.md) | Baselined |
+| Feat-02 | Image 组件 | [Feat-02-image-display-spec.md](07-frontend/04-generative-ui/03-a2ui-standard-display-components/Feat-02-image-display-spec.md) | Baselined |
+| Feat-03 | Icon 组件 | [Feat-03-icon-display-spec.md](07-frontend/04-generative-ui/03-a2ui-standard-display-components/Feat-03-icon-display-spec.md) | Baselined |
+| Feat-04 | Divider 组件 | [Feat-04-divider-display-spec.md](07-frontend/04-generative-ui/03-a2ui-standard-display-components/Feat-04-divider-display-spec.md) | Baselined |
 
 ### 07-04-04 标准协议交互组件
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | Button 组件 | *待补充* | Draft |
-| Feat-02 | TextField 组件 | *待补充* | Draft |
-| Feat-03 | CheckBox 组件 | *待补充* | Draft |
-| Feat-04 | Slider 组件 | *待补充* | Draft |
-| Feat-05 | DateTimeInput 组件 | *待补充* | Draft |
-| Feat-06 | ChoicePicker 组件 | *待补充* | Draft |
+| Feat-01 | Button 组件 | [Feat-01-button-interaction-spec.md](07-frontend/04-generative-ui/04-a2ui-standard-interaction-components/Feat-01-button-interaction-spec.md) | Baselined |
+| Feat-02 | TextField 组件 | [Feat-02-textfield-interaction-spec.md](07-frontend/04-generative-ui/04-a2ui-standard-interaction-components/Feat-02-textfield-interaction-spec.md) | Baselined |
+| Feat-03 | CheckBox 组件 | [Feat-03-checkbox-interaction-spec.md](07-frontend/04-generative-ui/04-a2ui-standard-interaction-components/Feat-03-checkbox-interaction-spec.md) | Baselined |
+| Feat-04 | Slider 组件 | [Feat-04-slider-interaction-spec.md](07-frontend/04-generative-ui/04-a2ui-standard-interaction-components/Feat-04-slider-interaction-spec.md) | Baselined |
+| Feat-05 | DateTimeInput 组件 | [Feat-05-datetimeinput-interaction-spec.md](07-frontend/04-generative-ui/04-a2ui-standard-interaction-components/Feat-05-datetimeinput-interaction-spec.md) | Baselined |
+| Feat-06 | ChoicePicker 组件 | [Feat-06-choicepicker-interaction-spec.md](07-frontend/04-generative-ui/04-a2ui-standard-interaction-components/Feat-06-choicepicker-interaction-spec.md) | Baselined |
 
 ### 07-04-05 标准协议容器组件
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | Card 组件 | *待补充* | Draft |
-| Feat-02 | Modal 组件 | *待补充* | Draft |
-| Feat-03 | Tabs 组件 | *待补充* | Draft |
+| Feat-01 | Card 组件 | [Feat-01-card-container-spec.md](07-frontend/04-generative-ui/05-a2ui-standard-container-components/Feat-01-card-container-spec.md) | Baselined |
+| Feat-02 | Modal 组件 | [Feat-02-modal-container-spec.md](07-frontend/04-generative-ui/05-a2ui-standard-container-components/Feat-02-modal-container-spec.md) | Baselined |
+| Feat-03 | Tabs 组件 | [Feat-03-tabs-container-spec.md](07-frontend/04-generative-ui/05-a2ui-standard-container-components/Feat-03-tabs-container-spec.md) | Baselined |
 
 ### 07-04-06 标准协议高级组件
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | Video 组件 | *待补充* | Draft |
-| Feat-02 | AudioPlayer 组件 | *待补充* | Draft |
+| Feat-01 | Video 组件 | [Feat-01-video-advanced-spec.md](07-frontend/04-generative-ui/06-a2ui-standard-advanced-components/Feat-01-video-advanced-spec.md) | Baselined |
+| Feat-02 | AudioPlayer 组件 | [Feat-02-audioplayer-advanced-spec.md](07-frontend/04-generative-ui/06-a2ui-standard-advanced-components/Feat-02-audioplayer-advanced-spec.md) | Baselined |
 
 ### 07-04-07 标准协议校验函数
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | required 函数 | *待补充* | Draft |
-| Feat-02 | regex 函数 | *待补充* | Draft |
-| Feat-03 | length 函数 | *待补充* | Draft |
-| Feat-04 | numeric 函数 | *待补充* | Draft |
-| Feat-05 | email 函数 | *待补充* | Draft |
+| Feat-01 | required 函数 | [Feat-01-required-validation-spec.md](07-frontend/04-generative-ui/07-a2ui-standard-validation-functions/Feat-01-required-validation-spec.md) | Baselined |
+| Feat-02 | regex 函数 | [Feat-02-regex-validation-spec.md](07-frontend/04-generative-ui/07-a2ui-standard-validation-functions/Feat-02-regex-validation-spec.md) | Baselined |
+| Feat-03 | length 函数 | [Feat-03-length-validation-spec.md](07-frontend/04-generative-ui/07-a2ui-standard-validation-functions/Feat-03-length-validation-spec.md) | Baselined |
+| Feat-04 | numeric 函数 | [Feat-04-numeric-validation-spec.md](07-frontend/04-generative-ui/07-a2ui-standard-validation-functions/Feat-04-numeric-validation-spec.md) | Baselined |
+| Feat-05 | email 函数 | [Feat-05-email-validation-spec.md](07-frontend/04-generative-ui/07-a2ui-standard-validation-functions/Feat-05-email-validation-spec.md) | Baselined |
 
 ### 07-04-08 标准协议格式化函数
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | formatString 函数 | *待补充* | Draft |
-| Feat-02 | formatNumber 函数 | *待补充* | Draft |
-| Feat-03 | formatCurrency 函数 | *待补充* | Draft |
-| Feat-04 | formatDate 函数 | *待补充* | Draft |
-| Feat-05 | pluralize 函数 | *待补充* | Draft |
+| Feat-01 | formatString 函数 | [Feat-01-formatstring-function-spec.md](07-frontend/04-generative-ui/08-a2ui-standard-format-functions/Feat-01-formatstring-function-spec.md) | Baselined |
+| Feat-02 | formatNumber 函数 | [Feat-02-formatnumber-function-spec.md](07-frontend/04-generative-ui/08-a2ui-standard-format-functions/Feat-02-formatnumber-function-spec.md) | Baselined |
+| Feat-03 | formatCurrency 函数 | [Feat-03-formatcurrency-function-spec.md](07-frontend/04-generative-ui/08-a2ui-standard-format-functions/Feat-03-formatcurrency-function-spec.md) | Baselined |
+| Feat-04 | formatDate 函数 | [Feat-04-formatdate-function-spec.md](07-frontend/04-generative-ui/08-a2ui-standard-format-functions/Feat-04-formatdate-function-spec.md) | Baselined |
+| Feat-05 | pluralize 函数 | [Feat-05-pluralize-function-spec.md](07-frontend/04-generative-ui/08-a2ui-standard-format-functions/Feat-05-pluralize-function-spec.md) | Baselined |
 
 ### 07-04-09 标准协议逻辑与系统函数
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | and 函数 | *待补充* | Draft |
-| Feat-02 | or 函数 | *待补充* | Draft |
-| Feat-03 | not 函数 | *待补充* | Draft |
-| Feat-04 | openUrl 函数 | *待补充* | Draft |
+| Feat-01 | and 函数 | [Feat-01-and-logic-spec.md](07-frontend/04-generative-ui/09-a2ui-standard-logic-system-functions/Feat-01-and-logic-spec.md) | Baselined |
+| Feat-02 | or 函数 | [Feat-02-or-logic-spec.md](07-frontend/04-generative-ui/09-a2ui-standard-logic-system-functions/Feat-02-or-logic-spec.md) | Baselined |
+| Feat-03 | not 函数 | [Feat-03-not-logic-spec.md](07-frontend/04-generative-ui/09-a2ui-standard-logic-system-functions/Feat-03-not-logic-spec.md) | Baselined |
+| Feat-04 | openUrl 函数 | [Feat-04-openurl-system-spec.md](07-frontend/04-generative-ui/09-a2ui-standard-logic-system-functions/Feat-04-openurl-system-spec.md) | Baselined |
 
 ### 07-04-10 扩展协议布局组件
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | Row 组件 | *待补充* | Draft |
-| Feat-02 | Column 组件 | *待补充* | Draft |
-| Feat-03 | List 组件 | *待补充* | Draft |
-| Feat-04 | Stack 组件 | *待补充* | Draft |
-| Feat-05 | Grid 组件 | *待补充* | Draft |
+| Feat-01 | Row 组件 | [Feat-01-row-extended-layout-spec.md](07-frontend/04-generative-ui/10-a2ui-extended-layout-components/Feat-01-row-extended-layout-spec.md) | Baselined |
+| Feat-02 | Column 组件 | [Feat-02-column-extended-layout-spec.md](07-frontend/04-generative-ui/10-a2ui-extended-layout-components/Feat-02-column-extended-layout-spec.md) | Baselined |
+| Feat-03 | List 组件 | [Feat-03-list-extended-layout-spec.md](07-frontend/04-generative-ui/10-a2ui-extended-layout-components/Feat-03-list-extended-layout-spec.md) | Baselined |
+| Feat-04 | Stack 组件 | [Feat-04-stack-extended-layout-spec.md](07-frontend/04-generative-ui/10-a2ui-extended-layout-components/Feat-04-stack-extended-layout-spec.md) | Baselined |
+| Feat-05 | Grid 组件 | [Feat-05-grid-extended-layout-spec.md](07-frontend/04-generative-ui/10-a2ui-extended-layout-components/Feat-05-grid-extended-layout-spec.md) | Baselined |
 
 ### 07-04-11 扩展协议展示组件
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | Text 组件 | *待补充* | Draft |
-| Feat-02 | Image 组件 | *待补充* | Draft |
-| Feat-03 | Divider 组件 | *待补充* | Draft |
-| Feat-04 | Progress 组件 | *待补充* | Draft |
+| Feat-01 | Text 组件 | [Feat-01-text-extended-display-spec.md](07-frontend/04-generative-ui/11-a2ui-extended-display-components/Feat-01-text-extended-display-spec.md) | Baselined |
+| Feat-02 | Image 组件 | [Feat-02-image-extended-display-spec.md](07-frontend/04-generative-ui/11-a2ui-extended-display-components/Feat-02-image-extended-display-spec.md) | Baselined |
+| Feat-03 | Divider 组件 | [Feat-03-divider-extended-display-spec.md](07-frontend/04-generative-ui/11-a2ui-extended-display-components/Feat-03-divider-extended-display-spec.md) | Baselined |
+| Feat-04 | Progress 组件 | [Feat-04-progress-extended-display-spec.md](07-frontend/04-generative-ui/11-a2ui-extended-display-components/Feat-04-progress-extended-display-spec.md) | Baselined |
 
 ### 07-04-12 扩展协议交互组件
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | Button 组件 | *待补充* | Draft |
-| Feat-02 | TextInput 组件 | *待补充* | Draft |
-| Feat-03 | Select 组件 | *待补充* | Draft |
-| Feat-04 | Toggle 组件 | *待补充* | Draft |
-| Feat-05 | Radio 组件 | *待补充* | Draft |
-| Feat-06 | Checkbox 组件 | *待补充* | Draft |
-| Feat-07 | CheckboxGroup 组件 | *待补充* | Draft |
+| Feat-01 | Button 组件 | [Feat-01-button-extended-interaction-spec.md](07-frontend/04-generative-ui/12-a2ui-extended-interaction-components/Feat-01-button-extended-interaction-spec.md) | Baselined |
+| Feat-02 | TextInput 组件 | [Feat-02-textinput-extended-interaction-spec.md](07-frontend/04-generative-ui/12-a2ui-extended-interaction-components/Feat-02-textinput-extended-interaction-spec.md) | Baselined |
+| Feat-03 | Select 组件 | [Feat-03-select-extended-interaction-spec.md](07-frontend/04-generative-ui/12-a2ui-extended-interaction-components/Feat-03-select-extended-interaction-spec.md) | Baselined |
+| Feat-04 | Toggle 组件 | [Feat-04-toggle-extended-interaction-spec.md](07-frontend/04-generative-ui/12-a2ui-extended-interaction-components/Feat-04-toggle-extended-interaction-spec.md) | Baselined |
+| Feat-05 | Radio 组件 | [Feat-05-radio-extended-interaction-spec.md](07-frontend/04-generative-ui/12-a2ui-extended-interaction-components/Feat-05-radio-extended-interaction-spec.md) | Baselined |
+| Feat-06 | Checkbox 组件 | [Feat-06-checkbox-extended-interaction-spec.md](07-frontend/04-generative-ui/12-a2ui-extended-interaction-components/Feat-06-checkbox-extended-interaction-spec.md) | Baselined |
+| Feat-07 | CheckboxGroup 组件 | [Feat-07-checkboxgroup-extended-interaction-spec.md](07-frontend/04-generative-ui/12-a2ui-extended-interaction-components/Feat-07-checkboxgroup-extended-interaction-spec.md) | Baselined |
 
 ### 07-04-13 扩展协议容器组件
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | Tabs 组件 | *待补充* | Draft |
-| Feat-02 | TabContent 组件 | *待补充* | Draft |
-| Feat-03 | NavContainer 组件 | *待补充* | Draft |
-| Feat-04 | Web 组件 | *待补充* | Draft |
+| Feat-01 | Tabs 组件 | [Feat-01-tabs-extended-container-spec.md](07-frontend/04-generative-ui/13-a2ui-extended-container-components/Feat-01-tabs-extended-container-spec.md) | Baselined |
+| Feat-02 | TabContent 组件 | [Feat-02-tabcontent-extended-container-spec.md](07-frontend/04-generative-ui/13-a2ui-extended-container-components/Feat-02-tabcontent-extended-container-spec.md) | Baselined |
+| Feat-03 | NavContainer 组件 | [Feat-03-navcontainer-extended-container-spec.md](07-frontend/04-generative-ui/13-a2ui-extended-container-components/Feat-03-navcontainer-extended-container-spec.md) | Baselined |
+| Feat-04 | Web 组件 | [Feat-04-web-extended-container-spec.md](07-frontend/04-generative-ui/13-a2ui-extended-container-components/Feat-04-web-extended-container-spec.md) | Baselined |
 
 ### 07-04-14 扩展协议绘制组件
 
@@ -2495,81 +2495,81 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | If 组件 | *待补充* | Draft |
+| Feat-01 | If 组件 | [Feat-01-if-conditional-spec.md](07-frontend/04-generative-ui/15-a2ui-extended-conditional-components/Feat-01-if-conditional-spec.md) | Baselined |
 
 ### 07-04-16 扩展协议内置函数
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | getRadioValue 函数 | *待补充* | Draft |
-| Feat-02 | getCheckboxGroupValues 函数 | *待补充* | Draft |
-| Feat-03 | getToggleValue 函数 | *待补充* | Draft |
-| Feat-04 | getSelectValue 函数 | *待补充* | Draft |
-| Feat-05 | break 函数 | *待补充* | Draft |
-| Feat-06 | setDataModel 函数 | *待补充* | Draft |
-| Feat-07 | setAttributes 函数 | *待补充* | Draft |
-| Feat-08 | navigate 函数 | *待补充* | Draft |
+| Feat-01 | getRadioValue 函数 | [Feat-01-getradiovalue-function-spec.md](07-frontend/04-generative-ui/16-a2ui-extended-functions/Feat-01-getradiovalue-function-spec.md) | Baselined |
+| Feat-02 | getCheckboxGroupValues 函数 | [Feat-02-getcheckboxgroupvalues-function-spec.md](07-frontend/04-generative-ui/16-a2ui-extended-functions/Feat-02-getcheckboxgroupvalues-function-spec.md) | Baselined |
+| Feat-03 | getToggleValue 函数 | [Feat-03-gettogglevalue-function-spec.md](07-frontend/04-generative-ui/16-a2ui-extended-functions/Feat-03-gettogglevalue-function-spec.md) | Baselined |
+| Feat-04 | getSelectValue 函数 | [Feat-04-getselectvalue-function-spec.md](07-frontend/04-generative-ui/16-a2ui-extended-functions/Feat-04-getselectvalue-function-spec.md) | Baselined |
+| Feat-05 | break 函数 | [Feat-05-break-function-spec.md](07-frontend/04-generative-ui/16-a2ui-extended-functions/Feat-05-break-function-spec.md) | Baselined |
+| Feat-06 | setDataModel 函数 | [Feat-06-setdatamodel-function-spec.md](07-frontend/04-generative-ui/16-a2ui-extended-functions/Feat-06-setdatamodel-function-spec.md) | Baselined |
+| Feat-07 | setAttributes 函数 | [Feat-07-setattributes-function-spec.md](07-frontend/04-generative-ui/16-a2ui-extended-functions/Feat-07-setattributes-function-spec.md) | Baselined |
+| Feat-08 | navigate 函数 | [Feat-08-navigate-function-spec.md](07-frontend/04-generative-ui/16-a2ui-extended-functions/Feat-08-navigate-function-spec.md) | Baselined |
 
 ### 07-04-17 子组件模板
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | 子组件模板声明与实例化 | *待补充* | Draft |
+| Feat-01 | 子组件模板声明与实例化 | [Feat-01-child-component-template-spec.md](07-frontend/04-generative-ui/17-child-component-template/Feat-01-child-component-template-spec.md) | Baselined |
 
 ### 07-04-18 通用样式与属性
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | 尺寸与布局样式 | *待补充* | Draft |
-| Feat-02 | 间距与边框样式 | *待补充* | Draft |
-| Feat-03 | 背景与颜色样式 | *待补充* | Draft |
-| Feat-04 | 视效样式 | *待补充* | Draft |
-| Feat-05 | 显示与裁切 | *待补充* | Draft |
+| Feat-01 | 尺寸与布局样式 | [Feat-01-size-layout-style-spec.md](07-frontend/04-generative-ui/18-common-styles-attributes/Feat-01-size-layout-style-spec.md) | Baselined |
+| Feat-02 | 间距与边框样式 | [Feat-02-spacing-border-style-spec.md](07-frontend/04-generative-ui/18-common-styles-attributes/Feat-02-spacing-border-style-spec.md) | Baselined |
+| Feat-03 | 背景与颜色样式 | [Feat-03-background-color-style-spec.md](07-frontend/04-generative-ui/18-common-styles-attributes/Feat-03-background-color-style-spec.md) | Baselined |
+| Feat-04 | 视效样式 | [Feat-04-visual-effect-style-spec.md](07-frontend/04-generative-ui/18-common-styles-attributes/Feat-04-visual-effect-style-spec.md) | Baselined |
+| Feat-05 | 显示与裁切 | [Feat-05-display-clip-style-spec.md](07-frontend/04-generative-ui/18-common-styles-attributes/Feat-05-display-clip-style-spec.md) | Baselined |
 
 ### 07-04-19 通用事件
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | 通用事件模型与触发契约 | *待补充* | Draft |
-| Feat-02 | 事件数据与分发 | *待补充* | Draft |
+| Feat-01 | 通用事件模型与触发契约 | [Feat-01-event-model-trigger-contract-spec.md](07-frontend/04-generative-ui/19-common-events/Feat-01-event-model-trigger-contract-spec.md) | Baselined |
+| Feat-02 | 事件数据与分发 | [Feat-02-event-data-dispatch-spec.md](07-frontend/04-generative-ui/19-common-events/Feat-02-event-data-dispatch-spec.md) | Baselined |
 
 ### 07-04-20 自定义组件与自定义函数
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | 自定义组件注册与使用 | *待补充* | Draft |
-| Feat-02 | 自定义函数注册与调用 | *待补充* | Draft |
+| Feat-01 | 自定义组件注册与使用 | [Feat-01-custom-component-registration-spec.md](07-frontend/04-generative-ui/20-custom-components-functions/Feat-01-custom-component-registration-spec.md) | Baselined |
+| Feat-02 | 自定义函数注册与调用 | [Feat-02-custom-function-registration-spec.md](07-frontend/04-generative-ui/20-custom-components-functions/Feat-02-custom-function-registration-spec.md) | Baselined |
 
 ### 07-04-21 动态数据绑定
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | DataModel 读写契约 | *待补充* | Draft |
-| Feat-02 | 路径绑定 | *待补充* | Draft |
-| Feat-03 | 表达式绑定 | *待补充* | Draft |
-| Feat-04 | 变量系统 | *待补充* | Draft |
+| Feat-01 | DataModel 读写契约 | [Feat-01-datamodel-readwrite-spec.md](07-frontend/04-generative-ui/21-dynamic-data-binding/Feat-01-datamodel-readwrite-spec.md) | Baselined |
+| Feat-02 | 路径绑定 | [Feat-02-path-binding-spec.md](07-frontend/04-generative-ui/21-dynamic-data-binding/Feat-02-path-binding-spec.md) | Baselined |
+| Feat-03 | 表达式绑定 | [Feat-03-expression-binding-spec.md](07-frontend/04-generative-ui/21-dynamic-data-binding/Feat-03-expression-binding-spec.md) | Baselined |
+| Feat-04 | 变量系统 | [Feat-04-variable-system-spec.md](07-frontend/04-generative-ui/21-dynamic-data-binding/Feat-04-variable-system-spec.md) | Baselined |
 
 ### 07-04-22 交互行为链
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | 交互模型 | *待补充* | Draft |
-| Feat-02 | 事件处理链语义 | *待补充* | Draft |
+| Feat-01 | 交互模型 | [Feat-01-interaction-model-spec.md](07-frontend/04-generative-ui/22-interaction-action-chain/Feat-01-interaction-model-spec.md) | Baselined |
+| Feat-02 | 事件处理链语义 | [Feat-02-event-handler-chain-spec.md](07-frontend/04-generative-ui/22-interaction-action-chain/Feat-02-event-handler-chain-spec.md) | Baselined |
 
 ### 07-04-23 多设备自适应
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | 响应式断点 | *待补充* | Draft |
-| Feat-02 | 自适应单位 | *待补充* | Draft |
-| Feat-03 | 条件组件与断点重渲染 | *待补充* | Draft |
+| Feat-01 | 响应式断点 | [Feat-01-responsive-breakpoint-spec.md](07-frontend/04-generative-ui/23-multi-device-adaptation/Feat-01-responsive-breakpoint-spec.md) | Baselined |
+| Feat-02 | 自适应单位 | [Feat-02-adaptive-unit-spec.md](07-frontend/04-generative-ui/23-multi-device-adaptation/Feat-02-adaptive-unit-spec.md) | Baselined |
+| Feat-03 | 条件组件与断点重渲染 | [Feat-03-conditional-breakpoint-rerender-spec.md](07-frontend/04-generative-ui/23-multi-device-adaptation/Feat-03-conditional-breakpoint-rerender-spec.md) | Baselined |
 
 ### 07-04-24 主题与深浅色
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | 主题与色彩模式 | *待补充* | Draft |
-| Feat-02 | 扩展组件默认深浅色 | *待补充* | Draft |
+| Feat-01 | 主题与色彩模式 | [Feat-01-theme-color-mode-spec.md](07-frontend/04-generative-ui/24-theme-color-mode/Feat-01-theme-color-mode-spec.md) | Baselined |
+| Feat-02 | 扩展组件默认深浅色 | [Feat-02-extended-default-color-spec.md](07-frontend/04-generative-ui/24-theme-color-mode/Feat-02-extended-default-color-spec.md) | Baselined |
 
 ### 07-04-25 生成式卡片
 
@@ -2583,9 +2583,9 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | 错误码与异常行为契约 | *待补充* | Draft |
-| Feat-02 | 维测可观测契约 | *待补充* | Draft |
-| Feat-03 | 大数据打点 | *待补充* | Draft |
+| Feat-01 | 错误码与异常行为契约 | [Feat-01-error-code-contract-spec.md](07-frontend/04-generative-ui/26-error-dfx/Feat-01-error-code-contract-spec.md) | Baselined |
+| Feat-02 | 维测可观测契约 | [Feat-02-observability-contract-spec.md](07-frontend/04-generative-ui/26-error-dfx/Feat-02-observability-contract-spec.md) | Baselined |
+| Feat-03 | 大数据打点 | [Feat-03-large-data-metrics-spec.md](07-frontend/04-generative-ui/26-error-dfx/Feat-03-large-data-metrics-spec.md) | Baselined |
 
 ### 07-04-27 扩展域-1
 

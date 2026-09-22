@@ -3298,448 +3298,448 @@ features:
 - func_id: 07-04-01
   id: Feat-01
   title: 消息类型与协议版本契约
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/01-protocol-core-message-model/Feat-01-message-type-and-protocol-version-contract-spec.md
+  status: Baselined
 - func_id: 07-04-01
   id: Feat-02
   title: Surface 生命周期与 catalogId 匹配
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/01-protocol-core-message-model/Feat-02-surface-lifecycle-and-catalogid-matching-spec.md
+  status: Baselined
 - func_id: 07-04-01
   id: Feat-03
   title: 组件描述与增量更新
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/01-protocol-core-message-model/Feat-03-component-description-and-incremental-update-spec.md
+  status: Baselined
 - func_id: 07-04-01
   id: Feat-04
   title: 数据模型更新与绑定刷新
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/01-protocol-core-message-model/Feat-04-data-model-update-and-binding-refresh-spec.md
+  status: Baselined
 - func_id: 07-04-01
   id: Feat-05
   title: 流式渐进渲染
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/01-protocol-core-message-model/Feat-05-streaming-progressive-rendering-spec.md
+  status: Baselined
 - func_id: 07-04-01
   id: Feat-06
   title: 多 Surface 管理
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/01-protocol-core-message-model/Feat-06-multi-surface-management-spec.md
+  status: Baselined
 - func_id: 07-04-01
   id: Feat-07
   title: Catalog 与能力查询
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/01-protocol-core-message-model/Feat-07-catalog-and-capability-query-spec.md
+  status: Baselined
 - func_id: 07-04-02
   id: Feat-01
   title: Row 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/02-a2ui-standard-layout-components/Feat-01-row-layout-spec.md
+  status: Baselined
 - func_id: 07-04-02
   id: Feat-02
   title: Column 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/02-a2ui-standard-layout-components/Feat-02-column-layout-spec.md
+  status: Baselined
 - func_id: 07-04-02
   id: Feat-03
   title: List 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/02-a2ui-standard-layout-components/Feat-03-list-layout-spec.md
+  status: Baselined
 - func_id: 07-04-03
   id: Feat-01
   title: Text 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/03-a2ui-standard-display-components/Feat-01-text-display-spec.md
+  status: Baselined
 - func_id: 07-04-03
   id: Feat-02
   title: Image 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/03-a2ui-standard-display-components/Feat-02-image-display-spec.md
+  status: Baselined
 - func_id: 07-04-03
   id: Feat-03
   title: Icon 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/03-a2ui-standard-display-components/Feat-03-icon-display-spec.md
+  status: Baselined
 - func_id: 07-04-03
   id: Feat-04
   title: Divider 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/03-a2ui-standard-display-components/Feat-04-divider-display-spec.md
+  status: Baselined
 - func_id: 07-04-04
   id: Feat-01
   title: Button 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/04-a2ui-standard-interaction-components/Feat-01-button-interaction-spec.md
+  status: Baselined
 - func_id: 07-04-04
   id: Feat-02
   title: TextField 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/04-a2ui-standard-interaction-components/Feat-02-textfield-interaction-spec.md
+  status: Baselined
 - func_id: 07-04-04
   id: Feat-03
   title: CheckBox 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/04-a2ui-standard-interaction-components/Feat-03-checkbox-interaction-spec.md
+  status: Baselined
 - func_id: 07-04-04
   id: Feat-04
   title: Slider 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/04-a2ui-standard-interaction-components/Feat-04-slider-interaction-spec.md
+  status: Baselined
 - func_id: 07-04-04
   id: Feat-05
   title: DateTimeInput 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/04-a2ui-standard-interaction-components/Feat-05-datetimeinput-interaction-spec.md
+  status: Baselined
 - func_id: 07-04-04
   id: Feat-06
   title: ChoicePicker 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/04-a2ui-standard-interaction-components/Feat-06-choicepicker-interaction-spec.md
+  status: Baselined
 - func_id: 07-04-05
   id: Feat-01
   title: Card 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/05-a2ui-standard-container-components/Feat-01-card-container-spec.md
+  status: Baselined
 - func_id: 07-04-05
   id: Feat-02
   title: Modal 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/05-a2ui-standard-container-components/Feat-02-modal-container-spec.md
+  status: Baselined
 - func_id: 07-04-05
   id: Feat-03
   title: Tabs 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/05-a2ui-standard-container-components/Feat-03-tabs-container-spec.md
+  status: Baselined
 - func_id: 07-04-06
   id: Feat-01
   title: Video 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/06-a2ui-standard-advanced-components/Feat-01-video-advanced-spec.md
+  status: Baselined
 - func_id: 07-04-06
   id: Feat-02
   title: AudioPlayer 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/06-a2ui-standard-advanced-components/Feat-02-audioplayer-advanced-spec.md
+  status: Baselined
 - func_id: 07-04-07
   id: Feat-01
   title: required 函数
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/07-a2ui-standard-validation-functions/Feat-01-required-validation-spec.md
+  status: Baselined
 - func_id: 07-04-07
   id: Feat-02
   title: regex 函数
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/07-a2ui-standard-validation-functions/Feat-02-regex-validation-spec.md
+  status: Baselined
 - func_id: 07-04-07
   id: Feat-03
   title: length 函数
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/07-a2ui-standard-validation-functions/Feat-03-length-validation-spec.md
+  status: Baselined
 - func_id: 07-04-07
   id: Feat-04
   title: numeric 函数
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/07-a2ui-standard-validation-functions/Feat-04-numeric-validation-spec.md
+  status: Baselined
 - func_id: 07-04-07
   id: Feat-05
   title: email 函数
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/07-a2ui-standard-validation-functions/Feat-05-email-validation-spec.md
+  status: Baselined
 - func_id: 07-04-08
   id: Feat-01
   title: formatString 函数
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/08-a2ui-standard-format-functions/Feat-01-formatstring-function-spec.md
+  status: Baselined
 - func_id: 07-04-08
   id: Feat-02
   title: formatNumber 函数
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/08-a2ui-standard-format-functions/Feat-02-formatnumber-function-spec.md
+  status: Baselined
 - func_id: 07-04-08
   id: Feat-03
   title: formatCurrency 函数
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/08-a2ui-standard-format-functions/Feat-03-formatcurrency-function-spec.md
+  status: Baselined
 - func_id: 07-04-08
   id: Feat-04
   title: formatDate 函数
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/08-a2ui-standard-format-functions/Feat-04-formatdate-function-spec.md
+  status: Baselined
 - func_id: 07-04-08
   id: Feat-05
   title: pluralize 函数
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/08-a2ui-standard-format-functions/Feat-05-pluralize-function-spec.md
+  status: Baselined
 - func_id: 07-04-09
   id: Feat-01
   title: and 函数
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/09-a2ui-standard-logic-system-functions/Feat-01-and-logic-spec.md
+  status: Baselined
 - func_id: 07-04-09
   id: Feat-02
   title: or 函数
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/09-a2ui-standard-logic-system-functions/Feat-02-or-logic-spec.md
+  status: Baselined
 - func_id: 07-04-09
   id: Feat-03
   title: not 函数
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/09-a2ui-standard-logic-system-functions/Feat-03-not-logic-spec.md
+  status: Baselined
 - func_id: 07-04-09
   id: Feat-04
   title: openUrl 函数
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/09-a2ui-standard-logic-system-functions/Feat-04-openurl-system-spec.md
+  status: Baselined
 - func_id: 07-04-10
   id: Feat-01
   title: Row 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/10-a2ui-extended-layout-components/Feat-01-row-extended-layout-spec.md
+  status: Baselined
 - func_id: 07-04-10
   id: Feat-02
   title: Column 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/10-a2ui-extended-layout-components/Feat-02-column-extended-layout-spec.md
+  status: Baselined
 - func_id: 07-04-10
   id: Feat-03
   title: List 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/10-a2ui-extended-layout-components/Feat-03-list-extended-layout-spec.md
+  status: Baselined
 - func_id: 07-04-10
   id: Feat-04
   title: Stack 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/10-a2ui-extended-layout-components/Feat-04-stack-extended-layout-spec.md
+  status: Baselined
 - func_id: 07-04-10
   id: Feat-05
   title: Grid 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/10-a2ui-extended-layout-components/Feat-05-grid-extended-layout-spec.md
+  status: Baselined
 - func_id: 07-04-11
   id: Feat-01
   title: Text 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/11-a2ui-extended-display-components/Feat-01-text-extended-display-spec.md
+  status: Baselined
 - func_id: 07-04-11
   id: Feat-02
   title: Image 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/11-a2ui-extended-display-components/Feat-02-image-extended-display-spec.md
+  status: Baselined
 - func_id: 07-04-11
   id: Feat-03
   title: Divider 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/11-a2ui-extended-display-components/Feat-03-divider-extended-display-spec.md
+  status: Baselined
 - func_id: 07-04-11
   id: Feat-04
   title: Progress 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/11-a2ui-extended-display-components/Feat-04-progress-extended-display-spec.md
+  status: Baselined
 - func_id: 07-04-12
   id: Feat-01
   title: Button 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/12-a2ui-extended-interaction-components/Feat-01-button-extended-interaction-spec.md
+  status: Baselined
 - func_id: 07-04-12
   id: Feat-02
   title: TextInput 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/12-a2ui-extended-interaction-components/Feat-02-textinput-extended-interaction-spec.md
+  status: Baselined
 - func_id: 07-04-12
   id: Feat-03
   title: Select 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/12-a2ui-extended-interaction-components/Feat-03-select-extended-interaction-spec.md
+  status: Baselined
 - func_id: 07-04-12
   id: Feat-04
   title: Toggle 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/12-a2ui-extended-interaction-components/Feat-04-toggle-extended-interaction-spec.md
+  status: Baselined
 - func_id: 07-04-12
   id: Feat-05
   title: Radio 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/12-a2ui-extended-interaction-components/Feat-05-radio-extended-interaction-spec.md
+  status: Baselined
 - func_id: 07-04-12
   id: Feat-06
   title: Checkbox 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/12-a2ui-extended-interaction-components/Feat-06-checkbox-extended-interaction-spec.md
+  status: Baselined
 - func_id: 07-04-12
   id: Feat-07
   title: CheckboxGroup 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/12-a2ui-extended-interaction-components/Feat-07-checkboxgroup-extended-interaction-spec.md
+  status: Baselined
 - func_id: 07-04-13
   id: Feat-01
   title: Tabs 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/13-a2ui-extended-container-components/Feat-01-tabs-extended-container-spec.md
+  status: Baselined
 - func_id: 07-04-13
   id: Feat-02
   title: TabContent 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/13-a2ui-extended-container-components/Feat-02-tabcontent-extended-container-spec.md
+  status: Baselined
 - func_id: 07-04-13
   id: Feat-03
   title: NavContainer 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/13-a2ui-extended-container-components/Feat-03-navcontainer-extended-container-spec.md
+  status: Baselined
 - func_id: 07-04-13
   id: Feat-04
   title: Web 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/13-a2ui-extended-container-components/Feat-04-web-extended-container-spec.md
+  status: Baselined
 - func_id: 07-04-15
   id: Feat-01
   title: If 组件
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/15-a2ui-extended-conditional-components/Feat-01-if-conditional-spec.md
+  status: Baselined
 - func_id: 07-04-16
   id: Feat-01
   title: getRadioValue 函数
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/16-a2ui-extended-functions/Feat-01-getradiovalue-function-spec.md
+  status: Baselined
 - func_id: 07-04-16
   id: Feat-02
   title: getCheckboxGroupValues 函数
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/16-a2ui-extended-functions/Feat-02-getcheckboxgroupvalues-function-spec.md
+  status: Baselined
 - func_id: 07-04-16
   id: Feat-03
   title: getToggleValue 函数
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/16-a2ui-extended-functions/Feat-03-gettogglevalue-function-spec.md
+  status: Baselined
 - func_id: 07-04-16
   id: Feat-04
   title: getSelectValue 函数
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/16-a2ui-extended-functions/Feat-04-getselectvalue-function-spec.md
+  status: Baselined
 - func_id: 07-04-16
   id: Feat-05
   title: break 函数
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/16-a2ui-extended-functions/Feat-05-break-function-spec.md
+  status: Baselined
 - func_id: 07-04-16
   id: Feat-06
   title: setDataModel 函数
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/16-a2ui-extended-functions/Feat-06-setdatamodel-function-spec.md
+  status: Baselined
 - func_id: 07-04-16
   id: Feat-07
   title: setAttributes 函数
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/16-a2ui-extended-functions/Feat-07-setattributes-function-spec.md
+  status: Baselined
 - func_id: 07-04-16
   id: Feat-08
   title: navigate 函数
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/16-a2ui-extended-functions/Feat-08-navigate-function-spec.md
+  status: Baselined
 - func_id: 07-04-17
   id: Feat-01
   title: 子组件模板声明与实例化
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/17-child-component-template/Feat-01-child-component-template-spec.md
+  status: Baselined
 - func_id: 07-04-18
   id: Feat-01
   title: 尺寸与布局样式
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/18-common-styles-attributes/Feat-01-size-layout-style-spec.md
+  status: Baselined
 - func_id: 07-04-18
   id: Feat-02
   title: 间距与边框样式
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/18-common-styles-attributes/Feat-02-spacing-border-style-spec.md
+  status: Baselined
 - func_id: 07-04-18
   id: Feat-03
   title: 背景与颜色样式
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/18-common-styles-attributes/Feat-03-background-color-style-spec.md
+  status: Baselined
 - func_id: 07-04-18
   id: Feat-04
   title: 视效样式
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/18-common-styles-attributes/Feat-04-visual-effect-style-spec.md
+  status: Baselined
 - func_id: 07-04-18
   id: Feat-05
   title: 显示与裁切
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/18-common-styles-attributes/Feat-05-display-clip-style-spec.md
+  status: Baselined
 - func_id: 07-04-19
   id: Feat-01
   title: 通用事件模型与触发契约
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/19-common-events/Feat-01-event-model-trigger-contract-spec.md
+  status: Baselined
 - func_id: 07-04-19
   id: Feat-02
   title: 事件数据与分发
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/19-common-events/Feat-02-event-data-dispatch-spec.md
+  status: Baselined
 - func_id: 07-04-20
   id: Feat-01
   title: 自定义组件注册与使用
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/20-custom-components-functions/Feat-01-custom-component-registration-spec.md
+  status: Baselined
 - func_id: 07-04-20
   id: Feat-02
   title: 自定义函数注册与调用
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/20-custom-components-functions/Feat-02-custom-function-registration-spec.md
+  status: Baselined
 - func_id: 07-04-21
   id: Feat-01
   title: DataModel 读写契约
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/21-dynamic-data-binding/Feat-01-datamodel-readwrite-spec.md
+  status: Baselined
 - func_id: 07-04-21
   id: Feat-02
   title: 路径绑定
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/21-dynamic-data-binding/Feat-02-path-binding-spec.md
+  status: Baselined
 - func_id: 07-04-21
   id: Feat-03
   title: 表达式绑定
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/21-dynamic-data-binding/Feat-03-expression-binding-spec.md
+  status: Baselined
 - func_id: 07-04-21
   id: Feat-04
   title: 变量系统
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/21-dynamic-data-binding/Feat-04-variable-system-spec.md
+  status: Baselined
 - func_id: 07-04-22
   id: Feat-01
   title: 交互模型
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/22-interaction-action-chain/Feat-01-interaction-model-spec.md
+  status: Baselined
 - func_id: 07-04-22
   id: Feat-02
   title: 事件处理链语义
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/22-interaction-action-chain/Feat-02-event-handler-chain-spec.md
+  status: Baselined
 - func_id: 07-04-23
   id: Feat-01
   title: 响应式断点
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/23-multi-device-adaptation/Feat-01-responsive-breakpoint-spec.md
+  status: Baselined
 - func_id: 07-04-23
   id: Feat-02
   title: 自适应单位
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/23-multi-device-adaptation/Feat-02-adaptive-unit-spec.md
+  status: Baselined
 - func_id: 07-04-23
   id: Feat-03
   title: 条件组件与断点重渲染
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/23-multi-device-adaptation/Feat-03-conditional-breakpoint-rerender-spec.md
+  status: Baselined
 - func_id: 07-04-24
   id: Feat-01
   title: 主题与色彩模式
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/24-theme-color-mode/Feat-01-theme-color-mode-spec.md
+  status: Baselined
 - func_id: 07-04-24
   id: Feat-02
   title: 扩展组件默认深浅色
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/24-theme-color-mode/Feat-02-extended-default-color-spec.md
+  status: Baselined
 - func_id: 07-04-25
   id: Feat-01
   title: Form 裁剪协议契约
@@ -3758,18 +3758,18 @@ features:
 - func_id: 07-04-26
   id: Feat-01
   title: 错误码与异常行为契约
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/26-error-dfx/Feat-01-error-code-contract-spec.md
+  status: Baselined
 - func_id: 07-04-26
   id: Feat-02
   title: 维测可观测契约
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/26-error-dfx/Feat-02-observability-contract-spec.md
+  status: Baselined
 - func_id: 07-04-26
   id: Feat-03
   title: 大数据打点
-  spec: null
-  status: Draft
+  spec: 07-frontend/04-generative-ui/26-error-dfx/Feat-03-large-data-metrics-spec.md
+  status: Baselined
 - func_id: 07-04-27
   id: Feat-01
   title: 通用能力
