@@ -1,5 +1,10 @@
 # 生成式 UI（GenUI / A2UI）规格子树说明
 
+> **独立仓声明**：本域（07-04 生成式 UI）归 GenUI 独立前端部件仓
+> （`GenerativeUI/A2UIRender`、`GenerativeUI/Docs` 等），**非 ArkUI
+> `ace_engine` 主仓库**。规格落点至本 ArkUI Specs 仓仅为全域归档，
+> 实现与契约以 GenUI 独立仓为准。
+
 本目录承载「07-04 生成式 UI」功能域的长期规格（每个 L3 功能域一份 `design.md` + 若干 `Feat-NN-*.md`）。
 
 GenUI 是基于 OpenHarmony ArkUI 的 A2UI（Agent-to-UI）渲染框架，实现分布在多个独立仓：
