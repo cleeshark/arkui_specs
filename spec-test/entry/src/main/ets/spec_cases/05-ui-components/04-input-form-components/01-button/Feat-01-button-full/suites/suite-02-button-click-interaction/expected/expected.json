@@ -1,0 +1,33 @@
+{
+  "suiteId": "suite-02-button-click-interaction",
+  "cases": [
+    {
+      "caseId": "case-007-button-click-callback",
+      "acRefs": ["AC-2.1"],
+      "targetNodeId": "N_BUTTON_US2_C007_TARGET",
+      "expectedRect": {"width": 140.0, "height": 20.0},
+      "tolerancePx": 1.0
+    },
+    {
+      "caseId": "case-008-button-touch-pressed-100ms",
+      "acRefs": ["AC-2.2", "AC-2.5"],
+      "targetNodeId": "N_BUTTON_US2_C008_TARGET",
+      "expectedRect": {"width": 140.0, "height": 20.0},
+      "tolerancePx": 1.0
+    },
+    {
+      "caseId": "case-009-button-touch-release-click",
+      "acRefs": ["AC-2.3"],
+      "targetNodeId": "N_BUTTON_US2_C009_TARGET",
+      "expectedRect": {"width": 160.0, "height": 20.0},
+      "tolerancePx": 1.0
+    },
+    {
+      "caseId": "case-010-button-mouse-hover-250ms",
+      "acRefs": ["AC-2.4"],
+      "targetNodeId": "N_BUTTON_US2_C010_TARGET",
+      "expectedRect": {"width": 140.0, "height": 20.0},
+      "tolerancePx": 1.0
+    }
+  ]
+}

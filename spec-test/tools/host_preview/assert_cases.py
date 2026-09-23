@@ -115,6 +115,9 @@ def main() -> None:
         target_id = case["targetNodeId"]
         tolerance = float(case.get("tolerancePx", 1.0))
         expected_rect = case["expectedRect"]
+        expected_attrs = case.get("expectedAttrs", {})
+        if not isinstance(expected_attrs, dict):
+            raise RuntimeError(f"expectedAttrs must be an object: {case_id}")
 
         node = find_node_by_attr_id(tree, target_id)
         if node is None:
@@ -145,7 +148,15 @@ def main() -> None:
         actual_rect = parse_rect(rect_raw)
         width_diff = abs(actual_rect["width"] - float(expected_rect["width"]))
         height_diff = abs(actual_rect["height"] - float(expected_rect["height"]))
-        ok = width_diff <= tolerance and height_diff <= tolerance
+        actual_attrs = node.get("$attrs", {})
+        if not isinstance(actual_attrs, dict):
+            actual_attrs = {}
+        attr_diff = {
+            key: {"expected": expected, "actual": actual_attrs.get(key)}
+            for key, expected in expected_attrs.items()
+            if actual_attrs.get(key) != expected
+        }
+        ok = width_diff <= tolerance and height_diff <= tolerance and not attr_diff
         status = "PASS" if ok else "FAIL"
         if ok:
             passed += 1
@@ -160,6 +171,9 @@ def main() -> None:
                 "expectedRect": expected_rect,
                 "actualRect": actual_rect,
                 "diff": {"width": width_diff, "height": height_diff},
+                "expectedAttrs": expected_attrs,
+                "actualAttrs": {key: actual_attrs.get(key) for key in expected_attrs},
+                "attrDiff": attr_diff,
                 "tolerancePx": tolerance,
                 "screenshotFile": screenshot_for_report,
             }
@@ -205,8 +219,15 @@ def main() -> None:
         ac = ",".join(item.get("acRefs", []))
         if item["status"] == "PASS":
             note = "width/height within tolerance"
+            if item.get("expectedAttrs"):
+                note += "; attrs matched"
         else:
-            note = item.get("reason", json.dumps(item.get("diff", {}), ensure_ascii=False))
+            note = item.get("reason")
+            if not note:
+                differences = {"rect": item.get("diff", {})}
+                if item.get("attrDiff"):
+                    differences["attrs"] = item["attrDiff"]
+                note = json.dumps(differences, ensure_ascii=False)
         md_lines.append(
             f"| {item.get('suiteId','')} | {item['caseId']} | {item['status']} | {ac} | {note} |"
         )

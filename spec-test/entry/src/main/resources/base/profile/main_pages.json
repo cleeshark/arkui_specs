@@ -28,6 +28,16 @@
     "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-03-flex-properties/suites/suite-02-flex-advanced/cases/case_003_flex_flex_shrink_default",
     "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-03-flex-properties/suites/suite-02-flex-advanced/cases/case_004_align_self_stretch",
     "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-03-flex-properties/suites/suite-02-flex-advanced/cases/case_005_align_self_center",
-    "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-03-flex-properties/suites/suite-02-flex-advanced/cases/case_006_display_priority_basic"
+    "spec_cases/04-common-capability/03-common-attributes/01-layout-attributes/Feat-03-flex-properties/suites/suite-02-flex-advanced/cases/case_006_display_priority_basic",
+    "spec_cases/05-ui-components/04-input-form-components/01-button/Feat-01-button-full/suites/suite-01-button-creation-type/cases/case_001_button_capsule",
+    "spec_cases/05-ui-components/04-input-form-components/01-button/Feat-01-button-full/suites/suite-01-button-creation-type/cases/case_002_button_circle",
+    "spec_cases/05-ui-components/04-input-form-components/01-button/Feat-01-button-full/suites/suite-01-button-creation-type/cases/case_003_button_normal",
+    "spec_cases/05-ui-components/04-input-form-components/01-button/Feat-01-button-full/suites/suite-01-button-creation-type/cases/case_004_button_rounded_rectangle",
+    "spec_cases/05-ui-components/04-input-form-components/01-button/Feat-01-button-full/suites/suite-01-button-creation-type/cases/case_005_button_default_api26",
+    "spec_cases/05-ui-components/04-input-form-components/01-button/Feat-01-button-full/suites/suite-01-button-creation-type/cases/case_006_button_disabled_no_click",
+    "spec_cases/05-ui-components/04-input-form-components/01-button/Feat-01-button-full/suites/suite-02-button-click-interaction/cases/case_007_button_click_callback",
+    "spec_cases/05-ui-components/04-input-form-components/01-button/Feat-01-button-full/suites/suite-02-button-click-interaction/cases/case_008_button_touch_pressed_100ms",
+    "spec_cases/05-ui-components/04-input-form-components/01-button/Feat-01-button-full/suites/suite-02-button-click-interaction/cases/case_009_button_touch_release_click",
+    "spec_cases/05-ui-components/04-input-form-components/01-button/Feat-01-button-full/suites/suite-02-button-click-interaction/cases/case_010_button_mouse_hover_250ms"
   ]
 }

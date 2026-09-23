@@ -1,0 +1,16 @@
+{
+  "featureId": "Func-05-04-01-Feat-01",
+  "featureName": "button-full",
+  "specPath": "05-ui-components/04-input-form-components/01-button/Feat-01-button-full-spec.md",
+  "targetApi": 26,
+  "suites": [
+    {
+      "suiteId": "suite-01-button-creation-type",
+      "suitePath": "suites/suite-01-button-creation-type"
+    },
+    {
+      "suiteId": "suite-02-button-click-interaction",
+      "suitePath": "suites/suite-02-button-click-interaction"
+    }
+  ]
+}

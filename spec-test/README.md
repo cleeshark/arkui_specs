@@ -79,6 +79,7 @@ arkui-specs/
   - `expectedRect.width`
   - `expectedRect.height`
   - `tolerancePx`
+- 可选字段 `expectedAttrs`：按键值精确匹配目标节点 Inspector `$attrs`，适用于组件类型、标签等非几何属性断言。
 
 ### 4.4 `main_pages.json`
 
@@ -111,6 +112,9 @@ arkui-specs/
      - `startX/startY/endX/endY`
    - `durationMs`: 滑动总时长（默认 `300`）
    - `steps`: 插值步数（默认 `6`）
+4. `action`：调用 PreviewerCLI 自定义 action
+   - `command`：PreviewerCLI action 名称。
+   - `args`：参数对象；值可为标量或非空数组，数组会展开为同一参数后的多个值。
 
 示例：
 

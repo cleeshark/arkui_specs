@@ -1,0 +1,93 @@
+{
+  "suiteId": "suite-02-button-click-interaction",
+  "suiteName": "Button Click Interaction",
+  "acRefs": [
+    "AC-2.1",
+    "AC-2.2",
+    "AC-2.3",
+    "AC-2.4",
+    "AC-2.5"
+  ],
+  "cases": [
+    {
+      "caseId": "case-007-button-click-callback",
+      "nodeId": "N_BUTTON_US2_C007_TARGET",
+      "url": "spec_cases/05-ui-components/04-input-form-components/01-button/Feat-01-button-full/suites/suite-02-button-click-interaction/cases/case_007_button_click_callback",
+      "description": "Click Button and verify onClick callback",
+      "operationSequence": [
+        {"op": "click", "inject": "mouse", "x": 80, "y": 24, "holdMs": 40},
+        {"op": "wait", "durationMs": 100}
+      ]
+    },
+    {
+      "caseId": "case-008-button-touch-pressed-100ms",
+      "nodeId": "N_BUTTON_US2_C008_TARGET",
+      "url": "spec_cases/05-ui-components/04-input-form-components/01-button/Feat-01-button-full/suites/suite-02-button-click-interaction/cases/case_008_button_touch_pressed_100ms",
+      "description": "Hold Button through Previewer press/release for 100ms and verify TouchType.Down is observed",
+      "operationSequence": [
+        {"op": "click", "inject": "mouse", "x": 80, "y": 24, "holdMs": 100},
+        {"op": "wait", "durationMs": 50}
+      ]
+    },
+    {
+      "caseId": "case-009-button-touch-release-click",
+      "nodeId": "N_BUTTON_US2_C009_TARGET",
+      "url": "spec_cases/05-ui-components/04-input-form-components/01-button/Feat-01-button-full/suites/suite-02-button-click-interaction/cases/case_009_button_touch_release_click",
+      "description": "Press and release Button through Previewer, then verify TouchType.Up and onClick",
+      "operationSequence": [
+        {"op": "click", "inject": "mouse", "x": 80, "y": 24, "holdMs": 40},
+        {"op": "wait", "durationMs": 100}
+      ]
+    },
+    {
+      "caseId": "case-010-button-mouse-hover-250ms",
+      "nodeId": "N_BUTTON_US2_C010_TARGET",
+      "url": "spec_cases/05-ui-components/04-input-form-components/01-button/Feat-01-button-full/suites/suite-02-button-click-interaction/cases/case_010_button_mouse_hover_250ms",
+      "description": "Move mouse over Button for 250ms and verify hover entry",
+      "operationSequence": [
+        {
+          "op": "action",
+          "command": "PointEvent",
+          "args": {
+            "x": 260,
+            "y": 160,
+            "button": 99,
+            "action": 10,
+            "sourceType": 1,
+            "sourceTool": 7,
+            "axisValues": [0, 0]
+          }
+        },
+        {"op": "wait", "durationMs": 50},
+        {
+          "op": "action",
+          "command": "PointEvent",
+          "args": {
+            "x": 260,
+            "y": 160,
+            "button": 99,
+            "action": 3,
+            "sourceType": 1,
+            "sourceTool": 7,
+            "axisValues": [0, 0]
+          }
+        },
+        {"op": "wait", "durationMs": 50},
+        {
+          "op": "action",
+          "command": "PointEvent",
+          "args": {
+            "x": 80,
+            "y": 24,
+            "button": 99,
+            "action": 3,
+            "sourceType": 1,
+            "sourceTool": 7,
+            "axisValues": [0, 0]
+          }
+        },
+        {"op": "wait", "durationMs": 250}
+      ]
+    }
+  ]
+}
