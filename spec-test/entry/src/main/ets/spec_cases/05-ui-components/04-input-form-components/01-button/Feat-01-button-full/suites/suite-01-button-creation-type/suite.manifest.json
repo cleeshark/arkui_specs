@@ -1,0 +1,63 @@
+{
+  "suiteId": "suite-01-button-creation-type",
+  "suiteName": "Button Creation and Type",
+  "acRefs": [
+    "AC-1.1",
+    "AC-1.2",
+    "AC-1.3",
+    "AC-1.4",
+    "AC-1.5",
+    "AC-1.6"
+  ],
+  "cases": [
+    {
+      "caseId": "case-001-button-capsule",
+      "nodeId": "N_BUTTON_US1_C001_TARGET",
+      "url": "spec_cases/05-ui-components/04-input-form-components/01-button/Feat-01-button-full/suites/suite-01-button-creation-type/cases/case_001_button_capsule",
+      "description": "Create a capsule Button with label Click"
+    },
+    {
+      "caseId": "case-002-button-circle",
+      "nodeId": "N_BUTTON_US1_C002_TARGET",
+      "url": "spec_cases/05-ui-components/04-input-form-components/01-button/Feat-01-button-full/suites/suite-01-button-creation-type/cases/case_002_button_circle",
+      "description": "Create a circle Button"
+    },
+    {
+      "caseId": "case-003-button-normal",
+      "nodeId": "N_BUTTON_US1_C003_TARGET",
+      "url": "spec_cases/05-ui-components/04-input-form-components/01-button/Feat-01-button-full/suites/suite-01-button-creation-type/cases/case_003_button_normal",
+      "description": "Create a normal Button with label Submit"
+    },
+    {
+      "caseId": "case-004-button-rounded-rectangle",
+      "nodeId": "N_BUTTON_US1_C004_TARGET",
+      "url": "spec_cases/05-ui-components/04-input-form-components/01-button/Feat-01-button-full/suites/suite-01-button-creation-type/cases/case_004_button_rounded_rectangle",
+      "description": "Create a rounded rectangle Button with label Rounded"
+    },
+    {
+      "caseId": "case-005-button-default-api26",
+      "nodeId": "N_BUTTON_US1_C005_TARGET",
+      "url": "spec_cases/05-ui-components/04-input-form-components/01-button/Feat-01-button-full/suites/suite-01-button-creation-type/cases/case_005_button_default_api26",
+      "description": "Create a Button without type on API 26 and verify rounded rectangle default"
+    },
+    {
+      "caseId": "case-006-button-disabled-no-click",
+      "nodeId": "N_BUTTON_US1_C006_TARGET",
+      "url": "spec_cases/05-ui-components/04-input-form-components/01-button/Feat-01-button-full/suites/suite-01-button-creation-type/cases/case_006_button_disabled_no_click",
+      "description": "Click a disabled Button and verify its callback is not invoked",
+      "operationSequence": [
+        {
+          "op": "click",
+          "inject": "mouse",
+          "x": 80,
+          "y": 24,
+          "holdMs": 120
+        },
+        {
+          "op": "wait",
+          "durationMs": 100
+        }
+      ]
+    }
+  ]
+}

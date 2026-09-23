@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import re
 import subprocess
 import time
 from pathlib import Path
@@ -40,8 +41,18 @@ def to_int(v: Any, name: str) -> int:
 def build_args_pairs(args_obj: Dict[str, Any]) -> List[str]:
     cli_args: List[str] = []
     for k, v in args_obj.items():
-        key = f"-{k}" if len(k) == 1 else f"--{k}"
-        cli_args.extend([key, str(v)])
+        # PreviewerCLI uses the dash depth to build nested JSON. All fields
+        # below --args therefore need one leading dash, regardless of length.
+        key = f"-{k}"
+        cli_args.append(key)
+        if isinstance(v, list):
+            if not v:
+                raise RuntimeError(f"action.args.{k} must not be an empty list")
+            cli_args.extend(str(item) for item in v)
+        elif isinstance(v, dict):
+            raise RuntimeError(f"action.args.{k} must be a scalar or list")
+        else:
+            cli_args.append(str(v))
     return cli_args
 
 
@@ -74,6 +85,11 @@ def call_action(
         text = output.lower()
         return "connect socket failed" in text or "unable to connect to server socket" in text
 
+    def is_action_rejected(output: str) -> bool:
+        return "unsupported command" in output.lower() or bool(
+            re.search(r'"result"\s*:\s*false', output, flags=re.IGNORECASE)
+        )
+
     last_rc = 0
     for attempt in range(1, ACTION_CONNECT_RETRY_COUNT + 1):
         proc = subprocess.run(
@@ -96,7 +112,7 @@ def call_action(
                 f.write("\n")
             f.write("\n")
 
-        if proc.returncode == 0:
+        if proc.returncode == 0 and not is_action_rejected(proc.stdout or ""):
             return
 
         last_rc = proc.returncode

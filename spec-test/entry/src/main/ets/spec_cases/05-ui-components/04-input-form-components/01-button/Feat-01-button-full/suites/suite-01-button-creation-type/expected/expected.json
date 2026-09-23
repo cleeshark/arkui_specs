@@ -1,0 +1,52 @@
+{
+  "suiteId": "suite-01-button-creation-type",
+  "cases": [
+    {
+      "caseId": "case-001-button-capsule",
+      "acRefs": ["AC-1.1"],
+      "targetNodeId": "N_BUTTON_US1_C001_TARGET",
+      "expectedRect": {"width": 160.0, "height": 48.0},
+      "expectedAttrs": {"type": "ButtonType.Capsule", "label": "Click"},
+      "tolerancePx": 1.0
+    },
+    {
+      "caseId": "case-002-button-circle",
+      "acRefs": ["AC-1.2"],
+      "targetNodeId": "N_BUTTON_US1_C002_TARGET",
+      "expectedRect": {"width": 64.0, "height": 64.0},
+      "expectedAttrs": {"type": "ButtonType.Circle"},
+      "tolerancePx": 1.0
+    },
+    {
+      "caseId": "case-003-button-normal",
+      "acRefs": ["AC-1.3"],
+      "targetNodeId": "N_BUTTON_US1_C003_TARGET",
+      "expectedRect": {"width": 160.0, "height": 48.0},
+      "expectedAttrs": {"type": "ButtonType.Normal", "label": "Submit"},
+      "tolerancePx": 1.0
+    },
+    {
+      "caseId": "case-004-button-rounded-rectangle",
+      "acRefs": ["AC-1.4"],
+      "targetNodeId": "N_BUTTON_US1_C004_TARGET",
+      "expectedRect": {"width": 160.0, "height": 48.0},
+      "expectedAttrs": {"type": "ButtonType.ROUNDED_RECTANGLE", "label": "Rounded"},
+      "tolerancePx": 1.0
+    },
+    {
+      "caseId": "case-005-button-default-api26",
+      "acRefs": ["AC-1.5"],
+      "targetNodeId": "N_BUTTON_US1_C005_TARGET",
+      "expectedRect": {"width": 160.0, "height": 48.0},
+      "expectedAttrs": {"type": "ButtonType.ROUNDED_RECTANGLE", "label": "Default"},
+      "tolerancePx": 1.0
+    },
+    {
+      "caseId": "case-006-button-disabled-no-click",
+      "acRefs": ["AC-1.6"],
+      "targetNodeId": "N_BUTTON_US1_C006_TARGET",
+      "expectedRect": {"width": 100.0, "height": 20.0},
+      "tolerancePx": 1.0
+    }
+  ]
+}
