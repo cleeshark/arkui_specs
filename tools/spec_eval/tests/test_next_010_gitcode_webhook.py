@@ -356,28 +356,36 @@ class ArchiveServeTest(unittest.TestCase):
             server.server_close()
             thread.join(timeout=5)
 
-    def _serve(self, *, archive_root: Path | None = None, site_root: Path | None = None):
+    def _serve(self, *, archive_root: Path | None = None, site_root: Path | None = None, **extra):
         receipts = Path(tempfile.mkdtemp()) / "receipts.ndjson"
         kwargs: dict = {"store": ReceiptStore(receipts)}
         if archive_root is not None:
             kwargs["archive_root"] = archive_root
         if site_root is not None:
             kwargs["site_root"] = site_root
+        kwargs.update(extra)
         server = create_server("127.0.0.1", 0, **kwargs)
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
         self._servers.append((server, thread))
         return server
 
+    @classmethod
+    def _get(cls, server, path: str, headers: dict[str, str] | None = None) -> tuple[int, bytes, str]:
+        status, body, response_headers = cls._request(server, path, headers)
+        return status, body, response_headers.get("Content-Type", "")
+
     @staticmethod
-    def _get(server, path: str) -> tuple[int, bytes, str]:
+    def _request(
+        server, path: str, headers: dict[str, str] | None = None
+    ) -> tuple[int, bytes, dict[str, str]]:
         connection = http.client.HTTPConnection(*server.server_address, timeout=5)
-        connection.request("GET", path)
+        connection.request("GET", path, headers=headers or {})
         response = connection.getresponse()
         body = response.read()
-        content_type = response.getheader("Content-Type", "")
+        response_headers = {key: value for key, value in response.getheaders()}
         connection.close()
-        return response.status, body, content_type
+        return response.status, body, response_headers
 
     def _delivery(self) -> Path:
         root = Path(tempfile.mkdtemp())
@@ -439,6 +447,131 @@ class ArchiveServeTest(unittest.TestCase):
         server = self._serve(archive_root=None)
         status, _, _ = self._get(server, "/arkui_specs/ci/pr-225/225_abc/ci-summary.json")
         self.assertEqual(status, 404)
+
+    def test_archive_file_revalidates_with_etag_and_304(self) -> None:
+        server = self._serve(archive_root=self._delivery())
+        path = "/arkui_specs/ci/pr-225/225_abc/ci-summary.json"
+        status, body, headers = self._request(server, path)
+        self.assertEqual(status, 200)
+        self.assertTrue(headers["ETag"].startswith('W/"'))
+        self.assertEqual(headers["Cache-Control"], "no-cache")
+        status, cached_body, _ = self._request(server, path, {"If-None-Match": headers["ETag"]})
+        self.assertEqual(status, 304)
+        self.assertEqual(cached_body, b"")
+        self.assertNotEqual(body, b"")
+
+    def test_if_modified_since_returns_304(self) -> None:
+        server = self._serve(archive_root=self._delivery())
+        path = "/arkui_specs/ci/pr-225/225_abc/ci-summary.json"
+        _, _, headers = self._request(server, path)
+        status, _, _ = self._request(server, path, {"If-Modified-Since": headers["Last-Modified"]})
+        self.assertEqual(status, 304)
+
+    def test_stale_etag_re_sends_body(self) -> None:
+        server = self._serve(archive_root=self._delivery())
+        path = "/arkui_specs/ci/pr-225/225_abc/ci-summary.json"
+        status, body, _ = self._request(server, path, {"If-None-Match": 'W/"0-0"'})
+        self.assertEqual(status, 200)
+        self.assertIn(b"affected_function_count", body)
+
+    def test_listing_is_not_cached(self) -> None:
+        server = self._serve(archive_root=self._delivery())
+        status, _, headers = self._request(server, "/arkui_specs/ci/pr-225/225_abc/")
+        self.assertEqual(status, 200)
+        self.assertEqual(headers["Cache-Control"], "no-store")
+
+    def test_listing_can_be_disabled(self) -> None:
+        server = self._serve(archive_root=self._delivery(), archive_listing=False)
+        status, _, _ = self._get(server, "/arkui_specs/ci/pr-225/225_abc/")
+        self.assertEqual(status, 404)
+        # files stay reachable when listings are off
+        status, _, _ = self._get(server, "/arkui_specs/ci/pr-225/225_abc/ci-summary.json")
+        self.assertEqual(status, 200)
+
+    def test_archive_token_gates_access(self) -> None:
+        server = self._serve(archive_root=self._delivery(), archive_token="s3cret")
+        path = "/arkui_specs/ci/pr-225/225_abc/ci-summary.json"
+        status, _, _ = self._get(server, path)
+        self.assertEqual(status, 401)
+        status, _, _ = self._get(server, path, {"X-Archive-Token": "wrong"})
+        self.assertEqual(status, 401)
+        status, body, _ = self._get(server, path, {"X-Archive-Token": "s3cret"})
+        self.assertEqual(status, 200)
+        self.assertIn(b"affected_function_count", body)
+        status, _, _ = self._get(server, path + "?token=s3cret")
+        self.assertEqual(status, 200)
+
+    def test_archive_rate_limit_returns_429(self) -> None:
+        server = self._serve(archive_root=self._delivery(), archive_rate_limit=2)
+        path = "/arkui_specs/ci/pr-225/225_abc/ci-summary.json"
+        codes = [self._get(server, path)[0] for _ in range(3)]
+        self.assertEqual(codes, [200, 200, 429])
+
+    def test_healthz_is_not_rate_limited(self) -> None:
+        server = self._serve(archive_root=self._delivery(), archive_rate_limit=1)
+        self._get(server, "/arkui_specs/ci/pr-225/225_abc/ci-summary.json")
+        for _ in range(3):
+            self.assertEqual(self._get(server, "/healthz")[0], 200)
+
+
+class RateLimiterTest(unittest.TestCase):
+    """Sliding-window accounting for the archive route."""
+
+    def test_window_expiry_frees_budget(self) -> None:
+        limiter = gitcode_webhook.RateLimiter(2, 60.0)
+        self.assertTrue(limiter.allow("a", now=0.0))
+        self.assertTrue(limiter.allow("a", now=1.0))
+        self.assertFalse(limiter.allow("a", now=2.0))
+        self.assertTrue(limiter.allow("a", now=61.5))
+
+    def test_clients_are_counted_separately(self) -> None:
+        limiter = gitcode_webhook.RateLimiter(1, 60.0)
+        self.assertTrue(limiter.allow("a", now=0.0))
+        self.assertFalse(limiter.allow("a", now=0.0))
+        self.assertTrue(limiter.allow("b", now=0.0))
+
+    def test_zero_limit_disables_limiting(self) -> None:
+        limiter = gitcode_webhook.RateLimiter(0, 60.0)
+        self.assertTrue(all(limiter.allow("a", now=0.0) for _ in range(10)))
+
+    def test_invalid_configuration_is_rejected(self) -> None:
+        with self.assertRaises(ValueError):
+            gitcode_webhook.RateLimiter(-1, 60.0)
+        with self.assertRaises(ValueError):
+            gitcode_webhook.RateLimiter(1, 0.0)
+
+
+class ClientIdentityTest(unittest.TestCase):
+    """X-Forwarded-For is honoured only for loopback peers, and only when trusted."""
+
+    class _Handler:
+        def __init__(self, peer: str, forwarded: str | None = None) -> None:
+            self.client_address = (peer, 4242)
+            self.headers = {"X-Forwarded-For": forwarded} if forwarded else {}
+
+    def test_untrusted_mode_uses_peer(self) -> None:
+        handler = self._Handler("127.0.0.1", "203.0.113.9")
+        self.assertEqual(
+            gitcode_webhook.client_identity(handler, trust_forwarded_for=False), "127.0.0.1"
+        )
+
+    def test_trusted_loopback_uses_leftmost_forwarded_entry(self) -> None:
+        handler = self._Handler("127.0.0.1", "203.0.113.9, 10.0.0.1")
+        self.assertEqual(
+            gitcode_webhook.client_identity(handler, trust_forwarded_for=True), "203.0.113.9"
+        )
+
+    def test_non_loopback_peer_ignores_forwarded_header(self) -> None:
+        handler = self._Handler("198.51.100.4", "203.0.113.9")
+        self.assertEqual(
+            gitcode_webhook.client_identity(handler, trust_forwarded_for=True), "198.51.100.4"
+        )
+
+    def test_garbage_forwarded_value_falls_back_to_peer(self) -> None:
+        handler = self._Handler("127.0.0.1", "not-an-ip")
+        self.assertEqual(
+            gitcode_webhook.client_identity(handler, trust_forwarded_for=True), "127.0.0.1"
+        )
 
 
 if __name__ == "__main__":

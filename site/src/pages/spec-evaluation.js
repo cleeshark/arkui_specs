@@ -16,16 +16,19 @@ const DIMENSIONS = [
   {id: 'function_modeling', label: 'Modeling', max: 10},
 ];
 
-// Dynamic (B-lite) mode re-polls the data files so a per-archive data-only
-// refresh appears on the served site without a full rebuild. Static mode fetches
-// once. The interval is deliberately gentle; the payloads are small and cached.
+// Dynamic (B-lite) mode watches for a per-archive data-only refresh so it shows
+// up on the served site without a full rebuild. Only the runtime descriptor
+// (a few hundred bytes) is polled; its ``dataRevision`` fingerprint changes when
+// a new report lands, and that is what triggers a refetch of the multi-megabyte
+// payloads. Polling the payloads directly cost ~15 MB per interval per open tab.
 const DYNAMIC_POLL_MS = 30000;
 
 // Fetch a runtime JSON file, seeding state with the value bundled at build time
 // so the first paint never blocks. When ``pollMs`` is set the file is re-fetched
-// on that interval (dynamic mode). ``fallback`` is returned on fetch failure so
-// a missing/served-late file degrades to the build-time snapshot.
-function useRuntimeJson(url, fallback, pollMs) {
+// on that interval (dynamic mode) — use this for the small probe file only.
+// ``fallback`` is returned on fetch failure so a missing/served-late file
+// degrades to the build-time snapshot.
+function useProbeJson(url, fallback, pollMs) {
   const [value, setValue] = useState(fallback);
   useEffect(() => {
     let active = true;
@@ -47,6 +50,29 @@ function useRuntimeJson(url, fallback, pollMs) {
     const timer = setInterval(load, pollMs);
     return () => { active = false; clearInterval(timer); };
   }, [url, pollMs]);
+  return value;
+}
+
+// Fetch a payload once per ``revision``. The revision comes from the probe file,
+// so a refetch happens only when the served data actually changed. Conditional
+// requests (weak ETag/Last-Modified) then make an unchanged payload a cheap 304.
+function useRevisionedJson(url, fallback, revision) {
+  const [value, setValue] = useState(fallback);
+  useEffect(() => {
+    let active = true;
+    fetch(url)
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+      })
+      .then((next) => {
+        if (active) setValue(next);
+      })
+      .catch(() => {
+        /* keep the previous value (bundled fallback on first load) */
+      });
+    return () => { active = false; };
+  }, [url, revision]);
   return value;
 }
 
@@ -432,14 +458,21 @@ export default function SpecEvaluationPage() {
 
   // The runtime descriptor decides whether to poll for a live (dynamic-mode)
   // refresh. It is absent on older builds, so default to static (fetch once).
-  const runtime = useRuntimeJson(runtimeUrl, {mode: 'static'});
-  const pollMs = runtime.mode === 'dynamic' ? DYNAMIC_POLL_MS : 0;
+  // Seeded at 0, so the first pass fetches once; if that fetch reports dynamic
+  // mode the hook re-runs and starts polling the probe (and only the probe).
+  const [probePollMs, setProbePollMs] = useState(0);
+  const runtime = useProbeJson(runtimeUrl, {mode: 'static'}, probePollMs);
+  useEffect(() => {
+    setProbePollMs(runtime.mode === 'dynamic' ? DYNAMIC_POLL_MS : 0);
+  }, [runtime.mode]);
+  // Older builds emit no ``dataRevision``; a constant one means "fetch once".
+  const revision = runtime.mode === 'dynamic' ? (runtime.dataRevision || 'dynamic') : 'static';
 
   // Summary/history are runtime-fetched (not just build-time imports) so a
   // data-only refresh is reflected on reload; the bundled JSON is the fallback.
-  const summaryData = useRuntimeJson(summaryUrl, bundledSummaryData, pollMs);
-  const semanticSummaryData = useRuntimeJson(semanticSummaryUrl, bundledSemanticSummaryData, pollMs);
-  const historyData = useRuntimeJson(historyUrl, bundledHistoryData, pollMs);
+  const summaryData = useRevisionedJson(summaryUrl, bundledSummaryData, revision);
+  const semanticSummaryData = useRevisionedJson(semanticSummaryUrl, bundledSemanticSummaryData, revision);
+  const historyData = useRevisionedJson(historyUrl, bundledHistoryData, revision);
 
   useEffect(() => {
     if (!summaryData.available) return undefined;
@@ -458,10 +491,8 @@ export default function SpecEvaluationPage() {
         });
     };
     load();
-    if (!pollMs) return () => { active = false; };
-    const timer = setInterval(load, pollMs);
-    return () => { active = false; clearInterval(timer); };
-  }, [reportUrl, summaryData.available, pollMs]);
+    return () => { active = false; };
+  }, [reportUrl, summaryData.available, revision]);
   useEffect(() => {
     if (!semanticSummaryData.available) return undefined;
     let active = true;
@@ -479,10 +510,8 @@ export default function SpecEvaluationPage() {
         });
     };
     load();
-    if (!pollMs) return () => { active = false; };
-    const timer = setInterval(load, pollMs);
-    return () => { active = false; clearInterval(timer); };
-  }, [semanticReportUrl, semanticSummaryData.available, pollMs]);
+    return () => { active = false; };
+  }, [semanticReportUrl, semanticSummaryData.available, revision]);
   const allFunctions = useMemo(() => {
     const semanticById = new Map((semanticEvaluation?.functions || []).map((item) => [item.func_id, item]));
     return (evaluation?.functions || []).map((item) => ({...item, semanticReview: semanticById.get(item.funcId) || null}));
