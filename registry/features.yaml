@@ -1894,6 +1894,11 @@ features:
   title: Frame回调与帧调度
   spec: 04-common-capability/12-ui-context/03-frame-callback/Feat-01-frame-callback-scheduling-spec.md
   status: Baselined
+- func_id: 04-12-03
+  id: Feat-02
+  title: FrameMetrics 帧耗时上报（单帧总耗时与实际开始时间戳）
+  spec: 04-common-capability/12-ui-context/03-frame-callback/Feat-02-framemetrics-duration-spec.md
+  status: Baselined
 - func_id: 04-13-01
   id: Feat-01
   title: 字体注册与查询全能力
