@@ -9,7 +9,7 @@
 | Design ID | DESIGN-Func-04-12-03 |
 | 关联需求 | 已有能力补录（无独立 requirement.md） |
 | 关联 Epic | UI上下文 (04-12) |
-| 目标 Feature | Feat-01: Frame回调与动画调度 |
+| 目标 Feature | Feat-01: Frame回调与动画调度; Feat-02: FrameMetrics 帧耗时上报 |
 | 复杂度 | 标准 |
 | 目标版本 | API 12+ (动态版), API 23+ (静态版), API 16+ (C-API OH_ArkUI_PostFrameCallback), API 20+ (C-API OH_ArkUI_PostIdleCallback) |
 | Owner | ArkUI SIG |

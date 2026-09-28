@@ -117,7 +117,7 @@
 | 04 通用能力层 | 11 组件信息获取 | 03 布局回调（inspector） | `04-11-03` | `04-common-capability/11-component-info/03-inspector-layout-callback/` | [design.md](04-common-capability/11-component-info/03-inspector-layout-callback/design.md) | 1 |
 | 04 通用能力层 | 12 UI上下文 | 01 UIContext接口 | `04-12-01` | `04-common-capability/12-ui-context/01-ui-context-interface/` | [design.md](04-common-capability/12-ui-context/01-ui-context-interface/design.md) | 4 |
 | 04 通用能力层 | 12 UI上下文 | 02 Ability上下文 | `04-12-02` | `04-common-capability/12-ui-context/02-ability-context/` | [design.md](04-common-capability/12-ui-context/02-ability-context/design.md) | 1 |
-| 04 通用能力层 | 12 UI上下文 | 03 Frame回调接口 | `04-12-03` | `04-common-capability/12-ui-context/03-frame-callback/` | [design.md](04-common-capability/12-ui-context/03-frame-callback/design.md) | 1 |
+| 04 通用能力层 | 12 UI上下文 | 03 Frame回调接口 | `04-12-03` | `04-common-capability/12-ui-context/03-frame-callback/` | [design.md](04-common-capability/12-ui-context/03-frame-callback/design.md) | 2 |
 | 04 通用能力层 | 13 字体文本 | 01 字体注册 | `04-13-01` | `04-common-capability/13-font-text/01-font-registration/` | [design.md](04-common-capability/13-font-text/01-font-registration/design.md) | 1 |
 | 04 通用能力层 | 13 字体文本 | 02 文本测量 | `04-13-02` | `04-common-capability/13-font-text/02-text-measurement/` | [design.md](04-common-capability/13-font-text/02-text-measurement/design.md) | 3 |
 | 04 通用能力层 | 14 输入交互 | 01 文本选择 | `04-14-01` | `04-common-capability/14-input-interaction/01-text-selection/` | [design.md](04-common-capability/14-input-interaction/01-text-selection/design.md) | 3 |
@@ -1085,6 +1085,7 @@
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
 | Feat-01 | Frame回调与帧调度 | [Feat-01-frame-callback-scheduling-spec.md](04-common-capability/12-ui-context/03-frame-callback/Feat-01-frame-callback-scheduling-spec.md) | Baselined |
+| Feat-02 | FrameMetrics 帧耗时上报（单帧总耗时与实际开始时间戳） | [Feat-02-framemetrics-duration-spec.md](04-common-capability/12-ui-context/03-frame-callback/Feat-02-framemetrics-duration-spec.md) | Baselined |
 
 ### 04-13-01 字体注册
 
