@@ -34,7 +34,7 @@ DVSync 场景下 RS 分配的 `vsyncTimestamp`（回调 `nanoTimestamp`）可为
 | ADDED | FrameMetrics DEBUG 日志 | 每次回调后输出 `ACE_WINDOW_PIPELINE` DEBUG 日志，包含 `actualStartTime`、`totalDuration`、`vsyncTimestamp` |
 | MODIFIED | `OHOS::Ace::FrameMetrics` 数据布局 | 既有四字段后依次追加两个字段；仅承诺 API Level 27 匹配版本联调 |
 | MODIFIED | VSync 回调链签名 | 新增参数传递 VSync 接收时刻；默认值保证非 Rosen 路径兼容 |
-| UNCHANGED | 既有字段与回调频次 | `firstDrawFrame`、`vsyncTimestamp`、`inputHandlingDuration`、`layoutMeasureDuration` 语义和回调频次不变 |
+| MODIFIED | 既有字段与回调频次保持 | `firstDrawFrame`、`vsyncTimestamp`、`inputHandlingDuration`、`layoutMeasureDuration` 语义和回调频次不变（兼容性约束，见"兼容性声明"） |
 
 ---
 
