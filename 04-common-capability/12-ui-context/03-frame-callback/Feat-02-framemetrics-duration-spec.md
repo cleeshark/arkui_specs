@@ -54,24 +54,49 @@ DVSync 场景下 RS 分配的 `vsyncTimestamp`（回调 `nanoTimestamp`）可为
 
 ## 用户故事
 
-### US-01：取得统一口径的单帧总耗时
+### US-1: 应用开发者需要取得统一口径的单帧总耗时
 
-**作为**应用或系统 DFX 开发者，**我希望**从 FrameMetrics 回调直接取得 UI 管线单帧总耗时，**以便**避免自行拼接分段耗时而遗漏阶段间隙，按统一口径分析帧性能。
+**作为** 应用或系统 DFX 开发者
+**我想要** 从 FrameMetrics 回调直接取得 UI 管线单帧总耗时
+**以便** 避免自行拼接分段耗时而遗漏阶段间隙，按统一口径分析帧性能
 
-### US-02：取得 UI 管线实际开始时间
+| AC编号 | 验收标准 | 类型 |
+|--------|----------|------|
+| AC-1.1 | WHEN 已注册 FrameMetrics 回调且一帧渲染提交完成后回调触发 THEN `totalDuration` 字段返回非负纳秒值，表示该帧从 VSync 接收到渲染提交完成的总耗时 | 正常 |
+| AC-1.2 | WHEN 回调返回已完成提交的帧数据且检查 `totalDuration` 与分段耗时的关系 THEN `totalDuration` 覆盖 `actualStartTime` 到 `window_->FlushVsync()` 返回（`submitEndTime`）的全流程耗时，包含输入、布局以及 `FlushMessages`、`FlushAfterRenderTask`、`FlushLayoutSize`、`window_->FlushVsync()` 自身等阶段，故必然满足 `totalDuration >= inputHandlingDuration + layoutMeasureDuration` | 正常 |
+| AC-1.3 | WHEN 当帧提交被冻结跳过或提交对象不可用但帧仍走完渲染流程 THEN 回调返回的 `totalDuration` 为正纳秒值（因帧仍完成渲染流程），冻结标志已复位 | 异常 |
 
-**作为**应用或系统 DFX 开发者，**我希望**从 FrameMetrics 回调取得当帧实际处理起点，**以便**区分 VSync 信号时刻与 UI 管线开始执行时刻，精确定位帧处理入口。
+### US-2: 应用开发者需要取得 UI 管线实际开始时间
 
-### US-03：保持既有消费方行为并提供 ArkUI 独立验收面
+**作为** 应用或系统 DFX 开发者
+**我想要** 从 FrameMetrics 回调取得当帧实际处理起点
+**以便** 区分 VSync 信号时刻与 UI 管线开始执行时刻，精确定位帧处理入口
 
-**作为**FrameMetrics 现有消费方，**我希望**升级到 API Level 27 匹配版本后继续读取既有字段，并能直接从 ArkUI 日志核对新增指标，**以便**平滑扩展帧性能分析能力，并在窗口消费适配完成前独立验收。
+| AC编号 | 验收标准 | 类型 |
+|--------|----------|------|
+| AC-2.1 | WHEN OHOS Rosen NG 管线处理一帧并触发回调 THEN `actualStartTime` 字段为 VSync 接收时刻捕获的单调时钟纳秒值，与 `totalDuration` 使用同一时钟域 | 正常 |
+| AC-2.2 | WHEN 当帧提交被冻结跳过且回调触发 THEN `actualStartTime` 仍保留有效的单调时钟纳秒值，`totalDuration` 为正纳秒值 | 异常 |
+| AC-2.3 | WHEN DVSync 场景给出的 VSync 信号时间晚于实际处理起点且回调返回当帧数据 THEN 允许 `actualStartTime < vsyncTimestamp`，两字段分别遵循各自定义的时间语义 | 正常 |
+| AC-2.4 | WHEN 非 Rosen 路径触发 VSync（如 FormRenderWindow、Classic Pipeline、`AceVsyncCallback` 调用方未传入 `vsyncStartTime` 参数致默认 -1）且回调返回数据 THEN `actualStartTime` 回退到 FlushVsync 入口的 `GetSysTimestamp()` 作为帧处理入口的本地时钟值，不崩溃或产生无效值，`totalDuration` 正常计算 | 边界 |
+
+### US-3: 保持既有消费方行为并提供 ArkUI 独立验收面
+
+**作为** FrameMetrics 现有消费方
+**我想要** 升级到 API Level 27 匹配版本后继续读取既有字段，并能直接从 ArkUI 日志核对新增指标
+**以便** 平滑扩展帧性能分析能力，并在窗口消费适配完成前独立验收
+
+| AC编号 | 验收标准 | 类型 |
+|--------|----------|------|
+| AC-3.1 | WHEN API Level 27 匹配版本触发回调且检查既有字段 THEN `firstDrawFrame`、`vsyncTimestamp`、`inputHandlingDuration`、`layoutMeasureDuration` 的值域、计算口径和回调频次与变更前一致 | 正常 |
+| AC-3.2 | WHEN API Level 27 的消费方按声明顺序读取 `FrameMetrics` THEN 先读取全部既有字段，再依次读取新增的 `actualStartTime`、`totalDuration` | 正常 |
+| AC-3.3 | WHEN 已注册 FrameMetrics 回调且当帧回调完成 THEN 紧随回调产生 `ACE_WINDOW_PIPELINE` DEBUG 日志，日志包含 `actualStartTime`、`totalDuration`、`vsyncTimestamp` 且数值与该次回调数据一致 | 正常 |
 
 ---
 
 ## 验收追溯
 
-| AC | 关联规则 | 关联 Task | 验证方式 | 证据 |
-|----|----------|----------|----------|------|
+| AC编号 | 关联规则 | 关联 Task | 验证方式 | 证据 |
+|--------|----------|----------|----------|------|
 | AC-1.1 | R-1 / R-2 | TASK-01 | UT + 设备日志 | 见验证映射 VM-1 / VM-5 |
 | AC-1.2 | R-2 | TASK-01 | UT + 设备日志 | 见验证映射 VM-1 / VM-5 |
 | AC-1.3 | R-4 | TASK-01 | UT + 设备日志 | 见验证映射 VM-2 |
@@ -96,23 +121,23 @@ DVSync 场景下 RS 分配的 `vsyncTimestamp`（回调 `nanoTimestamp`）可为
 | R-3 | 行为 | 回调触发 | `actualStartTime` 表示 VSync 接收时刻捕获的单调时钟纳秒值；非 Rosen 路径（`vsyncStartTime = -1`）回退到 FlushVsync 入口 `GetSysTimestamp()` | 不复用 VSync 信号时间；未提交帧仍有效 | AC-2.1、AC-2.2、AC-2.4 |
 | R-4 | 异常 | 当帧提交被冻结跳过或提交对象不可用 | 回调保留 `actualStartTime`；`totalDuration` 为正纳秒值（因帧仍走完渲染流程） | 冻结标志为一次性，下次正常帧恢复提交 | AC-1.3、AC-2.2 |
 | R-5 | 边界 | API Level 27 匹配版本读取 FrameMetrics | 保持既有字段合同，在结构尾部依次追加 `actualStartTime`、`totalDuration` | 不承诺新旧独立编译产物混用；不修改回调注册签名和频次 | AC-3.1、AC-3.2 |
-| R-6 | 验证边界 | 在 RK3568 当前刷新率运行 Animator demo 并采集 Trace/hilog | 逐帧关联 FrameMetrics、UI VSYNC 与提交边界，报告 `totalDuration` 分布 | 不区分 60/120 Hz，不要求 10,000 帧 A/B、p99 新增开销或运行时内存差值；摘要不代替可复算原始数据 | AC-1.1、AC-1.2、AC-2.1、AC-3.3 |
+| R-6 | 边界 | 在 RK3568 当前刷新率运行 Animator demo 并采集 Trace/hilog | 逐帧关联 FrameMetrics、UI VSYNC 与提交边界，报告 `totalDuration` 分布 | 不区分 60/120 Hz，不要求 10,000 帧 A/B、p99 新增开销或运行时内存差值；摘要不代替可复算原始数据 | AC-1.1、AC-1.2、AC-2.1、AC-3.3 |
 | R-7 | 边界 | DVSync 的 VSync 信号时间可能晚于实际处理起点 | 不建立 `actualStartTime >= vsyncTimestamp` 的不变量 | 两字段分别遵循实际处理起点和 VSync 信号语义 | AC-2.3 |
-| R-8 | 可观测性 | FrameMetrics 回调完成 | 紧随回调输出 tag 为 `ACE_WINDOW_PIPELINE` 的 DEBUG 日志，按名称打印 `actualStartTime`、`totalDuration`、`vsyncTimestamp` | 三项使用 `%{public}` `PRIu64`；日志不改变回调频次或字段值 | AC-3.3 |
+| R-8 | 行为 | FrameMetrics 回调完成 | 紧随回调输出 tag 为 `ACE_WINDOW_PIPELINE` 的 DEBUG 日志，按名称打印 `actualStartTime`、`totalDuration`、`vsyncTimestamp` | 三项使用 `%{public}` `PRIu64`；日志不改变回调频次或字段值 | AC-3.3 |
 
 ---
 
 ## 验证映射
 
-| VM编号 | 关联规则/AC | 验证方法 | 验证位置 |
-|--------|-------------|----------|----------|
-| VM-1 | R-1、R-2、R-3 / AC-1.1、AC-1.2、AC-2.1、AC-2.4 | UT + 设备日志 | `PipelineContextTestNg.FrameMetricsDurationCalculation`、`FrameMetricsFlushVsyncCallback`；RK3568 Animator + `hilog` |
+| 编号 | 对应规格项 | 验证方式 | 验证重点 |
+|------|------------|----------|----------|
+| VM-1 | R-1、R-2、R-3 / AC-1.1、AC-1.2、AC-2.1、AC-2.4 | UT + 设备日志 | `PipelineContextTestNg.FrameMetricsDurationCalculation`、`FrameMetricsFlushVsyncCallback`；RK3568 Animator + `hilog` 核对起止差值与回调频次 |
 | VM-2 | R-4 / AC-1.3、AC-2.2 | UT + 设备日志（冻结场景） | `PipelineContextTestNg.FrameMetricsFreezeFrame`、`FrameMetricsMissingDirector`；设置 `IsFreezeFlushMessage(true)` 断言回调触发、开始时间有效、总耗时>0、冻结标志复位 |
-| VM-3 | R-5 / AC-3.1、AC-3.2 | 类型/默认值/offsetof UT + 设备字段验证 | `PipelineContextTestNg.FrameMetricsApiContract`、`FrameMetricsExistingContract` |
-| VM-4 | R-8 / AC-3.3 | 日志与 Trace 对照 | RK3568 Animator 运行及 `hilog` 中 `ACE_WINDOW_PIPELINE` / `FrameMetrics` |
-| VM-5 | R-6 / AC-1.1、AC-1.2、AC-2.1、AC-3.3 | 逐帧时序核验 | RK3568 当前 Animator Trace/hilog 采集；摘要见 verification.md |
-| VM-6 | R-7 / AC-2.3 | 未来 VSync 输入 UT + 设备日志验证 | `PipelineContextTestNg.FrameMetricsDvSyncTimestamp`；保留输入 VSync，允许 `actualStartTime` 小于它 |
-| VM-7 | R-5 / AC-3.1 | UT 与兼容回归 + 设备全量验证 | `PipelineContextTestNg.FrameMetricsExistingContract`、`PipelineContextTestNg.*` 全量 target 基线对照 |
+| VM-3 | R-5 / AC-3.1、AC-3.2 | 类型/默认值/offsetof UT + 设备字段验证 | `PipelineContextTestNg.FrameMetricsApiContract`、`FrameMetricsExistingContract`；两字段 `uint64_t`、默认 0、尾追加、原回调合同保持 |
+| VM-4 | R-8 / AC-3.3 | 日志与 Trace 对照 | RK3568 Animator 运行及 `hilog` 中 `ACE_WINDOW_PIPELINE` / `FrameMetrics`；三字段对应同帧回调 |
+| VM-5 | R-6 / AC-1.1、AC-1.2、AC-2.1、AC-3.3 | 逐帧时序核验 | RK3568 当前 Animator Trace/hilog 采集；逐帧匹配 UI VSYNC 与提交边界，报告样本数/分布/输入 SHA |
+| VM-6 | R-7 / AC-2.3 | 未来 VSync 输入 UT + 设备日志验证 | `PipelineContextTestNg.FrameMetricsDvSyncTimestamp`；保留输入 VSync，允许 `actualStartTime` 小于它；总耗时仍按单调时钟计算 |
+| VM-7 | R-5 / AC-3.1 | UT 与兼容回归 + 设备全量验证 | `PipelineContextTestNg.FrameMetricsExistingContract`、`PipelineContextTestNg.*` 全量 target 基线对照；既有字段合同、原回调频次保持 |
 
 ---
 
