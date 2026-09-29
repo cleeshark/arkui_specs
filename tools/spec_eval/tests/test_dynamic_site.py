@@ -339,9 +339,35 @@ class WriteEvaluationDataTest(unittest.TestCase):
                     setattr(gs, name, value)
             runtime = json.loads((static_dir / "site-runtime.json").read_text(encoding="utf-8"))
             self.assertEqual(runtime["mode"], "dynamic")
+            # The page polls this descriptor and refetches payloads only when the
+            # fingerprint moves, so it must be present.
+            self.assertTrue(runtime["dataRevision"])
             # summary is mirrored into static/data for runtime fetch
             self.assertTrue((static_dir / "spec-evaluation-summary.json").is_file())
             self.assertTrue((static_dir / "spec-evaluation.json").is_file())
+
+
+class DataRevisionTest(unittest.TestCase):
+    """data_revision drives the page's refetch, so it must track content exactly."""
+
+    def test_same_content_yields_same_revision(self) -> None:
+        first = gs.data_revision({"available": True, "functions": [{"id": "01"}]}, {"available": False})
+        second = gs.data_revision({"functions": [{"id": "01"}], "available": True}, {"available": False})
+        # Key order must not matter: a re-serialized but identical payload would
+        # otherwise trigger a pointless multi-megabyte refetch.
+        self.assertEqual(first, second)
+
+    def test_changed_content_yields_new_revision(self) -> None:
+        before = gs.data_revision({"available": True, "functions": [{"id": "01"}]})
+        after = gs.data_revision({"available": True, "functions": [{"id": "02"}]})
+        self.assertNotEqual(before, after)
+
+    def test_document_boundaries_are_separated(self) -> None:
+        # Without a delimiter these two argument splits would hash identically.
+        self.assertNotEqual(
+            gs.data_revision({"a": "x"}, {"b": "y"}),
+            gs.data_revision({"a": "x", "b": "y"}),
+        )
 
 
 class DynamicHistoryAccumulationTest(unittest.TestCase):

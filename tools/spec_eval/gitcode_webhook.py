@@ -14,10 +14,13 @@ import mimetypes
 import os
 import re
 import threading
+import time
 from datetime import datetime, timezone
+from email.utils import formatdate, parsedate_to_datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Mapping
+from urllib.parse import parse_qs, urlsplit
 
 
 DEFAULT_HOST = "127.0.0.1"
@@ -34,6 +37,19 @@ DEFAULT_SITE_BASE_PATH = "/arkui_specs"
 ARCHIVE_URL_SEGMENT = "ci"
 MERGE_REQUEST_EVENT = "Merge Request Hook"
 SHA_PATTERN = re.compile(r"^[0-9a-fA-F]{40,64}$")
+# Served files carry mtime+size validators and must-revalidate caching so a
+# polling dashboard pays one conditional request instead of a full re-download
+# (issue #96: 30s full-data polling produced 10GB+/day of tunnel egress).
+CACHE_CONTROL_REVALIDATE = "no-cache"
+# Header (or ``?token=`` query parameter, for links pasted into PR comments)
+# that authorizes the public CI-archive route when a token is configured.
+ARCHIVE_TOKEN_HEADER = "X-Archive-Token"
+DEFAULT_ARCHIVE_TOKEN_ENV = "SPEC_EVAL_ARCHIVE_TOKEN"
+DEFAULT_ARCHIVE_RATE_LIMIT = 120
+DEFAULT_ARCHIVE_RATE_WINDOW = 60.0
+# Upper bound on per-client rate-limiter bookkeeping so a source-IP-rotating
+# crawler cannot grow the table without bound.
+MAX_TRACKED_CLIENTS = 4096
 
 LOGGER = logging.getLogger("spec_eval.gitcode_webhook")
 
@@ -224,13 +240,146 @@ def build_receipt(
     }
 
 
-def _json_response(handler: BaseHTTPRequestHandler, status: int, value: dict[str, Any]) -> None:
+class RateLimiter:
+    """Sliding-window per-client request counter for the public archive route."""
+
+    def __init__(self, limit: int, window: float) -> None:
+        if limit < 0:
+            raise ValueError("rate limit must not be negative")
+        if window <= 0:
+            raise ValueError("rate window must be positive")
+        self.limit = limit
+        self.window = window
+        self._lock = threading.Lock()
+        self._hits: dict[str, list[float]] = {}
+
+    def allow(self, client: str, *, now: float | None = None) -> bool:
+        """Record a request for ``client``; return False when over the limit."""
+
+        if self.limit <= 0:
+            return True
+        moment = time.monotonic() if now is None else now
+        with self._lock:
+            hits = [hit for hit in self._hits.get(client, []) if moment - hit < self.window]
+            if len(hits) >= self.limit:
+                self._hits[client] = hits
+                return False
+            hits.append(moment)
+            self._hits[client] = hits
+            if len(self._hits) > MAX_TRACKED_CLIENTS:
+                for key, moments in list(self._hits.items()):
+                    if key != client and (not moments or moment - moments[-1] >= self.window):
+                        del self._hits[key]
+            return True
+
+
+def client_identity(handler: BaseHTTPRequestHandler, *, trust_forwarded_for: bool) -> str:
+    """Return the client address to log and rate-limit against.
+
+    FRP loopback forwarding makes every peer look like ``127.0.0.1``, which
+    erases the real source from the access log. With ``trust_forwarded_for`` and
+    a reverse proxy in front that sets ``X-Forwarded-For``, the left-most entry
+    is used instead. Only enable it behind such a proxy: a client that can reach
+    the port directly can otherwise spoof the header.
+    """
+
+    peer = handler.client_address[0] if handler.client_address else "-"
+    if not trust_forwarded_for or not _is_loopback_host(peer):
+        return peer
+    headers = getattr(handler, "headers", None)
+    if headers is None:
+        return peer
+    for part in _header(headers, "X-Forwarded-For").split(","):
+        candidate = part.strip()
+        if not candidate:
+            continue
+        try:
+            ipaddress.ip_address(candidate)
+        except ValueError:
+            continue
+        return candidate
+    return peer
+
+
+def _weak_etag(info: os.stat_result) -> str:
+    """Weak validator derived from mtime+size; cheap and stable per revision."""
+
+    return f'W/"{info.st_mtime_ns:x}-{info.st_size:x}"'
+
+
+def _etag_matches(header_value: str, etag: str) -> bool:
+    def normalize(value: str) -> str:
+        return value[2:] if value.startswith("W/") else value
+
+    candidates = [part.strip() for part in header_value.split(",") if part.strip()]
+    if "*" in candidates:
+        return True
+    return any(normalize(candidate) == normalize(etag) for candidate in candidates)
+
+
+def _client_copy_is_current(headers: Mapping[str, str], *, etag: str, mtime: float) -> bool:
+    """Evaluate ``If-None-Match`` first, then ``If-Modified-Since`` (RFC 9110)."""
+
+    if_none_match = _header(headers, "If-None-Match")
+    if if_none_match:
+        return _etag_matches(if_none_match, etag)
+    if_modified_since = _header(headers, "If-Modified-Since")
+    if if_modified_since:
+        try:
+            since = parsedate_to_datetime(if_modified_since)
+        except (TypeError, ValueError):
+            return False
+        if since is None:
+            return False
+        if since.tzinfo is None:
+            since = since.replace(tzinfo=timezone.utc)
+        return int(mtime) <= int(since.timestamp())
+    return False
+
+
+def _json_response(
+    handler: BaseHTTPRequestHandler,
+    status: int,
+    value: dict[str, Any],
+    *,
+    extra_headers: Mapping[str, str] | None = None,
+) -> None:
     body = (json.dumps(value, ensure_ascii=False, sort_keys=True) + "\n").encode("utf-8")
     handler.send_response(status)
     handler.send_header("Content-Type", "application/json; charset=utf-8")
     handler.send_header("Content-Length", str(len(body)))
+    for name, header_value in (extra_headers or {}).items():
+        handler.send_header(name, header_value)
     handler.end_headers()
     handler.wfile.write(body)
+
+
+def _send_file(handler: BaseHTTPRequestHandler, path: Path, content_type: str) -> None:
+    """Send a file body, or a 304 when the client already holds this revision."""
+
+    try:
+        info = path.stat()
+    except OSError:
+        _json_response(handler, 404, {"status": "error", "code": "NOT_FOUND"})
+        return
+    etag = _weak_etag(info)
+    last_modified = formatdate(info.st_mtime, usegmt=True)
+    if _client_copy_is_current(handler.headers, etag=etag, mtime=info.st_mtime):
+        handler.send_response(304)
+        handler.send_header("ETag", etag)
+        handler.send_header("Last-Modified", last_modified)
+        handler.send_header("Cache-Control", CACHE_CONTROL_REVALIDATE)
+        handler.end_headers()
+        return
+    data = path.read_bytes()
+    handler.send_response(200)
+    handler.send_header("Content-Type", content_type)
+    handler.send_header("Content-Length", str(len(data)))
+    handler.send_header("ETag", etag)
+    handler.send_header("Last-Modified", last_modified)
+    handler.send_header("Cache-Control", CACHE_CONTROL_REVALIDATE)
+    handler.end_headers()
+    handler.wfile.write(data)
 
 
 def _serve_site_path(
@@ -244,6 +393,8 @@ def _serve_site_path(
     Used to host the rebuilt Docusaurus site on the same HTTP server that
     receives webhooks. Public (unauthenticated) read; path traversal outside
     ``site_root`` resolves to a 404. Directory requests serve ``index.html``.
+    Responses carry mtime+size validators so a repeat fetch of an unchanged
+    data file costs a 304 instead of the full payload.
     """
     url_path = raw_path.split("?", 1)[0]
     rel = url_path[len(base_path):].lstrip("/")
@@ -275,12 +426,26 @@ def _serve_site_path(
         content_type = "application/octet-stream"
     elif content_type.startswith("text/") or content_type in {"application/javascript", "application/json"}:
         content_type = f"{content_type}; charset=utf-8"
-    data = candidate.read_bytes()
-    handler.send_response(200)
-    handler.send_header("Content-Type", content_type)
-    handler.send_header("Content-Length", str(len(data)))
-    handler.end_headers()
-    handler.wfile.write(data)
+    _send_file(handler, candidate, content_type)
+
+
+def _archive_authorized(handler: BaseHTTPRequestHandler, token: str | None) -> bool:
+    """Check the archive token, taken from the header or the ``token`` query.
+
+    The query parameter exists because archive links are pasted into PR comments
+    and opened in a browser, which cannot set a header. Query tokens land in
+    access logs, so keep the token low-value and rotatable.
+    """
+
+    if token is None:
+        return True
+    supplied = _header(handler.headers, ARCHIVE_TOKEN_HEADER).strip()
+    if not supplied:
+        query = parse_qs(urlsplit(handler.path).query)
+        supplied = (query.get("token") or [""])[0].strip()
+    if not supplied:
+        return False
+    return hmac.compare_digest(supplied, token)
 
 
 def _serve_archive_path(
@@ -288,15 +453,19 @@ def _serve_archive_path(
     raw_path: str,
     archive_root: Path,
     archive_base: str,
+    *,
+    listing: bool = True,
 ) -> None:
     """Serve a CI archive file, or an HTML directory listing, under ``archive_base``.
 
     Lets PR authors browse and download the full per-delivery report
     (``report.md`` / ``static-result.json`` / ``ci-summary.json`` and the
     per-Function ``out/<sha>/<func_id>/`` tree) that the PR comment only
-    samples. Public (unauthenticated) read; path traversal outside
-    ``archive_root`` resolves to a 404. Unlike the Docusaurus site route,
-    directory requests render a listing rather than an ``index.html``.
+    samples. Path traversal outside ``archive_root`` resolves to a 404. Unlike
+    the Docusaurus site route, directory requests render a listing rather than
+    an ``index.html`` — set ``listing=False`` to 404 them instead, so the tree
+    cannot be walked (and bulk-downloaded) from a single entry URL. Callers are
+    responsible for archive authorization and rate limiting before calling this.
     """
     url_path = raw_path.split("?", 1)[0]
     rel = url_path[len(archive_base):].lstrip("/")
@@ -310,6 +479,9 @@ def _serve_archive_path(
         return
 
     if resolved.is_dir():
+        if not listing:
+            _json_response(handler, 404, {"status": "error", "code": "NOT_FOUND"})
+            return
         _serve_archive_listing(handler, resolved, url_path)
         return
     if not resolved.is_file():
@@ -323,12 +495,7 @@ def _serve_archive_path(
         content_type = "text/plain; charset=utf-8" if resolved.suffix == ".md" else "application/octet-stream"
     elif content_type.startswith("text/") or content_type in {"application/javascript", "application/json"}:
         content_type = f"{content_type}; charset=utf-8"
-    data = resolved.read_bytes()
-    handler.send_response(200)
-    handler.send_header("Content-Type", content_type)
-    handler.send_header("Content-Length", str(len(data)))
-    handler.end_headers()
-    handler.wfile.write(data)
+    _send_file(handler, resolved, content_type)
 
 
 def _serve_archive_listing(handler: BaseHTTPRequestHandler, directory: Path, url_path: str) -> None:
@@ -349,6 +516,8 @@ def _serve_archive_listing(handler: BaseHTTPRequestHandler, directory: Path, url
     handler.send_response(200)
     handler.send_header("Content-Type", "text/html; charset=utf-8")
     handler.send_header("Content-Length", str(len(body)))
+    # Listings reflect live directory contents; never let a proxy hold them.
+    handler.send_header("Cache-Control", "no-store")
     handler.end_headers()
     handler.wfile.write(body)
 
@@ -365,6 +534,11 @@ def create_server(
     site_root: Path | None = None,
     site_base_path: str = DEFAULT_SITE_BASE_PATH,
     archive_root: Path | None = None,
+    archive_token: str | None = None,
+    archive_listing: bool = True,
+    archive_rate_limit: int = 0,
+    archive_rate_window: float = DEFAULT_ARCHIVE_RATE_WINDOW,
+    trust_forwarded_for: bool = False,
 ) -> ThreadingHTTPServer:
     """Create a configured HTTP server without starting its event loop."""
 
@@ -385,20 +559,58 @@ def create_server(
     # Per-delivery CI archives are served at <site_base_path>/ci/... . This is a
     # sub-path of the site base, so it must be matched before the site route.
     archive_base = f"{site_base_path.rstrip('/')}/{ARCHIVE_URL_SEGMENT}"
+    archive_limiter = (
+        RateLimiter(archive_rate_limit, archive_rate_window) if archive_rate_limit > 0 else None
+    )
 
     class GitCodeWebhookHandler(BaseHTTPRequestHandler):
         server_version = "ArkUISpecEvalWebhook/0.1"
         sys_version = ""
 
         def log_message(self, format: str, *args: Any) -> None:
-            LOGGER.info("http client=%s message=%s", self.client_address[0], format % args)
+            LOGGER.info(
+                "http client=%s message=%s",
+                client_identity(self, trust_forwarded_for=trust_forwarded_for),
+                format % args,
+            )
 
         def do_GET(self) -> None:  # noqa: N802 - BaseHTTPRequestHandler API
             url_path = self.path.split("?", 1)[0]
             # Archive route first: <site_base_path>/ci/... is a sub-path of the
             # site base, so the more specific prefix must win.
             if archive_root is not None and (url_path == archive_base or url_path.startswith(archive_base + "/")):
-                _serve_archive_path(self, self.path, archive_root, archive_base)
+                client = client_identity(self, trust_forwarded_for=trust_forwarded_for)
+                if not _archive_authorized(self, archive_token):
+                    LOGGER.warning("archive unauthorized client=%s path=%s", client, url_path)
+                    _json_response(
+                        self,
+                        401,
+                        {
+                            "status": "error",
+                            "code": "ARCHIVE_UNAUTHORIZED",
+                            "message": f"archive access requires the {ARCHIVE_TOKEN_HEADER} header or ?token=",
+                        },
+                    )
+                    return
+                if archive_limiter is not None and not archive_limiter.allow(client):
+                    LOGGER.warning("archive rate limited client=%s path=%s", client, url_path)
+                    _json_response(
+                        self,
+                        429,
+                        {
+                            "status": "error",
+                            "code": "ARCHIVE_RATE_LIMITED",
+                            "message": (
+                                f"archive requests limited to {archive_rate_limit} per "
+                                f"{int(archive_rate_window)}s per client"
+                            ),
+                        },
+                        extra_headers={"Retry-After": str(max(1, int(archive_rate_window)))},
+                    )
+                    return
+                _serve_archive_path(
+                    self, self.path, archive_root, archive_base, listing=archive_listing
+                )
                 return
             if site_root is not None and (url_path == site_base_path or url_path.startswith(site_base_path + "/")):
                 _serve_site_path(self, self.path, site_root, site_base_path)
@@ -515,6 +727,21 @@ def build_parser() -> argparse.ArgumentParser:
                         help=("Directory of per-delivery CI archives (ci_worker --output-root, "
                               f"e.g. specs/.evaluator/ci) to serve at <site-base-path>/{ARCHIVE_URL_SEGMENT} "
                               "for full-report browsing/download (default: not served)"))
+    parser.add_argument("--archive-token-env", default=DEFAULT_ARCHIVE_TOKEN_ENV,
+                        help=("Environment variable holding a shared token required to read the "
+                              f"archive route, via the {ARCHIVE_TOKEN_HEADER} header or ?token= "
+                              f"(default {DEFAULT_ARCHIVE_TOKEN_ENV}; unset = public archives)"))
+    parser.add_argument("--no-archive-listing", dest="archive_listing", action="store_false",
+                        help="404 archive directory requests instead of rendering a browsable listing")
+    parser.add_argument("--archive-rate-limit", type=int, default=DEFAULT_ARCHIVE_RATE_LIMIT,
+                        help=("Max archive requests per client per --archive-rate-window "
+                              f"(default {DEFAULT_ARCHIVE_RATE_LIMIT}; 0 disables)"))
+    parser.add_argument("--archive-rate-window", type=float, default=DEFAULT_ARCHIVE_RATE_WINDOW,
+                        help=f"Archive rate-limit window in seconds (default {DEFAULT_ARCHIVE_RATE_WINDOW})")
+    parser.add_argument("--trust-forwarded-for", action="store_true",
+                        help=("Log and rate-limit against the left-most X-Forwarded-For entry when the "
+                              "peer is loopback. Only enable behind a reverse proxy that sets it; "
+                              "otherwise clients can spoof the header"))
     parser.add_argument("--token-env", default="GITCODE_WEBHOOK_TOKEN")
     parser.add_argument("--signature-secret-env", default="GITCODE_WEBHOOK_SIGNATURE_SECRET")
     return parser
@@ -525,6 +752,7 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     token = os.environ.get(args.token_env) or None
     signature_secret = os.environ.get(args.signature_secret_env) or None
+    archive_token = (os.environ.get(args.archive_token_env) or "").strip() or None
     if not token and not signature_secret and not _is_loopback_host(args.host):
         parser.error("non-loopback listeners require a webhook token or signature secret")
     try:
@@ -540,19 +768,29 @@ def main(argv: list[str] | None = None) -> int:
             site_root=args.site_root,
             site_base_path=args.site_base_path,
             archive_root=args.archive_root,
+            archive_token=archive_token,
+            archive_listing=args.archive_listing,
+            archive_rate_limit=args.archive_rate_limit,
+            archive_rate_window=args.archive_rate_window,
+            trust_forwarded_for=args.trust_forwarded_for,
         )
     except (OSError, ValueError) as error:
         parser.error(str(error))
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
     LOGGER.info(
-        "listening host=%s port=%s path=%s receipts=%s token=%s signature=%s",
+        "listening host=%s port=%s path=%s receipts=%s token=%s signature=%s "
+        "archive_token=%s archive_listing=%s archive_rate=%s/%ss",
         args.host,
         server.server_address[1],
         args.path,
         args.events_file,
         bool(token),
         bool(signature_secret),
+        bool(archive_token),
+        args.archive_listing,
+        args.archive_rate_limit,
+        int(args.archive_rate_window),
     )
     try:
         server.serve_forever()

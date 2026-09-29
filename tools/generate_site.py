@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import shutil
 import sys
@@ -547,6 +548,20 @@ def load_dynamic_evaluation(
     return spec_evaluation, semantic_evaluation, history
 
 
+def data_revision(*documents: dict[str, Any]) -> str:
+    """Fingerprint the served payloads so the page can poll a tiny probe file.
+
+    The page polls only ``site-runtime.json`` (a few hundred bytes) and refetches
+    the multi-megabyte reports when this value changes, instead of re-downloading
+    every payload on each interval.
+    """
+    digest = hashlib.sha256()
+    for document in documents:
+        digest.update(json.dumps(document, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8"))
+        digest.update(b"\0")
+    return digest.hexdigest()[:16]
+
+
 def _write_json(path: Path, document: dict[str, Any], *, compact: bool = False) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     if compact:
@@ -593,7 +608,14 @@ def write_evaluation_data(
     _write_json(SPEC_EVAL_SUMMARY_STATIC_JSON, spec_summary)
     _write_json(SEMANTIC_EVAL_SUMMARY_STATIC_JSON, semantic_summary)
     _write_json(SPEC_EVAL_HISTORY_STATIC_JSON, history_document)
-    _write_json(SITE_RUNTIME_JSON, {"schemaVersion": 1, "mode": mode})
+    _write_json(
+        SITE_RUNTIME_JSON,
+        {
+            "schemaVersion": 2,
+            "mode": mode,
+            "dataRevision": data_revision(spec_evaluation, semantic_evaluation, history_document),
+        },
+    )
     # Persist the un-stripped history (with ``activeFindings``) so the next
     # dynamic accumulation can chain forward and compute a correct day-over-day
     # Finding delta. Not served to the browser.
