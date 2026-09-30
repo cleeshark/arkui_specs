@@ -49,7 +49,7 @@
 | 03 引擎框架层 | 03 资源主题 | 02 主题分层访问 | `03-03-02` | `03-engine-framework/03-resource-theme/02-theme-layered-access/` | [design.md](03-engine-framework/03-resource-theme/02-theme-layered-access/design.md) | 1 |
 | 03 引擎框架层 | 03 资源主题 | 03 Theme框架 | `03-03-03` | `03-engine-framework/03-resource-theme/03-theme-framework/` | [design.md](03-engine-framework/03-resource-theme/03-theme-framework/design.md) | 2 |
 | 03 引擎框架层 | 03 资源主题 | 04 资源动态切换 | `03-03-04` | `03-engine-framework/03-resource-theme/04-resource-dynamic-switching/` | [design.md](03-engine-framework/03-resource-theme/04-resource-dynamic-switching/design.md) | 1 |
-| 03 引擎框架层 | 04 事件框架 | 01 事件基础框架 | `03-04-01` | `03-engine-framework/04-event-framework/01-event-base-framework/` | [design.md](03-engine-framework/04-event-framework/01-event-base-framework/design.md) | 6 |
+| 03 引擎框架层 | 04 事件框架 | 01 事件基础框架 | `03-04-01` | `03-engine-framework/04-event-framework/01-event-base-framework/` | [design.md](03-engine-framework/04-event-framework/01-event-base-framework/design.md) | 7 |
 | 03 引擎框架层 | 04 事件框架 | 02 拖拽框架 | `03-04-02` | `03-engine-framework/04-event-framework/02-drag-framework/` | [design.md](03-engine-framework/04-event-framework/02-drag-framework/design.md) | 7 |
 | 03 引擎框架层 | 05 窗口机制 | 01 窗口机制 | `03-05-01` | `03-engine-framework/05-window-mechanism/01-window-mechanism/` | [design.md](03-engine-framework/05-window-mechanism/01-window-mechanism/design.md) | 4 |
 | 03 引擎框架层 | 05 窗口机制 | 02 子窗机制 | `03-05-02` | `03-engine-framework/05-window-mechanism/02-subwindow-mechanism/` | [design.md](03-engine-framework/05-window-mechanism/02-subwindow-mechanism/design.md) | 3 |
@@ -62,7 +62,7 @@
 | 03 引擎框架层 | 08 DFX | 04 Dump机制 | `03-08-04` | `03-engine-framework/08-dfx-foundation/04-dump-mechanism/` | [design.md](03-engine-framework/08-dfx-foundation/04-dump-mechanism/design.md) | 5 |
 | 03 引擎框架层 | 08 DFX | 05 Benchmark | `03-08-05` | `03-engine-framework/08-dfx-foundation/05-benchmark/` | *待补充* | 0 |
 | 03 引擎框架层 | 08 DFX | 06 布局边界显示 | `03-08-06` | `03-engine-framework/08-dfx-foundation/06-layout-boundary-display/` | [design.md](03-engine-framework/08-dfx-foundation/06-layout-boundary-display/design.md) | 1 |
-| 03 引擎框架层 | 09 UISession | 01 UISession 服务 | `03-09-01` | `03-engine-framework/09-uisession/01-uisession-service/` | [design.md](03-engine-framework/09-uisession/01-uisession-service/design.md) | 11 |
+| 03 引擎框架层 | 09 UISession | 01 UISession 服务 | `03-09-01` | `03-engine-framework/09-uisession/01-uisession-service/` | [design.md](03-engine-framework/09-uisession/01-uisession-service/design.md) | 12 |
 | 04 通用能力层 | 01 图片加载能力 | 01 图片加载机制 | `04-01-01` | `04-common-capability/01-image-loading/01-image-loading-mechanism/` | [design.md](04-common-capability/01-image-loading/01-image-loading-mechanism/design.md) | 1 |
 | 04 通用能力层 | 01 图片加载能力 | 02 Svg解析 | `04-01-02` | `04-common-capability/01-image-loading/02-svg-parsing/` | [design.md](04-common-capability/01-image-loading/02-svg-parsing/design.md) | 4 |
 | 04 通用能力层 | 01 图片加载能力 | 03 DrawableDescriptor 能力 | `04-01-03` | `04-common-capability/01-image-loading/03-drawable-descriptor/` | [design.md](04-common-capability/01-image-loading/03-drawable-descriptor/design.md) | 1 |
@@ -538,6 +538,7 @@
 | Feat-04 | 手势仲裁与响应控制 | [Feat-04-gesture-referee-and-response-control-spec.md](03-engine-framework/04-event-framework/01-event-base-framework/Feat-04-gesture-referee-and-response-control-spec.md) | Baselined |
 | Feat-05 | 事件诊断与维测 | [Feat-05-event-diagnostics-and-inspection-spec.md](03-engine-framework/04-event-framework/01-event-base-framework/Feat-05-event-diagnostics-and-inspection-spec.md) | Baselined |
 | Feat-06 | 握姿和操作位置感知与分发 | *待补充* | Draft |
+| Feat-07 | 支持拖拽手势触发时滑动手势逃逸能力 | *待补充* | Draft |
 
 ### 03-04-02 拖拽框架
 
@@ -655,6 +656,7 @@
 | Feat-09 | PageScene 规则感知能力 | [Feat-09-pagescene-rule-awareness-spec.md](03-engine-framework/09-uisession/01-uisession-service/Feat-09-pagescene-rule-awareness-spec.md) | Draft |
 | Feat-10 | WM UIContentRemoteObj 验证链路 | [Feat-10-wm-uicontent-remoteobj-verification-spec.md](03-engine-framework/09-uisession/01-uisession-service/Feat-10-wm-uicontent-remoteobj-verification-spec.md) | Draft |
 | Feat-11 | 内容变化开始、取消事件上报与生命周期管理 | *待补充* | Draft |
+| Feat-12 | 触摸事件上报 UISession | *待补充* | Draft |
 
 ### 04-01-01 图片加载机制
 
