@@ -296,6 +296,7 @@
 | 07 前端层 | 03 自定义组件 | 05 自定义测量/布局 | `07-03-05` | `07-frontend/03-custom-components/05-custom-measure-layout/` | [design.md](07-frontend/03-custom-components/05-custom-measure-layout/design.md) | 1 |
 | 07 前端层 | 03 自定义组件 | 06 组件扩展 | `07-03-06` | `07-frontend/03-custom-components/06-component-extension/` | *待补充* | 0 |
 | 07 前端层 | 03 自定义组件 | 07 静态自定义组件状态相关 | `07-03-07` | `07-frontend/03-custom-components/07-static-custom-component-state/` | [design.md](07-frontend/03-custom-components/07-static-custom-component-state/design.md) | 0 |
+| 07 前端层 | 03 自定义组件 | 08 自定义组件异步加载 | `07-03-08` | `07-frontend/03-custom-components/08-async-component-load/` | *待补充* | 1 |
 | 07 前端层 | 04 生成式UI | 01 基础框架与消息模型 | `07-04-01` | `07-frontend/04-generative-ui/01-protocol-core-message-model/` | [design.md](07-frontend/04-generative-ui/01-protocol-core-message-model/design.md) | 7 |
 | 07 前端层 | 04 生成式UI | 02 标准协议布局组件 | `07-04-02` | `07-frontend/04-generative-ui/02-a2ui-standard-layout-components/` | [design.md](07-frontend/04-generative-ui/02-a2ui-standard-layout-components/design.md) | 3 |
 | 07 前端层 | 04 生成式UI | 03 标准协议展示组件 | `07-04-03` | `07-frontend/04-generative-ui/03-a2ui-standard-display-components/` | [design.md](07-frontend/04-generative-ui/03-a2ui-standard-display-components/design.md) | 4 |
@@ -2379,6 +2380,12 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+
+### 07-03-08 自定义组件异步加载
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | 自定义组件异步加载 | *待补充* | Draft |
 
 ### 07-04-01 基础框架与消息模型
 
