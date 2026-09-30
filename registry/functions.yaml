@@ -3589,6 +3589,19 @@ functions:
   path: 07-frontend/03-custom-components/07-static-custom-component-state/
   design: 07-frontend/03-custom-components/07-static-custom-component-state/design.md
   status: active
+- id: 07-03-08
+  l1:
+    id: '07'
+    title: 前端层
+  l2:
+    id: '03'
+    title: 自定义组件
+  l3:
+    id: '08'
+    title: 自定义组件异步加载
+  path: 07-frontend/03-custom-components/08-async-component-load/
+  design: null
+  status: active
 - id: 07-04-01
   l1:
     id: '07'
