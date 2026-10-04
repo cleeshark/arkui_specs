@@ -1571,6 +1571,44 @@ class NormalizeAggregationTest(unittest.TestCase):
         self.assertEqual(confidence["confidence_score"], 80)
         self.assertEqual(confidence["deduction_total"], 20)
 
+    def test_malformed_criterion_evidence_rows_are_flagged(self) -> None:
+        # issue #99: the assembler's final schema was the only enforcement
+        # point for criterion evidence row fields, so correction-fabricated
+        # rows (no evidence_id, null content_hash) died at final assembly
+        # after the whole aggregation spend.  The kernel gate must flag them
+        # first; review_record rows stay hash-exempt by design.
+        good = {
+            "evidence_id": "EV-1", "type": "spec_location",
+            "path": "specs/a.md", "source_revision": SOURCE_REVISION,
+            "content_hash": "sha256:" + "0" * 64, "description": "ok",
+        }
+        document = {"criterion_results": [{
+            "criterion_id": "SPEC-TRACEABILITY",
+            "evidence": [
+                good,
+                {**good, "evidence_id": None},
+                {**good, "evidence_id": "EV-2", "content_hash": None},
+                {**good, "evidence_id": "EV-3", "type": "review_record",
+                 "content_hash": None},
+                "not-an-object",
+            ],
+        }]}
+        errors = [
+            error for error in validate_aggregation_document(
+                document, criterion_order=["SPEC-TRACEABILITY"],
+            )
+            if error.code == "EVIDENCE_ROW_INVALID"
+        ]
+        paths = {error.path for error in errors}
+        self.assertEqual(paths, {
+            "aggregation.criterion_results[SPEC-TRACEABILITY].evidence[1]",
+            "aggregation.criterion_results[SPEC-TRACEABILITY].evidence[2]",
+            "aggregation.criterion_results[SPEC-TRACEABILITY].evidence[4]",
+        })
+        self.assertTrue(
+            all(error.repairability == SERVICE_NORMALIZATION for error in errors)
+        )
+
     def test_ambiguous_duplicate_defect_owner_uses_service_fallback(self) -> None:
         judgment = self._judgment()
         judgment["defect_ownership"].append({

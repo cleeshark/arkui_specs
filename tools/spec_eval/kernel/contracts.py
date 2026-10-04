@@ -77,6 +77,10 @@ REVIEW_RECORD = "review_record"
 DIRECTORY_PATH_EVIDENCE_TYPES = frozenset({REVIEW_RECORD})
 HASH_EXEMPT_EVIDENCE_TYPES = frozenset({REVIEW_RECORD})
 
+# Content hashes are lowercase SHA-256 with the literal sha256: prefix; the
+# skill's evidence pipeline computes them from the referenced file content.
+EVIDENCE_CONTENT_HASH_PATTERN = r"^sha256:[0-9a-f]{64}$"
+
 # Minimum observation-level evidence items per local outcome. NOT_VERIFIABLE
 # observations must still record their inspection evidence (issue #22 rule,
 # carried over as a typed check instead of a repair mode).

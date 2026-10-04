@@ -116,6 +116,12 @@ ERROR_REGISTRY: dict[str, str] = _register({
     "EVIDENCE_PATH_NOT_FOUND": MODEL_CORRECTION,
     "EVIDENCE_KEY_UNKNOWN": MODEL_CORRECTION,
     "EVIDENCE_CARDINALITY_VIOLATED": MODEL_CORRECTION,
+    # A criterion evidence row missing its evidence_id or carrying no content
+    # hash for a non hash-exempt type is service-owned: the deterministic
+    # corrector strips the row (issue #99) and any emptied criterion falls
+    # through to EVIDENCE_REQUIRED_MISSING instead of reaching the final
+    # schema gate.
+    "EVIDENCE_ROW_INVALID": SERVICE_NORMALIZATION,
     "NV_INSPECTION_EVIDENCE_MISSING": MODEL_CORRECTION,
     "GAP_MISSING_FOR_NV": MODEL_CORRECTION,
     "NV_MISSING_EVIDENCE_RECOVERED": MODEL_CORRECTION,
@@ -208,6 +214,9 @@ CONFIDENCE_LAYERS: dict[str, str] = {
     "NOT_APPLICABLE_FORBIDDEN": LAYER_MAJOR,
     "EVIDENCE_TYPE_MISSING": LAYER_MAJOR,
     "EVIDENCE_REQUIRED_MISSING": LAYER_MAJOR,
+    # The row is stripped deterministically, so a residual normally never
+    # reaches confidence scoring; classify it MAJOR defensively.
+    "EVIDENCE_ROW_INVALID": LAYER_MAJOR,
     "MODELING_BASIS_MISSING": LAYER_MAJOR,
     "MODELING_BASIS_INVALID": LAYER_MAJOR,
     "UNIT_CLAIM_OUTCOME_CONFLICT": LAYER_MAJOR,
