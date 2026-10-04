@@ -57,6 +57,7 @@ from spec_eval.service.pipeline.correction import (
     is_fatal_error,
     is_model_correction_error,
     resolve_typed_error_json_paths,
+    uncovered_correction_paths,
     validate_patch_evidence_refs,
     validate_patch_scope,
     validate_patch_values,
@@ -962,6 +963,19 @@ class JudgmentFlow:
                 # ones before validation/publish (issue #89 follow-up).
                 if "criterion_results" in corrected_payload:
                     rederive_aggregation_finding_ids(corrected_payload)
+                # issue #97: record when the bounded turn ignored part of the
+                # listed error set.  The patch set is still applied and the
+                # revalidation below decides the outcome.
+                uncovered = uncovered_correction_paths(
+                    candidate_document, model_dicts, patches,
+                )
+                if uncovered:
+                    self.events.append(
+                        self.ctx.job_id, "correction_paths_uncovered", {
+                            "work_item_id": work.work_item_id,
+                            "uncovered_paths": uncovered,
+                        },
+                    )
                 corrected_candidate_for_failure = corrected_payload
             except (OSError, json.JSONDecodeError, ValueError, TypeError) as exc:
                 return self._fail(

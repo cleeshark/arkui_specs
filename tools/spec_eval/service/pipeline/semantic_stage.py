@@ -119,7 +119,10 @@ def run_semantic(
     resumes at the single correction turn instead of regenerating.
     """
     from spec_eval.kernel import staged_state as SS
-    from spec_eval.kernel.errors import OBSERVATION_POST_CORRECTION_WARNING_CODES
+    from spec_eval.kernel.errors import (
+        DEFECT_KEYS_DEGRADED_PUBLISH_CODES,
+        OBSERVATION_POST_CORRECTION_WARNING_CODES,
+    )
     from spec_eval.kernel.normalize import (
         normalize_observation,
         project_observation_derived_fields,
@@ -244,7 +247,10 @@ def run_semantic(
             stage_event="work_item_completed",
             reproject=project_observation_derived_fields,
             allow_degraded_publish=True,
-            degraded_publish_codes=OBSERVATION_POST_CORRECTION_WARNING_CODES,
+            degraded_publish_codes=(
+                OBSERVATION_POST_CORRECTION_WARNING_CODES
+                | DEFECT_KEYS_DEGRADED_PUBLISH_CODES
+            ),
             on_post_correction_warnings=_record_post_correction_warnings,
         )
         if outcome.status != C.STATUS_COMPLETED:

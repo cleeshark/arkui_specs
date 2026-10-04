@@ -9,6 +9,8 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from spec_eval.kernel.errors import (
+    DEFECT_KEYS_DEGRADED_PUBLISH_CODES,
+    OBSERVATION_POST_CORRECTION_WARNING_CODES,
     TypedError,
     compute_confidence,
     is_post_correction_warning,
@@ -32,6 +34,7 @@ from spec_eval.service.pipeline.correction import (
     resolve_typed_error_json_path,
     resolve_typed_error_json_paths,
     typed_error_json_path,
+    uncovered_correction_paths,
     validate_patch_evidence_refs,
     validate_patch_scope,
     validate_patch_values,
@@ -418,6 +421,150 @@ class CorrectionFlowTest(unittest.TestCase):
             ["design.state-recovery-coverage-incomplete"],
         )
         self.assertTrue(changes)
+
+    def test_missing_observation_defect_fields_are_backfilled_without_model(self) -> None:
+        # issue #97: SERVICE_NORMALIZATION promises a silent deterministic fix,
+        # but the handler could only canonicalize existing values, so missing
+        # defect fields were folded into the single model Correction turn and
+        # 15 jobs died CORRECTION_INVALID_TERMINAL.  Backfill them instead.
+        document = {
+            "observations": [
+                {
+                    "observation_id": "OBS-1",
+                    "local_outcome": "CONFLICT",
+                    "criterion_ids": ["CORRECTNESS-SOURCE-SUPPORT"],
+                    "defect_key": None,
+                    "primary_criterion_id": None,
+                },
+                {
+                    "observation_id": "OBS-2",
+                    "local_outcome": "MISSING",
+                    "criterion_ids": ["SPEC-TRACEABILITY"],
+                    "defect_key": "   ",
+                    "primary_criterion_id": "SPEC-TRACEABILITY",
+                },
+            ],
+        }
+        errors = [
+            TypedError(
+                "DEFECT_KEYS_INVALID",
+                "observation.observations[0].defect_key",
+                entity_type="observation", entity_id="OBS-1",
+                expected="snake_case defect key for adverse outcome",
+            ),
+            TypedError(
+                "DEFECT_KEYS_INVALID",
+                "observation.observations[0].primary_criterion_id",
+                entity_type="defect", entity_id="",
+                expected="primary criterion for adverse outcome",
+            ),
+            TypedError(
+                "DEFECT_KEYS_INVALID",
+                "observation.observations[1].defect_key",
+                entity_type="observation", entity_id="OBS-2",
+                expected="snake_case defect key for adverse outcome",
+            ),
+        ]
+        corrected, changes, unresolved = apply_deterministic_correction(
+            document, errors
+        )
+        self.assertFalse(unresolved)
+        self.assertEqual(
+            corrected["observations"][0]["defect_key"],
+            "unresolved-observation-obs-1",
+        )
+        self.assertEqual(
+            corrected["observations"][0]["primary_criterion_id"],
+            "CORRECTNESS-SOURCE-SUPPORT",
+        )
+        self.assertEqual(
+            corrected["observations"][1]["defect_key"],
+            "unresolved-observation-obs-2",
+        )
+        # A backfilled key must not be reshipped as the reserved prefix.
+        self.assertFalse(
+            corrected["observations"][0]["defect_key"].startswith("service.")
+        )
+        self.assertEqual(len(changes), 3)
+
+    def test_missing_primary_backfill_requires_declared_criteria(self) -> None:
+        document = {
+            "observations": [{
+                "observation_id": "OBS-1",
+                "local_outcome": "CONFLICT",
+                "criterion_ids": [],
+                "defect_key": "conflict.no-criteria-declared",
+                "primary_criterion_id": None,
+            }],
+        }
+        error = TypedError(
+            "DEFECT_KEYS_INVALID",
+            "observation.observations[0].primary_criterion_id",
+            entity_type="defect", entity_id="conflict.no-criteria-declared",
+            expected="primary criterion for adverse outcome",
+        )
+        corrected, changes, unresolved = apply_deterministic_correction(
+            document, [error]
+        )
+        self.assertEqual(unresolved, [error])
+        self.assertEqual(changes, [])
+        self.assertIsNone(corrected["observations"][0]["primary_criterion_id"])
+
+    def test_malformed_defect_key_stays_with_model_correction(self) -> None:
+        # A non-empty key the model wrote is never replaced by the synthetic
+        # backfill: canonicalize when possible, otherwise leave it to the
+        # bounded Correction turn.
+        document = {
+            "observations": [{
+                "observation_id": "OBS-1",
+                "local_outcome": "CONFLICT",
+                "criterion_ids": ["SPEC-TRACEABILITY"],
+                "defect_key": "Spec Claims Conflict",
+                "primary_criterion_id": "SPEC-TRACEABILITY",
+            }],
+        }
+        error = TypedError(
+            "DEFECT_KEYS_INVALID",
+            "observation.observations[0].defect_key",
+            entity_type="observation", entity_id="OBS-1",
+            expected="snake_case defect key for adverse outcome",
+        )
+        corrected, changes, unresolved = apply_deterministic_correction(
+            document, [error]
+        )
+        self.assertEqual(unresolved, [error])
+        self.assertEqual(changes, [])
+        self.assertEqual(
+            corrected["observations"][0]["defect_key"], "Spec Claims Conflict"
+        )
+
+    def test_uncovered_correction_paths_reports_missed_targets(self) -> None:
+        document = {
+            "observations": [
+                {"observation_id": "OBS-1", "defect_key": None},
+                {"observation_id": "OBS-2", "check_ids": ["claim_source_support"]},
+            ],
+        }
+        errors = [{
+            "code": "DEFECT_KEYS_INVALID",
+            "path": "observation.observations[0].defect_key",
+            "entity_type": "observation", "entity_id": "OBS-1",
+        }]
+        unrelated = [{
+            "op": "replace",
+            "path": "/observations/1/check_ids/-",
+            "value": json.dumps("claim_source_consistent"),
+        }]
+        self.assertEqual(
+            uncovered_correction_paths(document, errors, unrelated),
+            ["/observations/0/defect_key"],
+        )
+        covering = [{
+            "op": "replace",
+            "path": "/observations/0/defect_key",
+            "value": json.dumps("fixed.defect"),
+        }]
+        self.assertEqual(uncovered_correction_paths(document, errors, covering), [])
 
     def test_json_patch_decodes_transport_values(self) -> None:
         result = apply_json_patch(
@@ -1579,6 +1726,164 @@ class CorrectionRoutingDegradeTest(unittest.TestCase):
         # The service error reached the model turn (it was not terminal first).
         self.assertIn("correct", executor.calls)
         self.assertEqual(outcome.status, C.STATUS_COMPLETED)
+
+    def test_missing_defect_fields_backfill_completes_without_model_turn(self) -> None:
+        # issue #97 job 086ebbf4: the candidate reported both missing defect
+        # fields, the old flow spent the single Correction turn on half of
+        # them and terminated.  The deterministic backfill must now complete
+        # the work item without any executor call.
+        document = {
+            "observations": [{
+                "observation_id": "OBS-1",
+                "local_outcome": "CONFLICT",
+                "criterion_ids": ["CORRECTNESS-SOURCE-SUPPORT"],
+                "defect_key": None,
+                "primary_criterion_id": None,
+            }],
+        }
+        errors = [
+            {
+                "code": "DEFECT_KEYS_INVALID",
+                "path": "observation.observations[0].defect_key",
+                "entity_type": "observation", "entity_id": "OBS-1",
+                "expected": "snake_case defect key for adverse outcome",
+                "repairability": "SERVICE_NORMALIZATION",
+            },
+            {
+                "code": "DEFECT_KEYS_INVALID",
+                "path": "observation.observations[0].primary_criterion_id",
+                "entity_type": "defect",
+                "expected": "primary criterion for adverse outcome",
+                "repairability": "SERVICE_NORMALIZATION",
+            },
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp)
+            work = _observation_work(run_dir)
+            self._seed_candidate(
+                run_dir, "Feat-01.json", document, errors,
+                work_item_id=work.work_item_id,
+            )
+            events = _Events()
+            executor = _FlowExecutor()
+            published: list[dict] = []
+            flow = JudgmentFlow(
+                ctx=SimpleNamespace(run_dir=run_dir, job_id="job", run_id="run-1"),
+                executor=executor, jobs=SimpleNamespace(), events=events,
+            )
+            outcome = flow.run(
+                work=work,
+                output_path=run_dir / "Feat-01.json",
+                template={},
+                normalize=lambda payload: NormalizationResult(document=payload),
+                validate=lambda doc: [] if all(
+                    isinstance(doc["observations"][0].get(field), str)
+                    and doc["observations"][0][field]
+                    for field in ("defect_key", "primary_criterion_id")
+                ) else [TypedError.from_dict(error) for error in errors],
+                base_contract=work.prompt_extras,
+                on_publish=lambda d: published.append(d) or True,
+                fingerprint="fp", stage_event="work_item_completed",
+            )
+        self.assertEqual(outcome.status, C.STATUS_COMPLETED)
+        self.assertEqual(executor.calls, [])
+        self.assertEqual(
+            published[0]["observations"][0]["defect_key"],
+            "unresolved-observation-obs-1",
+        )
+        self.assertEqual(
+            published[0]["observations"][0]["primary_criterion_id"],
+            "CORRECTNESS-SOURCE-SUPPORT",
+        )
+        self.assertIn(
+            "candidate_deterministic_repaired", events.types()
+        )
+
+    def test_defect_field_residual_degrades_instead_of_terminating(self) -> None:
+        # issue #97: when even the deterministic backfill cannot derive the
+        # fields (adverse observation with no criterion_ids) and the model
+        # turn ignores the listed path, the observation must publish degraded
+        # instead of dying CORRECTION_INVALID_TERMINAL.  Only the extended
+        # observation allowlist enables that; the un-extended set still fails.
+        document = {
+            "observations": [{
+                "observation_id": "OBS-1",
+                "local_outcome": "CONFLICT",
+                "criterion_ids": [],
+                "defect_key": "conflict.no-criteria-declared",
+                "primary_criterion_id": None,
+            }],
+        }
+        errors = [{
+            "code": "DEFECT_KEYS_INVALID",
+            "path": "observation.observations[0].primary_criterion_id",
+            "entity_type": "defect",
+            "entity_id": "conflict.no-criteria-declared",
+            "expected": "primary criterion for adverse outcome",
+            "repairability": "SERVICE_NORMALIZATION",
+        }]
+
+        def run_once(degraded_publish_codes):
+            with tempfile.TemporaryDirectory() as tmp:
+                run_dir = Path(tmp)
+                work = _observation_work(run_dir)
+                self._seed_candidate(
+                    run_dir, "Feat-01.json", document, errors,
+                    work_item_id=work.work_item_id,
+                )
+                events = _Events()
+                executor = _FlowExecutor(patches=[])
+                published: list[dict] = []
+                flow = JudgmentFlow(
+                    ctx=SimpleNamespace(
+                        run_dir=run_dir, job_id="job", run_id="run-1",
+                    ),
+                    executor=executor,
+                    jobs=SimpleNamespace(transition_status=lambda *a, **k: None),
+                    events=events,
+                )
+                outcome = flow.run(
+                    work=work,
+                    output_path=run_dir / "Feat-01.json",
+                    template={},
+                    normalize=lambda payload: NormalizationResult(document=payload),
+                    validate=lambda _document: [
+                        TypedError.from_dict(error) for error in errors
+                    ],
+                    base_contract=work.prompt_extras,
+                    on_publish=lambda d: published.append(d) or True,
+                    fingerprint="fp", stage_event="work_item_completed",
+                    allow_degraded_publish=True,
+                    degraded_publish_codes=degraded_publish_codes,
+                )
+                return outcome, events, published, executor
+
+        outcome, events, published, executor = run_once(
+            OBSERVATION_POST_CORRECTION_WARNING_CODES
+            | DEFECT_KEYS_DEGRADED_PUBLISH_CODES
+        )
+        self.assertEqual(outcome.status, C.STATUS_COMPLETED)
+        self.assertTrue(published)
+        # The model turn ignored the listed defect path: record the gap...
+        self.assertIn("correct", executor.calls)
+        self.assertIn("correction_paths_uncovered", events.types())
+        self.assertEqual(
+            events.rows[
+                [t for t, _ in events.rows].index("correction_paths_uncovered")
+            ][1]["uncovered_paths"],
+            ["/observations/0/primary_criterion_id"],
+        )
+        # ...then still publish degraded.
+        self.assertIn("correction_completed_degraded", events.types())
+
+        terminal_outcome, terminal_events, terminal_published, _ = run_once(
+            OBSERVATION_POST_CORRECTION_WARNING_CODES
+        )
+        self.assertEqual(terminal_outcome.status, C.STATUS_FAILED)
+        self.assertFalse(terminal_published)
+        self.assertNotIn(
+            "correction_completed_degraded", terminal_events.types()
+        )
 
     def test_residual_non_hard_error_degrades_only_for_final_report(self) -> None:
         # A non-HARD service error the deterministic repair cannot resolve and
