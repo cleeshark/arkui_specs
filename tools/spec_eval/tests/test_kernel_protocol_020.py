@@ -1149,6 +1149,97 @@ class ValidateObservationTest(unittest.TestCase):
             all(error.repairability == SERVICE_NORMALIZATION for error in errors)
         )
 
+    def test_claim_without_evidence_reports_required_missing(self) -> None:
+        # issue #98: the skill preflight requires evidence for every non-NV
+        # outcome, but the kernel had no such rule — a correction could trade
+        # an unknown reference for an empty citation list that only the
+        # preflight would reject.  The kernel gates must see the same rule.
+        document = copy.deepcopy(self.document)
+        claim = document["claim_reviews"][0]
+        claim["local_outcome"] = "SUPPORTED"
+        claim["evidence_ids"] = []
+        self.assertIn("EVIDENCE_REQUIRED_MISSING", self._codes(document))
+
+    def test_unit_without_evidence_reports_required_missing(self) -> None:
+        document = copy.deepcopy(self.document)
+        claim = document["claim_reviews"][0]
+        claim["local_outcome"] = "SUPPORTED"
+        unit = claim["unit_reviews"][0]
+        unit["local_outcome"] = "SUPPORTED"
+        unit["evidence_ids"] = []
+        errors = validate_observation_document(
+            document, valid_criterion_ids=CRITERIA
+        )
+        unit_errors = [
+            error for error in errors
+            if error.code == "EVIDENCE_REQUIRED_MISSING"
+        ]
+        self.assertTrue(unit_errors)
+        self.assertTrue(all(e.entity_type == "unit" for e in unit_errors))
+
+    def test_nv_claim_without_evidence_keeps_inspection_rule_only(self) -> None:
+        document = copy.deepcopy(self.document)
+        document["claim_reviews"][0]["evidence_ids"] = []
+        errors = validate_observation_document(
+            document, valid_criterion_ids=CRITERIA
+        )
+        codes = [error.code for error in errors]
+        self.assertNotIn("EVIDENCE_REQUIRED_MISSING", codes)
+        self.assertIn("NV_INSPECTION_EVIDENCE_MISSING", codes)
+
+    def test_dropped_observation_evidence_is_rehosted_for_claims(self) -> None:
+        # issue #98 (job 17a7dab3): an observation with empty claim_ids is
+        # dropped, but a claim may legitimately cite evidence that only the
+        # dropped observation hosted.  The claim-only attachment must consider
+        # surviving hosts only, otherwise the citation resolves to an EV id
+        # defined nowhere and the Correction turn is forced into clearing it.
+        judgment = _judgment(self.evidence_rel)
+        judgment["evidence_declarations"].append({
+            "key": "e3",
+            "type": "spec_location",
+            "path": self.evidence_rel,
+            "lines": "2-2",
+            "description": "Shared frozen evidence cited only by a claim.",
+        })
+        judgment["claim_reviews"][1]["evidence_refs"] = ["e3"]
+        judgment["claim_reviews"][1]["unit_reviews"][0]["evidence_refs"] = ["e3"]
+        judgment["observations"].append({
+            "criterion_ids": [],
+            "check_ids": [],
+            "claim_ids": [],
+            "local_outcome": "SUPPORTED",
+            "breadth": "feat_core",
+            "contract_family": "synthetic-contract",
+            "fact": "Evidence-only observation dropped for empty claim_ids.",
+            "defect_key": None,
+            "primary_criterion_id": None,
+            "evidence_refs": ["e3"],
+        })
+        base = normalize_observation(
+            self.template, judgment, repo_root=self.root
+        )
+        assert base.document is not None
+        document = base.document
+        self.assertEqual(len(document["observations"]), 1)
+        hosted = {
+            evidence.get("evidence_id")
+            for evidence in document["observations"][0]["evidence"]
+        }
+        claim = document["claim_reviews"][1]
+        self.assertTrue(claim["evidence_ids"])
+        self.assertLessEqual(set(claim["evidence_ids"]), hosted)
+        unit = claim["unit_reviews"][0]
+        self.assertLessEqual(set(unit["evidence_ids"]), hosted)
+        self.assertEqual(
+            [
+                error.code for error in validate_observation_document(
+                    document, valid_criterion_ids=CRITERIA
+                )
+                if error.code == "EVIDENCE_KEY_UNKNOWN"
+            ],
+            [],
+        )
+
     def test_unit_claim_outcome_conflict(self) -> None:
         document = copy.deepcopy(self.document)
         document["claim_reviews"][1]["unit_reviews"][0]["local_outcome"] = "CONFLICT"

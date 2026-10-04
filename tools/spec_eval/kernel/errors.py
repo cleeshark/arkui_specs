@@ -273,15 +273,24 @@ OBSERVATION_POST_CORRECTION_WARNING_CODES = frozenset({
     # Publish with the MAJOR deduction instead of terminating the run.
     "MODELING_BASIS_MISSING",
     "MODELING_BASIS_INVALID",
+    # A completed Claim or atomic unit whose outcome is not NOT_VERIFIABLE
+    # carries no evidence citation (issue #98, job 17a7dab3): the conclusion
+    # and its prose reason are preserved and the report stays consumable, so
+    # after the one bounded Correction turn publish with the MAJOR deduction
+    # instead of terminating the run.  The skill preflight downgrades the
+    # matching checkpoint errors via the post-correction-warnings sidecar.
+    "EVIDENCE_REQUIRED_MISSING",
 })
 
 # Residual DEFECT_KEYS_INVALID after the bounded Correction turn (issue #97):
 # the deterministic backfill fills missing observation defect fields whenever
 # they are derivable, so this code must stay OUT of POST_CORRECTION_WARNING_
 # CODES — the post-Correction downgrade runs before the deterministic repair
-# and would publish the unbackfilled document.  When even the backfill cannot
-# derive the fields (e.g. an adverse observation with no criterion_ids), the
-# observation stage publishes degraded instead of terminating the run.
+# and would publish the unbackfilled document.  Scope note: this allowlist
+# only fires when even the backfill cannot derive the fields (e.g. an adverse
+# observation with no criterion_ids) — the skill preflight still hard-requires
+# non-empty criterion_ids, so the entry moves the failure earlier (no further
+# model spend) rather than enabling a degraded publish through aggregation.
 DEFECT_KEYS_DEGRADED_PUBLISH_CODES = frozenset({"DEFECT_KEYS_INVALID"})
 
 POST_CORRECTION_WARNING_CODES = frozenset({
@@ -295,12 +304,13 @@ POST_CORRECTION_WARNING_CODES = frozenset({
     # gap the model cannot fabricate without violating the evidence allowlist.
     # The kernel classifies it as a non-blocking MAJOR confidence deduction.
     "EVIDENCE_TYPE_MISSING",
-    # A Criterion with SUPPORTED conclusion but no evidence is a logical flaw
-    # that should be fixed during Correction (change conclusion or add evidence).
-    # However, if the model cannot resolve it after one Correction turn, allow
-    # degraded publish with a MAJOR confidence deduction rather than terminal
-    # failure — report quality takes precedence over blocking for this bounded
-    # evaluation-quality issue.
+    # EVIDENCE_REQUIRED_MISSING (Criterion conclusion without evidence, and —
+    # via OBSERVATION_POST_CORRECTION_WARNING_CODES above — the Claim/unit
+    # empty-citation rule from issue #98) is a logical flaw that should be
+    # fixed during Correction. If the model cannot resolve it after one
+    # Correction turn, allow a degraded publish with a MAJOR confidence
+    # deduction rather than terminal failure — report quality takes
+    # precedence over blocking for this bounded evaluation-quality issue.
     "EVIDENCE_REQUIRED_MISSING",
 })
 
