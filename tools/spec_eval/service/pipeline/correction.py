@@ -138,16 +138,62 @@ def apply_deterministic_correction(
     one unambiguous key.  Missing observation defect fields on adverse
     outcomes are backfilled from the observation's own identity and declared
     criteria (issue #97) so the SERVICE_NORMALIZATION contract — fix silently
-    and re-validate, no executor call — actually holds.  No semantic
-    conclusion, reason, evidence or source assertion is inferred here.
+    and re-validate, no executor call — actually holds.  Malformed criterion
+    evidence rows are stripped (issue #99) so they never reach the final
+    schema gate; an emptied criterion falls through to the registered
+    EVIDENCE_REQUIRED_MISSING handling.  No semantic conclusion, reason,
+    evidence or source assertion is inferred here.
     """
     corrected = copy.deepcopy(document)
     changes: list[str] = []
     unresolved: list[TypedError] = []
+
+    # EVIDENCE_ROW_INVALID rows are stripped as a group before the per-error
+    # loop: the errors carry numeric indexes into shared evidence arrays, so
+    # every pointer is resolved against the unmodified document and removals
+    # are applied in descending index order (issue #99).
+    resolved_rows: list[tuple[TypedError, str]] = []
+    for raw_error in errors:
+        error = raw_error if isinstance(raw_error, TypedError) else TypedError.from_dict(raw_error)
+        if error.code != "EVIDENCE_ROW_INVALID":
+            continue
+        try:
+            pointer = resolve_typed_error_json_path(corrected, error)
+        except (ValueError, KeyError, TypeError, IndexError):
+            unresolved.append(error)
+            continue
+        resolved_rows.append((error, pointer))
+
+    def _row_removal_order(item: tuple[TypedError, str]) -> tuple[str, int]:
+        tokens = _decode_pointer(item[1])
+        try:
+            return ("/".join(tokens[:-1]), -int(tokens[-1]))
+        except ValueError:
+            return ("/".join(tokens), 0)
+
+    for _error, pointer in sorted(resolved_rows, key=_row_removal_order):
+        tokens = _decode_pointer(pointer)
+        parent: Any = corrected
+        try:
+            for token in tokens[:-1]:
+                parent = parent[int(token)] if isinstance(parent, list) else parent[token]
+            index = int(tokens[-1])
+            if not isinstance(parent, list) or index < 0 or index >= len(parent):
+                raise ValueError(pointer)
+            del parent[index]
+        except (TypeError, KeyError, ValueError, IndexError):
+            unresolved.append(_error)
+            continue
+        changes.append(
+            f"{'/'.join(tokens[:-1])}: stripped malformed evidence row"
+        )
+
     for raw_error in errors:
         error = raw_error if isinstance(raw_error, TypedError) else TypedError.from_dict(raw_error)
         if not is_deterministic_error(error):
             continue
+        if error.code == "EVIDENCE_ROW_INVALID":
+            continue  # handled by the group pre-pass above
 
         if error.code == "SEVERITY_BELOW_FLOOR":
             located = _finding_by_identity(corrected, error.entity_id)

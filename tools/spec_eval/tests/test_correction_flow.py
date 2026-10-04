@@ -1961,6 +1961,192 @@ class CorrectionRoutingDegradeTest(unittest.TestCase):
             [record["error"]["code"] for record in records],
         )
 
+    def test_malformed_evidence_rows_are_stripped_as_a_group(self) -> None:
+        # issue #99: correction-fabricated evidence rows (no evidence_id, no
+        # content_hash) must be stripped deterministically — including two in
+        # the same array, where descending-order removal avoids index shifts.
+        document = {
+            "criterion_results": [{
+                "criterion_id": "FUNCTION-FEAT-DECOMPOSITION",
+                "evidence": [
+                    {"evidence_id": "EV-1", "type": "spec_location",
+                     "path": "specs/a.md", "content_hash": "sha256:" + "0" * 64},
+                    {"type": "spec_location", "path": "specs/b.md",
+                     "content_hash": None, "description": "fabricated"},
+                    {"evidence_id": "EV-2", "type": "review_record",
+                     "path": "dir", "content_hash": None},
+                    {"type": "design_location", "path": "specs/c.md",
+                     "content_hash": None},
+                ],
+            }],
+        }
+        errors = [
+            TypedError(
+                "EVIDENCE_ROW_INVALID",
+                "aggregation.criterion_results[FUNCTION-FEAT-DECOMPOSITION]"
+                ".evidence[1]",
+                entity_type="evidence", expected="row",
+            ),
+            TypedError(
+                "EVIDENCE_ROW_INVALID",
+                "aggregation.criterion_results[FUNCTION-FEAT-DECOMPOSITION]"
+                ".evidence[3]",
+                entity_type="evidence", expected="row",
+            ),
+        ]
+        corrected, changes, unresolved = apply_deterministic_correction(
+            document, errors
+        )
+        self.assertFalse(unresolved)
+        self.assertEqual(len(changes), 2)
+        evidence = corrected["criterion_results"][0]["evidence"]
+        self.assertEqual(
+            [row.get("evidence_id") for row in evidence], ["EV-1", "EV-2"],
+        )
+
+    def test_empty_allowlist_menu_offers_required_types(self) -> None:
+        # issue #99: a Criterion with an empty allowlist mapping received an
+        # empty correction menu and fabricated raw evidence rows the final
+        # schema rejected.  The menu must offer catalog rows of the required
+        # types instead.
+        context = {
+            "criteria": [{
+                "criterion_id": "FUNCTION-FEAT-DECOMPOSITION",
+                "evidence_ids": [],
+                "evidence_ids_by_type": {},
+                "required_evidence_types": [
+                    "registry_entry", "spec_location", "source_citation",
+                ],
+            }],
+            "evidence_catalog": {
+                "EV-s1": {"evidence_id": "EV-s1", "type": "spec_location"},
+                "EV-s2": {"evidence_id": "EV-s2", "type": "spec_location"},
+                "EV-c1": {"evidence_id": "EV-c1", "type": "source_citation"},
+                "EV-t1": {"evidence_id": "EV-t1", "type": "test_evidence"},
+            },
+            "observations": {}, "claims": {}, "units": {},
+        }
+        projected = build_aggregation_correction_context(
+            context,
+            {"criterion_results": [
+                {"criterion_id": "FUNCTION-FEAT-DECOMPOSITION"},
+            ]},
+            [{
+                "code": "EVIDENCE_REQUIRED_MISSING",
+                "entity_type": "criterion",
+                "entity_id": "FUNCTION-FEAT-DECOMPOSITION",
+                "path": "aggregation.criterion_results["
+                        "FUNCTION-FEAT-DECOMPOSITION].evidence",
+            }],
+        )
+        self.assertEqual(
+            set(projected["evidence_catalog"]),
+            {"EV-s1", "EV-s2", "EV-c1"},
+        )
+
+    def test_non_empty_allowlist_menu_stays_scoped(self) -> None:
+        context = {
+            "criteria": [{
+                "criterion_id": "SPEC-TRACEABILITY",
+                "evidence_ids": ["EV-t1"],
+                "evidence_ids_by_type": {"test_evidence": ["EV-t1"]},
+                "required_evidence_types": ["spec_location", "test_evidence"],
+            }],
+            "evidence_catalog": {
+                "EV-s1": {"evidence_id": "EV-s1", "type": "spec_location"},
+                "EV-t1": {"evidence_id": "EV-t1", "type": "test_evidence"},
+            },
+            "observations": {}, "claims": {}, "units": {},
+        }
+        projected = build_aggregation_correction_context(
+            context,
+            {"criterion_results": [{"criterion_id": "SPEC-TRACEABILITY"}]},
+            [{
+                "code": "EVIDENCE_TYPE_MISSING",
+                "entity_type": "criterion",
+                "entity_id": "SPEC-TRACEABILITY",
+                "path": "aggregation.criterion_results[SPEC-TRACEABILITY].evidence",
+            }],
+        )
+        self.assertEqual(set(projected["evidence_catalog"]), {"EV-t1"})
+
+    def test_malformed_evidence_rows_stripped_then_degrade_publish(self) -> None:
+        # issue #99 (job cad1bb43): a criterion whose only evidence rows are
+        # malformed gets them stripped deterministically; the emptied
+        # criterion falls to EVIDENCE_REQUIRED_MISSING, the model turn cannot
+        # fix it, and the residual publishes with the MAJOR deduction instead
+        # of dying at assemble_semantic_result.
+        document = {
+            "criterion_results": [{
+                "criterion_id": "FUNCTION-FEAT-DECOMPOSITION",
+                "evidence": [{
+                    "type": "spec_location", "path": "specs/a.md",
+                    "content_hash": None, "description": "fabricated",
+                }],
+            }],
+        }
+        row_error = {
+            "code": "EVIDENCE_ROW_INVALID",
+            "path": "aggregation.criterion_results[FUNCTION-FEAT-DECOMPOSITION]"
+                    ".evidence[0]",
+            "entity_type": "evidence",
+            "expected": "row",
+            "repairability": "SERVICE_NORMALIZATION",
+        }
+        empty_error = {
+            "code": "EVIDENCE_REQUIRED_MISSING",
+            "path": "aggregation.criterion_results[FUNCTION-FEAT-DECOMPOSITION]"
+                    ".evidence",
+            "entity_type": "criterion",
+            "entity_id": "FUNCTION-FEAT-DECOMPOSITION",
+            "expected": "at least one evidence item",
+            "repairability": "MODEL_CORRECTION",
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp)
+            work = _aggregation_work(run_dir)
+            self._seed_candidate(
+                run_dir, "aggregation.json", document, [row_error],
+                work_item_id=work.work_item_id,
+            )
+            events = _Events()
+            executor = _FlowExecutor(patches=[])
+            published: list[dict] = []
+            flow = JudgmentFlow(
+                ctx=SimpleNamespace(run_dir=run_dir, job_id="job", run_id="run-1"),
+                executor=executor,
+                jobs=SimpleNamespace(transition_status=lambda *a, **k: None),
+                events=events,
+            )
+            outcome = flow.run(
+                work=work,
+                output_path=run_dir / "aggregation.json",
+                template={},
+                normalize=lambda payload: NormalizationResult(document=payload),
+                validate=lambda doc: [] if doc["criterion_results"][0]["evidence"] else [
+                    TypedError.from_dict(empty_error)
+                ],
+                base_contract=work.prompt_extras,
+                on_publish=lambda d: published.append(d) or True,
+                fingerprint="fp", stage_event="aggregation_completed",
+                allow_degraded_publish=True,
+                on_post_correction_warnings=lambda errors: (
+                    record_post_correction_warnings(
+                        run_dir, work.work_item_id, errors
+                    )
+                ),
+            )
+            records = load_post_correction_warning_records(run_dir)
+        self.assertEqual(outcome.status, C.STATUS_COMPLETED)
+        self.assertEqual(executor.calls, ["correct"])
+        self.assertEqual(published[0]["criterion_results"][0]["evidence"], [])
+        self.assertIn("candidate_deterministic_repaired", events.types())
+        self.assertIn("correction_completed_with_warnings", events.types())
+        self.assertIn(
+            "EVIDENCE_REQUIRED_MISSING",
+            [record["error"]["code"] for record in records],
+        )
+
     def test_residual_non_hard_error_degrades_only_for_final_report(self) -> None:
         # A non-HARD service error the deterministic repair cannot resolve and
         # whose document-level path does not resolve to a patch target is not

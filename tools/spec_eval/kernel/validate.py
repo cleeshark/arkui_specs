@@ -789,6 +789,53 @@ def validate_aggregation_document(
                 else:
                     findings_by_id[finding_id] = finding
 
+        # Criterion evidence rows must be consumable by the final semantic
+        # schema (issue #99): the assembler is the only later enforcement
+        # point, so a malformed row published here dies there after the whole
+        # aggregation spend.  The deterministic corrector strips flagged rows;
+        # review_record rows are hash-exempt by design (directory-anchored
+        # inspections).
+        evidence_rows = result.get("evidence")
+        for evidence_index, evidence_row in enumerate(
+            evidence_rows if isinstance(evidence_rows, list) else []
+        ):
+            row_label = (
+                f"{label}.criterion_results[{criterion_id}]"
+                f".evidence[{evidence_index}]"
+            )
+            if not isinstance(evidence_row, dict):
+                errors.append(_err(
+                    "EVIDENCE_ROW_INVALID", row_label,
+                    entity_type="evidence", entity_id="",
+                    expected="an evidence object",
+                ))
+                continue
+            evidence_id = evidence_row.get("evidence_id")
+            content_hash = evidence_row.get("content_hash")
+            hash_exempt = evidence_row.get("type") in K.HASH_EXEMPT_EVIDENCE_TYPES
+            row_ok = (
+                isinstance(evidence_id, str) and bool(evidence_id)
+                and (
+                    hash_exempt
+                    or (
+                        isinstance(content_hash, str)
+                        and bool(re.fullmatch(
+                            K.EVIDENCE_CONTENT_HASH_PATTERN, content_hash,
+                        ))
+                    )
+                )
+            )
+            if not row_ok:
+                errors.append(_err(
+                    "EVIDENCE_ROW_INVALID", row_label,
+                    entity_type="evidence", entity_id=str(evidence_id or ""),
+                    expected=(
+                        "non-empty evidence_id and a sha256 content_hash for "
+                        "non hash-exempt evidence types"
+                    ),
+                    actual=str(content_hash) if evidence_id else "",
+                ))
+
     if aggregation_context is not None:
         mappings_by_id = criteria_by_id(aggregation_context)
         for result in results:

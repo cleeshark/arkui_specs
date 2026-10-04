@@ -27,6 +27,9 @@ _EVIDENCE_CRITERION_FIELDS = (
     "criterion_id", "evidence_ids", "evidence_ids_by_type",
     "required_evidence_types",
 )
+# When a target Criterion's allowlist mapping is empty, the correction menu
+# offers at most this many catalog rows per required evidence type (issue #99).
+_EMPTY_ALLOWLIST_TYPE_MENU_CAP = 6
 
 
 def _rows(value: Any) -> list[dict[str, Any]]:
@@ -179,6 +182,30 @@ def build_aggregation_correction_context(
     evidence_catalog = aggregation_context.get("evidence_catalog", {})
     if not isinstance(evidence_catalog, dict):
         evidence_catalog = {}
+
+    # issue #99 (job cad1bb43): a Criterion whose allowlist mapping is empty
+    # cannot cite anything, so its required evidence types are unsatisfiable —
+    # the correction turn was handed an empty menu and forced into fabricating
+    # raw evidence rows that the final schema rejects.  When a target
+    # Criterion cites nothing, offer the catalog rows of the types its rubric
+    # mapping requires (bounded per type) so a legal citation exists.
+    for row in criteria:
+        if _strings(row.get("evidence_ids")):
+            continue
+        required_types = sorted(set(_strings(row.get("required_evidence_types"))))
+        if not required_types:
+            continue
+        for required_type in required_types:
+            offered = 0
+            for evidence_id, evidence_row in evidence_catalog.items():
+                if offered >= _EMPTY_ALLOWLIST_TYPE_MENU_CAP:
+                    break
+                if (
+                    isinstance(evidence_row, dict)
+                    and evidence_row.get("type") == required_type
+                ):
+                    evidence_ids.add(evidence_id)
+                    offered += 1
 
     metadata_fields = (
         "schema_version", "staged_schema_version", "evaluator_version",
