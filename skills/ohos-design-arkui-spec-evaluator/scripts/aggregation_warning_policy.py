@@ -128,6 +128,17 @@ OBSERVATION_WARNING_MARKERS = {
         ".modeling_basis.why_dependency_or_detail_is_insufficient:",
         ".modeling_basis.feat_roles:",
     ),
+    # Issue #98 (job 17a7dab3): a completed Claim or atomic unit whose outcome
+    # is not NOT_VERIFIABLE carries an empty evidence_ids list after the
+    # bounded Correction turn (the correction may only clear an unknown
+    # reference, never fabricate one).  The conclusion and its prose reason
+    # are preserved; the kernel registers the residual as a MAJOR deduction,
+    # so downgrade the matching checkpoint errors via the sidecar instead of
+    # rejecting the job at the aggregation preflight.
+    "EVIDENCE_REQUIRED_MISSING": (
+        ".evidence_ids: evidence is required for this outcome",
+        ".evidence_ids: evidence is required",
+    ),
 }
 
 

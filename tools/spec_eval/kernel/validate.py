@@ -378,6 +378,16 @@ def validate_observation_document(
                 "EVIDENCE_KEY_UNKNOWN", f"{row_label}.evidence_ids",
                 entity_type="claim", entity_id=claim_id, actual=str(unknown),
             ))
+        # Mirror the skill checkpoint rule (issue #98): a completed claim whose
+        # outcome is not NOT_VERIFIABLE must cite at least one evidence row,
+        # otherwise the correction loop can trade an unknown reference for an
+        # empty citation list that only the preflight would reject.
+        if outcome != K.NOT_VERIFIABLE and not _strings(row.get("evidence_ids")):
+            errors.append(_err(
+                "EVIDENCE_REQUIRED_MISSING", f"{row_label}.evidence_ids",
+                entity_type="claim", entity_id=claim_id,
+                expected="evidence for this outcome",
+            ))
         reason = row.get("reason")
         if not isinstance(reason, str) or not reason.strip() or K.PLACEHOLDER_TEXT in reason:
             errors.append(_err(
@@ -506,6 +516,17 @@ def validate_observation_document(
                     "EVIDENCE_KEY_UNKNOWN", f"{unit_label}.evidence_ids",
                     entity_type="unit", entity_id=unit_id, actual=str(unknown),
                 ))
+            unit_outcome = unit.get("local_outcome")
+            # Mirror of the claim-level rule at unit granularity (issue #98).
+            if (
+                unit_outcome != K.NOT_VERIFIABLE
+                and not _strings(unit.get("evidence_ids"))
+            ):
+                errors.append(_err(
+                    "EVIDENCE_REQUIRED_MISSING", f"{unit_label}.evidence_ids",
+                    entity_type="unit", entity_id=unit_id,
+                    expected="evidence for this outcome",
+                ))
             fact = unit.get("fact")
             if not isinstance(fact, str) or not fact.strip() or K.PLACEHOLDER_TEXT in fact:
                 errors.append(_err(
@@ -517,7 +538,6 @@ def validate_observation_document(
                     "REASON_LOW_INFORMATION", f"{unit_label}.fact",
                     entity_type="unit", entity_id=unit_id,
                 ))
-            unit_outcome = unit.get("local_outcome")
             unit_gap = unit.get("verification_gap")
             if unit_outcome == K.NOT_VERIFIABLE:
                 if not isinstance(unit_gap, dict):

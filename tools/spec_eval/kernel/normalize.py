@@ -651,11 +651,13 @@ def normalize_observation(
     #    references; claim-only references attach to the first observation so
     #    the published invariant (claim evidence defined by observations) holds
     observations: list[dict[str, Any]] = []
+    observation_refs: list[list[str]] = []
     for obs_index, entry in enumerate(_rows(judgment.get("observations"))):
         evidence_refs = _deduplicated_strings(
             entry.get("evidence_refs"),
             f"observations[{obs_index}].evidence_refs",
         )
+        observation_refs.append(evidence_refs)
         evidence_rows = [
             evidence_by_key[key]
             for key in evidence_refs
@@ -705,7 +707,13 @@ def normalize_observation(
     # and carries no claim→criterion mapping.  Keeping it would trigger
     # OBSERVATION_CLAIM_IDS_EMPTY at validation and is not model-repairable.
     pre_filter = len(observations)
-    observations = [obs for obs in observations if obs["claim_ids"]]
+    survivors = [
+        (obs, refs)
+        for obs, refs in zip(observations, observation_refs)
+        if obs["claim_ids"]
+    ]
+    observations = [obs for obs, _refs in survivors]
+    observation_refs = [refs for _obs, refs in survivors]
     if len(observations) < pre_filter:
         dropped = pre_filter - len(observations)
         changes.append(
@@ -719,10 +727,13 @@ def normalize_observation(
         claim_referenced_keys.extend(_strings(row.get("evidence_refs")))
         for unit in _rows(row.get("unit_reviews")):
             claim_referenced_keys.extend(_strings(unit.get("evidence_refs")))
+    # Only surviving observations count as evidence hosts (issue #98, job
+    # 17a7dab3): a dropped empty-claim_ids observation no longer hosts its
+    # rows, so keys it carried are re-attached below when a claim cites them.
     obs_referenced_keys: set[str] = {
         key
-        for entry in _rows(judgment.get("observations"))
-        for key in _strings(entry.get("evidence_refs"))
+        for refs in observation_refs
+        for key in refs
     }
     if observations:
         for key in declaration_order:
