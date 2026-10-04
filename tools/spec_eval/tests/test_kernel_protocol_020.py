@@ -1125,6 +1125,30 @@ class ValidateObservationTest(unittest.TestCase):
             membership_errors[0].repairability, SERVICE_NORMALIZATION
         )
 
+    def test_adverse_observation_reports_missing_defect_fields_together(self) -> None:
+        # issue #97: the masked elif surfaced primary_criterion_id only after
+        # a repair round had filled defect_key, so a candidate missing both
+        # fields burned the single Correction turn on half the violations and
+        # died CORRECTION_INVALID_TERMINAL.  Both paths must be reported in
+        # one validation pass.
+        document = copy.deepcopy(self.document)
+        observation = document["observations"][0]
+        observation["local_outcome"] = "CONFLICT"
+        observation["defect_key"] = None
+        observation["primary_criterion_id"] = None
+        errors = [
+            error for error in validate_observation_document(
+                document, valid_criterion_ids=CRITERIA
+            )
+            if error.code == "DEFECT_KEYS_INVALID"
+        ]
+        paths = {error.path for error in errors}
+        self.assertIn("observation.observations[0].defect_key", paths)
+        self.assertIn("observation.observations[0].primary_criterion_id", paths)
+        self.assertTrue(
+            all(error.repairability == SERVICE_NORMALIZATION for error in errors)
+        )
+
     def test_unit_claim_outcome_conflict(self) -> None:
         document = copy.deepcopy(self.document)
         document["claim_reviews"][1]["unit_reviews"][0]["local_outcome"] = "CONFLICT"

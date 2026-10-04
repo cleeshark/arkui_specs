@@ -72,6 +72,19 @@ def _canonical_outcome(value: Any) -> str | None:
     return normalized if normalized in K.LOCAL_OUTCOMES else None
 
 
+def _backfilled_defect_key(row: dict[str, Any], index: int) -> str:
+    """Return a deterministic service key for one unnamed observation defect.
+
+    Unique per observation row so two unnamed defects never merge; the row's
+    own fact/evidence fields carry the semantics.  The ``service.`` prefix is
+    deliberately avoided — it is reserved for aggregation ownership fallbacks
+    and is rejected as SERVICE_DEFECT_KEY_RESERVED in model-authored keys.
+    """
+    raw = str(row.get("observation_id") or f"index-{index + 1}")
+    slug = re.sub(r"[^a-z0-9._-]+", "-", raw.lower()).strip("-")
+    return f"unresolved-observation-{slug or index + 1}"
+
+
 def _path_index(path: str, collection: str) -> int | None:
     match = re.search(rf"{re.escape(collection)}\[(\d+)\]", path)
     return int(match.group(1)) if match else None
@@ -122,8 +135,11 @@ def apply_deterministic_correction(
     """Apply only safe structural repairs and return unresolved errors.
 
     A defect key is mapped only when the Claim's Observation ownership yields
-    one unambiguous key.  No semantic conclusion, reason, evidence or source
-    assertion is inferred here.
+    one unambiguous key.  Missing observation defect fields on adverse
+    outcomes are backfilled from the observation's own identity and declared
+    criteria (issue #97) so the SERVICE_NORMALIZATION contract — fix silently
+    and re-validate, no executor call — actually holds.  No semantic
+    conclusion, reason, evidence or source assertion is inferred here.
     """
     corrected = copy.deepcopy(document)
     changes: list[str] = []
@@ -238,20 +254,42 @@ def apply_deterministic_correction(
                 elif error.path.endswith(".primary_criterion_id"):
                     primary = rows[index].get("primary_criterion_id")
                     criterion_ids = rows[index].get("criterion_ids")
-                    if not isinstance(primary, str) or not isinstance(criterion_ids, list):
+                    if not isinstance(criterion_ids, list):
                         unresolved.append(error)
-                    elif primary not in criterion_ids:
-                        criterion_ids.append(primary)
+                    elif isinstance(primary, str) and primary:
+                        if primary not in criterion_ids:
+                            criterion_ids.append(primary)
+                            changes.append(
+                                f"observations[{index}].criterion_ids added primary criterion"
+                            )
+                        else:
+                            unresolved.append(error)
+                    elif criterion_ids:
+                        # Service-owned backfill (issue #97): the observation's
+                        # own declared criteria are the deterministic source;
+                        # aggregation reconciles the final primary (issue #53).
+                        rows[index]["primary_criterion_id"] = criterion_ids[0]
                         changes.append(
-                            f"observations[{index}].criterion_ids added primary criterion"
+                            f"observations[{index}].primary_criterion_id "
+                            f"backfilled from criterion_ids ({criterion_ids[0]})"
                         )
                     else:
                         unresolved.append(error)
                 else:
                     key = rows[index].get("defect_key")
-                    if isinstance(key, str) and DEFECT_KEY.fullmatch(key.strip().lower()):
+                    if (
+                        isinstance(key, str) and key.strip()
+                        and DEFECT_KEY.fullmatch(key.strip().lower())
+                    ):
                         rows[index]["defect_key"] = key.strip().lower()
                         changes.append(f"observations[{index}].defect_key canonicalized")
+                    elif not isinstance(key, str) or not key.strip():
+                        backfilled = _backfilled_defect_key(rows[index], index)
+                        rows[index]["defect_key"] = backfilled
+                        changes.append(
+                            f"observations[{index}].defect_key backfilled "
+                            f"({backfilled})"
+                        )
                     else:
                         unresolved.append(error)
             else:
@@ -698,6 +736,52 @@ def resolve_typed_error_json_paths(
             "with its ownership references"
         )
     return paths
+
+
+def _patch_covers_target(path: str, target: str) -> bool:
+    if path == target or path.startswith(target + "/"):
+        return True
+    if target.endswith("/-"):
+        # An append target is also covered by a whole-row add at any index.
+        stem = target[:-2]
+        remainder = path[len(stem):] if path.startswith(stem) else ""
+        return bool(re.fullmatch(r"/\d+", remainder))
+    return False
+
+
+def uncovered_correction_paths(
+    document: dict[str, Any],
+    errors: Iterable[TypedError | dict[str, Any]],
+    patches: Iterable[dict[str, Any]],
+) -> list[str]:
+    """Return Correction-requested targets no patch in *patches* addresses.
+
+    The bounded Correction turn is asked to fix a listed error set, but the
+    model may return patches that ignore part of it (issue #97: two jobs
+    received defect-key gaps alongside coverage errors and patched only the
+    latter).  The service still applies and revalidates whatever it receives;
+    the returned pointers only record the coverage gap for the job events.
+    """
+    patch_paths = [
+        patch["path"] for patch in patches
+        if isinstance(patch, dict) and isinstance(patch.get("path"), str)
+    ]
+    uncovered: list[str] = []
+    for raw_error in errors:
+        typed = (
+            raw_error if isinstance(raw_error, TypedError)
+            else TypedError.from_dict(raw_error)
+        )
+        try:
+            targets = resolve_typed_error_json_paths(document, typed)
+        except (ValueError, KeyError, TypeError, IndexError):
+            continue
+        for target in targets:
+            if any(_patch_covers_target(path, target) for path in patch_paths):
+                continue
+            if target not in uncovered:
+                uncovered.append(target)
+    return uncovered
 
 
 def validate_patch_scope(

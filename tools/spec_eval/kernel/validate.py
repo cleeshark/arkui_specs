@@ -266,19 +266,27 @@ def validate_observation_document(
         defect_key = entry.get("defect_key")
         primary = entry.get("primary_criterion_id")
         if outcome in {"CONFLICT", "MISSING"}:
-            if not isinstance(defect_key, str) or not DEFECT_KEY.fullmatch(defect_key):
+            defect_key_ok = (
+                isinstance(defect_key, str) and bool(DEFECT_KEY.fullmatch(defect_key))
+            )
+            if not defect_key_ok:
                 errors.append(_err(
                     "DEFECT_KEYS_INVALID", f"{obs_label}.defect_key",
                     entity_type="observation", entity_id=str(entry.get("observation_id")),
                     expected="snake_case defect key for adverse outcome",
                 ))
-            elif not isinstance(primary, str):
+            # Independent of the defect key result (issue #97): the previous
+            # elif masked a missing primary until a repair round filled the
+            # defect key, and the single bounded Correction turn can no longer
+            # fix a violation it was never shown.
+            if not isinstance(primary, str) or not primary:
                 errors.append(_err(
                     "DEFECT_KEYS_INVALID", f"{obs_label}.primary_criterion_id",
-                    entity_type="defect", entity_id=defect_key,
+                    entity_type="defect",
+                    entity_id=defect_key if defect_key_ok else "",
                     expected="primary criterion for adverse outcome",
                 ))
-            else:
+            elif defect_key_ok:
                 if primary not in observation_criterion_ids:
                     errors.append(_err(
                         "DEFECT_KEYS_INVALID",

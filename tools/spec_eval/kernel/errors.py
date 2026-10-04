@@ -275,6 +275,15 @@ OBSERVATION_POST_CORRECTION_WARNING_CODES = frozenset({
     "MODELING_BASIS_INVALID",
 })
 
+# Residual DEFECT_KEYS_INVALID after the bounded Correction turn (issue #97):
+# the deterministic backfill fills missing observation defect fields whenever
+# they are derivable, so this code must stay OUT of POST_CORRECTION_WARNING_
+# CODES — the post-Correction downgrade runs before the deterministic repair
+# and would publish the unbackfilled document.  When even the backfill cannot
+# derive the fields (e.g. an adverse observation with no criterion_ids), the
+# observation stage publishes degraded instead of terminating the run.
+DEFECT_KEYS_DEGRADED_PUBLISH_CODES = frozenset({"DEFECT_KEYS_INVALID"})
+
 POST_CORRECTION_WARNING_CODES = frozenset({
     "MAPPING_CLAIM_UNMAPPED",
     *OBSERVATION_POST_CORRECTION_WARNING_CODES,
