@@ -28,6 +28,7 @@ from spec_eval.service.executors import contract as C
 from spec_eval.service.pipeline.correction import (
     apply_deterministic_correction,
     apply_json_patch,
+    coerce_allowed_value_shapes,
     is_deterministic_error,
     is_fatal_error,
     is_model_correction_error,
@@ -607,7 +608,10 @@ class CorrectionFlowTest(unittest.TestCase):
                     "CORRECTNESS-SOURCE-SUPPORT"
                 ])}],
                 allowed_values_by_path={
-                    path: ["CORRECTNESS-SOURCE-SUPPORT"]
+                    path: {
+                        "field_type": "list",
+                        "values": ["CORRECTNESS-SOURCE-SUPPORT"],
+                    },
                 },
             ),
             [],
@@ -618,10 +622,150 @@ class CorrectionFlowTest(unittest.TestCase):
                     "SPEC-CROSS-DOC-CONSISTENCY"
                 ])}],
                 allowed_values_by_path={
-                    path: ["CORRECTNESS-SOURCE-SUPPORT"]
+                    path: {
+                        "field_type": "list",
+                        "values": ["CORRECTNESS-SOURCE-SUPPORT"],
+                    },
                 },
             )
         )
+
+    def test_patch_values_accept_scalar_contract_fields(self) -> None:
+        # issue #100: the ownership primary is a scalar field; the old
+        # array-shaped constraint deadlocked the channel because no patch
+        # value could satisfy both the value check and the field schema.
+        path = "/defect_ownership/26/primary_criterion_id"
+        allowed = {
+            path: {
+                "field_type": "scalar",
+                "values": ["SPEC-RULE-COMPLETENESS", "SPEC-TRACEABILITY"],
+            },
+        }
+        # The exact double-encoded transport value from job 61584665: one
+        # JSON decode yields the bare id string.
+        self.assertEqual(
+            validate_patch_values(
+                [{"path": path, "value": '"SPEC-RULE-COMPLETENESS"'}],
+                allowed_values_by_path=allowed,
+            ),
+            [],
+        )
+        self.assertEqual(
+            validate_patch_values(
+                [{"path": path, "value": json.dumps("SPEC-TRACEABILITY")}],
+                allowed_values_by_path=allowed,
+            ),
+            [],
+        )
+        self.assertEqual(
+            validate_patch_values(
+                [{"path": path, "value": json.dumps(["SPEC-TRACEABILITY"])}],
+                allowed_values_by_path=allowed,
+            ),
+            [],
+        )
+        self.assertTrue(validate_patch_values(
+            [{"path": path, "value": json.dumps([
+                "SPEC-TRACEABILITY", "SPEC-RULE-COMPLETENESS",
+            ])}],
+            allowed_values_by_path=allowed,
+        ))
+        self.assertTrue(validate_patch_values(
+            [{"path": path, "value": json.dumps("SPEC-SCOPE-BOUNDARY")}],
+            allowed_values_by_path=allowed,
+        ))
+
+    def test_coerce_allowed_value_shapes_unwraps_scalar_arrays(self) -> None:
+        document = {"defect_ownership": [
+            {"defect_key": "k1", "primary_criterion_id": ["SPEC-TRACEABILITY"]},
+            {"defect_key": "k2", "primary_criterion_id": "SPEC-RULE-COMPLETENESS"},
+        ]}
+        changes = coerce_allowed_value_shapes(
+            document,
+            {"/defect_ownership/0/primary_criterion_id": {
+                "field_type": "scalar", "values": ["SPEC-TRACEABILITY"],
+            }},
+        )
+        self.assertEqual(changes, [
+            "/defect_ownership/0/primary_criterion_id: unwrapped "
+            "single-element array",
+        ])
+        self.assertEqual(
+            document["defect_ownership"][0]["primary_criterion_id"],
+            "SPEC-TRACEABILITY",
+        )
+        self.assertEqual(
+            document["defect_ownership"][1]["primary_criterion_id"],
+            "SPEC-RULE-COMPLETENESS",
+        )
+
+    def test_defect_primary_missing_is_backfilled_from_owned_findings(self) -> None:
+        # issue #100 (job 61584665): the ownership primary is derivable from
+        # the criterion that owns the defect's findings when that ownership is
+        # unambiguous; ambiguous or unowned defects stay with the model turn.
+        document = {
+            "criterion_results": [
+                {"criterion_id": "SPEC-RULE-COMPLETENESS", "findings": [
+                    {"finding_id": "SEM-c1758fa3c48b37dadc2aabee"},
+                ]},
+                {"criterion_id": "SPEC-TRACEABILITY", "findings": [
+                    {"finding_id": "SEM-080a405a20e08bb73d2be989"},
+                    {"finding_id": "SEM-shared00000000000000002"},
+                ]},
+                {"criterion_id": "DESIGN-DECISION-QUALITY", "findings": [
+                    {"finding_id": "SEM-shared00000000000000001"},
+                ]},
+            ],
+            "defect_ownership": [
+                {"defect_key": "feat-04.animatemode-storage-path-conflict",
+                 "primary_criterion_id": None,
+                 "finding_ids": ["SEM-c1758fa3c48b37dadc2aabee"]},
+                {"defect_key": "feat-05.missing.api-version-runtime-gate",
+                 "primary_criterion_id": None,
+                 "finding_ids": ["SEM-080a405a20e08bb73d2be989"]},
+                {"defect_key": "feat-06.ambiguous-owner",
+                 "primary_criterion_id": None,
+                 "finding_ids": ["SEM-shared00000000000000001",
+                                 "SEM-shared00000000000000002"]},
+            ],
+        }
+        errors = [
+            TypedError(
+                "DEFECT_PRIMARY_MISSING",
+                "aggregation.defect_ownership[0].primary_criterion_id",
+                entity_type="defect",
+                entity_id="feat-04.animatemode-storage-path-conflict",
+            ),
+            TypedError(
+                "DEFECT_PRIMARY_MISSING",
+                "aggregation.defect_ownership[1].primary_criterion_id",
+                entity_type="defect",
+                entity_id="feat-05.missing.api-version-runtime-gate",
+            ),
+            TypedError(
+                "DEFECT_PRIMARY_MISSING",
+                "aggregation.defect_ownership[2].primary_criterion_id",
+                entity_type="defect",
+                entity_id="feat-06.ambiguous-owner",
+            ),
+        ]
+        corrected, changes, unresolved = apply_deterministic_correction(
+            document, errors
+        )
+        self.assertEqual(
+            corrected["defect_ownership"][0]["primary_criterion_id"],
+            "SPEC-RULE-COMPLETENESS",
+        )
+        self.assertEqual(
+            corrected["defect_ownership"][1]["primary_criterion_id"],
+            "SPEC-TRACEABILITY",
+        )
+        self.assertIsNone(
+            corrected["defect_ownership"][2]["primary_criterion_id"]
+        )
+        self.assertEqual(len(changes), 2)
+        self.assertEqual(len(unresolved), 1)
+        self.assertEqual(unresolved[0].entity_id, "feat-06.ambiguous-owner")
 
     def test_rederive_aggregation_finding_ids(self) -> None:
         """Job 61cfc52 (04-05-04): the correction added findings with
@@ -2145,6 +2289,170 @@ class CorrectionRoutingDegradeTest(unittest.TestCase):
         self.assertIn(
             "EVIDENCE_REQUIRED_MISSING",
             [record["error"]["code"] for record in records],
+        )
+
+    def test_defect_primary_backfill_rescues_aggregation_correction(self) -> None:
+        # issue #100 (job 61584665): an unambiguous ownership primary is
+        # backfilled deterministically; an ambiguous one is folded into the
+        # model turn with a shape-aware (scalar) value menu, the model patch
+        # fixes it, and the contradiction residual publishes with the MINOR
+        # deduction instead of dying in the patch-value deadlock.
+        document = {
+            "criterion_results": [
+                {"criterion_id": "SPEC-RULE-COMPLETENESS", "findings": [
+                    {"finding_id": "SEM-c1758fa3c48b37dadc2aabee"},
+                ]},
+                {"criterion_id": "SPEC-TRACEABILITY", "findings": [
+                    {"finding_id": "SEM-080a405a20e08bb73d2be989"},
+                    {"finding_id": "SEM-shared00000000000000002"},
+                ]},
+                {"criterion_id": "DESIGN-DECISION-QUALITY", "findings": [
+                    {"finding_id": "SEM-shared00000000000000001"},
+                ]},
+            ],
+            "defect_ownership": [
+                {"defect_key": "feat-04.animatemode-storage-path-conflict",
+                 "primary_criterion_id": None,
+                 "finding_ids": ["SEM-c1758fa3c48b37dadc2aabee"]},
+                {"defect_key": "feat-06.ambiguous-owner",
+                 "primary_criterion_id": None,
+                 "finding_ids": ["SEM-shared00000000000000001",
+                                 "SEM-shared00000000000000002"]},
+            ],
+            "contradiction_bases": [{
+                "criterion_id": "CONTRADICTED-X",
+                "primary_defect_key": "feat-01.adr1-capi-modifier-stale",
+            }],
+        }
+        primary_error = {
+            "code": "DEFECT_PRIMARY_MISSING",
+            "path": "aggregation.defect_ownership[0].primary_criterion_id",
+            "entity_type": "defect",
+            "entity_id": "feat-04.animatemode-storage-path-conflict",
+            "expected": "primary criterion for the owned findings",
+            "repairability": "SERVICE_NORMALIZATION",
+        }
+        ambiguous_error = {
+            "code": "DEFECT_PRIMARY_MISSING",
+            "path": "aggregation.defect_ownership[1].primary_criterion_id",
+            "entity_type": "defect",
+            "entity_id": "feat-06.ambiguous-owner",
+            "expected": "primary criterion for the owned findings",
+            "repairability": "SERVICE_NORMALIZATION",
+        }
+        contradiction_error = {
+            "code": "CONTRADICTION_BASIS_INVALID",
+            "path": "aggregation.contradiction_bases[0].primary_defect_key",
+            "entity_type": "defect",
+            "entity_id": "feat-01.adr1-capi-modifier-stale",
+            "expected": "basis defects must cover every CONTRADICTED Criterion",
+            "repairability": "MODEL_CORRECTION",
+        }
+        captured_menus: list[dict] = []
+
+        class _MenuCapturingExecutor:
+            def __init__(self) -> None:
+                self.calls: list[str] = []
+
+            def execute(self, work, emit, cancel=None):
+                mode = work.prompt_extras.get("mode", "observe")
+                self.calls.append(mode)
+                if mode == "correct":
+                    captured_menus.append(
+                        work.prompt_extras.get("correction_contract", {}).get(
+                            "allowed_values_by_path", {}
+                        )
+                    )
+                    return C.ExecutionResult(
+                        status=C.STATUS_COMPLETED,
+                        observation={"patches": [{
+                            "op": "replace",
+                            "path": "/defect_ownership/1/primary_criterion_id",
+                            "value": json.dumps("SPEC-TRACEABILITY"),
+                        }]},
+                    )
+                raise AssertionError("observe should be pre-seeded")
+
+        def _validate(doc):
+            errors = [TypedError.from_dict(contradiction_error)]
+            for index, row in enumerate(doc["defect_ownership"]):
+                if not row["primary_criterion_id"]:
+                    errors.append(TypedError.from_dict(
+                        primary_error if index == 0 else ambiguous_error
+                    ))
+            return errors
+
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp)
+            work = _aggregation_work(run_dir)
+            from dataclasses import replace as _replace
+            work = _replace(work, prompt_extras={
+                **work.prompt_extras,
+                "machine_contract": {
+                    "valid_criterion_ids": [
+                        "SPEC-RULE-COMPLETENESS", "SPEC-TRACEABILITY",
+                    ],
+                },
+            })
+            self._seed_candidate(
+                run_dir, "aggregation.json", document,
+                [primary_error, ambiguous_error, contradiction_error],
+                work_item_id=work.work_item_id,
+            )
+            events = _Events()
+            executor = _MenuCapturingExecutor()
+            published: list[dict] = []
+            flow = JudgmentFlow(
+                ctx=SimpleNamespace(run_dir=run_dir, job_id="job", run_id="run-1"),
+                executor=executor,
+                jobs=SimpleNamespace(transition_status=lambda *a, **k: None),
+                events=events,
+            )
+            outcome = flow.run(
+                work=work,
+                output_path=run_dir / "aggregation.json",
+                template={},
+                normalize=lambda payload: NormalizationResult(document=payload),
+                validate=_validate,
+                base_contract=work.prompt_extras,
+                on_publish=lambda d: published.append(d) or True,
+                fingerprint="fp", stage_event="aggregation_completed",
+                allow_degraded_publish=True,
+                on_post_correction_warnings=lambda errors: (
+                    record_post_correction_warnings(
+                        run_dir, work.work_item_id, errors
+                    )
+                ),
+            )
+            records = load_post_correction_warning_records(run_dir)
+        self.assertEqual(outcome.status, C.STATUS_COMPLETED)
+        self.assertEqual(executor.calls, ["correct"])
+        self.assertEqual(
+            published[0]["defect_ownership"][0]["primary_criterion_id"],
+            "SPEC-RULE-COMPLETENESS",
+        )
+        self.assertEqual(
+            published[0]["defect_ownership"][1]["primary_criterion_id"],
+            "SPEC-TRACEABILITY",
+        )
+        self.assertEqual(
+            captured_menus[0]["/defect_ownership/1/primary_criterion_id"][
+                "field_type"
+            ],
+            "scalar",
+        )
+        self.assertIn("candidate_deterministic_repaired", events.types())
+        self.assertIn("correction_completed_with_warnings", events.types())
+        # CONTRADICTION_BASIS_INVALID is downgraded unconditionally by the
+        # skill preflight's marker policy, so it never enters the kernel
+        # sidecar; the warning stays visible in the completion event.
+        warning_event = next(
+            payload for event_type, payload in events.rows
+            if event_type == "correction_completed_with_warnings"
+        )
+        self.assertIn(
+            "CONTRADICTION_BASIS_INVALID",
+            [warning["code"] for warning in warning_event["warnings"]],
         )
 
     def test_residual_non_hard_error_degrades_only_for_final_report(self) -> None:

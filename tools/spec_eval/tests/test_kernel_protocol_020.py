@@ -1609,6 +1609,33 @@ class NormalizeAggregationTest(unittest.TestCase):
             all(error.repairability == SERVICE_NORMALIZATION for error in errors)
         )
 
+    def test_defect_ownership_primary_missing_vs_unknown(self) -> None:
+        # issue #100: a missing primary is service-derivable (deterministic
+        # backfill), while a set-but-unknown id stays model-correctable.
+        document = {
+            "criterion_results": [{"criterion_id": "SPEC-TRACEABILITY"}],
+            "defect_ownership": [
+                {"defect_key": "k-missing", "primary_criterion_id": None,
+                 "finding_ids": []},
+                {"defect_key": "k-unknown", "primary_criterion_id": "NOPE",
+                 "finding_ids": []},
+                {"defect_key": "k-ok",
+                 "primary_criterion_id": "SPEC-TRACEABILITY",
+                 "finding_ids": []},
+            ],
+        }
+        errors = validate_aggregation_document(
+            document, criterion_order=["SPEC-TRACEABILITY"],
+        )
+        codes = {(error.code, error.entity_id) for error in errors}
+        self.assertIn(("DEFECT_PRIMARY_MISSING", "k-missing"), codes)
+        self.assertIn(("CRITERION_UNKNOWN", "k-unknown"), codes)
+        self.assertNotIn(("DEFECT_PRIMARY_MISSING", "k-ok"), codes)
+        self.assertTrue(all(
+            error.repairability == SERVICE_NORMALIZATION
+            for error in errors if error.code == "DEFECT_PRIMARY_MISSING"
+        ))
+
     def test_ambiguous_duplicate_defect_owner_uses_service_fallback(self) -> None:
         judgment = self._judgment()
         judgment["defect_ownership"].append({

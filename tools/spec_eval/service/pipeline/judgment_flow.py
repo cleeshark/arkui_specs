@@ -53,6 +53,7 @@ from spec_eval.service.pipeline.result_payload import (
 from spec_eval.service.pipeline.correction import (
     apply_deterministic_correction,
     apply_json_patch,
+    coerce_allowed_value_shapes,
     is_deterministic_error,
     is_fatal_error,
     is_model_correction_error,
@@ -958,6 +959,19 @@ class JudgmentFlow:
                 if violations:
                     raise ValueError("; ".join(violations))
                 corrected_payload = apply_json_patch(candidate_document, patches)
+                # Scalar contract fields patched with a one-element array are
+                # normalized to the scalar before revalidation (issue #100).
+                coerced = coerce_allowed_value_shapes(
+                    corrected_payload,
+                    correction_contract.get("allowed_values_by_path", {}),
+                )
+                if coerced:
+                    self.events.append(
+                        self.ctx.job_id, "correction_value_shapes_coerced", {
+                            "work_item_id": work.work_item_id,
+                            "changes": coerced,
+                        },
+                    )
                 # Deterministic bookkeeping: the model can neither compute nor
                 # guess canonical SEM finding ids, so re-derive any invented
                 # ones before validation/publish (issue #89 follow-up).
@@ -1204,14 +1218,46 @@ class JudgmentFlow:
         allowed_values_by_path = {}
         if valid_criterion_ids:
             for error, paths in zip(typed_errors, paths_by_error):
-                if error.get("code") == "CRITERION_UNKNOWN":
+                if error.get("code") in {
+                    "CRITERION_UNKNOWN", "DEFECT_PRIMARY_MISSING",
+                }:
                     for path in paths:
-                        allowed_values_by_path[path] = list(valid_criterion_ids)
+                        # Shape-aware menu (issue #100): the ownership primary
+                        # is a scalar field — an array-shaped constraint here
+                        # deadlocked the correction channel, since no patch
+                        # value could satisfy both the value check and the
+                        # field schema.
+                        allowed_values_by_path[path] = {
+                            "field_type": (
+                                "scalar"
+                                if path.endswith("/primary_criterion_id")
+                                else "list"
+                            ),
+                            "values": list(valid_criterion_ids),
+                        }
+        value_rules = [
+            "Encode every patch value as a JSON string (the JSON encoding of "
+            "the actual value).",
+            "For paths marked field_type=scalar, the decoded value must be "
+            "one of values as a JSON string; a one-element array is also "
+            "accepted and normalized to the scalar.",
+            "For paths marked field_type=list, the decoded value must be a "
+            "JSON array whose every element is in values.",
+        ]
+        if any(
+            error.get("code") == "CONTRADICTION_BASIS_INVALID"
+            for error in typed_errors
+        ):
+            value_rules.append(
+                "contradiction_bases[].primary_defect_key must reference a "
+                "defect key that has an ownership row in the candidate."
+            )
         correction_contract = {
             "format": "json_patch",
             "base": candidate_kind,
             "allowed_paths": list(dict.fromkeys(allowed_paths)),
             "allowed_values_by_path": allowed_values_by_path,
+            "value_rules": value_rules,
             "immutable_paths": [
                 "/func_id", "/source_revision", "/run_id", "/observation_id",
                 "/expected_claim_ids", "/required_checks", "/reviewed_claim_ids",
