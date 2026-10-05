@@ -342,6 +342,40 @@ def apply_deterministic_correction(
                 unresolved.append(error)
             continue
 
+        if error.code == "DEFECT_PRIMARY_MISSING":
+            index = _path_index(error.path, "defect_ownership")
+            rows = _rows(corrected.get("defect_ownership"))
+            if index is None or index >= len(rows):
+                unresolved.append(error)
+                continue
+            row = rows[index]
+            owned_ids = set(_strings(row.get("finding_ids")))
+            derived: set[str] = set()
+            for result in _rows(corrected.get("criterion_results")):
+                criterion_id = result.get("criterion_id")
+                if not isinstance(criterion_id, str) or not criterion_id:
+                    continue
+                for finding in _rows(result.get("findings")):
+                    identity = {finding.get("finding_id"), finding.get("key")}
+                    if owned_ids & identity:
+                        derived.add(criterion_id)
+                        break
+            if len(derived) == 1:
+                # Mirrors the aggregation normalizer's service-fallback owner
+                # derivation (normalize.py): the primary is the criterion that
+                # owns the defect's findings (issue #100).
+                row["primary_criterion_id"] = next(iter(derived))
+                changes.append(
+                    f"defect_ownership[{index}].primary_criterion_id backfilled "
+                    f"from owned findings ({row['primary_criterion_id']})"
+                )
+            else:
+                # Zero or several owning criteria: a semantic choice the
+                # bounded model turn makes (folded via the service-error
+                # reclassification in the correction flow).
+                unresolved.append(error)
+            continue
+
         if error.code != "DEFECT_KEY_UNDEFINED":
             # Structural field/mapping errors without a safe canonical repair
             # are terminal service errors; they are never delegated to a
@@ -862,32 +896,121 @@ def validate_patch_scope(
     return violations
 
 
+def _allowed_values_entry(
+    entry: Any,
+) -> tuple[str, set[str]]:
+    """Normalize one allowed_values_by_path entry to (field_type, values).
+
+    Entries are ``{"field_type": "scalar"|"list", "values": [...]}``; raw id
+    lists are still accepted and treated as list-shaped for compatibility.
+    """
+    if isinstance(entry, dict):
+        field_type = str(entry.get("field_type", "list"))
+        values = {
+            value for value in entry.get("values", [])
+            if isinstance(value, str) and value
+        }
+        return (field_type if field_type in {"scalar", "list"} else "list",
+                values)
+    if isinstance(entry, (list, tuple, set)):
+        return "list", {value for value in entry if isinstance(value, str)}
+    return "list", set()
+
+
 def validate_patch_values(
     patches: Iterable[dict[str, Any]],
     *,
-    allowed_values_by_path: dict[str, Iterable[str]],
+    allowed_values_by_path: dict[str, Any],
 ) -> list[str]:
-    """Validate enum-constrained patch values before applying a correction."""
+    """Validate enum-constrained patch values before applying a correction.
+
+    The check is shape-aware (issue #100): a scalar contract field such as
+    ``defect_ownership[N].primary_criterion_id`` accepts the JSON-encoded id
+    string — a one-element array is also accepted and normalized after the
+    patch is applied — while list fields require an array of allowed ids.
+    Decoding mirrors :func:`apply_json_patch`, including the bare-word
+    fallback, so the validator never rejects a value the applier accepts.
+    """
     violations: list[str] = []
     allowed = {
-        path: set(values) for path, values in allowed_values_by_path.items()
+        path: _allowed_values_entry(entry)
+        for path, entry in (allowed_values_by_path or {}).items()
     }
     for patch in patches:
         path = patch.get("path") if isinstance(patch, dict) else None
         if path not in allowed:
             continue
+        field_type, allowed_ids = allowed[path]
         raw_value = patch.get("value")
-        try:
-            value = json.loads(raw_value) if isinstance(raw_value, str) else raw_value
-        except json.JSONDecodeError:
-            violations.append(f"{path}: patch value is not valid JSON")
+        if isinstance(raw_value, str):
+            try:
+                value = json.loads(raw_value)
+            except json.JSONDecodeError:
+                # The applier preserves bare-word transport strings; the
+                # validator must not reject values the applier accepts.
+                value = raw_value
+        else:
+            value = raw_value
+        if field_type == "scalar":
+            shape_ok = isinstance(value, str) and value in allowed_ids
+            if not shape_ok and isinstance(value, list) and len(value) == 1:
+                shape_ok = isinstance(value[0], str) and value[0] in allowed_ids
+            if not shape_ok:
+                violations.append(
+                    f"{path}: expected a JSON string naming one of "
+                    f"{sorted(allowed_ids)} (a single-element array is also "
+                    "accepted)"
+                )
             continue
         if not isinstance(value, list) or not value or any(
-            not isinstance(item, str) or item not in allowed[path]
+            not isinstance(item, str) or item not in allowed_ids
             for item in value
         ):
             violations.append(
-                f"{path}: every Criterion must be one of "
-                f"{sorted(allowed[path])}"
+                f"{path}: expected a JSON array of Criterion ids, "
+                f"each one of {sorted(allowed_ids)}"
             )
     return violations
+
+
+def coerce_allowed_value_shapes(
+    document: dict[str, Any],
+    allowed_values_by_path: dict[str, Any],
+) -> list[str]:
+    """Unwrap single-element arrays that scalar contract fields received.
+
+    A scalar field patched with a one-element array passes value validation
+    but would violate the field schema's ``type: string``; normalize it right
+    after the patch is applied (issue #100).
+    """
+    changes: list[str] = []
+    for path, entry in (allowed_values_by_path or {}).items():
+        field_type = (
+            entry.get("field_type") if isinstance(entry, dict) else "list"
+        )
+        if field_type != "scalar":
+            continue
+        try:
+            tokens = _decode_pointer(path)
+            parent: Any = document
+            for token in tokens[:-1]:
+                parent = (
+                    parent[int(token)] if isinstance(parent, list)
+                    else parent[token]
+                )
+            leaf = tokens[-1]
+            current = (
+                parent[leaf] if isinstance(parent, dict) else parent[int(leaf)]
+            )
+            if (
+                isinstance(current, list) and len(current) == 1
+                and isinstance(current[0], str)
+            ):
+                if isinstance(parent, dict):
+                    parent[leaf] = current[0]
+                else:
+                    parent[int(leaf)] = current[0]
+                changes.append(f"{path}: unwrapped single-element array")
+        except (KeyError, IndexError, TypeError, ValueError):
+            continue
+    return changes

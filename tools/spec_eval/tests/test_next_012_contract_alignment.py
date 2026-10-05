@@ -566,7 +566,7 @@ class ObservationFlowTest(_StagedRunIntegrationTest):
             correction.prompt_extras["correction_contract"][
                 "allowed_values_by_path"
             ]["/observations/0/criterion_ids"],
-            list(valid_ids),
+            {"field_type": "list", "values": list(valid_ids)},
         )
         published = json.loads(
             (self.ctx.run_dir / "observations" / "Feat-01.json").read_text(

@@ -1034,7 +1034,17 @@ def validate_aggregation_document(
                     actual=defect_key,
                 ))
         primary = record.get("primary_criterion_id")
-        if primary not in actual_order:
+        if not isinstance(primary, str) or not primary:
+            # A missing primary is service-derivable from the criterion that
+            # owns the row's findings (issue #100, mirroring the #97
+            # observation backfill); a set-but-unknown id stays
+            # model-correctable.
+            errors.append(_err(
+                "DEFECT_PRIMARY_MISSING", f"{row_label}.primary_criterion_id",
+                entity_type="defect", entity_id=defect_key,
+                expected="primary criterion for the owned findings",
+            ))
+        elif primary not in actual_order:
             errors.append(_err(
                 "CRITERION_UNKNOWN", f"{row_label}.primary_criterion_id",
                 entity_type="defect", entity_id=defect_key, actual=str(primary),

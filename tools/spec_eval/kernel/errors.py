@@ -133,6 +133,11 @@ ERROR_REGISTRY: dict[str, str] = _register({
     # --- defect identity/mapping (service-owned when unambiguous) ------------
     "DEFECT_KEYS_INVALID": SERVICE_NORMALIZATION,
     "DEFECT_KEY_UNDEFINED": SERVICE_NORMALIZATION,
+    # An ownership row without a primary criterion is service-derivable from
+    # the criterion that owns its findings when that ownership is
+    # unambiguous (issue #100); a set-but-unknown id stays with
+    # CRITERION_UNKNOWN.
+    "DEFECT_PRIMARY_MISSING": SERVICE_NORMALIZATION,
     # --- aggregation contract (model-owned) ---------------------------------
     "CRITERION_SET_MISMATCH": SERVICE_NORMALIZATION,
     "CRITERION_EVIDENCE_UNKNOWN": MODEL_CORRECTION,
@@ -207,6 +212,7 @@ CONFIDENCE_LAYERS: dict[str, str] = {
     "OWNERSHIP_CRITICALITY": LAYER_MAJOR,
     "DEFECT_KEYS_INVALID": LAYER_MAJOR,
     "DEFECT_KEY_UNDEFINED": LAYER_MAJOR,
+    "DEFECT_PRIMARY_MISSING": LAYER_MAJOR,
     "DUPLICATE_DEFECT_OWNER": LAYER_MAJOR,
     "CRITICAL_NOT_PRIMARY": LAYER_MAJOR,
     "CROSS_FEAT_NOT_REVIEWED": LAYER_MAJOR,
