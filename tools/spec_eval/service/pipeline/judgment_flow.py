@@ -1210,6 +1210,18 @@ class JudgmentFlow:
         allowed_paths = [
             path for paths in paths_by_error for path in paths
         ]
+        # A claim-level conflict key the observations never defined cannot be
+        # repaired by clearing: the preflight requires CONFLICT/MISSING claims
+        # to keep non-empty defect_keys (issue #101).  Expose the append
+        # target so the bounded turn can define the key via a new
+        # CONFLICT/MISSING observation instead.
+        claim_defect_gap = any(
+            error.get("code") in {"DEFECT_KEY_UNDEFINED", "DEFECT_KEYS_REQUIRED"}
+            and ".claim_reviews[" in str(error.get("path", ""))
+            for error in typed_errors
+        )
+        if claim_defect_gap:
+            allowed_paths.append("/observations/-")
         valid_criterion_ids = tuple(
             base_contract.get("machine_contract", {}).get(
                 "valid_criterion_ids", ()
@@ -1251,6 +1263,15 @@ class JudgmentFlow:
             value_rules.append(
                 "contradiction_bases[].primary_defect_key must reference a "
                 "defect key that has an ownership row in the candidate."
+            )
+        if claim_defect_gap:
+            value_rules.append(
+                "A CONFLICT/MISSING claim must keep non-empty defect_keys: "
+                "map the claim to an observation-defined key, or append one "
+                "CONFLICT/MISSING observation whose defect_key defines the "
+                "cited key (with criterion_ids/check_ids/claim_ids/"
+                "evidence_refs/fact). Never clear the defect_keys of an "
+                "adverse claim."
             )
         correction_contract = {
             "format": "json_patch",

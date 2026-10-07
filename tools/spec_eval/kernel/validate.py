@@ -450,6 +450,17 @@ def validate_observation_document(
                     entity_type="defect", entity_id=defect_key,
                     expected="defined by a CONFLICT/MISSING observation",
                 ))
+        if outcome in {"CONFLICT", "MISSING"} and not defect_keys:
+            # Mirror of the skill checkpoint rule (issue #101): an adverse
+            # claim must keep defect ownership.  Without this half of the
+            # invariant the kernel published a claim whose keys a correction
+            # turn had cleared, and the preflight rejected the whole job
+            # after every observation had completed.
+            errors.append(_err(
+                "DEFECT_KEYS_REQUIRED", f"{row_label}.defect_keys",
+                entity_type="claim", entity_id=claim_id,
+                expected="defect keys for conflict or missing claims",
+            ))
 
         units = _rows(row.get("unit_reviews"))
         reviewed_units = _strings(row.get("reviewed_units"))

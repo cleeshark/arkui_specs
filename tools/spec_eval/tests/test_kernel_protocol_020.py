@@ -1240,6 +1240,31 @@ class ValidateObservationTest(unittest.TestCase):
             [],
         )
 
+    def test_adverse_claim_without_defect_keys_reports_required(self) -> None:
+        # issue #101: the skill preflight requires CONFLICT/MISSING claims to
+        # keep non-empty defect_keys; without the kernel-side mirror a
+        # correction could clear the ownership, pass every kernel gate, and
+        # kill the whole job at the preflight.  Both gates must see both
+        # directions of the invariant.
+        document = copy.deepcopy(self.document)
+        claim = document["claim_reviews"][1]
+        claim["local_outcome"] = "CONFLICT"
+        claim["defect_keys"] = []
+        errors = validate_observation_document(
+            document, valid_criterion_ids=CRITERIA
+        )
+        required = [
+            error for error in errors
+            if error.code == "DEFECT_KEYS_REQUIRED"
+        ]
+        self.assertEqual(len(required), 1)
+        self.assertEqual(required[0].entity_id, "Feat-01/AC-2")
+        self.assertEqual(required[0].repairability, SERVICE_NORMALIZATION)
+        # A supported claim with empty keys stays clean.
+        self.assertNotIn(
+            "DEFECT_KEYS_REQUIRED", self._codes(copy.deepcopy(self.document))
+        )
+
     def test_unit_claim_outcome_conflict(self) -> None:
         document = copy.deepcopy(self.document)
         document["claim_reviews"][1]["unit_reviews"][0]["local_outcome"] = "CONFLICT"

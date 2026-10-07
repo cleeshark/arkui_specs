@@ -2455,6 +2455,125 @@ class CorrectionRoutingDegradeTest(unittest.TestCase):
             [warning["code"] for warning in warning_event["warnings"]],
         )
 
+    def test_defect_keys_required_binds_from_sole_owning_observation(self) -> None:
+        # issue #101: DEFECT_KEYS_REQUIRED shares the DEFECT_KEY_UNDEFINED
+        # binding — fill the adverse claim's ownership when exactly one
+        # observation-defined key covers it; ambiguous or unbacked claims
+        # stay with the bounded model turn.
+        error = TypedError(
+            "DEFECT_KEYS_REQUIRED",
+            "observation.claim_reviews[0].defect_keys",
+            entity_type="claim", entity_id="Feat-02/NFR-346",
+        )
+        unambiguous = {
+            "claim_reviews": [{
+                "claim_id": "Feat-02/NFR-346",
+                "local_outcome": "CONFLICT",
+                "defect_keys": [],
+            }],
+            "observations": [{
+                "claim_ids": ["Feat-02/NFR-346"],
+                "local_outcome": "CONFLICT",
+                "defect_key": "dumpinfo-missing-state-fields",
+            }],
+        }
+        corrected, changes, unresolved = apply_deterministic_correction(
+            unambiguous, [error]
+        )
+        self.assertFalse(unresolved)
+        self.assertEqual(
+            corrected["claim_reviews"][0]["defect_keys"],
+            ["dumpinfo-missing-state-fields"],
+        )
+        self.assertTrue(changes)
+        unbacked = {
+            "claim_reviews": [unambiguous["claim_reviews"][0]],
+            "observations": [{
+                "claim_ids": ["Feat-02/AC-1"],
+                "local_outcome": "SUPPORTED",
+                "defect_key": None,
+            }],
+        }
+        corrected2, changes2, unresolved2 = apply_deterministic_correction(
+            unbacked, [error]
+        )
+        self.assertEqual(unresolved2, [error])
+        self.assertEqual(changes2, [])
+        self.assertEqual(corrected2["claim_reviews"][0]["defect_keys"], [])
+
+    def test_cleared_adverse_claim_publishes_degraded_with_sidecar(self) -> None:
+        # issue #101 (job 4635516e): after the bounded turn fails to
+        # establish ownership for a CONFLICT claim, the residual publishes
+        # degraded (MAJOR) and reaches the post-correction-warnings sidecar
+        # that the skill preflight downgrades on — instead of dying at the
+        # aggregation preflight after the whole run completed.
+        document = {
+            "claim_reviews": [{
+                "claim_id": "Feat-02/NFR-346",
+                "local_outcome": "CONFLICT",
+                "defect_keys": [],
+                "unit_reviews": [],
+            }],
+            "observations": [],
+        }
+        residual = {
+            "code": "DEFECT_KEYS_REQUIRED",
+            "path": "observation.claim_reviews[0].defect_keys",
+            "entity_type": "claim",
+            "entity_id": "Feat-02/NFR-346",
+            "expected": "defect keys for conflict or missing claims",
+            "repairability": "SERVICE_NORMALIZATION",
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp)
+            work = _observation_work(run_dir, feat_id="feature:Feat-02")
+            self._seed_candidate(
+                run_dir, "Feat-02.json", document, [residual],
+                work_item_id=work.work_item_id,
+            )
+            events = _Events()
+            executor = _FlowExecutor(patches=[])
+            published: list[dict] = []
+            flow = JudgmentFlow(
+                ctx=SimpleNamespace(run_dir=run_dir, job_id="job", run_id="run-1"),
+                executor=executor,
+                jobs=SimpleNamespace(transition_status=lambda *a, **k: None),
+                events=events,
+            )
+            outcome = flow.run(
+                work=work,
+                output_path=run_dir / "Feat-02.json",
+                template={},
+                normalize=lambda payload: NormalizationResult(document=payload),
+                validate=lambda doc: (
+                    [] if doc["claim_reviews"][0]["defect_keys"] else [
+                        TypedError.from_dict(residual)
+                    ]
+                ),
+                base_contract=work.prompt_extras,
+                on_publish=lambda d: published.append(d) or True,
+                fingerprint="fp", stage_event="work_item_completed",
+                allow_degraded_publish=True,
+                degraded_publish_codes=(
+                    OBSERVATION_POST_CORRECTION_WARNING_CODES
+                    | DEFECT_KEYS_DEGRADED_PUBLISH_CODES
+                ),
+                on_post_correction_warnings=lambda errors: (
+                    record_post_correction_warnings(
+                        run_dir, work.work_item_id, errors
+                    )
+                ),
+            )
+            records = load_post_correction_warning_records(run_dir)
+        self.assertEqual(outcome.status, C.STATUS_COMPLETED)
+        self.assertEqual(executor.calls, ["correct"])
+        self.assertEqual(published[0]["claim_reviews"][0]["defect_keys"], [])
+        self.assertIn("correction_completed_with_warnings", events.types())
+        self.assertIn(
+            "DEFECT_KEYS_REQUIRED",
+            [record["error"]["code"] for record in records],
+        )
+
     def test_residual_non_hard_error_degrades_only_for_final_report(self) -> None:
         # A non-HARD service error the deterministic repair cannot resolve and
         # whose document-level path does not resolve to a patch target is not

@@ -138,6 +138,11 @@ ERROR_REGISTRY: dict[str, str] = _register({
     # unambiguous (issue #100); a set-but-unknown id stays with
     # CRITERION_UNKNOWN.
     "DEFECT_PRIMARY_MISSING": SERVICE_NORMALIZATION,
+    # A CONFLICT/MISSING claim without defect ownership: bind the claim to
+    # its owning observation's key when unambiguous (shared handler with
+    # DEFECT_KEY_UNDEFINED), else let the bounded turn map or define the key
+    # (issue #101).
+    "DEFECT_KEYS_REQUIRED": SERVICE_NORMALIZATION,
     # --- aggregation contract (model-owned) ---------------------------------
     "CRITERION_SET_MISMATCH": SERVICE_NORMALIZATION,
     "CRITERION_EVIDENCE_UNKNOWN": MODEL_CORRECTION,
@@ -213,6 +218,7 @@ CONFIDENCE_LAYERS: dict[str, str] = {
     "DEFECT_KEYS_INVALID": LAYER_MAJOR,
     "DEFECT_KEY_UNDEFINED": LAYER_MAJOR,
     "DEFECT_PRIMARY_MISSING": LAYER_MAJOR,
+    "DEFECT_KEYS_REQUIRED": LAYER_MAJOR,
     "DUPLICATE_DEFECT_OWNER": LAYER_MAJOR,
     "CRITICAL_NOT_PRIMARY": LAYER_MAJOR,
     "CROSS_FEAT_NOT_REVIEWED": LAYER_MAJOR,
@@ -288,6 +294,13 @@ OBSERVATION_POST_CORRECTION_WARNING_CODES = frozenset({
     # Publish with the MAJOR deduction instead of terminating the run.
     "MODELING_BASIS_MISSING",
     "MODELING_BASIS_INVALID",
+    # A CONFLICT/MISSING claim whose defect ownership the bounded turn could
+    # not establish (no unambiguous owning observation; the model mapped or
+    # defined nothing): the conflict conclusion and its prose are preserved.
+    # Publish degraded with the MAJOR deduction instead of terminating, and
+    # the skill preflight downgrades the matching checkpoint error via the
+    # sidecar (issue #101, job 4635516e).
+    "DEFECT_KEYS_REQUIRED",
     # A completed Claim or atomic unit whose outcome is not NOT_VERIFIABLE
     # carries no evidence citation (issue #98, job 17a7dab3): the conclusion
     # and its prose reason are preserved and the report stays consumable, so
