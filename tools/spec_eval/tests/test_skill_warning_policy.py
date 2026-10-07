@@ -39,11 +39,18 @@ NV_ERROR = (
     "observation[feature:Feat-01].claim_reviews[28].evidence_ids: "
     "inspection evidence is required for NOT_VERIFIABLE"
 )
+DEFECT_KEYS_ERROR = (
+    "observation[feature:Feat-02].claim_reviews[48].defect_keys: "
+    "required for conflict or missing claims"
+)
 
 
 class EvidenceRequiredWarningPolicyTest(unittest.TestCase):
     def test_evidence_required_marker_is_registered(self) -> None:
         self.assertIn("EVIDENCE_REQUIRED_MISSING", OBSERVATION_WARNING_MARKERS)
+        # issue #101: the kernel's adverse-claim ownership residual must map
+        # to the matching preflight checkpoint error.
+        self.assertIn("DEFECT_KEYS_REQUIRED", OBSERVATION_WARNING_MARKERS)
 
     def test_claim_and_unit_errors_downgrade_via_sidecar(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -82,6 +89,28 @@ class EvidenceRequiredWarningPolicyTest(unittest.TestCase):
             )
         self.assertEqual(blocking, [CLAIM_ERROR])
         self.assertEqual(warnings, [])
+
+    def test_adverse_claim_defect_gap_downgrades_via_sidecar(self) -> None:
+        # issue #101 (job 4635516e): the exact preflight error that rejected
+        # the job must become a downgrade when the kernel sidecar carries the
+        # DEFECT_KEYS_REQUIRED residual for the same work item.
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp)
+            (run_dir / "post-correction-warnings.json").write_text(
+                json.dumps({
+                    "schema_version": 1,
+                    "warnings": [{
+                        "work_item_id": "feature:Feat-02",
+                        "error": {"code": "DEFECT_KEYS_REQUIRED"},
+                    }],
+                }),
+                encoding="utf-8",
+            )
+            blocking, warnings = split_observation_warnings(
+                run_dir, [DEFECT_KEYS_ERROR, NV_ERROR]
+            )
+        self.assertEqual(blocking, [NV_ERROR])
+        self.assertEqual(warnings, [DEFECT_KEYS_ERROR])
 
 
 if __name__ == "__main__":

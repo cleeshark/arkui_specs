@@ -376,15 +376,16 @@ def apply_deterministic_correction(
                 unresolved.append(error)
             continue
 
-        if error.code != "DEFECT_KEY_UNDEFINED":
+        if error.code not in {"DEFECT_KEY_UNDEFINED", "DEFECT_KEYS_REQUIRED"}:
             # Structural field/mapping errors without a safe canonical repair
             # are terminal service errors; they are never delegated to a
             # semantic model correction.
             unresolved.append(error)
             continue
 
-        # DEFECT_KEY_UNDEFINED: bind a Claim to its owning Observation only
-        # when the relationship has exactly one possible defect key.
+        # DEFECT_KEY_UNDEFINED / DEFECT_KEYS_REQUIRED: bind a Claim to its
+        # owning Observation only when the relationship has exactly one
+        # possible defect key (issue #101 adds the missing-ownership half).
         index = _path_index(error.path, "claim_reviews")
         rows = _rows(corrected.get("claim_reviews"))
         if index is None or index >= len(rows):

@@ -139,6 +139,14 @@ OBSERVATION_WARNING_MARKERS = {
         ".evidence_ids: evidence is required for this outcome",
         ".evidence_ids: evidence is required",
     ),
+    # Issue #101 (job 4635516e): a CONFLICT/MISSING claim whose defect_keys
+    # the bounded turn could not map to an observation-defined key.  The
+    # kernel registers the residual as a MAJOR deduction, so downgrade the
+    # matching checkpoint error via the sidecar instead of rejecting the job
+    # at the aggregation preflight.
+    "DEFECT_KEYS_REQUIRED": (
+        ".defect_keys: required for conflict or missing claims",
+    ),
 }
 
 
