@@ -266,7 +266,7 @@ features:
   status: Baselined
 - func_id: 03-09-01
   id: Feat-09
-  title: PageScene 规则感知能力
+  title: PageScene 规则感知与搜索功能识别
   spec: 03-engine-framework/09-uisession/01-uisession-service/Feat-09-pagescene-rule-awareness-spec.md
   status: Draft
 - func_id: 03-09-01

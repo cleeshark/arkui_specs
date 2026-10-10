@@ -654,7 +654,7 @@
 | Feat-06 | 内容变化检测与阈值管理 | [Feat-06-content-change-detection-and-threshold-spec.md](03-engine-framework/09-uisession/01-uisession-service/Feat-06-content-change-detection-and-threshold-spec.md) | Baselined |
 | Feat-07 | 查询能力与辅助Dump | [Feat-07-query-and-auxiliary-dump-spec.md](03-engine-framework/09-uisession/01-uisession-service/Feat-07-query-and-auxiliary-dump-spec.md) | Baselined |
 | Feat-08 | SA验证服务与hidumper命令路由 | [Feat-08-sa-verification-service-spec.md](03-engine-framework/09-uisession/01-uisession-service/Feat-08-sa-verification-service-spec.md) | Baselined |
-| Feat-09 | PageScene 规则感知能力 | [Feat-09-pagescene-rule-awareness-spec.md](03-engine-framework/09-uisession/01-uisession-service/Feat-09-pagescene-rule-awareness-spec.md) | Draft |
+| Feat-09 | PageScene 规则感知与搜索功能识别 | [Feat-09-pagescene-rule-awareness-spec.md](03-engine-framework/09-uisession/01-uisession-service/Feat-09-pagescene-rule-awareness-spec.md) | Draft |
 | Feat-10 | WM UIContentRemoteObj 验证链路 | [Feat-10-wm-uicontent-remoteobj-verification-spec.md](03-engine-framework/09-uisession/01-uisession-service/Feat-10-wm-uicontent-remoteobj-verification-spec.md) | Draft |
 | Feat-11 | 内容变化开始、取消事件上报与生命周期管理 | *待补充* | Draft |
 | Feat-12 | 触摸事件上报 UISession | *待补充* | Draft |

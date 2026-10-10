@@ -6,13 +6,13 @@
 | Field | Content |
 |-------|---------|
 | Design ID | DESIGN-Func-03-09-01 |
-| 关联需求 | 已有能力补录（无独立 requirement.md） |
+| 关联规格 | UISession 服务 Feat-01～Feat-10；PageScene 规则感知与搜索功能识别见 [Feat-09](Feat-09-pagescene-rule-awareness-spec.md) |
 | 关联 Epic | 无 |
-| 目标 Feature | Feat-01 IPC安全框架; Feat-02 InspectorTree查询与Web子树聚合; Feat-03 事件上报与注册计数门控; Feat-04 命令下发与同步请求保护; Feat-05 翻译能力与DFX并发保护; Feat-06 内容变化检测与阈值管理; Feat-07 查询能力与辅助Dump; Feat-08 SA验证服务与hidumper命令路由; Feat-09 页面场景规则化感知; Feat-10 WM UIContentRemoteObj验证链路 |
+| 目标 Feature | Feat-01 IPC安全框架; Feat-02 InspectorTree查询与Web子树聚合; Feat-03 事件上报与注册计数门控; Feat-04 命令下发与同步请求保护; Feat-05 翻译能力与DFX并发保护; Feat-06 内容变化检测与阈值管理; Feat-07 查询能力与辅助Dump; Feat-08 SA验证服务与hidumper命令路由; Feat-09 PageScene 规则感知与搜索功能识别; Feat-10 WM UIContentRemoteObj验证链路 |
 | 复杂度 | 关键 |
-| 目标版本 | API 9+（已有实现） |
+| 目标版本 | API 9+（存量能力）；PageScene 搜索功能识别为 OpenHarmony-7.1-Release |
 | Owner | ArkUI SIG |
-| 状态 | Baselined（已有实现补录） |
+| 状态 | 存量设计 Baselined；Feat-09 Draft（实现对照见特性规格） |
 
 ## 需求基线
 
@@ -21,8 +21,8 @@
 | IUiContentService IPC 接口 | 52 个 IPC 事务码，44 个纯虚方法 + 10 个带默认实现 |
 | ReportService IPC 接口 | 25 个 IPC 事务码，23 个纯虚方法 + 2 个带默认实现 |
 | SA-only 访问门控 | OnRemoteRequest 入口处 IsSACalling + interface token 校验，无 per-method 权限区分 |
-| 事件上报广播 | 9 类事件 atomic<int32_t> 注册计数门控（另有 webTaskNums_ atomic 子树聚合计数器，非事件门控），上报时广播至所有已连接 SA 进程 |
-| webFocusEvent 门控 | bool + mutex 全局开关（非 per-process），与其他 9 类 atomic 计数器不一致 |
+| 事件上报与 PageScene 路由 | 通用事件保留既有注册计数与上报方式；PageScene 使用 atomic<bool> 注册开关、按进程/规则集维护订阅，按 processId 定向报告 |
+| webFocusEvent 门控 | bool + mutex 全局开关（非 per-process）；PageScene 的独立注册开关见 ADR-2 |
 | InspectorTree 查询 | GetInspectorTree / GetVisibleInspectorTree，1500ms 超时，ParamConfig 过滤 |
 | Web 子树聚合 | webTaskNums_ atomic 计数器控制异步 Web 子树合并 |
 | HitTest 分包 IPC | 128KB 阈值分段传输（Ashmem），区别于 InspectorTree 常规单包上报 |
@@ -33,6 +33,8 @@
 | ContentChangeConfig | 5 字段阈值配置（默认 minReportTime=100ms, reportDelayTime=600ms, textContentRatio=0.15, minWidth=100px, minHeight=100px），ChangeType 9 值枚举，页面场景规则化感知规则检测 |
 | UiSaService SA | SA_ID=16666，DECLEAR_SYSTEM_ABILITY，Dump + DUMP_MAP 25 条路由 |
 | UiSessionManager | Meyers singleton (static UiSessionManagerOhos)，~116 虚方法，21 个 Save* + 2 个 Set* + 2 个 Register* = 25 个回调注册方法 |
+| PageScene 场景检测 | TEXT_EDITOR / COUNT_GTE 判断输入控件数量；搜索识别使用页面关键区域内的关键词、Inspector ID 和控件特征，稳定后上报 presence / click 事件 |
+| PageScene 规则生命周期 | 同一 SA 最多两个搜索规则集，按进程/规则集隔离；多规则命中按事件聚合，支持注销、前后台与死亡清理 |
 
 ### 设计目标
 
@@ -43,6 +45,7 @@
 | UI线程收敛 | `UIContentImpl` 保存的回调通过 `TaskExecutor` 投递到 UI 线程，再访问 `PipelineContext` 和节点树。 |
 | 多实例翻译 | `UiSessionManagerOhos` 通过当前 instanceId 回调从 `translateManagerMap_` 选择 `UiTranslateManager`。 |
 | 大数据保护 | HitTest 信息按 `ONCE_IPC_SEND_DATA_MAX_SIZE` 分段回传，InspectorTree 用 Web 任务计数聚合异步 Web 子树。 |
+| 页面场景感知 | 文本编辑与搜索识别共用规则服务入口、UI 线程调度和页面稳定通知，按场景维护匹配规则与事件状态。 |
 
 ## 上下文和现状
 
@@ -51,7 +54,7 @@
 | 仓库 | 补充架构说明 |
 |------|-------------|
 | ace_engine/interfaces/inner_api/ui_session/ui_content_service_interface.h | IUiContentService + ReportService 双 IPC 接口定义（52 + 25 事务码） |
-| ace_engine/interfaces/inner_api/ui_session/ui_session_manager.h:47-381 | UiSessionManager 虚基类，~116 虚方法，10 atomic<int32_t>（9 事件计数器 + webTaskNums_），21 个 Save* + 2 个 Set* + 2 个 Register* |
+| ace_engine/interfaces/inner_api/ui_session/ui_session_manager.h:47-381 | UiSessionManager 虚基类，存量虚接口与事件计数；PageScene 当前使用 atomic<bool> 注册开关；21 个 Save* + 2 个 Set* + 2 个 Register* |
 | ace_engine/adapter/ohos/entrance/ui_session/ui_session_manager_ohos.h | UiSessionManagerOhos 实现类，IPC 路由，reportObjectMap_ |
 | ace_engine/adapter/ohos/entrance/ui_session/ui_session_manager_ohos.cpp | 2002 行，事件上报、session 管理、翻译并发门控、SA 死亡清理 |
 | ace_engine/adapter/ohos/entrance/ui_session/ui_content_stub.cpp | OnRemoteRequest 分发，IsSACalling + interface token 校验 |
@@ -68,6 +71,8 @@
 | ace_engine/interfaces/inner_api/ui_session/ui_session_sample/ | UiSaService SA 示例（SA_ID=16666） |
 | ace_engine/interfaces/inner_api/ui_session/ui_session_request_guard.h | SyncRequestGuard RAII compare_exchange_strong |
 | ace_engine/interfaces/inner_api/ui_session/ui_session_ipc_util.h | UiSessionIpcUtil（Ashmem 64KB / 128KB 阈值） |
+| ace_engine/frameworks/core/components_ng/manager/page_scene/ | PageSceneRuleManager、页面/子窗收集、轻量快照、搜索存在性与点击匹配 |
+| ace_engine/frameworks/core/gestures/recognizers/、frameworks/core/components_ng/event/ | 开发者 onClick/onTouch 实际执行后的搜索点击观察点 |
 
 ### 调用链层级分析
 
@@ -90,6 +95,7 @@
 | 预览层 | InspectorClient + JsInspectorManager | preview-only 回调机制 | 已有实现 |
 | IPC 工具层 | SyncRequestGuard (ui_session_request_guard.h:23) | RAII compare_exchange_strong 单请求互斥 | 已有实现 |
 | IPC 工具层 | UiSessionIpcUtil (ui_session_ipc_util.h:27) | Ashmem 大字符串传输 64KB/128KB 阈值 | 已有实现 |
+| 页面场景层 | PageSceneRuleManager + SearchSceneContextCollector / SnapshotBuilder / Matcher / ClickMatcher | 文本编辑场景、搜索存在性状态与点击候选消费 | 目标契约与实现对照见 Feat-09 |
 
 ### 适用架构规则
 
@@ -115,8 +121,8 @@
 
 | 决策 ID | 问题 | 推荐方案 | 探索过的替代方案 | 取舍理由 | 影响 |
 |---------|------|----------|-----------------|----------|------|
-| ADR-1 | IPC 访问门控模型 | OnRemoteRequest 入口统一 IsSACalling + interface token 校验，不做 per-method 权限区分；事件上报广播至所有已连接 SA 进程 | per-method 权限表 / 事件按进程定向发送 | SA 进程已通过系统能力注册验证可信；per-method 权限增加维护成本且当前无需求；广播模式保证所有 SA 工具同步收到事件 | ui_content_stub.cpp OnRemoteRequest |
-| ADR-2 | 事件注册计数门控不一致 | 9 类事件使用 atomic<int32_t> per-process 引用计数（Click/Search/TextChange/Router/ComponentChange/Scroll/LifeCycle/SelectText/PageSceneRule），但 webFocusEvent 使用 bool + mutex 全局开关而非 per-process 计数器 | 统一为 atomic 计数器 | webFocusEvent 在当前实现中被作为全局开关处理（所有进程共享一个 bool），而非 per-process 注册计数；规格需标注此不一致 | ui_session_manager.h:310-380 |
+| ADR-1 | IPC 访问门控模型 | OnRemoteRequest 入口统一 IsSACalling + interface token 校验，不做 per-method 权限区分；通用事件沿用广播，PageScene 按 processId 定向报告 | per-method 权限表 / 事件按进程定向发送 | SA 进程已通过系统能力注册验证可信；per-method 权限增加维护成本且当前无需求；通用广播事件面向已连接 SA；PageScene 规则及报告按订阅所属进程隔离 | ui_content_stub.cpp OnRemoteRequest |
+| ADR-2 | 事件与 PageScene 注册门控 | 通用事件使用原有 atomic<int32_t> 引用计数，webFocusEvent 使用 bool+mutex；PageScene 使用 pageSceneRuleRegistered_ atomic<bool>，规则另按进程/规则集存储 | 全部改为同一种计数器 | 快速判断是否需要检测与管理具体订阅是不同职责；PageScene 不再描述为 pageSceneRuleRegisterProcesses_ 计数器 | ui_session_manager.h / ui_session_manager_ohos.cpp |
 | ADR-3 | 双并发门控模式 | RegisterPageTranslateTextCallback 使用 single-slot mutex（互斥占位）；GetCurrentAbilityLanguageInfo 使用 SyncRequestGuard（CAS atomic_bool compare_exchange_strong） | 统一为 SyncRequestGuard 或统一为 mutex | Page 翻译为单回调插槽，mutex 保护"谁占位"；语言查询为一次性同步请求，CAS 保证"谁先到谁执行"——两种语义不同 | ui_session_manager_ohos.cpp RegisterPageTranslateTextCallback vs ui_session_request_guard.h:25-41 |
 | ADR-4 | Web 子树聚合与分包 | InspectorTree 使用 webTaskNums_ atomic 计数器等待异步 Web 子树合并后单包上报；HitTest 使用 128KB 阈值分段 IPC（Ashmem 分割） | InspectorTree 也采用分段上报 | InspectorTree JSON 通常 < 1MB 不需分包；HitTest 数据可达 131KB+ 需分段；接口预留 partNum/isLastPart 分包参数但当前 InspectorTree 始终单包 | ui_session_manager_ohos.cpp:1023-1024 vs :1098-1118 |
 | ADR-5 | SendCommandAsync 错误码语义 | 返回 11（TaskExecutor null / 回调未注册）/ 12（自处理错误 / 默认返回值）/ 13（node null）；Code 10 在接口注释中文档化但当前 lambda 未产出 | 统一返回 bool 或单一错误码 | 不同错误类型需不同处理策略：11 表示回调未注册需重新初始化，13 表示节点已销毁需 UI 更新；Code 10 为 Pipeline null 但当前 lambda 在 Pipeline 为空时不执行到返回路径 | ui_content_service_interface.h:206-217 |
@@ -124,6 +130,12 @@
 | ADR-7 | InspectorJsonValue cJSON 所有权 | isRoot_ 标志控制：root 对象析构时 cJSON_Delete 释放整棵树，child 引用析构时不释放（非拥有） | 引用计数共享所有权 | cJSON 库不支持引用计数，isRoot_ 方式最简单且与 cJSON_Delete 语义匹配；child 引用生命周期由 root 保证 | ui_session_json_util.h:30-70, ui_session_json_util.cpp |
 | ADR-8 | 页面场景规则化感知检测收敛模式 | 页面场景规则化感知复用 ContentChange 的页面级稳定上报点，检测统一收敛到 OnVsyncEnd FlushPageSceneNodeChanged | 页面场景规则化感知独立定时检测 | 复用稳定上报点保证检测仅在页面内容真正稳定后触发，避免帧率影响；独立定时检测增加额外调度开销和不确定性 | ui_session_manager_ohos.h:181-197, content_change_manager.cpp |
 | ADR-9 | WM 验证链路跨仓定界 | 本规格为跨仓验证性规格，WindowSessionImpl fallback 为验证性逻辑，正式修复需由 window_manager 评估焦点窗口选择和安全边界 | 将 WM 变更纳入 ace_engine 规格 | WM 仓独立维护窗口策略和安全边界；ace_engine 仅定义 UIContent::GetRemoteObj 返回值语义 | ui_sa_service.cpp:241, ui_content_impl.h:383 |
+| ADR-10 | 搜索存在性如何匹配 | 收集当前 UIContent 主页面、overlay 与 ArkUI 子 Container，构建一次轻量快照；多条规则共享节点特征，关键词/Inspector ID 模糊/五类控件特征按 OR 判定 | 每条规则独立遍历组件树 | 复用节点特征，避免多规则重复读取组件树 | pageType 分别匹配顶部 NavDestination 或 pageUrl；区域为必填，禁止无过滤全进程容器遍历；不读取 Web/UIExtension 内部内容 |
+| ADR-11 | 几何和文本来源如何统一 | 组件变换矩形与窗口有效边界、实际裁剪祖先求交；子窗坐标先映射主窗，使用最终可见矩形中心点判定 | 仅使用组件 layout Rect | 统一变换、裁剪和子窗偏移，避免不可见节点误命中 | 目标数据契约见 Feat-09；当前快照实现使用 vp，配置区域/maxSize 与结果 rect 应使用同一单位；无裁剪祖先不得仅按 layout Rect 截断 |
+| ADR-12 | 页面状态与操作状态如何区分 | presence 按订阅归属和页面身份维护，首次 true、离开/后台/特征消失 false；点击只来自已执行开发者 onClick/onTouch 的响应节点 | 以每条规则独立维护页面状态 | 页面状态与操作去重分离，保证退出顺序与事件语义 | 证据变化不重复 true；A false 先于 B true；Inspector ID 精确只旁路区域/关键词，不旁路页面、真实回调、稳定门控和聚合 |
+| ADR-13 | 点击搜索入口如何识别 | 响应节点自身 Inspector ID 区分大小写完整相等优先；未命中才构建最多 10 层局部快照，以区域 OR 关键词回退 | 仅按区域识别或全页面回退 | ID 匹配适应入口滚动，局部回退限制遍历范围 | 不使用内部 nodeId、祖先/后代 ID 替代响应节点；不做全页点击回退；按真实操作标识去重，不能合并独立操作 |
+| ADR-14 | 双规则集如何上报和清理 | 同一 SA 最多两个不同 ruleSet；同一事件对该 SA 的所有命中合成一份 JSON、一次异步 IPC；report 端按 ruleSet 路由 callback | 每条规则单独 JSON/IPC | 统一事件边界，减少传输并保持订阅隔离 | 每集最多 10 rule，每 rule 1～5 区域/最多 5 关键词，每词 ≤20 UTF-8 字节；非法配置整体拒绝；单集注销不影响另一集 |
+| ADR-15 | 快速路径和线程边界 | 未注册搜索规则时不采集快照、不匹配、不上报；ContentChange 只提供稳定通知，节点读取/presence/候选消费收敛 UI 线程 | 事件到达后无条件扫描 | 无订阅时避免匹配开销，UI 线程访问节点保证线程边界 | 注册和死亡来自 IPC 线程，通过已有 callback 投递；不在持注册锁时调用业务 callback；后台/注销/死亡清理应同步覆盖派生状态 |
 
 ## 设计骨架
 
@@ -133,13 +145,13 @@
 |--------|------|--------|----------|
 | IPC 安全框架与连接生命周期 | UiSaService SA + OnRemoteRequest IsSACalling 门控 + UiSessionManager 单例 + SA 死亡清理 + 连接管理 | 翻译/事件/查询业务逻辑 | IPC 连通与门控验证 |
 | InspectorTree 查询与 Web 子树聚合 | GetInspectorTree / GetVisibleInspectorTree + webTaskNums_ + ParamConfig 过滤 + 分包接口预留 | HitTest 分包 | Inspector 输出验证 |
-| 事件上报与注册计数门控 | 9 类 atomic 计数器 + webFocusEvent bool+mutex + 广播模式 + SA 死亡计数恢复 | InspectorTree 查询 | 事件接收验证 |
+| 事件上报与注册计数门控 | 通用事件计数器 + webFocusEvent bool+mutex + 广播模式；PageScene 按进程规则集定向报告 | InspectorTree 查询 | 事件接收验证 |
 | 命令下发与同步请求保护 | SendCommand sync/async/relaxed + 错误码 11/12/13 + SyncRequestGuard | InspectorTree / 翻译 | 命令下发验证 |
 | 翻译能力与 DFX 并发保护 | WebView/Page 双通道 + TranslateContentScope + RegisterPageTranslateTextCallback mutex + SyncRequestGuard | 内容变更检测 | 翻译结果验证 |
 | 内容变化检测与阈值管理 | ContentChangeConfig 6 字段 + ChangeType 9 值 + 页面场景规则化感知规则检测 | 查询能力 | 变更检测验证 |
 | 查询能力与辅助 Dump | 页面名/图片/AI/StateMgmt/WebInfo/内容偏移/高亮内容 + NavigationManager dump + UIExtension dump | SA 验证 | 查询结果验证 |
 | SA 验证服务与 hidumper 命令路由 | UiSaService::Dump DUMP_MAP 25 条 + IsSACalling + InspectorJsonValue cJSON 所有权 + UiSessionIpcUtil | 事件上报 | 命令路由验证 |
-| 页面场景规则化感知能力 | TEXT_EDITOR 首批场景 + COUNT_GTE 规则运算符 + PageSceneRuleInfo/PageSceneRuleSetInfo + OnVsyncEnd FlushPageSceneNodeChanged 收敛 + TEXT_EDITOR_EXIT 退出上报 | 翻译/内容变化检测 | 页面场景规则检测验证 |
+| PageScene 规则感知与搜索功能识别 | TEXT_EDITOR / COUNT_GTE；搜索轻量快照、存在性状态、真实点击、双规则集、稳定点与事件聚合 | 搜索不覆盖 Web/UIExtension、其他 UIContent | Feat-09 VM-1～VM-14 |
 | WM UIContentRemoteObj 验证链路 | unified/sceneboard WindowSessionImpl fallback + separated WMS IPC 链路 + GetUIContentRemoteObj 权限校验 + 真机验证判据 | SA 验证 | WM remote 获取验证 |
 
 ### 骨架 Spec 拆分
@@ -154,7 +166,7 @@
 | TASK-SKELETON-6 | 内容变化检测与阈值管理 | param_config.h, content_change_manager.h, page_scene_rule_manager.h, ui_session_manager_ohos.cpp | Feat-06 AC |
 | TASK-SKELETON-7 | 查询能力与辅助 Dump | ui_content_service_interface.h, navigation_manager.cpp, pipeline_context.cpp, ui_content_impl.cpp | Feat-07 AC |
 | TASK-SKELETON-8 | SA 验证服务与 hidumper 命令路由 | ui_sa_service.h, ui_sa_service.cpp, ui_content_stub.cpp, ui_session_json_util.h, ui_session_ipc_util.h | Feat-08 AC |
-| TASK-SKELETON-9 | 页面场景规则化感知能力 | ui_session_manager_ohos.h:181-197, content_change_manager.cpp, ui_content_impl.cpp:6817 | Feat-09 AC |
+| TASK-SKELETON-9 | PageScene 文本编辑与搜索识别 | page_scene/、content_change_manager/、ui_session/、ui_content_impl.cpp | Feat-09 AC-1～AC-18 |
 | TASK-SKELETON-10 | WM UIContentRemoteObj 验证链路 | ui_sa_service.cpp:241, ui_content.h:518, ui_content_impl.h:383, window_manager (跨仓) | Feat-10 AC |
 
 ## 后续 Task 拆分
@@ -169,8 +181,19 @@
 | TASK-06 | 内容变化检测与阈值管理 | interfaces/inner_api/ui_session/, frameworks/core/components_ng/manager/ | TASK-01 |
 | TASK-07 | 查询能力与辅助 Dump | interfaces/inner_api/ui_session/, frameworks/core/, adapter/ohos/entrance/ | TASK-01 |
 | TASK-08 | SA 验证服务与 hidumper 命令路由 | interfaces/inner_api/ui_session/ui_session_sample/, adapter/ohos/entrance/ui_session/ | TASK-01 |
-| TASK-09 | 页面场景规则化感知能力 | interfaces/inner_api/ui_session/, frameworks/core/components_ng/manager/ | TASK-01 |
+| TASK-09 | PageScene 规则感知与搜索功能识别 | interfaces/inner_api/ui_session/、page_scene/、content_change_manager/、UIContent/事件观察点 | TASK-01；细分见 TASK-09-S1～S6 |
 | TASK-10 | WM UIContentRemoteObj 验证链路 | interfaces/inner_api/ui_session/ui_session_sample/, interfaces/inner_api/ace/, adapter/ohos/entrance/, window_manager (跨仓) | TASK-08 |
+
+### PageScene 任务拆分
+
+| Task ID | 目标与主要模块 | 本仓 AC / VM |
+|---------|----------------|--------------|
+| TASK-09-S1 | page_scene_rule_manager / ui_session_manager_ohos：规则全量校验、双规则集与原子提交 | AC-7.x、AC-15.x / VM-7 |
+| TASK-09-S2 | context_collector / snapshot / matcher：页面、子窗、最终可见几何、关键词/组件匹配与 presence | AC-8.x～AC-12.x、AC-18.1～AC-18.4 / VM-8～VM-10 |
+| TASK-09-S3 | ContentChange / UIContent：统一稳定调度、路由/前后台状态退出和顺序 | AC-11.x、AC-12.x、AC-13.11 / VM-10～VM-11 |
+| TASK-09-S4 | click_matcher / 事件观察点：自身 ID 精确、局部回退、操作去重与实例隔离 | AC-13.x / VM-11 |
+| TASK-09-S5 | UIContent / ui_report_stub / session manager：事件聚合、callback 载荷与故障/清理闭环 | AC-14.x、AC-16.x / VM-12～VM-13 |
+| TASK-09-S6 | manager/事件/IPC UT、模拟 SA、Demo 与目标设备性能 | AC-17.x～AC-18.x / VM-14 |
 
 ## API 签名、Kit 与权限
 
@@ -190,7 +213,7 @@
 
 ### 变更/废弃 API
 
-无。
+`RegisterPageSceneRules(const std::string&, const PageSceneEventCallback&)`、`UnregisterPageSceneRules(const std::string&)`、`GetPageScene(const std::string&, const PageSceneEventCallback&)` 和 `ReportService::ReportPageSceneEvent(const std::string&, bool)` 保持现有签名。SA 不传内部 processId。错误码沿用 NO_ERROR / NOT_CONNECTED / FAILED / REPLY_ERROR / PARAM_INVALID / LAST_UNFINISH，不新增 Public API、System API、SDK 声明或 IPC 事务。
 
 ## 构建系统影响
 
@@ -200,6 +223,8 @@
 文件: interfaces/inner_api/ui_session/BUILD.gn
 变更说明: UiSessionManager 系统能力 (SA) 编译为共享库
 ```
+
+PageScene 涉及 ace_engine 既有 page_scene、UI session、事件入口及对应单测 target 的源文件或依赖列表；不引入新的外部库或部件。
 
 ### bundle.json 变更
 
@@ -227,7 +252,7 @@ graph TB
         HUB["UiSessionManagerOhos<br/>Meyers singleton"]
         CB["InitCallbacks<br/>~25 回调注册"]
         GUARD["SyncRequestGuard<br/>CAS atomic_bool"]
-        EVT["9 atomic&lt;int32_t&gt; 事件计数器<br/>+ webTaskNums_ atomic 子树聚合<br/>+ webFocusEvent bool+mutex"]
+        EVT["通用事件 atomic&lt;int32_t&gt; 计数器 + PageScene atomic&lt;bool&gt;<br/>+ webTaskNums_ atomic 子树聚合<br/>+ webFocusEvent bool+mutex"]
         PTMUTEX["PageTranslate<br/>single-slot mutex"]
     end
 
@@ -270,6 +295,21 @@ graph TB
 | 9 | UiSessionManagerOhos | UiReportProxy | ReportInspectorTreeValue(data,1,true) | 反向 IPC，广播至所有 SA |
 | 10 | UiReportProxy | UiSaService | IPC REPORT_INSPECTOR_VALUE | 回传 SA |
 
+#### PageScene 数据流
+
+```mermaid
+flowchart LR
+    SA[系统 SA] -->|规则 JSON| U[UiSessionManagerOhos]
+    U -->|投递 UI 线程| P[PageSceneRuleManager]
+    C[ContentChange 稳定通知] --> P
+    E[开发者 onClick/onTouch 实际执行] -->|操作候选| P
+    P --> S[当前 UIContent 与子窗轻量快照]
+    S --> M[存在性匹配 / 点击局部匹配]
+    M --> J[按进程与事件聚合 JSON]
+    J -->|一次异步 IPC| R[UiReportStub 按 ruleSet 分发]
+    R --> SA
+```
+
 ### 时序设计
 
 ```mermaid
@@ -306,6 +346,9 @@ sequenceDiagram
 | HitTest 分段发送 | HitTest 数据按 `ONCE_IPC_SEND_DATA_MAX_SIZE` 切片并标记最后一段。 | 避免单次 IPC 数据过大。 |
 | 内容变化节流 | `minReportTime`、`reportDelayTime`、滚动/过渡状态共同控制上报窗口。 | 降低连续滚动、过渡、文本变化带来的重复上报。 |
 | 页面翻译版本过滤 | 文本 hash 未变化时返回 `-1` 跳过发送，变化后递增 version。 | 降低重复文本发送给 AI 的成本。 |
+| PageScene 按需扫描 | 无搜索订阅时不构建快照、不匹配；页面稳定后共享轻量快照，关键词命中早停。 | 典型 500 节点、最多 5 rule、每 rule 最多 5 区域，单次扫描 ≤10ms。 |
+| PageScene 点击局部匹配 | 响应节点自身 Inspector ID 精确匹配优先；回退限制为向下最多 10 层。 | ID 与回退路径新增时延均 <1ms。 |
+| PageScene 事件聚合 | 同一事件的多规则/双规则集命中合为一份 JSON、一次异步 IPC。 | 配置和事件 IPC 端到端均 ≤5ms。 |
 
 ### 核心接口索引
 
@@ -320,6 +363,9 @@ sequenceDiagram
 | `UiSessionManagerOhos::StartPageTranslate()` | 校验请求后记录页面翻译会话 scope 与 started 状态。 | `ui_session_manager_ohos.cpp:837` |
 | `UIContentImpl::InitializeCallback()` | 注册 InspectorTree、Web、图片、页面名、HitTest、内容变化等回调。 | `ui_content_impl.cpp:6180` |
 | `ContentChangeManager::StartContentChangeReport()` | 开启内容变化检测，修正非法阈值并通知已注册节点。 | `content_change_manager.cpp:247` |
+| `UiSessionManagerOhos::RegisterPageSceneRules()` / `UnregisterPageSceneRules()` | 规则注册、按集注销与检测开关维护。 | `ui_session_manager_ohos.cpp` |
+| `ContentChangeManager::FlushPageSceneNodeChanged()` | 页面稳定后通知 PageScene 消费待检测规则和操作候选。 | `content_change_manager.cpp` |
+| `UiReportStub::ReportPageSceneEvent()` | 解析规则集标识，在锁外分发对应 callback。 | `ui_report_stub.cpp` |
 
 ### 核心数据结构索引
 
@@ -373,6 +419,9 @@ sequenceDiagram
 | NotifySendCommandAsyncFunction | ui_session_manager.h:53 | 异步命令回调签名 |
 | PageSceneRuleInfo | ui_session_manager_ohos.h:181-189 | 页面场景规则信息 |
 | PageSceneRuleSetInfo | ui_session_manager_ohos.h:191-197 | 页面场景规则集信息 |
+| SearchRuleSet / SearchSceneRule | page_scene_rule_manager.h | 搜索规则集、页面、区域、关键词、控件特征与 Inspector ID 配置 |
+| SearchSceneSnapshot | search_scene_snapshot.h | 当前 UIContent 与子窗的轻量节点特征和最终可见矩形 |
+| SearchClickCandidate | search_scene_click_matcher.h | 实际响应节点弱引用、Inspector ID 与操作标识 |
 
 ### 算法与状态机
 
@@ -410,6 +459,14 @@ stateDiagram-v2
     ManagerCalls --> [*]: release locks
 ```
 
+#### PageScene 状态机
+
+TEXT_EDITOR 按规则记录命中态：COUNT_GTE 满足时上报命中，已命中规则不再满足时上报 TEXT_EDITOR_EXIT，退出后连续未命中不重复上报。
+
+搜索 presence 按订阅归属及页面身份（pageType/pageName/Dialog）维护 UNKNOWN/ABSENT/PRESENT：首次具备搜索功能上报一次 true；特征消失、路由离开或后台上报一次 false；重新出现或回到前台允许再次 true。证据变化而状态不变时不重复 true；页面切换保证 A false 先于 B true。注销和死亡仅清理状态，不产生退出报告。
+
+搜索点击候选只在开发者 onClick/onTouch 实际执行后创建，按真实 operationId 去重；不稳定期间保留，稳定后消费一次。页面失效、后台、注销/死亡清理候选，不得合并两次独立操作。
+
 ### 测试性设计
 
 | 测试场景 | 测试方法 | 覆盖 ADR |
@@ -422,6 +479,12 @@ stateDiagram-v2
 | SendCommandAsync 错误码 11/12/13 路径 | 单测：mock null callback / default return / null node | ADR-5 |
 | SA 死亡清理 ordered locks 顺序 | 集成测试：触发 OnRemoteDied，验证 reset 后 manager calls | ADR-6 |
 | InspectorJsonValue isRoot_ 所有权 | 单测：root 析构释放 cJSON tree，child 析构不释放 | ADR-7 |
+| PageScene 规则与几何 | 规则解析、容量、UTF-8、裁剪、子窗偏移、密度及范围排除；对应 Feat-09 VM-7～VM-9 | ADR-10 / ADR-11 / ADR-14 |
+| PageScene presence 与点击 | true/false 顺序、实际回调、ID 正反例、10 层回退、操作去重及稳定门控；对应 VM-10～VM-11 | ADR-12 / ADR-13 / ADR-15 |
+| PageScene 订阅与事件 | 双规则集、单集注销、SA 死亡、断链、callback 隔离与一次 IPC；对应 VM-12～VM-13 | ADR-14 / ADR-15 |
+| PageScene 性能与兼容 | 未配置/配置对照、目标设备 P50/P95/P99 和 6～10 rule 退化曲线；对应 VM-14 | ADR-10 / ADR-13 / ADR-15 |
+
+PageScene 性能验收需记录设备、版本、原始样本和用例数。当前记录不包含本次 ace_engine 构建、UT 或设备执行结果；完成 Feat-09 差异闭环、验证映射与评审后再更新状态。
 
 ### 异常传播时序图
 
@@ -435,7 +498,7 @@ sequenceDiagram
     SA->>SA: acquire ordered locks
     SA->>SA: EraseProcessId(key, pid)
     SA->>SA: reportObjectMap_ erase pid
-    SA->>SA: fetch_sub all 9 atomic counters
+    SA->>SA: restore event counters and clear PageScene rules
     SA->>SA: webFocusEventRegistered_ reset false
     SA->>SA: if pageTranslateOwnerPid_: ResetTranslate
     SA->>SA: ResetPageTransition
@@ -450,6 +513,16 @@ sequenceDiagram
 | UiReportProxy remote object | UiSessionManagerOhos | reportObjectMap_ per-pid | OnRemoteDied | EraseProcessId → fetch_sub counters | 进程死亡时批量清理 |
 | PageTranslate callback slot | RegisterPageTranslateTextCallback | single-slot mutex 保护 | Unregister OR OnRemoteDied | ResetTranslate → slot cleared | SA 死亡时 mutex 保护下 reset |
 | SyncRequestGuard pending flag | CAS atomic_bool | UiSessionManager | 析构 RAII → pending_=false | 析构自动恢复 | 请求失败时 acquired_=false，析构不操作 |
+
+#### PageScene 状态所有权
+
+| 状态 | 归属与键 | 生命周期 |
+|------|----------|----------|
+| 搜索规则原始配置 | UiSessionManagerOhos，`processId + ruleSetId` | 全量校验后提交；重复 ID/第三个集整体失败；按集注销/SA 死亡清理 |
+| 编译规则及快照 | PageSceneRuleManager / SnapshotBuilder，当前 UIContent 及订阅归属 | 服务层修改同步到派生缓存；快照只在检测需要时构建，禁止保留失效节点强引用 |
+| presence | SearchPresenceStateMachine，订阅归属 + pageType/pageName/Dialog 身份 | UNKNOWN/ABSENT→PRESENT 上报 true；PRESENT→ABSENT 上报 false；注销/死亡仅清理，不发送退出 |
+| 点击候选 | PageSceneRuleManager，UIContent + operationId + 响应节点弱引用 | 实际回调后创建，不稳定期间保留，稳定消费一次；页面失效、后台、注销/死亡清理 |
+| 回调表 | SA 侧 UiReportStub，ruleSetId | 先快照再锁外调用；一个 callback 缺失不能阻断另一个；单集注销只移除对应 callback |
 
 ### 接口参数规约
 
@@ -474,6 +547,8 @@ sequenceDiagram
 | GetCurrentAbilityLanguageInfo | binder 线程 | UI 线程 | SA→app IPC | SyncRequestGuard CAS | 第二请求立即失败 |
 | SendCommandAsync | binder 线程 | UI 线程(PostSyncTask) | SA→app IPC | mutex 保护 | RAII 互斥 |
 | SA 死亡清理 | binder 线程 | 同线程 | death notification | ordered locks | 严格顺序 |
+| PageScene 规则变更与清理 | IPC / death notification | UI 线程处理派生规则与节点状态 | SA→app IPC | 服务层规则表加锁，节点读取和状态更新投递 UI 线程 | 注销/死亡须覆盖派生缓存及候选 |
+| PageScene 事件分发 | UiReportStub Binder 接收 | callback 锁外执行 | app→SA IPC | 按 ruleSetId 建立 callback 快照 | 单 callback 缺失不阻断其他订阅 |
 
 并发场景：
 
@@ -532,22 +607,23 @@ Callback 注册方法 (21 个 Save* + 2 个 Set* + 2 个 Register* = 25 个回�
 
 Protected member fields (h:310-380)：
 - processMap_: map<string, set<int32_t>> + processMapMutex_: shared_mutex
-- 9 atomic<int32_t> 事件计数器 (click/search/textChange/router/componentChange/scroll/lifeCycle/selectText/pageSceneRule)
+- 通用事件使用 atomic<int32_t> 计数器；PageScene 使用 pageSceneRuleRegistered_ atomic<bool>，另按进程保存规则集
 - webFocusEventRegistered_: bool + webFocusEventMutex_: mutex（全局开关，非 per-process）
 - componentChangeEventMask_: uint32_t (位掩码)
 - inspectorFunction_ + inspectorFunctionMutex_ (+ ~15 个其他回调 + mutex)
 
 **事件广播模型**：
 
-所有 9 类事件上报均广播至 reportObjectMap_ 中所有已注册 SA 进程，不做定向发送。Report 方法内：
-- 9 类 atomic 计数器事件：计数器 > 0 时遍历 reportObjectMap_ 发送 IPC
+通用事件沿用 reportObjectMap_ 广播；PageScene 按请求所属 processId 定向报告。Report 方法内：
+- 通用 atomic 计数器事件：计数器 > 0 时遍历 reportObjectMap_ 发送 IPC
+- PageScene：按 processId 查找报告通道，搜索事件按 ruleSetId 路由 callback
 - webFocusEvent bool+mutex 门控：registered_==true 时遍历发送
 
 **SA 死亡清理** (`ui_content_proxy.cpp OnRemoteDied`)：
 
 ordered cleanup sequence:
 1. acquire ordered locks (processMapMutex_, webFocusEventMutex_, etc.)
-2. reset state — EraseProcessId(key, pid), reportObjectMap_ erase pid, fetch_sub all 9 atomic counters, webFocusEventRegistered_ reset false
+2. reset state — EraseProcessId(key, pid), reportObjectMap_ erase pid, restore event counters and clear PageScene rules, webFocusEventRegistered_ reset false
 3. manager calls — if pageTranslateOwnerPid_ matches: ResetTranslate(), ResetPageTransition()
 
 ### InspectorTree查询与Web子树聚合
@@ -602,7 +678,7 @@ ReportInspectorTreeValue 接口支持 partNum / isLastPart 参数，但当前 In
 
 ### 事件上报与注册计数门控
 
-**9 类事件计数器** (`ui_session_manager.h:310-380`)：
+**通用事件与 PageScene 注册门控** (`ui_session_manager.h`)：
 
 | 事件类型 | 计数器 | 门控方式 | 广播模式 |
 |----------|--------|----------|----------|
@@ -614,11 +690,12 @@ ReportInspectorTreeValue 接口支持 partNum / isLastPart 参数，但当前 In
 | Scroll | atomic<int32_t> scrollEventRegisteredProcesses_ | 同上 | 广播所有 SA |
 | LifeCycle | atomic<int32_t> lifeCycleEventRegisteredProcesses_ | 同上 | 广播所有 SA |
 | SelectText | atomic<int32_t> selectTextEventRegisteredProcesses_ | 同上 | 广播所有 SA |
-| PageSceneRule | atomic<int32_t> pageSceneRuleRegisterProcesses_ | 同上 | 广播所有 SA |
+| PageSceneRule | atomic<bool> pageSceneRuleRegistered_ + 按进程规则集表 | 成功注册开启，最后规则集清理关闭 | 按 processId 定向 ReportPageSceneEvent |
 | WebFocus | bool webFocusEventRegistered_ + mutex | global toggle, not per-process | 广播所有 SA |
 
 门控差异（ADR-2）：
-- 9 类 atomic 计数器：per-process 引用计数，每进程注册/注销独立递增递减
+- 通用事件 atomic 计数器：per-process 引用计数，每进程注册/注销独立递增递减
+- PageScene atomic<bool>：用于快速判断；具体订阅另存于规则表，按进程/规则集清理
 - webFocusEvent bool+mutex：全局开关，所有进程共享，Register 时设 true，Unregister 或 SA 死亡时 reset false
 
 **Register / Unregister 流程**：
@@ -776,11 +853,23 @@ if pageTranslateOwnerPid_ matches dead process → ResetTranslate() + ResetPageT
 - 检测节点属性变化，对比 ContentChangeConfig 阈值
 - 超阈值时触发 ReportContentChangeEvent IPC 上报
 
-**页面场景规则化感知规则检测** (`ui_session_manager_ohos.h:181-197`)：
+### PageScene 规则感知与搜索功能识别
 
-- PageSceneRuleInfo / PageSceneRuleSetInfo：页面场景规则信息结构
-- SavePageSceneDetectFunction (h:304)：注册 PageScene 检测回调
-- RegisterPageSceneRules / UnregisterPageSceneRules：atomic 计数器 pageSceneRuleRegisterProcesses_ 门控
+PageScene 使用统一的 SA 注册、检测回调和反向上报链路。`UiSessionManagerOhos` 按进程保存规则，`pageSceneRuleRegistered_` 提供原子检测开关；`SavePageSceneDetectFunction` 保存回调，由 UIContentImpl 将节点访问投递到 UI 线程。ContentChange 提供页面稳定通知，场景匹配与事件状态由 PageScene 维护。
+
+| 场景 | 规则与匹配 | 状态与事件 |
+|------|------------|------------|
+| 文本编辑 | TEXT_EDITOR / COUNT_GTE 按配置统计输入控件，支持节点摘要与显式 includeText | 命中上报 TEXT_EDITOR；已命中规则不再满足时上报 TEXT_EDITOR_EXIT；主动查询保持原契约 |
+| 搜索存在性 | 顶部 NavDestination/pageUrl 匹配后，在必填关键区域内按关键词、Inspector ID 模糊匹配或 Image/Swiper/Search/Button/TextInput 特征识别 | 稳定点维护 presence；输出 hasSearch=true/false 与 hits/exits，去重及退出顺序见状态机 |
+| 搜索点击 | 实际开发者回调形成候选，响应节点自身 Inspector ID 区分大小写完整精确匹配优先；否则向下最多 10 层按区域 OR 关键词回退 | 不稳定时保留候选，稳定消费后按操作聚合 click 事件；摘要始终指向实际响应节点 |
+
+`SearchSceneContextCollector` 只收集当前 UIContent 主页面、overlay 和所属 ArkUI 子 Container；搜索排除 Web/UIExtension 和其他独立窗口/实例。`SearchSceneSnapshotBuilder` 对组件变换矩形、窗口有效边界及实际裁剪祖先求交；子窗偏移映射到主窗后统一转换为 vp，以最终可见矩形中心点判断区域命中。未启用裁剪的祖先不按其 layout Rect 截断。
+
+搜索规则最多两个 ruleSet/SA、每集最多 10 rule、每 rule 1～5 区域/最多 5 关键词、每词 ≤20 UTF-8 字节；同集 ruleId 唯一，同 rule 区域不能有正面积重叠，非法配置整体拒绝且不覆盖既有配置。规则、presence、候选及 callback 的归属和清理见资源所有权矩阵。
+
+搜索 JSON 不含旧 TEXT_EDITOR 的 `version: 1`；当前源码按 version 是否缺失/null 分流。搜索事件使用 `eventType=presence/click`、`hasSearch`、`hits/exits`；TEXT_EDITOR 使用原有 eventName 和 matched 契约。事件按 processId 定向报告，同一 SA 的多规则/双规则集命中按事件聚合后一次 IPC，接收端按 ruleSet 分发。
+
+触摸/点击观察点作为搜索识别输入，通用触摸上报归 Feat-12，ContentChange 检测阈值归 Feat-06。接口、数据与验收条目统一见 [Feat-09](Feat-09-pagescene-rule-awareness-spec.md)；当前搜索 GetPageScene、事件聚合、状态归属和清理等实现差异见其 GAP-1～GAP-10。
 
 ### 查询能力与辅助Dump
 
@@ -929,7 +1018,7 @@ sequenceDiagram
 | InspectorJsonValue child 引用 UB 风险 | 架构 | 低 | isRoot_=false 的 child 引用在 root 析构后访问为 UB；使用方需保证 child 生命周期不超过 root | ArkUI SIG |
 | 双并发门控模式差异 | 架构 | 中 | PageTranslate mutex 占位 vs SyncRequestGuard CAS 语义不同；规格需明确两种门控适用场景 | ArkUI SIG |
 | UiSessionManager 与 hidumper 双通道并存 | 兼容 | 中 | 两套 dump 路径可能产生不一致输出，需注意同步 | ArkUI SIG |
-| 页面场景规则化感知为特性分支内容 | 兼容 | 中 | 主线可能尚未包含全部实现，核对代码时以特性分支源码为准 | ArkUI SIG |
+| PageScene 搜索识别存在契约差异 | 功能/兼容 | 高 | 按 Feat-09 GAP-1～GAP-10 完成接口、事件、状态清理及设备验证闭环 | ArkUI SIG |
 | WM 验证链路跨仓依赖 | 架构 | 中 | WindowSessionImpl fallback 和 WMS IPC 变更属于 window_manager 仓，正式修复需 WM 评估 | ArkUI SIG |
 
 ## 设计审批
@@ -946,4 +1035,4 @@ sequenceDiagram
 - [x] 关键设计决策有理由和影响说明
 - [x] 风险和开放问题有 Owner
 
-**结论:** 通过（已有实现补录）
+**结论:** 存量设计通过；Feat-09 保持 Draft，实现对照与验证结果见特性规格。
