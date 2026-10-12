@@ -357,6 +357,7 @@
 | 09 开发者工具 | 06 AI Agent Skill | 03 ArkUI通用无障碍快速接入Skill | `09-06-03` | `09-developer-tools/06-agent-skills/03-accessibility-integration/` | *待补充* | 1 |
 | 09 开发者工具 | 06 AI Agent Skill | 04 ArkUI命令式框架快速接入Skill | `09-06-04` | `09-developer-tools/06-agent-skills/04-imperative-framework/` | *待补充* | 1 |
 | 09 开发者工具 | 06 AI Agent Skill | 05 ArkUI跨平台迁移Skill | `09-06-05` | `09-developer-tools/06-agent-skills/05-cross-platform-migration/` | *待补充* | 2 |
+| 09 开发者工具 | 06 AI Agent Skill | 06 ArkUI-X流程日志诊断Skill | `09-06-06` | `09-developer-tools/06-agent-skills/06-flowlog-diagnose/` | *待补充* | 1 |
 | 09 开发者工具 | 07 内存分析工具 | 01 ArkUI 内存分析DFX工具 | `09-07-01` | `09-developer-tools/07-memory-analysis-tools/01-memory-dfx/` | *待补充* | 3 |
 | 10 产品化定制 | 01 穿戴 | 01 弧形组件 | `10-01-01` | `10-product-customization/01-wearable/01-arc-component/` | [design.md](10-product-customization/01-wearable/01-arc-component/design.md) | 2 |
 
@@ -2287,61 +2288,61 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | V1 核心机制与 IStateMgmtFactory 工厂 | *待补充* | 待补充 |
-| Feat-02 | @State/@Prop/@PropRef 组件内与父子单向同步 | *待补充* | 待补充 |
-| Feat-03 | @Link 父子双向同步 | *待补充* | 待补充 |
-| Feat-04 | @Provide/@Consume 跨层级同步 | *待补充* | 待补充 |
-| Feat-05 | @ObjectLink 嵌套对象共享引用 | *待补充* | 待补充 |
-| Feat-06 | @Watch 变更回调 | *待补充* | 待补充 |
+| Feat-01 | V1 核心机制与 IStateMgmtFactory 工厂 | *待补充* | Draft |
+| Feat-02 | @State/@Prop/@PropRef 组件内与父子单向同步 | *待补充* | Draft |
+| Feat-03 | @Link 父子双向同步 | *待补充* | Draft |
+| Feat-04 | @Provide/@Consume 跨层级同步 | *待补充* | Draft |
+| Feat-05 | @ObjectLink 嵌套对象共享引用 | *待补充* | Draft |
+| Feat-06 | @Watch 变更回调 | *待补充* | Draft |
 
 ### 07-02-09 静态V1数据对象内状态管理
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | @Observed InterfaceProxyHandler 代理与内置容器观测 | *待补充* | 待补充 |
-| Feat-02 | @Track 属性级精确追踪 | *待补充* | 待补充 |
+| Feat-01 | @Observed InterfaceProxyHandler 代理与内置容器观测 | *待补充* | Draft |
+| Feat-02 | @Track 属性级精确追踪 | *待补充* | Draft |
 
 ### 07-02-10 静态V1应用内状态管理
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | LocalStorage 页面级存储 | *待补充* | 待补充 |
-| Feat-02 | AppStorage 全局存储 | *待补充* | 待补充 |
-| Feat-03 | PersistentStorage 磁盘持久化 | *待补充* | 待补充 |
-| Feat-04 | Environment 设备环境变量 | *待补充* | 待补充 |
-| Feat-05 | 存储联动装饰器（@StorageLink/@StorageProp/@StoragePropRef/@LocalStorageLink/@LocalStoragePropRef） | *待补充* | 待补充 |
+| Feat-01 | LocalStorage 页面级存储 | *待补充* | Draft |
+| Feat-02 | AppStorage 全局存储 | *待补充* | Draft |
+| Feat-03 | PersistentStorage 磁盘持久化 | *待补充* | Draft |
+| Feat-04 | Environment 设备环境变量 | *待补充* | Draft |
+| Feat-05 | 存储联动装饰器（@StorageLink/@StorageProp/@StoragePropRef/@LocalStorageLink/@LocalStoragePropRef） | *待补充* | Draft |
 
 ### 07-02-11 静态V2组件内状态管理
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | V2 核心机制（DecoratedV2VariableBase + StateUpdateLoop + autoProxyObject） | *待补充* | 待补充 |
-| Feat-02 | @Local/@Param/@ParamOnce/@Provider/@Consumer 组件状态输入输出 | *待补充* | 待补充 |
-| Feat-03 | @Monitor/@SyncMonitor 路径感知监听 | *待补充* | 待补充 |
-| Feat-04 | @Computed 惰性计算属性 | *待补充* | 待补充 |
+| Feat-01 | V2 核心机制（DecoratedV2VariableBase + StateUpdateLoop + autoProxyObject） | *待补充* | Draft |
+| Feat-02 | @Local/@Param/@ParamOnce/@Provider/@Consumer 组件状态输入输出 | *待补充* | Draft |
+| Feat-03 | @Monitor/@SyncMonitor 路径感知监听 | *待补充* | Draft |
+| Feat-04 | @Computed 惰性计算属性 | *待补充* | Draft |
 
 ### 07-02-12 静态V2数据对象内状态管理
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | @ObservedV2/@Trace V2 可观察数据模型（UIPlugin 转换 MutableStateMeta） | *待补充* | 待补充 |
+| Feat-01 | @ObservedV2/@Trace V2 可观察数据模型（UIPlugin 转换 MutableStateMeta） | *待补充* | Draft |
 
 ### 07-02-13 静态V2应用内状态管理
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | AppStorageV2 内存全局存储 | *待补充* | 待补充 |
-| Feat-02 | PersistenceV2 磁盘持久化与 V2CollectionCoder | *待补充* | 待补充 |
+| Feat-01 | AppStorageV2 内存全局存储 | *待补充* | Draft |
+| Feat-02 | PersistenceV2 磁盘持久化与 V2CollectionCoder | *待补充* | Draft |
 
 ### 07-02-14 状态管理互操作
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
-| Feat-01 | 互操作核心机制（InteropState + openInterop + register 回调） | *待补充* | 待补充 |
-| Feat-02 | 跨前端存储互操作 | *待补充* | 待补充 |
-| Feat-03 | 跨前端组件互操作 | *待补充* | 待补充 |
-| Feat-04 | 跨前端状态代理 | *待补充* | 待补充 |
-| Feat-05 | Builder 与 Binding 互操作 | *待补充* | 待补充 |
+| Feat-01 | 互操作核心机制（InteropState + openInterop + register 回调） | *待补充* | Draft |
+| Feat-02 | 跨前端存储互操作 | *待补充* | Draft |
+| Feat-03 | 跨前端组件互操作 | *待补充* | Draft |
+| Feat-04 | 跨前端状态代理 | *待补充* | Draft |
+| Feat-05 | Builder 与 Binding 互操作 | *待补充* | Draft |
 
 ### 07-03-01 组件化
 
@@ -2818,6 +2819,12 @@
 |--------|----------|-----------|------|
 | Feat-01 | 跨平台骨架代码生成 | *待补充* | Draft |
 | Feat-02 | 跨平台接口扫描适配报告 | *待补充* | Draft |
+
+### 09-06-06 ArkUI-X流程日志诊断Skill
+
+| FeatID | 特性名称 | Spec 文件 | 状态 |
+|--------|----------|-----------|------|
+| Feat-01 | ArkUI-X关键流程日志补齐与异常场景分类排查skill | *待补充* | Draft |
 
 ### 09-07-01 ArkUI 内存分析DFX工具
 
