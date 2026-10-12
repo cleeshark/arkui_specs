@@ -2073,127 +2073,127 @@ features:
   id: Feat-01
   title: V1 核心机制与 IStateMgmtFactory 工厂
   spec: null
-  status: 待补充
+  status: Draft
 - func_id: 07-02-08
   id: Feat-02
   title: '@State/@Prop/@PropRef 组件内与父子单向同步'
   spec: null
-  status: 待补充
+  status: Draft
 - func_id: 07-02-08
   id: Feat-03
   title: '@Link 父子双向同步'
   spec: null
-  status: 待补充
+  status: Draft
 - func_id: 07-02-08
   id: Feat-04
   title: '@Provide/@Consume 跨层级同步'
   spec: null
-  status: 待补充
+  status: Draft
 - func_id: 07-02-08
   id: Feat-05
   title: '@ObjectLink 嵌套对象共享引用'
   spec: null
-  status: 待补充
+  status: Draft
 - func_id: 07-02-08
   id: Feat-06
   title: '@Watch 变更回调'
   spec: null
-  status: 待补充
+  status: Draft
 - func_id: 07-02-09
   id: Feat-01
   title: '@Observed InterfaceProxyHandler 代理与内置容器观测'
   spec: null
-  status: 待补充
+  status: Draft
 - func_id: 07-02-09
   id: Feat-02
   title: '@Track 属性级精确追踪'
   spec: null
-  status: 待补充
+  status: Draft
 - func_id: 07-02-10
   id: Feat-01
   title: LocalStorage 页面级存储
   spec: null
-  status: 待补充
+  status: Draft
 - func_id: 07-02-10
   id: Feat-02
   title: AppStorage 全局存储
   spec: null
-  status: 待补充
+  status: Draft
 - func_id: 07-02-10
   id: Feat-03
   title: PersistentStorage 磁盘持久化
   spec: null
-  status: 待补充
+  status: Draft
 - func_id: 07-02-10
   id: Feat-04
   title: Environment 设备环境变量
   spec: null
-  status: 待补充
+  status: Draft
 - func_id: 07-02-10
   id: Feat-05
   title: 存储联动装饰器（@StorageLink/@StorageProp/@StoragePropRef/@LocalStorageLink/@LocalStoragePropRef）
   spec: null
-  status: 待补充
+  status: Draft
 - func_id: 07-02-11
   id: Feat-01
   title: V2 核心机制（DecoratedV2VariableBase + StateUpdateLoop + autoProxyObject）
   spec: null
-  status: 待补充
+  status: Draft
 - func_id: 07-02-11
   id: Feat-02
   title: '@Local/@Param/@ParamOnce/@Provider/@Consumer 组件状态输入输出'
   spec: null
-  status: 待补充
+  status: Draft
 - func_id: 07-02-11
   id: Feat-03
   title: '@Monitor/@SyncMonitor 路径感知监听'
   spec: null
-  status: 待补充
+  status: Draft
 - func_id: 07-02-11
   id: Feat-04
   title: '@Computed 惰性计算属性'
   spec: null
-  status: 待补充
+  status: Draft
 - func_id: 07-02-12
   id: Feat-01
   title: '@ObservedV2/@Trace V2 可观察数据模型（UIPlugin 转换 MutableStateMeta）'
   spec: null
-  status: 待补充
+  status: Draft
 - func_id: 07-02-13
   id: Feat-01
   title: AppStorageV2 内存全局存储
   spec: null
-  status: 待补充
+  status: Draft
 - func_id: 07-02-13
   id: Feat-02
   title: PersistenceV2 磁盘持久化与 V2CollectionCoder
   spec: null
-  status: 待补充
+  status: Draft
 - func_id: 07-02-14
   id: Feat-01
   title: 互操作核心机制（InteropState + openInterop + register 回调）
   spec: null
-  status: 待补充
+  status: Draft
 - func_id: 07-02-14
   id: Feat-02
   title: 跨前端存储互操作
   spec: null
-  status: 待补充
+  status: Draft
 - func_id: 07-02-14
   id: Feat-03
   title: 跨前端组件互操作
   spec: null
-  status: 待补充
+  status: Draft
 - func_id: 07-02-14
   id: Feat-04
   title: 跨前端状态代理
   spec: null
-  status: 待补充
+  status: Draft
 - func_id: 07-02-14
   id: Feat-05
   title: Builder 与 Binding 互操作
   spec: null
-  status: 待补充
+  status: Draft
 - func_id: 07-03-01
   id: Feat-01
   title: '@Component/@ComponentV2 自定义组件声明与创建'
@@ -3347,6 +3347,11 @@ features:
 - func_id: 09-06-05
   id: Feat-02
   title: 跨平台接口扫描适配报告
+  spec: null
+  status: Draft
+- func_id: 09-06-06
+  id: Feat-01
+  title: ArkUI-X关键流程日志补齐与异常场景分类排查skill
   spec: null
   status: Draft
 - func_id: 09-07-01

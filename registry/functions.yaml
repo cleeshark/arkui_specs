@@ -4382,6 +4382,19 @@ functions:
   path: 09-developer-tools/06-agent-skills/05-cross-platform-migration/
   design: null
   status: active
+- id: 09-06-06
+  l1:
+    id: 09
+    title: 开发者工具
+  l2:
+    id: '06'
+    title: AI Agent Skill
+  l3:
+    id: '06'
+    title: ArkUI-X流程日志诊断Skill
+  path: 09-developer-tools/06-agent-skills/06-flowlog-diagnose/
+  design: null
+  status: active
 - id: 09-07-01
   l1:
     id: 09
