@@ -3945,3 +3945,8 @@ features:
   title: 自定义组件异步加载
   spec: null
   status: Draft
+- func_id: 07-01-17
+  id: Feat-01
+  title: SegmentButton 可配置拖拽交互模式
+  spec: null
+  status: 待补充
