@@ -3,6 +3,7 @@
 
 const POLL_MS = 2000;
 const METRICS_POLL_MS = 10000;
+const JOB_LIST_LIMIT = 1000;
 const ACTIVE_STATES = new Set(["running", "waiting"]);
 let selectedJob = null;
 let lastMetricsAt = 0;
@@ -37,6 +38,7 @@ const agentParams = document.getElementById("agent-params");
 const agentReset = document.getElementById("agent-reset");
 
 const SCHEDULER_DEFAULT_QUOTA = 10000000;
+const SCHEDULER_DEFAULT_FAILURE_LIMIT = 10;
 let schedulerExecOrder = [];
 let schedulerExecEnabled = new Set();
 let schedulerExecQuota = {};
@@ -45,6 +47,7 @@ const schedulerEnabledLabel = document.getElementById("scheduler-enabled-label")
 const schedulerForm = document.getElementById("scheduler-form");
 const schedulerStartTimes = document.getElementById("scheduler-start-times");
 const schedulerParallel = document.getElementById("scheduler-parallel");
+const schedulerFailureLimit = document.getElementById("scheduler-failure-limit");
 const schedulerExecList = document.getElementById("scheduler-executor-list");
 const schedulerError = document.getElementById("scheduler-error");
 const schedulerStatusEl = document.getElementById("scheduler-status");
@@ -385,6 +388,8 @@ function applySchedulerConfig(cfg) {
   schedulerEnabledLabel.textContent = cfg.enabled ? "enabled" : "disabled";
   schedulerStartTimes.value = (cfg.start_times || []).join(", ");
   schedulerParallel.value = cfg.parallel_tasks || 1;
+  schedulerFailureLimit.value =
+    cfg.daily_failure_limit || SCHEDULER_DEFAULT_FAILURE_LIMIT;
   const allIds = agentProfiles.map((p) => p.id);
   const priority = (cfg.executor_priority || []).filter((id) => allIds.includes(id));
   schedulerExecOrder = [...priority, ...allIds.filter((id) => !priority.includes(id))];
@@ -403,11 +408,18 @@ async function loadSchedulerConfig() {
 }
 
 function renderSchedulerStatus(s) {
-  const state = s.run_active ? "running" : (s.enabled ? "idle" : "off");
+  const state = s.failure_limit_reached
+    ? "failure limit reached"
+    : s.run_active ? "running" : (s.enabled ? "idle" : "off");
   const rows = [
     schedulerMetric("State", state),
     schedulerMetric("Active executor", s.active_executor || "—"),
     schedulerMetric("In-flight", `${s.inflight_count} / ${s.parallel_tasks}`),
+    schedulerMetric(
+      "Failures today",
+      `${s.daily_failure_count || 0} / ` +
+        `${s.daily_failure_limit || SCHEDULER_DEFAULT_FAILURE_LIMIT}`,
+    ),
     schedulerMetric("Next start", s.next_start_time || "—"),
     schedulerMetric("Last dispatched", s.last_dispatched_func || "—"),
   ];
@@ -474,6 +486,8 @@ schedulerForm.addEventListener("submit", async (e) => {
     enabled: schedulerEnabled.checked,
     start_times: startTimes,
     parallel_tasks: Number(schedulerParallel.value) || 1,
+    daily_failure_limit:
+      Number(schedulerFailureLimit.value) || SCHEDULER_DEFAULT_FAILURE_LIMIT,
     executor_priority: executorPriority,
     executor_quota: executorQuota,
   });
@@ -555,7 +569,7 @@ function renderFunctions(functions = latestFunctions) {
 
 async function refresh() {
   const [jobsResult, functionsResult] = await Promise.all([
-    api("GET", "/api/jobs"), api("GET", "/api/functions")
+    api("GET", `/api/jobs?limit=${JOB_LIST_LIMIT}`), api("GET", "/api/functions")
   ]);
   if (jobsResult.ok && Array.isArray(jobsResult.json)) {
     latestJobs = jobsResult.json;

@@ -27,7 +27,7 @@ from typing import Any, Iterator
 from ..domain import states as S
 from ..settings import ServiceSettings
 
-_SCHEMA_VERSION = "9"
+_SCHEMA_VERSION = "10"
 
 def utc_now() -> str:
     """Current UTC timestamp as an ISO-8601 string (seconds precision)."""
@@ -130,6 +130,24 @@ class SqliteStore:
                     UPDATE schema_meta SET value = '9' WHERE key = 'schema_version';
                 """)
                 version = "9"
+            if version == "9":
+                columns = {
+                    column["name"]
+                    for column in self._conn.execute(
+                        "PRAGMA table_info(scheduler_config)"
+                    ).fetchall()
+                }
+                if "daily_failure_limit" not in columns:
+                    self._conn.execute(
+                        "ALTER TABLE scheduler_config ADD COLUMN "
+                        "daily_failure_limit INTEGER NOT NULL DEFAULT 10 "
+                        "CHECK (daily_failure_limit >= 1)"
+                    )
+                self._conn.execute(
+                    "UPDATE schema_meta SET value = '10' "
+                    "WHERE key = 'schema_version'"
+                )
+                version = "10"
             if version != _SCHEMA_VERSION:
                 raise RuntimeError(
                     f"database has incompatible schema version {version!r}; "

@@ -15,12 +15,18 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
 
-from ..domain.errors import DuplicateJobError, IllegalTransitionError, JobNotFoundError
+from ..domain.errors import (
+    DuplicateJobError,
+    IllegalTransitionError,
+    JobNotFoundError,
+    SchedulerConfigError,
+)
 from ..workspace.manager import WorkspaceError
 from . import serializers
 from .security import safe_resolve, token_ok
 
 FUNC_ID_RE = re.compile(r"^[0-9]{2}-[0-9]{2}-[0-9]{2}$")
+MAX_JOB_LIST_LIMIT = 1000
 
 
 @dataclass
@@ -112,7 +118,16 @@ def _route_jobs(method: str, rest: list[str], query: dict[str, str], body: bytes
     if not rest:
         if method == "GET":
             status = query.get("status")
-            jobs = app.list_jobs(status)
+            try:
+                limit = int(query.get("limit", "100"))
+                if limit < 1 or limit > MAX_JOB_LIST_LIMIT:
+                    raise ValueError
+            except ValueError:
+                return _error(
+                    400,
+                    f"limit must be an integer between 1 and {MAX_JOB_LIST_LIMIT}",
+                )
+            jobs = app.list_jobs(status, limit=limit)
             return Response.json(200, [_job_to_dict(app, job) for job in jobs])
         if method == "POST":
             return _create_job(body, app)
@@ -359,7 +374,7 @@ def _route_scheduler(method: str, rest: list[str], body: bytes, app: Any) -> Res
             if not isinstance(payload, dict):
                 return _error(400, "body must be a JSON object")
             allowed = {
-                "enabled", "start_times", "parallel_tasks",
+                "enabled", "start_times", "parallel_tasks", "daily_failure_limit",
                 "executor_priority", "executor_quota",
             }
             unknown = set(payload) - allowed
@@ -367,7 +382,7 @@ def _route_scheduler(method: str, rest: list[str], body: bytes, app: Any) -> Res
                 return _error(400, f"unsupported field(s): {', '.join(sorted(unknown))}")
             try:
                 config = app.set_scheduler_config(**payload)
-            except (TypeError, ValueError) as exc:
+            except (TypeError, ValueError, SchedulerConfigError) as exc:
                 return _error(400, f"invalid scheduler config: {exc}")
             except Exception as exc:  # noqa: BLE001 - version/conflict etc.
                 return _error(409, str(exc))

@@ -18,6 +18,9 @@ worker pool. The dispatcher only runs jobs it is handed; this decides *when* and
 * **Failure skip** — a FuncID whose most recent job is ``failed``/``cancelled`` is
   skipped and never auto-retried; it becomes eligible again once a human retries
   it (its latest job leaves the terminal-failed state).
+* **Daily failure limit** — auto-scheduled jobs that enter ``failed`` are counted
+  since local midnight. Once the configured limit is reached, no new jobs are
+  dispatched until the next day; already-running jobs are not cancelled.
 
 Selection order per dispatch: freshness tier ``MISSING > EXPIRED > EXPIRING >
 FRESH`` (EXPIRED = EXPIRED_TIME or STALE_INPUT), FuncID ascending within a tier,
@@ -139,7 +142,17 @@ class AutoScheduler:
 
     # --- dispatch loop ----------------------------------------------------
     def _dispatch_due(self, config, now: datetime) -> None:
-        usage = self._usage_repo.usage_by_executor_since(self._day_start_iso(now))
+        day_start = self._day_start_iso(now)
+        failure_count = self._jobs_repo.auto_scheduled_failure_count_since(day_start)
+        if failure_count >= config.daily_failure_limit:
+            self._run_active = False
+            self._active_executor = None
+            self._last_error = (
+                "daily failure limit reached "
+                f"({failure_count}/{config.daily_failure_limit})"
+            )
+            return
+        usage = self._usage_repo.usage_by_executor_since(day_start)
         while len(self._inflight) < max(1, config.parallel_tasks):
             executor = self._select_executor(config, usage)
             if executor is None:
@@ -162,6 +175,15 @@ class AutoScheduler:
                 continue
             self._inflight[result.job.job_id] = func_id
             self._last_dispatched = func_id
+            try:
+                self._jobs_repo.mark_auto_scheduled(
+                    result.job.job_id, executor=executor
+                )
+            except Exception as exc:  # noqa: BLE001 - the dispatched job is already live
+                self._last_error = f"{func_id}: cannot persist scheduler marker: {exc}"
+                LOGGER.exception(
+                    "cannot mark auto-scheduled job %s", result.job.job_id
+                )
 
     def _select_executor(self, config, usage: dict[str, int]) -> str | None:
         chain = config.executor_priority or (self._app.default_agent,)
@@ -239,7 +261,9 @@ class AutoScheduler:
         now = now or datetime.now().astimezone()
         with self._lock:
             config = self._config_repo.get()
-            usage = self._usage_repo.usage_by_executor_since(self._day_start_iso(now))
+            day_start = self._day_start_iso(now)
+            usage = self._usage_repo.usage_by_executor_since(day_start)
+            failure_count = self._jobs_repo.auto_scheduled_failure_count_since(day_start)
             chain = config.executor_priority or (self._app.default_agent,)
             executors = [
                 {
@@ -259,12 +283,16 @@ class AutoScheduler:
                 ],
                 "inflight_count": len(self._inflight),
                 "parallel_tasks": config.parallel_tasks,
+                "daily_failure_count": failure_count,
+                "daily_failure_limit": config.daily_failure_limit,
+                "failure_limit_reached": failure_count >= config.daily_failure_limit,
                 "start_times": list(config.start_times),
                 "next_start_time": self._next_start_time(config, now),
                 "last_dispatched_func": self._last_dispatched,
                 "last_error": self._last_error,
                 "executors": executors,
-                "quota_window_start": self._day_start_iso(now),
+                "quota_window_start": day_start,
+                "failure_window_start": day_start,
             }
 
     def _next_start_time(self, config, now: datetime) -> str | None:

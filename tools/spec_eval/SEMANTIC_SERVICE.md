@@ -6,9 +6,8 @@ existing `spec_eval` evidence pipeline and staged-run skill scripts, calls the
 selected Agent executor per work item, deterministically scores and aggregates the
 result, then publishes an immutable automated archive.
 
-The current scheduler is deliberately manual: an operator chooses a FuncID and
-starts a refresh. Periodic scanning, automatic selection of stale Functions,
-and daily token budgets are future work.
+The service supports both operator-triggered Function refreshes and an optional
+quota-bounded auto-scheduler for unattended stale-Function evaluation.
 
 > Scope: the service evaluates existing content. It does **not** modify frozen
 > Specs/Design/Registry, confirmed Reviews, the confirmed site archives, or the
@@ -77,7 +76,7 @@ report head.
 The auto-scheduler is a planning layer over the dispatcher worker pool. It runs
 inside `serve` but stays idle until enabled from the UI ("Auto-scheduler" card)
 or `POST /api/scheduler/config`. Configuration is a singleton persisted in
-`scheduler_config` (schema v9); it holds policy only — no tokens or credentials.
+`scheduler_config` (schema v10); it holds policy only — no tokens or credentials.
 
 Config fields:
 
@@ -86,6 +85,8 @@ Config fields:
   time**. Reaching a start time begins a *run*.
 - **`parallel_tasks`** — how many jobs the scheduler keeps in flight. Real
   concurrency is still bounded by `serve --max-workers`; keep the two aligned.
+- **`daily_failure_limit`** — maximum auto-scheduled Job failures per local day
+  (default 10). It must be a positive integer.
 - **`executor_priority`** — an ordered executor chain (e.g. `["codex","claude"]`).
 - **`executor_quota`** — per-executor daily token budget (default 10,000,000).
 
@@ -108,6 +109,10 @@ Behaviour:
 - **Failure skip**: a FuncID whose most recent job is `failed`/`cancelled` is
   skipped and never auto-retried; it becomes eligible again once a human retries
   it (its latest job leaves the terminal state).
+- **Daily failure circuit breaker**: auto-scheduled Jobs are marked durably and
+  counted when they enter `failed`. Once the configured daily limit is reached,
+  the scheduler stops dispatching new Jobs until the next local day. Existing
+  in-flight Jobs continue, and manual refresh Jobs do not consume this limit.
 
 `GET /api/scheduler/status` reports the live run state, in-flight jobs, the
 currently-selected executor, the next start time, and each executor's used vs
@@ -133,7 +138,7 @@ quota tokens for the current day.
 | GET    | `/api/scheduler/status` | live run state, in-flight jobs, per-executor usage |
 | POST   | `/api/site/export` | write deterministic automated site JSON |
 | POST   | `/api/jobs` | low-level job creation without rolling promotion |
-| GET    | `/api/jobs[?status=]` | list jobs |
+| GET    | `/api/jobs[?status=&limit=]` | list jobs (`limit` defaults to 100, maximum 1000) |
 | GET    | `/api/jobs/{id}` | job detail |
 | GET    | `/api/jobs/{id}/events?since_seq=` | monotonic event log |
 | POST   | `/api/jobs/{id}/cancel` | state-aware immediate/cooperative cancel |

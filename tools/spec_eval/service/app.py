@@ -233,6 +233,7 @@ class SemanticServiceApp:
         enabled: bool | None = None,
         start_times: list[str] | None = None,
         parallel_tasks: int | None = None,
+        daily_failure_limit: int | None = None,
         executor_priority: list[str] | None = None,
         executor_quota: dict[str, int] | None = None,
     ) -> SchedulerConfig:
@@ -249,6 +250,8 @@ class SemanticServiceApp:
             if executor_quota is not None
             else dict(current.executor_quota)
         )
+        if isinstance(daily_failure_limit, bool):
+            raise ValueError("daily_failure_limit must be a positive integer")
         # Executor-registry validation lives here (the store layer is registry
         # agnostic): every named executor must be a registered agent.
         known = set(available())
@@ -262,6 +265,11 @@ class SemanticServiceApp:
             ),
             parallel_tasks=(
                 current.parallel_tasks if parallel_tasks is None else int(parallel_tasks)
+            ),
+            daily_failure_limit=(
+                current.daily_failure_limit
+                if daily_failure_limit is None
+                else int(daily_failure_limit)
             ),
             executor_priority=priority,
             executor_quota=quota,
@@ -280,8 +288,8 @@ class SemanticServiceApp:
             self.settings, self.store, observed_revision=self.default_source_revision()
         )
 
-    def list_jobs(self, status: str | None = None) -> list[Job]:
-        return self.jobs.list_jobs(status=status)
+    def list_jobs(self, status: str | None = None, *, limit: int = 100) -> list[Job]:
+        return self.jobs.list_jobs(status=status, limit=limit)
 
     def get_job(self, job_id: str) -> Job:
         return self.jobs.get_job(job_id)
