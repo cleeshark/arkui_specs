@@ -12,6 +12,7 @@ config/usage repositories plus HTTP routes.
 from __future__ import annotations
 
 import json
+import sqlite3
 import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
@@ -95,6 +96,7 @@ class _Base(unittest.TestCase):
     def _set_config(self, **fields) -> SchedulerConfig:
         defaults = dict(
             enabled=True, start_times=("00:00",), parallel_tasks=1,
+            daily_failure_limit=10,
             executor_priority=("codex",), executor_quota={"codex": DEFAULT_DAILY_QUOTA},
             version=self.config_repo.get().version + 1, updated_at=utc_now(),
         )
@@ -225,6 +227,74 @@ class ParallelChainingTest(_Base):
         self.assertEqual(len(app.dispatched), 3)
 
 
+class DailyFailureLimitTest(_Base):
+    def test_stops_dispatching_after_daily_failure_limit(self) -> None:
+        functions = [_func(f"04-01-0{i}", "MISSING") for i in range(1, 4)]
+        sched, app = self._scheduler(functions)
+        self._set_config(daily_failure_limit=2)
+        now = datetime.now().astimezone()
+
+        sched.tick(now=now)
+        first_job = _job_for(self, app.dispatched[-1][0])
+        self._set_status(first_job, S.FAILED)
+        sched.tick(now=now)
+        second_job = _job_for(self, app.dispatched[-1][0])
+        self._set_status(second_job, S.FAILED)
+        sched.tick(now=now)
+
+        self.assertEqual(len(app.dispatched), 2)
+        self.assertFalse(sched._run_active)
+        status = sched.status(now=now)
+        self.assertEqual(status["daily_failure_count"], 2)
+        self.assertEqual(status["daily_failure_limit"], 2)
+        self.assertTrue(status["failure_limit_reached"])
+        self.assertIn("daily failure limit reached", status["last_error"])
+
+    def test_manual_failures_do_not_consume_scheduler_limit(self) -> None:
+        manual = self.jobs.create_job(
+            CreateJobCommand(func_id="09-09-09", source_revision="rev", run_count=1),
+            evaluator_version="x",
+        )
+        self._set_status(manual.job_id, S.FAILED)
+        sched, app = self._scheduler([_func("04-01-01", "MISSING")])
+        self._set_config(daily_failure_limit=1)
+
+        sched.tick(now=datetime.now().astimezone())
+
+        self.assertEqual(len(app.dispatched), 1)
+
+    def test_failure_count_survives_scheduler_restart(self) -> None:
+        functions = [_func("04-01-01", "MISSING"), _func("04-01-02", "MISSING")]
+        sched, app = self._scheduler(functions)
+        self._set_config(daily_failure_limit=1)
+        now = datetime.now().astimezone()
+        sched.tick(now=now)
+        self._set_status(_job_for(self, app.dispatched[-1][0]), S.FAILED)
+
+        restarted, restarted_app = self._scheduler(functions)
+        restarted.tick(now=now)
+
+        self.assertEqual(restarted_app.dispatched, [])
+        self.assertTrue(restarted.status(now=now)["failure_limit_reached"])
+
+    def test_failure_limit_resets_at_next_local_day(self) -> None:
+        functions = [_func("04-01-01", "MISSING"), _func("04-01-02", "MISSING")]
+        sched, app = self._scheduler(functions)
+        self._set_config(daily_failure_limit=1)
+        now = datetime.now().astimezone()
+        sched.tick(now=now)
+        self._set_status(_job_for(self, app.dispatched[-1][0]), S.FAILED)
+        sched.tick(now=now)
+        self.assertEqual(len(app.dispatched), 1)
+
+        next_day = now + timedelta(days=1)
+        restarted, restarted_app = self._scheduler(functions)
+        restarted.tick(now=next_day)
+
+        self.assertEqual(len(restarted_app.dispatched), 1)
+        self.assertEqual(restarted.status(now=next_day)["daily_failure_count"], 0)
+
+
 class StartTimeTest(_Base):
     def test_run_only_after_start_time(self) -> None:
         functions = [_func("04-01-01", "MISSING")]
@@ -262,6 +332,42 @@ class RepositoryTest(_Base):
         with self.assertRaises(Exception):
             self.config_repo.set(self.config_repo.get())  # same version
 
+    def test_default_failure_limit_and_validation(self) -> None:
+        self.assertEqual(self.config_repo.get().daily_failure_limit, 10)
+        with self.assertRaises(Exception):
+            self._set_config(daily_failure_limit=0)
+
+    def test_v9_config_migrates_with_default_failure_limit(self) -> None:
+        self.store.close()
+        conn = sqlite3.connect(self.settings.db_path)
+        conn.execute("DROP TABLE scheduler_config")
+        conn.execute(
+            "CREATE TABLE scheduler_config ("
+            "id INTEGER PRIMARY KEY CHECK (id = 1), enabled INTEGER NOT NULL, "
+            "start_times_json TEXT NOT NULL, parallel_tasks INTEGER NOT NULL, "
+            "executor_priority_json TEXT NOT NULL, executor_quota_json TEXT NOT NULL, "
+            "version INTEGER NOT NULL, updated_at TEXT NOT NULL)"
+        )
+        conn.execute(
+            "INSERT INTO scheduler_config VALUES (1, 1, '[\"02:00\"]', 2, "
+            "'[\"codex\"]', '{\"codex\": 1000}', 3, ?)",
+            (utc_now(),),
+        )
+        conn.execute(
+            "UPDATE schema_meta SET value = '9' WHERE key = 'schema_version'"
+        )
+        conn.commit()
+        conn.close()
+
+        self.store = SqliteStore(self.settings)
+        self.jobs = JobRepository(self.store)
+        self.config_repo = SchedulerConfigRepository(self.store)
+        self.usage_repo = ExecutorCallRepository(self.store)
+
+        config = self.config_repo.get()
+        self.assertEqual(config.daily_failure_limit, 10)
+        self.assertEqual(config.parallel_tasks, 2)
+
 
 class HttpRouteTest(_Base):
     def _app(self):
@@ -280,22 +386,31 @@ class HttpRouteTest(_Base):
             status, cfg = call("GET", "/api/scheduler/config")
             self.assertEqual(status, 200)
             self.assertFalse(cfg["enabled"])
+            self.assertEqual(cfg["daily_failure_limit"], 10)
 
             status, cfg = call("POST", "/api/scheduler/config", {
                 "enabled": True, "start_times": ["02:00"], "parallel_tasks": 2,
+                "daily_failure_limit": 3,
                 "executor_priority": ["codex", "claude"],
                 "executor_quota": {"codex": 10_000_000},
             })
             self.assertEqual(status, 200)
             self.assertEqual(cfg["executor_priority"], ["codex", "claude"])
+            self.assertEqual(cfg["daily_failure_limit"], 3)
 
             status, body = call("GET", "/api/scheduler/status")
             self.assertEqual(status, 200)
             self.assertIn("executors", body)
+            self.assertEqual(body["daily_failure_limit"], 3)
+            self.assertEqual(body["daily_failure_count"], 0)
 
             status, _ = call("POST", "/api/scheduler/config", {"nope": 1})
             self.assertEqual(status, 400)
             status, _ = call("POST", "/api/scheduler/config", {"executor_priority": ["ghost"]})
+            self.assertEqual(status, 400)
+            status, _ = call("POST", "/api/scheduler/config", {"daily_failure_limit": 0})
+            self.assertEqual(status, 400)
+            status, _ = call("POST", "/api/scheduler/config", {"daily_failure_limit": True})
             self.assertEqual(status, 400)
         finally:
             app.stop()

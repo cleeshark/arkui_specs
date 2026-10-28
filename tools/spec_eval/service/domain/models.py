@@ -120,7 +120,7 @@ class FreshnessPolicy:
 
 @dataclass(frozen=True)
 class SchedulerConfig:
-    """Singleton auto-scheduler policy (schema v9).
+    """Singleton auto-scheduler policy (schema v10).
 
     ``start_times`` are ``"HH:MM"`` local-time daily triggers. ``executor_priority``
     is an ordered chain of registered executor ids; dispatch uses the first
@@ -132,6 +132,7 @@ class SchedulerConfig:
     enabled: bool
     start_times: tuple[str, ...]
     parallel_tasks: int
+    daily_failure_limit: int
     executor_priority: tuple[str, ...]
     executor_quota: dict[str, int]
     version: int

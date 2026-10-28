@@ -233,6 +233,7 @@ def scheduler_config_to_dict(config: SchedulerConfig) -> dict[str, Any]:
         "enabled": config.enabled,
         "start_times": list(config.start_times),
         "parallel_tasks": config.parallel_tasks,
+        "daily_failure_limit": config.daily_failure_limit,
         "executor_priority": list(config.executor_priority),
         "executor_quota": dict(config.executor_quota),
         "version": config.version,
