@@ -264,7 +264,7 @@
 | 07 前端层 | 01 ArkTS高级组件 | 14 GridObjectSortComponent | `07-01-14` | `07-frontend/01-arkts-advanced-components/14-grid-object-sort-component/` | *待补充* | 0 |
 | 07 前端层 | 01 ArkTS高级组件 | 15 ProgressButton | `07-01-15` | `07-frontend/01-arkts-advanced-components/15-progress-button/` | *待补充* | 0 |
 | 07 前端层 | 01 ArkTS高级组件 | 16 Popup | `07-01-16` | `07-frontend/01-arkts-advanced-components/16-popup/` | [design.md](07-frontend/01-arkts-advanced-components/16-popup/design.md) | 1 |
-| 07 前端层 | 01 ArkTS高级组件 | 17 SegmentButton | `07-01-17` | `07-frontend/01-arkts-advanced-components/17-segment-button/` | *待补充* | 0 |
+| 07 前端层 | 01 ArkTS高级组件 | 17 SegmentButton | `07-01-17` | `07-frontend/01-arkts-advanced-components/17-segment-button/` | [design.md](07-frontend/01-arkts-advanced-components/17-segment-button/design.md) | 1 |
 | 07 前端层 | 01 ArkTS高级组件 | 18 SelectionMenu | `07-01-18` | `07-frontend/01-arkts-advanced-components/18-selection-menu/` | *待补充* | 0 |
 | 07 前端层 | 01 ArkTS高级组件 | 19 SelectTitleBar | `07-01-19` | `07-frontend/01-arkts-advanced-components/19-select-title-bar/` | *待补充* | 0 |
 | 07 前端层 | 01 ArkTS高级组件 | 20 SplitLayout | `07-01-20` | `07-frontend/01-arkts-advanced-components/20-split-layout/` | *待补充* | 0 |
@@ -2171,6 +2171,7 @@
 
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
+| Feat-01 | SegmentButton 可配置拖拽交互模式 | [Feat-01-segment-button-interaction-mode-spec.md](07-frontend/01-arkts-advanced-components/17-segment-button/Feat-01-segment-button-interaction-mode-spec.md) | Draft |
 
 ### 07-01-18 SelectionMenu
 

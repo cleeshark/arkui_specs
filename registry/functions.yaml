@@ -3184,7 +3184,7 @@ functions:
     id: '17'
     title: SegmentButton
   path: 07-frontend/01-arkts-advanced-components/17-segment-button/
-  design: null
+  design: 07-frontend/01-arkts-advanced-components/17-segment-button/design.md
   status: active
 - id: 07-01-18
   l1:

@@ -3960,3 +3960,8 @@ features:
   title: 自定义组件异步加载
   spec: null
   status: Draft
+- func_id: 07-01-17
+  id: Feat-01
+  title: SegmentButton 可配置拖拽交互模式
+  spec: 07-frontend/01-arkts-advanced-components/17-segment-button/Feat-01-segment-button-interaction-mode-spec.md
+  status: Draft
