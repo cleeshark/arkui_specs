@@ -236,6 +236,7 @@ def scheduler_config_to_dict(config: SchedulerConfig) -> dict[str, Any]:
         "daily_failure_limit": config.daily_failure_limit,
         "executor_priority": list(config.executor_priority),
         "executor_quota": dict(config.executor_quota),
+        "executor_params": {k: dict(v) for k, v in config.executor_params.items()},
         "version": config.version,
         "updated_at": config.updated_at,
     }

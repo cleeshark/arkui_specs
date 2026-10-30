@@ -98,6 +98,7 @@ class _Base(unittest.TestCase):
             enabled=True, start_times=("00:00",), parallel_tasks=1,
             daily_failure_limit=10,
             executor_priority=("codex",), executor_quota={"codex": DEFAULT_DAILY_QUOTA},
+            executor_params={},
             version=self.config_repo.get().version + 1, updated_at=utc_now(),
         )
         defaults.update(fields)
