@@ -57,6 +57,7 @@ class ClaudeCliExecutor:
     ) -> None:
         self._command = str(config.get("command", "claude"))
         self._model = config.get("model")
+        self._config_file = config.get("config_file")
         self._permission_mode = str(
             config.get("permission_mode", "bypassPermissions")
         )
@@ -92,6 +93,7 @@ class ClaudeCliExecutor:
             "type": "claude-cli",
             "command": self._command,
             "model": self._model,
+            "config_file": self._config_file,
             "permission_mode": self._permission_mode,
             "timeout_seconds": self._timeout,
             "executor_version": C.CLAUDE_EXECUTOR_VERSION,
@@ -539,6 +541,10 @@ class ClaudeCliExecutor:
         argv = [self._command, "-p"]
         if self._model:
             argv += ["--model", str(self._model)]
+        if self._config_file:
+            # Expand leading ~ so the subprocess receives an absolute path.
+            settings_path = str(Path.home() / ".claude" / self._config_file)
+            argv += ["--settings", settings_path]
         allowed_tools = "Bash Read Grep Write" if allow_write else "Bash Read Grep"
         argv += [
             "--output-format", "stream-json",
@@ -928,7 +934,7 @@ def _safe_work_item_tag(work_item_id: str) -> str:
 
 
 def _redacted_argv(argv: list[str]) -> list[str]:
-    masked = {"--model", "--json-schema"}
+    masked = {"--model", "--json-schema", "--settings"}
     out: list[str] = []
     for i, token in enumerate(argv):
         if i > 0 and argv[i - 1] in masked and token:

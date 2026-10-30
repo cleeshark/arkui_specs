@@ -236,6 +236,7 @@ class SemanticServiceApp:
         daily_failure_limit: int | None = None,
         executor_priority: list[str] | None = None,
         executor_quota: dict[str, int] | None = None,
+        executor_params: dict[str, dict] | None = None,
     ) -> SchedulerConfig:
         """Apply a partial config update, bumping the version, and reconfigure."""
         repo = SchedulerConfigRepository(self.store)
@@ -250,14 +251,22 @@ class SemanticServiceApp:
             if executor_quota is not None
             else dict(current.executor_quota)
         )
+        params = (
+            {str(k): dict(v) for k, v in executor_params.items()}
+            if executor_params is not None
+            else dict(current.executor_params)
+        )
         if isinstance(daily_failure_limit, bool):
             raise ValueError("daily_failure_limit must be a positive integer")
         # Executor-registry validation lives here (the store layer is registry
         # agnostic): every named executor must be a registered agent.
         known = set(available())
-        for name in set(priority) | set(quota):
+        for name in set(priority) | set(quota) | set(params):
             if name not in known:
                 raise ValueError(f"unknown executor: {name!r}")
+        # Validate per-executor params against the executor's schema.
+        for name, overrides in params.items():
+            executor_config_for(name, overrides)  # raises ValueError on bad params
         updated = SchedulerConfig(
             enabled=current.enabled if enabled is None else bool(enabled),
             start_times=(
@@ -273,6 +282,7 @@ class SemanticServiceApp:
             ),
             executor_priority=priority,
             executor_quota=quota,
+            executor_params=params,
             version=current.version + 1,
             updated_at=utc_now(),
         )

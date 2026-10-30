@@ -12,6 +12,27 @@ from pathlib import Path
 from typing import Any
 
 
+def _scan_claude_config_files() -> list[str]:
+    """Return settings-*.json filenames found under ~/.claude, sorted.
+
+    Returns bare filenames (e.g. "settings-zai.json"); the executor passes
+    the expanded absolute path to ``claude --settings``.  An empty list means
+    only the CLI's built-in default will be available.
+    """
+    try:
+        claude_dir = Path.home() / ".claude"
+        if not claude_dir.is_dir():
+            return []
+        names = sorted(
+            p.name
+            for p in claude_dir.glob("settings*.json")
+            if p.is_file()
+        )
+        return names
+    except OSError:
+        return []
+
+
 def _default_executor_config() -> dict[str, Any]:
     """The Phase-1 fixed Codex CLI executor config (service plan §2.1)."""
     return {
@@ -45,21 +66,25 @@ _EXECUTOR_CONFIGS: dict[str, Any] = {
 }
 
 
-_EXECUTOR_PARAM_SCHEMAS: dict[str, tuple[dict[str, Any], ...]] = {
-    "codex": (
-        {
-            "key": "model", "label": "Model", "type": "string", "default": None,
-            "nullable": True, "description": "Leave empty to use the local Codex configuration.",
-        },
-        {
-            "key": "timeout_seconds", "label": "Timeout (seconds)", "type": "integer",
-            "default": 3600, "minimum": 10, "maximum": 7200,
-        },
-    ),
-    "claude": (
+def _claude_param_schema() -> tuple[dict[str, Any], ...]:
+    """Build the claude executor parameter schema, scanning ~/.claude for
+    settings files so ``config_file`` is offered as a dropdown of what exists.
+
+    Re-scanning on each call keeps the UI in sync when settings files are
+    added or removed while the service runs.  ``config_file`` is nullable:
+    ``None`` means the CLI uses its built-in default (no ``--settings`` flag).
+    """
+    config_files = _scan_claude_config_files()
+    return (
         {
             "key": "model", "label": "Model", "type": "string",
             "default": "GLM-5.3-Flash[1m]",
+        },
+        {
+            "key": "config_file", "label": "Config file", "type": "enum",
+            "default": None, "nullable": True, "enum": config_files,
+            "description": "Settings file under ~/.claude (e.g. settings-zai.json). "
+            "Leave empty for the CLI default.",
         },
         {
             "key": "permission_mode", "label": "Permission mode", "type": "enum",
@@ -73,15 +98,30 @@ _EXECUTOR_PARAM_SCHEMAS: dict[str, tuple[dict[str, Any], ...]] = {
             "key": "max_output_tokens", "label": "Max output tokens", "type": "integer",
             "default": 200000, "minimum": 1024, "maximum": 300000,
         },
+    )
+
+
+_EXECUTOR_PARAM_SCHEMAS: dict[str, Any] = {
+    "codex": (
+        {
+            "key": "model", "label": "Model", "type": "string", "default": None,
+            "nullable": True, "description": "Leave empty to use the local Codex configuration.",
+        },
+        {
+            "key": "timeout_seconds", "label": "Timeout (seconds)", "type": "integer",
+            "default": 3600, "minimum": 10, "maximum": 7200,
+        },
     ),
+    "claude": _claude_param_schema,
 }
 
 
 def _schema_for(name: str) -> tuple[dict[str, Any], ...]:
     try:
-        return _EXECUTOR_PARAM_SCHEMAS[name]
+        schema = _EXECUTOR_PARAM_SCHEMAS[name]
     except KeyError:
         raise ValueError(f"unknown executor: {name!r}") from None
+    return schema() if callable(schema) else schema
 
 
 def executor_config_for(

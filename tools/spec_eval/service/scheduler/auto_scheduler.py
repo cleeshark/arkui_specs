@@ -167,7 +167,10 @@ class AutoScheduler:
                     self._run_active = False
                 return  # wait for in-flight jobs to finish / free a slot
             try:
-                result = self._app.refresh_function(func_id=func_id, agent_id=executor)
+                agent_params = config.executor_params.get(executor) or None
+                result = self._app.refresh_function(
+                    func_id=func_id, agent_id=executor, agent_params=agent_params
+                )
             except Exception as exc:  # noqa: BLE001 - one func must not stall the run
                 self._skipped_this_run.add(func_id)
                 self._last_error = f"{func_id}: {exc}"

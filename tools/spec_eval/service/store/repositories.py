@@ -167,6 +167,12 @@ def _policy_from_row(row: sqlite3.Row) -> FreshnessPolicy:
 
 def _scheduler_config_from_row(row: sqlite3.Row) -> SchedulerConfig:
     quota = json.loads(row["executor_quota_json"])
+    keys = row.keys()
+    raw_params = json.loads(row["executor_params_json"]) if "executor_params_json" in keys else {}
+    executor_params = {
+        str(k): dict(v) if isinstance(v, dict) else {}
+        for k, v in raw_params.items()
+    }
     return SchedulerConfig(
         enabled=bool(row["enabled"]),
         start_times=tuple(json.loads(row["start_times_json"])),
@@ -174,6 +180,7 @@ def _scheduler_config_from_row(row: sqlite3.Row) -> SchedulerConfig:
         daily_failure_limit=int(row["daily_failure_limit"]),
         executor_priority=tuple(json.loads(row["executor_priority_json"])),
         executor_quota={str(k): int(v) for k, v in quota.items()},
+        executor_params=executor_params,
         version=int(row["version"]),
         updated_at=row["updated_at"],
     )
@@ -1414,11 +1421,25 @@ class SchedulerConfigRepository:
 
     def ensure_default(self) -> SchedulerConfig:
         with self._store._tx(immediate=True):
+            # Schema v11 migration: add executor_params_json if it doesn't exist yet
+            # (handles databases created before schema v11).
+            cols = {
+                row["name"]
+                for row in self._conn.execute(
+                    "PRAGMA table_info(scheduler_config)"
+                ).fetchall()
+            }
+            if "executor_params_json" not in cols:
+                self._conn.execute(
+                    "ALTER TABLE scheduler_config "
+                    "ADD COLUMN executor_params_json TEXT NOT NULL DEFAULT '{}'"
+                )
             self._conn.execute(
                 "INSERT OR IGNORE INTO scheduler_config "
                 "(id, enabled, start_times_json, parallel_tasks, daily_failure_limit, "
-                "executor_priority_json, executor_quota_json, version, updated_at) "
-                "VALUES (1, 0, '[]', 1, 10, '[]', '{}', 1, ?)",
+                "executor_priority_json, executor_quota_json, executor_params_json, "
+                "version, updated_at) "
+                "VALUES (1, 0, '[]', 1, 10, '[]', '{}', '{}', 1, ?)",
                 (utc_now(),),
             )
             row = self._conn.execute(
@@ -1440,14 +1461,15 @@ class SchedulerConfigRepository:
             self._conn.execute(
                 "INSERT INTO scheduler_config (id, enabled, start_times_json, "
                 "parallel_tasks, daily_failure_limit, executor_priority_json, "
-                "executor_quota_json, version, updated_at) "
-                "VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?) "
+                "executor_quota_json, executor_params_json, version, updated_at) "
+                "VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                 "ON CONFLICT(id) DO UPDATE SET enabled = excluded.enabled, "
                 "start_times_json = excluded.start_times_json, "
                 "parallel_tasks = excluded.parallel_tasks, "
                 "daily_failure_limit = excluded.daily_failure_limit, "
                 "executor_priority_json = excluded.executor_priority_json, "
                 "executor_quota_json = excluded.executor_quota_json, "
+                "executor_params_json = excluded.executor_params_json, "
                 "version = excluded.version, updated_at = excluded.updated_at",
                 (
                     1 if config.enabled else 0,
@@ -1456,6 +1478,7 @@ class SchedulerConfigRepository:
                     config.daily_failure_limit,
                     json.dumps(list(config.executor_priority), ensure_ascii=False),
                     json.dumps(config.executor_quota, ensure_ascii=False, sort_keys=True),
+                    json.dumps(config.executor_params, ensure_ascii=False, sort_keys=True),
                     config.version,
                     config.updated_at,
                 ),
@@ -1484,6 +1507,26 @@ class SchedulerConfigRepository:
         for name, quota in config.executor_quota.items():
             if isinstance(quota, bool) or not isinstance(quota, int) or quota < 0:
                 raise SchedulerConfigError(f"quota for {name!r} must be a non-negative integer")
+        if not isinstance(config.executor_params, dict):
+            raise SchedulerConfigError("executor_params must be a mapping")
+        for name, params in config.executor_params.items():
+            if not isinstance(name, str) or not name:
+                raise SchedulerConfigError(
+                    "executor_params keys must be non-empty strings"
+                )
+            if not isinstance(params, dict):
+                raise SchedulerConfigError(
+                    f"executor_params for {name!r} must be a mapping"
+                )
+            for key, value in params.items():
+                if not isinstance(key, str) or not key:
+                    raise SchedulerConfigError(
+                        f"executor_params[{name!r}] keys must be non-empty strings"
+                    )
+                if isinstance(value, (dict, list)):
+                    raise SchedulerConfigError(
+                        f"executor_params[{name!r}][{key!r}] must be a scalar"
+                    )
 
 
 class RefreshTargetRepository:

@@ -375,7 +375,7 @@ def _route_scheduler(method: str, rest: list[str], body: bytes, app: Any) -> Res
                 return _error(400, "body must be a JSON object")
             allowed = {
                 "enabled", "start_times", "parallel_tasks", "daily_failure_limit",
-                "executor_priority", "executor_quota",
+                "executor_priority", "executor_quota", "executor_params",
             }
             unknown = set(payload) - allowed
             if unknown:
