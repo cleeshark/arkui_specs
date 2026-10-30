@@ -3963,5 +3963,5 @@ features:
 - func_id: 07-01-17
   id: Feat-01
   title: SegmentButton 可配置拖拽交互模式
-  spec: null
-  status: 待补充
+  spec: 07-frontend/01-arkts-advanced-components/17-segment-button/Feat-01-segment-button-interaction-mode-spec.md
+  status: Draft
