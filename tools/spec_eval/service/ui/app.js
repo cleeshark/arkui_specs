@@ -3,6 +3,7 @@
 
 const POLL_MS = 2000;
 const METRICS_POLL_MS = 10000;
+const JOB_LIST_LIMIT = 1000;
 const ACTIVE_STATES = new Set(["running", "waiting"]);
 let selectedJob = null;
 let lastMetricsAt = 0;
@@ -37,14 +38,17 @@ const agentParams = document.getElementById("agent-params");
 const agentReset = document.getElementById("agent-reset");
 
 const SCHEDULER_DEFAULT_QUOTA = 10000000;
+const SCHEDULER_DEFAULT_FAILURE_LIMIT = 10;
 let schedulerExecOrder = [];
 let schedulerExecEnabled = new Set();
 let schedulerExecQuota = {};
+let schedulerExecParams = {}; // agent_id -> {model, config_file, ...}
 const schedulerEnabled = document.getElementById("scheduler-enabled");
 const schedulerEnabledLabel = document.getElementById("scheduler-enabled-label");
 const schedulerForm = document.getElementById("scheduler-form");
 const schedulerStartTimes = document.getElementById("scheduler-start-times");
 const schedulerParallel = document.getElementById("scheduler-parallel");
+const schedulerFailureLimit = document.getElementById("scheduler-failure-limit");
 const schedulerExecList = document.getElementById("scheduler-executor-list");
 const schedulerError = document.getElementById("scheduler-error");
 const schedulerStatusEl = document.getElementById("scheduler-status");
@@ -361,11 +365,32 @@ function renderSchedulerExecutors() {
     const name = profile ? (profile.name || id) : id;
     const enabled = schedulerExecEnabled.has(id);
     const quota = schedulerExecQuota[id] == null ? SCHEDULER_DEFAULT_QUOTA : schedulerExecQuota[id];
+    const params = schedulerExecParams[id] || {};
+    const paramFields = profile ? (profile.params || []).map((param) => {
+      const val = params[param.key] != null ? params[param.key] : (profile.defaults ? profile.defaults[param.key] : param.default);
+      const inputId = `sched-param-${esc(id)}-${esc(param.key)}`;
+      let input;
+      if (param.type === "enum") {
+        const options = (param.enum || []).map((item) =>
+          `<option value="${esc(item)}" ${String(item) === String(val) ? "selected" : ""}>${esc(item)}</option>`
+        ).join("");
+        const nullable = param.nullable
+          ? `<option value="" ${!val ? "selected" : ""}>${esc(param.label || param.key)}: default</option>`
+          : "";
+        input = `<select id="${inputId}" data-sparam="${esc(id)}" data-sparamkey="${esc(param.key)}">${nullable}${options}</select>`;
+      } else {
+        const type = param.type === "integer" ? "number" : "text";
+        const display = val == null ? "" : String(val);
+        input = `<input id="${inputId}" type="${type}" value="${esc(display)}" data-sparam="${esc(id)}" data-sparamkey="${esc(param.key)}" />`;
+      }
+      return `<span class="sched-param"><label for="${inputId}">${esc(param.label || param.key)}</label>${input}</span>`;
+    }).join("") : "";
     return `<li data-id="${esc(id)}">
       <button type="button" data-sact="up" ${idx === 0 ? "disabled" : ""} aria-label="move up">↑</button>
       <button type="button" data-sact="down" ${idx === schedulerExecOrder.length - 1 ? "disabled" : ""} aria-label="move down">↓</button>
       <label><input type="checkbox" data-sexec="${esc(id)}" ${enabled ? "checked" : ""} /> ${esc(name)}</label>
       <input type="number" min="0" step="1000000" data-squota="${esc(id)}" value="${esc(quota)}" aria-label="${esc(name)} daily token quota" />
+      ${paramFields ? `<span class="sched-exec-params">${paramFields}</span>` : ""}
     </li>`;
   }).join("");
 }
@@ -378,6 +403,21 @@ function syncSchedulerExecFromDom() {
   schedulerExecList.querySelectorAll("[data-squota]").forEach((inp) => {
     schedulerExecQuota[inp.dataset.squota] = Number(inp.value) || 0;
   });
+  // Per-executor params: read each input, coerce per its declared type.
+  schedulerExecList.querySelectorAll("[data-sparam]").forEach((inp) => {
+    const id = inp.dataset.sparam;
+    const key = inp.dataset.sparamkey;
+    const profile = agentProfiles.find((p) => p.id === id);
+    const param = profile && (profile.params || []).find((p) => p.key === key);
+    if (!profile || !param) return;
+    let value = inp.value;
+    if (param.type === "integer") value = value === "" ? (param.nullable ? null : param.default) : Number(value);
+    if (param.type === "string" && value === "" && param.nullable) value = null;
+    if (param.type === "enum" && param.nullable && value === "") value = null;
+    if (!schedulerExecParams[id]) schedulerExecParams[id] = {};
+    if (value == null) delete schedulerExecParams[id][key];
+    else schedulerExecParams[id][key] = value;
+  });
 }
 
 function applySchedulerConfig(cfg) {
@@ -385,6 +425,8 @@ function applySchedulerConfig(cfg) {
   schedulerEnabledLabel.textContent = cfg.enabled ? "enabled" : "disabled";
   schedulerStartTimes.value = (cfg.start_times || []).join(", ");
   schedulerParallel.value = cfg.parallel_tasks || 1;
+  schedulerFailureLimit.value =
+    cfg.daily_failure_limit || SCHEDULER_DEFAULT_FAILURE_LIMIT;
   const allIds = agentProfiles.map((p) => p.id);
   const priority = (cfg.executor_priority || []).filter((id) => allIds.includes(id));
   schedulerExecOrder = [...priority, ...allIds.filter((id) => !priority.includes(id))];
@@ -394,6 +436,13 @@ function applySchedulerConfig(cfg) {
     const q = cfg.executor_quota ? cfg.executor_quota[id] : null;
     schedulerExecQuota[id] = q == null ? SCHEDULER_DEFAULT_QUOTA : q;
   });
+  schedulerExecParams = {};
+  if (cfg.executor_params && typeof cfg.executor_params === "object") {
+    allIds.forEach((id) => {
+      const p = cfg.executor_params[id];
+      if (p && typeof p === "object") schedulerExecParams[id] = Object.assign({}, p);
+    });
+  }
   renderSchedulerExecutors();
 }
 
@@ -403,11 +452,18 @@ async function loadSchedulerConfig() {
 }
 
 function renderSchedulerStatus(s) {
-  const state = s.run_active ? "running" : (s.enabled ? "idle" : "off");
+  const state = s.failure_limit_reached
+    ? "failure limit reached"
+    : s.run_active ? "running" : (s.enabled ? "idle" : "off");
   const rows = [
     schedulerMetric("State", state),
     schedulerMetric("Active executor", s.active_executor || "—"),
     schedulerMetric("In-flight", `${s.inflight_count} / ${s.parallel_tasks}`),
+    schedulerMetric(
+      "Failures today",
+      `${s.daily_failure_count || 0} / ` +
+        `${s.daily_failure_limit || SCHEDULER_DEFAULT_FAILURE_LIMIT}`,
+    ),
     schedulerMetric("Next start", s.next_start_time || "—"),
     schedulerMetric("Last dispatched", s.last_dispatched_func || "—"),
   ];
@@ -470,12 +526,21 @@ schedulerForm.addEventListener("submit", async (e) => {
   Object.keys(schedulerExecQuota).forEach((id) => {
     executorQuota[id] = schedulerExecQuota[id];
   });
+  // Only send non-empty executor_params entries.
+  const executorParams = {};
+  Object.keys(schedulerExecParams).forEach((id) => {
+    const p = schedulerExecParams[id];
+    if (p && Object.keys(p).length > 0) executorParams[id] = Object.assign({}, p);
+  });
   const ok = await saveSchedulerConfig({
     enabled: schedulerEnabled.checked,
     start_times: startTimes,
     parallel_tasks: Number(schedulerParallel.value) || 1,
+    daily_failure_limit:
+      Number(schedulerFailureLimit.value) || SCHEDULER_DEFAULT_FAILURE_LIMIT,
     executor_priority: executorPriority,
     executor_quota: executorQuota,
+    executor_params: executorParams,
   });
   if (ok) refreshSchedulerStatus();
 });
@@ -555,7 +620,7 @@ function renderFunctions(functions = latestFunctions) {
 
 async function refresh() {
   const [jobsResult, functionsResult] = await Promise.all([
-    api("GET", "/api/jobs"), api("GET", "/api/functions")
+    api("GET", `/api/jobs?limit=${JOB_LIST_LIMIT}`), api("GET", "/api/functions")
   ]);
   if (jobsResult.ok && Array.isArray(jobsResult.json)) {
     latestJobs = jobsResult.json;

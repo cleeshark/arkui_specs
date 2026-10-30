@@ -56,7 +56,7 @@
 | 03 引擎框架层 | 06 多实例管理 | 01 多实例管理 | `03-06-01` | `03-engine-framework/06-multi-instance-management/01-multi-instance-management/` | [design.md](03-engine-framework/06-multi-instance-management/01-multi-instance-management/design.md) | 1 |
 | 03 引擎框架层 | 07 无障碍机制 | 01 无障碍能力 | `03-07-01` | `03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/` | [design.md](03-engine-framework/07-accessibility-mechanism/01-accessibility-capability/design.md) | 8 |
 | 03 引擎框架层 | 07 无障碍机制 | 02 Inspector | `03-07-02` | `03-engine-framework/07-accessibility-mechanism/02-inspector/` | [design.md](03-engine-framework/07-accessibility-mechanism/02-inspector/design.md) | 2 |
-| 03 引擎框架层 | 08 DFX | 01 日志 | `03-08-01` | `03-engine-framework/08-dfx-foundation/01-logging/` | [design.md](03-engine-framework/08-dfx-foundation/01-logging/design.md) | 3 |
+| 03 引擎框架层 | 08 DFX | 01 日志 | `03-08-01` | `03-engine-framework/08-dfx-foundation/01-logging/` | [design.md](03-engine-framework/08-dfx-foundation/01-logging/design.md) | 4 |
 | 03 引擎框架层 | 08 DFX | 02 内存管理 | `03-08-02` | `03-engine-framework/08-dfx-foundation/02-memory-management/` | [design.md](03-engine-framework/08-dfx-foundation/02-memory-management/design.md) | 4 |
 | 03 引擎框架层 | 08 DFX | 03 Trace打点 | `03-08-03` | `03-engine-framework/08-dfx-foundation/03-trace/` | [design.md](03-engine-framework/08-dfx-foundation/03-trace/design.md) | 3 |
 | 03 引擎框架层 | 08 DFX | 04 Dump机制 | `03-08-04` | `03-engine-framework/08-dfx-foundation/04-dump-mechanism/` | [design.md](03-engine-framework/08-dfx-foundation/04-dump-mechanism/design.md) | 5 |
@@ -99,7 +99,7 @@
 | 04 通用能力层 | 05 自定义扩展能力 | 07 手势Modifier | `04-05-07` | `04-common-capability/05-custom-extension/07-gesture-modifier/` | [design.md](04-common-capability/05-custom-extension/07-gesture-modifier/design.md) | 1 |
 | 04 通用能力层 | 06 自定义节点能力 | 01 占位组件 | `04-06-01` | `04-common-capability/06-custom-node/01-placeholder-component/` | [design.md](04-common-capability/06-custom-node/01-placeholder-component/design.md) | 1 |
 | 04 通用能力层 | 06 自定义节点能力 | 02 FrameNode | `04-06-02` | `04-common-capability/06-custom-node/02-frame-node/` | [design.md](04-common-capability/06-custom-node/02-frame-node/design.md) | 9 |
-| 04 通用能力层 | 06 自定义节点能力 | 03 RenderNode | `04-06-03` | `04-common-capability/06-custom-node/03-render-node/` | [design.md](04-common-capability/06-custom-node/03-render-node/design.md) | 1 |
+| 04 通用能力层 | 06 自定义节点能力 | 03 RenderNode | `04-06-03` | `04-common-capability/06-custom-node/03-render-node/` | [design.md](04-common-capability/06-custom-node/03-render-node/design.md) | 3 |
 | 04 通用能力层 | 06 自定义节点能力 | 04 BuilderNode | `04-06-04` | `04-common-capability/06-custom-node/04-builder-node/` | [design.md](04-common-capability/06-custom-node/04-builder-node/design.md) | 8 |
 | 04 通用能力层 | 06 自定义节点能力 | 05 ComponentContent | `04-06-05` | `04-common-capability/06-custom-node/05-component-content/` | [design.md](04-common-capability/06-custom-node/05-component-content/design.md) | 5 |
 | 04 通用能力层 | 06 自定义节点能力 | 06 NodeAdapter | `04-06-06` | `04-common-capability/06-custom-node/06-node-adapter/` | [design.md](04-common-capability/06-custom-node/06-node-adapter/design.md) | 1 |
@@ -604,6 +604,7 @@
 | Feat-01 | LogWrapper核心框架与HiLog适配 | [Feat-01-log-wrapper-core-spec.md](03-engine-framework/08-dfx-foundation/01-logging/Feat-01-log-wrapper-core-spec.md) | Baselined |
 | Feat-02 | 日志控制开关与前端日志桥接 | [Feat-02-log-control-frontend-bridge-spec.md](03-engine-framework/08-dfx-foundation/01-logging/Feat-02-log-control-frontend-bridge-spec.md) | Baselined |
 | Feat-03 | HiSysEvent事件上报与异常诊断 | [Feat-03-hisysevent-report-spec.md](03-engine-framework/08-dfx-foundation/01-logging/Feat-03-hisysevent-report-spec.md) | Baselined |
+| Feat-04 | 全量 C API 应用回调崩溃诊断信息补齐 | *待补充* | Draft |
 
 ### 03-08-02 内存管理
 
@@ -953,6 +954,8 @@
 | FeatID | 特性名称 | Spec 文件 | 状态 |
 |--------|----------|-----------|------|
 | Feat-01 | RenderNode 全量规格 | [Feat-01-render-node-full-spec.md](04-common-capability/06-custom-node/03-render-node/Feat-01-render-node-full-spec.md) | Baselined |
+| Feat-02 | AdoptNode 混排浮层位置计算策略 | *待补充* | Draft |
+| Feat-03 | RenderNode 跟随父节点实例迁移 | *待补充* | Draft |
 
 ### 04-06-04 BuilderNode
 

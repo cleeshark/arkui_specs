@@ -17,6 +17,7 @@ import unittest
 import urllib.error
 import urllib.request
 from pathlib import Path
+from unittest import mock
 
 from spec_eval.service.app import SemanticServiceApp
 from spec_eval.service.domain import states as S
@@ -81,6 +82,20 @@ class CreateListDetailTest(_HttpTestBase):
         self.assertIn("executor_duration_ms", detail["timing"])
         self.assertIn("total_tokens", detail["usage"])
         self.assertIn("command_calls", detail["executor_telemetry"])
+
+    def test_list_limit_supports_one_hundred_default_ui_pages(self) -> None:
+        with mock.patch.object(self.app, "list_jobs", return_value=[]) as list_jobs:
+            status, jobs = self._req("GET", "/api/jobs?limit=1000")
+
+        self.assertEqual(status, 200)
+        self.assertEqual(jobs, [])
+        list_jobs.assert_called_once_with(None, limit=1000)
+
+    def test_list_limit_rejects_invalid_values(self) -> None:
+        for value in ("0", "1001", "not-a-number"):
+            status, body = self._req("GET", f"/api/jobs?limit={value}")
+            self.assertEqual(status, 400)
+            self.assertIn("between 1 and 1000", body["error"])
 
     def test_invalid_func_id_rejected(self) -> None:
         status, body = self._req("POST", "/api/jobs", {"func_id": "bad"})
@@ -428,10 +443,15 @@ class StaticUITest(_HttpTestBase):
     def test_manual_refresh_and_scheduler_controls_use_polished_ui(self) -> None:
         index = route_request("GET", "/", b"", {}, self.app)
         self.assertIn(b'class="slider"', index.body)
+        self.assertIn(b'id="scheduler-failure-limit"', index.body)
 
         css = route_request("GET", "/static/style.css", b"", {}, self.app)
         self.assertIn(b"grid-template-columns: repeat(auto-fill", css.body)
         self.assertIn(b".switch input:checked + .slider", css.body)
+
+        js = route_request("GET", "/static/app.js", b"", {}, self.app)
+        self.assertIn(b"daily_failure_limit", js.body)
+        self.assertIn(b"Failures today", js.body)
 
     def test_static_asset_served(self) -> None:
         status, _ = self._req("GET", "/static/style.css")
@@ -483,6 +503,8 @@ class StaticUITest(_HttpTestBase):
         self.assertIn('functionsPageNext.addEventListener("click"', js)
         self.assertIn('jobsPagePrev.addEventListener("click"', js)
         self.assertIn('jobsPageNext.addEventListener("click"', js)
+        self.assertIn("const JOB_LIST_LIMIT = 1000", js)
+        self.assertIn('`/api/jobs?limit=${JOB_LIST_LIMIT}`', js)
 
     def test_static_traversal_rejected(self) -> None:
         status, _ = self._req("GET", "/static/../../etc/passwd")

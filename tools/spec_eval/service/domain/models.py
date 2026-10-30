@@ -120,20 +120,24 @@ class FreshnessPolicy:
 
 @dataclass(frozen=True)
 class SchedulerConfig:
-    """Singleton auto-scheduler policy (schema v9).
+    """Singleton auto-scheduler policy (schema v11).
 
     ``start_times`` are ``"HH:MM"`` local-time daily triggers. ``executor_priority``
     is an ordered chain of registered executor ids; dispatch uses the first
     executor whose daily token usage is still under its ``executor_quota`` entry,
     failing over down the chain and stopping the run only when all are exhausted.
+    ``executor_params`` maps an executor id to a dict of per-run parameter overrides
+    (e.g. ``{"claude": {"model": "opus", "config_file": "~/.claude/settings-zai.json"}}``).
     Holds policy only — never tokens, credentials or prompts.
     """
 
     enabled: bool
     start_times: tuple[str, ...]
     parallel_tasks: int
+    daily_failure_limit: int
     executor_priority: tuple[str, ...]
     executor_quota: dict[str, int]
+    executor_params: dict[str, dict]
     version: int
     updated_at: str
 

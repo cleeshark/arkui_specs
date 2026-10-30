@@ -42,6 +42,9 @@ from ..domain.models import (
 )
 from .sqlite_store import SqliteStore, utc_now
 
+AUTO_SCHEDULER_DISPATCHED_EVENT = "auto_scheduler_dispatched"
+AUTO_SCHEDULER_FAILED_EVENT = "auto_scheduler_failed"
+
 
 # --- row <-> DTO converters -------------------------------------------------
 
@@ -164,12 +167,20 @@ def _policy_from_row(row: sqlite3.Row) -> FreshnessPolicy:
 
 def _scheduler_config_from_row(row: sqlite3.Row) -> SchedulerConfig:
     quota = json.loads(row["executor_quota_json"])
+    keys = row.keys()
+    raw_params = json.loads(row["executor_params_json"]) if "executor_params_json" in keys else {}
+    executor_params = {
+        str(k): dict(v) if isinstance(v, dict) else {}
+        for k, v in raw_params.items()
+    }
     return SchedulerConfig(
         enabled=bool(row["enabled"]),
         start_times=tuple(json.loads(row["start_times_json"])),
         parallel_tasks=int(row["parallel_tasks"]),
+        daily_failure_limit=int(row["daily_failure_limit"]),
         executor_priority=tuple(json.loads(row["executor_priority_json"])),
         executor_quota={str(k): int(v) for k, v in quota.items()},
+        executor_params=executor_params,
         version=int(row["version"]),
         updated_at=row["updated_at"],
     )
@@ -344,6 +355,67 @@ class JobRepository:
                     (status, limit),
                 ).fetchall()
             return [_job_from_row(r) for r in rows]
+
+    def mark_auto_scheduled(self, job_id: str, *, executor: str) -> None:
+        """Persist that a job was dispatched by the unattended scheduler."""
+        with self._store._tx(immediate=True):
+            row = self._conn.execute(
+                "SELECT 1 FROM jobs WHERE job_id = ?", (job_id,)
+            ).fetchone()
+            if row is None:
+                raise JobNotFoundError(job_id)
+            marked = self._conn.execute(
+                "SELECT 1 FROM events WHERE job_id = ? AND event_type = ?",
+                (job_id, AUTO_SCHEDULER_DISPATCHED_EVENT),
+            ).fetchone()
+            if marked is None:
+                self._store._append_event(
+                    job_id,
+                    AUTO_SCHEDULER_DISPATCHED_EVENT,
+                    {"executor": executor},
+                    now=utc_now(),
+                )
+
+    def auto_scheduled_failure_count_since(self, since: str) -> int:
+        """Reconcile and count auto-scheduled job failures in a time window.
+
+        The derived failure event makes the daily count stable across retries
+        and service restarts. Its timestamp is the original terminal timestamp,
+        so a restart after midnight cannot move yesterday's failures into today.
+        """
+        with self._store._tx(immediate=True):
+            rows = self._conn.execute(
+                "SELECT jobs.job_id, "
+                "COALESCE(job_statistics.finished_at, jobs.updated_at) AS failure_at "
+                "FROM jobs LEFT JOIN job_statistics USING (job_id) "
+                "WHERE jobs.status = ? "
+                "AND COALESCE(job_statistics.finished_at, jobs.updated_at) >= ? "
+                "AND EXISTS (SELECT 1 FROM events dispatched "
+                "  WHERE dispatched.job_id = jobs.job_id "
+                "  AND dispatched.event_type = ?) "
+                "AND NOT EXISTS (SELECT 1 FROM events failed "
+                "  WHERE failed.job_id = jobs.job_id "
+                "  AND failed.event_type = ?)",
+                (
+                    S.FAILED,
+                    since,
+                    AUTO_SCHEDULER_DISPATCHED_EVENT,
+                    AUTO_SCHEDULER_FAILED_EVENT,
+                ),
+            ).fetchall()
+            for row in rows:
+                self._store._append_event(
+                    row["job_id"],
+                    AUTO_SCHEDULER_FAILED_EVENT,
+                    {"status": S.FAILED},
+                    now=row["failure_at"],
+                )
+            count = self._conn.execute(
+                "SELECT COUNT(*) FROM events "
+                "WHERE event_type = ? AND created_at >= ?",
+                (AUTO_SCHEDULER_FAILED_EVENT, since),
+            ).fetchone()[0]
+            return int(count)
 
     def transition_status(
         self,
@@ -1334,7 +1406,7 @@ class FreshnessPolicyRepository:
 
 
 class SchedulerConfigRepository:
-    """Singleton auto-scheduler configuration (schema v9).
+    """Singleton auto-scheduler configuration (schema v10).
 
     One row keyed by ``id = 1``. Validates structural invariants; whether an
     executor id is actually registered is checked by the app layer (which owns
@@ -1349,11 +1421,25 @@ class SchedulerConfigRepository:
 
     def ensure_default(self) -> SchedulerConfig:
         with self._store._tx(immediate=True):
+            # Schema v11 migration: add executor_params_json if it doesn't exist yet
+            # (handles databases created before schema v11).
+            cols = {
+                row["name"]
+                for row in self._conn.execute(
+                    "PRAGMA table_info(scheduler_config)"
+                ).fetchall()
+            }
+            if "executor_params_json" not in cols:
+                self._conn.execute(
+                    "ALTER TABLE scheduler_config "
+                    "ADD COLUMN executor_params_json TEXT NOT NULL DEFAULT '{}'"
+                )
             self._conn.execute(
                 "INSERT OR IGNORE INTO scheduler_config "
-                "(id, enabled, start_times_json, parallel_tasks, "
-                "executor_priority_json, executor_quota_json, version, updated_at) "
-                "VALUES (1, 0, '[]', 1, '[]', '{}', 1, ?)",
+                "(id, enabled, start_times_json, parallel_tasks, daily_failure_limit, "
+                "executor_priority_json, executor_quota_json, executor_params_json, "
+                "version, updated_at) "
+                "VALUES (1, 0, '[]', 1, 10, '[]', '{}', '{}', 1, ?)",
                 (utc_now(),),
             )
             row = self._conn.execute(
@@ -1374,20 +1460,25 @@ class SchedulerConfigRepository:
                 raise SchedulerConfigError("scheduler config version must increase")
             self._conn.execute(
                 "INSERT INTO scheduler_config (id, enabled, start_times_json, "
-                "parallel_tasks, executor_priority_json, executor_quota_json, "
-                "version, updated_at) VALUES (1, ?, ?, ?, ?, ?, ?, ?) "
+                "parallel_tasks, daily_failure_limit, executor_priority_json, "
+                "executor_quota_json, executor_params_json, version, updated_at) "
+                "VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                 "ON CONFLICT(id) DO UPDATE SET enabled = excluded.enabled, "
                 "start_times_json = excluded.start_times_json, "
                 "parallel_tasks = excluded.parallel_tasks, "
+                "daily_failure_limit = excluded.daily_failure_limit, "
                 "executor_priority_json = excluded.executor_priority_json, "
                 "executor_quota_json = excluded.executor_quota_json, "
+                "executor_params_json = excluded.executor_params_json, "
                 "version = excluded.version, updated_at = excluded.updated_at",
                 (
                     1 if config.enabled else 0,
                     json.dumps(list(config.start_times), ensure_ascii=False),
                     config.parallel_tasks,
+                    config.daily_failure_limit,
                     json.dumps(list(config.executor_priority), ensure_ascii=False),
                     json.dumps(config.executor_quota, ensure_ascii=False, sort_keys=True),
+                    json.dumps(config.executor_params, ensure_ascii=False, sort_keys=True),
                     config.version,
                     config.updated_at,
                 ),
@@ -1397,6 +1488,12 @@ class SchedulerConfigRepository:
     def _validate(self, config: SchedulerConfig) -> None:
         if config.parallel_tasks < 1:
             raise SchedulerConfigError("parallel_tasks must be >= 1")
+        if (
+            isinstance(config.daily_failure_limit, bool)
+            or not isinstance(config.daily_failure_limit, int)
+            or config.daily_failure_limit < 1
+        ):
+            raise SchedulerConfigError("daily_failure_limit must be a positive integer")
         for value in config.start_times:
             if not isinstance(value, str) or not self._TIME_RE.match(value):
                 raise SchedulerConfigError(f"invalid start time (want HH:MM): {value!r}")
@@ -1410,6 +1507,26 @@ class SchedulerConfigRepository:
         for name, quota in config.executor_quota.items():
             if isinstance(quota, bool) or not isinstance(quota, int) or quota < 0:
                 raise SchedulerConfigError(f"quota for {name!r} must be a non-negative integer")
+        if not isinstance(config.executor_params, dict):
+            raise SchedulerConfigError("executor_params must be a mapping")
+        for name, params in config.executor_params.items():
+            if not isinstance(name, str) or not name:
+                raise SchedulerConfigError(
+                    "executor_params keys must be non-empty strings"
+                )
+            if not isinstance(params, dict):
+                raise SchedulerConfigError(
+                    f"executor_params for {name!r} must be a mapping"
+                )
+            for key, value in params.items():
+                if not isinstance(key, str) or not key:
+                    raise SchedulerConfigError(
+                        f"executor_params[{name!r}] keys must be non-empty strings"
+                    )
+                if isinstance(value, (dict, list)):
+                    raise SchedulerConfigError(
+                        f"executor_params[{name!r}][{key!r}] must be a scalar"
+                    )
 
 
 class RefreshTargetRepository:

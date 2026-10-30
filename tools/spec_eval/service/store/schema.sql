@@ -1,4 +1,4 @@
--- SQLite schema for the semantic evaluation service Job Store (schema_version 9).
+-- SQLite schema for the semantic evaluation service Job Store (schema_version 10).
 -- Loaded idempotently by sqlite_store._run_migrations. PRAGMAs are applied in
 -- code (they are connection-scoped / must run outside a transaction). The
 -- load-bearing constraints are:
@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS schema_meta (
     key   TEXT PRIMARY KEY,
     value TEXT NOT NULL
 );
-INSERT OR IGNORE INTO schema_meta (key, value) VALUES ('schema_version', '9');
+INSERT OR IGNORE INTO schema_meta (key, value) VALUES ('schema_version', '10');
 
 -- schema v6 (protocol 0.2.0 S3, design R6): six-state lifecycle + stage.
 CREATE TABLE IF NOT EXISTS jobs (
@@ -89,6 +89,8 @@ CREATE TABLE IF NOT EXISTS events (
     created_at   TEXT NOT NULL,
     PRIMARY KEY (job_id, seq)
 );
+CREATE INDEX IF NOT EXISTS idx_events_type_created
+    ON events (event_type, created_at);
 
 -- Add a statistics projection for jobs created by pre-v3 service versions.
 -- Historical timing is recoverable from lifecycle events; historical Codex
@@ -268,17 +270,20 @@ CREATE TABLE IF NOT EXISTS finding_ledger (
 CREATE INDEX IF NOT EXISTS idx_ledger_func ON finding_ledger (func_id);
 CREATE INDEX IF NOT EXISTS idx_ledger_status ON finding_ledger (func_id, status);
 
--- schema v9: singleton auto-scheduler configuration. One row (id = 1). Holds
+-- schema v11: singleton auto-scheduler configuration. One row (id = 1). Holds
 -- only non-sensitive scheduling policy (start times, concurrency cap, ordered
--- executor priority chain and per-executor daily token quotas). No tokens,
--- credentials or prompts are stored here.
+-- executor priority chain, per-executor daily token quotas, and per-executor
+-- parameter overrides such as model and config_file). No tokens, credentials
+-- or prompts are stored here.
 CREATE TABLE IF NOT EXISTS scheduler_config (
-    id                     INTEGER PRIMARY KEY CHECK (id = 1),
-    enabled                INTEGER NOT NULL DEFAULT 0 CHECK (enabled IN (0, 1)),
-    start_times_json       TEXT NOT NULL DEFAULT '[]',
-    parallel_tasks         INTEGER NOT NULL DEFAULT 1 CHECK (parallel_tasks >= 1),
-    executor_priority_json TEXT NOT NULL DEFAULT '[]',
-    executor_quota_json    TEXT NOT NULL DEFAULT '{}',
-    version                INTEGER NOT NULL DEFAULT 1 CHECK (version >= 1),
-    updated_at             TEXT NOT NULL
+    id                       INTEGER PRIMARY KEY CHECK (id = 1),
+    enabled                  INTEGER NOT NULL DEFAULT 0 CHECK (enabled IN (0, 1)),
+    start_times_json         TEXT NOT NULL DEFAULT '[]',
+    parallel_tasks           INTEGER NOT NULL DEFAULT 1 CHECK (parallel_tasks >= 1),
+    daily_failure_limit      INTEGER NOT NULL DEFAULT 10 CHECK (daily_failure_limit >= 1),
+    executor_priority_json   TEXT NOT NULL DEFAULT '[]',
+    executor_quota_json      TEXT NOT NULL DEFAULT '{}',
+    executor_params_json     TEXT NOT NULL DEFAULT '{}',
+    version                  INTEGER NOT NULL DEFAULT 1 CHECK (version >= 1),
+    updated_at               TEXT NOT NULL
 );
