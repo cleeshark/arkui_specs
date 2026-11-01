@@ -22,9 +22,12 @@ worker pool. The dispatcher only runs jobs it is handed; this decides *when* and
   the FuncID becomes auto-eligible again; ``0`` disables the skip entirely. An
   explicit retry still clears the marker immediately (the retried job leaves
   the terminal-failed state).
-* **Daily failure limit** — auto-scheduled jobs that enter ``failed`` are counted
-  since local midnight. Once the configured limit is reached, no new jobs are
-  dispatched until the next day; already-running jobs are not cancelled.
+* **Daily failure limit** — auto-scheduled jobs that enter ``failed`` *after
+  reaching model processing* (at least one executor call) are counted since
+  local midnight. Failures in pre-processing — before any executor call (e.g.
+  evidence packaging or staged-run bootstrap) — cost no tokens and do not
+  consume the breaker budget. Once the configured limit is reached, no new jobs
+  are dispatched until the next day; already-running jobs are not cancelled.
 
 Selection order per dispatch: freshness tier ``MISSING > EXPIRED > EXPIRING >
 FRESH`` (EXPIRED = EXPIRED_TIME or STALE_INPUT), FuncID ascending within a tier,
@@ -294,6 +297,9 @@ class AutoScheduler:
             day_start = self._day_start_iso(now)
             usage = self._usage_repo.usage_by_executor_since(day_start)
             failure_count = self._jobs_repo.auto_scheduled_failure_count_since(day_start)
+            pre_model_count = (
+                self._jobs_repo.auto_scheduled_pre_model_failure_count_since(day_start)
+            )
             chain = config.executor_priority or (self._app.default_agent,)
             executors = [
                 {
@@ -314,6 +320,7 @@ class AutoScheduler:
                 "inflight_count": len(self._inflight),
                 "parallel_tasks": config.parallel_tasks,
                 "daily_failure_count": failure_count,
+                "pre_model_failure_count": pre_model_count,
                 "daily_failure_limit": config.daily_failure_limit,
                 "failure_limit_reached": failure_count >= config.daily_failure_limit,
                 "start_times": list(config.start_times),

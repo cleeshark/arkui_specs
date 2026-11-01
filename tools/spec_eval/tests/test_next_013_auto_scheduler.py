@@ -128,6 +128,16 @@ class _Base(unittest.TestCase):
                 ),
             )
 
+    def _record_executor_call(self, job_id: str, *, when: str | None = None) -> None:
+        """Mark that a job reached model processing (>=1 executor call)."""
+        with self.store._tx() as conn:
+            conn.execute(
+                "INSERT INTO executor_calls (job_id, run_id, work_item_id, attempt_type, "
+                "executor, status, started_at, duration_ms, usage_json, telemetry_json) "
+                "VALUES (?, 'run-1', 'w1', 'observe', 'codex-cli', 'completed', ?, 0, '{}', '{}')",
+                (job_id, when or utc_now()),
+            )
+
 
 class SelectionOrderTest(_Base):
     def test_tier_then_funcid_then_fresh_by_date(self) -> None:
@@ -287,15 +297,18 @@ class DailyFailureLimitTest(_Base):
         sched.tick(now=now)
         first_job = _job_for(self, app.dispatched[-1][0])
         self._set_status(first_job, S.FAILED)
+        self._record_executor_call(first_job)  # model-reached failure
         sched.tick(now=now)
         second_job = _job_for(self, app.dispatched[-1][0])
         self._set_status(second_job, S.FAILED)
+        self._record_executor_call(second_job)
         sched.tick(now=now)
 
         self.assertEqual(len(app.dispatched), 2)
         self.assertFalse(sched._run_active)
         status = sched.status(now=now)
         self.assertEqual(status["daily_failure_count"], 2)
+        self.assertEqual(status["pre_model_failure_count"], 0)
         self.assertEqual(status["daily_failure_limit"], 2)
         self.assertTrue(status["failure_limit_reached"])
         self.assertIn("daily failure limit reached", status["last_error"])
@@ -313,13 +326,59 @@ class DailyFailureLimitTest(_Base):
 
         self.assertEqual(len(app.dispatched), 1)
 
+    def test_pre_model_failures_do_not_consume_limit(self) -> None:
+        functions = [_func(f"04-01-0{i}", "MISSING") for i in range(1, 4)]
+        sched, app = self._scheduler(functions)
+        self._set_config(daily_failure_limit=1)
+        now = datetime.now().astimezone()
+
+        # Each job crashes in pre-processing (evidence/staged bootstrap):
+        # no executor call, so the breaker budget is never touched.
+        for expected in (1, 2, 3):
+            sched.tick(now=now)
+            self.assertEqual(len(app.dispatched), expected)
+            job_id = _job_for(self, app.dispatched[-1][0])
+            self._set_status(job_id, S.FAILED)
+
+        self.assertEqual(len(app.dispatched), 3)
+        status = sched.status(now=now)
+        self.assertEqual(status["daily_failure_count"], 0)
+        self.assertEqual(status["pre_model_failure_count"], 3)
+        self.assertFalse(status["failure_limit_reached"])
+
+    def test_stale_derived_events_without_model_calls_are_ignored(self) -> None:
+        # The old breaker logic derived auto_scheduler_failed events for every
+        # failure; the count must ignore the ones whose job never reached the
+        # model (no executor_calls) instead of consuming today's budget.
+        functions = [_func("04-01-01", "MISSING")]
+        sched, app = self._scheduler(functions)
+        self._set_config(daily_failure_limit=1)
+        now = datetime.now().astimezone()
+        sched.tick(now=now)
+        job_id = _job_for(self, app.dispatched[-1][0])
+        self._set_status(job_id, S.FAILED)  # crashed before any executor call
+        with self.store._tx() as conn:
+            conn.execute(
+                "INSERT INTO events (job_id, seq, event_type, payload_json, created_at) "
+                "VALUES (?, 999, 'auto_scheduler_failed', '{}', ?)",
+                (job_id, utc_now()),
+            )
+
+        status = sched.status(now=now)
+
+        self.assertEqual(status["daily_failure_count"], 0)
+        self.assertEqual(status["pre_model_failure_count"], 1)
+        self.assertFalse(status["failure_limit_reached"])
+
     def test_failure_count_survives_scheduler_restart(self) -> None:
         functions = [_func("04-01-01", "MISSING"), _func("04-01-02", "MISSING")]
         sched, app = self._scheduler(functions)
         self._set_config(daily_failure_limit=1)
         now = datetime.now().astimezone()
         sched.tick(now=now)
-        self._set_status(_job_for(self, app.dispatched[-1][0]), S.FAILED)
+        failed_job = _job_for(self, app.dispatched[-1][0])
+        self._set_status(failed_job, S.FAILED)
+        self._record_executor_call(failed_job)
 
         restarted, restarted_app = self._scheduler(functions)
         restarted.tick(now=now)
@@ -333,7 +392,9 @@ class DailyFailureLimitTest(_Base):
         self._set_config(daily_failure_limit=1)
         now = datetime.now().astimezone()
         sched.tick(now=now)
-        self._set_status(_job_for(self, app.dispatched[-1][0]), S.FAILED)
+        failed_job = _job_for(self, app.dispatched[-1][0])
+        self._set_status(failed_job, S.FAILED)
+        self._record_executor_call(failed_job)
         sched.tick(now=now)
         self.assertEqual(len(app.dispatched), 1)
 
