@@ -104,11 +104,11 @@ class _Base(unittest.TestCase):
         defaults.update(fields)
         return self.config_repo.set(SchedulerConfig(**defaults))
 
-    def _set_status(self, job_id: str, status: str) -> None:
+    def _set_status(self, job_id: str, status: str, *, updated_at: str | None = None) -> None:
         with self.store._tx(immediate=True) as conn:
             conn.execute(
                 "UPDATE jobs SET status = ?, updated_at = ? WHERE job_id = ?",
-                (status, utc_now(), job_id),
+                (status, updated_at or utc_now(), job_id),
             )
 
     def _record_usage(self, executor: str, total_tokens: int, *, when=None) -> None:
@@ -168,20 +168,69 @@ class SelectionOrderTest(_Base):
 
 
 class FailedSkipTest(_Base):
-    def test_failed_func_is_skipped_until_retried(self) -> None:
+    def _failed_job(self, func_id: str, *, terminal_at: str | None = None) -> str:
+        job = self.jobs.create_job(
+            CreateJobCommand(func_id=func_id, source_revision="rev", run_count=1),
+            evaluator_version="x",
+        )
+        self._set_status(job.job_id, S.FAILED, updated_at=terminal_at)
+        return job.job_id
+
+    def test_failed_func_is_skipped_within_ttl(self) -> None:
         functions = [_func("04-01-01", "MISSING")]
         sched, app = self._scheduler(functions)
         config = self._set_config()
-        # A prior failed job for this func -> skipped.
-        failed = self.jobs.create_job(
-            CreateJobCommand(func_id="04-01-01", source_revision="rev", run_count=1),
-            evaluator_version="x",
-        )
-        self._set_status(failed.job_id, S.FAILED)
+        # A prior failed job for this func (just now) -> skipped.
+        self._failed_job("04-01-01")
         self.assertIsNone(sched._select_next_func(config))
         # Human retries: the job leaves the failed state -> eligible again.
-        self._set_status(failed.job_id, S.QUEUED)
+        job_id = _job_for(self, "04-01-01")
+        self._set_status(job_id, S.QUEUED)
         self.assertEqual(sched._select_next_func(config), "04-01-01")
+
+    def test_skip_marker_expires_after_ttl(self) -> None:
+        functions = [_func("04-01-01", "MISSING"), _func("04-01-02", "MISSING")]
+        sched, _ = self._scheduler(functions)
+        config = self._set_config()  # default TTL: one day
+        now = datetime.now(timezone.utc)
+        stale_failure = (now - timedelta(seconds=86_400 + 1)).isoformat(
+            timespec="seconds"
+        )
+        recent_failure = (now - timedelta(seconds=3600)).isoformat(timespec="seconds")
+        self._failed_job("04-01-01", terminal_at=stale_failure)
+        self._failed_job("04-01-02", terminal_at=recent_failure)
+
+        skip = sched._skip_funcs(config, now=now)
+
+        self.assertNotIn("04-01-01", skip)  # older than the TTL -> expired
+        self.assertIn("04-01-02", skip)     # within the TTL -> still skipped
+        self.assertEqual(sched._select_next_func(config, now=now), "04-01-01")
+
+    def test_zero_ttl_disables_skip(self) -> None:
+        functions = [_func("04-01-01", "MISSING")]
+        sched, _ = self._scheduler(functions)
+        config = self._set_config(failure_skip_ttl_seconds=0)
+        self._failed_job("04-01-01")
+        self.assertEqual(sched._select_next_func(config), "04-01-01")
+
+    def test_custom_ttl_window(self) -> None:
+        functions = [_func("04-01-01", "MISSING"), _func("04-01-02", "MISSING")]
+        sched, _ = self._scheduler(functions)
+        config = self._set_config(failure_skip_ttl_seconds=600)
+        now = datetime.now(timezone.utc)
+        self._failed_job(
+            "04-01-01",
+            terminal_at=(now - timedelta(seconds=601)).isoformat(timespec="seconds"),
+        )
+        self._failed_job(
+            "04-01-02",
+            terminal_at=(now - timedelta(seconds=599)).isoformat(timespec="seconds"),
+        )
+
+        skip = sched._skip_funcs(config, now=now)
+
+        self.assertNotIn("04-01-01", skip)
+        self.assertIn("04-01-02", skip)
 
 
 class QuotaFailoverTest(_Base):
@@ -335,8 +384,11 @@ class RepositoryTest(_Base):
 
     def test_default_failure_limit_and_validation(self) -> None:
         self.assertEqual(self.config_repo.get().daily_failure_limit, 10)
+        self.assertEqual(self.config_repo.get().failure_skip_ttl_seconds, 86_400)
         with self.assertRaises(Exception):
             self._set_config(daily_failure_limit=0)
+        with self.assertRaises(Exception):
+            self._set_config(failure_skip_ttl_seconds=-1)
 
     def test_v9_config_migrates_with_default_failure_limit(self) -> None:
         self.store.close()
@@ -368,6 +420,7 @@ class RepositoryTest(_Base):
         config = self.config_repo.get()
         self.assertEqual(config.daily_failure_limit, 10)
         self.assertEqual(config.parallel_tasks, 2)
+        self.assertEqual(config.failure_skip_ttl_seconds, 86_400)
 
 
 class HttpRouteTest(_Base):
@@ -388,22 +441,26 @@ class HttpRouteTest(_Base):
             self.assertEqual(status, 200)
             self.assertFalse(cfg["enabled"])
             self.assertEqual(cfg["daily_failure_limit"], 10)
+            self.assertEqual(cfg["failure_skip_ttl_seconds"], 86_400)
 
             status, cfg = call("POST", "/api/scheduler/config", {
                 "enabled": True, "start_times": ["02:00"], "parallel_tasks": 2,
                 "daily_failure_limit": 3,
+                "failure_skip_ttl_seconds": 3600,
                 "executor_priority": ["codex", "claude"],
                 "executor_quota": {"codex": 10_000_000},
             })
             self.assertEqual(status, 200)
             self.assertEqual(cfg["executor_priority"], ["codex", "claude"])
             self.assertEqual(cfg["daily_failure_limit"], 3)
+            self.assertEqual(cfg["failure_skip_ttl_seconds"], 3600)
 
             status, body = call("GET", "/api/scheduler/status")
             self.assertEqual(status, 200)
             self.assertIn("executors", body)
             self.assertEqual(body["daily_failure_limit"], 3)
             self.assertEqual(body["daily_failure_count"], 0)
+            self.assertEqual(body["failure_skip_ttl_seconds"], 3600)
 
             status, _ = call("POST", "/api/scheduler/config", {"nope": 1})
             self.assertEqual(status, 400)
@@ -412,6 +469,10 @@ class HttpRouteTest(_Base):
             status, _ = call("POST", "/api/scheduler/config", {"daily_failure_limit": 0})
             self.assertEqual(status, 400)
             status, _ = call("POST", "/api/scheduler/config", {"daily_failure_limit": True})
+            self.assertEqual(status, 400)
+            status, _ = call("POST", "/api/scheduler/config", {"failure_skip_ttl_seconds": -1})
+            self.assertEqual(status, 400)
+            status, _ = call("POST", "/api/scheduler/config", {"failure_skip_ttl_seconds": True})
             self.assertEqual(status, 400)
         finally:
             app.stop()

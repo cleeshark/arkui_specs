@@ -39,6 +39,7 @@ const agentReset = document.getElementById("agent-reset");
 
 const SCHEDULER_DEFAULT_QUOTA = 10000000;
 const SCHEDULER_DEFAULT_FAILURE_LIMIT = 10;
+const SCHEDULER_DEFAULT_FAILURE_SKIP_TTL = 86400;
 let schedulerExecOrder = [];
 let schedulerExecEnabled = new Set();
 let schedulerExecQuota = {};
@@ -49,6 +50,7 @@ const schedulerForm = document.getElementById("scheduler-form");
 const schedulerStartTimes = document.getElementById("scheduler-start-times");
 const schedulerParallel = document.getElementById("scheduler-parallel");
 const schedulerFailureLimit = document.getElementById("scheduler-failure-limit");
+const schedulerFailureSkipTtl = document.getElementById("scheduler-failure-skip-ttl");
 const schedulerExecList = document.getElementById("scheduler-executor-list");
 const schedulerError = document.getElementById("scheduler-error");
 const schedulerStatusEl = document.getElementById("scheduler-status");
@@ -427,6 +429,10 @@ function applySchedulerConfig(cfg) {
   schedulerParallel.value = cfg.parallel_tasks || 1;
   schedulerFailureLimit.value =
     cfg.daily_failure_limit || SCHEDULER_DEFAULT_FAILURE_LIMIT;
+  schedulerFailureSkipTtl.value =
+    (cfg.failure_skip_ttl_seconds == null
+      ? SCHEDULER_DEFAULT_FAILURE_SKIP_TTL
+      : cfg.failure_skip_ttl_seconds);
   const allIds = agentProfiles.map((p) => p.id);
   const priority = (cfg.executor_priority || []).filter((id) => allIds.includes(id));
   schedulerExecOrder = [...priority, ...allIds.filter((id) => !priority.includes(id))];
@@ -532,12 +538,18 @@ schedulerForm.addEventListener("submit", async (e) => {
     const p = schedulerExecParams[id];
     if (p && Object.keys(p).length > 0) executorParams[id] = Object.assign({}, p);
   });
+  const skipTtlRaw = schedulerFailureSkipTtl.value.trim();
+  const skipTtl = skipTtlRaw === "" ? NaN : Number(skipTtlRaw);
   const ok = await saveSchedulerConfig({
     enabled: schedulerEnabled.checked,
     start_times: startTimes,
     parallel_tasks: Number(schedulerParallel.value) || 1,
     daily_failure_limit:
       Number(schedulerFailureLimit.value) || SCHEDULER_DEFAULT_FAILURE_LIMIT,
+    failure_skip_ttl_seconds:
+      Number.isFinite(skipTtl) && skipTtl >= 0
+        ? Math.floor(skipTtl)
+        : SCHEDULER_DEFAULT_FAILURE_SKIP_TTL,
     executor_priority: executorPriority,
     executor_quota: executorQuota,
     executor_params: executorParams,

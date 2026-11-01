@@ -106,9 +106,13 @@ Behaviour:
   chain, dispatching with the first executor still under its quota. When one is
   exhausted it fails over to the next; the run stops only when every executor in
   the chain is spent, resuming after the daily reset.
-- **Failure skip**: a FuncID whose most recent job is `failed`/`cancelled` is
-  skipped and never auto-retried; it becomes eligible again once a human retries
-  it (its latest job leaves the terminal state).
+- **Failure skip with TTL**: a FuncID whose most recent job is `failed`/`cancelled`
+  is skipped so one run does not keep dispatching the same failing task. The skip
+  marker expires after `failure_skip_ttl_seconds` (configurable via
+  `/api/scheduler/config`, default one day, counted from the failed job's terminal
+  time), after which the FuncID becomes auto-eligible again; `0` disables the skip.
+  An explicit retry still clears the marker immediately (the retried job leaves
+  the terminal state).
 - **Daily failure circuit breaker**: auto-scheduled Jobs are marked durably and
   counted when they enter `failed`. Once the configured daily limit is reached,
   the scheduler stops dispatching new Jobs until the next local day. Existing

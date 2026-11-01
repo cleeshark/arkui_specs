@@ -27,7 +27,7 @@ from typing import Any, Iterator
 from ..domain import states as S
 from ..settings import ServiceSettings
 
-_SCHEMA_VERSION = "10"
+_SCHEMA_VERSION = "11"
 
 def utc_now() -> str:
     """Current UTC timestamp as an ISO-8601 string (seconds precision)."""
@@ -148,6 +148,28 @@ class SqliteStore:
                     "WHERE key = 'schema_version'"
                 )
                 version = "10"
+            if version == "10":
+                # v11 additive-only: the failure-skip TTL column bounds how long
+                # a terminal-failed/cancelled FuncID stays auto-skip eligible.
+                # schema.sql creates it for fresh databases; this ALTER covers
+                # databases created before schema v11.
+                columns = {
+                    column["name"]
+                    for column in self._conn.execute(
+                        "PRAGMA table_info(scheduler_config)"
+                    ).fetchall()
+                }
+                if "failure_skip_ttl_seconds" not in columns:
+                    self._conn.execute(
+                        "ALTER TABLE scheduler_config ADD COLUMN "
+                        "failure_skip_ttl_seconds INTEGER NOT NULL DEFAULT 86400 "
+                        "CHECK (failure_skip_ttl_seconds >= 0)"
+                    )
+                self._conn.execute(
+                    "UPDATE schema_meta SET value = '11' "
+                    "WHERE key = 'schema_version'"
+                )
+                version = "11"
             if version != _SCHEMA_VERSION:
                 raise RuntimeError(
                     f"database has incompatible schema version {version!r}; "

@@ -128,6 +128,9 @@ class SchedulerConfig:
     failing over down the chain and stopping the run only when all are exhausted.
     ``executor_params`` maps an executor id to a dict of per-run parameter overrides
     (e.g. ``{"claude": {"model": "opus", "config_file": "~/.claude/settings-zai.json"}}``).
+    ``failure_skip_ttl_seconds`` bounds how long a FuncID whose most recent job is
+    terminal-failed/cancelled stays excluded from auto dispatch (default one day);
+    ``0`` disables the skip entirely.
     Holds policy only — never tokens, credentials or prompts.
     """
 
@@ -140,6 +143,7 @@ class SchedulerConfig:
     executor_params: dict[str, dict]
     version: int
     updated_at: str
+    failure_skip_ttl_seconds: int = 86_400
 
 
 @dataclass(frozen=True)

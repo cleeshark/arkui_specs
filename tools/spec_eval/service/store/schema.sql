@@ -1,4 +1,4 @@
--- SQLite schema for the semantic evaluation service Job Store (schema_version 10).
+-- SQLite schema for the semantic evaluation service Job Store (schema_version 11).
 -- Loaded idempotently by sqlite_store._run_migrations. PRAGMAs are applied in
 -- code (they are connection-scoped / must run outside a transaction). The
 -- load-bearing constraints are:
@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS schema_meta (
     key   TEXT PRIMARY KEY,
     value TEXT NOT NULL
 );
-INSERT OR IGNORE INTO schema_meta (key, value) VALUES ('schema_version', '10');
+INSERT OR IGNORE INTO schema_meta (key, value) VALUES ('schema_version', '11');
 
 -- schema v6 (protocol 0.2.0 S3, design R6): six-state lifecycle + stage.
 CREATE TABLE IF NOT EXISTS jobs (
@@ -272,9 +272,10 @@ CREATE INDEX IF NOT EXISTS idx_ledger_status ON finding_ledger (func_id, status)
 
 -- schema v11: singleton auto-scheduler configuration. One row (id = 1). Holds
 -- only non-sensitive scheduling policy (start times, concurrency cap, ordered
--- executor priority chain, per-executor daily token quotas, and per-executor
--- parameter overrides such as model and config_file). No tokens, credentials
--- or prompts are stored here.
+-- executor priority chain, per-executor daily token quotas, per-executor
+-- parameter overrides such as model and config_file, and the failure-skip TTL
+-- bounding how long a terminal-failed/cancelled FuncID stays auto-skip
+-- eligible). No tokens, credentials or prompts are stored here.
 CREATE TABLE IF NOT EXISTS scheduler_config (
     id                       INTEGER PRIMARY KEY CHECK (id = 1),
     enabled                  INTEGER NOT NULL DEFAULT 0 CHECK (enabled IN (0, 1)),
@@ -284,6 +285,8 @@ CREATE TABLE IF NOT EXISTS scheduler_config (
     executor_priority_json   TEXT NOT NULL DEFAULT '[]',
     executor_quota_json      TEXT NOT NULL DEFAULT '{}',
     executor_params_json     TEXT NOT NULL DEFAULT '{}',
+    failure_skip_ttl_seconds INTEGER NOT NULL DEFAULT 86400
+                             CHECK (failure_skip_ttl_seconds >= 0),
     version                  INTEGER NOT NULL DEFAULT 1 CHECK (version >= 1),
     updated_at               TEXT NOT NULL
 );
