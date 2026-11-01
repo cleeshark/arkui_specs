@@ -42,6 +42,7 @@ from spec_eval.kernel.errors import (
 from spec_eval.kernel.normalize import (
     NormalizationResult,
     rederive_aggregation_finding_ids,
+    strip_dangling_finding_evidence,
 )
 from spec_eval.service.domain import states as S
 from spec_eval.service.executors import contract as C
@@ -966,6 +967,21 @@ class JudgmentFlow:
                 # ones before validation/publish (issue #89 follow-up).
                 if "criterion_results" in corrected_payload:
                     rederive_aggregation_finding_ids(corrected_payload)
+                    # issue #104 (job 99131e31): a correction that clears or
+                    # shrinks a Criterion's evidence leaves the findings'
+                    # evidence_ids dangling; the aggregation normalizer's
+                    # drop+note reconciliation does not run on the published
+                    # path.  Strip the dangling refs and record the
+                    # service-warning note the skill preflight's tolerance
+                    # chain (recovered_finding_ids) keys on.
+                    reconciled = strip_dangling_finding_evidence(corrected_payload)
+                    if reconciled:
+                        self.events.append(
+                            self.ctx.job_id, "correction_finding_evidence_reconciled", {
+                                "work_item_id": work.work_item_id,
+                                "changes": reconciled,
+                            },
+                        )
                 # issue #97: record when the bounded turn ignored part of the
                 # listed error set.  The patch set is still applied and the
                 # revalidation below decides the outcome.
@@ -1245,6 +1261,15 @@ class JudgmentFlow:
             "For paths marked field_type=list, the decoded value must be a "
             "JSON array whose every element is in values.",
         ]
+        if any(
+            str(path).endswith("/evidence") for path in allowed_paths
+        ):
+            value_rules.append(
+                "criterion_results[].findings[].evidence_ids must stay within "
+                "the Criterion's own evidence rows; when you clear or shrink a "
+                "Criterion's evidence, the service strips dangling finding "
+                "references and records the quality warning."
+            )
         if any(
             error.get("code") == "CONTRADICTION_BASIS_INVALID"
             for error in typed_errors

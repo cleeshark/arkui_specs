@@ -256,6 +256,61 @@ def _unique_strings(value: Any) -> list[str]:
     return list(dict.fromkeys(_strings(value)))
 
 
+def strip_dangling_finding_evidence(document: dict[str, Any]) -> list[str]:
+    """Drop finding evidence references outside the Criterion's own evidence.
+
+    The aggregation normalizer closes this relation at first normalization
+    and records the service-warning note the skill preflight's tolerance
+    chain keys on (``recovered_finding_ids`` skips the hard "not present in
+    Criterion evidence" / evidence-backed checks for recovered findings).
+    Correction patches that clear or shrink a Criterion's evidence re-create
+    the dangling references on the published-candidate path, where the
+    normalizer does not run (issue #104, job 99131e31).  Mirrors the
+    normalizer's recovery-note payload exactly.
+    """
+    changes: list[str] = []
+    recovered: list[dict[str, Any]] = []
+    for result in _rows(document.get("criterion_results")):
+        criterion_id = result.get("criterion_id")
+        evidence_ids = {
+            evidence.get("evidence_id")
+            for evidence in _rows(result.get("evidence"))
+            if isinstance(evidence.get("evidence_id"), str)
+        }
+        for finding in _rows(result.get("findings")):
+            finding_id = finding.get("finding_id")
+            refs = _strings(finding.get("evidence_ids"))
+            kept = [ref for ref in refs if ref in evidence_ids]
+            dropped = sorted(set(refs) - set(kept))
+            if not dropped:
+                continue
+            finding["evidence_ids"] = kept
+            recovered.append({
+                "finding_id": finding_id if isinstance(finding_id, str) else "",
+                "criterion_id": criterion_id if isinstance(criterion_id, str) else "",
+                "removed_evidence_ids": dropped,
+            })
+            changes.append(
+                f"criterion_results[{criterion_id}].findings: stripped dangling "
+                f"evidence references {dropped}"
+            )
+    if recovered:
+        notes = document.get("notes")
+        if not isinstance(notes, list):
+            notes = []
+            document["notes"] = notes
+        notes.append(
+            FINDING_EVIDENCE_WARNING_PREFIX
+            + json.dumps(
+                {"findings": recovered},
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            )
+        )
+    return changes
+
+
 def project_observation_derived_fields(
     document: dict[str, Any],
     *,
