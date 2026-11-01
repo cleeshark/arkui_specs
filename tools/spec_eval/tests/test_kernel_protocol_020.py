@@ -48,6 +48,7 @@ from spec_eval.kernel.normalize import (
     normalize_observation,
     project_observation_derived_fields,
     semantic_finding_id,
+    strip_dangling_finding_evidence,
 )
 from spec_eval.kernel.schema_gen import build_envelope_schema
 from spec_eval.kernel.validate import (
@@ -1706,6 +1707,43 @@ class NormalizeAggregationTest(unittest.TestCase):
             projected["observations"][0]["evidence"][0]["evidence_id"], "EV-2"
         )
         self.assertEqual(projected["completed_checks"], ["design_decisions"])
+
+    def test_strip_dangling_finding_evidence_mirrors_normalizer_note(self) -> None:
+        # issue #104 (job 99131e31): clearing a Criterion's evidence left the
+        # finding's evidence_ids dangling; the skill's aggregation validation
+        # treats that as a hard error unless the document carries the
+        # service-warning note the normalizer writes.  The post-patch
+        # reconciliation must strip the refs and emit the exact same payload
+        # shape the normalizer (and the skill's recovered_finding_ids parser)
+        # use.
+        import json as _json
+        document = {
+            "criterion_results": [{
+                "criterion_id": "CORRECTNESS-SDK-CONTRACT",
+                "evidence": [],
+                "findings": [{
+                    "finding_id": "SEM-80a2cb26ffea5e0468affcf6",
+                    "evidence_ids": ["EV-a8804e7489990effa943d87a", "EV-kept"],
+                }],
+            }],
+            "notes": [],
+        }
+        # EV-kept is not hosted either, but only refs outside the criterion's
+        # own evidence set are dangling — both are stripped here.
+        changes = strip_dangling_finding_evidence(document)
+        finding = document["criterion_results"][0]["findings"][0]
+        self.assertEqual(finding["evidence_ids"], [])
+        self.assertEqual(len(changes), 1)
+        notes = document["notes"]
+        self.assertEqual(len(notes), 1)
+        prefix = "service-warning:FINDING_EVIDENCE_UNKNOWN:"
+        self.assertTrue(notes[0].startswith(prefix))
+        payload = _json.loads(notes[0][len(prefix):])
+        self.assertEqual(payload, {"findings": [{
+            "finding_id": "SEM-80a2cb26ffea5e0468affcf6",
+            "criterion_id": "CORRECTNESS-SDK-CONTRACT",
+            "removed_evidence_ids": ["EV-a8804e7489990effa943d87a", "EV-kept"],
+        }]})
 
     def test_ambiguous_duplicate_defect_owner_uses_service_fallback(self) -> None:
         judgment = self._judgment()

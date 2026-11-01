@@ -183,17 +183,24 @@ def build_aggregation_correction_context(
     if not isinstance(evidence_catalog, dict):
         evidence_catalog = {}
 
-    # issue #99 (job cad1bb43): a Criterion whose allowlist mapping is empty
-    # cannot cite anything, so its required evidence types are unsatisfiable —
-    # the correction turn was handed an empty menu and forced into fabricating
-    # raw evidence rows that the final schema rejects.  When a target
-    # Criterion cites nothing, offer the catalog rows of the types its rubric
-    # mapping requires (bounded per type) so a legal citation exists.
+    # issue #99 (job cad1bb43) / issue #104 (job 99131e31): a Criterion whose
+    # allowlist cannot satisfy its required evidence types — empty, or
+    # carrying none of the required types — has no legal citation, and the
+    # bounded turn was forced into destructive fixes (fabricating raw rows /
+    # clearing the evidence).  Offer the catalog rows of the required types
+    # (bounded per type) and reflect them in the projected Criterion
+    # allowlist so the menu stays coherent.
     for row in criteria:
-        if _strings(row.get("evidence_ids")):
-            continue
+        current_ids = _strings(row.get("evidence_ids"))
         required_types = sorted(set(_strings(row.get("required_evidence_types"))))
         if not required_types:
+            continue
+        current_types = {
+            evidence_catalog[eid].get("type")
+            for eid in current_ids
+            if isinstance(evidence_catalog.get(eid), dict)
+        }
+        if current_types & set(required_types):
             continue
         for required_type in required_types:
             offered = 0
@@ -203,9 +210,15 @@ def build_aggregation_correction_context(
                 if (
                     isinstance(evidence_row, dict)
                     and evidence_row.get("type") == required_type
+                    and evidence_id not in evidence_ids
                 ):
                     evidence_ids.add(evidence_id)
                     offered += 1
+                    if isinstance(row.get("evidence_ids"), list):
+                        row["evidence_ids"].append(evidence_id)
+                    row.setdefault("evidence_ids_by_type", {}).setdefault(
+                        required_type, []
+                    ).append(evidence_id)
 
     metadata_fields = (
         "schema_version", "staged_schema_version", "evaluator_version",

@@ -2647,6 +2647,176 @@ class CorrectionRoutingDegradeTest(unittest.TestCase):
             [record["error"]["code"] for record in records],
         )
 
+    def test_type_deficient_allowlist_menu_offers_required_types(self) -> None:
+        # issue #104 (job 99131e31): a Criterion whose allowlist carries only
+        # a wrong-type row received a menu with no legal citation and cleared
+        # its evidence, leaving dangling finding references for the final
+        # gate.  The menu must offer compliant-type catalog rows and reflect
+        # them in the projected allowlist.
+        context = {
+            "criteria": [{
+                "criterion_id": "CORRECTNESS-SDK-CONTRACT",
+                "evidence_ids": ["EV-wrong"],
+                "evidence_ids_by_type": {"design_location": ["EV-wrong"]},
+                "required_evidence_types": [
+                    "sdk_declaration", "source_citation",
+                ],
+            }],
+            "evidence_catalog": {
+                "EV-wrong": {"evidence_id": "EV-wrong", "type": "design_location"},
+                "EV-c1": {"evidence_id": "EV-c1", "type": "source_citation"},
+                "EV-c2": {"evidence_id": "EV-c2", "type": "source_citation"},
+                "EV-d1": {"evidence_id": "EV-d1", "type": "design_location"},
+            },
+            "observations": {}, "claims": {}, "units": {},
+        }
+        projected = build_aggregation_correction_context(
+            context,
+            {"criterion_results": [{"criterion_id": "CORRECTNESS-SDK-CONTRACT"}]},
+            [{
+                "code": "EVIDENCE_TYPE_MISSING",
+                "entity_type": "criterion",
+                "entity_id": "CORRECTNESS-SDK-CONTRACT",
+                "path": "aggregation.criterion_results["
+                        "CORRECTNESS-SDK-CONTRACT].evidence",
+            }],
+        )
+        self.assertEqual(
+            set(projected["evidence_catalog"]),
+            {"EV-wrong", "EV-c1", "EV-c2"},
+        )
+        row = projected["criteria"][0]
+        self.assertIn("EV-c1", row["evidence_ids"])
+        self.assertIn("EV-c1", row["evidence_ids_by_type"]["source_citation"])
+
+    def test_compliant_allowlist_menu_stays_scoped(self) -> None:
+        # A Criterion already citing a required-type row keeps its scoped
+        # menu: the type-deficit supply must not over-offer.
+        context = {
+            "criteria": [{
+                "criterion_id": "CORRECTNESS-SDK-CONTRACT",
+                "evidence_ids": ["EV-c1"],
+                "evidence_ids_by_type": {"source_citation": ["EV-c1"]},
+                "required_evidence_types": [
+                    "sdk_declaration", "source_citation",
+                ],
+            }],
+            "evidence_catalog": {
+                "EV-c1": {"evidence_id": "EV-c1", "type": "source_citation"},
+                "EV-c2": {"evidence_id": "EV-c2", "type": "source_citation"},
+            },
+            "observations": {}, "claims": {}, "units": {},
+        }
+        projected = build_aggregation_correction_context(
+            context,
+            {"criterion_results": [{"criterion_id": "CORRECTNESS-SDK-CONTRACT"}]},
+            [{
+                "code": "EVIDENCE_TYPE_MISSING",
+                "entity_type": "criterion",
+                "entity_id": "CORRECTNESS-SDK-CONTRACT",
+                "path": "aggregation.criterion_results["
+                        "CORRECTNESS-SDK-CONTRACT].evidence",
+            }],
+        )
+        self.assertEqual(set(projected["evidence_catalog"]), {"EV-c1"})
+
+    def test_cleared_criterion_evidence_reconciles_dangling_finding_refs(self) -> None:
+        # issue #104 (job 99131e31): a correction clearing a Criterion's
+        # evidence left the finding's evidence_ids dangling; the kernel treats
+        # that as a non-blocking warning while the assemble gate treats it as
+        # hard.  The post-patch reconciliation must strip the dangling refs
+        # and record the service-warning note so the skill tolerance chain
+        # engages, with the emptied criterion degrading via its registered
+        # residual.
+        document = {
+            "criterion_results": [{
+                "criterion_id": "CORRECTNESS-SDK-CONTRACT",
+                "conclusion": "PARTIALLY_SUPPORTED",
+                "evidence": [{
+                    "evidence_id": "EV-wrong", "type": "design_location",
+                    "path": "specs/a.md", "content_hash": "sha256:" + "0" * 64,
+                }],
+                "findings": [{
+                    "finding_id": "SEM-80a2cb26ffea5e0468affcf6",
+                    "evidence_ids": ["EV-wrong"],
+                }],
+                "claim_ids": [],
+            }],
+        }
+        type_error = {
+            "code": "EVIDENCE_TYPE_MISSING",
+            "path": "aggregation.criterion_results[CORRECTNESS-SDK-CONTRACT].evidence",
+            "entity_type": "criterion",
+            "entity_id": "CORRECTNESS-SDK-CONTRACT",
+            "expected": "at least one evidence of type ['sdk_declaration', 'source_citation']",
+            "repairability": "MODEL_CORRECTION",
+        }
+        empty_error = {
+            "code": "EVIDENCE_REQUIRED_MISSING",
+            "path": "aggregation.criterion_results[CORRECTNESS-SDK-CONTRACT].evidence",
+            "entity_type": "criterion",
+            "entity_id": "CORRECTNESS-SDK-CONTRACT",
+            "expected": "at least one evidence item for PARTIALLY_SUPPORTED",
+            "repairability": "MODEL_CORRECTION",
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp)
+            work = _aggregation_work(run_dir)
+            self._seed_candidate(
+                run_dir, "aggregation.json", document, [type_error],
+                work_item_id=work.work_item_id,
+            )
+            events = _Events()
+            executor = _FlowExecutor(patches=[{
+                "op": "replace",
+                "path": "/criterion_results/0/evidence",
+                "value": json.dumps([]),
+            }])
+            published: list[dict] = []
+            flow = JudgmentFlow(
+                ctx=SimpleNamespace(run_dir=run_dir, job_id="job", run_id="run-1"),
+                executor=executor,
+                jobs=SimpleNamespace(transition_status=lambda *a, **k: None),
+                events=events,
+            )
+            outcome = flow.run(
+                work=work,
+                output_path=run_dir / "aggregation.json",
+                template={},
+                normalize=lambda payload: NormalizationResult(document=payload),
+                validate=lambda doc: (
+                    [] if doc["criterion_results"][0]["evidence"] else [
+                        TypedError.from_dict(empty_error)
+                    ]
+                ),
+                base_contract=work.prompt_extras,
+                on_publish=lambda d: published.append(d) or True,
+                fingerprint="fp", stage_event="aggregation_completed",
+                allow_degraded_publish=True,
+                on_post_correction_warnings=lambda errors: (
+                    record_post_correction_warnings(
+                        run_dir, work.work_item_id, errors
+                    )
+                ),
+            )
+            records = load_post_correction_warning_records(run_dir)
+        self.assertEqual(outcome.status, C.STATUS_COMPLETED)
+        self.assertEqual(executor.calls, ["correct"])
+        criterion = published[0]["criterion_results"][0]
+        self.assertEqual(criterion["evidence"], [])
+        self.assertEqual(criterion["findings"][0]["evidence_ids"], [])
+        notes = published[0].get("notes") or []
+        self.assertTrue(
+            any(n.startswith("service-warning:FINDING_EVIDENCE_UNKNOWN:")
+                for n in notes)
+        )
+        self.assertIn("correction_finding_evidence_reconciled", events.types())
+        self.assertIn("correction_completed_with_warnings", events.types())
+        self.assertIn(
+            "EVIDENCE_REQUIRED_MISSING",
+            [record["error"]["code"] for record in records],
+        )
+
     def test_residual_non_hard_error_degrades_only_for_final_report(self) -> None:
         # A non-HARD service error the deterministic repair cannot resolve and
         # whose document-level path does not resolve to a patch target is not
