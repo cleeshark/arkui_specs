@@ -383,11 +383,18 @@ class JobRepository:
                 )
 
     def auto_scheduled_failure_count_since(self, since: str) -> int:
-        """Reconcile and count auto-scheduled job failures in a time window.
+        """Count breaker-budget failures among auto-scheduled jobs in a window.
 
-        The derived failure event makes the daily count stable across retries
-        and service restarts. Its timestamp is the original terminal timestamp,
-        so a restart after midnight cannot move yesterday's failures into today.
+        Only failures that reached model processing (at least one
+        ``executor_calls`` row) count against the daily circuit breaker:
+        pre-processing failures (evidence packaging, staged-run bootstrap,
+        workspace prep) never invoked the executor, cost no tokens, and do not
+        consume the budget. The derived failure event makes the daily count
+        stable across retries and service restarts — its timestamp is the
+        original terminal timestamp, so a restart after midnight cannot move
+        yesterday's failures into today. Events derived before the
+        model-reached rule existed are ignored at count time (the job has no
+        executor calls), so no data backfill is needed.
         """
         with self._store._tx(immediate=True):
             rows = self._conn.execute(
@@ -401,7 +408,9 @@ class JobRepository:
                 "  AND dispatched.event_type = ?) "
                 "AND NOT EXISTS (SELECT 1 FROM events failed "
                 "  WHERE failed.job_id = jobs.job_id "
-                "  AND failed.event_type = ?)",
+                "  AND failed.event_type = ?) "
+                "AND EXISTS (SELECT 1 FROM executor_calls model "
+                "  WHERE model.job_id = jobs.job_id)",
                 (
                     S.FAILED,
                     since,
@@ -418,10 +427,36 @@ class JobRepository:
                 )
             count = self._conn.execute(
                 "SELECT COUNT(*) FROM events "
-                "WHERE event_type = ? AND created_at >= ?",
+                "WHERE event_type = ? AND created_at >= ? "
+                "AND EXISTS (SELECT 1 FROM executor_calls model "
+                "  WHERE model.job_id = events.job_id)",
                 (AUTO_SCHEDULER_FAILED_EVENT, since),
             ).fetchone()[0]
             return int(count)
+
+    def auto_scheduled_pre_model_failure_count_since(self, since: str) -> int:
+        """Count auto-scheduled failures that never reached model processing.
+
+        Informational only (exposed via scheduler status): these jobs failed
+        before any executor call — evidence packaging, staged-run bootstrap,
+        workspace prep — and are excluded from the daily breaker budget. Not
+        backed by derived events, so a retry that later reaches the model and
+        fails again moves this job out of this count and into the billed one.
+        """
+        with self._store._tx():
+            row = self._conn.execute(
+                "SELECT COUNT(*) FROM jobs "
+                "LEFT JOIN job_statistics USING (job_id) "
+                "WHERE jobs.status = ? "
+                "AND COALESCE(job_statistics.finished_at, jobs.updated_at) >= ? "
+                "AND EXISTS (SELECT 1 FROM events dispatched "
+                "  WHERE dispatched.job_id = jobs.job_id "
+                "  AND dispatched.event_type = ?) "
+                "AND NOT EXISTS (SELECT 1 FROM executor_calls model "
+                "  WHERE model.job_id = jobs.job_id)",
+                (S.FAILED, since, AUTO_SCHEDULER_DISPATCHED_EVENT),
+            ).fetchone()
+            return int(row[0])
 
     def transition_status(
         self,

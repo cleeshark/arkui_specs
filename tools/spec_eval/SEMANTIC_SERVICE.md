@@ -114,9 +114,14 @@ Behaviour:
   An explicit retry still clears the marker immediately (the retried job leaves
   the terminal state).
 - **Daily failure circuit breaker**: auto-scheduled Jobs are marked durably and
-  counted when they enter `failed`. Once the configured daily limit is reached,
-  the scheduler stops dispatching new Jobs until the next local day. Existing
-  in-flight Jobs continue, and manual refresh Jobs do not consume this limit.
+  counted when they enter `failed` *after reaching model processing* (at least
+  one `executor_calls` row). Failures in pre-processing — before any executor
+  call (evidence packaging, staged-run bootstrap, workspace prep) — cost no
+  tokens and do not consume the daily budget; they are reported separately as
+  `pre_model_failure_count` in `/api/scheduler/status`. Once the configured
+  daily limit is reached, the scheduler stops dispatching new Jobs until the
+  next local day. Existing in-flight Jobs continue, and manual refresh Jobs do
+  not consume this limit.
 
 `GET /api/scheduler/status` reports the live run state, in-flight jobs, the
 currently-selected executor, the next start time, and each executor's used vs
