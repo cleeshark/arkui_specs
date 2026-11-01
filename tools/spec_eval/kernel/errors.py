@@ -301,6 +301,14 @@ OBSERVATION_POST_CORRECTION_WARNING_CODES = frozenset({
     # the skill preflight downgrades the matching checkpoint error via the
     # sidecar (issue #101, job 4635516e).
     "DEFECT_KEYS_REQUIRED",
+    # Issue #103 (jobs 81792106/deb7a6a5): a correction-appended observation
+    # whose evidence could not be materialized, and check coverage left
+    # incomplete after the service dropped unregistered check ids.  Both are
+    # bounded quality gaps the bounded turn could not fill; publish with the
+    # registered deduction and let the skill preflight downgrade the matching
+    # checkpoint errors via the sidecar instead of rejecting the job.
+    "EVIDENCE_CARDINALITY_VIOLATED",
+    "CHECK_COVERAGE_INCOMPLETE",
     # A completed Claim or atomic unit whose outcome is not NOT_VERIFIABLE
     # carries no evidence citation (issue #98, job 17a7dab3): the conclusion
     # and its prose reason are preserved and the report stays consumable, so

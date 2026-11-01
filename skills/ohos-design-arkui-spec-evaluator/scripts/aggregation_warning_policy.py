@@ -147,6 +147,19 @@ OBSERVATION_WARNING_MARKERS = {
     "DEFECT_KEYS_REQUIRED": (
         ".defect_keys: required for conflict or missing claims",
     ),
+    # Issue #103 (jobs 81792106/deb7a6a5): correction-appended observations
+    # whose evidence the service could not materialize, and check ids outside
+    # the work item's registered checks.  The kernel registers both residuals
+    # (EVIDENCE_CARDINALITY_VIOLATED / CHECK_COVERAGE_INCOMPLETE) after the
+    # bounded turn, so downgrade the matching checkpoint errors via the
+    # sidecar instead of rejecting the job at the aggregation preflight.
+    "EVIDENCE_CARDINALITY_VIOLATED": (
+        ".evidence: evidence is required for this local outcome",
+    ),
+    "CHECK_COVERAGE_INCOMPLETE": (
+        ".check_ids: unknown checks",
+        "observations.check_ids: missing=",
+    ),
 }
 
 

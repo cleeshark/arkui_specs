@@ -258,6 +258,8 @@ def _unique_strings(value: Any) -> list[str]:
 
 def project_observation_derived_fields(
     document: dict[str, Any],
+    *,
+    required_checks: list[str] | None = None,
 ) -> dict[str, Any]:
     """Rebuild service-owned Observation fields after a bounded correction.
 
@@ -265,6 +267,14 @@ def project_observation_derived_fields(
     an Observation mapping, Claim Criterion mappings and progress lists must
     be projected again instead of retaining values derived from the invalid
     pre-correction candidate.
+
+    Correction-appended observation rows are also normalized here (issue
+    #103): the model is told the service owns derived fields, so appended
+    rows may omit ``observation_id`` and ``evidence`` — the projector
+    assigns the next free OBS-N id, materializes the evidence array from the
+    row's ``evidence_refs`` against the document's hosted evidence rows, and
+    (when ``required_checks`` is supplied) drops check ids outside the work
+    item's registered checks.
     """
     projected = copy.deepcopy(document)
     observations = _rows(projected.get("observations"))
@@ -272,6 +282,9 @@ def project_observation_derived_fields(
     for observation in observations:
         criterion_ids = _unique_strings(observation.get("criterion_ids"))
         check_ids = _unique_strings(observation.get("check_ids"))
+        if required_checks is not None:
+            registered = set(required_checks)
+            check_ids = [c for c in check_ids if c in registered]
         claim_ids = _unique_strings(observation.get("claim_ids"))
         observation["criterion_ids"] = criterion_ids
         observation["check_ids"] = check_ids
@@ -289,6 +302,41 @@ def project_observation_derived_fields(
             for criterion_id in criterion_ids:
                 if criterion_id not in mapped:
                     mapped.append(criterion_id)
+
+    # Fill observation ids the correction turn left to the service, without
+    # colliding with the ids the model already assigned.
+    taken = {
+        observation.get("observation_id") for observation in observations
+        if isinstance(observation.get("observation_id"), str)
+        and observation["observation_id"]
+    }
+    next_sequence = 1
+    for observation in observations:
+        current = observation.get("observation_id")
+        if isinstance(current, str) and current:
+            continue
+        while f"OBS-{next_sequence}" in taken:
+            next_sequence += 1
+        observation["observation_id"] = f"OBS-{next_sequence}"
+        taken.add(f"OBS-{next_sequence}")
+
+    # Materialize evidence arrays for appended rows that only carry
+    # ``evidence_refs``: reference the rows already hosted by the document
+    # (issue #103).  Unresolvable references cannot be materialized and are
+    # left for the validator to report.
+    hosted: dict[str, dict[str, Any]] = {}
+    for observation in observations:
+        for evidence in _rows(observation.get("evidence")):
+            evidence_id = evidence.get("evidence_id")
+            if isinstance(evidence_id, str) and evidence_id:
+                hosted.setdefault(evidence_id, evidence)
+    for observation in observations:
+        refs = _strings(observation.get("evidence_refs"))
+        if not refs or _rows(observation.get("evidence")):
+            continue
+        materialized = [hosted[ref] for ref in refs if ref in hosted]
+        if materialized:
+            observation["evidence"] = copy.deepcopy(materialized)
 
     claim_reviews = _rows(projected.get("claim_reviews"))
     for claim in claim_reviews:
