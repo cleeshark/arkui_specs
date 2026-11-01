@@ -43,6 +43,10 @@
       </label>
       <label>Parallel tasks <input id="scheduler-parallel" type="number" min="1" value="1" /></label>
       <label>Daily failure limit <input id="scheduler-failure-limit" type="number" min="1" value="10" /></label>
+      <label>Failure skip TTL (s)
+        <input id="scheduler-failure-skip-ttl" type="number" min="0" step="1" value="86400" />
+        <small class="muted">A failed/cancelled task is auto-skipped for this long (86400 = one day); 0 disables the skip.</small>
+      </label>
       <fieldset class="scheduler-executors">
         <legend>Executor priority &amp; daily token quota</legend>
         <small class="muted">Top runs first; when its quota is spent the run fails over to the next enabled executor.</small>

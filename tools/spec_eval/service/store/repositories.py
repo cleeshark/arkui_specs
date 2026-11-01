@@ -173,6 +173,11 @@ def _scheduler_config_from_row(row: sqlite3.Row) -> SchedulerConfig:
         str(k): dict(v) if isinstance(v, dict) else {}
         for k, v in raw_params.items()
     }
+    skip_ttl = (
+        int(row["failure_skip_ttl_seconds"])
+        if "failure_skip_ttl_seconds" in keys
+        else 86_400
+    )
     return SchedulerConfig(
         enabled=bool(row["enabled"]),
         start_times=tuple(json.loads(row["start_times_json"])),
@@ -183,6 +188,7 @@ def _scheduler_config_from_row(row: sqlite3.Row) -> SchedulerConfig:
         executor_params=executor_params,
         version=int(row["version"]),
         updated_at=row["updated_at"],
+        failure_skip_ttl_seconds=skip_ttl,
     )
 
 
@@ -1406,7 +1412,7 @@ class FreshnessPolicyRepository:
 
 
 class SchedulerConfigRepository:
-    """Singleton auto-scheduler configuration (schema v10).
+    """Singleton auto-scheduler configuration (schema v11).
 
     One row keyed by ``id = 1``. Validates structural invariants; whether an
     executor id is actually registered is checked by the app layer (which owns
@@ -1421,8 +1427,8 @@ class SchedulerConfigRepository:
 
     def ensure_default(self) -> SchedulerConfig:
         with self._store._tx(immediate=True):
-            # Schema v11 migration: add executor_params_json if it doesn't exist yet
-            # (handles databases created before schema v11).
+            # Pre-v11 databases: add the failure-skip TTL column in place
+            # (same in-place policy as the executor_params_json v11 migration).
             cols = {
                 row["name"]
                 for row in self._conn.execute(
@@ -1434,12 +1440,18 @@ class SchedulerConfigRepository:
                     "ALTER TABLE scheduler_config "
                     "ADD COLUMN executor_params_json TEXT NOT NULL DEFAULT '{}'"
                 )
+            if "failure_skip_ttl_seconds" not in cols:
+                self._conn.execute(
+                    "ALTER TABLE scheduler_config "
+                    "ADD COLUMN failure_skip_ttl_seconds INTEGER NOT NULL DEFAULT 86400 "
+                    "CHECK (failure_skip_ttl_seconds >= 0)"
+                )
             self._conn.execute(
                 "INSERT OR IGNORE INTO scheduler_config "
                 "(id, enabled, start_times_json, parallel_tasks, daily_failure_limit, "
                 "executor_priority_json, executor_quota_json, executor_params_json, "
-                "version, updated_at) "
-                "VALUES (1, 0, '[]', 1, 10, '[]', '{}', '{}', 1, ?)",
+                "failure_skip_ttl_seconds, version, updated_at) "
+                "VALUES (1, 0, '[]', 1, 10, '[]', '{}', '{}', 86400, 1, ?)",
                 (utc_now(),),
             )
             row = self._conn.execute(
@@ -1461,8 +1473,9 @@ class SchedulerConfigRepository:
             self._conn.execute(
                 "INSERT INTO scheduler_config (id, enabled, start_times_json, "
                 "parallel_tasks, daily_failure_limit, executor_priority_json, "
-                "executor_quota_json, executor_params_json, version, updated_at) "
-                "VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                "executor_quota_json, executor_params_json, "
+                "failure_skip_ttl_seconds, version, updated_at) "
+                "VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
                 "ON CONFLICT(id) DO UPDATE SET enabled = excluded.enabled, "
                 "start_times_json = excluded.start_times_json, "
                 "parallel_tasks = excluded.parallel_tasks, "
@@ -1470,6 +1483,7 @@ class SchedulerConfigRepository:
                 "executor_priority_json = excluded.executor_priority_json, "
                 "executor_quota_json = excluded.executor_quota_json, "
                 "executor_params_json = excluded.executor_params_json, "
+                "failure_skip_ttl_seconds = excluded.failure_skip_ttl_seconds, "
                 "version = excluded.version, updated_at = excluded.updated_at",
                 (
                     1 if config.enabled else 0,
@@ -1479,6 +1493,7 @@ class SchedulerConfigRepository:
                     json.dumps(list(config.executor_priority), ensure_ascii=False),
                     json.dumps(config.executor_quota, ensure_ascii=False, sort_keys=True),
                     json.dumps(config.executor_params, ensure_ascii=False, sort_keys=True),
+                    config.failure_skip_ttl_seconds,
                     config.version,
                     config.updated_at,
                 ),
@@ -1494,6 +1509,14 @@ class SchedulerConfigRepository:
             or config.daily_failure_limit < 1
         ):
             raise SchedulerConfigError("daily_failure_limit must be a positive integer")
+        if (
+            isinstance(config.failure_skip_ttl_seconds, bool)
+            or not isinstance(config.failure_skip_ttl_seconds, int)
+            or config.failure_skip_ttl_seconds < 0
+        ):
+            raise SchedulerConfigError(
+                "failure_skip_ttl_seconds must be a non-negative integer"
+            )
         for value in config.start_times:
             if not isinstance(value, str) or not self._TIME_RE.match(value):
                 raise SchedulerConfigError(f"invalid start time (want HH:MM): {value!r}")

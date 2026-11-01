@@ -15,9 +15,13 @@ worker pool. The dispatcher only runs jobs it is handed; this decides *when* and
   token usage (all consumption, from ``executor_calls``) is still under its
   quota. When one is exhausted it fails over to the next; the run only stops when
   all executors in the chain are exhausted. Reset is daily (local midnight).
-* **Failure skip** — a FuncID whose most recent job is ``failed``/``cancelled`` is
-  skipped and never auto-retried; it becomes eligible again once a human retries
-  it (its latest job leaves the terminal-failed state).
+* **Failure skip with TTL** — a FuncID whose most recent job is
+  ``failed``/``cancelled`` is skipped so one run does not keep dispatching the
+  same failing task. The skip marker expires after ``failure_skip_ttl_seconds``
+  (default one day, counted from the failed job's terminal time), after which
+  the FuncID becomes auto-eligible again; ``0`` disables the skip entirely. An
+  explicit retry still clears the marker immediately (the retried job leaves
+  the terminal-failed state).
 * **Daily failure limit** — auto-scheduled jobs that enter ``failed`` are counted
   since local midnight. Once the configured limit is reached, no new jobs are
   dispatched until the next day; already-running jobs are not cancelled.
@@ -161,7 +165,7 @@ class AutoScheduler:
                 self._active_executor = None
                 return
             self._active_executor = executor
-            func_id = self._select_next_func(config)
+            func_id = self._select_next_func(config, now=now)
             if func_id is None:
                 if not self._inflight:
                     self._run_active = False
@@ -197,8 +201,8 @@ class AutoScheduler:
                 return name
         return None
 
-    def _select_next_func(self, config) -> str | None:
-        skip = self._skip_funcs()
+    def _select_next_func(self, config, *, now: datetime | None = None) -> str | None:
+        skip = self._skip_funcs(config, now=now)
         candidates: list[tuple[int, str, str]] = []
         for func in self._app.list_functions():
             func_id = func["func_id"]
@@ -228,8 +232,21 @@ class AutoScheduler:
             if job.status in S.TERMINAL_STATES:
                 self._inflight.pop(job_id, None)
 
-    def _skip_funcs(self) -> set[str]:
-        """FuncIDs whose most recent job is terminal-failed/cancelled."""
+    def _skip_funcs(self, config, *, now: datetime | None = None) -> set[str]:
+        """FuncIDs whose most recent job is terminal-failed/cancelled in the TTL window.
+
+        The skip is a cooldown, not a blacklist: it only covers failures whose
+        terminal time is within ``config.failure_skip_ttl_seconds`` of ``now``,
+        so a func that keeps failing is retried at most once per TTL period
+        instead of being excluded until a human intervenes. A TTL of ``0``
+        disables the skip. An explicit retry (``Dispatcher.retry``) resets the
+        same job to ``queued``, which also leaves this set immediately.
+        """
+        ttl = int(config.failure_skip_ttl_seconds)
+        if ttl <= 0:
+            return set()
+        now = now or datetime.now().astimezone()
+        cutoff = now - timedelta(seconds=ttl)
         latest: dict[str, Any] = {}
         for job in self._jobs_repo.list_jobs(limit=100_000):
             prev = latest.get(job.func_id)
@@ -239,6 +256,7 @@ class AutoScheduler:
             func_id
             for func_id, job in latest.items()
             if job.status in _SKIP_STATUSES
+            and (self._parse_utc(job.updated_at) or now) >= cutoff
         }
 
     def _executor_identity(self, agent_id: str) -> str:
@@ -258,6 +276,15 @@ class AutoScheduler:
         local = now if now.tzinfo is not None else now.astimezone()
         midnight = local.replace(hour=0, minute=0, second=0, microsecond=0)
         return midnight.astimezone(timezone.utc).isoformat(timespec="seconds")
+
+    @staticmethod
+    def _parse_utc(value: str) -> datetime | None:
+        """Parse a store ISO timestamp; None when it is not a valid timestamp."""
+        try:
+            parsed = datetime.fromisoformat(value)
+        except (TypeError, ValueError):
+            return None
+        return parsed if parsed.tzinfo is not None else parsed.replace(tzinfo=timezone.utc)
 
     # --- observability ----------------------------------------------------
     def status(self, *, now: datetime | None = None) -> dict[str, Any]:
@@ -291,6 +318,7 @@ class AutoScheduler:
                 "failure_limit_reached": failure_count >= config.daily_failure_limit,
                 "start_times": list(config.start_times),
                 "next_start_time": self._next_start_time(config, now),
+                "failure_skip_ttl_seconds": config.failure_skip_ttl_seconds,
                 "last_dispatched_func": self._last_dispatched,
                 "last_error": self._last_error,
                 "executors": executors,

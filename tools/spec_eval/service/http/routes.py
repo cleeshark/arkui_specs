@@ -376,6 +376,7 @@ def _route_scheduler(method: str, rest: list[str], body: bytes, app: Any) -> Res
             allowed = {
                 "enabled", "start_times", "parallel_tasks", "daily_failure_limit",
                 "executor_priority", "executor_quota", "executor_params",
+                "failure_skip_ttl_seconds",
             }
             unknown = set(payload) - allowed
             if unknown:

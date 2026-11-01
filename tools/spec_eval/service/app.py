@@ -237,6 +237,7 @@ class SemanticServiceApp:
         executor_priority: list[str] | None = None,
         executor_quota: dict[str, int] | None = None,
         executor_params: dict[str, dict] | None = None,
+        failure_skip_ttl_seconds: int | None = None,
     ) -> SchedulerConfig:
         """Apply a partial config update, bumping the version, and reconfigure."""
         repo = SchedulerConfigRepository(self.store)
@@ -258,6 +259,8 @@ class SemanticServiceApp:
         )
         if isinstance(daily_failure_limit, bool):
             raise ValueError("daily_failure_limit must be a positive integer")
+        if isinstance(failure_skip_ttl_seconds, bool):
+            raise ValueError("failure_skip_ttl_seconds must be a non-negative integer")
         # Executor-registry validation lives here (the store layer is registry
         # agnostic): every named executor must be a registered agent.
         known = set(available())
@@ -279,6 +282,11 @@ class SemanticServiceApp:
                 current.daily_failure_limit
                 if daily_failure_limit is None
                 else int(daily_failure_limit)
+            ),
+            failure_skip_ttl_seconds=(
+                current.failure_skip_ttl_seconds
+                if failure_skip_ttl_seconds is None
+                else int(failure_skip_ttl_seconds)
             ),
             executor_priority=priority,
             executor_quota=quota,
