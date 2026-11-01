@@ -245,7 +245,9 @@ def run_semantic(
             on_publish=_publish,
             fingerprint=fingerprint,
             stage_event="work_item_completed",
-            reproject=project_observation_derived_fields,
+            reproject=lambda document, _checks=item.get("required_checks"): (
+                project_observation_derived_fields(document, required_checks=_checks)
+            ),
             allow_degraded_publish=True,
             degraded_publish_codes=(
                 OBSERVATION_POST_CORRECTION_WARNING_CODES

@@ -112,6 +112,38 @@ class EvidenceRequiredWarningPolicyTest(unittest.TestCase):
         self.assertEqual(blocking, [NV_ERROR])
         self.assertEqual(warnings, [DEFECT_KEYS_ERROR])
 
+    def test_correction_appended_observation_errors_downgrade(self) -> None:
+        # issue #103 (jobs 81792106/deb7a6a5): the exact preflight errors —
+        # missing observation evidence and an unregistered check id — must
+        # downgrade when the kernel sidecar carries the matching residuals.
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp)
+            (run_dir / "post-correction-warnings.json").write_text(
+                json.dumps({
+                    "schema_version": 1,
+                    "warnings": [
+                        {"work_item_id": "function-global",
+                         "error": {"code": "EVIDENCE_CARDINALITY_VIOLATED"}},
+                        {"work_item_id": "function-global",
+                         "error": {"code": "CHECK_COVERAGE_INCOMPLETE"}},
+                    ],
+                }),
+                encoding="utf-8",
+            )
+            evidence_error = (
+                "observation[function-global].observations[20].evidence: "
+                "evidence is required for this local outcome"
+            )
+            check_error = (
+                "observation[function-global].observations.check_ids: "
+                "missing=[] extra=['verification_and_regression_plan']"
+            )
+            blocking, warnings = split_observation_warnings(
+                run_dir, [evidence_error, check_error]
+            )
+        self.assertEqual(blocking, [])
+        self.assertEqual(len(warnings), 2)
+
 
 if __name__ == "__main__":
     unittest.main()

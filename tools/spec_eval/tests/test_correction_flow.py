@@ -2574,6 +2574,79 @@ class CorrectionRoutingDegradeTest(unittest.TestCase):
             [record["error"]["code"] for record in records],
         )
 
+    def test_unrecorded_post_correction_residual_now_reaches_sidecar(self) -> None:
+        # issue #103 (jobs 81792106/deb7a6a5): post-correction residuals in
+        # unregistered MODEL_CORRECTION codes (evidence cardinality, check
+        # coverage) used to be dropped from the blocking set WITHOUT any
+        # sidecar record, so the preflight rejected the published document
+        # with no tolerance path.  Every dropped residual must be recorded.
+        document = {
+            "claim_reviews": [],
+            "observations": [{
+                "observation_id": "OBS-1",
+                "local_outcome": "CONFLICT",
+                "criterion_ids": ["CORRECTNESS-SOURCE-SUPPORT"],
+                "check_ids": [],
+                "claim_ids": ["Feat-01/AC-1"],
+                "evidence": [],
+            }],
+        }
+        residual = {
+            "code": "EVIDENCE_CARDINALITY_VIOLATED",
+            "path": "observation.observations[0].evidence",
+            "entity_type": "observation", "entity_id": "OBS-1",
+            "expected": ">= 1 evidence items for CONFLICT", "actual": "0",
+            "repairability": "MODEL_CORRECTION",
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp)
+            work = _observation_work(run_dir)
+            self._seed_candidate(
+                run_dir, "Feat-01.json", document, [residual],
+                work_item_id=work.work_item_id,
+            )
+            events = _Events()
+            executor = _FlowExecutor(patches=[])
+            published: list[dict] = []
+            flow = JudgmentFlow(
+                ctx=SimpleNamespace(run_dir=run_dir, job_id="job", run_id="run-1"),
+                executor=executor,
+                jobs=SimpleNamespace(transition_status=lambda *a, **k: None),
+                events=events,
+            )
+            outcome = flow.run(
+                work=work,
+                output_path=run_dir / "Feat-01.json",
+                template={},
+                normalize=lambda payload: NormalizationResult(document=payload),
+                validate=lambda doc: (
+                    [] if doc["observations"][0]["evidence"] else [
+                        TypedError.from_dict(residual)
+                    ]
+                ),
+                base_contract=work.prompt_extras,
+                on_publish=lambda d: published.append(d) or True,
+                fingerprint="fp", stage_event="work_item_completed",
+                allow_degraded_publish=True,
+                degraded_publish_codes=(
+                    OBSERVATION_POST_CORRECTION_WARNING_CODES
+                    | DEFECT_KEYS_DEGRADED_PUBLISH_CODES
+                ),
+                on_post_correction_warnings=lambda errors: (
+                    record_post_correction_warnings(
+                        run_dir, work.work_item_id, errors
+                    )
+                ),
+            )
+            records = load_post_correction_warning_records(run_dir)
+        self.assertEqual(outcome.status, C.STATUS_COMPLETED)
+        self.assertEqual(executor.calls, ["correct"])
+        self.assertIn("correction_completed_with_warnings", events.types())
+        self.assertIn(
+            "EVIDENCE_CARDINALITY_VIOLATED",
+            [record["error"]["code"] for record in records],
+        )
+
     def test_residual_non_hard_error_degrades_only_for_final_report(self) -> None:
         # A non-HARD service error the deterministic repair cannot resolve and
         # whose document-level path does not resolve to a patch target is not

@@ -1661,6 +1661,52 @@ class NormalizeAggregationTest(unittest.TestCase):
             for error in errors if error.code == "DEFECT_PRIMARY_MISSING"
         ))
 
+    def test_projector_normalizes_correction_appended_observation(self) -> None:
+        # issue #103: a correction appended an observation with no
+        # observation_id, no evidence array (only evidence_refs) and an
+        # unregistered check id; the published-candidate path published it
+        # as-is and the preflight rejected the job.  The projector must
+        # normalize all three.
+        document = {
+            "observations": [
+                {
+                    "observation_id": "OBS-1",
+                    "criterion_ids": ["SPEC-TRACEABILITY"],
+                    "check_ids": ["design_decisions"],
+                    "claim_ids": ["design/RISK-209"],
+                    "local_outcome": "SUPPORTED",
+                    "evidence": [{
+                        "evidence_id": "EV-2", "type": "source_citation",
+                        "path": "frameworks/x.ts", "description": "hosted",
+                    }],
+                },
+                {
+                    "criterion_ids": ["DESIGN-DECISION-QUALITY"],
+                    "check_ids": ["design_decisions", "invented_check"],
+                    "claim_ids": ["design/RISK-210"],
+                    "local_outcome": "CONFLICT",
+                    "defect_key": "risk-210.all-decorators-execute",
+                    "evidence_refs": ["EV-2", "EV-404"],
+                    "fact": "appended without id/evidence",
+                },
+            ],
+        }
+        projected = project_observation_derived_fields(
+            document, required_checks=["design_decisions"]
+        )
+        appended = projected["observations"][1]
+        self.assertEqual(appended["observation_id"], "OBS-2")
+        self.assertEqual(appended["check_ids"], ["design_decisions"])
+        self.assertEqual(
+            [e["evidence_id"] for e in appended["evidence"]], ["EV-2"]
+        )
+        # The hosted sibling row is untouched and stays the materialization
+        # source.
+        self.assertEqual(
+            projected["observations"][0]["evidence"][0]["evidence_id"], "EV-2"
+        )
+        self.assertEqual(projected["completed_checks"], ["design_decisions"])
+
     def test_ambiguous_duplicate_defect_owner_uses_service_fallback(self) -> None:
         judgment = self._judgment()
         judgment["defect_ownership"].append({

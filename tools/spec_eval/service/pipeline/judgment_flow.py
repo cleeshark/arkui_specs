@@ -476,31 +476,20 @@ class JudgmentFlow:
 
             def downgrade_warnings(errors: list[TypedError]) -> list[TypedError]:
                 for error in errors:
-                    # Once the single model Correction turn has completed,
-                    # any remaining MODEL_CORRECTION issue is a report-quality
-                    # warning.  Keep its original code so aggregation can
-                    # apply the registered confidence deduction.  Fatal and
-                    # service-owned structural errors remain blocking.
-                    registered_warning = (
-                        is_post_correction_warning(error)
-                        and (
-                            degraded_publish_codes is None
-                            or error.code in degraded_publish_codes
+                    # Every residual this downgrade removes from the blocking
+                    # set must be recorded: the skill preflight tolerates only
+                    # sidecar-recorded errors, so an unrecorded drop silently
+                    # publishes a document the preflight is guaranteed to
+                    # reject (issue #103, jobs 81792106/deb7a6a5 — cardinality
+                    # and check-coverage residuals were dropped unseen).
+                    if is_post_correction_warning(error) or is_model_correction_error(error):
+                        identity = (
+                            error.code, error.path,
+                            error.entity_type, error.entity_id,
                         )
-                    )
-                    unrestricted_final_warning = (
-                        degraded_publish_codes is None
-                        and is_model_correction_error(error)
-                    )
-                    if not (registered_warning or unrestricted_final_warning):
-                        continue
-                    identity = (
-                        error.code, error.path,
-                        error.entity_type, error.entity_id,
-                    )
-                    if identity not in downgraded_identities:
-                        downgraded_identities.add(identity)
-                        downgraded.append(error)
+                        if identity not in downgraded_identities:
+                            downgraded_identities.add(identity)
+                            downgraded.append(error)
                 return [
                     error for error in errors
                     if not (
@@ -1273,6 +1262,14 @@ class JudgmentFlow:
                 "evidence_refs/fact). Never clear the defect_keys of an "
                 "adverse claim."
             )
+            registered_checks = list(
+                work.work_item.get("required_checks") or []
+            )
+            if registered_checks:
+                value_rules.append(
+                    "Appended observations must use registered check_ids "
+                    "only: " + ", ".join(registered_checks) + "."
+                )
         correction_contract = {
             "format": "json_patch",
             "base": candidate_kind,
