@@ -311,6 +311,72 @@ def strip_dangling_finding_evidence(document: dict[str, Any]) -> list[str]:
     return changes
 
 
+def reconcile_aggregation_findings(document: dict[str, Any]) -> list[str]:
+    """Bring correction-appended findings to the published finding shape.
+
+    The correction contract does not carry the finding schema, so a bounded
+    turn asked to fix FINDING_CARDINALITY_VIOLATED can append a row missing
+    the fields the final semantic schema requires (issue #105, job
+    d18dea46).  Mirrors :func:`normalize_aggregation`'s published-finding
+    construction on the patch path:
+
+    - ``criterion_id`` / ``conclusion`` are derived from the owning
+      Criterion row (the validator requires both to match it anyway);
+    - ``severity`` is canonicalized through
+      :data:`FINDING_SEVERITY_TO_PUBLISHED`;
+    - ``message`` / ``recommendation`` are model-owned semantics with a
+      non-empty schema minimum the service cannot invent — a finding
+      lacking either is dropped, leaving the documented FINDING_CARDINALITY
+      residual (downgraded after the bounded turn) instead of a
+      schema-invalid row that kills the assemble gate.
+    """
+    changes: list[str] = []
+    for result in _rows(document.get("criterion_results")):
+        criterion_id = result.get("criterion_id")
+        if not isinstance(criterion_id, str) or not criterion_id:
+            continue
+        conclusion = result.get("conclusion")
+        survivors: list[dict[str, Any]] = []
+        for finding_index, finding in enumerate(_rows(result.get("findings"))):
+            label = (
+                f"criterion_results[{criterion_id}].findings[{finding_index}]"
+            )
+            if finding.get("criterion_id") != criterion_id:
+                finding["criterion_id"] = criterion_id
+                changes.append(f"{label}.criterion_id set to owning criterion")
+            if finding.get("conclusion") != conclusion:
+                finding["conclusion"] = conclusion
+                changes.append(
+                    f"{label}.conclusion set to the criterion conclusion"
+                )
+            severity = finding.get("severity")
+            canonical_severity = FINDING_SEVERITY_TO_PUBLISHED.get(
+                str(severity).upper() if isinstance(severity, str) else "",
+                severity,
+            )
+            if canonical_severity != severity:
+                finding["severity"] = canonical_severity
+                changes.append(f"{label}.severity canonicalized")
+            message = finding.get("message")
+            recommendation = finding.get("recommendation")
+            if (
+                not isinstance(message, str) or not message.strip()
+                or not isinstance(recommendation, str)
+                or not recommendation.strip()
+            ):
+                changes.append(
+                    f"{label}: dropped — missing model-owned message or "
+                    "recommendation the service cannot invent"
+                )
+                continue
+            survivors.append(finding)
+        if survivors is not None and len(survivors) != len(
+            result.get("findings") or []
+        ):
+            result["findings"] = survivors
+    return changes
+
+
 def project_observation_derived_fields(
     document: dict[str, Any],
     *,

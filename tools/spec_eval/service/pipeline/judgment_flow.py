@@ -42,6 +42,7 @@ from spec_eval.kernel.errors import (
 from spec_eval.kernel.normalize import (
     NormalizationResult,
     rederive_aggregation_finding_ids,
+    reconcile_aggregation_findings,
     strip_dangling_finding_evidence,
 )
 from spec_eval.service.domain import states as S
@@ -967,6 +968,19 @@ class JudgmentFlow:
                 # ones before validation/publish (issue #89 follow-up).
                 if "criterion_results" in corrected_payload:
                     rederive_aggregation_finding_ids(corrected_payload)
+                    # issue #105 (job d18dea46): correction-appended findings
+                    # may lack the schema fields the final semantic schema
+                    # requires.  Backfill the derivable identity fields and
+                    # drop rows whose model-owned fields the service cannot
+                    # invent, before the dangling-reference strip below.
+                    reconciled = reconcile_aggregation_findings(corrected_payload)
+                    if reconciled:
+                        self.events.append(
+                            self.ctx.job_id, "correction_finding_schema_reconciled", {
+                                "work_item_id": work.work_item_id,
+                                "changes": reconciled,
+                            },
+                        )
                     # issue #104 (job 99131e31): a correction that clears or
                     # shrinks a Criterion's evidence leaves the findings'
                     # evidence_ids dangling; the aggregation normalizer's
@@ -1261,6 +1275,20 @@ class JudgmentFlow:
             "For paths marked field_type=list, the decoded value must be a "
             "JSON array whose every element is in values.",
         ]
+        if any(
+            error.get("code") == "FINDING_CARDINALITY_VIOLATED"
+            or str(path).endswith("/findings")
+            for error in typed_errors
+            for path in [str(error.get("path", ""))]
+        ):
+            value_rules.append(
+                "A Finding row requires exactly these fields: severity "
+                "(Info/Minor/Major/Critical), message (non-empty, evidence-"
+                "specific), conclusion (must equal the owning Criterion's "
+                "conclusion), recommendation (non-empty remediation), and "
+                "evidence_ids citing the Criterion allowlist. The service "
+                "derives criterion_id and the canonical finding_id."
+            )
         if any(
             str(path).endswith("/evidence") for path in allowed_paths
         ):
