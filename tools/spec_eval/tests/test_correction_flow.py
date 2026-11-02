@@ -2738,6 +2738,9 @@ class CorrectionRoutingDegradeTest(unittest.TestCase):
                 }],
                 "findings": [{
                     "finding_id": "SEM-80a2cb26ffea5e0468affcf6",
+                    "message": "SDK 契约与源码声明存在偏差，需补齐声明。",
+                    "recommendation": "对照冻结源码补齐 sdk_declaration 引用。",
+                    "severity": "Major",
                     "evidence_ids": ["EV-wrong"],
                 }],
                 "claim_ids": [],
@@ -2816,6 +2819,155 @@ class CorrectionRoutingDegradeTest(unittest.TestCase):
             "EVIDENCE_REQUIRED_MISSING",
             [record["error"]["code"] for record in records],
         )
+
+    def test_malformed_appended_finding_drops_and_degrades(self) -> None:
+        # issue #105 (job d18dea46): a correction appending a finding without
+        # the schema fields (conclusion/recommendation/criterion_id) used to
+        # reach assemble and hard-fail.  The reconciliation backfills the
+        # derivable identity fields and drops the row whose model-owned
+        # semantics cannot be invented; the FINDING_CARDINALITY residual then
+        # degrades on the aggregation stage's unrestricted post-correction
+        # policy, and the skill's own cardinality markers already downgrade
+        # the matching final-gate errors.
+        document = {
+            "criterion_results": [{
+                "criterion_id": "COMPATIBILITY-API-VERSION",
+                "conclusion": "PARTIALLY_SUPPORTED",
+                "findings": [],
+                "claim_ids": [],
+            }],
+        }
+        cardinality_error = {
+            "code": "FINDING_CARDINALITY_VIOLATED",
+            "path": "aggregation.criterion_results["
+                    "COMPATIBILITY-API-VERSION].findings",
+            "entity_type": "criterion",
+            "entity_id": "COMPATIBILITY-API-VERSION",
+            "expected": "at least one finding for PARTIALLY_SUPPORTED",
+            "repairability": "MODEL_CORRECTION",
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp)
+            work = _aggregation_work(run_dir)
+            self._seed_candidate(
+                run_dir, "aggregation.json", document, [cardinality_error],
+                work_item_id=work.work_item_id,
+            )
+            events = _Events()
+            executor = _FlowExecutor(patches=[{
+                "op": "replace",
+                "path": "/criterion_results/0/findings",
+                "value": json.dumps([{
+                    "severity": "Major",
+                    "message": "Tabs 容器实现路径差异导致部分支持。",
+                    "evidence_ids": [],
+                }]),
+            }])
+            published: list[dict] = []
+            flow = JudgmentFlow(
+                ctx=SimpleNamespace(run_dir=run_dir, job_id="job", run_id="run-1"),
+                executor=executor,
+                jobs=SimpleNamespace(transition_status=lambda *a, **k: None),
+                events=events,
+            )
+            outcome = flow.run(
+                work=work,
+                output_path=run_dir / "aggregation.json",
+                template={},
+                normalize=lambda payload: NormalizationResult(document=payload),
+                validate=lambda doc: (
+                    [] if doc["criterion_results"][0]["findings"] else [
+                        TypedError.from_dict(cardinality_error)
+                    ]
+                ),
+                base_contract=work.prompt_extras,
+                on_publish=lambda d: published.append(d) or True,
+                fingerprint="fp", stage_event="aggregation_completed",
+                allow_degraded_publish=True,
+                on_post_correction_warnings=lambda errors: (
+                    record_post_correction_warnings(
+                        run_dir, work.work_item_id, errors
+                    )
+                ),
+            )
+            records = load_post_correction_warning_records(run_dir)
+        self.assertEqual(outcome.status, C.STATUS_COMPLETED)
+        self.assertEqual(executor.calls, ["correct"])
+        criterion = published[0]["criterion_results"][0]
+        self.assertEqual(criterion["findings"], [])
+        self.assertIn("correction_finding_schema_reconciled", events.types())
+        self.assertIn("correction_completed_with_warnings", events.types())
+        # FINDING_CARDINALITY_VIOLATED rides the skill's marker downgrade
+        # (FINDING_CARDINALITY_WARNING_MARKERS), not the sidecar — the
+        # warning stays visible in the completion event.
+        warning_event = next(
+            payload for event_type, payload in events.rows
+            if event_type == "correction_completed_with_warnings"
+        )
+        self.assertIn(
+            "FINDING_CARDINALITY_VIOLATED",
+            [warning["code"] for warning in warning_event["warnings"]],
+        )
+
+    def test_finding_contract_disclosed_for_cardinality_errors(self) -> None:
+        # issue #105: the correction turn was asked to "add one finding" with
+        # no field definition anywhere in its context; the contract must
+        # disclose the finding schema.
+        document = {
+            "criterion_results": [{
+                "criterion_id": "COMPATIBILITY-API-VERSION",
+                "findings": [],
+            }],
+        }
+        error = {
+            "code": "FINDING_CARDINALITY_VIOLATED",
+            "path": "aggregation.criterion_results["
+                    "COMPATIBILITY-API-VERSION].findings",
+            "entity_type": "criterion",
+            "entity_id": "COMPATIBILITY-API-VERSION",
+            "repairability": "MODEL_CORRECTION",
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp)
+            work = _aggregation_work(run_dir)
+            self._seed_candidate(
+                run_dir, "aggregation.json", document, [error],
+                work_item_id=work.work_item_id,
+            )
+            captured: list[dict] = []
+
+            class _CaptureExecutor:
+                def execute(self, work_, emit, cancel=None):
+                    if work_.prompt_extras.get("mode") == "correct":
+                        captured.append(work_.prompt_extras.get(
+                            "correction_contract", {}
+                        ))
+                        return C.ExecutionResult(
+                            status=C.STATUS_COMPLETED,
+                            observation={"patches": []},
+                        )
+                    raise AssertionError("observe should be pre-seeded")
+
+            flow = JudgmentFlow(
+                ctx=SimpleNamespace(run_dir=run_dir, job_id="job", run_id="run-1"),
+                executor=_CaptureExecutor(),
+                jobs=SimpleNamespace(transition_status=lambda *a, **k: None),
+                events=_Events(),
+            )
+            flow.run(
+                work=work,
+                output_path=run_dir / "aggregation.json",
+                template={},
+                normalize=lambda payload: NormalizationResult(document=payload),
+                validate=lambda _doc: [TypedError.from_dict(error)],
+                base_contract=work.prompt_extras,
+                on_publish=lambda d: True,
+                fingerprint="fp", stage_event="aggregation_completed",
+            )
+        rules = " ".join(captured[0].get("value_rules", []))
+        self.assertIn("recommendation", rules)
+        self.assertIn("conclusion", rules)
+        self.assertIn("severity", rules)
 
     def test_residual_non_hard_error_degrades_only_for_final_report(self) -> None:
         # A non-HARD service error the deterministic repair cannot resolve and

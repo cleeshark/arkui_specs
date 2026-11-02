@@ -49,6 +49,7 @@ from spec_eval.kernel.normalize import (
     project_observation_derived_fields,
     semantic_finding_id,
     strip_dangling_finding_evidence,
+    reconcile_aggregation_findings,
 )
 from spec_eval.kernel.schema_gen import build_envelope_schema
 from spec_eval.kernel.validate import (
@@ -1744,6 +1745,51 @@ class NormalizeAggregationTest(unittest.TestCase):
             "criterion_id": "CORRECTNESS-SDK-CONTRACT",
             "removed_evidence_ids": ["EV-a8804e7489990effa943d87a", "EV-kept"],
         }]})
+
+    def test_reconcile_aggregation_findings_backfills_and_drops(self) -> None:
+        # issue #105 (job d18dea46): the correction contract does not carry
+        # the finding schema, so an appended finding lacked criterion_id/
+        # conclusion/recommendation.  The service must backfill the fields
+        # derived from the owning Criterion and drop rows whose model-owned
+        # semantics it cannot invent, leaving the documented cardinality
+        # residual instead of a schema-invalid row at assemble.
+        import json as _json
+        document = {
+            "criterion_results": [
+                {
+                    "criterion_id": "COMPATIBILITY-API-VERSION",
+                    "conclusion": "PARTIALLY_SUPPORTED",
+                    "findings": [
+                        {
+                            "severity": "major",
+                            "message": "Tabs 容器实现路径与 C-API 桥接路径存在差异。",
+                            "evidence_ids": ["EV-1", "EV-2"],
+                        },
+                        {
+                            "severity": "Major",
+                            "message": "只有 message，没有修复建议。",
+                        },
+                        {
+                            "severity": "Minor",
+                            "message": "完整行。",
+                            "recommendation": "补齐声明。",
+                            "evidence_ids": ["EV-2"],
+                        },
+                    ],
+                },
+            ],
+        }
+        changes = reconcile_aggregation_findings(document)
+        findings = document["criterion_results"][0]["findings"]
+        # Only the complete row survives; the two rows missing the model-owned
+        # recommendation are dropped.
+        self.assertEqual(len(findings), 1)
+        self.assertEqual(findings[0]["message"], "完整行。")
+        self.assertEqual(findings[0]["criterion_id"], "COMPATIBILITY-API-VERSION")
+        self.assertEqual(findings[0]["conclusion"], "PARTIALLY_SUPPORTED")
+        self.assertEqual(findings[0]["severity"], "Minor")
+        self.assertEqual(len(changes), 9)
+        self.assertEqual(sum(1 for c in changes if "dropped" in c), 2)
 
     def test_ambiguous_duplicate_defect_owner_uses_service_fallback(self) -> None:
         judgment = self._judgment()
