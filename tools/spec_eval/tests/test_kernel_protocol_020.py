@@ -1462,7 +1462,9 @@ class NormalizeAggregationTest(unittest.TestCase):
         judgment = self._judgment()
         judgment["criterion_results"][0]["evidence_ids"] = ["EV-unknown"]
         result = self._normalize(judgment)
-        self.assertIsNone(result.document)
+        # issue #106: non-fatal normalization errors keep the document so the
+        # first-pass kernel validation sees the complete violation set.
+        self.assertIsNotNone(result.document)
         self.assertEqual([error.code for error in result.errors], [
             "CRITERION_EVIDENCE_UNKNOWN"
         ])
@@ -1506,7 +1508,9 @@ class NormalizeAggregationTest(unittest.TestCase):
 
         result = self._normalize(judgment)
 
-        self.assertIsNone(result.document)
+        # issue #106: non-fatal normalization errors keep the document so the
+        # first-pass kernel validation sees the complete violation set.
+        self.assertIsNotNone(result.document)
         self.assertEqual(
             [error.code for error in result.errors],
             ["SERVICE_DEFECT_KEY_RESERVED"],
@@ -1528,7 +1532,9 @@ class NormalizeAggregationTest(unittest.TestCase):
         result = self._normalize(judgment)
 
         self.assertEqual(result.fatal, [])
-        self.assertIsNone(result.document)
+        # issue #106: non-fatal normalization errors keep the document so the
+        # first-pass kernel validation sees the complete violation set.
+        self.assertIsNotNone(result.document)
         self.assertEqual([error.code for error in result.errors], [
             "DUPLICATE_DEFECT_OWNER",
         ])
@@ -1949,7 +1955,9 @@ class NormalizeAggregationTest(unittest.TestCase):
         result = normalize_aggregation(
             self._template(), self._judgment(), source_observation_ids=[]
         )
-        self.assertIsNone(result.document)
+        # issue #106: non-fatal normalization errors keep the document so the
+        # first-pass kernel validation sees the complete violation set.
+        self.assertIsNotNone(result.document)
         self.assertTrue(result.errors)
         self.assertEqual(
             {error.code for error in result.errors},
@@ -2839,7 +2847,9 @@ class FindingEvidenceClosureTest(unittest.TestCase):
             source_observation_ids=[],
             aggregation_context=_compact_context(self._aggregation_context()),
         )
-        self.assertIsNone(result.document)
+        # issue #106: non-fatal normalization errors keep the document so the
+        # first-pass kernel validation sees the complete violation set.
+        self.assertIsNotNone(result.document)
         self.assertTrue(
             any(e.code == "CRITERION_EVIDENCE_UNKNOWN" for e in result.errors)
         )

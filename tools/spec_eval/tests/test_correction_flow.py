@@ -2969,6 +2969,102 @@ class CorrectionRoutingDegradeTest(unittest.TestCase):
         self.assertIn("conclusion", rules)
         self.assertIn("severity", rules)
 
+    def test_conclusion_forbidden_paths_expose_conclusion_field(self) -> None:
+        # issue #106: the validator path targets the Criterion row; the
+        # bounded turn repairs the conclusion field.
+        document = {"criterion_results": [
+            {"criterion_id": "FUNCTION-FEAT-COVERAGE"},
+            {"criterion_id": "DESIGN-FEAT-RUNTIME-COVERAGE"},
+        ]}
+        error = TypedError(
+            "MAPPING_CONCLUSION_FORBIDDEN",
+            "aggregation.criterion_results[FUNCTION-FEAT-COVERAGE]",
+            entity_type="criterion", entity_id="FUNCTION-FEAT-COVERAGE",
+        )
+        paths = resolve_typed_error_json_paths(document, error)
+        self.assertEqual(paths, [
+            "/criterion_results/0",
+            "/criterion_results/0/conclusion",
+        ])
+        patch = [{"op": "replace", "path": paths[1], "value": "PARTIALLY_SUPPORTED"}]
+        self.assertEqual(
+            validate_patch_scope(patch, allowed_paths=paths, immutable_paths=[]),
+            [],
+        )
+
+    def test_conclusion_contract_disclosed_for_mapping_errors(self) -> None:
+        # issue #106: the aggregation policy and the criterion's outcome
+        # counts must be disclosed when a conclusion violation reaches the
+        # bounded turn.
+        document = {
+            "criterion_results": [{
+                "criterion_id": "FUNCTION-FEAT-COVERAGE",
+                "conclusion": "SUPPORTED",
+            }],
+        }
+        error = {
+            "code": "MAPPING_CONCLUSION_FORBIDDEN",
+            "path": "aggregation.criterion_results[FUNCTION-FEAT-COVERAGE]",
+            "entity_type": "criterion",
+            "entity_id": "FUNCTION-FEAT-COVERAGE",
+            "expected": "conclusion not in forbidden_conclusions "
+                        "['SUPPORTED', 'NOT_APPLICABLE']",
+            "actual": "SUPPORTED",
+            "repairability": "MODEL_CORRECTION",
+        }
+        captured: list[dict] = []
+
+        class _CaptureExecutor:
+            def execute(self, work, emit, cancel=None):
+                if work.prompt_extras.get("mode") == "correct":
+                    captured.append(work.prompt_extras.get(
+                        "correction_contract", {}
+                    ))
+                    return C.ExecutionResult(
+                        status=C.STATUS_COMPLETED,
+                        observation={"patches": [{
+                            "op": "replace",
+                            "path": "/criterion_results/0/conclusion",
+                            "value": json.dumps("PARTIALLY_SUPPORTED"),
+                        }]},
+                    )
+                raise AssertionError("observe should be pre-seeded")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            run_dir = Path(tmp)
+            work = _aggregation_work(run_dir)
+            self._seed_candidate(
+                run_dir, "aggregation.json", document, [error],
+                work_item_id=work.work_item_id,
+            )
+            flow = JudgmentFlow(
+                ctx=SimpleNamespace(run_dir=run_dir, job_id="job", run_id="run-1"),
+                executor=_CaptureExecutor(),
+                jobs=SimpleNamespace(transition_status=lambda *a, **k: None),
+                events=_Events(),
+            )
+            outcome = flow.run(
+                work=work,
+                output_path=run_dir / "aggregation.json",
+                template={},
+                normalize=lambda payload: NormalizationResult(document=payload),
+                validate=lambda doc: (
+                    [] if doc["criterion_results"][0]["conclusion"]
+                    == "PARTIALLY_SUPPORTED" else [TypedError.from_dict(error)]
+                ),
+                base_contract=work.prompt_extras,
+                on_publish=lambda d: True,
+                fingerprint="fp", stage_event="aggregation_completed",
+            )
+        self.assertEqual(outcome.status, C.STATUS_COMPLETED)
+        rules = " ".join(captured[0].get("value_rules", []))
+        self.assertIn("NOT_VERIFIABLE", rules)
+        self.assertIn("SUPPORTED and NOT_APPLICABLE are forbidden", rules)
+        self.assertIn(
+            "/criterion_results/0/conclusion",
+            captured[0].get("allowed_paths", []),
+        )
+
     def test_residual_non_hard_error_degrades_only_for_final_report(self) -> None:
         # A non-HARD service error the deterministic repair cannot resolve and
         # whose document-level path does not resolve to a patch target is not
