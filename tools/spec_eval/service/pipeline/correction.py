@@ -734,6 +734,18 @@ def resolve_typed_error_json_paths(
     """
     typed = error if isinstance(error, TypedError) else TypedError.from_dict(error)
 
+    if typed.code in {
+        "MAPPING_CONCLUSION_FORBIDDEN",
+        "MAPPING_NV_REQUIRED",
+        "NOT_APPLICABLE_FORBIDDEN",
+    }:
+        # The validator path targets the Criterion row; the repairable field
+        # is its conclusion (issue #106).  Expose the row plus the conclusion
+        # field so the bounded turn can align the conclusion with the
+        # mapping constraints.
+        primary_path = resolve_typed_error_json_path(document, typed)
+        return list(dict.fromkeys([primary_path, primary_path + "/conclusion"]))
+
     if typed.code == "CHECK_COVERAGE_INCOMPLETE":
         # The validator path "observation.observations.check_ids" is document-level
         # and does not resolve to a traversable node via the generic resolver.

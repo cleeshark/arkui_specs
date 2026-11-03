@@ -1299,6 +1299,25 @@ class JudgmentFlow:
                 "references and records the quality warning."
             )
         if any(
+            error.get("code") in {
+                "MAPPING_CONCLUSION_FORBIDDEN",
+                "MAPPING_NV_REQUIRED",
+                "NOT_APPLICABLE_FORBIDDEN",
+            }
+            for error in typed_errors
+        ):
+            value_rules.append(
+                "Criterion conclusions must aggregate their mapped unit "
+                "outcomes: when mapped units include CONFLICT or MISSING "
+                "rows, SUPPORTED and NOT_APPLICABLE are forbidden (use "
+                "PARTIALLY_SUPPORTED/CONTRADICTED/MISSING per the rubric); "
+                "when mapped units include NOT_VERIFIABLE but no adverse "
+                "rows, conclude NOT_VERIFIABLE; NOT_APPLICABLE requires no "
+                "applicable mapped unit. The criterion's constraints "
+                "(outcome_counts, adverse/unverifiable/applicable refs) in "
+                "the correction context carry the exact counts."
+            )
+        if any(
             error.get("code") == "CONTRADICTION_BASIS_INVALID"
             for error in typed_errors
         ):

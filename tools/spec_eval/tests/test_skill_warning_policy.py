@@ -144,6 +144,32 @@ class EvidenceRequiredWarningPolicyTest(unittest.TestCase):
         self.assertEqual(blocking, [])
         self.assertEqual(len(warnings), 2)
 
+    def test_conclusion_aggregation_errors_downgrade(self) -> None:
+        # issue #106 (job af50dc4e): the exact assemble error — a conclusion
+        # contradicting mapped adverse units — must downgrade in both the
+        # aggregation and final-candidate gates so a post-Correction residual
+        # yields a degraded report instead of discarding the run.
+        from aggregation_warning_policy import (
+            split_aggregation_warnings,
+            split_final_candidate_warnings,
+        )
+        error = (
+            "aggregation.criterion_results[FUNCTION-FEAT-COVERAGE]: mapped "
+            "adverse units ['claim:feature:Feat-01:Feat-01/AC-1.1=MISSING'] "
+            "may not aggregate to SUPPORTED"
+        )
+        nv_error = (
+            "aggregation.criterion_results[SPEC-AC-TESTABILITY]: mapped "
+            "NOT_VERIFIABLE units ['u1'] require NOT_VERIFIABLE when no "
+            "adverse unit is mapped, got SUPPORTED"
+        )
+        blocking, warnings = split_aggregation_warnings([error, nv_error])
+        self.assertEqual(blocking, [])
+        self.assertEqual(len(warnings), 2)
+        final_blocking, final_warnings = split_final_candidate_warnings([error])
+        self.assertEqual(final_blocking, [])
+        self.assertEqual(final_warnings, [error])
+
 
 if __name__ == "__main__":
     unittest.main()

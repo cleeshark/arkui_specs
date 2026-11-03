@@ -102,6 +102,20 @@ FINDING_CARDINALITY_WARNING_MARKERS = (
 )
 FINDING_CARDINALITY_WARNING_CODE = "FINDING_CARDINALITY_VIOLATED"
 FINDING_CARDINALITY_WARNING_DEDUCTION = 20
+# Issue #106 (job af50dc4e): a Criterion conclusion that contradicts its
+# mapped unit outcomes (e.g. SUPPORTED despite mapped adverse rows) is a
+# bounded evaluation-quality gap.  After the one Correction turn — whose
+# contract now discloses the aggregation policy and the criterion's outcome
+# counts — a residual means the model judged the aggregate differently;
+# the report stays consumable with a MAJOR deduction, so downgrade the
+# matching final-gate error instead of discarding the whole run.
+CONCLUSION_AGGREGATION_WARNING_MARKERS = (
+    "may not aggregate to",
+    "require NOT_VERIFIABLE when no adverse",
+    "may not aggregate to NOT_APPLICABLE",
+)
+CONCLUSION_AGGREGATION_WARNING_CODE = "MAPPING_CONCLUSION_FORBIDDEN"
+CONCLUSION_AGGREGATION_WARNING_DEDUCTION = 20
 POST_CORRECTION_WARNING_FILE = "post-correction-warnings.json"
 OBSERVATION_WARNING_MARKERS = {
     "UNIT_ROW_INVALID": (
@@ -282,6 +296,10 @@ def split_aggregation_warnings(errors: list[str]) -> tuple[list[str], list[str]]
                 marker in error
                 for marker in FINDING_CARDINALITY_WARNING_MARKERS
             )
+            or any(
+                marker in error
+                for marker in CONCLUSION_AGGREGATION_WARNING_MARKERS
+            )
         ):
             warnings.append(error)
         else:
@@ -312,6 +330,10 @@ def split_final_candidate_warnings(
             or any(
                 marker in error
                 for marker in FINDING_CARDINALITY_WARNING_MARKERS
+            )
+            or any(
+                marker in error
+                for marker in CONCLUSION_AGGREGATION_WARNING_MARKERS
             )
         ):
             warnings.append(error)
@@ -354,6 +376,30 @@ def record_aggregation_warnings(run_dir: Path, warnings: list[str]) -> None:
             for marker in FINDING_CARDINALITY_WARNING_MARKERS
         )
     ])
+    record_conclusion_aggregation_warning(run_dir, [
+        warning for warning in warnings
+        if any(
+            marker in warning
+            for marker in CONCLUSION_AGGREGATION_WARNING_MARKERS
+        )
+    ])
+
+
+def record_conclusion_aggregation_warning(
+    run_dir: Path, warnings: list[str]
+) -> None:
+    """Deduct confidence for conclusions contradicting mapped unit outcomes."""
+    _record_confidence_warning(
+        run_dir, warnings,
+        code=CONCLUSION_AGGREGATION_WARNING_CODE,
+        layer="MAJOR",
+        deduction=CONCLUSION_AGGREGATION_WARNING_DEDUCTION,
+        message=(
+            "aggregation retains a criterion conclusion that contradicts "
+            "its mapped unit outcomes"
+        ),
+        warning_path="aggregation.criterion_results[].conclusion",
+    )
 
 
 def record_finding_cardinality_warning(

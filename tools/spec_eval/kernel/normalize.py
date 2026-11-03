@@ -1674,12 +1674,17 @@ def normalize_aggregation(
             evidence_catalog=inherited_catalog,
         )
     if errors:
+        # Non-fatal normalization errors must not starve the kernel gate
+        # (issue #106, job af50dc4e): one evidence-reference typo used to
+        # discard the document, so the first-pass typed validation never ran
+        # and unrelated violations (e.g. conclusions forbidden by the
+        # mapping constraints) reached the assemble gate unseen.  Return the
+        # deterministic document alongside the errors so the flow's first
+        # pass collects the complete violation set; the raw payload remains
+        # the correction patch base and this document is still never
+        # published directly from here.
         return NormalizationResult(
-            # A duplicate-key pass keeps this deterministic recovery document
-            # only for collecting the other validation errors that must share
-            # the one Correction turn.  The raw payload remains the actual
-            # patch base and this document is never published here.
-            document=published if duplicate_occurrences else None,
+            document=published,
             changes=changes, errors=errors,
             evidence_catalog=inherited_catalog,
         )
