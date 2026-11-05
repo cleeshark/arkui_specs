@@ -8,7 +8,7 @@
 | Design ID | DESIGN-Func-03-09-01 |
 | 关联规格 | UISession 服务 Feat-01～Feat-10；PageScene 规则感知与搜索功能识别见 [Feat-09](Feat-09-pagescene-rule-awareness-spec.md) |
 | 关联 Epic | 无 |
-| 目标 Feature | Feat-01 IPC安全框架; Feat-02 InspectorTree查询与Web子树聚合; Feat-03 事件上报与注册计数门控; Feat-04 命令下发与同步请求保护; Feat-05 翻译能力与DFX并发保护; Feat-06 内容变化检测与阈值管理; Feat-07 查询能力与辅助Dump; Feat-08 SA验证服务与hidumper命令路由; Feat-09 PageScene 规则感知与搜索功能识别; Feat-10 WM UIContentRemoteObj验证链路 |
+| 目标 Feature | Feat-01 IPC安全框架; Feat-02 InspectorTree查询与Web子树聚合; Feat-03 事件上报与注册计数门控; Feat-04 命令下发与同步请求保护; Feat-05 翻译能力与DFX并发保护; Feat-06 内容变化检测与阈值管理; Feat-07 查询能力与辅助Dump; Feat-08 SA验证服务与hidumper命令路由; Feat-09 PageScene 规则感知与搜索功能识别; Feat-10 WM UIContentRemoteObj验证链路; Feat-13 键鼠非精确基础操控与结果回传; Feat-14 非精确操控安全管控与冲突管理 |
 | 复杂度 | 关键 |
 | 目标版本 | API 9+（存量能力）；PageScene 搜索功能识别为 OpenHarmony-7.1-Release |
 | Owner | ArkUI SIG |
