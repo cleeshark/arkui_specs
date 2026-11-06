@@ -53,6 +53,7 @@ from spec_eval.service.pipeline.result_payload import (
     correct_prompt_contract,
 )
 from spec_eval.service.pipeline.correction import (
+    evidence_catalog_map,
     apply_deterministic_correction,
     apply_json_patch,
     coerce_allowed_value_shapes,
@@ -515,6 +516,9 @@ class JudgmentFlow:
                 return document, typed
             corrected, changes, _unresolved = apply_deterministic_correction(
                 document, deterministic,
+                evidence_catalog=evidence_catalog_map(
+                    breakpoint_data.get("evidence_catalog")
+                ),
             )
             if not changes:
                 record_downgraded()
@@ -709,6 +713,9 @@ class JudgmentFlow:
                     working_candidate_kind = CANDIDATE_PUBLISHED_DOCUMENT
             corrected_document, changes, _unresolved = apply_deterministic_correction(
                 repair_base, deterministic_dicts,
+                evidence_catalog=evidence_catalog_map(
+                    breakpoint_data.get("evidence_catalog")
+                ),
             )
             corrected_document = projected(corrected_document)
 
@@ -1297,6 +1304,13 @@ class JudgmentFlow:
                 "the Criterion's own evidence rows; when you clear or shrink a "
                 "Criterion's evidence, the service strips dangling finding "
                 "references and records the quality warning."
+            )
+            value_rules.append(
+                "Prefer appending single evidence rows over rewriting whole "
+                "evidence arrays; when transcribing existing rows, copy "
+                "content_hash verbatim from the correction context catalog — "
+                "the service repairs tampered rows from the catalog or strips "
+                "them."
             )
         if any(
             error.get("code") in {
