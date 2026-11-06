@@ -27,7 +27,7 @@ from spec_eval.kernel.errors import (
     TypedError,
     repairability_of,
 )
-from spec_eval.kernel.normalize import DEFECT_KEY
+from spec_eval.kernel.normalize import DEFECT_KEY, strip_dangling_finding_evidence
 
 
 _OBSERVATION_SET_FIELDS = frozenset({"criterion_ids", "check_ids", "claim_ids"})
@@ -128,9 +128,28 @@ def _deduplicate_string_field(row: dict[str, Any], field: str) -> bool:
     return True
 
 
+def evidence_catalog_map(
+    raw: Any,
+) -> dict[str, dict[str, Any]]:
+    """Normalize an evidence catalog (list or id-keyed dict) to id → row."""
+    if isinstance(raw, dict):
+        return {
+            evidence_id: row for evidence_id, row in raw.items()
+            if isinstance(row, dict) and isinstance(row.get("evidence_id"), str)
+        }
+    if isinstance(raw, list):
+        return {
+            row["evidence_id"]: row for row in raw
+            if isinstance(row, dict) and isinstance(row.get("evidence_id"), str)
+        }
+    return {}
+
+
 def apply_deterministic_correction(
     document: dict[str, Any],
     errors: Iterable[TypedError | dict[str, Any]],
+    *,
+    evidence_catalog: dict[str, dict[str, Any]] | None = None,
 ) -> tuple[dict[str, Any], list[str], list[TypedError]]:
     """Apply only safe structural repairs and return unresolved errors.
 
@@ -171,6 +190,7 @@ def apply_deterministic_correction(
         except ValueError:
             return ("/".join(tokens), 0)
 
+    removed_evidence_rows = False
     for _error, pointer in sorted(resolved_rows, key=_row_removal_order):
         tokens = _decode_pointer(pointer)
         parent: Any = corrected
@@ -180,13 +200,41 @@ def apply_deterministic_correction(
             index = int(tokens[-1])
             if not isinstance(parent, list) or index < 0 or index >= len(parent):
                 raise ValueError(pointer)
+            row = parent[index]
+            # Lossless repair first (issue #108, job 2e235c60): a row whose
+            # evidence_id exists in the canonical catalog — e.g. a hash
+            # transcription slip — is replaced with the catalog row instead
+            # of being stripped.
+            catalog_row = None
+            if evidence_catalog and isinstance(row, dict):
+                candidate_row = evidence_catalog.get(row.get("evidence_id"))
+                if (
+                    isinstance(candidate_row, dict)
+                    and candidate_row.get("evidence_id") == row.get("evidence_id")
+                ):
+                    catalog_row = candidate_row
+            if catalog_row is not None:
+                parent[index] = copy.deepcopy(catalog_row)
+                changes.append(
+                    f"{'/'.join(tokens[:-1])}[{index}]: evidence row repaired "
+                    "from catalog"
+                )
+                continue
             del parent[index]
+            removed_evidence_rows = True
         except (TypeError, KeyError, ValueError, IndexError):
             unresolved.append(_error)
             continue
         changes.append(
             f"{'/'.join(tokens[:-1])}: stripped malformed evidence row"
         )
+
+    if removed_evidence_rows:
+        # Stripping an evidence row can orphan the findings that cited it;
+        # reconcile immediately so the dangling references never reach the
+        # assemble gate (issue #108 — the #104 reconciliation ran before the
+        # strip and could not see these).
+        changes.extend(strip_dangling_finding_evidence(corrected))
 
     for raw_error in errors:
         error = raw_error if isinstance(raw_error, TypedError) else TypedError.from_dict(raw_error)

@@ -29,6 +29,7 @@ from spec_eval.service.pipeline.correction import (
     apply_deterministic_correction,
     apply_json_patch,
     coerce_allowed_value_shapes,
+    evidence_catalog_map,
     is_deterministic_error,
     is_fatal_error,
     is_model_correction_error,
@@ -3063,6 +3064,98 @@ class CorrectionRoutingDegradeTest(unittest.TestCase):
         self.assertIn(
             "/criterion_results/0/conclusion",
             captured[0].get("allowed_paths", []),
+        )
+
+    def test_evidence_row_backfilled_from_catalog_before_strip(self) -> None:
+        # issue #108 (job 2e235c60): a correction transcribing an 8-row
+        # evidence array dropped one hex char from an existing row's
+        # content_hash.  The row's evidence_id exists in the canonical
+        # catalog with the correct hash — repair it losslessly instead of
+        # stripping, so the findings citing it never dangle.
+        good_hash = "sha256:" + "0" * 64
+        broken_hash = "sha256:" + "0" * 63
+        document = {
+            "criterion_results": [{
+                "criterion_id": "DESIGN-VERIFICATION-PLAN",
+                "evidence": [
+                    {"evidence_id": "EV-1", "type": "spec_location",
+                     "path": "specs/a.md", "content_hash": good_hash},
+                    {"evidence_id": "EV-2", "type": "spec_location",
+                     "path": "specs/b.md", "content_hash": broken_hash},
+                ],
+                "findings": [{
+                    "finding_id": "SEM-1",
+                    "evidence_ids": ["EV-2"],
+                }],
+            }],
+        }
+        catalog = evidence_catalog_map([
+            {"evidence_id": "EV-1", "type": "spec_location",
+             "path": "specs/a.md", "content_hash": good_hash},
+            {"evidence_id": "EV-2", "type": "spec_location",
+             "path": "specs/b.md", "content_hash": good_hash},
+        ])
+        error = TypedError(
+            "EVIDENCE_ROW_INVALID",
+            "aggregation.criterion_results[DESIGN-VERIFICATION-PLAN].evidence[1]",
+            entity_type="evidence", entity_id="EV-2",
+            expected="sha256 content hash", actual=broken_hash,
+        )
+        corrected, changes, unresolved = apply_deterministic_correction(
+            document, [error], evidence_catalog=catalog,
+        )
+        self.assertFalse(unresolved)
+        self.assertEqual(len(changes), 1)
+        self.assertIn("repaired from catalog", changes[0])
+        evidence = corrected["criterion_results"][0]["evidence"]
+        self.assertEqual(
+            [e["evidence_id"] for e in evidence], ["EV-1", "EV-2"]
+        )
+        self.assertEqual(evidence[1]["content_hash"], good_hash)
+        # The finding's citation stays intact — no dangling reconciliation.
+        self.assertEqual(
+            corrected["criterion_results"][0]["findings"][0]["evidence_ids"],
+            ["EV-2"],
+        )
+
+    def test_uncataloged_evidence_row_strip_reconciles_findings(self) -> None:
+        # The strip fallback must reconcile findings immediately (issue #108):
+        # the #104 reconciliation ran before the strip and could not see the
+        # dangling reference the strip creates.
+        document = {
+            "criterion_results": [{
+                "criterion_id": "DESIGN-VERIFICATION-PLAN",
+                "evidence": [
+                    {"evidence_id": "EV-1", "type": "spec_location",
+                     "path": "specs/a.md", "content_hash": "sha256:" + "0" * 64},
+                    {"evidence_id": "EV-orphan", "type": "spec_location",
+                     "path": "specs/x.md", "content_hash": "sha256:" + "0" * 63},
+                ],
+                "findings": [{
+                    "finding_id": "SEM-2",
+                    "evidence_ids": ["EV-orphan"],
+                }],
+            }],
+        }
+        error = TypedError(
+            "EVIDENCE_ROW_INVALID",
+            "aggregation.criterion_results[DESIGN-VERIFICATION-PLAN].evidence[1]",
+            entity_type="evidence", entity_id="EV-orphan",
+            expected="sha256 content hash", actual="broken",
+        )
+        corrected, changes, unresolved = apply_deterministic_correction(
+            document, [error], evidence_catalog=evidence_catalog_map([]),
+        )
+        self.assertFalse(unresolved)
+        evidence = corrected["criterion_results"][0]["evidence"]
+        self.assertEqual([e["evidence_id"] for e in evidence], ["EV-1"])
+        finding = corrected["criterion_results"][0]["findings"][0]
+        self.assertEqual(finding["evidence_ids"], [])
+        self.assertTrue(any("dangling" in c for c in changes))
+        notes = corrected.get("notes") or []
+        self.assertTrue(
+            any(n.startswith("service-warning:FINDING_EVIDENCE_UNKNOWN:")
+                for n in notes)
         )
 
     def test_residual_non_hard_error_degrades_only_for_final_report(self) -> None:
