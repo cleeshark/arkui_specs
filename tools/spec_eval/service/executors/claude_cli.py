@@ -56,6 +56,7 @@ class ClaudeCliExecutor:
         runner: Callable[..., ProcessResult] = run_subprocess,
     ) -> None:
         self._command = str(config.get("command", "claude"))
+        self._agent_id = str(config.get("agent_id") or "claude")
         self._model = config.get("model")
         self._config_file = config.get("config_file")
         self._permission_mode = str(
@@ -91,6 +92,7 @@ class ClaudeCliExecutor:
     def describe(self) -> dict[str, Any]:
         desc = {
             "type": "claude-cli",
+            "agent_id": self._agent_id,
             "command": self._command,
             "model": self._model,
             "config_file": self._config_file,

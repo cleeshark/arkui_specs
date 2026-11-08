@@ -235,6 +235,21 @@ def _guard_correction_regression(
     return corrected
 
 
+def _executor_call_identity(desc: dict) -> str:
+    """The ``executor_calls.executor`` identity for one executor descriptor.
+
+    Base agents record their executor type (``codex-cli``/``claude-cli``) as
+    before. Executor instances (``claude:zai`` — several CLIs of one type with
+    separate settings files) record ``<type>:<label>`` so the auto-scheduler's
+    per-executor daily quota can bucket each instance independently.
+    """
+    from spec_eval.service.settings import split_agent_instance
+
+    type_name = str(desc.get("type", "unknown"))
+    _base, label = split_agent_instance(str(desc.get("agent_id") or ""))
+    return f"{type_name}:{label}" if label else type_name
+
+
 class JudgmentFlow:
     """Drives observe -> normalize -> typed validate -> (one) correct."""
 
@@ -325,7 +340,7 @@ class JudgmentFlow:
                 run_id=self.ctx.run_id,
                 work_item_id=work.work_item_id,
                 attempt_type=attempt_type,
-                executor=self.executor.describe().get("type", "unknown"),
+                executor=_executor_call_identity(self.executor.describe()),
                 status=result.status,
                 duration_ms=max(0, int(round((time.monotonic() - started) * 1000))),
                 usage=usage,

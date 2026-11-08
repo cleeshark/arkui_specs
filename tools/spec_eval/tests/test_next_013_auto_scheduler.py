@@ -66,7 +66,7 @@ class _FakeApp:
                          agent_id=None, agent_params=None):
         cmd = CreateJobCommand(func_id=func_id, source_revision="rev", run_count=1)
         job = self.jobs.create_job(cmd, evaluator_version="x")
-        self.dispatched.append((func_id, agent_id))
+        self.dispatched.append((func_id, agent_id, agent_params))
         return SimpleNamespace(job=job, target=None, deduplicated=False)
 
 
@@ -266,6 +266,59 @@ class QuotaFailoverTest(_Base):
         sched.tick(now=now)
         self.assertEqual(len(app.dispatched), before)
         self.assertFalse(sched._run_active)
+
+
+class ExecutorInstanceTest(_Base):
+    """Executor instances (``claude:zai``): own params, own quota bucket."""
+
+    def test_executor_identity_maps_instances(self) -> None:
+        sched, _ = self._scheduler([])
+        self.assertEqual(sched._executor_identity("codex"), "codex-cli")
+        self.assertEqual(sched._executor_identity("claude"), "claude-cli")
+        self.assertEqual(sched._executor_identity("claude:zai"), "claude-cli:zai")
+
+    def test_instance_dispatches_with_own_params_and_quota(self) -> None:
+        functions = [_func("04-01-01", "MISSING")]
+        sched, app = self._scheduler(functions)
+        self._set_config(
+            executor_priority=("claude:zai", "claude"),
+            executor_quota={"claude:zai": 1000, "claude": 1000},
+            executor_params={"claude:zai": {"config_file": "settings-zai.json"}},
+        )
+        # base agent exhausted; the instance bucket is untouched
+        self._record_usage("claude-cli", 1000)
+        sched.tick(now=datetime.now().astimezone())
+        self.assertEqual(len(app.dispatched), 1)
+        self.assertEqual(app.dispatched[0][1], "claude:zai")
+        self.assertEqual(
+            app.dispatched[0][2], {"config_file": "settings-zai.json"}
+        )
+
+    def test_exhausted_instance_fails_over_to_base(self) -> None:
+        functions = [_func("04-01-01", "MISSING")]
+        sched, app = self._scheduler(functions)
+        self._set_config(
+            executor_priority=("claude:zai", "claude"),
+            executor_quota={"claude:zai": 1000, "claude": 1000},
+        )
+        self._record_usage("claude-cli:zai", 1000)
+        sched.tick(now=datetime.now().astimezone())
+        self.assertEqual(len(app.dispatched), 1)
+        self.assertEqual(app.dispatched[0][1], "claude")
+
+    def test_status_reports_per_instance_buckets(self) -> None:
+        sched, _ = self._scheduler([])
+        self._set_config(
+            executor_priority=("claude:zai", "claude"),
+            executor_quota={"claude:zai": 1000, "claude": 1000},
+        )
+        self._record_usage("claude-cli:zai", 400)
+        status = sched.status(now=datetime.now().astimezone())
+        by_id = {item["agent_id"]: item for item in status["executors"]}
+        self.assertEqual(by_id["claude:zai"]["used_tokens"], 400)
+        self.assertEqual(by_id["claude:zai"]["quota_tokens"], 1000)
+        self.assertEqual(by_id["claude"]["used_tokens"], 0)
+        self.assertEqual(by_id["claude"]["quota_tokens"], 1000)
 
 
 class ParallelChainingTest(_Base):
@@ -527,6 +580,26 @@ class HttpRouteTest(_Base):
             self.assertEqual(status, 400)
             status, _ = call("POST", "/api/scheduler/config", {"executor_priority": ["ghost"]})
             self.assertEqual(status, 400)
+
+            # executor instances (claude:zai) are accepted with their own
+            # params and quota; unknown bases and malformed labels are not.
+            status, cfg = call("POST", "/api/scheduler/config", {
+                "executor_priority": ["claude:zai", "claude"],
+                "executor_quota": {"claude:zai": 5000, "claude": 9000},
+                "executor_params": {"claude:zai": {"model": "test-model"}},
+            })
+            self.assertEqual(status, 200)
+            self.assertEqual(cfg["executor_priority"], ["claude:zai", "claude"])
+            self.assertEqual(cfg["executor_params"], {"claude:zai": {"model": "test-model"}})
+            status, _ = call(
+                "POST", "/api/scheduler/config", {"executor_priority": ["ghost:x"]}
+            )
+            self.assertEqual(status, 400)
+            status, _ = call(
+                "POST", "/api/scheduler/config", {"executor_priority": ["claude:x!"]}
+            )
+            self.assertEqual(status, 400)
+
             status, _ = call("POST", "/api/scheduler/config", {"daily_failure_limit": 0})
             self.assertEqual(status, 400)
             status, _ = call("POST", "/api/scheduler/config", {"daily_failure_limit": True})
