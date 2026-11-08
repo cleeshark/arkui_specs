@@ -45,6 +45,7 @@ class CodexCliExecutor:
         runner: Callable[..., ProcessResult] = run_subprocess,
     ) -> None:
         self._command = str(config.get("command", "codex"))
+        self._agent_id = str(config.get("agent_id") or "codex")
         self._sandbox = str(config.get("sandbox", "read-only"))
         self._model = config.get("model")  # None => use local codex config
         self._timeout = float(config.get("timeout_seconds", DEFAULT_TIMEOUT))
@@ -74,6 +75,7 @@ class CodexCliExecutor:
     def describe(self) -> dict[str, Any]:
         return {
             "type": "codex-cli",
+            "agent_id": self._agent_id,
             "command": self._command,
             "model": self._model,
             "sandbox": self._sandbox,

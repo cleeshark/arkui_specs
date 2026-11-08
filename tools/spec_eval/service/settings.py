@@ -7,9 +7,34 @@ environment variables (service plan §2, §6.1).
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+
+INSTANCE_SEPARATOR = ":"
+"""Delimiter between a base agent id and an instance label (``claude:zai``).
+
+Executor *types* (``codex``/``claude``) map one CLI binary each. Multiple
+*instances* of one type — e.g. several Claude accounts via different
+``~/.claude/settings-*.json`` files — are addressed as ``<base>:<label>`` and
+each carries its own parameter overrides and daily token quota.
+"""
+
+_INSTANCE_LABEL_RE = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+
+
+def split_agent_instance(name: str) -> tuple[str, str | None]:
+    """Split ``claude:zai`` into ``("claude", "zai")``.
+
+    A name without a valid ``<base>:<label>`` suffix is returned unchanged with
+    ``None`` as the label, so base agent ids pass through and malformed
+    instance ids fail later lookup instead of being silently reinterpreted.
+    """
+    base, sep, label = str(name).partition(INSTANCE_SEPARATOR)
+    if sep and base and _INSTANCE_LABEL_RE.match(label):
+        return base, label
+    return str(name), None
 
 
 def _scan_claude_config_files() -> list[str]:
@@ -129,15 +154,21 @@ def executor_config_for(
 ) -> dict[str, Any]:
     """Return a complete, validated config for one executor.
 
-    ``overrides`` contains only values explicitly supplied for one job. The
-    returned config always contains every exposed parameter, so queued jobs are
-    reproducible even if service defaults change after submission.
+    ``name`` is a base agent id (``claude``) or an instance id
+    (``claude:zai``); instances resolve against their base agent's config
+    factory and parameter schema. ``overrides`` contains only values
+    explicitly supplied for one job. The returned config always contains every
+    exposed parameter, so queued jobs are reproducible even if service
+    defaults change after submission. ``agent_id`` keeps the full id the
+    caller asked for, so instances stay distinguishable downstream (dedupe
+    fingerprints, quota accounting).
     """
-    factory = _EXECUTOR_CONFIGS.get(name)
+    base, _label = split_agent_instance(name)
+    factory = _EXECUTOR_CONFIGS.get(base)
     if factory is None:
         raise ValueError(f"unknown executor: {name!r}")
     overrides = overrides or {}
-    schema = {item["key"]: item for item in _schema_for(name)}
+    schema = {item["key"]: item for item in _schema_for(base)}
     unknown = sorted(set(overrides) - set(schema))
     if unknown:
         raise ValueError(f"unsupported {name} executor parameter(s): {', '.join(unknown)}")

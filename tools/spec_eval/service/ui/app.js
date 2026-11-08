@@ -54,6 +54,27 @@ const schedulerFailureSkipTtl = document.getElementById("scheduler-failure-skip-
 const schedulerExecList = document.getElementById("scheduler-executor-list");
 const schedulerError = document.getElementById("scheduler-error");
 const schedulerStatusEl = document.getElementById("scheduler-status");
+const schedulerAddAgent = document.getElementById("scheduler-add-agent");
+const schedulerAddLabel = document.getElementById("scheduler-add-label");
+const schedulerAddBtn = document.getElementById("scheduler-add-btn");
+
+// Executor instances are `<base>:<label>` ids (e.g. "claude:zai"): several
+// CLIs of one executor type, each with its own params and daily quota.
+function baseAgentOf(id) {
+  const s = String(id);
+  const idx = s.indexOf(":");
+  return idx > 0 ? s.slice(0, idx) : s;
+}
+
+function instanceLabelOf(id) {
+  const s = String(id);
+  const idx = s.indexOf(":");
+  return idx > 0 ? s.slice(idx + 1) : null;
+}
+
+function profileFor(id) {
+  return agentProfiles.find((p) => p.id === baseAgentOf(id)) || null;
+}
 
 function esc(s) {
   return String(s == null ? "" : s).replace(/[&<>"]/g, (c) =>
@@ -353,6 +374,9 @@ async function loadAgents() {
   agentSelect.innerHTML = agentProfiles.map((profile) =>
     `<option value="${esc(profile.id)}" ${profile.default ? "selected" : ""}>${esc(profile.name || profile.id)}${profile.default ? " (default)" : ""}</option>`
   ).join("");
+  schedulerAddAgent.innerHTML = agentProfiles.map((profile) =>
+    `<option value="${esc(profile.id)}">${esc(profile.name || profile.id)}</option>`
+  ).join("");
   renderAgentParams(agentProfiles.find((profile) => profile.default) || agentProfiles[0]);
 }
 
@@ -363,8 +387,11 @@ function schedulerMetric(label, value) {
 
 function renderSchedulerExecutors() {
   schedulerExecList.innerHTML = schedulerExecOrder.map((id, idx) => {
-    const profile = agentProfiles.find((p) => p.id === id);
-    const name = profile ? (profile.name || id) : id;
+    const profile = profileFor(id);
+    const label = instanceLabelOf(id);
+    const name = profile
+      ? `${profile.name || baseAgentOf(id)}${label ? ":" + label : ""}`
+      : id;
     const enabled = schedulerExecEnabled.has(id);
     const quota = schedulerExecQuota[id] == null ? SCHEDULER_DEFAULT_QUOTA : schedulerExecQuota[id];
     const params = schedulerExecParams[id] || {};
@@ -393,6 +420,7 @@ function renderSchedulerExecutors() {
       <label><input type="checkbox" data-sexec="${esc(id)}" ${enabled ? "checked" : ""} /> ${esc(name)}</label>
       <input type="number" min="0" step="1000000" data-squota="${esc(id)}" value="${esc(quota)}" aria-label="${esc(name)} daily token quota" />
       ${paramFields ? `<span class="sched-exec-params">${paramFields}</span>` : ""}
+      ${label ? `<button type="button" data-sact="remove" aria-label="remove ${esc(name)}">✕</button>` : ""}
     </li>`;
   }).join("");
 }
@@ -409,7 +437,7 @@ function syncSchedulerExecFromDom() {
   schedulerExecList.querySelectorAll("[data-sparam]").forEach((inp) => {
     const id = inp.dataset.sparam;
     const key = inp.dataset.sparamkey;
-    const profile = agentProfiles.find((p) => p.id === id);
+    const profile = profileFor(id);
     const param = profile && (profile.params || []).find((p) => p.key === key);
     if (!profile || !param) return;
     let value = inp.value;
@@ -434,17 +462,20 @@ function applySchedulerConfig(cfg) {
       ? SCHEDULER_DEFAULT_FAILURE_SKIP_TTL
       : cfg.failure_skip_ttl_seconds);
   const allIds = agentProfiles.map((p) => p.id);
-  const priority = (cfg.executor_priority || []).filter((id) => allIds.includes(id));
+  // Priority entries may be base ids or instance ids (claude:zai); keep the
+  // ones whose base agent profile exists and append any base agent the config
+  // does not mention yet.
+  const priority = (cfg.executor_priority || []).filter((id) => profileFor(id));
   schedulerExecOrder = [...priority, ...allIds.filter((id) => !priority.includes(id))];
   schedulerExecEnabled = new Set(priority.length ? priority : allIds);
   schedulerExecQuota = {};
-  allIds.forEach((id) => {
+  schedulerExecOrder.forEach((id) => {
     const q = cfg.executor_quota ? cfg.executor_quota[id] : null;
     schedulerExecQuota[id] = q == null ? SCHEDULER_DEFAULT_QUOTA : q;
   });
   schedulerExecParams = {};
   if (cfg.executor_params && typeof cfg.executor_params === "object") {
-    allIds.forEach((id) => {
+    schedulerExecOrder.forEach((id) => {
       const p = cfg.executor_params[id];
       if (p && typeof p === "object") schedulerExecParams[id] = Object.assign({}, p);
     });
@@ -512,8 +543,54 @@ schedulerExecList.addEventListener("click", (e) => {
   } else if (btn.dataset.sact === "down" && idx < schedulerExecOrder.length - 1) {
     [schedulerExecOrder[idx + 1], schedulerExecOrder[idx]] =
       [schedulerExecOrder[idx], schedulerExecOrder[idx + 1]];
+  } else if (btn.dataset.sact === "remove" && instanceLabelOf(id)) {
+    // Only instances are removable; base executor rows always stay.
+    schedulerExecOrder.splice(idx, 1);
+    schedulerExecEnabled.delete(id);
+    delete schedulerExecQuota[id];
+    delete schedulerExecParams[id];
   }
   renderSchedulerExecutors();
+});
+
+function schedulerAddExecutor() {
+  schedulerError.hidden = true;
+  const base = schedulerAddAgent.value;
+  if (!base) return;
+  const raw = schedulerAddLabel.value.trim();
+  if (raw && !/^[A-Za-z0-9_-]{1,64}$/.test(raw)) {
+    schedulerError.textContent =
+      "instance name may only contain letters, digits, '-' and '_'";
+    schedulerError.hidden = false;
+    return;
+  }
+  let label = raw;
+  if (!label) {
+    let n = 2; // the unlabelled base row counts as the first instance
+    while (schedulerExecOrder.includes(`${base}:${n}`)) n += 1;
+    label = String(n);
+  }
+  const id = `${base}:${label}`;
+  if (schedulerExecOrder.includes(id)) {
+    schedulerError.textContent = `executor ${id} already exists`;
+    schedulerError.hidden = false;
+    return;
+  }
+  syncSchedulerExecFromDom();
+  schedulerExecOrder.push(id);
+  schedulerExecEnabled.add(id);
+  schedulerExecQuota[id] = SCHEDULER_DEFAULT_QUOTA;
+  schedulerExecParams[id] = {};
+  schedulerAddLabel.value = "";
+  renderSchedulerExecutors();
+}
+
+schedulerAddBtn.addEventListener("click", schedulerAddExecutor);
+schedulerAddLabel.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    schedulerAddExecutor();
+  }
 });
 
 schedulerEnabled.addEventListener("change", async () => {

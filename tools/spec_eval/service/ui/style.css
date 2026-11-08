@@ -92,6 +92,11 @@ button[type="submit"] { justify-self: start; }
 #scheduler-executor-list input[type="number"] { width: 8.5rem; flex: 0 0 auto; }
 #scheduler-executor-list button { padding: 0.22rem 0.5rem; font-size: 0.85rem; line-height: 1;
   margin: 0; }
+.scheduler-add-executor { display: flex; align-items: center; gap: 0.5rem;
+  margin-top: 0.6rem; flex-wrap: wrap; }
+.scheduler-add-executor select { width: auto; flex: 0 0 auto; }
+.scheduler-add-executor input { flex: 1 1 10rem; min-width: 8rem; }
+.scheduler-add-executor button { flex: 0 0 auto; white-space: nowrap; }
 #scheduler-status { margin-top: 1rem; }
 
 .table-scroll { overflow-x: auto; }

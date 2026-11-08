@@ -51,6 +51,15 @@
         <legend>Executor priority &amp; daily token quota</legend>
         <small class="muted">Top runs first; when its quota is spent the run fails over to the next enabled executor.</small>
         <ul id="scheduler-executor-list"></ul>
+        <div class="scheduler-add-executor">
+          <select id="scheduler-add-agent" aria-label="Executor type"></select>
+          <input id="scheduler-add-label" placeholder="instance name (optional)"
+                 aria-label="Executor instance name" maxlength="64" />
+          <button type="button" id="scheduler-add-btn">+ Add executor</button>
+        </div>
+        <small class="muted">Add another instance of an executor (e.g. Claude with a different
+          <code>~/.claude/settings-*.json</code> config file); each instance gets its own
+          parameters and daily token quota.</small>
       </fieldset>
       <button type="submit">Save schedule</button>
     </form>
@@ -149,6 +158,6 @@
     <pre id="function-detail-state"></pre>
   </section>
 
-  <script src="/static/app.js?v=20261028-2"></script>
+  <script src="/static/app.js?v=20261108-1"></script>
 </body>
 </html>

@@ -25,7 +25,12 @@ from .report_registry import OrphanReconcileResult, ReportRegistry
 from .scheduler.auto_scheduler import AutoScheduler
 from .scheduler.dispatcher import CancelResult, Dispatcher
 from .scheduler.job_worker import build_runner
-from .settings import ServiceSettings, executor_config_for, executor_profiles
+from .settings import (
+    ServiceSettings,
+    executor_config_for,
+    executor_profiles,
+    split_agent_instance,
+)
 from .store.repositories import (
     ArtifactRepository,
     EventRepository,
@@ -128,9 +133,12 @@ class SemanticServiceApp:
         legacy_type = {"codex-cli": "codex", "claude-cli": "claude"}.get(
             str(config.get("type", ""))
         )
-        name = str(config.get("agent_id") or legacy_type or self._default_agent)
+        raw = str(config.get("agent_id") or legacy_type or self._default_agent)
+        # Instance ids (claude:zai) share the base agent's factory; the full id
+        # stays in the config for dedupe and quota accounting.
+        name = split_agent_instance(raw)[0]
         if (
-            name == self._default_agent
+            raw == self._default_agent
             and self._injected_executor is not None
             and config == self._executor_config
         ):
@@ -262,10 +270,12 @@ class SemanticServiceApp:
         if isinstance(failure_skip_ttl_seconds, bool):
             raise ValueError("failure_skip_ttl_seconds must be a non-negative integer")
         # Executor-registry validation lives here (the store layer is registry
-        # agnostic): every named executor must be a registered agent.
+        # agnostic): every named executor must be a registered agent, either a
+        # base id (``claude``) or an instance id (``claude:zai``).
         known = set(available())
         for name in set(priority) | set(quota) | set(params):
-            if name not in known:
+            base, _label = split_agent_instance(name)
+            if name not in known and base not in known:
                 raise ValueError(f"unknown executor: {name!r}")
         # Validate per-executor params against the executor's schema.
         for name, overrides in params.items():

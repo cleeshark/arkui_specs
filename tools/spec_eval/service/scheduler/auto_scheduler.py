@@ -15,6 +15,10 @@ worker pool. The dispatcher only runs jobs it is handed; this decides *when* and
   token usage (all consumption, from ``executor_calls``) is still under its
   quota. When one is exhausted it fails over to the next; the run only stops when
   all executors in the chain are exhausted. Reset is daily (local midnight).
+  The chain may contain executor *instances* (``claude:zai``) — several CLIs of
+  one type, e.g. with different ``~/.claude/settings-*.json`` config files —
+  each with its own ``executor_params`` entry and its own ``executor_quota``
+  bucket; usage is accounted per instance, not per type.
 * **Failure skip with TTL** — a FuncID whose most recent job is
   ``failed``/``cancelled`` is skipped so one run does not keep dispatching the
   same failing task. The skip marker expires after ``failure_skip_ttl_seconds``
@@ -47,6 +51,7 @@ from typing import Any
 
 from .. import freshness as F
 from ..domain import states as S
+from ..settings import split_agent_instance
 
 LOGGER = logging.getLogger(__name__)
 
@@ -263,15 +268,21 @@ class AutoScheduler:
         }
 
     def _executor_identity(self, agent_id: str) -> str:
-        """Map an agent id (``codex``) to the stored executor identity (``codex-cli``).
+        """Map a config executor id to the stored executor identity.
 
-        ``executor_calls.executor`` records the executor ``type``, so quota
-        accounting must key on that, not the short agent id.
+        ``executor_calls.executor`` records the executor ``type`` for base
+        agents (``codex`` -> ``codex-cli``) and ``<type>:<label>`` for
+        instances (``claude:zai`` -> ``claude-cli:zai``), so quota accounting
+        must apply the same mapping instead of keying on the short agent id.
         """
+        base, label = split_agent_instance(agent_id)
         try:
-            return str(self._app.resolve_executor_config(agent_id).get("type", agent_id))
+            type_name = str(
+                self._app.resolve_executor_config(base).get("type", base)
+            )
         except Exception:  # noqa: BLE001 - unknown agent -> use the id verbatim
-            return agent_id
+            type_name = base
+        return f"{type_name}:{label}" if label else type_name
 
     @staticmethod
     def _day_start_iso(now: datetime) -> str:

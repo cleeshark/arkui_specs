@@ -28,7 +28,11 @@ from spec_eval.service.executors.claude_cli import (
 )
 from spec_eval.service.executors.process import ProcessResult
 from spec_eval.service.executors.registry import available as registry_available
-from spec_eval.service.settings import ServiceSettings, executor_config_for
+from spec_eval.service.settings import (
+    ServiceSettings,
+    executor_config_for,
+    split_agent_instance,
+)
 
 
 def _stream_json_output(
@@ -732,6 +736,35 @@ class ClaudeSettingsTest(unittest.TestCase):
     def test_executor_config_for_unknown_raises(self):
         with self.assertRaises(ValueError):
             executor_config_for("unknown")
+
+    def test_split_agent_instance(self):
+        split = split_agent_instance
+        self.assertEqual(split("claude:zai"), ("claude", "zai"))
+        self.assertEqual(split("claude"), ("claude", None))
+        self.assertEqual(split("codex:worker-2"), ("codex", "worker-2"))
+        # malformed labels are not instances
+        self.assertEqual(split("claude:"), ("claude:", None))
+        self.assertEqual(split("claude:bad label!"), ("claude:bad label!", None))
+
+    def test_executor_config_for_instance(self):
+        config = executor_config_for(
+            "claude:zai", {"config_file": "settings-zai.json"}
+        )
+        self.assertEqual(config["agent_id"], "claude:zai")
+        self.assertEqual(config["type"], "claude-cli")
+        self.assertEqual(config["config_file"], "settings-zai.json")
+        self.assertEqual(config["resolved_params"]["config_file"], "settings-zai.json")
+        self.assertEqual(config["overrides"], {"config_file": "settings-zai.json"})
+        # unset params keep the base agent defaults
+        self.assertEqual(config["timeout_seconds"], 3600)
+
+    def test_instance_rejects_bad_params(self):
+        with self.assertRaises(ValueError):
+            executor_config_for("claude:zai", {"bogus": 1})
+
+    def test_instance_of_unknown_base_raises(self):
+        with self.assertRaises(ValueError):
+            executor_config_for("ghost:x")
 
 
 if __name__ == "__main__":
